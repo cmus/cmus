@@ -1,0 +1,150 @@
+#!/bin/bash
+
+source $(dirname $0)/scripts/configure.sh || exit 1
+
+PACKAGE="cmus"
+VERSION="1.4.2"
+PACKAGE_BUGREPORT="tihirvon@ee.oulu.fi"
+PACKAGE_NAME="C* Music Player"
+
+check_iconv()
+{
+	local libs=-liconv
+
+	if check_lib "iconv ($libs)" "$libs"
+	then
+		makefile_var ICONV_CFLAGS ""
+		makefile_var ICONV_LIBS "$libs"
+		return 0
+	fi
+	echo "assuming libc contains iconv"
+	makefile_var ICONV_CFLAGS ""
+	makefile_var ICONV_LIBS ""
+	return 0
+}
+
+check_ncurses()
+{
+	local libs=-lncurses
+
+	if check_lib "ncurses ($libs)" "$libs"
+	then
+		makefile_var NCURSES_CFLAGS ""
+		makefile_var NCURSES_LIBS "$libs"
+		return 0
+	fi
+	return 1
+}
+
+check_flac()
+{
+	if check_lib FLAC -lFLAC
+	then
+		makefile_var FLAC_CFLAGS ""
+		makefile_var FLAC_LIBS -lFLAC
+		return 0
+	fi
+	return 1
+}
+
+check_mad()
+{
+	pkg_check_modules mad "mad id3tag"
+	return $?
+}
+
+check_modplug()
+{
+	pkg_check_modules modplug "libmodplug"
+	return $?
+}
+
+check_vorbis()
+{
+	pkg_check_modules vorbis "vorbisfile"
+	return $?
+}
+
+check_alsa()
+{
+	pkg_check_modules alsa "alsa"
+	return $?
+}
+
+check_arts()
+{
+	local artsc_config
+
+	if ! check_program artsc-config ARTSC_CONFIG
+	then
+		msg_error "*** The artsc-config script could not be found."
+		return 1
+	fi
+
+	msg_checking "CFLAGS for artsc"
+	ARTS_CFLAGS="$($ARTSC_CONFIG --cflags)"
+	msg_result $ARTS_CFLAGS
+
+	msg_checking "LIBS for artsc"
+	ARTS_LIBS="$($ARTSC_CONFIG --libs)"
+	msg_result $ARTS_LIBS
+
+	makefile_var ARTS_CFLAGS "$ARTS_CFLAGS"
+	makefile_var ARTS_LIBS "$ARTS_LIBS"
+	return 0
+}
+
+check_oss()
+{
+	msg_checking "for header /usr/include/sys/soundcard.h"
+	if test -f /usr/include/sys/soundcard.h
+	then
+		msg_result "yes"
+		return 0
+	else
+		msg_result "no"
+		return 1
+	fi
+}
+
+add_check check_cc
+add_check check_ar
+add_check check_pthread
+add_check check_ncurses
+add_check check_iconv
+
+enable_flag flac    auto CONFIG_FLAC    "FLAC (Free Lossless Audio Codec) support"
+enable_flag mad     auto CONFIG_MAD     "MPEG Audio Decoder (libmad) support"
+enable_flag modplug auto CONFIG_MODPLUG "libmodplug (mod, x3m, ...) support"
+enable_flag vorbis  auto CONFIG_VORBIS  "Ogg/Vorbis support"
+enable_flag wav     yes  CONFIG_WAV     "WAV support"
+enable_flag alsa    auto CONFIG_ALSA    "ALSA support"
+enable_flag arts    auto CONFIG_ARTS    "ARTS support"
+enable_flag oss     auto CONFIG_OSS     "Open Sound System support"
+enable_flag irman   no   CONFIG_IRMAN   "Irman support"
+
+parse_command_line "$@"
+
+case $DEBUG in
+	[0-2])
+		;;
+	'')
+		DEBUG=1
+		;;
+	*)
+		warn "DEBUG must be 0-2, setting to 1"
+		DEBUG=1
+		;;
+esac
+
+run_checks
+
+CFLAGS="${CFLAGS} -DDEBUG=$DEBUG"
+
+generate_config_h
+generate_config_mk
+generate_makefiles . cmus common doc remote
+
+print_config
+print_compiler_settings
+print_install_dirs

@@ -1,0 +1,39 @@
+
+                     CMus - C* Music Player
+
+                Copyright 2004-2005 Timo Hirvonen
+
+Installation
+============
+
+./configure --help
+./configure
+make help
+make
+make install
+
+
+Documentation
+=============
+
+See $datadir/cmus/doc/cmus.html (e.g. /usr/share/cmus/doc/cmus.html).
+
+Known Problems
+==============
+
+According to the README file included in libmodplug, it should
+understand following compressed mods:
+
+    zip:  mdz,  s3z,  xmz,  itz
+    rar:  mdr,  s3r,  xmr,  itr
+    gzip: mdgz, s3gz, xmgz, itgz
+
+But I've not been able to play any compressed mods. Uncompressed mods
+play without problems.
+
+Reporting Bugs
+==============
+
+After a crash send bug report with last lines of /tmp/cmus-debug to
+tihirvon@ee.oulu.fi.  /tmp/cmus-debug file exists only if you configured
+cmus with maximum debug level (./configure DEBUG=2).

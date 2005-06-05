@@ -1,0 +1,311 @@
+Summary of changes from 1.4.1 to 1.4.2
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen:
+ o use HTTP/1.0 instead of 1.1
+ o make .pls parser more forgiving
+ o split remote code to separate program cmus-remote
+ o move common code to common/
+ o add --listen option to cmus
+ o add --server option to cmus-remote
+ o improved search: //WORDS compares to titles only
+ o clean ups
+ o better configure check for pthread
+ o configure checks for iconv and ncurses
+ o doc update
+
+Summary of changes from 1.4.0 to 1.4.1
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen:
+ o fixed long option parsing bug (--play now works)
+ o added support for .m3u and .pls playlist formats (loading only)
+ o much improved streaming
+ o better error reporting (http errors)
+ o streams are now put under <Stream> 'artist' instead of <no name> in
+   the artist/album view
+ o clear current track at eof when there's no next track available
+ o skip ID3 tags when decoding mp3
+ o optimize adding a track to the sorted view
+
+Summary of changes from 1.3.2 to 1.4.0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen:
+ o made view 3 sortable
+ o added 'sort' option
+ o added prepend to play queue command ('E')
+ o display info message if searched text was not found
+ o fixed bug in ip_mad. get genre name instead of genre index.
+   ~/.cache/cmus/trackdb.* may contain invalid genres, remove these
+   files if genre numbers are shown instead of genre names
+ o added 'g' (genre) to format chars
+ o renamed playlist modes: sorted -> tree, playlist -> sorted
+ o changed format_print to cut text if it is longer than specified field width
+ o made play queue thread safe
+ o changed debugging code (less bloated now)
+ o code clean-ups
+ o help update
+ o documentation update
+
+Summary of changes from 1.3.1 to 1.3.2
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen:
+ o flac plugin
+ o document :enqueue command
+ o playlist fixes
+
+Summary of changes from 1.3.0 to 1.3.1
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen:
+ o new input plugin (libmodplug). adds support for following files:
+   mod, s3m, xm, it, 669, amf, ams, dbm, dmf, dsm, far, mdl, med, mtm,
+   okt, ptm, stm, ult, umx, mt2, psm, mdz, s3z, xmz, itz, mdr, s3r, xmr,
+   itr, mdgz, s3gz, xmgz, itgz
+
+Summary of changes from 1.2.5 to 1.3.0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen:
+ o add ':enqueue' command
+ o add '--enqueue' command line option
+ o enqueue now works for directories and playlists too
+ o enqueue now works in the artist/album window
+ o replace playlist loader with a more general purpose worker thread
+ o playlist update ('u' key) now happens in the worker thread
+ o files can be deleted in the directory browser ('D' or del)
+ o searching now works in every view
+ o multiple search patterns recognized (separated by spaces)
+ o colorize error messages
+ o doc update
+ o updated AUTHORS (should have done that much earlier)
+
+Summary of changes from 1.2.4 to 1.2.5
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen:
+ o fix search bug
+ o update window title only if terminal supports dynamic window titles
+
+Summary of changes from 1.2.3 to 1.2.4
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen:
+ o hide non-playable files in the directory browser
+ o don't read uninitialized memory (bsplit.c)
+ o make directory name absolute before changing to that directory
+   in the directory browser
+ o customizable colors for files and directories in the directory browser
+ o --seek command line option
+ o documentation is now generated from restructured text
+ o updated cmus-status-display script
+ o build system changes
+
+Summary of changes from 1.2.2 to 1.2.3
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen:
+ o remove obsolete .mpl code. loading mpl-playlists still works
+ o allow playing selected file in the directory browser
+ o enqueue now works in the directory browser too
+ o redirect output of status display script to /dev/null
+
+Summary of changes from 1.2.1 to 1.2.2
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen:
+ o don't use GNU extensions
+ o fix compiling against alsa-lib-1.0.9rc2
+ o small doc update
+
+Summary of changes from 1.2.0 to 1.2.1
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen:
+ o load output plugin options before initializing the plugins
+ o oss: only set options to default if not set by user
+ o load output plugin options before initializing plugins
+ o new config dirs: ~/.config/cmus/ and ~/.cache/cmus/
+ o clean-ups
+
+Summary of changes from 1.1.4 to 1.2.0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen:
+ o play queue (use 'e' to enqueue track)
+ o more pages in the help window
+ o use 'D' instead of 'd' for delete commands. this prevents accidental removes
+ o key '4' now shows the play queue
+ o key '5' now shows the directory browser
+ o try to initialize output plugin again when selecting it for use if
+   previously failed to initialize
+ o lots of code changes
+ o documentation update
+
+Summary of changes from 1.1.3 to 1.1.4
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen:
+ o fix 'j' and 'k' keys in directory browser
+ o big build system update
+
+Summary of changes from 1.1.2 to 1.1.3
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen:
+ o help window by Sergey Kuleshov
+ o fixed crash in command mode when backspace is pressed on multibyte
+   utf8 character
+ o changed key mappings (more vim like)
+ o add ARTS_CFLAGS and ARTS_LIBS to Makefile. this _should_ make arts
+   plugin to compile again. this bug was reported by Martin Stubenschrott
+ o documentation update
+ o build system update
+
+Summary of changes from 1.1.1 to 1.1.2
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen:
+ o don't BUG if real-time scheduling policy is not available
+   should work this time :)
+
+Summary of changes from 1.1.0 to 1.1.1
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen:
+ o added buffer_seconds option (buffer size in seconds)
+ o fixed compilation with older (non C99) compilers (hopefully)
+ o don't BUG if real-time scheduling policy is not available.
+   this bug was reported by Sergey Kuleshov
+ o makefile changes
+ o documentation update
+
+Summary of changes from 1.0.1 to 1.1.0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen:
+ o added status_display_program option
+ o sample status display script
+ o made struct nomad and struct irman private
+ o more robust player status updating
+ o code clean-ups
+ o documentation update
+
+Summary of changes from 1.0.0 to 1.0.1
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen:
+ o fix track db bug
+ o fix xrealloc bug
+
+Summary of changes from 0.9.3 to 1.0.0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen:
+ o track metadata database
+ o speed up seeking
+ o don't crash when nothing to play (player_play)
+ o don't assume simple playlists (*.pl) contain only files
+   crashed when there was url
+ o clean-ups
+ o documentation update
+
+Summary of changes from 0.9.2 to 0.9.3
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen:
+ o fix crash in tabexp_file.c
+ o clean up tabexp*
+
+Summary of changes from 0.9.1 to 0.9.2
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen:
+ o track window: sort by filename if track number not set
+ o increase history sizes to 100 lines
+
+Summary of changes from 0.9.0 to 0.9.1
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen:
+ o don't prebuffer (and crash) when changing state paused->playing
+ o added support for disc number tag (vorbis: DISCNUMBER, id3: TPOS)
+ o added '%D' (disc number) format option
+ o sort tracks by disc, track, title
+ o added "play artist" mode
+ o documentation update
+
+Summary of changes from 0.8.2 to 0.9.0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen:
+ o changed from separate artist/album windows to artist/album treeview
+ o better error handling in input plugins
+ o misc clean ups
+ o documentation update
+
+Summary of changes from 0.8.1 to 0.8.2
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen:
+ o delete old ip on file change
+ o fix seeking bug
+ o fill sound card buffer more aggressively
+ o change some key mappings
+ o 5s timeout (streaming)
+ o documentation update
+
+Summary of changes from 0.8.0 to 0.8.1
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen:
+ o added "play album" mode
+ o disable seeking when streaming
+ o only compile OSS plugin if available (changed from "yes" to "auto")
+ o buffering changes
+ o small bug fixes
+ o documentation update
+
+Summary of changes from 0.7.0 to 0.8.0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen:
+  o ID3v2 support (libid3tag)
+  o full UTF-8 support
+  o separate threads for player input / output
+  o remove quit remote command
+  o create /tmp/cmus-debug only if needed
+
+Summary of changes from 0.6.8 to 0.7.0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen:
+  o ":load" now clears playlist before loading new one
+  o ":load" now updates playlist filename
+  o ":add" can be used to join playlists
+  o directory browser window
+  o display more error messages
+  o hide error message after key press
+  o show playlist filename in shuffle and playlist windows
+  o fix memory leak in pl_add_dir
+  o clean ups
+  o documentation updates
+
+Summary of changes from 0.6.7 to 0.6.8
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen:
+  o small fixes
+
+Summary of changes from 0.6.6 to 0.6.7
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen:
+  o remove errors.[ch]
+  o make filenames absolute before adding to the playlist
+  o format_print.c: allow field width for %d
+  o pl.c: search: compare with filename if track has no tag
+  o makefile changes
+  o small bug fixes and clean ups
