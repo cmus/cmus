@@ -498,6 +498,8 @@ int ip_read(struct input_plugin *ip, char *buffer, int count)
 {
 	struct timeval tv;
 	fd_set readfds;
+	char tmp[8 * 1024];
+	char *buf;
 	int rc;
 
 	BUG_ON(!ip->open);
@@ -520,11 +522,42 @@ int ip_read(struct input_plugin *ip, char *buffer, int count)
 		return -1;
 	}
 
-	rc = ip->ops->read(&ip->data, buffer, count);
+	buf = buffer;
+	if (ip->data.sf.channels == 1) {
+		/* player wants channels to be >= 2 */
+		buf = tmp;
+		count /= 2;
+		if (count > sizeof(tmp))
+			count = sizeof(tmp);
+		BUG_ON(count == 0);
+	}
+
+	rc = ip->ops->read(&ip->data, buf, count);
 	if (rc == 0)
 		ip->eof = 1;
 	if (rc == -1)
 		d_print("error: %s\n", strerror(errno));
+
+	if (rc > 0 && ip->data.sf.channels == 1) {
+		/* convert mono to 2 ch */
+		int i, j = 0;
+
+		if (ip->data.sf.bits == 16) {
+			uint16_t *out = (uint16_t *)buffer;
+			uint16_t *in = (uint16_t *)buf;
+
+			for (i = 0; i < rc / 2; i++) {
+				out[j++] = in[i];
+				out[j++] = in[i];
+			}
+		} else {
+			for (i = 0; i < rc; i++) {
+				buffer[j++] = buf[i];
+				buffer[j++] = buf[i];
+			}
+		}
+		rc *= 2;
+	}
 	return rc;
 }
 

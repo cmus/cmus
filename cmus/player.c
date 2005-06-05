@@ -69,6 +69,7 @@ struct player_info player_info = {
 static const struct player_callbacks *player_cbs = NULL;
 static int player_cont = 1;
 static struct buffer player_buffer;
+static struct sample_format buffer_sf;
 
 static pthread_t producer_thread;
 static pthread_mutex_t producer_mutex = CMUS_MUTEX_INITIALIZER;
@@ -108,6 +109,20 @@ static void reset_buffer(void)
 {
 	buffer_reset(&player_buffer);
 	consumer_pos = 0;
+}
+
+static void set_buffer_sf(const struct sample_format *sf)
+{
+	buffer_sf = *sf;
+
+	/* ip_read converts samples to this format */
+	if (buffer_sf.channels == 1)
+		buffer_sf.channels = 2;
+}
+
+static inline int buffer_second_size(void)
+{
+	return buffer_sf.rate * buffer_sf.bits * buffer_sf.channels / 8;
 }
 
 static inline int get_next(char **filename)
@@ -248,7 +263,7 @@ static void __consumer_position_update(void)
 	
 	pos = 0;
 	if (consumer_status == CS_PLAYING || consumer_status == CS_PAUSED)
-		pos = consumer_pos / op_second_size();
+		pos = consumer_pos / buffer_second_size();
 	if (pos != old_pos) {
 /* 		d_print("\n"); */
 		old_pos = pos;
@@ -281,7 +296,7 @@ static void __player_status_changed(void)
 
 /* 	d_print("\n"); */
 	if (consumer_status == CS_PLAYING || consumer_status == CS_PAUSED)
-		pos = consumer_pos / op_second_size();
+		pos = consumer_pos / buffer_second_size();
 
 	player_info_lock();
 	player_info.status = consumer_status;
@@ -306,7 +321,7 @@ static void __prebuffer(void)
 		int limit_ms, limit_size;
 
 		limit_ms = 250;
-		limit_size = limit_ms * ip_second_size(&ip) / 1000;
+		limit_size = limit_ms * buffer_second_size() / 1000;
 		limit_chunks = limit_size / CHUNK_SIZE;
 		if (limit_chunks < 1)
 			limit_chunks = 1;
@@ -451,7 +466,8 @@ static void __consumer_play(void)
 	} else if (consumer_status == CS_STOPPED) {
 		int rc;
 
-		rc = op_open(&ip.data.sf);
+		set_buffer_sf(&ip.data.sf);
+		rc = op_open(&buffer_sf);
 		if (rc) {
 			player_op_error(rc, "opening audio device");
 		} else {
@@ -517,7 +533,8 @@ static void __consumer_handle_eof(void)
 					file_changed();
 				} else {
 					/* PS_PLAYING */
-					rc = op_set_sf(&ip.data.sf);
+					set_buffer_sf(&ip.data.sf);
+					rc = op_set_sf(&buffer_sf);
 					if (rc < 0) {
 						__producer_stop();
 						consumer_status = CS_STOPPED;
@@ -850,7 +867,8 @@ void player_set_file(const char *filename)
 		 */
 		op_drop();
 
-		rc = op_set_sf(&ip.data.sf);
+		set_buffer_sf(&ip.data.sf);
+		rc = op_set_sf(&buffer_sf);
 		if (rc == 0) {
 			/* device wasn't reopened */
 			if (consumer_status == CS_PAUSED) {
@@ -907,7 +925,8 @@ void player_play_file(const char *filename)
 		 */
 		op_drop();
 
-		rc = op_set_sf(&ip.data.sf);
+		set_buffer_sf(&ip.data.sf);
+		rc = op_set_sf(&buffer_sf);
 		if (rc == 0) {
 			/* device wasn't reopened */
 			if (consumer_status == CS_PAUSED) {
@@ -939,7 +958,7 @@ void player_seek(double offset, int whence)
 		double pos, duration, new_pos;
 		int rc;
 
-		pos = (double)consumer_pos / (double)ip_second_size(&ip);
+		pos = (double)consumer_pos / (double)buffer_second_size();
 		duration = ip_duration(&ip);
 		if (duration < 0) {
 			/* can't seek */
@@ -985,7 +1004,7 @@ void player_seek(double offset, int whence)
 /* 			d_print("doing op_drop after seek\n"); */
 			op_drop();
 			reset_buffer();
-			consumer_pos = new_pos * ip_second_size(&ip);
+			consumer_pos = new_pos * buffer_second_size();
 			__consumer_position_update();
 		} else {
 			d_print("error: ip_seek returned %d\n", rc);
@@ -1022,7 +1041,8 @@ int player_set_op(const char *name)
 	}
 
 	if (consumer_status == CS_PLAYING || consumer_status == CS_PAUSED) {
-		rc = op_open(&ip.data.sf);
+		set_buffer_sf(&ip.data.sf);
+		rc = op_open(&buffer_sf);
 		if (rc) {
 			consumer_status = CS_STOPPED;
 			__producer_stop();
