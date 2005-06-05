@@ -498,6 +498,7 @@ int ip_read(struct input_plugin *ip, char *buffer, int count)
 {
 	struct timeval tv;
 	fd_set readfds;
+	/* 4608 seems to be optimal for mp3s, 4096 for oggs */
 	char tmp[8 * 1024];
 	char *buf;
 	int rc;
@@ -529,7 +530,6 @@ int ip_read(struct input_plugin *ip, char *buffer, int count)
 		count /= 2;
 		if (count > sizeof(tmp))
 			count = sizeof(tmp);
-		BUG_ON(count == 0);
 	}
 
 	rc = ip->ops->read(&ip->data, buf, count);
