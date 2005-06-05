@@ -122,7 +122,6 @@ extern int ip_read_comments(struct input_plugin *ip, struct comment **comments);
 extern int ip_duration(struct input_plugin *ip);
 
 extern int ip_eof(struct input_plugin *ip);
-extern int ip_second_size(struct input_plugin *ip);
 extern char *ip_get_error_msg(struct input_plugin *ip, int rc, const char *arg);
 extern char **ip_get_supported_extensions(void);
 

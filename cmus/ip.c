@@ -601,12 +601,6 @@ int ip_eof(struct input_plugin *ip)
 	return ip->eof;
 }
 
-int ip_second_size(struct input_plugin *ip)
-{
-	BUG_ON(!ip->open);
-	return ip->data.sf.rate * ip->data.sf.bits * ip->data.sf.channels / 8;
-}
-
 char *ip_get_error_msg(struct input_plugin *ip, int rc, const char *arg)
 {
 	char buffer[1024];
