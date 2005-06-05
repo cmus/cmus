@@ -1,0 +1,17 @@
+.*.*
+.git
+.nfs*
+*.a
+*.bak
+*.lo
+*.o
+*.orig
+*.pc
+*.rej
+*~
+CVS
+MT
+Makefile
+core
+core.[0-9]*
+tags
