@@ -32,8 +32,6 @@
 #include <errno.h>
 #include <id3tag.h>
 
-#define DEBUG_XING
-
 struct nomad {
 	struct mad_stream stream;
 	struct mad_frame frame;
