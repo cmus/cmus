@@ -93,7 +93,7 @@ a          add file/directory to playlist
 e          append selected file/directory to the play queue without adding to playlist
 E          prepend selected file/directory to the play queue without adding to playlist
 i          toggle showing of hidden files
-enter      cd to selected directory or play selected file
+enter      cd to selected directory/playlist or play selected file
 backspace  cd to parent directory
 =========  ===========
 
