@@ -116,8 +116,12 @@ static void set_buffer_sf(const struct sample_format *sf)
 	buffer_sf = *sf;
 
 	/* ip_read converts samples to this format */
-	if (buffer_sf.channels == 1)
+	if (buffer_sf.channels <= 2 && buffer_sf.bits <= 16) {
 		buffer_sf.channels = 2;
+		buffer_sf.bits = 16;
+		buffer_sf.is_signed = 1;
+		buffer_sf.big_endian = 0;
+	}
 }
 
 static inline int buffer_second_size(void)

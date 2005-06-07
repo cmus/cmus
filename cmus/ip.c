@@ -18,6 +18,7 @@
  */
 
 #include <ip.h>
+#include <pcm.h>
 #include <http.h>
 #include <xmalloc.h>
 #include <file.h>
@@ -467,6 +468,49 @@ int ip_open(struct input_plugin *ip, struct sample_format *sf)
 		return rc;
 	}
 
+	ip->pcm_convert_scale = 1;
+	ip->pcm_convert = NULL;
+	ip->pcm_convert_in_place = NULL;
+	if (ip->data.sf.bits <= 16 && ip->data.sf.channels <= 2) {
+		if (ip->data.sf.bits == 8) {
+			if (ip->data.sf.channels == 1) {
+				ip->pcm_convert_scale = 4;
+				if (ip->data.sf.is_signed) {
+					ip->pcm_convert = convert_s8_1ch_to_s16_2ch;
+				} else {
+					ip->pcm_convert = convert_u8_1ch_to_s16_2ch;
+				}
+			} else {
+				ip->pcm_convert_scale = 2;
+				if (ip->data.sf.is_signed) {
+					ip->pcm_convert = convert_s8_2ch_to_s16_2ch;
+				} else {
+					ip->pcm_convert = convert_u8_2ch_to_s16_2ch;
+				}
+			}
+		} else {
+			if (ip->data.sf.channels == 1) {
+				ip->pcm_convert_scale = 2;
+				ip->pcm_convert = convert_16_1ch_to_16_2ch;
+			}
+
+			if (ip->data.sf.is_signed) {
+				if (ip->data.sf.big_endian)
+					ip->pcm_convert_in_place = convert_s16_be_to_s16_le;
+			} else {
+				if (ip->data.sf.big_endian) {
+					ip->pcm_convert_in_place = convert_u16_be_to_s16_le;
+				} else {
+					ip->pcm_convert_in_place = convert_u16_le_to_s16_le;
+				}
+			}
+		}
+	}
+	d_print("pcm convert: scale=%d convert=%d convert_in_place=%d\n",
+			ip->pcm_convert_scale,
+			ip->pcm_convert != NULL,
+			ip->pcm_convert_in_place != NULL);
+
 	ip->open = 1;
 	if (sf)
 		*sf = ip->data.sf;
@@ -491,6 +535,10 @@ int ip_close(struct input_plugin *ip)
 	ip->ops = NULL;
 	ip->open = 0;
 	ip->eof = 0;
+
+	ip->pcm_convert_scale = -1;
+	ip->pcm_convert = NULL;
+	ip->pcm_convert_in_place = NULL;
 	return rc;
 }
 
@@ -524,10 +572,10 @@ int ip_read(struct input_plugin *ip, char *buffer, int count)
 	}
 
 	buf = buffer;
-	if (ip->data.sf.channels == 1) {
-		/* player wants channels to be >= 2 */
+	if (ip->pcm_convert_scale > 1) {
+		/* use tmp buffer for 16-bit mono and 8-bit */
 		buf = tmp;
-		count /= 2;
+		count /= ip->pcm_convert_scale;
 		if (count > sizeof(tmp))
 			count = sizeof(tmp);
 	}
@@ -538,25 +586,14 @@ int ip_read(struct input_plugin *ip, char *buffer, int count)
 	if (rc == -1)
 		d_print("error: %s\n", strerror(errno));
 
-	if (rc > 0 && ip->data.sf.channels == 1) {
-		/* convert mono to 2 ch */
-		int i, j = 0;
+	if (rc > 0) {
+		int sample_size = ip->data.sf.bits / 8;
 
-		if (ip->data.sf.bits == 16) {
-			uint16_t *out = (uint16_t *)buffer;
-			uint16_t *in = (uint16_t *)buf;
-
-			for (i = 0; i < rc / 2; i++) {
-				out[j++] = in[i];
-				out[j++] = in[i];
-			}
-		} else {
-			for (i = 0; i < rc; i++) {
-				buffer[j++] = buf[i];
-				buffer[j++] = buf[i];
-			}
-		}
-		rc *= 2;
+		if (ip->pcm_convert_in_place != NULL)
+			ip->pcm_convert_in_place(buf, rc / sample_size);
+		if (ip->pcm_convert != NULL)
+			ip->pcm_convert(buffer, tmp, rc / sample_size);
+		rc *= ip->pcm_convert_scale;
 	}
 	return rc;
 }

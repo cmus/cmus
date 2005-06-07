@@ -14,6 +14,7 @@ obj-y := \
 	mergesort.o \
 	misc.o \
 	op.o \
+	pcm.o \
 	pl.o \
 	play_queue.o \
 	player.o \
