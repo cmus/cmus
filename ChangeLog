@@ -1,3 +1,13 @@
+Summary of changes from 1.4.2 to 1.4.3
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen:
+ o made playlists browsable in directory browser
+ o 'u' now updates reloads directory in browser
+ o convert PCM to 16-bit signed little-endian stereo
+ o clean ups
+ o tiny doc update
+
 Summary of changes from 1.4.1 to 1.4.2
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
