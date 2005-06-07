@@ -357,15 +357,24 @@ int format_print(char *str, int str_size, int width, const char *format,
 	lsize = llen * 4;
 	rsize = rlen * 4;
 
+	if (l_str_size < lsize) {
+		free(l_str);
+		l_str_size = lsize;
+		l_str = xnew(char, l_str_size + 1);
+		l_str[l_str_size] = 0;
+	}
+	if (r_str_size < rsize) {
+		free(r_str);
+		r_str_size = rsize;
+		r_str = xnew(char, r_str_size + 1);
+		r_str[r_str_size] = 0;
+	}
+	l_str[0] = 0;
+	r_str[0] = 0;
+
 	if (lsize > 0) {
 		int ul;
 
-		if (l_str_size < lsize) {
-			free(l_str);
-			l_str_size = lsize;
-			l_str = xnew(char, l_str_size + 1);
-			l_str[l_str_size] = 0;
-		}
 		print(l_str, format, fopts);
 		ul = u_strlen(l_str);
 		if (ul != llen)
@@ -375,12 +384,6 @@ int format_print(char *str, int str_size, int width, const char *format,
 	if (rsize > 0) {
 		int ul;
 
-		if (r_str_size < rsize) {
-			free(r_str);
-			r_str_size = rsize;
-			r_str = xnew(char, r_str_size + 1);
-			r_str[r_str_size] = 0;
-		}
 		print(r_str, format + eq_pos + 1, fopts);
 		ul = u_strlen(r_str);
 		if (ul != rlen)
