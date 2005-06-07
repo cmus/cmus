@@ -1,3 +1,9 @@
+Summary of changes from 1.4.3 to 1.4.4
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen:
+ o fix bug in format_print() when %= not in format
+
 Summary of changes from 1.4.2 to 1.4.3
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
