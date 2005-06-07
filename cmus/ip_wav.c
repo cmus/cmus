@@ -176,10 +176,7 @@ static int wav_open(struct input_plugin_data *ip_data)
 	d_print("sec size: %d\n", priv->sec_size);
 	d_print("format_tag: %d\n", format_tag);
 	d_print("\n");
-	d_print("bits: %d\n", ip_data->sf.bits);
-	d_print("rate: %d\n", ip_data->sf.rate);
-	d_print("channels: %d\n", ip_data->sf.channels);
-	d_print("signed: %d\n", ip_data->sf.is_signed);
+	d_print("sr: %d, ch: %d, bits: %d, signed: %d\n", ip_data->sf.rate, ip_data->sf.channels, ip_data->sf.bits, ip_data->sf.is_signed);
 	return 0;
 error_exit:
 	save = errno;
