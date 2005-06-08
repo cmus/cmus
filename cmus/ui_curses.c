@@ -2140,6 +2140,18 @@ static int u_getch(uchar *uch, int *keyp)
 	return 0;
 }
 
+static int cursed_color(int fg, int bg)
+{
+	/* first color pair is 1 */
+	static int pair = 1;
+	int cursed;
+
+	init_pair(pair, fg & 7, bg);
+	cursed = COLOR_PAIR(pair) | (fg & BRIGHT ? A_BOLD : 0);
+	pair++;
+	return cursed;
+}
+
 static void ui_curses_start(void)
 {
 	struct sigaction act;
@@ -2172,43 +2184,21 @@ static void ui_curses_start(void)
 		int i;
 
 		start_color();
-		for (i = 0; i < 8; i++) {
-			init_pair(i, row_fg[i] & 7, row_bg[i] & 7);
-			if (row_fg[i] & BRIGHT) {
-				color_row[i] = COLOR_PAIR(i) | A_BOLD;
-			} else {
-				color_row[i] = COLOR_PAIR(i);
-			}
-		}
-		init_pair(i, title_fg & 7, title_bg);
-		color_title = COLOR_PAIR(i) | (title_fg & BRIGHT ? A_BOLD : 0);
-		i++;
-		init_pair(i, commandline_fg & 7, commandline_bg);
-		color_commandline = COLOR_PAIR(i) | (commandline_fg & BRIGHT ? A_BOLD : 0);
-		i++;
-		init_pair(i, statusline_fg & 7, statusline_bg);
-		color_statusline = COLOR_PAIR(i) | (statusline_fg & BRIGHT ? A_BOLD : 0);
-		i++;
-		init_pair(i, titleline_fg & 7, titleline_bg);
-		color_titleline = COLOR_PAIR(i) | (titleline_fg & BRIGHT ? A_BOLD : 0);
+		for (i = 0; i < 8; i++)
+			color_row[i] = cursed_color(row_fg[i], row_bg[i]);
 
-		i++;
-		init_pair(i, browser_dir_fg & 7, browser_dir_bg);
-		color_browser_dir = COLOR_PAIR(i) | (browser_dir_fg & BRIGHT ? A_BOLD : 0);
-		i++;
-		init_pair(i, browser_file_fg & 7, browser_file_bg);
-		color_browser_file = COLOR_PAIR(i) | (browser_file_fg & BRIGHT ? A_BOLD : 0);
+		color_title = cursed_color(title_fg, title_bg);
+		color_commandline = cursed_color(commandline_fg, commandline_bg);
+		color_statusline = cursed_color(statusline_fg, statusline_bg);
+		color_titleline = cursed_color(titleline_fg, titleline_bg);
 
-		i++;
-		init_pair(i, error_fg & 7, error_bg);
-		color_error = COLOR_PAIR(i) | (error_fg & BRIGHT ? A_BOLD : 0);
-		i++;
-		init_pair(i, info_fg & 7, info_bg);
-		color_info = COLOR_PAIR(i) | (info_fg & BRIGHT ? A_BOLD : 0);
+		color_browser_dir = cursed_color(browser_dir_fg, browser_dir_bg);
+		color_browser_file = cursed_color(browser_file_fg, browser_file_bg);
 
-		i++;
-		init_pair(i, title_bg & 7, row_bg[0] & 7);
-		color_separator = COLOR_PAIR(i);
+		color_error = cursed_color(error_fg, error_bg);
+		color_info = cursed_color(info_fg, info_bg);
+
+		color_separator = cursed_color(title_bg, row_bg[0]);
 	}
 
 	while (running) {
