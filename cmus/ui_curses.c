@@ -126,6 +126,9 @@ static int color_browser_file;
 static int color_error;
 static int color_info;
 
+/* separator line between tree and track windows */
+static int color_separator;
+
 #define BRIGHT (1 << 3)
 
 /* colors */
@@ -707,6 +710,17 @@ static void update_browser_window(void)
 	update_window(browser_win, 0, 0, COLS, title, print_browser);
 }
 
+static void draw_separator(void)
+{
+	int row;
+
+	bkgdset(color_title);
+	mvaddch(0, tree_win_w, ' ');
+	bkgdset(color_separator);
+	for (row = 1; row < LINES - 3; row++)
+		mvaddch(row, tree_win_w, ACS_VLINE);
+}
+
 static void update_view(void)
 {
 	switch (ui_curses_view) {
@@ -715,6 +729,7 @@ static void update_view(void)
 		update_tree_window();
 		update_track_window();
 		pl_unlock();
+		draw_separator();
 		break;
 	case SHUFFLE_LIST_VIEW:
 		pl_lock();
@@ -1131,6 +1146,7 @@ static void ui_curses_set_view(enum ui_curses_view view)
 		searchable = tree_searchable;
 		update_tree_window();
 		update_track_window();
+		draw_separator();
 		break;
 	case SHUFFLE_LIST_VIEW:
 		searchable = shuffle_searchable;
@@ -1888,14 +1904,14 @@ static int get_window_size(int *lines, int *columns)
 static void resize_playlist(int w, int h)
 {
 	tree_win_w = w / 3;
-	track_win_w = w - tree_win_w;
+	track_win_w = w - tree_win_w - 1;
 	if (tree_win_w < 8)
 		tree_win_w = 8;
 	if (track_win_w < 8)
 		track_win_w = 8;
 	tree_win_x = 0;
 	tree_win_y = 0;
-	track_win_x = tree_win_w;
+	track_win_x = tree_win_w + 1;
 	track_win_y = 0;
 
 	pl_set_tree_win_nr_rows(h - 1);
@@ -2189,6 +2205,10 @@ static void ui_curses_start(void)
 		i++;
 		init_pair(i, info_fg & 7, info_bg);
 		color_info = COLOR_PAIR(i) | (info_fg & BRIGHT ? A_BOLD : 0);
+
+		i++;
+		init_pair(i, title_bg & 7, row_bg[0] & 7);
+		color_separator = COLOR_PAIR(i);
 	}
 
 	while (running) {
