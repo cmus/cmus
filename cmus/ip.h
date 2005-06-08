@@ -63,7 +63,7 @@ struct input_plugin_data {
 	char *http_reason;
 
 	/* filled by plugin */
-	struct sample_format sf;
+	sample_format_t sf;
 	void *private;
 };
 
@@ -107,7 +107,7 @@ extern void ip_delete(struct input_plugin *ip);
 /*
  * errors: IP_ERROR_{ERRNO, FILE_FORMAT, SAMPLE_FORMAT}
  */
-extern int ip_open(struct input_plugin *ip, struct sample_format *sf);
+extern int ip_open(struct input_plugin *ip);
 
 /*
  * errors: none?

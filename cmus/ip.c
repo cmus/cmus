@@ -424,9 +424,9 @@ void ip_delete(struct input_plugin *ip)
 	free(ip->data.filename);
 }
 
-int ip_open(struct input_plugin *ip, struct sample_format *sf)
+int ip_open(struct input_plugin *ip)
 {
-	int rc;
+	int rc, bits, is_signed, channels;
 
 	BUG_ON(ip->open);
 	BUG_ON(ip->eof);
@@ -471,34 +471,38 @@ int ip_open(struct input_plugin *ip, struct sample_format *sf)
 	ip->pcm_convert_scale = 1;
 	ip->pcm_convert = NULL;
 	ip->pcm_convert_in_place = NULL;
-	if (ip->data.sf.bits <= 16 && ip->data.sf.channels <= 2) {
-		if (ip->data.sf.bits == 8) {
-			if (ip->data.sf.channels == 1) {
-				ip->pcm_convert_scale = 4;
-				if (ip->data.sf.is_signed) {
-					ip->pcm_convert = convert_s8_1ch_to_s16_2ch;
-				} else {
-					ip->pcm_convert = convert_u8_1ch_to_s16_2ch;
-				}
+	bits = sf_get_bits(ip->data.sf);
+	is_signed = sf_get_signed(ip->data.sf);
+	channels = sf_get_channels(ip->data.sf);
+	if (bits == 8) {
+		if (channels == 1) {
+			ip->pcm_convert_scale = 4;
+			if (is_signed) {
+				ip->pcm_convert = convert_s8_1ch_to_s16_2ch;
 			} else {
-				ip->pcm_convert_scale = 2;
-				if (ip->data.sf.is_signed) {
-					ip->pcm_convert = convert_s8_2ch_to_s16_2ch;
-				} else {
-					ip->pcm_convert = convert_u8_2ch_to_s16_2ch;
-				}
+				ip->pcm_convert = convert_u8_1ch_to_s16_2ch;
 			}
-		} else {
-			if (ip->data.sf.channels == 1) {
-				ip->pcm_convert_scale = 2;
-				ip->pcm_convert = convert_16_1ch_to_16_2ch;
+		} else if (channels == 2) {
+			ip->pcm_convert_scale = 2;
+			if (is_signed) {
+				ip->pcm_convert = convert_s8_2ch_to_s16_2ch;
+			} else {
+				ip->pcm_convert = convert_u8_2ch_to_s16_2ch;
 			}
+		}
+	} else if (bits == 16) {
+		if (channels == 1) {
+			ip->pcm_convert_scale = 2;
+			ip->pcm_convert = convert_16_1ch_to_16_2ch;
+		}
+		if (channels <= 2) {
+			int bigendian = sf_get_bigendian(ip->data.sf);
 
-			if (ip->data.sf.is_signed) {
-				if (ip->data.sf.big_endian)
+			if (is_signed) {
+				if (bigendian)
 					ip->pcm_convert_in_place = convert_s16_be_to_s16_le;
 			} else {
-				if (ip->data.sf.big_endian) {
+				if (bigendian) {
 					ip->pcm_convert_in_place = convert_u16_be_to_s16_le;
 				} else {
 					ip->pcm_convert_in_place = convert_u16_le_to_s16_le;
@@ -512,8 +516,6 @@ int ip_open(struct input_plugin *ip, struct sample_format *sf)
 			ip->pcm_convert_in_place != NULL);
 
 	ip->open = 1;
-	if (sf)
-		*sf = ip->data.sf;
 	return 0;
 }
 
@@ -587,7 +589,7 @@ int ip_read(struct input_plugin *ip, char *buffer, int count)
 		d_print("error: %s\n", strerror(errno));
 
 	if (rc > 0) {
-		int sample_size = ip->data.sf.bits / 8;
+		int sample_size = sf_get_sample_size(ip->data.sf);
 
 		if (ip->pcm_convert_in_place != NULL)
 			ip->pcm_convert_in_place(buf, rc / sample_size);

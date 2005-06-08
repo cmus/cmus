@@ -117,11 +117,7 @@ static int vorbis_open(struct input_plugin_data *ip_data)
 	ip_data->private = priv;
 
 	vi = ov_info(&priv->vf, -1);
-	ip_data->sf.bits = 16;
-	ip_data->sf.rate = vi->rate;
-	ip_data->sf.channels = vi->channels;
-	ip_data->sf.is_signed = 1;
-	ip_data->sf.big_endian = 0;
+	ip_data->sf = sf_rate(vi->rate) | sf_channels(vi->channels) | sf_bits(16) | sf_signed(1);
 	return 0;
 }
 

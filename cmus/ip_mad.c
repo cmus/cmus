@@ -75,13 +75,9 @@ static int mad_open(struct input_plugin_data *ip_data)
 	ip_data->private = nomad;
 
 	nomad_info(nomad, &info);
-	ip_data->sf.rate = info.sample_rate;
-	ip_data->sf.channels = info.channels;
 
 	/* always 16-bit signed little-endian */
-	ip_data->sf.bits = 16;
-	ip_data->sf.is_signed = 1;
-	ip_data->sf.big_endian = 0;
+	ip_data->sf = sf_rate(info.sample_rate) | sf_channels(info.channels) | sf_bits(16) | sf_signed(1);
 	return 0;
 }
 

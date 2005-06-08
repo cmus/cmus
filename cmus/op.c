@@ -83,7 +83,7 @@ static struct output_plugin output_plugins[] = {
 
 static const struct mixer_plugin *mixer = NULL;
 static const struct output_plugin *op = NULL;
-static struct sample_format current_sf = { 0, 0, 0, 0, 0 };
+static sample_format_t current_sf = 0;
 
 /* volume is between 0 and volume_max */
 static int volume_max;
@@ -311,31 +311,22 @@ int op_select(const char *name)
 	return -OP_ERROR_NO_PLUGIN;
 }
 
-int op_open(const struct sample_format *sf)
+int op_open(sample_format_t sf)
 {
 	int rc;
 
-	current_sf = *sf;
+	current_sf = sf;
 	rc = op->ops->open(sf);
 	if (rc)
-		current_sf.bits = 0;
+		current_sf = 0;
 	return rc;
 }
 
-static int sample_format_changed(const struct sample_format *sf)
-{
-	return sf->rate != current_sf.rate ||
-		sf->bits != current_sf.bits ||
-		sf->channels != current_sf.channels ||
-		sf->is_signed != current_sf.is_signed ||
-		sf->big_endian != current_sf.big_endian;
-}
-
-int op_set_sf(const struct sample_format *sf)
+int op_set_sf(sample_format_t sf)
 {
 	int rc = 0;
 
-	if (sample_format_changed(sf)) {
+	if (current_sf != sf) {
 		rc = op_close();
 		if (rc) {
 			d_print("op_close returned %d\n", rc);
@@ -345,7 +336,7 @@ int op_set_sf(const struct sample_format *sf)
 		if (rc) {
 			return rc;
 		} else {
-			current_sf = *sf;
+			current_sf = sf;
 			return 1;
 		}
 	}
@@ -354,7 +345,7 @@ int op_set_sf(const struct sample_format *sf)
 
 int op_second_size(void)
 {
-	return current_sf.rate * current_sf.bits * current_sf.channels / 8;
+	return sf_get_rate(current_sf) * sf_get_frame_size(current_sf);
 }
 
 int op_drop(void)
@@ -366,7 +357,7 @@ int op_drop(void)
 
 int op_close(void)
 {
-	current_sf.bits = 0;
+	current_sf = 0;
 	return op->ops->close();
 }
 

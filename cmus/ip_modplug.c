@@ -88,11 +88,7 @@ static int mod_open(struct input_plugin_data *ip_data)
 	ModPlug_SetSettings(&settings);
 
 	ip_data->private = priv;
-	ip_data->sf.bits = 16;
-	ip_data->sf.rate = 44100;
-	ip_data->sf.channels = 2;
-	ip_data->sf.is_signed = 1;
-	ip_data->sf.big_endian = 0;
+	ip_data->sf = sf_bits(16) | sf_rate(44100) | sf_channels(2) | sf_signed(1);
 	return 0;
 }
 

@@ -42,7 +42,7 @@ enum {
 struct output_plugin_ops {
 	int (*init)(void);
 	int (*exit)(void);
-	int (*open)(const struct sample_format *sf);
+	int (*open)(sample_format_t sf);
 	int (*close)(void);
 	int (*drop)(void);
 	int (*write)(const char *buffer, int count);
@@ -79,7 +79,7 @@ extern int op_select(const char *name);
  *
  * errors: OP_ERROR_{}
  */
-extern int op_open(const struct sample_format *sf);
+extern int op_open(sample_format_t sf);
 
 /*
  * returns:
@@ -87,7 +87,7 @@ extern int op_open(const struct sample_format *sf);
  *     1 if sample format did change
  *     OP_ERROR_{} on error
  */
-extern int op_set_sf(const struct sample_format *sf);
+extern int op_set_sf(sample_format_t sf);
 
 extern int op_second_size(void);
 

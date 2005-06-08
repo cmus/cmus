@@ -25,7 +25,7 @@
 #include <artsc.h>
 
 static arts_stream_t arts_stream;
-static struct sample_format arts_sf;
+static sample_format_t arts_sf;
 static int arts_buffer_size;
 
 static int op_arts_init(void)
@@ -45,16 +45,14 @@ static int op_arts_exit(void)
 	return 0;
 }
 
-static int op_arts_open(const struct sample_format *sf)
+static int op_arts_open(sample_format_t sf)
 {
 	int buffer_time, server_latency, total_latency;
 	int blocking;
 
-	arts_sf = *sf;
-	d_print("opening: rate = %d, bits = %d, channels = %d\n",
-			arts_sf.rate, arts_sf.bits, arts_sf.channels);
-	arts_stream = arts_play_stream(arts_sf.rate, arts_sf.bits,
-			arts_sf.channels, PACKAGE);
+	arts_sf = sf;
+	arts_stream = arts_play_stream(sf_get_rate(arts_sf), sf_get_bits(arts_sf),
+			sf_get_channels(arts_sf), PACKAGE);
 	blocking = arts_stream_set(arts_stream, ARTS_P_BLOCKING, 0);
 	if (blocking) {
 	}

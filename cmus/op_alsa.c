@@ -77,14 +77,14 @@ static inline const char *state_to_str(snd_pcm_state_t state)
 	return states[state];
 }
 
-static struct sample_format alsa_sf;
+static sample_format_t alsa_sf;
 static snd_pcm_t *alsa_handle;
 static snd_pcm_format_t alsa_fmt;
 static int alsa_can_pause;
 static snd_pcm_status_t *status;
 
 /* bytes (bits * channels / 8) */
-static int alsa_sample_size;
+static int alsa_frame_size;
 
 static int alsa_buffer_size;
 static int alsa_period_size;
@@ -142,9 +142,9 @@ static int alsa_set_hw_params(void)
 	if (rc < 0)
 		goto error;
 
-	fmt = snd_pcm_build_linear_format(alsa_sf.bits, alsa_sf.bits,
-			alsa_sf.is_signed ? 0 : 1,
-			alsa_sf.big_endian ? 1 : 0);
+	fmt = snd_pcm_build_linear_format(sf_get_bits(alsa_sf), sf_get_bits(alsa_sf),
+			sf_get_signed(alsa_sf) ? 0 : 1,
+			sf_get_bigendian(alsa_sf));
 	cmd = "snd_pcm_hw_params_set_format";
 	rc = snd_pcm_hw_params_set_format(alsa_handle, hwparams, fmt);
 	if (rc < 0)
@@ -153,12 +153,12 @@ static int alsa_set_hw_params(void)
 	alsa_fmt = fmt;
 
 	cmd = "snd_pcm_hw_params_set_channels";
-	rc = snd_pcm_hw_params_set_channels(alsa_handle, hwparams, alsa_sf.channels);
+	rc = snd_pcm_hw_params_set_channels(alsa_handle, hwparams, sf_get_channels(alsa_sf));
 	if (rc < 0)
 		goto error;
 
 	cmd = "snd_pcm_hw_params_set_rate";
-	rate = alsa_sf.rate;
+	rate = sf_get_rate(alsa_sf);
 	dir = 0;
 	rc = snd_pcm_hw_params_set_rate_near(alsa_handle, hwparams, &rate, &dir);
 	if (rc < 0)
@@ -188,14 +188,14 @@ static int alsa_set_hw_params(void)
 	if (rc < 0) {
 		alsa_period_size = -1;
 	} else {
-		alsa_period_size = frames * alsa_sample_size;
+		alsa_period_size = frames * alsa_frame_size;
 	}
 
 	rc = snd_pcm_hw_params_get_buffer_size(hwparams, &frames);
 	if (rc < 0) {
 		alsa_buffer_size = -1;
 	} else {
-		alsa_buffer_size = frames * alsa_sample_size;
+		alsa_buffer_size = frames * alsa_frame_size;
 	}
 	d_print("period_size = %d (dir = %d), buffer_size = %d\n",
 			alsa_period_size, dir, alsa_buffer_size);
@@ -234,7 +234,7 @@ static int alsa_set_sw_params(void)
 		/* start the transfer when N frames available */
 		cmd = "snd_pcm_sw_params_set_start_threshold";
 		/* start playing when hardware buffer is full (64 kB, 372 ms) */
-		rc = snd_pcm_sw_params_set_start_threshold(alsa_handle, swparams, alsa_buffer_size / alsa_sample_size);
+		rc = snd_pcm_sw_params_set_start_threshold(alsa_handle, swparams, alsa_buffer_size / alsa_frame_size);
 		if (rc < 0)
 			goto error;
 	}
@@ -244,7 +244,7 @@ static int alsa_set_sw_params(void)
 		/* minimum avail frames to consider pcm ready. must be power of 2 */
 		cmd = "snd_pcm_sw_params_set_avail_min";
 		/* underrun when available is <8192 B or 46.5 ms */
-		rc = snd_pcm_sw_params_set_avail_min(alsa_handle, swparams, alsa_period_size / alsa_sample_size);
+		rc = snd_pcm_sw_params_set_avail_min(alsa_handle, swparams, alsa_period_size / alsa_frame_size);
 		if (rc < 0)
 			goto error;
 	}
@@ -272,12 +272,12 @@ error:
 	return -1;
 }
 
-static int op_alsa_open(const struct sample_format *sf)
+static int op_alsa_open(sample_format_t sf)
 {
 	int rc;
 
-	alsa_sf = *sf;
-	alsa_sample_size = alsa_sf.bits * alsa_sf.channels / 8;
+	alsa_sf = sf;
+	alsa_frame_size = sf_get_frame_size(alsa_sf);
 
 	rc = snd_pcm_open(&alsa_handle, alsa_dsp_device, SND_PCM_STREAM_PLAYBACK, 0);
 	if (rc < 0)
@@ -351,10 +351,10 @@ static int op_alsa_write(const char *buffer, int count)
 	 * hardware not ready? */
 	//rc = snd_pcm_wait(alsa_handle, 5);
 
-	len = count / alsa_sample_size;
+	len = count / alsa_frame_size;
 	rc = snd_pcm_writei(alsa_handle, buffer, len);
 	if (rc >= 0) {
-		return rc * alsa_sample_size;
+		return rc * alsa_frame_size;
 	} else if (rc == -EPIPE) {
 		d_print("underrun. resetting stream\n");
 		snd_pcm_prepare(alsa_handle);
@@ -363,7 +363,7 @@ static int op_alsa_write(const char *buffer, int count)
 			d_print("write error: %s\n", snd_strerror(rc));
 			return -1;
 		}
-		return rc * alsa_sample_size;
+		return rc * alsa_frame_size;
 	} else if (rc == -EAGAIN) {
 		errno = EAGAIN;
 		return -1;
@@ -388,7 +388,7 @@ static int op_alsa_buffer_space(void)
 		d_print("snd_pcm_status_get_avail returned huge number: %lu\n", f);
 		f = 1024;
 	}
-	return f * alsa_sample_size;
+	return f * alsa_frame_size;
 }
 
 static int op_alsa_pause(void)

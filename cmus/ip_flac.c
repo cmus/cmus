@@ -146,9 +146,9 @@ static FLAC__StreamDecoderWriteStatus write_cb(const Dec *dec, const FLAC__Frame
 {
 	struct input_plugin_data *ip_data = data;
 	struct flac_private *priv = ip_data->private;
-	int samples, bytes, size, channels;
+	int samples, bytes, size, channels, bits;
 
-	if (ip_data->sf.channels == 0) {
+	if (ip_data->sf == 0) {
 		return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
 	}
 
@@ -158,7 +158,8 @@ static FLAC__StreamDecoderWriteStatus write_cb(const Dec *dec, const FLAC__Frame
 	}
 
 	samples = frame->header.blocksize;
-	channels = ip_data->sf.channels;
+	channels = sf_get_channels(ip_data->sf);
+	bits = sf_get_bits(ip_data->sf);
 	bytes = samples * frame->header.bits_per_sample / 8 * channels;
 	size = priv->buf_size;
 
@@ -170,7 +171,7 @@ static FLAC__StreamDecoderWriteStatus write_cb(const Dec *dec, const FLAC__Frame
 		priv->buf_size = size;
 	}
 
-	if (ip_data->sf.bits == 8) {
+	if (bits == 8) {
 		char *b = priv->buf + priv->buf_wpos;
 		int ch, i, j = 0;
 
@@ -179,7 +180,7 @@ static FLAC__StreamDecoderWriteStatus write_cb(const Dec *dec, const FLAC__Frame
 			for (ch = 0; ch < channels; ch++)
 				b[j++] = buf[ch][i];
 		}
-	} else if (ip_data->sf.bits == 16) {
+	} else if (bits == 16) {
 		int16_t *b = (int16_t *)(priv->buf + priv->buf_wpos);
 		int ch, i, j = 0;
 
@@ -187,7 +188,7 @@ static FLAC__StreamDecoderWriteStatus write_cb(const Dec *dec, const FLAC__Frame
 			for (ch = 0; ch < channels; ch++)
 				b[j++] = buf[ch][i];
 		}
-	} else if (ip_data->sf.bits == 24) {
+	} else if (bits == 24) {
 		char *b = (char *)(priv->buf + priv->buf_wpos);
 		int ch, i, j = 0;
 
@@ -234,11 +235,7 @@ static void metadata_cb(const Dec *dec, const FLAC__StreamMetadata *metadata, vo
 			const FLAC__StreamMetadata_StreamInfo *si = &metadata->data.stream_info;
 
 			d_print("STREAMINFO\n");
-			ip_data->sf.rate = si->sample_rate;
-			ip_data->sf.channels = si->channels;
-			ip_data->sf.bits = si->bits_per_sample;
-			ip_data->sf.is_signed = 1;
-			ip_data->sf.big_endian = 0;
+			ip_data->sf = sf_rate(si->sample_rate) | sf_bits(si->bits_per_sample) | sf_signed(1) | sf_channels(si->channels);
 			if (!ip_data->remote && si->total_samples)
 				priv->duration = si->total_samples / si->sample_rate;
 		}
@@ -348,7 +345,7 @@ static int flac_open(struct input_plugin_data *ip_data)
 		return -IP_ERROR_ERRNO;
 	}
 
-	ip_data->sf.channels = 0;
+	ip_data->sf = 0;
 	while (priv->buf_wpos == 0 && !priv->eof) {
 		if (!F(process_single)(priv->dec)) {
 			int save = errno;
@@ -365,10 +362,10 @@ static int flac_open(struct input_plugin_data *ip_data)
 			return -IP_ERROR_ERRNO;
 		}
 	}
-	BUG_ON(ip_data->sf.channels == 0);
-	d_print("%d channels\n", ip_data->sf.channels);
-	d_print("%d bits\n", ip_data->sf.bits);
-	d_print("%d Hz\n", ip_data->sf.rate);
+	BUG_ON(ip_data->sf == 0);
+	d_print("%d channels\n", sf_get_channels(ip_data->sf));
+	d_print("%d bits\n", sf_get_bits(ip_data->sf));
+	d_print("%d Hz\n", sf_get_rate(ip_data->sf));
 	d_print("%d s\n", priv->duration);
 	return 0;
 }
@@ -441,7 +438,7 @@ static int flac_seek(struct input_plugin_data *ip_data, double offset)
 	if (ip_data->remote)
 		return -IP_ERROR_ERRNO;
 
-	sample = (uint64_t)(offset * (double)ip_data->sf.rate + 0.5);
+	sample = (uint64_t)(offset * (double)sf_get_rate(ip_data->sf) + 0.5);
 	if (!F(seek_absolute)(priv->dec, sample)) {
 		return -IP_ERROR_ERRNO;
 	}

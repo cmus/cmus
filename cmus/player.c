@@ -69,7 +69,7 @@ struct player_info player_info = {
 static const struct player_callbacks *player_cbs = NULL;
 static int player_cont = 1;
 static struct buffer player_buffer;
-static struct sample_format buffer_sf;
+static sample_format_t buffer_sf;
 
 static pthread_t producer_thread;
 static pthread_mutex_t producer_mutex = CMUS_MUTEX_INITIALIZER;
@@ -111,22 +111,20 @@ static void reset_buffer(void)
 	consumer_pos = 0;
 }
 
-static void set_buffer_sf(const struct sample_format *sf)
+static void set_buffer_sf(sample_format_t sf)
 {
-	buffer_sf = *sf;
+	buffer_sf = sf;
 
 	/* ip_read converts samples to this format */
-	if (buffer_sf.channels <= 2 && buffer_sf.bits <= 16) {
-		buffer_sf.channels = 2;
-		buffer_sf.bits = 16;
-		buffer_sf.is_signed = 1;
-		buffer_sf.big_endian = 0;
+	if (sf_get_channels(buffer_sf) <= 2 && sf_get_bits(buffer_sf) <= 16) {
+		buffer_sf &= SF_RATE_MASK;
+		buffer_sf |= sf_channels(2) | sf_bits(16) | sf_signed(1);
 	}
 }
 
 static inline int buffer_second_size(void)
 {
-	return buffer_sf.rate * buffer_sf.bits * buffer_sf.channels / 8;
+	return sf_get_second_size(buffer_sf);
 }
 
 static inline int get_next(char **filename)
@@ -378,14 +376,13 @@ static void __producer_play(void)
 		char *filename;
 
 		if (get_next(&filename) == 0) {
-			struct sample_format sf;
 			int rc;
 
 			rc = ip_create(&ip, filename);
 			if (rc) {
 				player_ip_error(rc, "creating ip for file `%s'", filename);
 			} else {
-				rc = ip_open(&ip, &sf);
+				rc = ip_open(&ip);
 				if (rc) {
 					player_ip_error(rc, "opening file `%s'", filename);
 					ip_delete(&ip);
@@ -401,10 +398,9 @@ static void __producer_play(void)
 			reset_buffer();
 		}
 	} else if (producer_status == PS_STOPPED) {
-		struct sample_format sf;
 		int rc;
 
-		rc = ip_open(&ip, &sf);
+		rc = ip_open(&ip);
 		if (rc) {
 			player_ip_error(rc, "opening file `%s'", ip.data.filename);
 			ip_delete(&ip);
@@ -470,8 +466,8 @@ static void __consumer_play(void)
 	} else if (consumer_status == CS_STOPPED) {
 		int rc;
 
-		set_buffer_sf(&ip.data.sf);
-		rc = op_open(&buffer_sf);
+		set_buffer_sf(ip.data.sf);
+		rc = op_open(buffer_sf);
 		if (rc) {
 			player_op_error(rc, "opening audio device");
 		} else {
@@ -537,8 +533,8 @@ static void __consumer_handle_eof(void)
 					file_changed();
 				} else {
 					/* PS_PLAYING */
-					set_buffer_sf(&ip.data.sf);
-					rc = op_set_sf(&buffer_sf);
+					set_buffer_sf(ip.data.sf);
+					rc = op_set_sf(buffer_sf);
 					if (rc < 0) {
 						__producer_stop();
 						consumer_status = CS_STOPPED;
@@ -871,8 +867,8 @@ void player_set_file(const char *filename)
 		 */
 		op_drop();
 
-		set_buffer_sf(&ip.data.sf);
-		rc = op_set_sf(&buffer_sf);
+		set_buffer_sf(ip.data.sf);
+		rc = op_set_sf(buffer_sf);
 		if (rc == 0) {
 			/* device wasn't reopened */
 			if (consumer_status == CS_PAUSED) {
@@ -929,8 +925,8 @@ void player_play_file(const char *filename)
 		 */
 		op_drop();
 
-		set_buffer_sf(&ip.data.sf);
-		rc = op_set_sf(&buffer_sf);
+		set_buffer_sf(ip.data.sf);
+		rc = op_set_sf(buffer_sf);
 		if (rc == 0) {
 			/* device wasn't reopened */
 			if (consumer_status == CS_PAUSED) {
@@ -1045,8 +1041,8 @@ int player_set_op(const char *name)
 	}
 
 	if (consumer_status == CS_PLAYING || consumer_status == CS_PAUSED) {
-		set_buffer_sf(&ip.data.sf);
-		rc = op_open(&buffer_sf);
+		set_buffer_sf(ip.data.sf);
+		rc = op_open(buffer_sf);
 		if (rc) {
 			consumer_status = CS_STOPPED;
 			__producer_stop();
@@ -1119,14 +1115,12 @@ int player_get_fileinfo(const char *filename, int *duration,
 	*duration = -1;
 	rc = ip_create(&plug, filename);
 	if (rc == 0) {
-		struct sample_format sf;
-
 		if (plug.data.remote) {
 			*comments = xnew0(struct comment, 1);
 			ip_delete(&plug);
 			return 0;
 		}
-		rc = ip_open(&plug, &sf);
+		rc = ip_open(&plug);
 		if (rc) {
 			int save = errno;
 

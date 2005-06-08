@@ -29,7 +29,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-static struct sample_format oss_sf;
+static sample_format_t oss_sf;
 static int oss_fd = -1;
 
 /* configuration */
@@ -45,33 +45,33 @@ static int oss_reset(void)
 	return 0;
 }
 
-static int oss_set_sf(const struct sample_format *sf)
+static int oss_set_sf(sample_format_t sf)
 {
 	int tmp, log2_fragment_size, nr_fragments, bytes_per_second;
 
 	oss_reset();
-	oss_sf = *sf;
-	tmp = oss_sf.channels - 1;
+	oss_sf = sf;
+	tmp = sf_get_channels(oss_sf) - 1;
 	if (ioctl(oss_fd, SNDCTL_DSP_STEREO, &tmp) == -1) {
 		d_print("SNDCTL_DSP_STEREO failed: %s\n", strerror(errno));
 		return -1;
 	}
-	if (oss_sf.bits == 16) {
-		if (oss_sf.is_signed) {
-			if (oss_sf.big_endian) {
+	if (sf_get_bits(oss_sf) == 16) {
+		if (sf_get_signed(oss_sf)) {
+			if (sf_get_bigendian(oss_sf)) {
 				tmp = AFMT_S16_BE;
 			} else {
 				tmp = AFMT_S16_LE;
 			}
 		} else {
-			if (oss_sf.big_endian) {
+			if (sf_get_bigendian(oss_sf)) {
 				tmp = AFMT_U16_BE;
 			} else {
 				tmp = AFMT_U16_LE;
 			}
 		}
-	} else if (oss_sf.bits == 8) {
-		if (oss_sf.is_signed) {
+	} else if (sf_get_bits(oss_sf) == 8) {
+		if (sf_get_signed(oss_sf)) {
 			tmp = AFMT_S8;
 		} else {
 			tmp = AFMT_U8;
@@ -84,13 +84,13 @@ static int oss_set_sf(const struct sample_format *sf)
 		d_print("SNDCTL_DSP_SAMPLESIZE failed: %s\n", strerror(errno));
 		return -1;
 	}
-	tmp = oss_sf.rate;
+	tmp = sf_get_rate(oss_sf);
 	if (ioctl(oss_fd, SNDCTL_DSP_SPEED, &tmp) == -1) {
 		d_print("SNDCTL_DSP_SPEED failed: %s\n", strerror(errno));
 		return -1;
 	}
 #if 1
-	bytes_per_second = oss_sf.rate * oss_sf.channels * oss_sf.bits / 8;
+	bytes_per_second = sf_get_second_size(oss_sf);
 	log2_fragment_size = 0;
 	while (1 << log2_fragment_size < bytes_per_second / 25)
 		log2_fragment_size++;
@@ -151,7 +151,7 @@ static int oss_exit(void)
 	return 0;
 }
 
-static int oss_open(const struct sample_format *sf)
+static int oss_open(sample_format_t sf)
 {
 	oss_fd = open(oss_dsp_device, O_WRONLY);
 	if (oss_fd == -1)

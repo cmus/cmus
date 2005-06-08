@@ -92,7 +92,6 @@ static int wav_open(struct input_plugin_data *ip_data)
 	char *fmt;
 	int rc;
 	unsigned int riff_size, fmt_size;
-	unsigned short format_tag;
 	int save;
 
 	d_print("file: %s\n", ip_data->filename);
@@ -135,13 +134,28 @@ static int wav_open(struct input_plugin_data *ip_data)
 		rc = -IP_ERROR_FILE_FORMAT;
 		goto error_exit;
 	}
-	format_tag = read_u2(fmt + 0);
-	ip_data->sf.channels = read_u2(fmt + 2);
-	ip_data->sf.rate = read_u4(fmt + 4);
-	/* 4 bytes, bytes per second */
-	/* 2 bytes, bytes per sample */
-	ip_data->sf.bits = read_u2(fmt + 14);
-	free(fmt);
+	{
+		int format_tag, channels, rate, bits;
+
+		format_tag = read_u2(fmt + 0);
+		channels = read_u2(fmt + 2);
+		rate = read_u4(fmt + 4);
+		/* 4 bytes, bytes per second */
+		/* 2 bytes, bytes per sample */
+		bits = read_u2(fmt + 14);
+		free(fmt);
+
+		if (format_tag != 1) {
+			d_print("invalid format tag %d, should be 1\n", format_tag);
+			rc = -IP_ERROR_FILE_FORMAT;
+			goto error_exit;
+		}
+		if ((bits != 8 && bits != 16) || channels < 1 || channels > 2) {
+			rc = -IP_ERROR_SAMPLE_FORMAT;
+			goto error_exit;
+		}
+		ip_data->sf = sf_channels(channels) | sf_rate(rate) | sf_bits(bits) | sf_signed(bits > 8);
+	}
 
 	rc = find_chunk(ip_data->fd, "data", &priv->pcm_size);
 	if (rc)
@@ -153,34 +167,17 @@ static int wav_open(struct input_plugin_data *ip_data)
 	}
 	priv->pcm_start = rc;
 
-	if (format_tag != 1) {
-		d_print("invalid format tag %d, should be 1\n", format_tag);
-		rc = -IP_ERROR_FILE_FORMAT;
-		goto error_exit;
-	}
-
-	priv->sec_size = ip_data->sf.rate * ip_data->sf.channels * ip_data->sf.bits / 8;
+	priv->sec_size = sf_get_second_size(ip_data->sf);
 	priv->pos = 0;
-
-	ip_data->sf.is_signed = ip_data->sf.bits > 8;
-	ip_data->sf.big_endian = 0;
-
-	if ((ip_data->sf.bits != 8 && ip_data->sf.bits != 16) ||
-			ip_data->sf.channels < 1 || ip_data->sf.channels > 2) {
-		rc = -IP_ERROR_SAMPLE_FORMAT;
-		goto error_exit;
-	}
 
 	d_print("pcm start: %d\n", priv->pcm_start);
 	d_print("pcm size: %d\n", priv->pcm_size);
-	d_print("sec size: %d\n", priv->sec_size);
-	d_print("format_tag: %d\n", format_tag);
 	d_print("\n");
-	d_print("sr: %d, ch: %d, bits: %d, signed: %d\n", ip_data->sf.rate, ip_data->sf.channels, ip_data->sf.bits, ip_data->sf.is_signed);
+	d_print("sr: %d, ch: %d, bits: %d, signed: %d\n", sf_get_rate(ip_data->sf),
+			sf_get_channels(ip_data->sf), sf_get_bits(ip_data->sf), sf_get_signed(ip_data->sf));
 	return 0;
 error_exit:
 	save = errno;
-	d_print("error: %d\n", rc);
 	free(priv);
 	errno = save;
 	return rc;
