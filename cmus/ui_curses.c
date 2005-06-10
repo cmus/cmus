@@ -2242,7 +2242,11 @@ static void ui_curses_start(void)
 		if (player_info.file_changed) {
 			if (cur_track_info)
 				track_info_unref(cur_track_info);
-			cur_track_info = cmus_get_track_info(player_info.filename);
+			if (player_info.filename[0] == 0) {
+				cur_track_info = NULL;
+			} else {
+				cur_track_info = cmus_get_track_info(player_info.filename);
+			}
 			player_info.file_changed = 0;
 			needs_title_update = 1;
 			needs_status_update = 1;
