@@ -109,6 +109,7 @@ check_oss()
 
 add_check check_cc
 add_check check_ar
+add_check check_endianness
 add_check check_pthread
 add_check check_ncurses
 add_check check_iconv
@@ -140,6 +141,7 @@ esac
 run_checks
 
 CFLAGS="${CFLAGS} -DDEBUG=$DEBUG"
+[[ $WORDS_BIGENDIAN -eq 1 ]] && CFLAGS="${CFLAGS} -DWORDS_BIGENDIAN"
 
 generate_config_h
 generate_config_mk

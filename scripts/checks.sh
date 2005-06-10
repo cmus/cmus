@@ -279,6 +279,37 @@ int main(int argc, char *argv[])
 	return $?
 }
 
+check_endianness()
+{
+	local file src obj exe
+
+	argc 0
+	file="
+int main(int argc, char *argv[])
+{
+	unsigned int i = 1;
+
+	return *(char *)&i;
+}
+"
+	msg_checking "byte order"
+	src=$(tmp_file prog.c)
+	obj=$(tmp_file prog.o)
+	exe=$(tmp_file prog)
+	echo "$file" > $src || exit 1
+	$CC -c $src -o $obj 2>/dev/null || exit 1
+	$LD -o $exe $obj 2>/dev/null || return 1
+	if ./$exe
+	then
+		msg_result "big-endian"
+		WORDS_BIGENDIAN=1
+	else
+		msg_result "little-endian"
+		WORDS_BIGENDIAN=0
+	fi
+	return 0
+}
+
 # @name:   user visible name
 # @ldadd:  arg passed to try_link
 check_lib()
