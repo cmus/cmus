@@ -175,7 +175,6 @@ static FLAC__StreamDecoderWriteStatus write_cb(const Dec *dec, const FLAC__Frame
 		char *b = priv->buf + priv->buf_wpos;
 		int ch, i, j = 0;
 
-		/* NOT TESTED! */
 		for (i = 0; i < samples; i++) {
 			for (ch = 0; ch < channels; ch++)
 				b[j++] = buf[ch][i];
@@ -363,10 +362,8 @@ static int flac_open(struct input_plugin_data *ip_data)
 		}
 	}
 	BUG_ON(ip_data->sf == 0);
-	d_print("%d channels\n", sf_get_channels(ip_data->sf));
-	d_print("%d bits\n", sf_get_bits(ip_data->sf));
-	d_print("%d Hz\n", sf_get_rate(ip_data->sf));
-	d_print("%d s\n", priv->duration);
+	d_print("sr: %d, ch: %d, bits: %d\n", sf_get_rate(ip_data->sf),
+			sf_get_channels(ip_data->sf), sf_get_bits(ip_data->sf));
 	return 0;
 }
 
