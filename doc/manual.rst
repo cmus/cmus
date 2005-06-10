@@ -12,7 +12,33 @@ See ``cmus --help`` for more information.
 Remote Control
 ==============
 
+CMus can be controlled via UNIX-socket using ``cmus-remote`` command. This is
+very useful feature because it allows you control CMus without having to
+switch to the desktop where CMus window is.
+
 See ``cmus-remote --help`` for more information.
+
+Views
+=====
+
+There are 5 views in cmus:
+
+* Artist/Album/Track Tree View (1)
+* Shuffle List (2)
+* Sorted List (3)
+* Play Queue (4)
+* Directory Browser (5)
+
+To switch between the views use keys '1' - '5'. Views 1-3 display current
+playlist.  View 3 can be sorted (see sort_ option).
+
+View 4 displays play queue. Tracks in the play queue are played first and
+removed from the queue immediately after playing starts. After last track from
+play queue has been played CMus starts playing tracks in the playlist.
+
+View 5 allows you to browse filesystem, add tracks to playlist, enqueue
+tracks, delete files and even play tracks directly from the browser.  You can
+also 'cd' into a playlist.
 
 Normal Mode
 ==========================
@@ -37,7 +63,7 @@ t                  toggle time elapsed/remaining
 q                  quit
 :                  enter command mode
 left, h            skip 5 seconds back in song
-right,l            skip 5 seconds forward in song
+right, l           skip 5 seconds forward in song
 1                  switch to artist/album/track tree view
 2                  switch to shuffle view
 3                  switch to sorted view
@@ -140,7 +166,7 @@ format_playlist         format of text in shuffle and sorted windows
 format_title            format of window title
 format_track_win        format of text in track window
 altformat\_\*           format strings used when file has no tags
-sort                    comma separated list of sort keys for the sorted view (3). Valid keys: artist, album, title, tracknumber, discnumber, date, genre, filename)
+_`sort`                 comma separated list of sort keys for the sorted view (3). Valid keys: artist, album, title, tracknumber, discnumber, date, genre, filename)
 status_display_program  script to run when player status changes (See `Status Display`_)
 ======================  ===========
 
