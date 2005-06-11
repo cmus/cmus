@@ -1814,6 +1814,24 @@ void __pl_set_view(int view)
 	}
 }
 
+int __pl_toggle_active_window(void)
+{
+	if (playlist.cur_win == TREE_WIN) {
+		struct artist *artist;
+		struct album *album;
+
+		tree_win_get_selected(&artist, &album);
+		if (album) {
+			playlist.cur_win = TRACK_WIN;
+			return 1;
+		}
+	} else if (playlist.cur_win == TRACK_WIN) {
+		playlist.cur_win = TREE_WIN;
+		return 1;
+	}
+	return 0;
+}
+
 void pl_remove_sel(void)
 {
 	pl_lock();

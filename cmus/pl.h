@@ -144,6 +144,7 @@ extern void pl_set_play_mode(enum play_mode play_mode);
 extern void pl_get_status(int *repeat, enum playlist_mode *playlist_mode, enum play_mode *play_mode, int *total_time);
 
 extern void __pl_set_view(int view);
+extern int __pl_toggle_active_window(void);
 
 extern void pl_sel_up(int rows);
 extern void pl_sel_down(int rows);

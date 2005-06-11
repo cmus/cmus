@@ -1555,15 +1555,12 @@ static int pl_ch(uchar ch)
 	case 0x09:
 		if (ui_curses_view == TREE_VIEW) {
 			pl_lock();
-			if (playlist.cur_win == TREE_WIN) {
-				playlist.cur_win = TRACK_WIN;
-			} else {
-				playlist.cur_win = TREE_WIN;
+			if (__pl_toggle_active_window()) {
+				update_tree_window();
+				update_track_window();
+				refresh();
 			}
-			update_tree_window();
-			update_track_window();
 			pl_unlock();
-			refresh();
 		}
 		break;
 	default:
