@@ -1119,28 +1119,15 @@ int ui_curses_yes_no_query(const char *format, ...)
 	return ret;
 }
 
-/* TREE_WIN or TRACK_WIN */
-static int __tree_view_active_window = TREE_WIN;
-
 static void ui_curses_set_view(int view)
 {
 	if (view == ui_curses_view)
 		return;
-
 	ui_curses_view = view;
-	curs_set(0);
 
 	pl_lock();
-
-	/* update playlist.cur_win hack */
-	if (ui_curses_view == TREE_VIEW) {
-		playlist.cur_win = __tree_view_active_window;
-	} else if (ui_curses_view == SHUFFLE_VIEW) {
-		playlist.cur_win = SHUFFLE_WIN;
-	} else if (ui_curses_view == SORTED_VIEW) {
-		playlist.cur_win = SORTED_WIN;
-	}
-
+	if (view < 3)
+		__pl_set_view(view);
 	switch (ui_curses_view) {
 	case TREE_VIEW:
 		searchable = tree_searchable;
@@ -1167,7 +1154,6 @@ static void ui_curses_set_view(int view)
 	}
 	pl_unlock();
 
-	fix_cursor_pos();
 	refresh();
 }
 
@@ -1550,10 +1536,6 @@ static int pl_ch(uchar ch)
 	case 7: /* ^g */
 	case 'i':
 		pl_sel_current();
-		pl_lock();
-		if (playlist.cur_win == TREE_WIN || playlist.cur_win == TRACK_WIN)
-			__tree_view_active_window = playlist.cur_win;
-		pl_unlock();
 		break;
 	case 'j':
 		pl_sel_down(1);
@@ -1563,38 +1545,24 @@ static int pl_ch(uchar ch)
 		break;
 	case 'D':
 		pl_remove_sel();
-		pl_lock();
-		if (playlist.cur_win == TREE_WIN || playlist.cur_win == TRACK_WIN)
-			__tree_view_active_window = playlist.cur_win;
-		pl_unlock();
 		break;
 	case 'u':
 		cmus_update_playlist();
 		break;
 	case ' ':
 		pl_toggle_expand_artist();
-		pl_lock();
-		if (playlist.cur_win == TREE_WIN || playlist.cur_win == TRACK_WIN)
-			__tree_view_active_window = playlist.cur_win;
-		pl_unlock();
 		break;
 	case 0x09:
 		if (ui_curses_view == TREE_VIEW) {
-			if (__tree_view_active_window == TREE_WIN) {
-				__tree_view_active_window = TRACK_WIN;
-			} else {
-				__tree_view_active_window = TREE_WIN;
-			}
-
-			curs_set(0);
-
 			pl_lock();
-			playlist.cur_win = __tree_view_active_window;
+			if (playlist.cur_win == TREE_WIN) {
+				playlist.cur_win = TRACK_WIN;
+			} else {
+				playlist.cur_win = TREE_WIN;
+			}
 			update_tree_window();
 			update_track_window();
 			pl_unlock();
-
-			fix_cursor_pos();
 			refresh();
 		}
 		break;

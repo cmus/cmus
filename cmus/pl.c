@@ -1788,6 +1788,32 @@ void pl_get_status(int *repeat, enum playlist_mode *playlist_mode, enum play_mod
 	pl_unlock();
 }
 
+void __pl_set_view(int view)
+{
+	/* TREE_WIN or TRACK_WIN */
+	static int tree_view_active_win = TREE_WIN;
+
+	BUG_ON(view < 0);
+	BUG_ON(view > 2);
+
+	if (view == TREE_VIEW) {
+		if (playlist.cur_win != TREE_WIN && playlist.cur_win != TRACK_WIN) {
+			playlist.cur_win = tree_view_active_win;
+		}
+	} else {
+		if (playlist.cur_win == TREE_WIN || playlist.cur_win == TRACK_WIN)
+			tree_view_active_win = playlist.cur_win;
+		switch (view) {
+		case SHUFFLE_VIEW:
+			playlist.cur_win = SHUFFLE_WIN;
+			break;
+		case SORTED_VIEW:
+			playlist.cur_win = SORTED_WIN;
+			break;
+		}
+	}
+}
+
 void pl_remove_sel(void)
 {
 	pl_lock();
