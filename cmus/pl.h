@@ -75,6 +75,11 @@ enum playlist_mode {
 	PLAYLIST_MODE_ALBUM
 };
 
+/* PLAY_QUEUE_VIEW and BROWSER_VIEW are defined in ui_curses.h */
+#define TREE_VIEW    0
+#define SHUFFLE_VIEW 1
+#define SORTED_VIEW  2
+
 struct playlist {
 	struct list_head artist_head;
 	struct list_head shuffle_head;

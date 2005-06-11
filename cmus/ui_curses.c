@@ -65,7 +65,7 @@
 char *program_name = NULL;
 
 enum ui_curses_input_mode ui_curses_input_mode = NORMAL_MODE;
-enum ui_curses_view ui_curses_view = TREE_VIEW;
+int ui_curses_view = TREE_VIEW;
 struct searchable *searchable;
 
 char *playlist_autosave_filename;
@@ -731,7 +731,7 @@ static void update_view(void)
 		pl_unlock();
 		draw_separator();
 		break;
-	case SHUFFLE_LIST_VIEW:
+	case SHUFFLE_VIEW:
 		pl_lock();
 		update_shuffle_window();
 		pl_unlock();
@@ -1122,7 +1122,7 @@ int ui_curses_yes_no_query(const char *format, ...)
 /* TREE_WIN or TRACK_WIN */
 static int __tree_view_active_window = TREE_WIN;
 
-static void ui_curses_set_view(enum ui_curses_view view)
+static void ui_curses_set_view(int view)
 {
 	if (view == ui_curses_view)
 		return;
@@ -1135,7 +1135,7 @@ static void ui_curses_set_view(enum ui_curses_view view)
 	/* update playlist.cur_win hack */
 	if (ui_curses_view == TREE_VIEW) {
 		playlist.cur_win = __tree_view_active_window;
-	} else if (ui_curses_view == SHUFFLE_LIST_VIEW) {
+	} else if (ui_curses_view == SHUFFLE_VIEW) {
 		playlist.cur_win = SHUFFLE_WIN;
 	} else if (ui_curses_view == SORTED_VIEW) {
 		playlist.cur_win = SORTED_WIN;
@@ -1148,7 +1148,7 @@ static void ui_curses_set_view(enum ui_curses_view view)
 		update_track_window();
 		draw_separator();
 		break;
-	case SHUFFLE_LIST_VIEW:
+	case SHUFFLE_VIEW:
 		searchable = shuffle_searchable;
 		update_shuffle_window();
 		break;
@@ -1706,7 +1706,7 @@ static int common_ch(uchar ch)
 		ui_curses_set_view(TREE_VIEW);
 		break;
 	case '2':
-		ui_curses_set_view(SHUFFLE_LIST_VIEW);
+		ui_curses_set_view(SHUFFLE_VIEW);
 		break;
 	case '3':
 		ui_curses_set_view(SORTED_VIEW);
@@ -1772,7 +1772,7 @@ static void normal_mode_ch(uchar ch)
 {
 	switch (ui_curses_view) {
 	case TREE_VIEW:
-	case SHUFFLE_LIST_VIEW:
+	case SHUFFLE_VIEW:
 	case SORTED_VIEW:
 		if (pl_ch(ch))
 			return;
@@ -1799,7 +1799,7 @@ static void normal_mode_key(int key)
 {
 	switch (ui_curses_view) {
 	case TREE_VIEW:
-	case SHUFFLE_LIST_VIEW:
+	case SHUFFLE_VIEW:
 	case SORTED_VIEW:
 		if (pl_key(key))
 			return;
@@ -2266,7 +2266,7 @@ static void ui_curses_start(void)
 		case TREE_VIEW:
 			needs_view_update += playlist.tree_win_changed || playlist.track_win_changed;
 			break;
-		case SHUFFLE_LIST_VIEW:
+		case SHUFFLE_VIEW:
 			needs_view_update += playlist.shuffle_win_changed;
 			break;
 		case SORTED_VIEW:

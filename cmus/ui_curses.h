@@ -28,16 +28,12 @@ enum ui_curses_input_mode {
 	SEARCH_MODE
 };
 
-enum ui_curses_view {
-	TREE_VIEW,
-	SHUFFLE_LIST_VIEW,
-	SORTED_VIEW,
-	PLAY_QUEUE_VIEW,
-	BROWSER_VIEW
-};
+/* other views are defined in pl.h */
+#define PLAY_QUEUE_VIEW 3
+#define BROWSER_VIEW    4
 
 extern enum ui_curses_input_mode ui_curses_input_mode;
-extern enum ui_curses_view ui_curses_view;
+extern int ui_curses_view;
 extern struct searchable *searchable;
 
 /* usually ~/.config/cmus/playlist.pl */
