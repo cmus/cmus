@@ -47,6 +47,13 @@ static LIST_HEAD(browser_head);
 static int show_hidden = 0;
 static char **supported_extensions;
 
+static inline void browser_entry_to_iter(struct browser_entry *e, struct iter *iter)
+{
+	iter->data0 = &browser_head;
+	iter->data1 = e;
+	iter->data2 = NULL;
+}
+
 /* filter out names starting with '.' except '..' */
 static int normal_filter(const char *name, const struct stat *s, void *data)
 {
@@ -332,27 +339,60 @@ void browser_exit(void)
 static void browser_cd(const char *dir)
 {
 	char *new;
+	int len;
 
-	if (dir[0] == '.' && dir[1] == '.' && dir[2] == '/') {
-		char *ptr;
-
-		ptr = strrchr(browser_dir, '/');
-		if (ptr == browser_dir) {
-			new = xstrdup("/");
-		} else {
-			new = xstrndup(browser_dir, ptr - browser_dir);
-		}
-	} else {
-		int len;
-
-		new = fullname(browser_dir, dir);
-		len = strlen(new);
-		if (new[len - 1] == '/')
-			new[len - 1] = 0;
-	}
+	new = fullname(browser_dir, dir);
+	len = strlen(new);
+	if (new[len - 1] == '/')
+		new[len - 1] = 0;
 	if (browser_load(new))
 		ui_curses_display_error_msg("could not open directory '%s': %s\n", dir, strerror(errno));
 	free(new);
+}
+
+static void browser_cd_parent(void)
+{
+	char *new, *ptr, *pos;
+	struct browser_entry *e;
+	int len;
+
+	if (strcmp(browser_dir, "/") == 0)
+		return;
+
+	ptr = strrchr(browser_dir, '/');
+	if (ptr == browser_dir) {
+		new = xstrdup("/");
+	} else {
+		new = xstrndup(browser_dir, ptr - browser_dir);
+	}
+
+	/* remember last position */
+	ptr++;
+	len = strlen(ptr);
+	pos = xnew(char, len + 2);
+	memcpy(pos, ptr, len);
+	pos[len] = '/';
+	pos[len + 1] = 0;
+
+	if (browser_load(new)) {
+		ui_curses_display_error_msg("could not open directory '%s': %s\n", new, strerror(errno));
+		free(new);
+		return;
+	}
+	free(new);
+
+	/* select */
+	list_for_each_entry(e, &browser_head, node) {
+		if (strcmp(e->name, pos) == 0) {
+			struct iter iter;
+
+			browser_entry_to_iter(e, &iter);
+			window_set_sel(browser_win, &iter);
+			break;
+		}
+	}
+	d_print("'%s' not found\n", pos);
+	free(pos);
 }
 
 static void browser_cd_playlist(const char *filename)
@@ -518,7 +558,7 @@ int browser_ch(uchar ch)
 		window_goto_bottom(browser_win);
 		break;
 	case 127:
-		browser_cd("../");
+		browser_cd_parent();
 		break;
 	default:
 		return 0;
@@ -530,7 +570,7 @@ int browser_key(int key)
 {
 	switch (key) {
 	case KEY_BACKSPACE:
-		browser_cd("../");
+		browser_cd_parent();
 		break;
 	case KEY_DC:
 		browser_delete();
