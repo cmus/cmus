@@ -94,6 +94,13 @@ static int name_compare(const void *ap, const void *bp)
 
 	alen = strlen(a);
 	blen = strlen(b);
+
+	/* ".." is special case, always on top */
+	if (strcmp(a, "../") == 0)
+		return -1;
+	if (strcmp(b, "../") == 0)
+		return 1;
+
 	if (alen && a[alen - 1] == '/') {
 		if (blen && b[blen - 1] == '/') {
 			return strcmp(a, b);
