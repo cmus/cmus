@@ -343,20 +343,6 @@ void browser_exit(void)
 	window_free(browser_win);
 }
 
-static void browser_cd(const char *dir)
-{
-	char *new;
-	int len;
-
-	new = fullname(browser_dir, dir);
-	len = strlen(new);
-	if (new[len - 1] == '/')
-		new[len - 1] = 0;
-	if (browser_load(new))
-		ui_curses_display_error_msg("could not open directory '%s': %s\n", dir, strerror(errno));
-	free(new);
-}
-
 static void browser_cd_parent(void)
 {
 	char *new, *ptr, *pos;
@@ -399,6 +385,25 @@ static void browser_cd_parent(void)
 		}
 	}
 	free(pos);
+}
+
+static void browser_cd(const char *dir)
+{
+	char *new;
+	int len;
+
+	if (strcmp(dir, "../") == 0) {
+		browser_cd_parent();
+		return;
+	}
+
+	new = fullname(browser_dir, dir);
+	len = strlen(new);
+	if (new[len - 1] == '/')
+		new[len - 1] = 0;
+	if (browser_load(new))
+		ui_curses_display_error_msg("could not open directory '%s': %s\n", dir, strerror(errno));
+	free(new);
 }
 
 static void browser_cd_playlist(const char *filename)
