@@ -391,7 +391,6 @@ static void browser_cd_parent(void)
 			break;
 		}
 	}
-	d_print("'%s' not found\n", pos);
 	free(pos);
 }
 
