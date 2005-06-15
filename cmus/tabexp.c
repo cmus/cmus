@@ -24,13 +24,15 @@
 #include <stdlib.h>
 
 void tabexp_init(struct tabexp *tabexp,
-	void (*load_matches)(struct tabexp *tabexp, const char *src))
+	void (*load_matches)(struct tabexp *tabexp, const char *src),
+	void *private_data)
 {
 	tabexp->tails = NULL;
 	tabexp->head = NULL;
 	tabexp->nr_tails = 0;
 	tabexp->index = -1;
 	tabexp->load_matches = load_matches;
+	tabexp->private_data = private_data;
 }
 
 void tabexp_free(struct tabexp *tabexp)

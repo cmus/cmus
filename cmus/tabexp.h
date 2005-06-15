@@ -29,11 +29,15 @@ struct tabexp {
 	 * if no matches then tabexp must be left in resetted state
 	 */
 	void (*load_matches)(struct tabexp *tabexp, const char *src);
+
+	/* the private_data arg given for tabexp_init() */
+	void *private_data;
 };
 
 /* initialize */
 extern void tabexp_init(struct tabexp *tabexp,
-	void (*load_matches)(struct tabexp *tabexp, const char *src));
+	void (*load_matches)(struct tabexp *tabexp, const char *src),
+	void *private_data);
 
 /* free */
 extern void tabexp_free(struct tabexp *tabexp);

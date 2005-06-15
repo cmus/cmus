@@ -662,9 +662,9 @@ void commands_init(void)
 	add_option("status_display_program", set_status_display_program, NULL);
 	add_option("sort", set_sort, NULL);
 
-	tabexp_init(&file_tabexp, load_matching_files);
-	tabexp_init(&option_tabexp, load_matching_cm_options);
-	tabexp_init(&cmd_tabexp, load_matching_commands);
+	tabexp_init(&file_tabexp, load_matching_files, NULL);
+	tabexp_init(&option_tabexp, load_matching_cm_options, NULL);
+	tabexp_init(&cmd_tabexp, load_matching_commands, NULL);
 }
 
 void commands_exit(void)
