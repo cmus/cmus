@@ -243,7 +243,7 @@ const struct output_plugin_ops op_oss_ops = {
 	.get_option = op_oss_get_option
 };
 
-const char *op_oss_options[] = {
+const char * const op_oss_options[] = {
 	"device",
 	NULL
 };

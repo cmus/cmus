@@ -23,6 +23,6 @@
 #include <op.h>
 
 extern const struct output_plugin_ops op_oss_ops;
-extern const char *op_oss_options[];
+extern const char * const op_oss_options[];
 
 #endif

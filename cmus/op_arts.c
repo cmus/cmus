@@ -130,6 +130,6 @@ const struct output_plugin_ops op_arts_ops = {
 	.get_option = op_arts_get_option
 };
 
-const char *op_arts_options[] = {
+const char * const op_arts_options[] = {
 	NULL
 };

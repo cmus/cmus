@@ -507,7 +507,7 @@ const struct output_plugin_ops op_alsa_ops = {
 	.get_option = op_alsa_get_option
 };
 
-const char *op_alsa_options[] = {
+const char * const op_alsa_options[] = {
 	"buffer_time",
 	"device",
 	"period_time",

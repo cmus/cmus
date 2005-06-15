@@ -23,6 +23,6 @@
 #include <op.h>
 
 extern const struct output_plugin_ops op_alsa_ops;
-extern const char *op_alsa_options[];
+extern const char * const op_alsa_options[];
 
 #endif
