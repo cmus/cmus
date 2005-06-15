@@ -250,7 +250,7 @@ static void metadata_cb(const Dec *dec, const FLAC__StreamMetadata *metadata, vo
 			nr = metadata->data.vorbis_comment.num_comments;
 			c = xnew0(struct comment, nr + 1);
 			for (s = 0, d = 0; s < nr; s++) {
-				const char *str = metadata->data.vorbis_comment.comments[s].entry;
+				const char *str = (const char *)metadata->data.vorbis_comment.comments[s].entry;
 				int i;
 
 				d_print("comment: %s\n", str);

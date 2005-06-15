@@ -2282,7 +2282,7 @@ static void ui_curses_start(void)
 				remote_server_serve();
 			}
 			if (FD_ISSET(0, &set)) {
-				int key;
+				int key = 0;
 				uchar ch;
 
 				if (using_utf8) {
