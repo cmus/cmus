@@ -49,8 +49,19 @@ check_flac()
 
 check_mad()
 {
-	pkg_check_modules mad "mad id3tag"
-	return $?
+	local libs="-lmad -lm -lid3tag -lz"
+
+	if pkg_check_modules mad "mad id3tag"
+	then
+		return 0
+	fi
+	if check_lib "mad ($libs)" "$libs"
+	then
+		makefile_var MAD_CFLAGS ""
+		makefile_var MAD_LIBS "$libs"
+		return 0
+	fi
+	return 1
 }
 
 check_modplug()
