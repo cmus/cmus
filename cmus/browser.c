@@ -515,11 +515,37 @@ static void browser_delete(void)
 static void browser_reload(void)
 {
 	char *tmp = xstrdup(browser_dir);
+	char *sel = NULL;
+	struct iter iter;
+	struct browser_entry *e;
+
+	/* remember selection */
+	if (window_get_sel(browser_win, &iter)) {
+		e = iter_to_browser_entry(&iter);
+		sel = xstrdup(e->name);
+	}
 
 	/* have to use tmp  */
-	if (browser_load(tmp))
+	if (browser_load(tmp)) {
 		ui_curses_display_error_msg("could not update contents '%s': %s\n", tmp, strerror(errno));
+		free(tmp);
+		free(sel);
+		return;
+	}
+
+	if (sel) {
+		/* set selection */
+		list_for_each_entry(e, &browser_head, node) {
+			if (strcmp(e->name, sel) == 0) {
+				browser_entry_to_iter(e, &iter);
+				window_set_sel(browser_win, &iter);
+				break;
+			}
+		}
+	}
+
 	free(tmp);
+	free(sel);
 }
 
 int browser_ch(uchar ch)
