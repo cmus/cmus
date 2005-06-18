@@ -1736,6 +1736,7 @@ void pl_clear(void)
 		item = next;
 	}
 	all_wins_changed();
+	status_changed();
 	pl_unlock();
 }
 
