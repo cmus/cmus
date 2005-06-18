@@ -1,3 +1,15 @@
+Summary of changes from 1.4.5 to 1.4.6
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen:
+ o always sort ".." first in browser
+ o remember position in browser when cd'ing to ".."
+ o tab expand only directories for :cd command
+ o don't allow adding duplicate files to playlist
+ o better check_mad (configure script). now works even without .pc files
+ o more detailed installation instructions
+ o miscellaneous clean ups
+
 Summary of changes from 1.4.4 to 1.4.5
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
