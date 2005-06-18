@@ -6,7 +6,6 @@ aac (faad2)
 playlist
  - use different color for tracks that will not be played in artist and album modes?
    also for unrecognized files in the directory browser
- - do not accept duplicates in playlist
  - automatic reshuffle after all tracks have been played
  - automatic rating system
    - sort by rating

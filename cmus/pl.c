@@ -661,6 +661,25 @@ static void sort_sorted_list(void)
 	list_mergesort(&playlist.sorted_head, sorted_view_cmp);
 }
 
+static void artist_free(struct artist *artist)
+{
+	free(artist->name);
+	free(artist);
+}
+
+static void album_free(struct album *album)
+{
+	free(album->name);
+	free(album);
+}
+
+static void track_free(struct track *track)
+{
+	free(track->name);
+	track_info_unref(track->info);
+	free(track);
+}
+
 /* adding artist/album/track {{{ */
 
 static void find_artist_and_album(const char *artist_name,
@@ -805,6 +824,67 @@ static void album_add_track(struct album *album, struct track *track)
 	list_add_tail(&track->node, item);
 }
 
+struct fh_entry {
+	struct fh_entry *next;
+	const char *filename;
+};
+
+#define FH_SIZE (1024)
+static struct fh_entry *filename_hash[FH_SIZE] = { NULL, };
+
+/* this is from glib */
+static unsigned int str_hash(const char *str)
+{
+	unsigned int hash = 0;
+	int i;
+
+	for (i = 0; str[i]; i++)
+		hash = (hash << 5) - hash + str[i];
+	return hash;
+}
+
+static int filename_hash_insert(const char *filename)
+{
+	unsigned int pos = str_hash(filename) % FH_SIZE;
+	struct fh_entry **entryp;
+	struct fh_entry *e;
+
+	entryp = &filename_hash[pos];
+	e = *entryp;
+	while (e) {
+		if (strcmp(e->filename, filename) == 0) {
+			/* found, don't insert */
+			return 0;
+		}
+		e = e->next;
+	}
+
+	e = xnew(struct fh_entry, 1);
+	e->filename = filename;
+	e->next = *entryp;
+	*entryp = e;
+	return 1;
+}
+
+static void filename_hash_remove(const char *filename)
+{
+	unsigned int pos = str_hash(filename) % FH_SIZE;
+	struct fh_entry **entryp;
+
+	entryp = &filename_hash[pos];
+	while (1) {
+		struct fh_entry *e = *entryp;
+
+		BUG_ON(e == NULL);
+		if (strcmp(e->filename, filename) == 0) {
+			*entryp = e->next;
+			free(e);
+			break;
+		}
+		entryp = &e->next;
+	}
+}
+
 void pl_add_track(struct track_info *ti)
 {
 	const char *album_name, *artist_name;
@@ -830,6 +910,13 @@ void pl_add_track(struct track_info *ti)
 	}
 
 	pl_lock();
+
+	if (!filename_hash_insert(track->info->filename)) {
+		/* duplicate files not allowed */
+		pl_unlock();
+		return;
+	}
+
 	find_artist_and_album(artist_name, album_name, &artist, &album);
 	if (album) {
 		album_add_track(album, track);
@@ -876,25 +963,6 @@ void pl_add_track(struct track_info *ti)
 }
 
 /* adding artist/album/track }}} */
-
-static void artist_free(struct artist *artist)
-{
-	free(artist->name);
-	free(artist);
-}
-
-static void album_free(struct album *album)
-{
-	free(album->name);
-	free(album);
-}
-
-static void track_free(struct track *track)
-{
-	free(track->name);
-	track_info_unref(track->info);
-	free(track);
-}
 
 /* removing artist/album/track {{{ */
 
@@ -957,6 +1025,7 @@ static void remove_and_free_track(struct track *track)
 
 	tree_win_get_selected(&sel_artist, &sel_album);
 
+	filename_hash_remove(track->info->filename);
 	__shuffle_list_remove_track(track);
 	__sorted_list_remove_track(track);
 	__album_remove_track(track);
