@@ -18,24 +18,26 @@
  */
 
 #include <tabexp.h>
+#include <xmalloc.h>
 #include <xstrjoin.h>
 #include <debug.h>
 
 #include <stdlib.h>
 
-void tabexp_init(struct tabexp *tabexp,
-	void (*load_matches)(struct tabexp *tabexp, const char *src),
-	void *private_data)
+struct tabexp *tabexp_new(void (*load_matches)(struct tabexp *tabexp, const char *src), void *private_data)
 {
+	struct tabexp *tabexp = xnew(struct tabexp, 1);
+
 	tabexp->tails = NULL;
 	tabexp->head = NULL;
 	tabexp->nr_tails = 0;
 	tabexp->index = -1;
 	tabexp->load_matches = load_matches;
 	tabexp->private_data = private_data;
+	return tabexp;
 }
 
-void tabexp_free(struct tabexp *tabexp)
+void tabexp_reset(struct tabexp *tabexp)
 {
 	int i;
 
@@ -49,9 +51,10 @@ void tabexp_free(struct tabexp *tabexp)
 	tabexp->index = -1;
 }
 
-void tabexp_reset(struct tabexp *tabexp)
+void tabexp_free(struct tabexp *tabexp)
 {
-	tabexp_free(tabexp);
+	tabexp_reset(tabexp);
+	free(tabexp);
 }
 
 char *tabexp_expand(struct tabexp *tabexp, const char *src)

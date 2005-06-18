@@ -1,5 +1,5 @@
 /* 
- * Copyright 2004 Timo Hirvonen
+ * Copyright 2004-2005 Timo Hirvonen
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -30,16 +30,11 @@ struct tabexp {
 	 */
 	void (*load_matches)(struct tabexp *tabexp, const char *src);
 
-	/* the private_data arg given for tabexp_init() */
+	/* the private_data arg given to tabexp_new() */
 	void *private_data;
 };
 
-/* initialize */
-extern void tabexp_init(struct tabexp *tabexp,
-	void (*load_matches)(struct tabexp *tabexp, const char *src),
-	void *private_data);
-
-/* free */
+extern struct tabexp *tabexp_new(void (*load_matches)(struct tabexp *tabexp, const char *src), void *private_data);
 extern void tabexp_free(struct tabexp *tabexp);
 
 /* head = NULL

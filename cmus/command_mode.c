@@ -248,29 +248,27 @@ struct command {
 	cmd_func *func;
 	int min_args;
 	int max_args;
-	enum { TE_NONE, TE_FILE, TE_OPTION } expand;
+	enum { TE_NONE, TE_FILEDIR, TE_DIR, TE_OPTION } expand;
 };
 
 /* sort by name */
 static struct command commands[] = {
-	{ "add",        cmd_add,        1, 1, TE_FILE },
-	{ "cd",         cmd_cd,         0, 1, TE_FILE },
+	{ "add",        cmd_add,        1, 1, TE_FILEDIR },
+	{ "cd",         cmd_cd,         0, 1, TE_DIR },
 	{ "clear",      cmd_clear,      0, 0, TE_NONE },
-	{ "enqueue",    cmd_enqueue,    1, 1, TE_FILE },
-	{ "load",       cmd_load,       1, 1, TE_FILE },
-	{ "save",       cmd_save,       0, 1, TE_FILE },
+	{ "enqueue",    cmd_enqueue,    1, 1, TE_FILEDIR },
+	{ "load",       cmd_load,       1, 1, TE_FILEDIR },
+	{ "save",       cmd_save,       0, 1, TE_FILEDIR },
 	{ "set",        cmd_set,        1, 1, TE_OPTION },
 	{ "shuffle",    cmd_reshuffle,  0, 0, TE_NONE },
 	{ NULL,         NULL,           0, 0, 0 },
 };
 
-/* file name extensions for tabexp_file */
-char **extensions = NULL;
-
 static int arg_expand_cmd = -1;
-static struct tabexp file_tabexp;
-static struct tabexp cmd_tabexp;
-static struct tabexp option_tabexp;
+static struct tabexp *filedir_tabexp;
+static struct tabexp *dir_tabexp;
+static struct tabexp *cmd_tabexp;
+static struct tabexp *option_tabexp;
 
 static void load_matching_commands(struct tabexp *tabexp, const char *str)
 {
@@ -340,7 +338,7 @@ static char *expand(const char *str)
 		char *cmd_head = xstrndup(str, cmd_len);
 		char *expanded = NULL;
 
-		expanded = tabexp_expand(&cmd_tabexp, cmd_head);
+		expanded = tabexp_expand(cmd_tabexp, cmd_head);
 		if (expanded) {
 			char *s;
 			
@@ -376,11 +374,14 @@ static char *expand(const char *str)
 		switch (commands[arg_expand_cmd].expand) {
 		case TE_NONE:
 			break;
-		case TE_FILE:
-			expanded = tabexp_expand(&file_tabexp, str + arg_start);
+		case TE_FILEDIR:
+			expanded = tabexp_expand(filedir_tabexp, str + arg_start);
+			break;
+		case TE_DIR:
+			expanded = tabexp_expand(dir_tabexp, str + arg_start);
 			break;
 		case TE_OPTION:
-			expanded = tabexp_expand(&option_tabexp, str + arg_start);
+			expanded = tabexp_expand(option_tabexp, str + arg_start);
 			break;
 		}
 		if (expanded) {
@@ -440,9 +441,10 @@ static void tab_expand(void)
 
 static void reset_tab_expansion(void)
 {
-	tabexp_reset(&file_tabexp);
-	tabexp_reset(&option_tabexp);
-	tabexp_reset(&cmd_tabexp);
+	tabexp_reset(filedir_tabexp);
+	tabexp_reset(dir_tabexp);
+	tabexp_reset(option_tabexp);
+	tabexp_reset(cmd_tabexp);
 	arg_expand_cmd = -1;
 }
 
@@ -662,9 +664,10 @@ void commands_init(void)
 	add_option("status_display_program", set_status_display_program, NULL);
 	add_option("sort", set_sort, NULL);
 
-	tabexp_init(&file_tabexp, load_matching_files, NULL);
-	tabexp_init(&option_tabexp, load_matching_cm_options, NULL);
-	tabexp_init(&cmd_tabexp, load_matching_commands, NULL);
+	filedir_tabexp = tabexp_file_new(TABEXP_FILE_FLAG_FILES, NULL);
+	dir_tabexp = tabexp_file_new(0, NULL);
+	option_tabexp = tabexp_new(load_matching_cm_options, NULL);
+	cmd_tabexp = tabexp_new(load_matching_commands, NULL);
 }
 
 void commands_exit(void)
@@ -682,4 +685,9 @@ void commands_exit(void)
 	history_save(&cmd_history, cmd_history_filename);
 	history_free(&cmd_history);
 	free(cmd_history_filename);
+
+	tabexp_file_free(filedir_tabexp);
+	tabexp_file_free(dir_tabexp);
+	tabexp_free(option_tabexp);
+	tabexp_free(cmd_tabexp);
 }

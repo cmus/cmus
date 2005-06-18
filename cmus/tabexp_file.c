@@ -29,7 +29,11 @@
 #include <pwd.h>
 #include <dirent.h>
 
-extern char **extensions;
+struct tabexp_file_private {
+	char **extensions;
+	unsigned int flags;
+	const char *start;
+};
 
 static char *get_home(const char *user)
 {
@@ -85,7 +89,8 @@ static int strptrcmp(const void *a, const void *b)
 
 static int filter(const char *name, const struct stat *s, void *data)
 {
-	const char *start = data;
+	struct tabexp_file_private *priv = data;
+	const char *start = priv->start;
 	const char *ext;
 	int start_len, i;
 
@@ -100,7 +105,10 @@ static int filter(const char *name, const struct stat *s, void *data)
 	if (S_ISDIR(s->st_mode))
 		return 1;
 
-	if (extensions == NULL) {
+	if ((priv->flags & TABEXP_FILE_FLAG_FILES) == 0)
+		return 0;
+
+	if (priv->extensions == NULL) {
 		/* no extensions => accept all */
 		return 1;
 	}
@@ -108,8 +116,8 @@ static int filter(const char *name, const struct stat *s, void *data)
 	if (ext == NULL)
 		return 0;
 	ext++;
-	for (i = 0; extensions[i]; i++) {
-		if (strcmp(extensions[i], ext) == 0)
+	for (i = 0; priv->extensions[i]; i++) {
+		if (strcmp(priv->extensions[i], ext) == 0)
 			return 1;
 	}
 	return 0;
@@ -121,6 +129,7 @@ static int filter(const char *name, const struct stat *s, void *data)
  */
 static void tabexp_load_dir(struct tabexp *tabexp, const char *dir, const char *start)
 {
+	struct tabexp_file_private *priv = tabexp->private_data;
 	char **ptrs;
 	int nr_ptrs;
 	char *full_dir_name;
@@ -129,7 +138,8 @@ static void tabexp_load_dir(struct tabexp *tabexp, const char *dir, const char *
 	if (full_dir_name == NULL)
 		return;
 
-	load_dir(full_dir_name, &ptrs, &nr_ptrs, 1, filter, strptrcmp, (void *)start);
+	priv->start = start;
+	load_dir(full_dir_name, &ptrs, &nr_ptrs, 1, filter, strptrcmp, priv);
 	free(full_dir_name);
 
 	if (nr_ptrs > 0) {
@@ -140,7 +150,7 @@ static void tabexp_load_dir(struct tabexp *tabexp, const char *dir, const char *
 	}
 }
 
-void load_matching_files(struct tabexp *tabexp, const char *src)
+static void load_matching_files(struct tabexp *tabexp, const char *src)
 {
 	char *slash;
 
@@ -174,4 +184,22 @@ void load_matching_files(struct tabexp *tabexp, const char *src)
 			tabexp_load_dir(tabexp, "", src);
 		}
 	}
+}
+
+struct tabexp *tabexp_file_new(unsigned int flags, char **extensions)
+{
+	struct tabexp_file_private *priv;
+
+	priv = xnew(struct tabexp_file_private, 1);
+	priv->flags = flags;
+	priv->extensions = extensions;
+	return tabexp_new(load_matching_files, priv);
+}
+
+void tabexp_file_free(struct tabexp *tabexp)
+{
+	struct tabexp_file_private *priv = tabexp->private_data;
+
+	free(priv);
+	tabexp_free(tabexp);
 }

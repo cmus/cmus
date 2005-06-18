@@ -22,6 +22,9 @@
 
 #include <tabexp.h>
 
-extern void load_matching_files(struct tabexp *tabexp, const char *src);
+#define TABEXP_FILE_FLAG_FILES	(1 << 0)
+
+extern struct tabexp *tabexp_file_new(unsigned int flags, char **extensions);
+extern void tabexp_file_free(struct tabexp *tabexp);
 
 #endif
