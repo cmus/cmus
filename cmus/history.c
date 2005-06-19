@@ -123,30 +123,45 @@ int history_delete_ch(struct history *history)
 
 void history_current_save(struct history *history)
 {
-	struct history_entry *first;
+	struct history_entry *new;
+	struct list_head *item;
 
 	SANITY_CHECK();
 
-	first = list_entry(history->head.next, struct history_entry, node);
-	if (list_empty(&history->head) || strcmp(first->text, history->current)) {
-		struct history_entry *new;
+	new = xnew(struct history_entry, 1);
+	new->text = xstrdup(history->current);
+	list_add(&new->node, &history->head);
+	history->lines++;
 
-		new = xnew(struct history_entry, 1);
-		new->text = xstrdup(history->current);
-		list_add(&new->node, &history->head);
-		if (history->lines == history->max_lines) {
-			struct list_head *node;
-			struct history_entry *hentry;
-
-			node = history->head.prev;
-			list_del(node);
-			hentry = list_entry(node, struct history_entry, node);
+	/* remove identical */
+	item = history->head.next->next;
+	while (item != &history->head) {
+		struct list_head *next = item->next;
+		struct history_entry *hentry;
+		
+		hentry = container_of(item, struct history_entry, node);
+		if (strcmp(hentry->text, new->text) == 0) {
+			list_del(item);
 			free(hentry->text);
 			free(hentry);
-		} else {
-			history->lines++;
+			history->lines--;
 		}
+		item = next;
 	}
+
+	/* remove oldest if history is 'full' */
+	if (history->lines > history->max_lines) {
+		struct list_head *node;
+		struct history_entry *hentry;
+
+		node = history->head.prev;
+		list_del(node);
+		hentry = list_entry(node, struct history_entry, node);
+		free(hentry->text);
+		free(hentry);
+		history->lines--;
+	}
+
 	history->current_cpos = 0;
 	history->current_bpos = 0;
 	history->current_blen = 0;
