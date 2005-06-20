@@ -395,18 +395,35 @@ generated_file()
 	echo "$1" >> .distclean
 }
 
+update_file()
+{
+	local old new
+
+	argc 2
+	new="$1"
+	old="$2"
+	if [[ -e $old ]]
+	then
+		cmp "$old" "$new" 2>/dev/null 1>&2 && return 0
+	fi
+	mv -f "$new" "$old"
+}
+
 generate_config_h()
 {
+	local tmp i
+
 	argc 0
 	after run_checks
 	only_once
 
 	set_config_h_variables
 	echo "Generating config.h"
-	output_file config.h
+	tmp=$(tmp_file config.h)
+	output_file $tmp
 	out "#ifndef _CONFIG_H"
 	out "#define _CONFIG_H"
-	local i=0
+	i=0
 	while [[ $i -lt ${#config_var_names[@]} ]]
 	do
 		out
@@ -445,12 +462,13 @@ generate_config_h()
 	done
 	out
 	out "#endif"
+	update_file $tmp config.h
 	did_run
 }
 
 generate_config_mk()
 {
-	local i s c
+	local i s c tmp
 
 	argc 0
 	after run_checks
@@ -458,7 +476,8 @@ generate_config_mk()
 
 	set_makefile_variables
 	echo "Generating config.mk"
-	output_file config.mk
+	tmp=$(tmp_file config.mk)
+	output_file $tmp
 	out '# run "make help" for usage information'
 	out
 	for i in $mk_env_vars
@@ -487,6 +506,7 @@ generate_config_mk()
 	done
 	out
 	out 'include $(scriptdir)/main.mk'
+	update_file $tmp config.mk
 	did_run
 }
 
