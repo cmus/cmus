@@ -20,7 +20,7 @@
 #include <player.h>
 #include <buffer.h>
 #include <input.h>
-#include <op.h>
+#include <output.h>
 #include <sf.h>
 #include <utils.h>
 #include <xmalloc.h>

@@ -13,7 +13,7 @@ obj-y := \
 	load_dir.o \
 	mergesort.o \
 	misc.o \
-	op.o \
+	output.o \
 	pcm.o \
 	pl.o \
 	play_queue.o \

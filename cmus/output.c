@@ -17,6 +17,7 @@
  * 02111-1307, USA.
  */
 
+#include <output.h>
 #include <op.h>
 #include <sf.h>
 #include <sconf.h>
