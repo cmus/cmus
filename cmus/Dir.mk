@@ -9,7 +9,7 @@ obj-y := \
 	format_print.o \
 	history.o \
 	http.o \
-	ip.o \
+	input.o \
 	load_dir.o \
 	mergesort.o \
 	misc.o \

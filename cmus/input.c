@@ -17,6 +17,7 @@
  * 02111-1307, USA.
  */
 
+#include <input.h>
 #include <ip.h>
 #include <pcm.h>
 #include <http.h>

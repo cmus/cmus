@@ -19,7 +19,7 @@
 
 #include <player.h>
 #include <buffer.h>
-#include <ip.h>
+#include <input.h>
 #include <op.h>
 #include <sf.h>
 #include <utils.h>
