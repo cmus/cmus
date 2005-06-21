@@ -57,6 +57,28 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+struct input_plugin {
+	const struct input_plugin_ops *ops;
+	struct input_plugin_data data;
+	unsigned int open : 1;
+	unsigned int eof : 1;
+	int http_code;
+	char *http_reason;
+
+	/*
+	 * pcm is converted to 16-bit signed little-endian stereo
+	 * NOTE: no conversion is done if channels > 2 or bits > 16
+	 */
+	void (*pcm_convert)(char *, const char *, int);
+	void (*pcm_convert_in_place)(char *, int);
+	/*
+	 * 4  if 8-bit mono
+	 * 2  if 8-bit stereo or 16-bit mono
+	 * 1  otherwise
+	 */
+	int pcm_convert_scale;
+};
+
 struct ip {
 	const char * const *extensions;
 	const char * const *mime_types;
@@ -262,7 +284,6 @@ static void dump_lines(char **lines)
 
 static int read_pls(struct input_plugin *ip, int sock)
 {
-	struct input_plugin_data *d = &ip->data;
 	struct http_header *headers;
 	char *body, *reason;
 	char **lines;
@@ -290,8 +311,8 @@ static int read_pls(struct input_plugin *ip, int sock)
 	sock = do_http_get(lines[0], &headers, &code, &reason);
 	free_str_array(lines);
 	if (sock < 0) {
-		d->http_code = code;
-		d->http_reason = reason;
+		ip->http_code = code;
+		ip->http_reason = reason;
 		return sock;
 	}
 
@@ -302,7 +323,6 @@ static int read_pls(struct input_plugin *ip, int sock)
 
 static int read_m3u(struct input_plugin *ip, int sock)
 {
-	struct input_plugin_data *d = &ip->data;
 	struct http_header *headers;
 	char *body, *reason;
 	char **lines;
@@ -337,8 +357,8 @@ static int read_m3u(struct input_plugin *ip, int sock)
 	sock = do_http_get(lines[0], &headers, &code, &reason);
 	free_str_array(lines);
 	if (sock < 0) {
-		d->http_code = code;
-		d->http_reason = reason;
+		ip->http_code = code;
+		ip->http_reason = reason;
 
 		if (sock == -IP_ERROR_INVALID_URI)
 			sock = -IP_ERROR_HTTP_RESPONSE;
@@ -360,8 +380,8 @@ static int open_remote(struct input_plugin *ip)
 
 	sock = do_http_get(d->filename, &headers, &code, &reason);
 	if (sock < 0) {
-		d->http_code = code;
-		d->http_reason = reason;
+		ip->http_code = code;
+		ip->http_reason = reason;
 		return sock;
 	}
 
@@ -395,11 +415,15 @@ static int open_file(struct input_plugin *ip)
 	return 0;
 }
 
-int ip_create(struct input_plugin *ip, const char *filename)
+int ip_create(struct input_plugin **ipp, const char *filename)
 {
+	struct input_plugin *ip = xnew(struct input_plugin, 1);
+
 	ip->ops = NULL;
 	ip->open = 0;
 	ip->eof = 0;
+	ip->http_code = -1;
+	ip->http_reason = NULL;
 
 	ip->data.filename = xstrdup(filename);
 	ip->data.fd = -1;
@@ -410,10 +434,8 @@ int ip_create(struct input_plugin *ip, const char *filename)
 	ip->data.metaint = 0;
 	ip->data.metadata = NULL;
 
-	ip->data.http_code = -1;
-	ip->data.http_reason = NULL;
-
 	ip->data.private = NULL;
+	*ipp = ip;
 	return 0;
 }
 
@@ -422,6 +444,7 @@ void ip_delete(struct input_plugin *ip)
 	BUG_ON(ip->open);
 
 	free(ip->data.filename);
+	free(ip);
 }
 
 int ip_open(struct input_plugin *ip)
@@ -530,10 +553,10 @@ int ip_close(struct input_plugin *ip)
 	if (ip->data.fd != -1)
 		close(ip->data.fd);
 	free(ip->data.metadata);
-	free(ip->data.http_reason);
-	ip->data.metadata = NULL;
-	ip->data.http_reason = NULL;
+	free(ip->http_reason);
 	ip->data.fd = -1;
+	ip->data.metadata = NULL;
+	ip->http_reason = NULL;
 	ip->ops = NULL;
 	ip->open = 0;
 	ip->eof = 0;
@@ -634,6 +657,37 @@ int ip_duration(struct input_plugin *ip)
 	return rc;
 }
 
+sample_format_t ip_get_sf(struct input_plugin *ip)
+{
+	BUG_ON(!ip->open);
+	return ip->data.sf;
+}
+
+const char *ip_get_filename(struct input_plugin *ip)
+{
+	return ip->data.filename;
+}
+
+const char *ip_get_metadata(struct input_plugin *ip)
+{
+	BUG_ON(!ip->open);
+	return ip->data.metadata;
+}
+
+int ip_is_remote(struct input_plugin *ip)
+{
+	return ip->data.remote;
+}
+
+int ip_metadata_changed(struct input_plugin *ip)
+{
+	int ret = ip->data.metadata_changed;
+
+	BUG_ON(!ip->open);
+	ip->data.metadata_changed = 0;
+	return ret;
+}
+
 int ip_eof(struct input_plugin *ip)
 {
 	BUG_ON(!ip->open);
@@ -673,10 +727,10 @@ char *ip_get_error_msg(struct input_plugin *ip, int rc, const char *arg)
 		snprintf(buffer, sizeof(buffer), "%s: invalid HTTP response", arg);
 		break;
 	case IP_ERROR_HTTP_STATUS:
-		snprintf(buffer, sizeof(buffer), "%s: %d %s", arg, ip->data.http_code, ip->data.http_reason);
-		free(ip->data.http_reason);
-		ip->data.http_reason = NULL;
-		ip->data.http_code = -1;
+		snprintf(buffer, sizeof(buffer), "%s: %d %s", arg, ip->http_code, ip->http_reason);
+		free(ip->http_reason);
+		ip->http_reason = NULL;
+		ip->http_code = -1;
 		break;
 	case IP_ERROR_INTERNAL:
 		snprintf(buffer, sizeof(buffer), "%s: internal error", arg);

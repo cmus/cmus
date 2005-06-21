@@ -75,7 +75,7 @@ static pthread_t producer_thread;
 static pthread_mutex_t producer_mutex = CMUS_MUTEX_INITIALIZER;
 static int producer_running = 1;
 static enum producer_status producer_status = PS_UNLOADED;
-static struct input_plugin ip;
+static struct input_plugin *ip = NULL;
 
 static pthread_t consumer_thread;
 static pthread_mutex_t consumer_mutex = CMUS_MUTEX_INITIALIZER;
@@ -140,7 +140,7 @@ static inline void file_changed(void)
 	if (producer_status == PS_UNLOADED) {
 		player_info.filename[0] = 0;
 	} else {
-		strncpy(player_info.filename, ip.data.filename, sizeof(player_info.filename));
+		strncpy(player_info.filename, ip_get_filename(ip), sizeof(player_info.filename));
 		player_info.filename[sizeof(player_info.filename) - 1] = 0;
 	}
 	d_print("%s\n", player_info.filename);
@@ -152,9 +152,8 @@ static inline void file_changed(void)
 static inline void metadata_changed(void)
 {
 	player_info_lock();
-	d_print("metadata changed: %s\n", ip.data.metadata);
-	ip.data.metadata_changed = 0;
-	memcpy(player_info.metadata, ip.data.metadata, 255 * 16 + 1);
+	d_print("metadata changed: %s\n", ip_get_metadata(ip));
+	memcpy(player_info.metadata, ip_get_metadata(ip), 255 * 16 + 1);
 	player_info.metadata_changed = 1;
 	player_info_unlock();
 }
@@ -196,7 +195,7 @@ static void player_ip_error(int rc, const char *format, ...)
 	va_end(ap);
 
 	errno = save;
-	msg = ip_get_error_msg(&ip, rc, buffer);
+	msg = ip_get_error_msg(ip, rc, buffer);
 	player_error(msg);
 	free(msg);
 }
@@ -317,7 +316,7 @@ static void __prebuffer(void)
 	int limit_chunks;
 
 	BUG_ON(producer_status != PS_PLAYING);
-	if (ip.data.remote) {
+	if (ip_is_remote(ip)) {
 		limit_chunks = buffer_get_nr_chunks(&player_buffer);
 	} else {
 		int limit_ms, limit_size;
@@ -343,18 +342,18 @@ static void __prebuffer(void)
 			break;
 
 		buffer_get_wpos(&player_buffer, &wpos, &size);
-		nr_read = ip_read(&ip, wpos, size);
+		nr_read = ip_read(ip, wpos, size);
 		if (nr_read < 0) {
 			if (nr_read == -1 && errno == EAGAIN)
 				continue;
-			player_ip_error(nr_read, "reading file %s", ip.data.filename);
+			player_ip_error(nr_read, "reading file %s", ip_get_filename(ip));
 
-			ip_close(&ip);
-			ip_delete(&ip);
+			ip_close(ip);
+			ip_delete(ip);
 			producer_status = PS_UNLOADED;
 			return;
 		}
-		if (ip.data.metadata_changed)
+		if (ip_metadata_changed(ip))
 			metadata_changed();
 
 		/* buffer_fill with 0 count marks current chunk filled */
@@ -382,10 +381,10 @@ static void __producer_play(void)
 			if (rc) {
 				player_ip_error(rc, "creating ip for file `%s'", filename);
 			} else {
-				rc = ip_open(&ip);
+				rc = ip_open(ip);
 				if (rc) {
 					player_ip_error(rc, "opening file `%s'", filename);
-					ip_delete(&ip);
+					ip_delete(ip);
 				} else {
 					producer_status = PS_PLAYING;
 				}
@@ -394,16 +393,16 @@ static void __producer_play(void)
 			file_changed();
 		}
 	} else if (producer_status == PS_PLAYING) {
-		if (ip_seek(&ip, 0.0) == 0) {
+		if (ip_seek(ip, 0.0) == 0) {
 			reset_buffer();
 		}
 	} else if (producer_status == PS_STOPPED) {
 		int rc;
 
-		rc = ip_open(&ip);
+		rc = ip_open(ip);
 		if (rc) {
-			player_ip_error(rc, "opening file `%s'", ip.data.filename);
-			ip_delete(&ip);
+			player_ip_error(rc, "opening file `%s'", ip_get_filename(ip));
+			ip_delete(ip);
 			producer_status = PS_UNLOADED;
 		} else {
 			producer_status = PS_PLAYING;
@@ -416,7 +415,7 @@ static void __producer_play(void)
 static void __producer_stop(void)
 {
 	if (producer_status == PS_PLAYING || producer_status == PS_PAUSED) {
-		ip_close(&ip);
+		ip_close(ip);
 		producer_status = PS_STOPPED;
 		reset_buffer();
 	}
@@ -426,7 +425,7 @@ static void __producer_unload(void)
 {
 	__producer_stop();
 	if (producer_status == PS_STOPPED) {
-		ip_delete(&ip);
+		ip_delete(ip);
 		producer_status = PS_UNLOADED;
 	}
 }
@@ -466,7 +465,7 @@ static void __consumer_play(void)
 	} else if (consumer_status == CS_STOPPED) {
 		int rc;
 
-		set_buffer_sf(ip.data.sf);
+		set_buffer_sf(ip_get_sf(ip));
 		rc = op_open(buffer_sf);
 		if (rc) {
 			player_op_error(rc, "opening audio device");
@@ -533,7 +532,7 @@ static void __consumer_handle_eof(void)
 					file_changed();
 				} else {
 					/* PS_PLAYING */
-					set_buffer_sf(ip.data.sf);
+					set_buffer_sf(ip_get_sf(ip));
 					rc = op_set_sf(buffer_sf);
 					if (rc < 0) {
 						__producer_stop();
@@ -613,7 +612,7 @@ static void *consumer_loop(void *arg)
 				buffer_get_rpos(&player_buffer, &rpos, &size);
 				if (size == 0) {
 					/* OK. now it's safe to check if we are at EOF */
-					if (ip_eof(&ip)) {
+					if (ip_eof(ip)) {
 						/* EOF */
 						__consumer_handle_eof();
 						producer_unlock();
@@ -668,7 +667,7 @@ static void *producer_loop(void *arg)
 
 		if (producer_status == PS_UNLOADED ||
 		    producer_status == PS_PAUSED ||
-		    producer_status == PS_STOPPED || ip_eof(&ip)) {
+		    producer_status == PS_STOPPED || ip_eof(ip)) {
 			producer_unlock();
 			ms_sleep(50);
 			continue;
@@ -681,19 +680,19 @@ static void *producer_loop(void *arg)
 				ms_sleep(50);
 				break;
 			}
-			nr_read = ip_read(&ip, wpos, size);
+			nr_read = ip_read(ip, wpos, size);
 			if (nr_read < 0) {
 				if (nr_read != -1 || errno != EAGAIN) {
-					player_ip_error(nr_read, "reading file %s", ip.data.filename);
-					ip_close(&ip);
-					ip_delete(&ip);
+					player_ip_error(nr_read, "reading file %s", ip_get_filename(ip));
+					ip_close(ip);
+					ip_delete(ip);
 					producer_status = PS_UNLOADED;
 				}
 				producer_unlock();
 				ms_sleep(50);
 				break;
 			}
-			if (ip.data.metadata_changed)
+			if (ip_metadata_changed(ip))
 				metadata_changed();
 
 			/* buffer_fill with 0 count marks current chunk filled */
@@ -714,7 +713,7 @@ static void *producer_loop(void *arg)
 	}
 	__producer_stop();
 	if (producer_status != PS_UNLOADED) {
-		ip_delete(&ip);
+		ip_delete(ip);
 		producer_status = PS_UNLOADED;
 	}
 	producer_unlock();
@@ -809,7 +808,7 @@ void player_play(void)
 	int prebuffer;
 
 	player_lock();
-	if (producer_status == PS_PLAYING && ip.data.remote) {
+	if (producer_status == PS_PLAYING && ip_is_remote(ip)) {
 		/* seeking not allowed */
 		player_unlock();
 		return;
@@ -832,7 +831,7 @@ void player_play(void)
 void player_pause(void)
 {
 	player_lock();
-	if (ip.data.remote) {
+	if (ip_is_remote(ip)) {
 		/* pausing not allowed */
 		player_unlock();
 		return;
@@ -867,7 +866,7 @@ void player_set_file(const char *filename)
 		 */
 		op_drop();
 
-		set_buffer_sf(ip.data.sf);
+		set_buffer_sf(ip_get_sf(ip));
 		rc = op_set_sf(buffer_sf);
 		if (rc == 0) {
 			/* device wasn't reopened */
@@ -925,7 +924,7 @@ void player_play_file(const char *filename)
 		 */
 		op_drop();
 
-		set_buffer_sf(ip.data.sf);
+		set_buffer_sf(ip_get_sf(ip));
 		rc = op_set_sf(buffer_sf);
 		if (rc == 0) {
 			/* device wasn't reopened */
@@ -959,7 +958,7 @@ void player_seek(double offset, int whence)
 		int rc;
 
 		pos = (double)consumer_pos / (double)buffer_second_size();
-		duration = ip_duration(&ip);
+		duration = ip_duration(ip);
 		if (duration < 0) {
 			/* can't seek */
 			d_print("can't seek\n");
@@ -999,7 +998,7 @@ void player_seek(double offset, int whence)
 			}
 		}
 /* 		d_print("seeking %g/%g (%g from eof)\n", new_pos, duration, duration - new_pos); */
-		rc = ip_seek(&ip, new_pos);
+		rc = ip_seek(ip, new_pos);
 		if (rc == 0) {
 /* 			d_print("doing op_drop after seek\n"); */
 			op_drop();
@@ -1041,7 +1040,7 @@ int player_set_op(const char *name)
 	}
 
 	if (consumer_status == CS_PLAYING || consumer_status == CS_PAUSED) {
-		set_buffer_sf(ip.data.sf);
+		set_buffer_sf(ip_get_sf(ip));
 		rc = op_open(buffer_sf);
 		if (rc) {
 			consumer_status = CS_STOPPED;
@@ -1108,32 +1107,32 @@ void player_set_cont(int value)
 int player_get_fileinfo(const char *filename, int *duration,
 		struct comment **comments)
 {
-	struct input_plugin plug;
+	struct input_plugin *plug;
 	int rc;
 
 	*comments = NULL;
 	*duration = -1;
 	rc = ip_create(&plug, filename);
 	if (rc == 0) {
-		if (plug.data.remote) {
+		if (ip_is_remote(plug)) {
 			*comments = xnew0(struct comment, 1);
-			ip_delete(&plug);
+			ip_delete(plug);
 			return 0;
 		}
-		rc = ip_open(&plug);
+		rc = ip_open(plug);
 		if (rc) {
 			int save = errno;
 
-			ip_delete(&plug);
+			ip_delete(plug);
 			errno = save;
 			if (rc != -1)
 				rc = -PLAYER_ERROR_NOT_SUPPORTED;
 			return rc;
 		}
-		*duration = ip_duration(&plug);
-		rc = ip_read_comments(&plug, comments);
-		ip_close(&plug);
-		ip_delete(&plug);
+		*duration = ip_duration(plug);
+		rc = ip_read_comments(plug, comments);
+		ip_close(plug);
+		ip_delete(plug);
 		return rc;
 	}
 	return -PLAYER_ERROR_NOT_SUPPORTED;

@@ -23,9 +23,6 @@
 #include <comment.h>
 #include <sf.h>
 
-#include <stdio.h>
-#include <stdio.h>
-
 enum {
 	/* no error */
 	IP_ERROR_SUCCESS,
@@ -59,8 +56,6 @@ struct input_plugin_data {
 	int counter;
 	int metaint;
 	char *metadata;
-	int http_code;
-	char *http_reason;
 
 	/* filled by plugin */
 	sample_format_t sf;
@@ -77,30 +72,12 @@ struct input_plugin_ops {
 	int (*duration)(struct input_plugin_data *ip_data);
 };
 
-struct input_plugin {
-	const struct input_plugin_ops *ops;
-	struct input_plugin_data data;
-	unsigned int open : 1;
-	unsigned int eof : 1;
-
-	/*
-	 * pcm is converted to 16-bit signed little-endian stereo
-	 * NOTE: no conversion is done if channels > 2 or bits > 16
-	 */
-	void (*pcm_convert)(char *, const char *, int);
-	void (*pcm_convert_in_place)(char *, int);
-	/*
-	 * 4  if 8-bit mono
-	 * 2  if 8-bit stereo or 16-bit mono
-	 * 1  otherwise
-	 */
-	int pcm_convert_scale;
-};
+struct input_plugin;
 
 /*
  * errors: IP_ERROR_{UNRECOGNIZED_FILE_TYPE, INVALID_URI}
  */
-extern int ip_create(struct input_plugin *ip, const char *filename);
+extern int ip_create(struct input_plugin **ip, const char *filename);
 
 extern void ip_delete(struct input_plugin *ip);
 
@@ -134,6 +111,11 @@ extern int ip_read_comments(struct input_plugin *ip, struct comment **comments);
  */
 extern int ip_duration(struct input_plugin *ip);
 
+extern sample_format_t ip_get_sf(struct input_plugin *ip);
+extern const char *ip_get_filename(struct input_plugin *ip);
+extern const char *ip_get_metadata(struct input_plugin *ip);
+extern int ip_is_remote(struct input_plugin *ip);
+extern int ip_metadata_changed(struct input_plugin *ip);
 extern int ip_eof(struct input_plugin *ip);
 extern char *ip_get_error_msg(struct input_plugin *ip, int rc, const char *arg);
 extern char **ip_get_supported_extensions(void);
