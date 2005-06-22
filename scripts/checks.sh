@@ -333,6 +333,9 @@ check_lib()
 	fi
 }
 
+# check X11 libs
+#
+# defines X11_LIBS in config.mk
 check_x11()
 {
 	local libs
@@ -348,6 +351,10 @@ check_x11()
 	return $?
 }
 
+# check posix threads
+#
+# defines PTHREAD_CFLAGS in config.mk
+# defines PTHREAD_LIBS in config.mk
 check_pthread()
 {
 	local libs
@@ -365,5 +372,22 @@ check_pthread()
 	echo "using -pthread gcc option"
 	makefile_var PTHREAD_CFLAGS "-pthread -D_THREAD_SAFE"
 	makefile_var PTHREAD_LIBS "-pthread"
+	return 0
+}
+
+# check dynamic linking loader
+#
+# defines DL_LIBS in config.mk
+check_dl()
+{
+	local libs="-ldl -rdynamic"
+
+	msg_checking "dynamic linking loader"
+	if ! try_link "$libs" 2>/dev/null
+	then
+		libs="-rdynamic"
+	fi
+	msg_result "$libs"
+	makefile_var DL_LIBS "$libs"
 	return 0
 }
