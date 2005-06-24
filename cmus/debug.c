@@ -22,19 +22,21 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-extern char *program_name;
-
 #if DEBUG > 0
-
+extern char *program_name;
 static FILE *debug_stream = NULL;
+#endif
 
 void debug_init(FILE *stream)
 {
+#if DEBUG > 0
 	debug_stream = stream;
+#endif
 }
 
 void __debug_warn(const char *file, int line, const char *function, const char *fmt, ...)
 {
+#if DEBUG > 0
 	const char *format = "\n%s: %s:%d: %s: BUG: ";
 	va_list ap;
 
@@ -48,12 +50,12 @@ void __debug_warn(const char *file, int line, const char *function, const char *
 		fflush(stderr);
 	}
 	va_end(ap);
+#endif
 }
-
-#if DEBUG > 1
 
 void __debug_print(const char *function, const char *fmt, ...)
 {
+#if DEBUG > 1
 	va_list ap;
 
 	fprintf(debug_stream, "%s: ", function);
@@ -61,8 +63,5 @@ void __debug_print(const char *function, const char *fmt, ...)
 	vfprintf(debug_stream, fmt, ap);
 	va_end(ap);
 	fflush(debug_stream);
+#endif
 }
-
-#endif
-
-#endif

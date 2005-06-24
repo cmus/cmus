@@ -70,13 +70,13 @@
 #define __format_check(fmt, first)
 #endif
 
+extern void debug_init(FILE *stream);
+extern void __debug_warn(const char *file, int line, const char *function, const char *fmt, ...) __format_check(4, 5);
+extern void __debug_print(const char *function, const char *fmt, ...) __format_check(2, 3);
+
 /* ------------------------------------------------------------------------ */
 
 #if DEBUG == 0
-
-static inline void debug_init(FILE *stream)
-{
-}
 
 #define WARN(...) \
 do { \
@@ -87,9 +87,6 @@ do { \
 } while (0)
 
 #else /* >0 */
-
-extern void debug_init(FILE *stream);
-extern void __debug_warn(const char *file, int line, const char *function, const char *fmt, ...) __format_check(4, 5);
 
 #define WARN(...) __debug_warn(__FILE__, __LINE__, __FUNCTION__, __VA_ARGS__)
 
@@ -119,8 +116,6 @@ static inline void timer_print(const char *what, uint64_t usec)
 }
 
 #else /* >1 */
-
-extern void __debug_print(const char *function, const char *fmt, ...) __format_check(2, 3);
 
 #define d_print(...) __debug_print(__FUNCTION__, __VA_ARGS__)
 
