@@ -391,3 +391,19 @@ check_dl()
 	makefile_var DL_LIBS "$libs"
 	return 0
 }
+
+check_iconv()
+{
+	local libs=-liconv
+
+	if check_lib "iconv ($libs)" "$libs"
+	then
+		makefile_var ICONV_CFLAGS ""
+		makefile_var ICONV_LIBS "$libs"
+		return 0
+	fi
+	echo "assuming libc contains iconv"
+	makefile_var ICONV_CFLAGS ""
+	makefile_var ICONV_LIBS ""
+	return 0
+}
