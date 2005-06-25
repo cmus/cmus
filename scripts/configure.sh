@@ -110,6 +110,35 @@ enable_flag()
 	set_var enable_value_${name} "$value"
 	set_var enable_var_${name} "$var"
 	set_var enable_desc_${name} "$desc"
+
+	set_var enable_config_h_${name} $enable_use_config_h_val
+	set_var enable_config_mk_${name} $enable_use_config_mk_val
+}
+
+enable_use_config_h()
+{
+	argc 1
+	case $1 in
+		yes|no)
+			;;
+		*)
+			die "parameter for $FUNCNAME must be 'yes' or 'no'"
+			;;
+	esac
+	enable_use_config_h_val=$1
+}
+
+enable_use_config_mk()
+{
+	argc 1
+	case $1 in
+		yes|no)
+			;;
+		*)
+			die "parameter for $FUNCNAME must be 'yes' or 'no'"
+			;;
+	esac
+	enable_use_config_mk_val=$1
 }
 
 # usage: 'configure_simple "$@"'

@@ -14,6 +14,10 @@ module_libs=()
 # $NAME must contain only [a-z0-9-] characters
 enable_flags=""
 
+# put config values to config.h and config.mk
+enable_use_config_h_val=yes
+enable_use_config_mk_val=yes
+
 # For each --enable-$NAME there are
 #   enable_value_$NAME
 #   enable_desc_$NAME
@@ -179,7 +183,7 @@ set_makefile_variables()
 	for flag in $enable_flags
 	do
 		local var=$(get_var enable_var_${flag})
-		if [[ -n $var ]]
+		if [[ -n $var ]] && [[ $(get_var enable_config_mk_${flag}) = yes ]]
 		then
 			local v
 			if [[ $(get_var enable_value_${flag}) = yes ]]
@@ -217,7 +221,7 @@ set_config_h_variables()
 	for flag in $enable_flags
 	do
 		local var=$(get_var enable_var_${flag})
-		if [[ -n $var ]]
+		if [[ -n $var ]] && [[ $(get_var enable_config_h_${flag}) = yes ]]
 		then
 			config_var "${var}" "$(get_var enable_value_${flag})" "$(get_var enable_desc_${flag})" bool
 		fi

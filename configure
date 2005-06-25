@@ -109,6 +109,8 @@ add_check check_pthread
 add_check check_ncurses
 add_check check_iconv
 
+#enable_use_config_h no
+
 enable_flag flac    auto CONFIG_FLAC    "FLAC (Free Lossless Audio Codec) support"
 enable_flag mad     auto CONFIG_MAD     "MPEG Audio Decoder (libmad) support"
 enable_flag modplug auto CONFIG_MODPLUG "libmodplug (mod, x3m, ...) support"
@@ -117,6 +119,9 @@ enable_flag wav     yes  CONFIG_WAV     "WAV support"
 enable_flag alsa    auto CONFIG_ALSA    "ALSA support"
 enable_flag arts    auto CONFIG_ARTS    "ARTS support"
 enable_flag oss     auto CONFIG_OSS     "Open Sound System support"
+
+enable_use_config_h yes
+
 enable_flag irman   no   CONFIG_IRMAN   "Irman support"
 
 parse_command_line "$@"
