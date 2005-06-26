@@ -19,6 +19,7 @@ obj-y := \
 	play_queue.o \
 	player.o \
 	pls.o \
+	read_wrapper.o \
 	server.o \
 	sconf.o \
 	search.o \
@@ -43,13 +44,6 @@ obj-$(CONFIG_ALSA)	+= mixer_alsa.o op_alsa.o
 obj-$(CONFIG_ARTS)	+= op_arts.o
 obj-$(CONFIG_OSS)	+= mixer_oss.o op_oss.o
 obj-$(CONFIG_IRMAN)	+= irman.o irman_config.o
-ifeq ($(CONFIG_MAD),y)
-  obj-y			+= read_wrapper.o
-else
-  ifeq ($(CONFIG_VORBIS),y)
-    obj-y		+= read_wrapper.o
-  endif
-endif
 
 CFLAGS += -I$(top_builddir) -I$(top_srcdir)/common -I$(srcdir) -g $(PTHREAD_CFLAGS) $(NCURSES_CFLAGS) $(ICONV_CFLAGS)
 CFLAGS += $(FLAC_CFLAGS) $(MAD_CFLAGS) $(MODPLUG_CFLAGS) $(VORBIS_CFLAGS) $(ALSA_CFLAGS) $(ARTS_CFLAGS)
