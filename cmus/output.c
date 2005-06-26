@@ -664,3 +664,13 @@ char *op_get_error_msg(int rc, const char *arg)
 	}
 	return xstrdup(buffer);
 }
+
+void op_dump_plugins(void)
+{
+	struct output_plugin *o;
+
+	printf("\nOutput Plugins:\n");
+	list_for_each_entry(o, &op_head, node) {
+		printf("  %s\n", o->name);
+	}
+}

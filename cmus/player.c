@@ -1211,3 +1211,9 @@ char **player_get_supported_extensions(void)
 {
 	return ip_get_supported_extensions();
 }
+
+void player_dump_plugins(void)
+{
+	ip_dump_plugins();
+	op_dump_plugins();
+}

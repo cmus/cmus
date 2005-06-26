@@ -810,3 +810,20 @@ char **ip_get_supported_extensions(void)
 	qsort(exts, count, sizeof(char *), strptrcmp);
 	return exts;
 }
+
+void ip_dump_plugins(void)
+{
+	struct ip *ip;
+	int i;
+
+	printf("Input Plugins:\n");
+	list_for_each_entry(ip, &ip_head, node) {
+		printf("  %s:\n    File Types:", ip->name);
+		for (i = 0; ip->extensions[i]; i++)
+			printf(" %s", ip->extensions[i]);
+		printf("\n    MIME Types:");
+		for (i = 0; ip->mime_types[i]; i++)
+			printf(" %s", ip->mime_types[i]);
+		printf("\n");
+	}
+}

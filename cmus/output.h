@@ -105,5 +105,6 @@ extern int op_set_option(const char *key, const char *val);
 
 extern int op_for_each_option(void (*callback)(void *data, const char *key), void *data);
 extern char *op_get_error_msg(int rc, const char *arg);
+extern void op_dump_plugins(void);
 
 #endif

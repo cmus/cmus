@@ -2502,6 +2502,7 @@ enum {
 	FLAG_IRMAN_CONFIG,
 #endif
 	FLAG_LISTEN,
+	FLAG_PLUGINS,
 	FLAG_HELP,
 	FLAG_VERSION,
 	NR_FLAGS
@@ -2512,6 +2513,7 @@ static struct option options[NR_FLAGS + 1] = {
 	{ 0, "irman-config", 0 },
 #endif
 	{ 0, "listen", 1 },
+	{ 0, "plugins", 0 },
 	{ 0, "help", 0 },
 	{ 0, "version", 0 },
 	{ 0, NULL, 0 }
@@ -2525,6 +2527,7 @@ static const char *usage =
 "      --irman-config  configure irman settings\n"
 #endif
 "      --listen ADDR   listen ADDR (unix socket) instead of /tmp/cmus-$USER\n"
+"      --plugins       list available plugins and exit\n"
 "      --help          display this help and exit\n"
 "      --version       " VERSION "\n"
 "\n"
@@ -2535,6 +2538,7 @@ static const char *usage =
 int main(int argc, char *argv[])
 {
 	int configure_irman = 0;
+	int list_plugins = 0;
 
 	program_name = argv[0];
 	argv++;
@@ -2559,6 +2563,9 @@ int main(int argc, char *argv[])
 		case FLAG_VERSION:
 			printf(PACKAGE " " VERSION "\nCopyright 2004-2005 Timo Hirvonen\n");
 			return 0;
+		case FLAG_PLUGINS:
+			list_plugins = 1;
+			break;
 		case FLAG_LISTEN:
 			server_address = xstrdup(arg);
 			break;
@@ -2608,6 +2615,10 @@ int main(int argc, char *argv[])
 #endif
 	} else {
 		player_init_plugins();
+		if (list_plugins) {
+			player_dump_plugins();
+			return 0;
+		}
 		if (ui_curses_init())
 			return 1;
 		ui_curses_exit();

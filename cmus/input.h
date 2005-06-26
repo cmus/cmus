@@ -57,5 +57,6 @@ extern int ip_metadata_changed(struct input_plugin *ip);
 extern int ip_eof(struct input_plugin *ip);
 extern char *ip_get_error_msg(struct input_plugin *ip, int rc, const char *arg);
 extern char **ip_get_supported_extensions(void);
+extern void ip_dump_plugins(void);
 
 #endif
