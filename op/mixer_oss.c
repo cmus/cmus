@@ -17,7 +17,7 @@
  * 02111-1307, USA.
  */
 
-#include <mixer_oss.h>
+#include <mixer.h>
 #include <op.h>
 #include <misc.h>
 #include <utils.h>
@@ -231,7 +231,7 @@ static int oss_mixer_get_option(int key, char **val)
 	return 0;
 }
 
-const struct mixer_plugin_ops mixer_oss_ops = {
+const struct mixer_plugin_ops op_mixer_ops = {
 	.init = oss_mixer_init,
 	.exit = oss_mixer_exit,
 	.open = oss_mixer_open,
@@ -242,7 +242,7 @@ const struct mixer_plugin_ops mixer_oss_ops = {
 	.get_option = oss_mixer_get_option
 };
 
-const char * const mixer_oss_options[] = {
+const char * const op_mixer_options[] = {
 	"channel",
 	"device",
 	NULL

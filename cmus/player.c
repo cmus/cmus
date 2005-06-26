@@ -720,6 +720,12 @@ static void *producer_loop(void *arg)
 	return NULL;
 }
 
+void player_init_plugins(void)
+{
+	ip_init_plugins();
+	op_init_plugins();
+}
+
 int player_init(const struct player_callbacks *callbacks)
 {
 	int rc, nr_chunks;

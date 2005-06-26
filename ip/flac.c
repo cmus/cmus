@@ -17,7 +17,7 @@
  * 02111-1307, USA.
  */
 
-#include <ip_flac.h>
+#include <ip.h>
 #include <comment.h>
 #include <xmalloc.h>
 #include <debug.h>
@@ -464,7 +464,7 @@ static int flac_duration(struct input_plugin_data *ip_data)
 	return priv->duration;
 }
 
-const struct input_plugin_ops flac_ip_ops = {
+const struct input_plugin_ops ip_ops = {
 	.open = flac_open,
 	.close = flac_close,
 	.read = flac_read,
@@ -473,5 +473,5 @@ const struct input_plugin_ops flac_ip_ops = {
 	.duration = flac_duration
 };
 
-const char * const flac_extensions[] = { "flac", "fla", NULL };
-const char * const flac_mime_types[] = { NULL };
+const char * const ip_extensions[] = { "flac", "fla", NULL };
+const char * const ip_mime_types[] = { NULL };

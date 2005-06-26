@@ -105,11 +105,12 @@ check_oss()
 add_check check_cc
 add_check check_ar
 add_check check_endianness
+add_check check_dl
 add_check check_pthread
 add_check check_ncurses
 add_check check_iconv
 
-#enable_use_config_h no
+enable_use_config_h no
 
 enable_flag flac    auto CONFIG_FLAC    "FLAC (Free Lossless Audio Codec) support"
 enable_flag mad     auto CONFIG_MAD     "MPEG Audio Decoder (libmad) support"
@@ -145,7 +146,7 @@ CFLAGS="${CFLAGS} -DDEBUG=$DEBUG"
 
 generate_config_h
 generate_config_mk
-generate_makefiles . cmus common doc remote
+generate_makefiles . cmus common ip ip/flac ip/mad ip/modplug ip/vorbis op op/alsa op/arts op/oss doc remote
 
 print_config
 print_compiler_settings

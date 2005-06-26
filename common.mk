@@ -1,1 +1,1 @@
-ctags-dirs	:= cmus common remote
+ctags-dirs	:= cmus common ip op remote

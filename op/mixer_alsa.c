@@ -17,7 +17,7 @@
  * 02111-1307, USA.
  */
 
-#include <mixer_alsa.h>
+#include <mixer.h>
 #include <op.h>
 #include <misc.h>
 #include <xmalloc.h>
@@ -186,7 +186,7 @@ static int alsa_mixer_get_option(int key, char **val)
 	return 0;
 }
 
-const struct mixer_plugin_ops mixer_alsa_ops = {
+const struct mixer_plugin_ops op_mixer_ops = {
 	.init = alsa_mixer_init,
 	.exit = alsa_mixer_exit,
 	.open = alsa_mixer_open,
@@ -197,7 +197,7 @@ const struct mixer_plugin_ops mixer_alsa_ops = {
 	.get_option = alsa_mixer_get_option
 };
 
-const char * const mixer_alsa_options[] = {
+const char * const op_mixer_options[] = {
 	"channel",
 	"device",
 	NULL

@@ -19,161 +19,280 @@
 
 #include <output.h>
 #include <op.h>
+#include <mixer.h>
 #include <sf.h>
 #include <sconf.h>
 #include <misc.h>
 #include <utils.h>
+#include <symbol.h>
 #include <xmalloc.h>
-#include <config.h>
-
-#if defined(CONFIG_ARTS)
-#include <op_arts.h>
-#endif
-
-#if defined(CONFIG_ALSA)
-#include <op_alsa.h>
-#include <mixer_alsa.h>
-#endif
-
-#if defined(CONFIG_OSS)
-#include <op_oss.h>
-#include <mixer_oss.h>
-#endif
-
 #include <debug.h>
+#include <config.h>
 
 #include <string.h>
 #include <stdlib.h>
-
-struct mixer_plugin {
-	const char *name;
-	const struct mixer_plugin_ops *ops;
-	const char * const *options;
-	unsigned int initialized : 1;
-};
+#include <sys/types.h>
+#include <dirent.h>
+#include <dlfcn.h>
 
 struct output_plugin {
-	const char *name;
-	const struct output_plugin_ops *ops;
-	const char * const *options;
-	unsigned int initialized : 1;
+	struct list_head node;
+	char *name;
+	void *handle;
+
+	const struct output_plugin_ops *pcm_ops;
+	const struct mixer_plugin_ops *mixer_ops;
+	const char * const *pcm_options;
+	const char * const *mixer_options;
+
+	unsigned int pcm_initialized : 1;
+	unsigned int mixer_initialized : 1;
+	unsigned int mixer_open : 1;
 };
 
-static struct mixer_plugin mixer_plugins[] = {
-#if defined(CONFIG_ALSA)
-	{ "alsa", &mixer_alsa_ops, mixer_alsa_options, 0 },
-#endif
-#if defined(CONFIG_OSS)
-	{ "oss", &mixer_oss_ops, mixer_oss_options, 0 },
-#endif
-	{ NULL, NULL, NULL, 0 }
-};
-
-static struct output_plugin output_plugins[] = {
-#if defined(CONFIG_ARTS)
-	{ "arts", &op_arts_ops, op_arts_options, 0 },
-#endif
-#if defined(CONFIG_ALSA)
-	{ "alsa", &op_alsa_ops, op_alsa_options, 0 },
-#endif
-#if defined(CONFIG_OSS)
-	{ "oss", &op_oss_ops, op_oss_options, 0 },
-#endif
-	{ NULL, NULL, NULL, 0 }
-};
-
-static const struct mixer_plugin *mixer = NULL;
-static const struct output_plugin *op = NULL;
+static LIST_HEAD(op_head);
+static struct output_plugin *op = NULL;
 static sample_format_t current_sf = 0;
 
 /* volume is between 0 and volume_max */
 static int volume_max;
-
-/* hack */
-static int arts_use_alsa_mixer = 1;
 
 static void dump_option(void *data, const char *key)
 {
 	d_print("%s\n", key);
 }
 
-int op_init(void)
+static void load_plugins(void)
 {
-	char key[64];
-	int i, j, rc = 0;
-	char *op_name = NULL;
+	static const char *dirname = LIBDIR "/" PACKAGE "/op";
+	DIR *dir;
+	struct dirent *d;
 
-	/* _must_ load plugin options before initialization! */
-	for (i = 0; output_plugins[i].name; i++) {
-		for (j = 0; output_plugins[i].options[j]; j++) {
+	dir = opendir(dirname);
+	if (dir == NULL) {
+		fprintf(stderr, "couldn't open directory `%s': %s\n", dirname, strerror(errno));
+		return;
+	}
+	while ((d = readdir(dir)) != NULL) {
+		char filename[256];
+		struct output_plugin *plug;
+		void *so;
+		char *ext;
+
+		if (d->d_name[0] == '.')
+			continue;
+		ext = strrchr(d->d_name, '.');
+		if (ext == NULL)
+			continue;
+		if (strcmp(ext, ".so"))
+			continue;
+
+		snprintf(filename, sizeof(filename), "%s/%s", dirname, d->d_name);
+
+		so = dlopen(filename, RTLD_NOW);
+		if (so == NULL) {
+			fprintf(stderr, "couldn't open file `%s': %s\n", dirname, strerror(errno));
+			continue;
+		}
+
+		plug = xnew(struct output_plugin, 1);
+
+		if (!get_symbol(so, "op_pcm_ops", filename, (void **)&plug->pcm_ops, 0)) {
+			free(plug);
+			dlclose(so);
+			continue;
+		}
+
+		if (!get_symbol(so, "op_pcm_options", filename, (void **)&plug->pcm_options, 0)) {
+			free(plug);
+			dlclose(so);
+			continue;
+		}
+
+		if (!get_symbol(so, "op_mixer_ops", filename, (void **)&plug->mixer_ops, 1)) {
+			free(plug);
+			dlclose(so);
+			continue;
+		}
+
+		if (!get_symbol(so, "op_mixer_options", filename, (void **)&plug->mixer_options, 1)) {
+			free(plug);
+			dlclose(so);
+			continue;
+		}
+
+		if (plug->mixer_ops == NULL || plug->mixer_options == NULL) {
+			plug->mixer_ops = NULL;
+			plug->mixer_options = NULL;
+		}
+
+		plug->name = xstrndup(d->d_name, ext - d->d_name);
+		plug->handle = so;
+		plug->pcm_initialized = 0;
+		plug->mixer_initialized = 0;
+		plug->mixer_open = 0;
+
+		list_add_tail(&plug->node, &op_head);
+	}
+	closedir(dir);
+}
+
+static void init_plugins(void)
+{
+	struct output_plugin *o;
+	int rc;
+
+	list_for_each_entry(o, &op_head, node) {
+		if (o->mixer_ops) {
+			rc = o->mixer_ops->init();
+			if (rc == 0) {
+				o->mixer_initialized = 1;
+			} else {
+				d_print("could not initialize mixer `%s'\n", o->name);
+			}
+		}
+		rc = o->pcm_ops->init();
+		if (rc == 0) {
+			o->pcm_initialized = 1;
+		} else {
+			d_print("could not initialize op `%s'\n", o->name);
+		}
+	}
+}
+
+static void exit_plugins(void)
+{
+	struct output_plugin *o;
+
+	list_for_each_entry(o, &op_head, node) {
+		if (o->mixer_initialized && o->mixer_ops)
+			o->mixer_ops->exit();
+		if (o->pcm_initialized)
+			o->pcm_ops->exit();
+	}
+}
+
+static void load_plugin_options(void)
+{
+	struct output_plugin *o;
+
+	list_for_each_entry(o, &op_head, node) {
+		char key[64];
+		int j;
+
+		for (j = 0; o->pcm_options[j]; j++) {
 			char *val = NULL;
 
 			snprintf(key, sizeof(key), "dsp.%s.%s",
-					output_plugins[i].name,
-					output_plugins[i].options[j]);
+					o->name,
+					o->pcm_options[j]);
 			sconf_get_str_option(&sconf_head, key, &val);
 			if (val) {
 				d_print("loaded: '%s=%s'\n", key, val);
-				output_plugins[i].ops->set_option(j, val);
+				o->pcm_ops->set_option(j, val);
 				free(val);
 			}
 		}
-	}
-	for (i = 0; mixer_plugins[i].name; i++) {
-		for (j = 0; mixer_plugins[i].options[j]; j++) {
+
+		/* arts has no mixer */
+		if (o->mixer_ops == NULL)
+			continue;
+
+		for (j = 0; o->mixer_options[j]; j++) {
 			char *val = NULL;
 
 			snprintf(key, sizeof(key), "mixer.%s.%s",
-					mixer_plugins[i].name,
-					mixer_plugins[i].options[j]);
+					o->name,
+					o->mixer_options[j]);
 			sconf_get_str_option(&sconf_head, key, &val);
 			if (val) {
 				d_print("loaded: '%s=%s'\n", key, val);
-				mixer_plugins[i].ops->set_option(j, val);
+				o->mixer_ops->set_option(j, val);
 				free(val);
 			}
 		}
 	}
+}
 
-	/* options have been set, initialize */
-	for (i = 0; mixer_plugins[i].name; i++) {
-		rc = mixer_plugins[i].ops->init();
-		if (rc == 0) {
-			mixer_plugins[i].initialized = 1;
-		} else {
-			d_print("could not initialize mixer `%s'\n", mixer_plugins[i].name);
-		}
-	}
-	for (i = 0; output_plugins[i].name; i++) {
-		rc = output_plugins[i].ops->init();
-		if (rc == 0) {
-			output_plugins[i].initialized = 1;
-		} else {
-			d_print("could not initialize op `%s'\n", output_plugins[i].name);
-		}
-	}
+static void save_plugin_options(void)
+{
+	struct output_plugin *o;
 
-	sconf_get_str_option(&sconf_head, "output_plugin", &op_name);
-	sconf_get_bool_option(&sconf_head, "mixer.arts.use_alsa", &arts_use_alsa_mixer);
+	list_for_each_entry(o, &op_head, node) {
+		char key[64];
+		int j;
 
-	/* select op */
-	if (op_name) {
-		rc = op_select(op_name);
-		if (rc) {
-			d_print("could not initialize user defined op: %s\n", op_name);
-			for (i = 0; output_plugins[i].name; i++) {
-				if (output_plugins[i].initialized) {
-					rc = op_select(output_plugins[i].name);
-					break;
-				}
+		/* FIXME: */
+		if (!o->pcm_initialized)
+			continue;
+
+		for (j = 0; o->pcm_options[j]; j++) {
+			char *val = NULL;
+
+			o->pcm_ops->get_option(j, &val);
+			if (val) {
+				snprintf(key, sizeof(key), "dsp.%s.%s",
+						o->name,
+						o->pcm_options[j]);
+				d_print("saving: '%s=%s'\n", key, val);
+				sconf_set_str_option(&sconf_head, key, val);
+				free(val);
 			}
 		}
+
+		/* FIXME: */
+		if (!o->mixer_initialized)
+			continue;
+
+		for (j = 0; o->mixer_options[j]; j++) {
+			char *val = NULL;
+
+			o->mixer_ops->get_option(j, &val);
+			if (val) {
+				snprintf(key, sizeof(key), "mixer.%s.%s",
+						o->name,
+						o->mixer_options[j]);
+				d_print("saving: '%s=%s'\n", key, val);
+				sconf_set_str_option(&sconf_head, key, val);
+				free(val);
+			}
+		}
+	}
+}
+
+void op_init_plugins(void)
+{
+	load_plugins();
+
+	/* _must_ load plugin options before initialization! */
+	load_plugin_options();
+
+	/* options have been set, initialize */
+	init_plugins();
+}
+
+int op_init(void)
+{
+	int rc;
+	char *op_name = NULL;
+
+	sconf_get_str_option(&sconf_head, "output_plugin", &op_name);
+
+	/* select op */
+	rc = -OP_ERROR_NO_PLUGIN;
+	if (op_name) {
+		rc = op_select(op_name);
+		if (rc)
+			d_print("could not initialize user defined op: %s\n", op_name);
 		free(op_name);
-	} else {
+	}
+	if (rc) {
 		/* default op is the first initialized op */
-		for (i = 0; output_plugins[i].name; i++) {
-			if (output_plugins[i].initialized) {
-				rc = op_select(output_plugins[i].name);
+		struct output_plugin *o;
+
+		list_for_each_entry(o, &op_head, node) {
+			if (o->pcm_initialized) {
+				rc = op_select(o->name);
 				break;
 			}
 		}
@@ -185,127 +304,65 @@ int op_init(void)
 
 int op_exit(void)
 {
-	char key[64];
-	int i, j;
-
 	d_print("saving options\n");
-
-	/* save plugin options */
-	for (i = 0; output_plugins[i].name; i++) {
-		if (!output_plugins[i].initialized)
-			continue;
-
-		for (j = 0; output_plugins[i].options[j]; j++) {
-			char *val = NULL;
-
-			output_plugins[i].ops->get_option(j, &val);
-			if (val) {
-				snprintf(key, sizeof(key), "dsp.%s.%s",
-						output_plugins[i].name,
-						output_plugins[i].options[j]);
-				d_print("saving: '%s=%s'\n", key, val);
-				sconf_set_str_option(&sconf_head, key, val);
-				free(val);
-			}
-		}
-	}
-	for (i = 0; mixer_plugins[i].name; i++) {
-		if (!mixer_plugins[i].initialized)
-			continue;
-
-		for (j = 0; mixer_plugins[i].options[j]; j++) {
-			char *val = NULL;
-
-			mixer_plugins[i].ops->get_option(j, &val);
-			if (val) {
-				snprintf(key, sizeof(key), "mixer.%s.%s",
-						mixer_plugins[i].name,
-						mixer_plugins[i].options[j]);
-				d_print("saving: '%s=%s'\n", key, val);
-				sconf_set_str_option(&sconf_head, key, val);
-				free(val);
-			}
-		}
-	}
-
-	sconf_set_bool_option(&sconf_head, "mixer.arts.use_alsa", arts_use_alsa_mixer);
-
-	/* free plugins */
-	for (i = 0; mixer_plugins[i].name; i++) {
-		if (mixer_plugins[i].initialized)
-			mixer_plugins[i].ops->exit();
-	}
-	for (i = 0; output_plugins[i].name; i++) {
-		if (output_plugins[i].initialized)
-			output_plugins[i].ops->exit();
-	}
+	save_plugin_options();
 	if (op)
 		sconf_set_str_option(&sconf_head, "output_plugin", op->name);
+	exit_plugins();
 	return 0;
 }
 
-void set_and_open_mixer(void)
+static void close_mixer(void)
 {
-	const char *name;
-	int i;
-
-	/* close current mixer */
-	if (mixer) {
-		mixer->ops->close();
-		mixer = NULL;
-	}
 	if (op == NULL)
 		return;
 
-	/* hack */
-	if (strcmp(op->name, "arts") == 0) {
-		if (arts_use_alsa_mixer) {
-			name = "alsa";
-		} else {
-			name = "oss";
-		}
-	} else {
-		name = op->name;
+	if (op->mixer_open) {
+		BUG_ON(op->mixer_ops == NULL);
+		op->mixer_ops->close();
+		op->mixer_open = 0;
 	}
+}
 
-	for (i = 0; mixer_plugins[i].name; i++) {
-		if (strcmp(name, mixer_plugins[i].name) == 0) {
-			if (mixer_plugins[i].initialized) {
-				int rc;
+static void open_mixer(void)
+{
+	if (op == NULL)
+		return;
 
-				mixer = &mixer_plugins[i];
-				rc = mixer->ops->open(&volume_max);
-				if (rc) {
-					mixer = NULL;
-				}
-			}
-			break;
+	BUG_ON(op->mixer_open);
+	if (op->mixer_ops) {
+		int rc;
+
+		rc = op->mixer_ops->open(&volume_max);
+		if (rc == 0) {
+			op->mixer_open = 1;
 		}
 	}
 }
 
 int op_select(const char *name)
 {
-	int i;
+	struct output_plugin *o;
 
-	for (i = 0; output_plugins[i].name; i++) {
-		if (strcasecmp(name, output_plugins[i].name) == 0) {
-			if (!output_plugins[i].initialized) {
+	list_for_each_entry(o, &op_head, node) {
+		if (strcasecmp(name, o->name) == 0) {
+			if (!o->pcm_initialized) {
 				/* try to initialize again */
 				int rc;
 
-				d_print("op `%s' is uninitialized, trying to initialize again\n", output_plugins[i].name);
-				rc = output_plugins[i].ops->init();
+				d_print("op `%s' is uninitialized, trying to initialize again\n", o->name);
+				rc = o->pcm_ops->init();
 				if (rc == 0) {
-					output_plugins[i].initialized = 1;
+					o->pcm_initialized = 1;
 				} else {
-					d_print("could not initialize op `%s'\n", output_plugins[i].name);
+					d_print("could not initialize op `%s'\n", o->name);
 					return -OP_ERROR_NOT_INITIALIZED;
 				}
 			}
 
-			op = &output_plugins[i];
-			set_and_open_mixer();
+			close_mixer();
+			op = o;
+			open_mixer();
 			return 0;
 		}
 	}
@@ -317,7 +374,7 @@ int op_open(sample_format_t sf)
 	int rc;
 
 	current_sf = sf;
-	rc = op->ops->open(sf);
+	rc = op->pcm_ops->open(sf);
 	if (rc)
 		current_sf = 0;
 	return rc;
@@ -351,44 +408,44 @@ int op_second_size(void)
 
 int op_drop(void)
 {
-	if (op->ops->drop == NULL)
+	if (op->pcm_ops->drop == NULL)
 		return -OP_ERROR_NOT_SUPPORTED;
-	return op->ops->drop();
+	return op->pcm_ops->drop();
 }
 
 int op_close(void)
 {
 	current_sf = 0;
-	return op->ops->close();
+	return op->pcm_ops->close();
 }
 
 int op_write(const char *buffer, int count)
 {
 	int rc;
 
-	rc = op->ops->write(buffer, count);
+	rc = op->pcm_ops->write(buffer, count);
 	return rc;
 }
 
 int op_pause(void)
 {
-	if (op->ops->pause == NULL)
+	if (op->pcm_ops->pause == NULL)
 		return 0;
-	return op->ops->pause();
+	return op->pcm_ops->pause();
 }
 
 int op_unpause(void)
 {
-	if (op->ops->unpause == NULL)
+	if (op->pcm_ops->unpause == NULL)
 		return 0;
-	return op->ops->unpause();
+	return op->pcm_ops->unpause();
 }
 
 int op_buffer_space(void)
 {
 	int rc;
 	
-	rc = op->ops->buffer_space();
+	rc = op->pcm_ops->buffer_space();
 	return rc;
 }
 
@@ -417,20 +474,20 @@ int op_set_volume(int left, int right)
 {
 	int l, r;
 
-	if (mixer == NULL)
+	if (!op->mixer_open)
 		return -OP_ERROR_NOT_SUPPORTED;
 	l = scale_volume_to_internal(left);
 	r = scale_volume_to_internal(right);
-	return mixer->ops->set_volume(l, r);
+	return op->mixer_ops->set_volume(l, r);
 }
 
 int op_get_volume(int *left, int *right)
 {
 	int l, r, rc;
 
-	if (mixer == NULL)
+	if (!op->mixer_open)
 		return -OP_ERROR_NOT_SUPPORTED;
-	rc = mixer->ops->get_volume(&l, &r);
+	rc = op->mixer_ops->get_volume(&l, &r);
 	if (rc)
 		return rc;
 	*left = scale_volume_from_internal(l);
@@ -442,15 +499,15 @@ int op_add_volume(int *left, int *right)
 {
 	int l, r, rc;
 
-	if (mixer == NULL)
+	if (!op->mixer_open)
 		return -OP_ERROR_NOT_SUPPORTED;
-	rc = mixer->ops->get_volume(&l, &r);
+	rc = op->mixer_ops->get_volume(&l, &r);
 	if (rc)
 		return rc;
 	*left = clamp(*left + l, 0, volume_max);
 	*right = clamp(*right + r, 0, volume_max);
 	if (*left != l || *right != r)
-		rc = mixer->ops->set_volume(*left, *right);
+		rc = op->mixer_ops->set_volume(*left, *right);
 	*left = scale_volume_from_internal(*left);
 	*right = scale_volume_from_internal(*right);
 	return rc;
@@ -462,9 +519,9 @@ int op_volume_changed(int *left, int *right)
 	static int oldr = -1;
 	int l, r, rc;
 
-	if (mixer == NULL)
+	if (!op->mixer_open)
 		return 0;
-	rc = mixer->ops->get_volume(&l, &r);
+	rc = op->mixer_ops->get_volume(&l, &r);
 	if (rc)
 		return rc;
 	if (l != oldl || r != oldr) {
@@ -479,7 +536,8 @@ int op_volume_changed(int *left, int *right)
 
 int op_set_option(const char *key, const char *val)
 {
-	int i, j, len;
+	struct output_plugin *o;
+	int j, len;
 
 	/*
 	 * dsp.alsa.device
@@ -494,17 +552,17 @@ int op_set_option(const char *key, const char *val)
 				return -OP_ERROR_NOT_OPTION;
 		}
 /* 		d_print("dsp: '%s'\n", key); */
-		for (i = 0; output_plugins[i].name; i++) {
-			if (strncasecmp(output_plugins[i].name, key, len))
+		list_for_each_entry(o, &op_head, node) {
+			if (strncasecmp(o->name, key, len))
 				continue;
 
 			key += len + 1;
-			BUG_ON(output_plugins[i].ops->set_option == NULL);
-			for (j = 0; output_plugins[i].options[j]; j++) {
-/* 				d_print("dsp.%s.%s\n", output_plugins[i].name, output_plugins[i].options[j]); */
-				if (strcasecmp(key, output_plugins[i].options[j]) == 0) {
+			BUG_ON(o->pcm_ops->set_option == NULL);
+			for (j = 0; o->pcm_options[j]; j++) {
+/* 				d_print("dsp.%s.%s\n", o->name, o->pcm_options[j]); */
+				if (strcasecmp(key, o->pcm_options[j]) == 0) {
 					d_print("setting to '%s'\n", val);
-					return output_plugins[i].ops->set_option(j, val);
+					return o->pcm_ops->set_option(j, val);
 				}
 			}
 			break;
@@ -516,21 +574,25 @@ int op_set_option(const char *key, const char *val)
 				return -OP_ERROR_NOT_OPTION;
 		}
 /* 		d_print("mixer: '%s'\n", key); */
-		for (i = 0; mixer_plugins[i].name; i++) {
-			if (strncasecmp(mixer_plugins[i].name, key, len))
+		list_for_each_entry(o, &op_head, node) {
+			if (strncasecmp(o->name, key, len))
+				continue;
+			if (o->mixer_ops == NULL)
 				continue;
 
 			key += len + 1;
-			BUG_ON(mixer_plugins[i].ops->set_option == NULL);
-			for (j = 0; mixer_plugins[i].options[j]; j++) {
-/* 				d_print("mixer.%s.%s\n", mixer_plugins[i].name, mixer_plugins[i].options[j]); */
-				if (strcasecmp(key, mixer_plugins[i].options[j]) == 0) {
+			BUG_ON(o->mixer_ops->set_option == NULL);
+			for (j = 0; o->mixer_options[j]; j++) {
+/* 				d_print("mixer.%s.%s\n", o->name, o->mixer_options[j]); */
+				if (strcasecmp(key, o->mixer_options[j]) == 0) {
 					int rc;
 
 					d_print("setting to '%s'\n", val);
-					rc = mixer_plugins[i].ops->set_option(j, val);
-					if (rc == 0)
-						set_and_open_mixer();
+					rc = o->mixer_ops->set_option(j, val);
+					if (rc == 0) {
+						close_mixer();
+						open_mixer();
+					}
 					return rc;
 				}
 			}
@@ -542,22 +604,23 @@ int op_set_option(const char *key, const char *val)
 
 int op_for_each_option(void (*callback)(void *data, const char *key), void *data)
 {
+	struct output_plugin *o;
 	char key[64];
-	int i, j;
+	int j;
 
-	for (i = 0; output_plugins[i].name; i++) {
-		for (j = 0; output_plugins[i].options[j]; j++) {
+	list_for_each_entry(o, &op_head, node) {
+		for (j = 0; o->pcm_options[j]; j++) {
 			snprintf(key, sizeof(key), "dsp.%s.%s",
-					output_plugins[i].name,
-					output_plugins[i].options[j]);
+					o->name,
+					o->pcm_options[j]);
 			callback(data, key);
 		}
-	}
-	for (i = 0; mixer_plugins[i].name; i++) {
-		for (j = 0; mixer_plugins[i].options[j]; j++) {
+		if (o->mixer_ops == NULL)
+			continue;
+		for (j = 0; o->mixer_options[j]; j++) {
 			snprintf(key, sizeof(key), "mixer.%s.%s",
-					mixer_plugins[i].name,
-					mixer_plugins[i].options[j]);
+					o->name,
+					o->mixer_options[j]);
 			callback(data, key);
 		}
 	}

@@ -17,7 +17,7 @@
  * 02111-1307, USA.
  */
 
-#include <ip_vorbis.h>
+#include <ip.h>
 #include <xmalloc.h>
 #include <read_wrapper.h>
 #include <debug.h>
@@ -254,7 +254,7 @@ static int vorbis_duration(struct input_plugin_data *ip_data)
 	return duration;
 }
 
-const struct input_plugin_ops vorbis_ip_ops = {
+const struct input_plugin_ops ip_ops = {
 	.open = vorbis_open,
 	.close = vorbis_close,
 	.read = vorbis_read,
@@ -263,5 +263,5 @@ const struct input_plugin_ops vorbis_ip_ops = {
 	.duration = vorbis_duration
 };
 
-const char * const vorbis_extensions[] = { "ogg", NULL };
-const char * const vorbis_mime_types[] = { "application/ogg", "audio/x-ogg", NULL };
+const char * const ip_extensions[] = { "ogg", NULL };
+const char * const ip_mime_types[] = { "application/ogg", "audio/x-ogg", NULL };

@@ -17,7 +17,7 @@
  * 02111-1307, USA.
  */
 
-#include <ip_mad.h>
+#include <ip.h>
 #include <nomad.h>
 #include <xmalloc.h>
 #include <read_wrapper.h>
@@ -229,7 +229,7 @@ static int mad_duration(struct input_plugin_data *ip_data)
 	return nomad_time_total(nomad);
 }
 
-const struct input_plugin_ops mad_ip_ops = {
+const struct input_plugin_ops ip_ops = {
 	.open = mad_open,
 	.close = mad_close,
 	.read = mad_read,
@@ -238,5 +238,5 @@ const struct input_plugin_ops mad_ip_ops = {
 	.duration = mad_duration
 };
 
-const char * const mad_extensions[] = { "mp3", "mp2", NULL };
-const char * const mad_mime_types[] = { "audio/mpeg", NULL };
+const char * const ip_extensions[] = { "mp3", "mp2", NULL };
+const char * const ip_mime_types[] = { "audio/mpeg", NULL };

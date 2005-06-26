@@ -2607,6 +2607,7 @@ int main(int argc, char *argv[])
 			return 1;
 #endif
 	} else {
+		player_init_plugins();
 		if (ui_curses_init())
 			return 1;
 		ui_curses_exit();

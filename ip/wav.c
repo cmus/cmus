@@ -17,7 +17,7 @@
  * 02111-1307, USA.
  */
 
-#include <ip_wav.h>
+#include <ip.h>
 #include <file.h>
 #include <xmalloc.h>
 #include <debug.h>
@@ -251,7 +251,7 @@ static int wav_duration(struct input_plugin_data *ip_data)
 	return duration;
 }
 
-const struct input_plugin_ops wav_ip_ops = {
+const struct input_plugin_ops ip_ops = {
 	.open = wav_open,
 	.close = wav_close,
 	.read = wav_read,
@@ -260,5 +260,5 @@ const struct input_plugin_ops wav_ip_ops = {
 	.duration = wav_duration
 };
 
-const char * const wav_extensions[] = { "wav", NULL };
-const char * const wav_mime_types[] = { NULL };
+const char * const ip_extensions[] = { "wav", NULL };
+const char * const ip_mime_types[] = { NULL };

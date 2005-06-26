@@ -48,7 +48,7 @@
  * SND_PCM_STATE_DISCONNECTED = 8,
  */
 
-#include <op_alsa.h>
+#include <op.h>
 #include <utils.h>
 #include <xmalloc.h>
 #include <sf.h>
@@ -493,7 +493,7 @@ static int op_alsa_get_option(int key, char **val)
 	return 0;
 }
 
-const struct output_plugin_ops op_alsa_ops = {
+const struct output_plugin_ops op_pcm_ops = {
 	.init = op_alsa_init,
 	.exit = op_alsa_exit,
 	.open = op_alsa_open,
@@ -507,7 +507,7 @@ const struct output_plugin_ops op_alsa_ops = {
 	.get_option = op_alsa_get_option
 };
 
-const char * const op_alsa_options[] = {
+const char * const op_pcm_options[] = {
 	"buffer_time",
 	"device",
 	"period_time",

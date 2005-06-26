@@ -17,7 +17,7 @@
  * 02111-1307, USA.
  */
 
-#include <ip_modplug.h>
+#include <ip.h>
 #include <file.h>
 #include <xmalloc.h>
 
@@ -150,7 +150,7 @@ static int mod_duration(struct input_plugin_data *ip_data)
 	return (ModPlug_GetLength(priv->file) + 500) / 1000;
 }
 
-const struct input_plugin_ops modplug_ip_ops = {
+const struct input_plugin_ops ip_ops = {
 	.open = mod_open,
 	.close = mod_close,
 	.read = mod_read,
@@ -159,5 +159,5 @@ const struct input_plugin_ops modplug_ip_ops = {
 	.duration = mod_duration
 };
 
-const char * const modplug_extensions[] = { "mod", "s3m", "xm", "it", "669", "amf", "ams", "dbm", "dmf", "dsm", "far", "mdl", "med", "mtm", "okt", "ptm", "stm", "ult", "umx", "mt2", "psm", "mdz", "s3z", "xmz", "itz", "mdr", "s3r", "xmr", "itr", "mdgz", "s3gz", "xmgz", "itgz", NULL };
-const char * const modplug_mime_types[] = { NULL };
+const char * const ip_extensions[] = { "mod", "s3m", "xm", "it", "669", "amf", "ams", "dbm", "dmf", "dsm", "far", "mdl", "med", "mtm", "okt", "ptm", "stm", "ult", "umx", "mt2", "psm", "mdz", "s3z", "xmz", "itz", "mdr", "s3r", "xmr", "itr", "mdgz", "s3gz", "xmgz", "itgz", NULL };
+const char * const ip_mime_types[] = { NULL };

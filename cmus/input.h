@@ -10,6 +10,8 @@
 
 struct input_plugin;
 
+extern void ip_init_plugins(void);
+
 /*
  * errors: IP_ERROR_{UNRECOGNIZED_FILE_TYPE, INVALID_URI}
  */

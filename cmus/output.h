@@ -7,6 +7,8 @@
 
 #include <sf.h>
 
+extern void op_init_plugins(void);
+
 /*
  * errors: OP_ERROR_{}
  */

@@ -17,10 +17,9 @@
  * 02111-1307, USA.
  */
 
-#include <op_arts.h>
+#include <op.h>
 #include <xmalloc.h>
 #include <debug.h>
-#include <config.h>
 
 #include <artsc.h>
 
@@ -52,7 +51,7 @@ static int op_arts_open(sample_format_t sf)
 
 	arts_sf = sf;
 	arts_stream = arts_play_stream(sf_get_rate(arts_sf), sf_get_bits(arts_sf),
-			sf_get_channels(arts_sf), PACKAGE);
+			sf_get_channels(arts_sf), "cmus");
 	blocking = arts_stream_set(arts_stream, ARTS_P_BLOCKING, 0);
 	if (blocking) {
 	}
@@ -117,7 +116,7 @@ static int op_arts_get_option(int key, char **val)
 	return -OP_ERROR_NOT_OPTION;
 }
 
-const struct output_plugin_ops op_arts_ops = {
+const struct output_plugin_ops op_pcm_ops = {
 	.init = op_arts_init,
 	.exit = op_arts_exit,
 	.open = op_arts_open,
@@ -130,6 +129,8 @@ const struct output_plugin_ops op_arts_ops = {
 	.get_option = op_arts_get_option
 };
 
-const char * const op_arts_options[] = {
+const char * const op_pcm_options[] = {
 	NULL
 };
+
+/* no mixer, op_mixer_ops and op_mixer_options not defined */

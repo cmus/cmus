@@ -77,6 +77,7 @@ struct player_info {
 
 extern struct player_info player_info;
 
+extern void player_init_plugins(void);
 extern int player_init(const struct player_callbacks *callbacks);
 extern void player_exit(void);
 

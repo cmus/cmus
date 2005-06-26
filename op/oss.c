@@ -17,7 +17,7 @@
  * 02111-1307, USA.
  */
 
-#include <op_oss.h>
+#include <op.h>
 #include <sf.h>
 #include <xmalloc.h>
 #include <debug.h>
@@ -230,7 +230,7 @@ static int op_oss_get_option(int key, char **val)
 	return 0;
 }
 
-const struct output_plugin_ops op_oss_ops = {
+const struct output_plugin_ops op_pcm_ops = {
 	.init = oss_init,
 	.exit = oss_exit,
 	.open = oss_open,
@@ -243,7 +243,7 @@ const struct output_plugin_ops op_oss_ops = {
 	.get_option = op_oss_get_option
 };
 
-const char * const op_oss_options[] = {
+const char * const op_pcm_options[] = {
 	"device",
 	NULL
 };

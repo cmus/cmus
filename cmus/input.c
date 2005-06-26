@@ -24,39 +24,21 @@
 #include <xmalloc.h>
 #include <file.h>
 #include <utils.h>
+#include <symbol.h>
 #include <pls.h>
-#include <config.h>
-
-#if defined(CONFIG_FLAC)
-#include <ip_flac.h>
-#endif
-
-#if defined(CONFIG_MAD)
-#include <ip_mad.h>
-#endif
-
-#if defined(CONFIG_MODPLUG)
-#include <ip_modplug.h>
-#endif
-
-#if defined(CONFIG_VORBIS)
-#include <ip_vorbis.h>
-#endif
-
-#if defined(CONFIG_WAV)
-#include <ip_wav.h>
-#endif
-
+#include <list.h>
 #include <debug.h>
+#include <config.h>
 
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
 #include <stdarg.h>
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <dirent.h>
+#include <dlfcn.h>
 
 struct input_plugin {
 	const struct input_plugin_ops *ops;
@@ -81,29 +63,16 @@ struct input_plugin {
 };
 
 struct ip {
+	struct list_head node;
+	char *name;
+	void *handle;
+
 	const char * const *extensions;
 	const char * const *mime_types;
 	const struct input_plugin_ops *ops;
 };
 
-static const struct ip ips[] = {
-#if defined(CONFIG_FLAC)
-	{ flac_extensions, flac_mime_types, &flac_ip_ops },
-#endif
-#if defined(CONFIG_MAD)
-	{ mad_extensions, mad_mime_types, &mad_ip_ops },
-#endif
-#if defined(CONFIG_MODPLUG)
-	{ modplug_extensions, modplug_mime_types, &modplug_ip_ops },
-#endif
-#if defined(CONFIG_VORBIS)
-	{ vorbis_extensions, vorbis_mime_types, &vorbis_ip_ops },
-#endif
-#if defined(CONFIG_WAV)
-	{ wav_extensions, wav_mime_types, &wav_ip_ops },
-#endif
-	{ NULL, NULL, NULL }
-};
+static LIST_HEAD(ip_head);
 
 /* timeouts (ms) */
 static int http_connection_timeout = 5e3;
@@ -126,18 +95,19 @@ static const char *get_extension(const char *filename)
 
 static const struct input_plugin_ops *get_ops_by_filename(const char *filename)
 {
+	struct ip *ip;
 	const char *ext;
-	int i, j;
 
 	ext = get_extension(filename);
 	if (ext == NULL)
 		return NULL;
-	for (i = 0; ips[i].extensions; i++) {
-		const char * const *exts = ips[i].extensions;
+	list_for_each_entry(ip, &ip_head, node) {
+		const char * const *exts = ip->extensions;
+		int i;
 
-		for (j = 0; exts[j]; j++) {
-			if (strcasecmp(ext, exts[j]) == 0)
-				return ips[i].ops;
+		for (i = 0; exts[i]; i++) {
+			if (strcasecmp(ext, exts[i]) == 0)
+				return ip->ops;
 		}
 	}
 	return NULL;
@@ -145,14 +115,15 @@ static const struct input_plugin_ops *get_ops_by_filename(const char *filename)
 
 static const struct input_plugin_ops *get_ops_by_mime_type(const char *mime_type)
 {
-	int i, j;
+	struct ip *ip;
 
-	for (i = 0; ips[i].mime_types; i++) {
-		const char * const *types = ips[i].mime_types;
+	list_for_each_entry(ip, &ip_head, node) {
+		const char * const *types = ip->mime_types;
+		int i;
 
-		for (j = 0; types[j]; j++) {
-			if (strcasecmp(mime_type, types[j]) == 0)
-				return ips[i].ops;
+		for (i = 0; types[i]; i++) {
+			if (strcasecmp(mime_type, types[i]) == 0)
+				return ip->ops;
 		}
 	}
 	return NULL;
@@ -414,6 +385,67 @@ static int open_file(struct input_plugin *ip)
 		return -IP_ERROR_ERRNO;
 	}
 	return 0;
+}
+
+void ip_init_plugins(void)
+{
+	static const char *dirname = LIBDIR "/" PACKAGE "/ip";
+	DIR *dir;
+	struct dirent *d;
+
+	dir = opendir(dirname);
+	if (dir == NULL) {
+		fprintf(stderr, "couldn't open directory `%s': %s\n", dirname, strerror(errno));
+		return;
+	}
+	while ((d = readdir(dir)) != NULL) {
+		char filename[256];
+		struct ip *ip;
+		void *so;
+		char *ext;
+
+		if (d->d_name[0] == '.')
+			continue;
+		ext = strrchr(d->d_name, '.');
+		if (ext == NULL)
+			continue;
+		if (strcmp(ext, ".so"))
+			continue;
+
+		snprintf(filename, sizeof(filename), "%s/%s", dirname, d->d_name);
+
+		so = dlopen(filename, RTLD_NOW);
+		if (so == NULL) {
+			fprintf(stderr, "couldn't open file `%s': %s\n", dirname, strerror(errno));
+			continue;
+		}
+
+		ip = xnew(struct ip, 1);
+
+		if (!get_symbol(so, "ip_extensions", filename, (void **)&ip->extensions, 0)) {
+			free(ip);
+			dlclose(so);
+			continue;
+		}
+
+		if (!get_symbol(so, "ip_mime_types", filename, (void **)&ip->mime_types, 0)) {
+			free(ip);
+			dlclose(so);
+			continue;
+		}
+
+		if (!get_symbol(so, "ip_ops", filename, (void **)&ip->ops, 0)) {
+			free(ip);
+			dlclose(so);
+			continue;
+		}
+
+		ip->name = xstrndup(d->d_name, ext - d->d_name);
+		ip->handle = so;
+
+		list_add_tail(&ip->node, &ip_head);
+	}
+	closedir(dir);
 }
 
 int ip_create(struct input_plugin **ipp, const char *filename)
@@ -756,21 +788,22 @@ static int strptrcmp(const void *a, const void *b)
 
 char **ip_get_supported_extensions(void)
 {
+	struct ip *ip;
 	char **exts;
-	int i, j, size;
+	int i, size;
 	int count = 0;
 
 	size = 8;
 	exts = xnew(char *, size);
-	for (i = 0; ips[i].extensions; i++) {
-		const char * const *e = ips[i].extensions;
+	list_for_each_entry(ip, &ip_head, node) {
+		const char * const *e = ip->extensions;
 
-		for (j = 0; e[j]; j++) {
+		for (i = 0; e[i]; i++) {
 			if (count == size - 1) {
 				size *= 2;
 				exts = xrenew(char *, exts, size);
 			}
-			exts[count++] = xstrdup(e[j]);
+			exts[count++] = xstrdup(e[i]);
 		}
 	}
 	exts[count] = NULL;
