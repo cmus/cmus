@@ -48,7 +48,7 @@
 struct mixer_plugin {
 	const char *name;
 	const struct mixer_plugin_ops *ops;
-	const char * *options;
+	const char * const *options;
 	unsigned int initialized : 1;
 };
 

@@ -23,6 +23,6 @@
 #include <mixer.h>
 
 extern const struct mixer_plugin_ops mixer_alsa_ops;
-extern const char *mixer_alsa_options[];
+extern const char * const mixer_alsa_options[];
 
 #endif

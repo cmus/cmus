@@ -23,6 +23,6 @@
 #include <mixer.h>
 
 extern const struct mixer_plugin_ops mixer_oss_ops;
-extern const char *mixer_oss_options[];
+extern const char * const mixer_oss_options[];
 
 #endif

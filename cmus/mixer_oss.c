@@ -242,7 +242,7 @@ const struct mixer_plugin_ops mixer_oss_ops = {
 	.get_option = oss_mixer_get_option
 };
 
-const char *mixer_oss_options[] = {
+const char * const mixer_oss_options[] = {
 	"channel",
 	"device",
 	NULL

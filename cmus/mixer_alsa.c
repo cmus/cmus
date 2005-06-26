@@ -197,7 +197,7 @@ const struct mixer_plugin_ops mixer_alsa_ops = {
 	.get_option = alsa_mixer_get_option
 };
 
-const char *mixer_alsa_options[] = {
+const char * const mixer_alsa_options[] = {
 	"channel",
 	"device",
 	NULL
