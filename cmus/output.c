@@ -91,7 +91,7 @@ static void load_plugins(void)
 
 		so = dlopen(filename, RTLD_NOW);
 		if (so == NULL) {
-			fprintf(stderr, "couldn't open file `%s': %s\n", dirname, strerror(errno));
+			fprintf(stderr, "%s\n", dlerror());
 			continue;
 		}
 
