@@ -44,7 +44,7 @@
 #define WORKER_TYPE_UPDATE    (3U)
 
 static pthread_mutex_t track_db_mutex = CMUS_MUTEX_INITIALIZER;
-struct track_db *track_db;
+static struct track_db *track_db;
 
 #define track_db_lock() cmus_mutex_lock(&track_db_mutex)
 #define track_db_unlock() cmus_mutex_unlock(&track_db_mutex)

@@ -22,8 +22,6 @@
 
 #include <track_db.h>
 
-extern struct track_db *track_db;
-
 extern int cmus_init(void);
 extern void cmus_exit(void);
 extern void cmus_next(void);
