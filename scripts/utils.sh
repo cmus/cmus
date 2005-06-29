@@ -10,76 +10,38 @@ PROGRAM_NAME=${0##*/}
 # Don't use __FOO functions directly. use FOO alias instead!
 #
 
-argc()
-{
-	return 0
-}
+shopt -s expand_aliases
 
-did_run()
-{
-	return 0
-}
+# usage: 'argc min' or 'argc min max'
+# check argument count
+# e.g. 'argc 3 4' defines that minimum argument count is 3 and maximum 4
+alias argc='__argc $FUNCNAME $#'
 
-only_once()
-{
-	return 0
-}
+# usage: 'did_run'
+# mark function to have been run
+alias did_run='__did_run $FUNCNAME'
 
-before()
-{
-	return 0
-}
+# usage: 'only_once'
+# allow function to be run only once
+alias only_once='__only_once $FUNCNAME'
 
-after()
-{
-	return 0
-}
+# usage: 'before function_name'
+# this function must be run before function 'function_name'
+alias before='__before $FUNCNAME'
 
-deprecated()
-{
-	return 0
-}
+# usage: 'after function_name'
+# this function must be run after function 'function_name'
+alias after='__after $FUNCNAME'
+
+# usage: 'deprecated'
+# mark function deprecated
+alias deprecated='__deprecated $FUNCNAME'
 
 is_function()
 {
-	return 0
+	argc 1
+	[[ $(type -t "$1") = function ]]
 }
-
-if [[ -n $BASH_VERSION ]]
-then
-	shopt -s expand_aliases
-
-	# usage: 'argc min' or 'argc min max'
-	# check argument count
-	# e.g. 'argc 3 4' defines that minimum argument count is 3 and maximum 4
-	alias argc='__argc $FUNCNAME $#'
-
-	# usage: 'did_run'
-	# mark function to have been run
-	alias did_run='__did_run $FUNCNAME'
-
-	# usage: 'only_once'
-	# allow function to be run only once
-	alias only_once='__only_once $FUNCNAME'
-
-	# usage: 'before function_name'
-	# this function must be run before function 'function_name'
-	alias before='__before $FUNCNAME'
-
-	# usage: 'after function_name'
-	# this fnction must be run after function 'function_name'
-	alias after='__after $FUNCNAME'
-
-	# usage: 'deprecated'
-	# mark function deprecated
-	alias deprecated='__deprecated $FUNCNAME'
-
-	is_function()
-	{
-		argc 1
-		[[ $(type -t "$1") = function ]]
-	}
-fi
 
 # print warning message (all parameters)
 warn()
@@ -311,6 +273,14 @@ var_assert()
 	local name=$1
 
 	[[ -z $(get_var $name) ]] && pdie "variable \`$name' must be set"
+}
+
+# portable which command
+path_find()
+{
+	argc 1
+	type -p "$1"
+	return $?
 }
 
 # cd to @path following symbolic links and print $PWD

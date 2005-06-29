@@ -19,20 +19,6 @@ msg_error()
 	echo "$@"
 }
 
-# which is totally brain dead on solaris
-path_find()
-{
-	local program full
-
-	argc 1
-	program="$1"
-	full=$(which "$program" 2> /dev/null)
-	[[ $? -ne 0 ]] && return 1
-	[[ ${full##/} = $full ]] && return 1
-	echo "${full}"
-	return 0
-}
-
 # @program: program to check
 # @name:    name of variable where to store the full program name (optional)
 #

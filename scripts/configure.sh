@@ -6,6 +6,20 @@
 
 # misc {{{
 
+check_bash_version()
+{
+	local tmp
+
+	[[ ${BASH_VERSINFO[0]} -gt 2 ]] && return 0
+	tmp=${BASH_VERSINFO[1]}
+	tmp=${tmp:0:2}
+	[[ ${BASH_VERSINFO[0]} -eq 2 ]] && [[ "${tmp}" = "05" ]] && return 0
+	echo "bash 2.05 or newer required." >&2
+	exit 1
+}
+
+check_bash_version
+
 srcdir="$(dirname $0)"
 srcdir=$(cd $srcdir && pwd)
 [[ -z $srcdir ]] && exit 1
