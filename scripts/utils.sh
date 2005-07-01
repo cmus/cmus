@@ -278,9 +278,16 @@ var_assert()
 # portable which command
 path_find()
 {
+	local prog
+
 	argc 1
-	type -p "$1"
-	return $?
+	prog=$(type -p "$1")
+	if [[ $? -eq 0 ]] && [[ -x $prog ]]
+	then
+		echo "$prog"
+		return 0
+	fi
+	return 1
 }
 
 # cd to @path following symbolic links and print $PWD
