@@ -1,3 +1,12 @@
+Summary of changes from 1.4.6 to 1.5.0
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen:
+ o dynamically loadable plugins
+ o add --plugins cmd line option
+ o improved search/command history
+ o build system changes
+
 Summary of changes from 1.4.5 to 1.4.6
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
