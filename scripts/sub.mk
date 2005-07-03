@@ -53,8 +53,6 @@ clobber-files	:=
 distclean-files	:=
 targets		:=
 extra-targets	:=
-obj-y		:=
-libobj-y	:=
 subdirs		:=
 ctags-languages	:= all,-html
 ctags-dirs	:=
@@ -64,7 +62,7 @@ include $(scriptdir)/lib.mk
 include $(srcdir)/Dir.mk
 
 dep-files	:= $(wildcard .dep-*)
-clean-files	+= $(obj-y) $(obj-n) $(libobj-y) $(libobj-n) $(dep-files) core core.[0-9]*
+clean-files	+= $(dep-files) core core.[0-9]*
 clobber-files	+= $(targets) $(extra-targets)
 distclean-files	+= Makefile
 
