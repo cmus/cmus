@@ -46,8 +46,8 @@ cmus: $(obj-y) $(top_builddir)/common/common.a
 install-exec:
 	$(INSTALL) --auto cmus
 
-targets		:= cmus
-clean-files	+= $(obj-y) $(obj-n)
+targets	:= cmus
+clean	+= $(obj-y) $(obj-n)
 
 # If config.mk changes, rebuild all sources that include debug.h
 #

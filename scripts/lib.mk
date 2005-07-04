@@ -107,13 +107,10 @@ quiet_cmd_rst = RST    $@
       cmd_rst = $(RST2HTML) $(RST2HTML_FLAGS) $< $@
 
 # quiet_cmd_clean = CLEAN  Temporary files
-      cmd_clean = rm -f $(clean-files)
-
-# quiet_cmd_clobber = CLEAN  Targets
-      cmd_clobber = rm -f $(clobber-files)
+      cmd_clean = rm -f $(clean)
 
 # quiet_cmd_distclean = CLEAN  All generated files
-      cmd_distclean = rm -f $(distclean-files)
+      cmd_distclean = rm -f $(distclean)
 
 cmd = @$(if $($(quiet)cmd_$(1)),echo '   $(call $(quiet)cmd_$(1),$(2))' &&) $(call cmd_$(1),$(2))
 

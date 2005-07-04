@@ -8,5 +8,5 @@ cmus-remote: $(objs) $(top_builddir)/common/common.a
 install-exec:
 	$(INSTALL) --auto cmus-remote
 
-targets		:= cmus-remote
-clean-files	+= $(objs)
+targets	:= cmus-remote
+clean	+= $(objs)

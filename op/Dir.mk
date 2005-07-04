@@ -13,9 +13,8 @@ so-$(CONFIG_ALSA)	+= alsa.so
 so-$(CONFIG_ARTS)	+= arts.so
 so-$(CONFIG_OSS)	+= oss.so
 
-clean-files	:= $(alsa-objs) $(arts-objs) $(oss-objs)
-clobber-files	:= $(so-n)
-targets		:= $(so-y)
+clean	:= $(alsa-objs) $(arts-objs) $(oss-objs) $(so-n)
+targets	:= $(so-y)
 
 alsa.so: $(alsa-objs)
 	$(call cmd,ld_so,$(ALSA_LIBS))

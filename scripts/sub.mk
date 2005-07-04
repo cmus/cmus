@@ -32,7 +32,7 @@ restricted := 0
 ifeq ($(MAKELEVEL),0)
   # if in subdir
   ifneq ($(currelpath),)
-    # make was executed by user in subdir
+    # make was executed by user in a subdir
     # disable distclean, uninstall and dist
     restricted := 1
   endif
@@ -48,9 +48,8 @@ extra: extra-build
 builddir	:= .
 
 # these can be set from Dir.mk or common.mk
-clean-files	:=
-clobber-files	:=
-distclean-files	:=
+clean		:=
+distclean	:=
 targets		:=
 extra-targets	:=
 subdirs		:=
@@ -62,12 +61,11 @@ include $(scriptdir)/lib.mk
 include $(srcdir)/Dir.mk
 
 dep-files	:= $(wildcard .dep-*)
-clean-files	+= $(dep-files) core core.[0-9]*
-clobber-files	+= $(targets) $(extra-targets)
-distclean-files	+= Makefile
+clean		+= $(targets) $(extra-targets) $(dep-files) core core.[0-9]*
+distclean	+= Makefile
 
 ifeq ($(currelpath),)
-distclean-files	+= config.h config.mk install.log
+distclean	+= config.h config.mk install.log
 endif
 
 # create directories
@@ -77,10 +75,6 @@ endif
 
 clean: recursive-clean
 	$(call cmd,clean)
-
-clobber: recursive-clobber
-	$(call cmd,clean)
-	$(call cmd,clobber)
 
 define top_distclean
 	@if [[ -f .distclean ]]; \
@@ -102,7 +96,6 @@ endef
 ifeq ($(restricted),0)
 distclean: recursive-distclean
 	$(call cmd,clean)
-	$(call cmd,clobber)
 	$(call cmd,distclean)
 ifeq ($(currelpath),)
 	$(call top_distclean)
@@ -182,7 +175,7 @@ extra-install-data:
 
 _targets		:= build install install-exec install-data
 _targets		+= extra-build extra-install extra-install-exec extra-install-data
-_targets		+= clean clobber distclean
+_targets		+= clean distclean
 _recursive_targets	:= $(addprefix recursive-,$(_targets))
 
 $(_recursive_targets):

@@ -19,9 +19,8 @@ so-$(CONFIG_MODPLUG)	+= modplug.so
 so-$(CONFIG_VORBIS)	+= vorbis.so
 so-$(CONFIG_WAV)	+= wav.so
 
-clean-files	:= $(flac-objs) $(mad-objs) $(modplug-objs) $(vorbis-objs) $(wav-objs)
-clobber-files	:= $(so-n)
-targets		:= $(so-y)
+clean	:= $(flac-objs) $(mad-objs) $(modplug-objs) $(vorbis-objs) $(wav-objs) $(so-n)
+targets	:= $(so-y)
 
 flac.so: $(flac-objs)
 	$(call cmd,ld_so,$(FLAC_LIBS))
