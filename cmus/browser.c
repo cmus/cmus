@@ -341,6 +341,8 @@ void browser_exit(void)
 	searchable_free(browser_searchable);
 	free_browser_list();
 	window_free(browser_win);
+	free(browser_dir);
+	free_str_array(supported_extensions);
 }
 
 static void browser_cd_parent(void)

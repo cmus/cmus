@@ -1540,6 +1540,7 @@ int pl_exit(void)
 	window_free(playlist.track_win);
 	window_free(playlist.shuffle_win);
 	window_free(playlist.sorted_win);
+	free_str_array(playlist.sort_keys);
 	return 0;
 }
 

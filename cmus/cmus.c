@@ -326,6 +326,7 @@ int cmus_init(void)
 
 void cmus_exit(void)
 {
+	worker_remove_jobs(WORKER_TYPE_ANY);
 	play_queue_exit();
 	worker_exit();
 	if (track_db_close(track_db))
