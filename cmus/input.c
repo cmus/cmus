@@ -186,6 +186,10 @@ static int do_http_get(const char *uri, struct http_header **headersp, int *code
 
 	rc = http_get(sock, path, h, &code, &reason, headersp, http_read_timeout);
 	http_headers_free(h);
+	free(user);
+	free(pass);
+	free(host);
+	free(path);
 	switch (rc) {
 	case -1:
 		d_print("error: %s\n", strerror(errno));
