@@ -2331,7 +2331,6 @@ static void ui_curses_start(void)
 		}
 	}
 	endwin();
-	cmus_save_playlist(playlist_autosave_filename);
 }
 
 static int get_next(char **filename)
@@ -2433,8 +2432,6 @@ static int ui_curses_init(void)
 	search_mode_init();
 	playlist_autosave_filename = xstrjoin(cmus_config_dir, "/playlist.pl");
 	player_get_volume(&player_info.vol_left, &player_info.vol_right);
-
-	ui_curses_start();
 	return 0;
 }
 
@@ -2445,16 +2442,20 @@ static void ui_curses_exit(void)
 	enum play_mode play_mode;
 	char *sort;
 
+#if defined(CONFIG_IRMAN)
+	ir_exit();
+#endif
+	remote_server_exit();
+
+	cmus_exit();
+	cmus_save_playlist(playlist_autosave_filename);
+
+	sort = get_sort();
 	pl_get_status(&repeat, &playlist_mode, &play_mode, &total_time);
 	buffer_chunks = player_get_buffer_size();
 
 	player_exit();
 	pl_exit();
-	cmus_exit();
-#if defined(CONFIG_IRMAN)
-	ir_exit();
-#endif
-	remote_server_exit();
 
 	if (cur_track_info)
 		track_info_unref(cur_track_info);
@@ -2466,11 +2467,13 @@ static void ui_curses_exit(void)
 	sconf_set_bool_option(&sconf_head, "show_remaining_time", show_remaining_time);
 	sconf_set_str_option(&sconf_head, "status_display_program",
 			status_display_program ? status_display_program : "");
-	sort = get_sort();
 	sconf_set_str_option(&sconf_head, "sort", sort);
-	free(sort);
 	sconf_set_int_option(&sconf_head, "buffer_chunks", buffer_chunks);
 	set_colors();
+
+	free(playlist_autosave_filename);
+	free(status_display_program);
+	free(sort);
 
 	commands_exit();
 	search_mode_exit();
@@ -2621,6 +2624,7 @@ int main(int argc, char *argv[])
 		}
 		if (ui_curses_init())
 			return 1;
+		ui_curses_start();
 		ui_curses_exit();
 	}
 
