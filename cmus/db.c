@@ -21,7 +21,6 @@
 #include <xmalloc.h>
 #include <xstrjoin.h>
 #include <file.h>
-#include <debug.h>
 
 #include <inttypes.h>
 #include <sys/types.h>
@@ -43,7 +42,6 @@ struct db {
 	struct db_entry *entries;
 	unsigned int nr_entries;
 	unsigned int nr_allocated;
-/* 	int (*key_cmp)(const void *, const void *); */
 
 	/* insert queue, not sorted */
 	struct db_entry *iq_entries;
@@ -73,9 +71,6 @@ static void array_remove(void *array, size_t nmemb, size_t size, int idx)
 	char *s, *d;
 	size_t c;
 
-	BUG_ON(idx < 0);
-	BUG_ON(nmemb == 0);
-	BUG_ON(size == 0);
 	d = a + idx * size;
 	s = d + size;
 	c = size * (nmemb - idx - 1);
@@ -119,16 +114,18 @@ static int index_load(struct db *db)
 	db->entries = xnew(struct db_entry, db->nr_entries);
 	db->nr_allocated = db->nr_entries;
 	for (i = 0; i < db->nr_entries; i++) {
+		struct db_entry *e = &db->entries[i];
+
 		if (size - pos < 3 * 4)
 			goto corrupt;
-		db->entries[i].data_pos = ntohl(*(uint32_t *)(buf + pos)); pos += 4;
-		db->entries[i].data_size = ntohl(*(uint32_t *)(buf + pos)); pos += 4;
-		db->entries[i].key_size = ntohl(*(uint32_t *)(buf + pos)); pos += 4;
-		if (size - pos < db->entries[i].key_size)
+		e->data_pos = ntohl(*(uint32_t *)(buf + pos)); pos += 4;
+		e->data_size = ntohl(*(uint32_t *)(buf + pos)); pos += 4;
+		e->key_size = ntohl(*(uint32_t *)(buf + pos)); pos += 4;
+		if (size - pos < e->key_size)
 			goto corrupt;
-		db->entries[i].key = xmalloc(db->entries[i].key_size);
-		memcpy(db->entries[i].key, buf + pos, db->entries[i].key_size);
-		pos += db->entries[i].key_size;
+		e->key = xmalloc(e->key_size);
+		memcpy(e->key, buf + pos, e->key_size);
+		pos += e->key_size;
 	}
 	free(buf);
 	return 0;
@@ -283,14 +280,12 @@ static int iq_remove(struct db *db, const void *key, unsigned int key_size)
 
 /* }}} */
 
-/* struct db *db_new(const char *filename_base, int (*key_cmp)(const void *, const void *)) */
 struct db *db_new(const char *filename_base)
 {
 	struct db *db;
 
 	db = xnew(struct db, 1);
 	db->index_dirty = 0;
-/* 	db->key_cmp = key_cmp; */
 	db->idx_fn = xstrjoin(filename_base, ".idx");
 	db->dat_fn = xstrjoin(filename_base, ".dat");
 	db->entries = NULL;
@@ -391,14 +386,12 @@ int db_query(struct db *db, const void *key, void **datap, unsigned int *data_si
 	}
 
 	if (lseek(db->dat_fd, e->data_pos, SEEK_SET) == -1) {
-		d_print("lseek: %s\n", strerror(errno));
 		return -1;
 	}
 
 	buf = xmalloc(e->data_size);
 	rc = read_all(db->dat_fd, buf, e->data_size);
 	if (rc == -1) {
-		d_print("read: %s\n", strerror(errno));
 		free(buf);
 		return -1;
 	}
