@@ -68,11 +68,13 @@ int spawn(char *argv[])
 		errno_save = errno;
 		close(err_pipe[0]);
 
+		waitpid(pid, &status, 0);
+
 		if (rc == -1) {
 			errno = errno_save;
 			return -1;
 		}
-		if (rc == 4) {
+		if (rc == sizeof(int)) {
 			errno = child_errno;
 			return -1;
 		}
@@ -80,8 +82,6 @@ int spawn(char *argv[])
 			errno = EMSGSIZE;
 			return -1;
 		}
-
-		rc = waitpid(pid, &status, 0);
 		return 0;
 	}
 }
