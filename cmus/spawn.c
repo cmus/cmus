@@ -20,6 +20,8 @@
 #include <spawn.h>
 #include <file.h>
 
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -59,7 +61,7 @@ int spawn(char *argv[])
 		exit(1);
 	} else {
 		/* parent */
-		int rc, errno_save, child_errno;
+		int rc, errno_save, child_errno, status;
 
 		close(err_pipe[1]);
 		rc = read_all(err_pipe[0], &child_errno, sizeof(int));
@@ -78,6 +80,8 @@ int spawn(char *argv[])
 			errno = EMSGSIZE;
 			return -1;
 		}
+
+		rc = waitpid(pid, &status, 0);
 		return 0;
 	}
 }
