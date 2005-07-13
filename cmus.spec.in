@@ -212,7 +212,9 @@ EOF
 %if %altlinux
 %post
 %update_menus
+%endif
 
+%if %altlinux
 %postun
 %clean_menus
 %endif
@@ -220,18 +222,22 @@ EOF
 
 %files
 %defattr(-,root,root, -)
-%_bindir/cmus
-%_bindir/cmus-remote
 %dir %_libdir/cmus
 %dir %_libdir/cmus/ip
 %dir %_libdir/cmus/op
+%dir %_datadir/cmus
+%dir %_datadir/cmus/doc
+%dir %_datadir/cmus/example
+%_bindir/cmus
+%_bindir/cmus-remote
 %_libdir/cmus/ip/wav.so
 %_libdir/cmus/op/oss.so
+%_datadir/cmus/doc/cmus.html
+%_datadir/cmus/example/cmus-status-display
+%doc AUTHORS ChangeLog COPYING README TODO
+%if %altlinux
 %_menudir/cmus
-# FIXME
-# doc/cmus.html packed in standard doc directory - not in /usr/share/cmus
-#%_datadir/cmus
-%doc AUTHORS ChangeLog COPYING README TODO doc/cmus.html example
+%endif
 
 %files in-flac
 %defattr(-,root,root, -)
