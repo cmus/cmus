@@ -159,6 +159,39 @@ static void cmd_set(char *arg)
 	ui_curses_display_error_msg("unknown option '%s'", name);
 }
 
+static void cmd_seek(char *arg)
+{
+	int seek, seek_mode;
+	char *endptr;
+
+	/* Absolute or relative search */
+	seek_mode = SEEK_SET;
+	if (arg[0] == '+' || arg[0] == '-') {
+		seek_mode = SEEK_CUR;
+	}
+
+	seek = (int) strtol(arg, &endptr, 10);
+	if (!seek && arg == endptr) {
+		ui_curses_display_error_msg("invalid seek value");
+		return;
+	}
+
+	/* Expand M, H to seconds */
+	if (endptr && endptr[0] != '\0') {
+		endptr[0] = toupper (endptr[0]);
+		if (endptr[0] == 'M') {
+			seek *= 60;
+		} else if (endptr[0] == 'H') {
+			seek *= 3600;
+		} else {
+			ui_curses_display_error_msg("invalid seek modifier");
+			return;
+		}
+	}
+
+	player_seek(seek, seek_mode);
+}
+
 static void cmd_add(char *arg)
 {
 	char *name;
@@ -260,6 +293,7 @@ static struct command commands[] = {
 	{ "load",       cmd_load,       1, 1, TE_FILEDIR },
 	{ "save",       cmd_save,       0, 1, TE_FILEDIR },
 	{ "set",        cmd_set,        1, 1, TE_OPTION },
+	{ "seek",       cmd_seek,       1, 1, TE_NONE },
 	{ "shuffle",    cmd_reshuffle,  0, 0, TE_NONE },
 	{ NULL,         NULL,           0, 0, 0 },
 };
