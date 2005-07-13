@@ -149,6 +149,7 @@ Command                      Description
 :clear                       Clear playlist.
 :enqueue\ dir/file/playlist  Add dir/file/playlist to the play queue.
 :shuffle                     Reshuffle playlist.
+:seek [+-]POS                Seek top POS (seconds). POS can be suffixed with 'm' (minutes) or 'h' (hours).
 :set OPTION=VALUE            Set option (See Options_).
 ===========================  ===========
 
