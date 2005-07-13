@@ -1,3 +1,12 @@
+Summary of changes from 1.5.0 to 1.5.1
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen:
+ o don't spawn zombie processes.  Bug reported by Eugene Vlasov.
+ o fix mem leak in do_http_get
+ o reorder *_exit() calls (fixes segfault at exit)
+ o added .spec file (might not work, patches welcome)
+
 Summary of changes from 1.4.6 to 1.5.0
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
