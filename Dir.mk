@@ -2,7 +2,7 @@ release	:= $(PACKAGE)-$(VERSION)
 tmpdir	:= /tmp
 tarball	:= $(DISTDIR)/$(release).tar.bz2
 
-release: extra
+release: extra cmus.spec
 	@dir=$(tmpdir)/$(release); \
 	if [[ -e $$dir ]]; \
 	then \
@@ -19,6 +19,7 @@ release: extra
 	cg-export $$dir || exit 1; \
 	cd $(tmpdir) || exit 1; \
 	cp $(top_srcdir)/doc/cmus.html $(release)/doc || exit 1; \
+	cp $(top_builddir)/cmus.spec $(release) || exit 1; \
 	tar -c $(release) | bzip2 -9 > $(tarball) || rm -f $(tarball); \
 	rm -rf $(release)
 

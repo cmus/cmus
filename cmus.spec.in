@@ -1,0 +1,267 @@
+# -*- coding: utf-8; mode: rpm-spec -*-
+# 
+# CMus spec file.
+# 
+# Written Eugene Vlasov <eugvv@altlinux.ru> for ALTLinux
+# distribution (www.altlinux.org)
+# 
+# Modified by Timo Hirvonen <tihirvon@ee.oulu.fi>
+#
+# Separate packages for plugins:
+#   cmus-in-flac
+#   cmus-in-mad
+#   cmus-in-modplug
+#   cmus-in-vorbis
+#   cmus-out-alsa
+#   cmus-out-arts
+#
+# The main package contains WAV input and OSS output plugins.
+# 
+# You need to define 'altlinux 0' or 'altlinux 1'
+# (pass -D 'altlinux 0' to rpmbuild)
+# 
+
+%if %altlinux
+
+%define release alt1
+
+%define pkg libncurses
+
+%define flacpkg libflac
+%define madpkg libid3tag libmad
+%define modplugpkg libmodplug
+%define vorbispkg libogg libvorbis
+%define alsapkg libalsa
+%define artspkg libarts
+
+%define devpkg libncurses-devel pkgconfig
+
+%define flacdevpkg libflac-devel
+%define maddevpkg libid3tag-devel libmad-devel
+%define modplugdevpkg libmodplug-devel
+%define vorbisdevpkg libogg-devel libvorbis-devel
+%define alsadevpkg libalsa-devel
+%define artsdevpkg libarts-devel
+
+%else
+
+%define release 0
+
+%define pkg ncurses
+
+%define flacpkg flac
+%define madpkg libid3tag libmad
+%define modplugpkg libmodplug
+%define vorbispkg libogg libvorbis
+%define alsapkg alsa-lib
+%define artspkg arts
+
+%define devpkg ncurses-devel pkgconfig
+
+%define flacdevpkg flac-devel
+%define maddevpkg libid3tag-devel libmad-devel
+%define modplugdevpkg libmodplug-devel
+%define vorbisdevpkg libogg-devel libvorbis-devel
+%define alsadevpkg alsa-lib-devel
+%define artsdevpkg arts-devel
+
+%endif
+
+Name:		cmus
+Version:	@VERSION@
+Release:	%release
+Summary:	CMus - C* Music Player
+License:	GPL
+Group:		Sound
+Url:		http://onion.dynserv.net/~timo/index.php?page=Projects/cmus
+Packager:	Eugene Vlasov <eugvv@altlinux.ru>
+BuildRoot:	%{_tmppath}/cmus-@VERSION@-root
+Source0:	cmus-@VERSION@.tar.bz2
+Requires:	%pkg
+
+BuildRequires: %devpkg
+BuildRequires: %flacdevpkg
+BuildRequires: %maddevpkg
+BuildRequires: %modplugdevpkg
+BuildRequires: %vorbisdevpkg
+BuildRequires: %alsadevpkg
+BuildRequires: %artsdevpkg
+
+# FIXME
+#BuildRequires: glib2-devel libstdc++-devel libtinfo-devel zlib-devel
+
+%description
+CMus is a small and fast music player using the ncurses library.
+Features
+  * Input
+    o FLAC
+    o Ogg/Vorbis
+    o MP3 (libmad)
+    o Wav
+    o Modules (libmodplug)
+  * Output
+    o ALSA
+    o OSS
+    o ARTS
+  * MP3 and Ogg streaming (Shoutcast/Icecast)
+  * WinAmp / XMMS keys "zxcvb"
+  * Can be controlled via UNIX socket
+  * Customizable colors
+  * Nice vi-style interface with tabulator expansion
+  * Background playlist loading
+  * Track metadata database makes adding files to playlist very fast.
+  * Album/artist modes. Playing within one album or artist.
+  * Playlist is always kept sorted.
+  * Play queue
+  * Directory browser
+  * Full UTF-8 support
+
+Contains WAV input and OSS output plugin.
+
+%package in-flac
+Summary: FLAC plugin for CMus
+Group: Sound
+Requires: cmus = @VERSION@-%release libflac
+
+%description in-flac
+CMus is a small and fast music player using the ncurses library.
+
+This package contains FLAC plugin.
+
+%package in-mad
+Summary: libmad (mp3) plugin for CMus
+Group: Sound
+Requires: cmus = @VERSION@-%release libid3tag libmad
+
+%description in-mad
+CMus is a small and fast music player using the ncurses library.
+
+This package contains libmad (mp3) plugin.
+
+%package in-modplug
+Summary: Ogg/Vorbis plugin for CMus
+Group: Sound
+Requires: cmus = @VERSION@-%release libmodplug
+
+%description in-modplug
+CMus is a small and fast music player using the ncurses library.
+
+This package contains modules plugin (libmodplug).
+
+%package in-vorbis
+Summary: Ogg/Vorbis plugin for CMus
+Group: Sound
+Requires: cmus = @VERSION@-%release libogg libvorbis
+
+%description in-vorbis
+CMus is a small and fast music player using the ncurses library.
+
+This package contains Ogg/Vorbis plugin.
+
+%package out-alsa
+Summary: ALSA output plugin for CMus
+Group: Sound
+Requires: cmus = @VERSION@-%release libalsa
+
+%description out-alsa
+CMus is a small and fast music player using the ncurses library.
+
+This package contains ALSA output plugin.
+
+%package out-arts
+Summary: ARTS output plugin for CMus
+Group: Sound
+Requires: cmus = @VERSION@-%release libarts
+
+%description out-arts
+CMus is a small and fast music player using the ncurses library.
+
+This package contains ARTS output plugin.
+
+%prep
+%setup -q
+
+
+%build
+CFLAGS="${CFLAGS:--O2 -Wall -pipe}" \
+./configure \
+        --prefix=%prefix \
+        --enable-flac \
+        --enable-mad \
+        --enable-modplug \
+        --enable-vorbis \
+        --enable-wav \
+        --enable-alsa \
+        --enable-arts \
+        --enable-oss
+make
+
+%install
+make DESTDIR=${RPM_BUILD_ROOT} install
+
+%if %altlinux
+%__mkdir_p %buildroot/%_menudir
+cat > %buildroot/%_menudir/cmus <<EOF
+?package(cmus):\
+ 	command="%_bindir/cmus" needs="text" \
+  	section="Multimedia/Sound" title="CMus" \
+        longtitle="CMus - C* Music Player"
+EOF
+%endif
+
+%if %altlinux
+%post
+%update_menus
+
+%postun
+%clean_menus
+%endif
+
+
+%files
+%defattr(-,root,root, -)
+%_bindir/cmus
+%_bindir/cmus-remote
+%dir %_libdir/cmus
+%dir %_libdir/cmus/ip
+%dir %_libdir/cmus/op
+%_libdir/cmus/ip/wav.so
+%_libdir/cmus/op/oss.so
+%_menudir/cmus
+# FIXME
+# doc/cmus.html packed in standard doc directory - not in /usr/share/cmus
+#%_datadir/cmus
+%doc AUTHORS ChangeLog COPYING README TODO doc/cmus.html example
+
+%files in-flac
+%defattr(-,root,root, -)
+%_libdir/cmus/ip/flac.so
+
+%files in-mad
+%defattr(-,root,root, -)
+%_libdir/cmus/ip/mad.so
+
+%files in-modplug
+%defattr(-,root,root, -)
+%_libdir/cmus/ip/modplug.so
+
+%files in-vorbis
+%defattr(-,root,root, -)
+%_libdir/cmus/ip/vorbis.so
+
+%files out-alsa
+%defattr(-,root,root, -)
+%_libdir/cmus/op/alsa.so
+
+%files out-arts
+%defattr(-,root,root, -)
+%_libdir/cmus/op/arts.so
+
+
+%clean
+rm -rf ${RPM_BUILD_ROOT}
+
+
+%changelog
+* Fri Jul 08 2005 Eugene Vlasov <eugvv@altlinux.ru> 1.5.0-alt1
+- First build for Sisyphus
