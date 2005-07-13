@@ -70,7 +70,7 @@ uninstall dist:
 
 endif
 
-help:
+do-help:
 	@echo "Main targets:"
 	@echo "  all                 same as build (this is the default target)"
 	@echo "  build               build main targets"
@@ -100,8 +100,10 @@ help:
 	@echo "  make V=1            beautified build (default)"
 	@echo "  make V=2            verbose build"
 	@echo "  make -s             same as 'make V=0'"
-	@echo
-	@echo "Installed files are logged to $(install_log)."
+
+local-help:
+
+help: do-help local-help
 
 tags:
 	@if [[ -z "$(currelpath)" ]]; \
@@ -133,4 +135,4 @@ tags:
 		fi; \
 	fi
 
-.PHONY: help uninstall tags dist
+.PHONY: do-help help local-help uninstall tags dist
