@@ -279,8 +279,12 @@ static void cmd_reshuffle(char *arg)
 struct command {
 	const char *name;
 	cmd_func *func;
+
+	/* min/max number of arguments */
 	int min_args;
 	int max_args;
+
+	/* type of tab expansion*/
 	enum { TE_NONE, TE_FILEDIR, TE_DIR, TE_OPTION } expand;
 };
 
@@ -292,8 +296,8 @@ static struct command commands[] = {
 	{ "enqueue",    cmd_enqueue,    1, 1, TE_FILEDIR },
 	{ "load",       cmd_load,       1, 1, TE_FILEDIR },
 	{ "save",       cmd_save,       0, 1, TE_FILEDIR },
-	{ "set",        cmd_set,        1, 1, TE_OPTION },
 	{ "seek",       cmd_seek,       1, 1, TE_NONE },
+	{ "set",        cmd_set,        1, 1, TE_OPTION },
 	{ "shuffle",    cmd_reshuffle,  0, 0, TE_NONE },
 	{ NULL,         NULL,           0, 0, 0 },
 };

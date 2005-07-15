@@ -32,9 +32,15 @@
 #include <sys/time.h>
 
 struct track {
+	/* next/prev track in artist/album/track tree */
 	struct list_head node;
+
+	/* next/prev track in shuffle list */
 	struct list_head shuffle_node;
+
+	/* next/prev track in sorted list */
 	struct list_head sorted_node;
+
 	struct album *album;
 	struct track_info *info;
 
@@ -45,14 +51,21 @@ struct track {
 };
 
 struct album {
+	/* next/prev album */
 	struct list_head node;
+
+	/* list of tracks */
 	struct list_head track_head;
+
 	struct artist *artist;
 	char *name;
 };
 
 struct artist {
+	/* next/prev artist */
 	struct list_head node;
+
+	/* list of albums */
 	struct list_head album_head;
 	char *name;
 
@@ -143,6 +156,7 @@ extern void pl_set_playlist_mode(enum playlist_mode playlist_mode);
 extern void pl_set_play_mode(enum play_mode play_mode);
 extern void pl_get_status(int *repeat, enum playlist_mode *playlist_mode, enum play_mode *play_mode, int *total_time);
 
+/* these are unlocked */
 extern void __pl_set_view(int view);
 extern int __pl_toggle_active_window(void);
 

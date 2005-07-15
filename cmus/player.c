@@ -67,7 +67,10 @@ struct player_info player_info = {
 };
 
 static const struct player_callbacks *player_cbs = NULL;
+
+/* continue playing after track is finished? */
 static int player_cont = 1;
+
 static struct buffer player_buffer;
 static sample_format_t buffer_sf;
 
@@ -551,15 +554,9 @@ static void __consumer_handle_eof(void)
 		}
 		free(filename);
 	} else {
-#if 0
-		__producer_stop();
-		__consumer_drain_and_stop();
-		/* don't delete ip */
-#else
 		__producer_unload();
 		__consumer_drain_and_stop();
 		file_changed();
-#endif
 	}
 	__player_status_changed();
 }

@@ -497,6 +497,7 @@ int cmus_is_playlist(const char *filename)
 	if (ext == NULL)
 		return 0;
 	ext++;
+	/* ugh, this extension is actually used by perl */
 	if (strcasecmp(ext, "pl") == 0)
 		return 1;
 	if (strcasecmp(ext, "m3u") == 0)

@@ -53,6 +53,8 @@ struct input_plugin_data {
 
 	unsigned int remote : 1;
 	unsigned int metadata_changed : 1;
+
+	/* shoutcast */
 	int counter;
 	int metaint;
 	char *metadata;

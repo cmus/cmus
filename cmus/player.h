@@ -55,6 +55,7 @@ struct player_info {
 	/* status */
 	enum player_status status;
 	int pos;
+	/* continue after track is finished? */
 	int cont;
 
 	/* volume */

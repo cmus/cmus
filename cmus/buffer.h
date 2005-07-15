@@ -26,10 +26,25 @@
 
 #define CHUNK_SIZE (64 * 1024)
 
+/*
+ * chunk can be accessed by either consumer OR producer, not both at same time
+ * -> no need to lock
+ */
 struct chunk {
 	char data[CHUNK_SIZE];
+
+	/* index to data, first filled byte */
 	unsigned int l;
+
+	/* index to data, last filled byte + 1
+	 *
+	 * there are h - l bytes available (filled)
+	 */
 	unsigned int h : 31;
+
+	/* if chunk is marked filled it can only be accessed by consumer
+	 * otherwise only producer is allowed to access the chunk
+	 */
 	unsigned int filled : 1;
 };
 
@@ -158,7 +173,7 @@ static inline void buffer_get_wpos(struct buffer *buf, char **wpos, int *size)
  * @buf:   the buffer
  * @count: how many bytes were written to the buffer
  *
- * chunks is marked full if free bytes < 1024 or count == 0
+ * chunk is marked filled if free bytes < 1024 or count == 0
  */
 static inline void buffer_fill(struct buffer *buf, int count)
 {
