@@ -12,4 +12,4 @@ manual.html: manual.rst $(CSS)
 install-data:
 	$(SRCDIR_INSTALL) $(docdir) cmus.html
 
-extra-targets	:= $(HTML)
+extra-targets-y	+= $(HTML)

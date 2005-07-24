@@ -1,4 +1,4 @@
-obj-y := \
+cmus-objs-y := \
 	browser.o \
 	cmus.o \
 	command_mode.o \
@@ -36,18 +36,11 @@ obj-y := \
 	worker.o \
 	xstrjoin.o
 
-obj-$(CONFIG_IRMAN)	+= irman.o irman_config.o
+cmus-objs-$(CONFIG_IRMAN)	+= irman.o irman_config.o
+cmus-libs			:= $(top_builddir)/common/common.a $(PTHREAD_LIBS) $(NCURSES_LIBS) $(ICONV_LIBS) $(DL_LIBS) -lm
+bin-programs-y			+= cmus
 
 CFLAGS += -I$(top_builddir) -I$(top_srcdir)/common -I$(srcdir) -g $(PTHREAD_CFLAGS) $(NCURSES_CFLAGS) $(ICONV_CFLAGS)
-
-cmus: $(obj-y) $(top_builddir)/common/common.a
-	$(call cmd,ld,$(PTHREAD_LIBS) $(NCURSES_LIBS) $(ICONV_LIBS) $(DL_LIBS) -lm)
-
-install-exec:
-	$(INSTALL) --auto cmus
-
-targets	:= cmus
-clean	+= $(obj-y) $(obj-n)
 
 # If config.mk changes, rebuild all sources that include debug.h
 #

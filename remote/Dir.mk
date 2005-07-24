@@ -1,12 +1,6 @@
-objs	:= main.o
-
 CFLAGS	+= -I$(top_builddir) -I$(top_srcdir)/common -I$(srcdir) -g
 
-cmus-remote: $(objs) $(top_builddir)/common/common.a
-	$(call cmd,ld,)
+cmus-remote-objs-y	:= main.o
+cmus-remote-libs	:= $(top_builddir)/common/common.a
 
-install-exec:
-	$(INSTALL) --auto cmus-remote
-
-targets	:= cmus-remote
-clean	+= $(objs)
+bin-programs-y		+= cmus-remote

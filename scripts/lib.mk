@@ -102,7 +102,7 @@ quiet_cmd_as = AS     $@
 quiet_cmd_sed_in = SED    $@
       cmd_sed_in = $(scriptdir)/sedin $< $@
 
-# .txt (restructured text) -> .html
+# .rst (restructured text) -> .html
 quiet_cmd_rst = RST    $@
       cmd_rst = $(RST2HTML) $(RST2HTML_FLAGS) $< $@
 
@@ -113,6 +113,77 @@ quiet_cmd_rst = RST    $@
       cmd_distclean = rm -f $(distclean)
 
 cmd = @$(if $($(quiet)cmd_$(1)),echo '   $(call $(quiet)cmd_$(1),$(2))' &&) $(call cmd_$(1),$(2))
+
+# -----------------------------------------------------------------------------
+# Templates
+#
+# -objs-y     Object files to build
+# -objs-n     Object files which are not built
+# -cpp        Use C++ linker instead of C linker? y or n. default is n.
+# -mode       File mode when installed. Default is almost always what you want
+# -owner      File owner when installed. Default is undefined
+# -group      File group when installed. Default is undefined
+# -target     Target file name. Default is the prefix (foo for foo-target)
+#             with .a or .so appended for libs. You don't usually need to
+#             define this for programs
+
+# build templates
+
+define template_common
+$(1)-cpp	?= n
+$(1)-linkprefix	:= $$(if $$(subst n,,$$($(1)-cpp)),cxx,)
+$(1)-instflags	:= $$(if $$($(1)-owner),--owner=$$($(1)-owner)) $$(if $$($(1)-group),--group=$$($(1)-group)) $$(if $$($(1)-mode),--fmode=$$($(1)-mode))
+endef
+
+define archive_template
+$(1)-mode	?= 0644
+$(1)-target	?= $(1).a
+$(call template_common,$(1))
+
+$$($(1)-target): $$($(1)-objs-y)
+	$$(call cmd,ar,$$($(1)-libs))
+endef
+
+define lib_template
+$(1)-mode	?= 0755
+$(1)-target	?= $(1).so
+$(call template_common,$(1))
+
+$$($(1)-target): $$($(1)-objs-y)
+	$$(call cmd,$$($(1)-linkprefix)ld_so,$$($(1)-libs))
+endef
+
+define program_template
+$(1)-mode	?= 0755
+$(1)-target	?= $(1)
+$(call template_common,$(1))
+
+$$($(1)-target): $$($(1)-objs-y)
+	$$(call cmd,$$($(1)-linkprefix)ld,$$($(1)-libs))
+endef
+
+# install templates
+
+define a_install_template
+$(1)-install: $$($(1)-target)
+	$(INSTALL) $$($(1)-instflags) $(libdir) $$($(1)-target)
+endef
+
+define so_install_template
+$(1)-install: $$($(1)-target)
+	$(INSTALL) $$($(1)-instflags) $(libdir) $$($(1)-target)
+endef
+
+define bin_install_template
+$(1)-install: $$($(1)-target)
+	$(INSTALL) $$($(1)-instflags) $(bindir) $$($(1)-target)
+endef
+
+define sbin_install_template
+$(1)-install: $$($(1)-target)
+	$(INSTALL) $$($(1)-instflags) $(sbindir) $$($(1)-target)
+endef
+# -----------------------------------------------------------------------------
 
 # Run target recursively
 #
