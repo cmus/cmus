@@ -33,9 +33,9 @@ check_flac()
 
 check_mad()
 {
-	local libs="-lmad -lm -lid3tag -lz"
+	local libs="-lmad -lm"
 
-	if pkg_check_modules mad "mad id3tag"
+	if pkg_check_modules mad "mad"
 	then
 		return 0
 	fi

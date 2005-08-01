@@ -1,5 +1,5 @@
 flac-objs-y		:= flac.lo
-mad-objs-y		:= mad.lo nomad.lo
+mad-objs-y		:= id3.lo mad.lo nomad.lo utf8_encode.lo
 modplug-objs-y		:= modplug.lo
 vorbis-objs-y		:= vorbis.lo
 wav-objs-y		:= wav.lo

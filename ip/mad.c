@@ -19,13 +19,17 @@
 
 #include <ip.h>
 #include <nomad.h>
+#include <id3.h>
 #include <xmalloc.h>
 #include <read_wrapper.h>
+#include <debug.h>
 
 #include <errno.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include <id3tag.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 /* ------------------------------------------------------------------------- */
 
@@ -108,116 +112,56 @@ static int mad_seek(struct input_plugin_data *ip_data, double offset)
 	return nomad_time_seek(nomad, offset);
 }
 
-static char *get_tag(struct id3_tag *tag, const char *name)
+static void get_comment(struct comment *c, int *iptr, ID3 *id3, enum id3_key key, const char *key_name)
 {
-	struct id3_frame *frame;
+	int i = *iptr;
 
-	frame = id3_tag_findframe(tag, name, 0);
-	if (frame) {
-		const id3_ucs4_t *ucs4;
-
-		ucs4 = id3_field_getstrings(&frame->fields[1], 0);
-		if (ucs4)
-			return (char *)id3_ucs4_utf8duplicate(ucs4);
-	}
-	return NULL;
+	c[i].val = id3_get_comment(id3, key);
+	if (c[i].val == NULL)
+		return;
+	c[i].key = xstrdup(key_name);
+	*iptr = i + 1;
 }
 
-static void add_tag(struct id3_tag *tag, const char *name, struct comment **cp, const char *key)
-{
-	char *val;
-
-	val = get_tag(tag, name);
-	if (val) {
-		struct comment *c = *cp;
-
-		c->key = xstrdup(key);
-		c->val = val;
-		*cp = c + 1;
-	}
-}
-
-static void add_int_tag(struct id3_tag *tag, const char *name, struct comment **cp, const char *key)
-{
-	char *val;
-
-	val = get_tag(tag, name);
-	if (val) {
-		struct comment *c = *cp;
-		int i;
-
-		/* val is "4" or "4/10" */
-		for (i = 0; val[i]; i++) {
-			if (val[i] == '/') {
-				val[i] = 0;
-				break;
-			}
-		}
-		c->key = xstrdup(key);
-		c->val = val;
-		*cp = c + 1;
-	}
-}
-
-static void add_genre(struct id3_tag *tag, struct comment **cp)
-{
-	struct comment *c = *cp;
-	struct id3_frame *frame;
-	const id3_ucs4_t *ucs4;
-	char *genre;
-
-	frame = id3_tag_findframe(tag, ID3_FRAME_GENRE, 0);
-	if (frame == NULL)
-		return;
-
-	ucs4 = id3_field_getstrings(&frame->fields[1], 0);
-	if (ucs4 == NULL)
-		return;
-
-	ucs4 = id3_genre_name(ucs4);
-	if (ucs4 == NULL)
-		return;
-
-	genre = (char *)id3_ucs4_utf8duplicate(ucs4);
-	if (genre == NULL)
-		return;
-
-	c->key = xstrdup("genre");
-	c->val = genre;
-	*cp = c + 1;
-}
-
-/* FIXME: get duration (milli seconds) from TLEN frame
- */
 static int mad_read_comments(struct input_plugin_data *ip_data,
 		struct comment **comments)
 {
-	struct id3_file *file;
+	ID3 *id3;
+	struct comment *c;
+	int fd, rc, save, i;
 
-	file = id3_file_open(ip_data->filename, ID3_FILE_MODE_READONLY);
-	if (file) {
-		struct id3_tag *tag;
-
-		tag = id3_file_tag(file);
-		if (tag) {
-			struct comment *c;
-
-			*comments = xnew0(struct comment, 8);
-			c = *comments;
-			add_tag(tag, ID3_FRAME_ARTIST, &c, "artist");
-			add_tag(tag, ID3_FRAME_ALBUM, &c, "album");
-			add_tag(tag, ID3_FRAME_TITLE, &c, "title");
-			add_tag(tag, ID3_FRAME_YEAR, &c, "date");
-			add_int_tag(tag, ID3_FRAME_TRACK, &c, "tracknumber");
-			add_int_tag(tag, "TPOS", &c, "discnumber");
-			add_genre(tag, &c);
-		} else {
-			*comments = xnew0(struct comment, 1);
-		}
-		id3_file_close (file);
-	} else {
-		*comments = xnew0(struct comment, 1);
+	d_print("\n");
+	fd = open(ip_data->filename, O_RDONLY);
+	if (fd == -1) {
+		return -1;
 	}
+
+	id3 = id3_new();
+	rc = id3_read_tags(id3, fd, ID3_V1 | ID3_V2);
+	save = errno;
+	close(fd);
+	errno = save;
+	if (rc) {
+		if (rc == -1) {
+			d_print("error: %s\n", strerror(errno));
+			return -1;
+		}
+		d_print("corrupted tag?\n");
+		*comments = xnew0(struct comment, 1);
+		return 0;
+	}
+
+	c = xnew0(struct comment, NUM_ID3_KEYS + 1);
+	i = 0;
+	get_comment(c, &i, id3, ID3_ARTIST, "artist");
+	get_comment(c, &i, id3, ID3_ALBUM, "album");
+	get_comment(c, &i, id3, ID3_TITLE, "title");
+	get_comment(c, &i, id3, ID3_DATE, "date");
+	get_comment(c, &i, id3, ID3_GENRE, "genre");
+	get_comment(c, &i, id3, ID3_DISC, "discnumber");
+	get_comment(c, &i, id3, ID3_TRACK, "tracknumber");
+	*comments = c;
+	id3_free(id3);
 	return 0;
 }
 
