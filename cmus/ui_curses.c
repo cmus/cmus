@@ -1045,7 +1045,7 @@ static void ui_curses_update_commandline(void)
 	refresh();
 }
 
-static void ui_curses_update_statusline(void)
+void ui_curses_update_statusline(void)
 {
 	curs_set(0);
 	update_statusline();

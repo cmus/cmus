@@ -62,6 +62,7 @@ extern char *window_title_alt_format;
 extern char *status_display_program;
 
 extern void ui_curses_update_browser(void);
+extern void ui_curses_update_statusline(void);
 extern void ui_curses_update_view(void);
 extern void ui_curses_update_titleline(void);
 extern void ui_curses_set_sort(const char *value, int warn);

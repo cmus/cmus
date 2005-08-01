@@ -26,6 +26,7 @@
 #include <pl.h>
 #include <debug.h>
 #include <config.h>
+#include <ui_curses.h>
 
 #include <unistd.h>
 #include <sys/un.h>
@@ -108,6 +109,17 @@ static void cmd_enqueue(void *data, size_t data_size)
 	cmus_enqueue(ptr, 0);
 }
 
+static void cmd_mix_vol(void *data, size_t data_size)
+{
+	int volume_step;
+
+	if (data_size != sizeof(int))
+		return;
+	volume_step = *(int *)data;
+	player_add_volume(volume_step, volume_step);
+	ui_curses_update_statusline();
+}
+
 typedef void cmd_func_t(void *data, size_t data_size);
 
 static cmd_func_t *commands[CMD_MAX] = {
@@ -123,7 +135,8 @@ static cmd_func_t *commands[CMD_MAX] = {
 	cmd_plreshuffle,
 	cmd_pladd,
 	cmd_plclear,
-	cmd_enqueue
+	cmd_enqueue,
+	cmd_mix_vol
 };
 
 extern char *program_name;

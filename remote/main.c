@@ -100,6 +100,7 @@ enum {
 	FLAG_REPEAT,
 	FLAG_PLAY_MODE,
 	FLAG_ENQUEUE,
+	FLAG_VOLUME,
 	FLAG_RESHUFFLE,
 	FLAG_SEEK,
 	NR_FLAGS
@@ -119,6 +120,7 @@ static struct option options[NR_FLAGS + 1] = {
 	{ 'R', "repeat", 0 },
 	{ 'P', "play-mode", 0 },
 	{ 'e', "enqueue", 0 },
+	{ 'v', "volume", 1 },
 	{ 0, "reshuffle", 0 },
 	{ 0, "seek", 1 },
 	{ 0, NULL, 0 }
@@ -146,6 +148,7 @@ static const char *usage =
 "  -R, --repeat         toggle repeat\n"
 "  -P, --play-mode      toggle play mode\n"
 "  -e, --enqueue        enqueue instead of adding to playlist\n"
+"  -v, --volume         set volume\n"
 "      --reshuffle      shuffle playlist again\n"
 "      --seek SECONDS   seek\n"
 "\n"
@@ -157,6 +160,7 @@ int main(int argc, char *argv[])
 	char server_buf[256];
 	char *server = NULL;
 	int sock, i;
+	int volume = 0;
 	int seek = 0;
 	int nr_commands = 0;
 
@@ -182,6 +186,18 @@ int main(int argc, char *argv[])
 		case FLAG_SERVER:
 			server = arg;
 			break;
+                case FLAG_VOLUME:
+			{
+				char *end;
+
+				volume = strtol(arg, &end, 10);
+				if (*arg == 0 || *end != 0 || volume == 0) {
+					fprintf(stderr, "%s: argument for --volume must be non-zero integer\n", program_name);
+					return 1;
+				}
+				nr_commands++;
+			}
+                       break;
 		case FLAG_SEEK:
 			{
 				char *end;
@@ -191,8 +207,9 @@ int main(int argc, char *argv[])
 					fprintf(stderr, "%s: argument for --seek must be non-zero integer\n", program_name);
 					return 1;
 				}
+				nr_commands++;
 			}
-			/* fall through */
+			break;
 		default:
 			nr_commands++;
 			break;
@@ -262,6 +279,8 @@ int main(int argc, char *argv[])
 		remote_send_cmd(sock, CMD_NEXT, NULL, 0);
 	if (flags[FLAG_PREV])
 		remote_send_cmd(sock, CMD_PREV, NULL, 0);
+	if (volume)
+		remote_send_cmd(sock, CMD_MIX_VOL, &volume, sizeof(int));
 	if (seek)
 		remote_send_cmd(sock, CMD_SEEK, &seek, sizeof(int));
 	remote_close(sock);
