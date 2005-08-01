@@ -220,6 +220,7 @@ static int vorbis_read_comments(struct input_plugin_data *ip_data,
 	vc = ov_comment(&priv->vf, -1);
 	if (vc == NULL) {
 		d_print("vc == NULL\n");
+		*comments = xnew0(struct comment, 1);
 		return 0;
 	}
 	c = xnew0(struct comment, vc->comments + 1);
