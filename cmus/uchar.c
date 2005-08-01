@@ -21,6 +21,44 @@
 
 #include <stdlib.h>
 
+static int u_get_char_bytes(const char *str)
+{
+	int i = 0;
+	int bit = 7;
+	int mask = (1 << 7);
+	int c, count;
+	uchar ch;
+
+	ch = (unsigned char)str[i++];
+	while (bit > 0 && ch & mask) {
+		mask >>= 1;
+		bit--;
+	}
+
+	if (bit == 7)
+		return 1;
+	count = 6 - bit;
+	if (count == 0 || count > 3)
+		return -1;
+	for (c = 0; c < count; c++) {
+		if (u_is_first_byte(str[i++]))
+			return -1;
+	}
+	return count + 1;
+}
+
+int u_is_valid(const char *str)
+{
+	while (*str) {
+		int skip = u_get_char_bytes(str);
+
+		if (skip == -1)
+			return 0;
+		str += skip;
+	}
+	return 1;
+}
+
 int u_strlen(const char *str)
 {
 	int i = 0;

@@ -49,6 +49,7 @@ static inline int u_char_size(uchar uch)
 	}
 }
 
+extern int u_is_valid(const char *str);
 extern int u_strlen(const char *str);
 extern int u_get_char(const char *str, int *idx, uchar *uch);
 extern int u_set_char(char *str, int *idx, uchar uch);
