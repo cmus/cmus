@@ -1162,9 +1162,10 @@ int player_set_volume(int left, int right)
 	left = clamp(left, 0, 100);
 	right = clamp(right, 0, 100);
 	consumer_lock();
-	rc = op_set_volume(left, right);
+	rc = op_set_volume(&left, &right);
 	consumer_unlock();
-	volume_changed(left, right);
+	if (rc == 0)
+		volume_changed(left, right);
 	return rc;
 }
 

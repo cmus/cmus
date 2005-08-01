@@ -470,14 +470,16 @@ static int scale_volume_to_internal(int volume)
 	return volume;
 }
 
-int op_set_volume(int left, int right)
+int op_set_volume(int *left, int *right)
 {
 	int l, r;
 
 	if (!op->mixer_open)
 		return -OP_ERROR_NOT_SUPPORTED;
-	l = scale_volume_to_internal(left);
-	r = scale_volume_to_internal(right);
+	l = scale_volume_to_internal(*left);
+	r = scale_volume_to_internal(*right);
+	*left = scale_volume_from_internal(l);
+	*right = scale_volume_from_internal(r);
 	return op->mixer_ops->set_volume(l, r);
 }
 
