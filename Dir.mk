@@ -16,7 +16,11 @@ release: extra cmus.spec
 		case $$key in y|Y) ;; *) exit 0; ;; esac; \
 	fi; \
 	echo "   DIST   $(tarball)"; \
-	cg-export $$dir || exit 1; \
+	mkdir -p $$dir || exit 1; \
+	export GIT_INDEX_FILE=$$dir/.git-index; \
+	git-read-tree HEAD || exit 1; \
+	git-checkout-cache --prefix=$$dir/ -a || exit 1; \
+	rm $$GIT_INDEX_FILE; \
 	cd $(tmpdir) || exit 1; \
 	cp $(top_srcdir)/doc/cmus.html $(release)/doc || exit 1; \
 	cp $(top_builddir)/cmus.spec $(release) || exit 1; \
