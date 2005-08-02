@@ -148,7 +148,7 @@ static const char *usage =
 "  -R, --repeat         toggle repeat\n"
 "  -P, --play-mode      toggle play mode\n"
 "  -e, --enqueue        enqueue instead of adding to playlist\n"
-"  -v, --volume         set volume\n"
+"  -v, --volume DELTA   increase/decrease volume\n"
 "      --reshuffle      shuffle playlist again\n"
 "      --seek SECONDS   seek\n"
 "\n"
