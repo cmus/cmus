@@ -130,7 +130,6 @@ static int mad_read_comments(struct input_plugin_data *ip_data,
 	struct comment *c;
 	int fd, rc, save, i;
 
-	d_print("\n");
 	fd = open(ip_data->filename, O_RDONLY);
 	if (fd == -1) {
 		return -1;

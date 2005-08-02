@@ -419,8 +419,6 @@ static int v2_read(ID3 *id3, int fd, const struct v2_header *header)
 	int rc, buf_size;
 	int frame_start, i;
 
-	id3_debug("\n");
-
 	buf_size = header->size;
 	buf = xnew(char, buf_size);
 	rc = read_all(fd, buf, buf_size);
@@ -516,7 +514,6 @@ int id3_read_tags(ID3 *id3, int fd, unsigned int flags)
 		if (rc)
 			goto rc_error;
 		if (v2_header_parse(&header, buf)) {
-			id3_debug("ID3v2 crap size = %d\n", header.size);
 			rc = v2_read(id3, fd, &header);
 			if (rc)
 				goto rc_error;
