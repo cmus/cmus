@@ -13,3 +13,7 @@ play queue idea and other misc ideas from Martin Stubenschrott
 <stubenschrott@gmx.net>
 
 original RPM spec file by Eugene Vlasov <eugene@ikz.ru>
+
+Claes Nästen <pekdon@gmail.com>
+  :seek command
+  --volume option for cmus-remote

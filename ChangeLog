@@ -1,3 +1,14 @@
+2005-08-02: 1.5.2
+~~~~~~~~~~~~~~~~~
+
+Claes Nästen:
+  o :seek command
+  o --volume option for cmus-remote
+
+Timo Hirvonen:
+  o replaced libid3tag code with my own ID3 code
+    should fix problems with some mp3s with UTF-8 tags
+
 Summary of changes from 1.5.0 to 1.5.1
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
