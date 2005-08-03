@@ -79,7 +79,8 @@ int u_strlen(const char *str)
 	return len;
 }
 
-int u_get_char(const char *str, int *idx, uchar *uch)
+/* int u_get_char(const char *str, int *idx, uchar *uch) */
+void u_get_char(const char *str, int *idx, uchar *uch)
 {
 	int i = *idx;
 	int bit = 7;
@@ -96,7 +97,7 @@ int u_get_char(const char *str, int *idx, uchar *uch)
 		u = ch;
 		*uch = u;
 		*idx = i;
-		return 0;
+/* 		return 0; */
 	} else {
 		int count;
 
@@ -109,31 +110,32 @@ int u_get_char(const char *str, int *idx, uchar *uch)
 		}
 		*uch = u;
 		*idx = i;
-		return 0;
+/* 		return 0; */
 	}
 }
 
-int u_set_char(char *str, int *idx, uchar uch)
+/* int u_set_char(char *str, int *idx, uchar uch) */
+void u_set_char(char *str, int *idx, uchar uch)
 {
 	int i = *idx;
 
 	if (uch <= 0x0000007fU) {
 		str[i++] = uch;
 		*idx = i;
-		return 0;
+/* 		return 0; */
 	} else if (uch <= 0x000007ffU) {
 		str[i + 1] = (uch & 63) | 0x80; uch >>= 6;
 		str[i + 0] = uch | 0x000000c0U;
 		i += 2;
 		*idx = i;
-		return 0;
+/* 		return 0; */
 	} else if (uch <= 0x0000ffffU) {
 		str[i + 2] = (uch & 63) | 0x80; uch >>= 6;
 		str[i + 1] = (uch & 63) | 0x80; uch >>= 6;
 		str[i + 0] = uch | 0x000000e0U;
 		i += 3;
 		*idx = i;
-		return 0;
+/* 		return 0; */
 	} else if (uch <= 0x0010ffffU) {
 		str[i + 3] = (uch & 63) | 0x80; uch >>= 6;
 		str[i + 2] = (uch & 63) | 0x80; uch >>= 6;
@@ -141,9 +143,9 @@ int u_set_char(char *str, int *idx, uchar uch)
 		str[i + 0] = uch | 0x000000f0U;
 		i += 4;
 		*idx = i;
-		return 0;
-	} else {
-		return -1;
+/* 		return 0; */
+/* 	} else { */
+/* 		return -1; */
 	}
 }
 
@@ -151,19 +153,10 @@ void u_copy_char(char *dst, int *didx, const char *src, int *sidx)
 {
 	int s = *sidx;
 	int d = *didx;
-	unsigned char ch;
 
-	ch = src[s++];
-	dst[d++] = ch;
-	if (ch & (1 << 7)) {
-		while (1) {
-			ch = src[s];
-			if (u_is_first_byte(ch))
-				break;
-			s++;
-			dst[d++] = ch;
-		}
-	}
+	dst[d++] = src[s++];
+	while (!u_is_first_byte(src[s]))
+		dst[d++] = src[s++];
 	*sidx = s;
 	*didx = d;
 }

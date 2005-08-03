@@ -34,6 +34,11 @@ static inline int u_is_first_byte(unsigned char byte)
 	return byte >> 6 != 2;
 }
 
+static inline int u_is_unicode(uchar u)
+{
+	return u <= 0x0010ffffU;
+}
+
 static inline int u_char_size(uchar uch)
 {
 	if (uch <= 0x0000007fU) {
@@ -51,8 +56,8 @@ static inline int u_char_size(uchar uch)
 
 extern int u_is_valid(const char *str);
 extern int u_strlen(const char *str);
-extern int u_get_char(const char *str, int *idx, uchar *uch);
-extern int u_set_char(char *str, int *idx, uchar uch);
+extern void u_get_char(const char *str, int *idx, uchar *uch);
+extern void u_set_char(char *str, int *idx, uchar uch);
 extern void u_copy_char(char *dst, int *didx, const char *src, int *sidx);
 extern void u_strncpy(char *dst, const char *src, int len);
 extern void u_substrcpy(char *dst, int didx, const char *src, int sidx, int len);

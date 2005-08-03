@@ -228,10 +228,11 @@ static char *utf16_to_utf8(const char *buf, int buf_size)
 		uchar u;
 		
 		u = buf[i] + (buf[i + 1] << 8);
-		if (u_set_char(out, &idx, u)) {
+		if (!u_is_unicode(u)) {
 			free(out);
 			return NULL;
 		}
+		u_set_char(out, &idx, u);
 		if (u == 0)
 			return out;
 		i += 2;
@@ -252,10 +253,11 @@ static char *utf16be_to_utf8(const char *buf, int buf_size)
 		uchar u;
 		
 		u = buf[i + 1] + (buf[i] << 8);
-		if (u_set_char(out, &idx, u)) {
+		if (!u_is_unicode(u)) {
 			free(out);
 			return NULL;
 		}
+		u_set_char(out, &idx, u);
 		if (u == 0)
 			return out;
 		i += 2;
