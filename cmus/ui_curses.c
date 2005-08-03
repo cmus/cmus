@@ -235,67 +235,52 @@ static void utf8_decode(const char *buffer)
 static void dump_print_buffer(int row, int col)
 {
 	if (using_utf8) {
-		mvprintw(row, col, "%s", print_buffer);
+		mvaddstr(row, col, print_buffer);
 	} else {
 		utf8_decode(print_buffer);
-		mvprintw(row, col, "%s", conv_buffer);
+		mvaddstr(row, col, conv_buffer);
 	}
 }
 
-static void dump_buffer(const char *buffer)
+static void sprint(int row, int col, const char *str, int len, int indent)
 {
-	if (using_utf8) {
-		printw("%s", buffer);
-	} else {
-		utf8_decode(buffer);
-		printw("%s", conv_buffer);
-	}
-}
+	int d, l;
 
-static void sprint(int row, int col, char *str, int len, int indent)
-{
-	int s, d, l;
-
-	if (str == NULL)
-		str = "<no name>";
 	l = u_strlen(str);
-	s = 0;
-	d = 0;
 	len -= 2 + indent;
 	indent++;
-	while (indent--)
-		u_set_char(print_buffer, &d, ' ');
+
+	memset(print_buffer, ' ', indent);
+	d = indent;
 	if (l > len) {
+		int s = 0;
+
 		l = len - 3;
 		while (l) {
 			u_copy_char(print_buffer, &d, str, &s);
 			l--;
 		}
-		u_set_char(print_buffer, &d, '.');
-		u_set_char(print_buffer, &d, '.');
-		u_set_char(print_buffer, &d, '.');
+		print_buffer[d++] = '.';
+		print_buffer[d++] = '.';
+		print_buffer[d++] = '.';
 	} else {
-		while (l) {
-			u_copy_char(print_buffer, &d, str, &s);
-			len--;
-			l--;
-		}
-		while (len) {
-			u_set_char(print_buffer, &d, ' ');
-			len--;
-		}
+		int s = 0;
+
+		while (str[s])
+			print_buffer[d++] = str[s++];
+
+		memset(print_buffer + d, ' ', len - l);
+		d += len - l;
 	}
-	u_set_char(print_buffer, &d, ' ');
-	u_set_char(print_buffer, &d, 0);
+	print_buffer[d++] = ' ';
+	print_buffer[d++] = 0;
 	dump_print_buffer(row, col);
 }
 
-static void sprint_ascii(int row, int col, char *str, int len)
+static void sprint_ascii(int row, int col, const char *str, int len)
 {
 	int l;
 
-	if (str == NULL)
-		str = "<no name>";
 	l = strlen(str);
 	len -= 2;
 	if (l > len) {
@@ -313,6 +298,7 @@ static void sprint_ascii(int row, int col, char *str, int len)
 
 static void print_tree(struct window *win, int row, struct iter *iter)
 {
+	const char *noname = "<no name>";
 	struct artist *artist;
 	struct album *album;
 	struct iter sel;
@@ -330,9 +316,9 @@ static void print_tree(struct window *win, int row, struct iter *iter)
 	active = playlist.cur_win == TREE_WIN;
 	bkgdset(color_row[(active << 2) | (selected << 1) | current]);
 	if (album) {
-		sprint(tree_win_y + row + 1, tree_win_x, album->name, tree_win_w, 2);
+		sprint(tree_win_y + row + 1, tree_win_x, album->name ? : noname, tree_win_w, 2);
 	} else {
-		sprint(tree_win_y + row + 1, tree_win_x, artist->name, tree_win_w, 0);
+		sprint(tree_win_y + row + 1, tree_win_x, artist->name ? : noname, tree_win_w, 0);
 	}
 }
 
@@ -571,6 +557,7 @@ static void print_browser(struct window *win, int row, struct iter *iter)
 		}
 	}
 
+	/* file name encoding == terminal encoding. no need to convert */
 	if (using_utf8) {
 		sprint(row + 1, 0, e->name, COLS, 0);
 	} else {
@@ -858,12 +845,22 @@ static void update_statusline(void)
 	}
 }
 
+static void dump_buffer(const char *buffer)
+{
+	if (using_utf8) {
+		addstr(buffer);
+	} else {
+		utf8_decode(buffer);
+		addstr(conv_buffer);
+	}
+}
+
 static void update_commandline(void)
 {
 	move(LINES - 1, 0);
 	if (error_msg[0]) {
 		bkgdset(color_error);
-		printw("%s", error_msg);
+		addstr(error_msg);
 	} else {
 		bkgdset(color_commandline);
 		if (ui_curses_input_mode == COMMAND_MODE) {
@@ -1102,7 +1099,7 @@ int ui_curses_yes_no_query(const char *format, ...)
 	 * encoded in same charset as LC_CTYPE).
 	 */
 
-	printw("%s", buffer);
+	addstr(buffer);
 	clrtoeol();
 	refresh();
 
