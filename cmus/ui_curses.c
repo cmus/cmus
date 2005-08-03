@@ -283,17 +283,20 @@ static void sprint_ascii(int row, int col, const char *str, int len)
 
 	l = strlen(str);
 	len -= 2;
+
+	print_buffer[0] = ' ';
 	if (l > len) {
-		memcpy(print_buffer, str, len - 3);
-		print_buffer[len - 3] = '.';
+		memcpy(print_buffer + 1, str, len - 3);
 		print_buffer[len - 2] = '.';
 		print_buffer[len - 1] = '.';
+		print_buffer[len - 0] = '.';
 	} else {
-		memcpy(print_buffer, str, l);
-		memset(print_buffer + l, ' ', len - l);
+		memcpy(print_buffer + 1, str, l);
+		memset(print_buffer + 1 + l, ' ', len - l);
 	}
-	print_buffer[len] = 0;
-	mvprintw(row, col, " %s ", print_buffer);
+	print_buffer[len + 1] = ' ';
+	print_buffer[len + 2] = 0;
+	mvaddstr(row, col, print_buffer);
 }
 
 static void print_tree(struct window *win, int row, struct iter *iter)
