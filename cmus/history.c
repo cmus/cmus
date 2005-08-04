@@ -58,6 +58,8 @@ void history_insert_ch(struct history *history, uchar ch)
 	int size;
 
 	SANITY_CHECK();
+	if (!u_is_unicode(ch))
+		return;
 
 	size = u_char_size(ch);
 	if (history->current_blen + size > history->current_size) {

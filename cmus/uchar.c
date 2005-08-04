@@ -79,7 +79,6 @@ int u_strlen(const char *str)
 	return len;
 }
 
-/* int u_get_char(const char *str, int *idx, uchar *uch) */
 void u_get_char(const char *str, int *idx, uchar *uch)
 {
 	int i = *idx;
@@ -97,7 +96,6 @@ void u_get_char(const char *str, int *idx, uchar *uch)
 		u = ch;
 		*uch = u;
 		*idx = i;
-/* 		return 0; */
 	} else {
 		int count;
 
@@ -110,11 +108,9 @@ void u_get_char(const char *str, int *idx, uchar *uch)
 		}
 		*uch = u;
 		*idx = i;
-/* 		return 0; */
 	}
 }
 
-/* int u_set_char(char *str, int *idx, uchar uch) */
 void u_set_char(char *str, int *idx, uchar uch)
 {
 	int i = *idx;
@@ -122,20 +118,17 @@ void u_set_char(char *str, int *idx, uchar uch)
 	if (uch <= 0x0000007fU) {
 		str[i++] = uch;
 		*idx = i;
-/* 		return 0; */
 	} else if (uch <= 0x000007ffU) {
 		str[i + 1] = (uch & 63) | 0x80; uch >>= 6;
 		str[i + 0] = uch | 0x000000c0U;
 		i += 2;
 		*idx = i;
-/* 		return 0; */
 	} else if (uch <= 0x0000ffffU) {
 		str[i + 2] = (uch & 63) | 0x80; uch >>= 6;
 		str[i + 1] = (uch & 63) | 0x80; uch >>= 6;
 		str[i + 0] = uch | 0x000000e0U;
 		i += 3;
 		*idx = i;
-/* 		return 0; */
 	} else if (uch <= 0x0010ffffU) {
 		str[i + 3] = (uch & 63) | 0x80; uch >>= 6;
 		str[i + 2] = (uch & 63) | 0x80; uch >>= 6;
@@ -143,94 +136,37 @@ void u_set_char(char *str, int *idx, uchar uch)
 		str[i + 0] = uch | 0x000000f0U;
 		i += 4;
 		*idx = i;
-/* 		return 0; */
-/* 	} else { */
-/* 		return -1; */
 	}
 }
 
-void u_copy_char(char *dst, int *didx, const char *src, int *sidx)
+int u_copy_chars(char *dst, const char *src, int len)
 {
-	int s = *sidx;
-	int d = *didx;
+	unsigned char ch = src[0];
+	int i = 0;
 
-	dst[d++] = src[s++];
-	while (!u_is_first_byte(src[s]))
-		dst[d++] = src[s++];
-	*sidx = s;
-	*didx = d;
-}
-
-void u_strncpy(char *dst, const char *src, int len)
-{
-	int i;
-
-	i = 0;
 	while (len) {
-		unsigned char ch;
-
-		ch = (unsigned char)src[i];
-		dst[i] = ch;
 		if (ch == 0)
 			break;
-		i++;
-
-		if (ch & (1 << 7)) {
-			do {
-				ch = (unsigned char)src[i];
-				dst[i] = ch;
-				i++;
-			} while (!u_is_first_byte(ch));
-			i--;
-		}
+		do {
+			dst[i++] = ch;
+			ch = src[i];
+		} while (!u_is_first_byte(ch));
 		len--;
 	}
-	dst[i] = 0;
+	return i;
 }
 
-void u_substrcpy(char *dst, int didx, const char *src, int sidx, int len)
+int u_skip_chars(const char *str, int len)
 {
-	int s, d;
-	unsigned char ch;
+	int i = 0;
 
-	d = 0;
-	while (didx) {
-		ch = (unsigned char)dst[d++];
-		if (ch & (1 << 7)) {
-			do {
-				ch = (unsigned char)dst[d++];
-			} while (!u_is_first_byte(ch));
-			d--;
-		}
-		didx--;
+	while (len) {
+		do {
+			i++;
+		} while (!u_is_first_byte(str[i]));
+		len--;
 	}
-	s = 0;
-	while (sidx) {
-		ch = (unsigned char)src[s++];
-		if (ch & (1 << 7)) {
-			do {
-				ch = (unsigned char)src[s++];
-			} while (!u_is_first_byte(ch));
-			s--;
-		}
-		sidx--;
-	}
-	u_strncpy(dst + d, src + s, len);
-}
-
-int u_get_idx(const char *str, int pos)
-{
-	int idx = 0;
-
-	while (pos > 0) {
-		uchar ch;
-
-		u_get_char(str, &idx, &ch);
-		if (ch == 0)
-			return idx - 1;
-		pos--;
-	}
-	return idx;
+	return i;
 }
 
 // FIXME

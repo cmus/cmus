@@ -162,7 +162,7 @@ static void print_str(char *buf, int *idx, const char *str, int width, int align
 			d += ws_len;
 			i += ws_len;
 		} else {
-			int str_len, skip;
+			int str_len;
 
 			str_len = u_strlen(str);
 			ws_len = width - str_len;
@@ -173,16 +173,15 @@ static void print_str(char *buf, int *idx, const char *str, int width, int align
 				i += ws_len;
 			}
 
-			skip = -ws_len;
-			while (skip > 0) {
-				u_get_char(str, &s, &u);
-				skip--;
-			}
+			if (ws_len < 0)
+				s += u_skip_chars(str, -ws_len);
 
-			while (i < width) {
-				u_get_char(str, &s, &u);
-				u_set_char(buf, &d, u);
-				i++;
+			if (width - i > 0) {
+				int c;
+
+				c = u_copy_chars(buf + d, str + s, width - i);
+				s += c;
+				d += c;
 			}
 		}
 	} else {
@@ -394,31 +393,26 @@ int format_print(char *str, int str_size, int width, const char *format,
 
 	if (llen + rlen <= width) {
 		/* both fit */
-		int ws_len;
+		int ws_len = width - llen - rlen;
+		int pos = 0;
 
-		/* get real lenghts (bytes) */
-		lsize = strlen(l_str);
-		rsize = strlen(r_str);
-
-		if (lsize > 0)
-			memcpy(str, l_str, lsize);
-		ws_len = width - llen - rlen;
-		memset(str + lsize, ' ', ws_len);
-		if (rsize > 0)
-			memcpy(str + lsize + ws_len, r_str, rsize);
-		str[lsize + ws_len + rsize] = 0;
-	} else {
-		int l_space;
-
-		l_space = width - rlen;
-		if (l_space > 0)
-			u_strncpy(str, l_str, l_space);
-
-		if (l_space < 0) {
-			u_substrcpy(str, 0, r_str, -l_space, width);
-		} else {
-			u_substrcpy(str, l_space, r_str, 0, rlen);
+		/* I would use strcpy if it returned anything useful */
+		while (l_str[pos]) {
+			str[pos] = l_str[pos];
+			pos++;
 		}
+		memset(str + pos, ' ', ws_len);
+		strcpy(str + pos + ws_len, r_str);
+	} else {
+		int l_space = width - rlen;
+		int pos = 0;
+		int idx = 0;
+
+		if (l_space > 0)
+			pos = u_copy_chars(str, l_str, l_space);
+		if (l_space < 0)
+			idx = u_skip_chars(r_str, -l_space);
+		strcpy(str + pos, r_str + idx);
 	}
 	return 0;
 }

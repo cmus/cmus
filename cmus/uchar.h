@@ -29,16 +29,29 @@ typedef unsigned int uchar;
  * 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
  */
 
+/*
+ * @byte  any byte in UTF-8 string
+ *
+ * Returns 1 if @byte is the first byte of unicode char, 0 otherwise
+ */
 static inline int u_is_first_byte(unsigned char byte)
 {
 	return byte >> 6 != 2;
 }
 
-static inline int u_is_unicode(uchar u)
+/*
+ * @uch  potential unicode character
+ *
+ * Returns 1 if @uch is valid unicode character, 0 otherwise
+ */
+static inline int u_is_unicode(uchar uch)
 {
-	return u <= 0x0010ffffU;
+	return uch <= 0x0010ffffU;
 }
 
+/*
+ * Returns size of @uch in bytes
+ */
 static inline int u_char_size(uchar uch)
 {
 	if (uch <= 0x0000007fU) {
@@ -54,14 +67,56 @@ static inline int u_char_size(uchar uch)
 	}
 }
 
+/*
+ * @str  any null-terminated string
+ *
+ * Returns 1 if @str is valid UTF-8 string, 0 otherwise.
+ */
 extern int u_is_valid(const char *str);
+
+/*
+ * @str  null-terminated UTF-8 string
+ *
+ * Retuns length of @str in UTF-8 characters.
+ */
 extern int u_strlen(const char *str);
+
+/*
+ * @str  null-terminated UTF-8 string
+ * @idx  pointer to byte index in @str (not UTF-8 character index!)
+ * @uch  pointer to returned unicode character
+ */
 extern void u_get_char(const char *str, int *idx, uchar *uch);
+
+/*
+ * @str  destination buffer
+ * @idx  pointer to byte index in @str (not UTF-8 character index!)
+ * @uch  unicode character
+ */
 extern void u_set_char(char *str, int *idx, uchar uch);
-extern void u_copy_char(char *dst, int *didx, const char *src, int *sidx);
-extern void u_strncpy(char *dst, const char *src, int len);
-extern void u_substrcpy(char *dst, int didx, const char *src, int sidx, int len);
-extern int u_get_idx(const char *str, int pos);
+
+/*
+ * @dst  destination buffer (size >= @len)
+ * @src  null-terminated UTF-8 string
+ * @len  number of UTF-8 characters to copy
+ *
+ * Copies at most @len characters, less if null byte was hit.
+ * Null byte is _never_ copied.
+ *
+ * Returns number of _bytes_ copied.
+ */
+extern int u_copy_chars(char *dst, const char *src, int len);
+
+/*
+ * @str  null-terminated UTF-8 string, length >= @len
+ * @len  number of UTF-8 characters to skip
+ *
+ * Skips @len UTF-8 characters.
+ *
+ * Returns number of _bytes_ skipped.
+ */
+extern int u_skip_chars(const char *str, int len);
+
 extern char *u_strcasestr(const char *text, const char *part);
 
 #endif

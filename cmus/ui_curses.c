@@ -253,13 +253,7 @@ static void sprint(int row, int col, const char *str, int len, int indent)
 	memset(print_buffer, ' ', indent);
 	d = indent;
 	if (l > len) {
-		int s = 0;
-
-		l = len - 3;
-		while (l) {
-			u_copy_char(print_buffer, &d, str, &s);
-			l--;
-		}
+		d += u_copy_chars(print_buffer + d, str, len - 3);
 		print_buffer[d++] = '.';
 		print_buffer[d++] = '.';
 		print_buffer[d++] = '.';
@@ -872,15 +866,9 @@ static void update_commandline(void)
 				dump_buffer(cmd_history.current);
 			} else {
 				char *str = cmd_history.current;
-				int skip = cmd_history.current_clen - COLS + 1;
-				int idx = 0;
+				int idx;
 
-				while (skip) {
-					uchar ch;
-
-					u_get_char(str, &idx, &ch);
-					skip--;
-				}
+				idx = u_skip_chars(str, cmd_history.current_clen - COLS + 1);
 				dump_buffer(str + idx);
 			}
 		} else if (ui_curses_input_mode == SEARCH_MODE) {
@@ -889,15 +877,9 @@ static void update_commandline(void)
 				dump_buffer(search_history.current);
 			} else {
 				char *str = search_history.current;
-				int skip = search_history.current_clen - COLS + 1;
-				int idx = 0;
+				int idx;
 
-				while (skip) {
-					uchar ch;
-
-					u_get_char(str, &idx, &ch);
-					skip--;
-				}
+				idx = u_skip_chars(str, cmd_history.current_clen - COLS + 1);
 				dump_buffer(str + idx);
 			}
 		}
