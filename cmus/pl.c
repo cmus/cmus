@@ -33,7 +33,7 @@
 /* iterator {{{ */
 
 /* tree (search) iterators {{{ */
-int tree_search_get_prev(struct iter *iter)
+static int tree_search_get_prev(struct iter *iter)
 {
 	struct list_head *head = iter->data0;
 	struct track *track = iter->data1;
@@ -75,7 +75,7 @@ int tree_search_get_prev(struct iter *iter)
 	return 1;
 }
 
-int tree_search_get_next(struct iter *iter)
+static int tree_search_get_next(struct iter *iter)
 {
 	struct list_head *head = iter->data0;
 	struct track *track = iter->data1;
@@ -119,7 +119,7 @@ int tree_search_get_next(struct iter *iter)
 /* }}} */
 
 /* tree window iterators {{{ */
-int tree_get_prev(struct iter *iter)
+static int tree_get_prev(struct iter *iter)
 {
 	struct list_head *head = iter->data0;
 	struct artist *artist = iter->data1;
@@ -170,7 +170,7 @@ int tree_get_prev(struct iter *iter)
 	return 1;
 }
 
-int tree_get_next(struct iter *iter)
+static int tree_get_next(struct iter *iter)
 {
 	struct list_head *head = iter->data0;
 	struct artist *artist = iter->data1;
@@ -214,7 +214,7 @@ int tree_get_next(struct iter *iter)
 /* }}} */
 
 /* track window iterators {{{ */
-int track_get_prev(struct iter *iter)
+static int track_get_prev(struct iter *iter)
 {
 	struct list_head *head = iter->data0;
 	struct track *track = iter->data1;
@@ -239,7 +239,7 @@ int track_get_prev(struct iter *iter)
 	return 1;
 }
 
-int track_get_next(struct iter *iter)
+static int track_get_next(struct iter *iter)
 {
 	struct list_head *head = iter->data0;
 	struct track *track = iter->data1;
@@ -266,7 +266,7 @@ int track_get_next(struct iter *iter)
 /* }}} */
 
 /* shuffle window iterators {{{ */
-int shuffle_get_prev(struct iter *iter)
+static int shuffle_get_prev(struct iter *iter)
 {
 	struct list_head *head = iter->data0;
 	struct track *track = iter->data1;
@@ -290,7 +290,7 @@ int shuffle_get_prev(struct iter *iter)
 	return 1;
 }
 
-int shuffle_get_next(struct iter *iter)
+static int shuffle_get_next(struct iter *iter)
 {
 	struct list_head *head = iter->data0;
 	struct track *track = iter->data1;
@@ -316,7 +316,7 @@ int shuffle_get_next(struct iter *iter)
 /* }}} */
 
 /* sorted window iterators {{{ */
-int sorted_get_prev(struct iter *iter)
+static int sorted_get_prev(struct iter *iter)
 {
 	struct list_head *head = iter->data0;
 	struct track *track = iter->data1;
@@ -340,7 +340,7 @@ int sorted_get_prev(struct iter *iter)
 	return 1;
 }
 
-int sorted_get_next(struct iter *iter)
+static int sorted_get_next(struct iter *iter)
 {
 	struct list_head *head = iter->data0;
 	struct track *track = iter->data1;

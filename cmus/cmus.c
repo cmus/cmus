@@ -384,7 +384,7 @@ void cmus_clear_playlist(void)
 	pl_clear();
 }
 
-int save_playlist_cb(void *data, struct track_info *ti)
+static int save_playlist_cb(void *data, struct track_info *ti)
 {
 	int fd = *(int *)data;
 	const char nl = '\n';
