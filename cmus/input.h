@@ -13,10 +13,14 @@ struct input_plugin;
 extern void ip_init_plugins(void);
 
 /*
- * errors: IP_ERROR_{UNRECOGNIZED_FILE_TYPE, INVALID_URI}
+ * allocates new struct input_plugin.
+ * never fails. does not check if the file is really playable
  */
-extern int ip_create(struct input_plugin **ip, const char *filename);
+extern struct input_plugin *ip_new(const char *filename);
 
+/*
+ * frees struct input_plugin closing it first if necessary
+ */
 extern void ip_delete(struct input_plugin *ip);
 
 /*

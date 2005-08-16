@@ -350,8 +350,6 @@ static void __prebuffer(void)
 			if (nr_read == -1 && errno == EAGAIN)
 				continue;
 			player_ip_error(nr_read, "reading file %s", ip_get_filename(ip));
-
-			ip_close(ip);
 			ip_delete(ip);
 			producer_status = PS_UNLOADED;
 			return;
@@ -380,17 +378,13 @@ static void __producer_play(void)
 		if (get_next(&filename) == 0) {
 			int rc;
 
-			rc = ip_create(&ip, filename);
+			ip = ip_new(filename);
+			rc = ip_open(ip);
 			if (rc) {
-				player_ip_error(rc, "creating ip for file `%s'", filename);
+				player_ip_error(rc, "opening file `%s'", filename);
+				ip_delete(ip);
 			} else {
-				rc = ip_open(ip);
-				if (rc) {
-					player_ip_error(rc, "opening file `%s'", filename);
-					ip_delete(ip);
-				} else {
-					producer_status = PS_PLAYING;
-				}
+				producer_status = PS_PLAYING;
 			}
 			free(filename);
 			file_changed();
@@ -444,16 +438,9 @@ static void __producer_pause(void)
 
 static void __producer_set_file(const char *filename)
 {
-	int rc;
-
 	__producer_unload();
-	rc = ip_create(&ip, filename);
-	if (rc) {
-		player_ip_error(rc, "creating ip for file `%s'", filename);
-		producer_status = PS_UNLOADED;
-	} else {
-		producer_status = PS_STOPPED;
-	}
+	ip = ip_new(filename);
+	producer_status = PS_STOPPED;
 	file_changed();
 }
 
@@ -519,38 +506,31 @@ static void __consumer_handle_eof(void)
 		int rc;
 
 		__producer_unload();
-		rc = ip_create(&ip, filename);
-		if (rc) {
-			/* PS_UNLOADED, CS_PLAYING */
-			__consumer_stop();
-			player_ip_error(rc, "creating ip for file %s", filename);
-			file_changed();
-		} else {
-			producer_status = PS_STOPPED;
-			/* PS_STOPPED, CS_PLAYING */
-			if (player_cont) {
-				__producer_play();
-				if (producer_status == PS_UNLOADED) {
-					__consumer_stop();
+		ip = ip_new(filename);
+		producer_status = PS_STOPPED;
+		/* PS_STOPPED, CS_PLAYING */
+		if (player_cont) {
+			__producer_play();
+			if (producer_status == PS_UNLOADED) {
+				__consumer_stop();
+				file_changed();
+			} else {
+				/* PS_PLAYING */
+				set_buffer_sf(ip_get_sf(ip));
+				rc = op_set_sf(buffer_sf);
+				if (rc < 0) {
+					__producer_stop();
+					consumer_status = CS_STOPPED;
+					player_op_error(rc, "setting sample format");
 					file_changed();
 				} else {
-					/* PS_PLAYING */
-					set_buffer_sf(ip_get_sf(ip));
-					rc = op_set_sf(buffer_sf);
-					if (rc < 0) {
-						__producer_stop();
-						consumer_status = CS_STOPPED;
-						player_op_error(rc, "setting sample format");
-						file_changed();
-					} else {
-						file_changed();
-						__prebuffer();
-					}
+					file_changed();
+					__prebuffer();
 				}
-			} else {
-				__consumer_drain_and_stop();
-				file_changed();
 			}
+		} else {
+			__consumer_drain_and_stop();
+			file_changed();
 		}
 		free(filename);
 	} else {
@@ -681,7 +661,6 @@ static void *producer_loop(void *arg)
 			if (nr_read < 0) {
 				if (nr_read != -1 || errno != EAGAIN) {
 					player_ip_error(nr_read, "reading file %s", ip_get_filename(ip));
-					ip_close(ip);
 					ip_delete(ip);
 					producer_status = PS_UNLOADED;
 				}
@@ -1115,30 +1094,26 @@ int player_get_fileinfo(const char *filename, int *duration,
 
 	*comments = NULL;
 	*duration = -1;
-	rc = ip_create(&plug, filename);
-	if (rc == 0) {
-		if (ip_is_remote(plug)) {
-			*comments = xnew0(struct comment, 1);
-			ip_delete(plug);
-			return 0;
-		}
-		rc = ip_open(plug);
-		if (rc) {
-			int save = errno;
-
-			ip_delete(plug);
-			errno = save;
-			if (rc != -1)
-				rc = -PLAYER_ERROR_NOT_SUPPORTED;
-			return rc;
-		}
-		*duration = ip_duration(plug);
-		rc = ip_read_comments(plug, comments);
-		ip_close(plug);
+	plug = ip_new(filename);
+	if (ip_is_remote(plug)) {
+		*comments = xnew0(struct comment, 1);
 		ip_delete(plug);
+		return 0;
+	}
+	rc = ip_open(plug);
+	if (rc) {
+		int save = errno;
+
+		ip_delete(plug);
+		errno = save;
+		if (rc != -1)
+			rc = -PLAYER_ERROR_NOT_SUPPORTED;
 		return rc;
 	}
-	return -PLAYER_ERROR_NOT_SUPPORTED;
+	*duration = ip_duration(plug);
+	rc = ip_read_comments(plug, comments);
+	ip_delete(plug);
+	return rc;
 }
 
 int player_get_volume(int *left, int *right)

@@ -452,7 +452,7 @@ void ip_init_plugins(void)
 	closedir(dir);
 }
 
-int ip_create(struct input_plugin **ipp, const char *filename)
+struct input_plugin *ip_new(const char *filename)
 {
 	struct input_plugin *ip = xnew(struct input_plugin, 1);
 
@@ -472,14 +472,13 @@ int ip_create(struct input_plugin **ipp, const char *filename)
 	ip->data.metadata = NULL;
 
 	ip->data.private = NULL;
-	*ipp = ip;
-	return 0;
+	return ip;
 }
 
 void ip_delete(struct input_plugin *ip)
 {
-	BUG_ON(ip->open);
-
+	if (ip->open)
+		ip_close(ip);
 	free(ip->data.filename);
 	free(ip);
 }
