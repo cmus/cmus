@@ -269,16 +269,16 @@ int main(int argc, char *argv[])
 		remote_send_cmd(sock, CMD_TPLAYMODE, NULL, 0);
 	if (flags[FLAG_RESHUFFLE])
 		remote_send_cmd(sock, CMD_PLRESHUFFLE, NULL, 0);
-	if (flags[FLAG_PLAY])
-		remote_send_cmd(sock, CMD_PLAY, NULL, 0);
-	if (flags[FLAG_PAUSE])
-		remote_send_cmd(sock, CMD_PAUSE, NULL, 0);
 	if (flags[FLAG_STOP])
 		remote_send_cmd(sock, CMD_STOP, NULL, 0);
 	if (flags[FLAG_NEXT])
 		remote_send_cmd(sock, CMD_NEXT, NULL, 0);
 	if (flags[FLAG_PREV])
 		remote_send_cmd(sock, CMD_PREV, NULL, 0);
+	if (flags[FLAG_PLAY])
+		remote_send_cmd(sock, CMD_PLAY, NULL, 0);
+	if (flags[FLAG_PAUSE])
+		remote_send_cmd(sock, CMD_PAUSE, NULL, 0);
 	if (volume)
 		remote_send_cmd(sock, CMD_MIX_VOL, &volume, sizeof(int));
 	if (seek)
