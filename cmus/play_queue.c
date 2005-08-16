@@ -167,6 +167,7 @@ void __play_queue_append(struct track_info *track_info)
 	e->track_info = track_info;
 	list_add_tail(&e->node, &play_queue_head);
 	window_changed(play_queue_win);
+	play_queue_changed = 1;
 }
 
 void __play_queue_prepend(struct track_info *track_info)
@@ -179,6 +180,7 @@ void __play_queue_prepend(struct track_info *track_info)
 	e->track_info = track_info;
 	list_add(&e->node, &play_queue_head);
 	window_changed(play_queue_win);
+	play_queue_changed = 1;
 }
 
 void play_queue_append(struct track_info *track_info)
