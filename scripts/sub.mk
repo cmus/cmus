@@ -47,96 +47,23 @@ extra: extra-build
 # constants
 builddir	:= .
 
-# ---------------------------------------
 # variables used in Dir.mk and commmon.mk
-
-# low-level
 clean		:=
 distclean	:=
 targets-n	:=
 targets-y	:=
 extra-targets-n	:=
 extra-targets-y	:=
-
-# high-level (make all)
-archives-n	:=
-archives-y	:=
-libs-n		:=
-libs-y		:=
-programs-n	:=
-programs-y	:=
-lib-archives-n	:=
-lib-archives-y	:=
-lib-libs-n	:=
-lib-libs-y	:=
-bin-programs-n	:=
-bin-programs-y	:=
-sbin-programs-n	:=
-sbin-programs-y	:=
-# same as above but extra versions (make extra)
-extra-archives-n	:=
-extra-archives-y	:=
-extra-libs-n		:=
-extra-libs-y		:=
-extra-programs-n	:=
-extra-programs-y	:=
-extra-lib-archives-n	:=
-extra-lib-archives-y	:=
-extra-lib-libs-n	:=
-extra-lib-libs-y	:=
-extra-bin-programs-n	:=
-extra-bin-programs-y	:=
-extra-sbin-programs-n	:=
-extra-sbin-programs-y	:=
-
-# misc
 subdirs		:=
 ctags-languages	:= all,-html
 ctags-dirs	:=
-# ---------------------------------------
 
 include $(scriptdir)/lib.mk
 -include $(top_srcdir)/common.mk
 include $(srcdir)/Dir.mk
 
-ifneq ($(targets),)
-$(warning targets is deprecated)
-endif
-
-# ---------------------------------------------------------------------------------------------
-# do "foo = $(foo-y) $(foo-n) $(extra-foo-y) $(extra-foo-n)"
-# to simplify generation of build/install targets
-$(foreach i,archives libs programs lib-archives lib-libs bin-programs sbin-programs,$(eval $(i) := $$($(i)-y) $$($(i)-n) $$(extra-$(i)-y) $$(extra-$(i)-n)))
-
-# generate build targets
-$(foreach i,                 $(archives) $(lib-archives),$(eval $(call archive_template,$(i))))
-$(foreach i,                         $(libs) $(lib-libs),$(eval $(call     lib_template,$(i))))
-$(foreach i,$(programs) $(bin-programs) $(sbin-programs),$(eval $(call program_template,$(i))))
-
-# generate install targets
-$(foreach i, $(lib-archives),$(eval $(call    a_install_template,$(i))))
-$(foreach i,     $(lib-libs),$(eval $(call   so_install_template,$(i))))
-$(foreach i, $(bin-programs),$(eval $(call  bin_install_template,$(i))))
-$(foreach i,$(sbin-programs),$(eval $(call sbin_install_template,$(i))))
-# ---------------------------------------------------------------------------------------------
-
-# virtual targets. usually same as real ones for programs
-all-y		:= $(foreach i,archives libs programs lib-archives lib-libs bin-programs sbin-programs,$($(i)-y))
-all-n		:= $(foreach i,archives libs programs lib-archives lib-libs bin-programs sbin-programs,$($(i)-n))
-all-extra-y	:= $(foreach i,archives libs programs lib-archives lib-libs bin-programs sbin-programs,$(extra-$(i)-y))
-all-extra-n	:= $(foreach i,archives libs programs lib-archives lib-libs bin-programs sbin-programs,$(extra-$(i)-n))
-
-# real target files
-targets-y	+= $(foreach i,$(all-y),$($(i)-target))
-targets-n	+= $(foreach i,$(all-n),$($(i)-target))
-extra-targets-y	+= $(foreach i,$(all-extra-y),$($(i)-target))
-extra-targets-n	+= $(foreach i,$(all-extra-n),$($(i)-target))
-
 # clean target files
 clean		+= $(targets-y) $(targets-n) $(extra-targets-y) $(extra-targets-n)
-
-# clean object files
-clean		+= $(foreach i,$(all-y) $(all-n) $(all-extra-y) $(all-extra-n),$($(i)-objs-y) $($(i)-objs-n))
 
 dep-files	:= $(wildcard .dep-*)
 clean		+= $(dep-files) core core.[0-9]*
@@ -244,13 +171,6 @@ extra-install-data: recursive-extra-install-data
 endif
 
 endif
-
-get-installs		= $(foreach j,$(foreach i,$(1),$($(i)-y)),$(j)-install)
-
-install-exec: $(call get-installs,bin-programs sbin-programs lib-libs)
-install-data: $(call get-installs,lib-archives)
-extra-install-exec: $(call get-installs,extra-bin-programs extra-sbin-programs extra-lib-libs)
-extra-install-data: $(call get-installs,extra-lib-archives)
 
 _targets		:= build install install-exec install-data
 _targets		+= extra-build extra-install extra-install-exec extra-install-data
