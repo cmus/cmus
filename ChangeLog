@@ -1,3 +1,10 @@
+2005-08-17: 1.5.3
+~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen:
+  o update play queue view when tracks are enqueued using cmus-remote
+  o build system fixes
+
 2005-08-02: 1.5.2
 ~~~~~~~~~~~~~~~~~
 
