@@ -134,40 +134,40 @@ static int color_separator;
 /* colors */
 /* active,selected,current */
 static int row_bg[8] = {
-	COLOR_BLACK,
-	COLOR_BLACK,
+	-1,
+	-1,
 	COLOR_WHITE,
 	COLOR_WHITE,
-	COLOR_BLACK,
-	COLOR_BLACK,
+	-1,
+	-1,
 	COLOR_BLUE,
 	COLOR_BLUE
 };
 static int row_fg[8] = {
-	COLOR_WHITE,
+	-1,
 	COLOR_YELLOW | BRIGHT,
 	COLOR_BLACK,
 	COLOR_YELLOW | BRIGHT,
-	COLOR_WHITE,
+	-1,
 	COLOR_YELLOW | BRIGHT,
 	COLOR_WHITE | BRIGHT,
 	COLOR_YELLOW | BRIGHT
 };
 static int title_bg = COLOR_RED;
 static int title_fg = COLOR_WHITE | BRIGHT;
-static int commandline_bg = COLOR_BLACK;
-static int commandline_fg = COLOR_WHITE;
+static int commandline_bg = -1;
+static int commandline_fg = -1;
 static int statusline_bg = COLOR_WHITE;
 static int statusline_fg = COLOR_BLACK;
 static int titleline_bg = COLOR_RED;
 static int titleline_fg = COLOR_WHITE | BRIGHT;
-static int browser_dir_bg = COLOR_BLACK;
+static int browser_dir_bg = -1;
 static int browser_dir_fg = COLOR_BLUE | BRIGHT;
-static int browser_file_bg = COLOR_BLACK;
-static int browser_file_fg = COLOR_WHITE;
-static int error_bg = COLOR_BLACK;
+static int browser_file_bg = -1;
+static int browser_file_fg = -1;
+static int error_bg = -1;
 static int error_fg = COLOR_RED | BRIGHT;
-static int info_bg = COLOR_BLACK;
+static int info_bg = -1;
 static int info_fg = COLOR_YELLOW | BRIGHT;
 
 /*
@@ -2096,8 +2096,15 @@ static int cursed_color(int fg, int bg)
 	static int pair = 1;
 	int cursed;
 
-	init_pair(pair, fg & 7, bg);
-	cursed = COLOR_PAIR(pair) | (fg & BRIGHT ? A_BOLD : 0);
+	fg = clamp(fg, -1, 15);
+	bg = clamp(bg, -1, 7);
+	if (fg == -1) {
+		init_pair(pair, fg, bg);
+		cursed = COLOR_PAIR(pair);
+	} else {
+		init_pair(pair, fg & 7, bg);
+		cursed = COLOR_PAIR(pair) | (fg & BRIGHT ? A_BOLD : 0);
+	}
 	pair++;
 	return cursed;
 }
@@ -2134,6 +2141,7 @@ static void ui_curses_start(void)
 		int i;
 
 		start_color();
+		use_default_colors();
 		for (i = 0; i < 8; i++)
 			color_row[i] = cursed_color(row_fg[i], row_bg[i]);
 
