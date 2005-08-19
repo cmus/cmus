@@ -201,6 +201,24 @@ Examples
 	:set format_trackwin= %02n. %t (%y)%= %d
 	:set format_current= %n. %-30t %40F (%y)%= %d
 
+ID3 Tags
+========
+
+Some MP3s encode tags using different character set than specified in the
+frame. In other words those MP3s are broken but because this is so common
+problem cmus has an option (mad.charset) to change character set used for those broken MP3s.
+
+You need to edit ``~/.config/cmus/config`` manually, this can't be set using
+``:set`` command. Default value is ISO-8859-1.
+
+::
+
+	mad.charset = "cp1251"
+
+**Note:** If you change this option you need to remove
+``~/.cache/cmus/trackdb.*`` files because they contain tags encoded in the old
+character set.
+
 Searching
 =========
 
@@ -302,6 +320,7 @@ Colors
 =====  =====
 Value  Color
 =====  =====
+-1     default color. use this if you want transparency
 0      black
 1      red
 2      green
