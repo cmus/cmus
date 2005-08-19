@@ -3,6 +3,8 @@
  */
 
 #include <id3.h>
+#include <misc.h>
+#include <sconf.h>
 #include <xmalloc.h>
 #include <utf8_encode.h>
 #include <uchar.h>
@@ -59,7 +61,7 @@ struct v2_frame_header {
 #define V2_FRAME_UNSYNC		(1 << 1)
 #define V2_FRAME_LEN_INDICATOR	(1 << 0)
 
-char *id3_v1_charset = "ISO-8859-1";
+static char *default_charset = NULL;
 
 #define NR_GENRES 148
 static const char *genres[NR_GENRES] = {
@@ -378,12 +380,18 @@ static int v2_add_frame(ID3 *id3, struct v2_frame_header *fh, const char *buf)
 
 			switch (buf[0]) {
 			case 0x00: /* ISO-8859-1 */
+				in = xstrndup(buf + 1, fh->size - 1);
+				rc = utf8_encode(in, default_charset, &out);
+				free(in);
+				if (rc) 
+					return 0;
+				break;
 			case 0x03: /* UTF-8 */
 				in = xstrndup(buf + 1, fh->size - 1);
 				if (u_is_valid(in)) {
 					out = in;
 				} else {
-					rc = utf8_encode(in, "ISO-8859-1", &out);
+					rc = utf8_encode(in, default_charset, &out);
 					free(in);
 					if (rc)
 						return 0;
@@ -491,6 +499,12 @@ int id3_tag_size(const char *buf, int buf_size)
 ID3 *id3_new(void)
 {
 	ID3 *id3 = xnew0(ID3, 1);
+
+	if (default_charset == NULL) {
+		int res = sconf_get_str_option(&sconf_head, "mad.charset", &default_charset);
+		if (res == -SCONF_ERROR_NOTFOUND || res == -SCONF_ERROR_TYPE)
+			default_charset = "ISO-8859-1";
+	}
 	return id3;
 }
 
@@ -588,7 +602,7 @@ static char *v1_get_str(const char *buf, int len)
 	in[i + 1] = 0;
 	if (u_is_valid(in))
 		return xstrdup(in);
-	if (utf8_encode(in, id3_v1_charset, &out))
+	if (utf8_encode(in, default_charset, &out))
 		return NULL;
 	return out;
 }

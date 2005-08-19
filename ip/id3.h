@@ -22,9 +22,6 @@ enum id3_key {
 
 typedef struct ID3 ID3;
 
-/* default is ISO-8859-1 */
-extern char *id3_v1_charset;
-
 extern int id3_tag_size(const char *buf, int buf_size);
 
 extern ID3 *id3_new(void);
