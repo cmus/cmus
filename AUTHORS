@@ -4,7 +4,8 @@ Timo Hirvonen <tihirvon@ee.oulu.fi>
 
 Credits
 -------
-original help window code by Sergey Kuleshov <svyatogor@gentoo.org>
+original help window code and mad.charset option by Sergey Kuleshov
+<svyatogor@gentoo.org>
 
 artist/album mode idea and "display artist/album as a tree instead of two
 windows" idea from divxero <divxero@gmx.net>
