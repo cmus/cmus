@@ -139,19 +139,19 @@ Commands
 
 Use the ``:set`` command to set options.
 
-===========================  ===========
-Command                      Description
-===========================  ===========
-:load filename               Clear playlist and then load a new one. Simple one track/line lists and .pls playlists are supported.
-:save [filename]             Save playlist.  Default filename is the last used one.
-:add dir/file/playlist       Add dir/file/playlist to playlist. This command can be used to join playlists.
-:cd [directory]              Change directory.  Default directory is ``$HOME``.
-:clear                       Clear playlist.
-:enqueue\ dir/file/playlist  Add dir/file/playlist to the play queue.
-:shuffle                     Reshuffle playlist.
-:seek [+-]POS                Seek top POS (seconds). POS can be suffixed with 'm' (minutes) or 'h' (hours).
-:set OPTION=VALUE            Set option (See Options_).
-===========================  ===========
+===============================  ===========
+Command                          Description
+===============================  ===========
+:load filename                   Clear playlist and then load a new one. Simple one track/line lists and .pls playlists are supported.
+:save [filename]                 Save playlist.  Default filename is the last used one.
+:add dir/file/playlist/url       Add dir/file/playlist/url to playlist. This command can be used to join playlists.
+:cd [directory]                  Change directory.  Default directory is ``$HOME``.
+:clear                           Clear playlist.
+:enqueue\ dir/file/playlist/url  Add dir/file/playlist/url to the play queue.
+:shuffle                         Reshuffle playlist.
+:seek [+-]POS                    Seek top POS (seconds). POS can be suffixed with 'm' (minutes) or 'h' (hours).
+:set OPTION=VALUE                Set option (See Options_).
+===============================  ===========
 
 Options
 --------------------------
@@ -243,6 +243,16 @@ and ??WORDS to search only titles.  If the file doesn't have tags words are
 compared to filename without path.  
 
 In view 5 words are compared to filename without path.
+
+Streaming
+=========
+
+CMus supports Shoutcast/Icecast streams (Ogg and MP3).  Only way to add stream
+to playlist is using the command mode.
+
+::
+
+	:add http://example.com/path/to/stream
 
 Status Display
 ==========================
