@@ -2096,14 +2096,27 @@ static int cursed_color(int fg, int bg)
 	static int pair = 1;
 	int cursed;
 
-	fg = clamp(fg, -1, 15);
-	bg = clamp(bg, -1, 7);
+	if (COLORS > 8) {
+		/* some terminals support 88 or 256 colors */
+		fg = clamp(fg, -1, COLORS);
+		bg = clamp(bg, -1, COLORS);
+	} else {
+		/* assume 8 colors (16/8 actually) */
+		fg = clamp(fg, -1, 15);
+		bg = clamp(bg, -1, 7);
+	}
 	if (fg == -1) {
 		init_pair(pair, fg, bg);
 		cursed = COLOR_PAIR(pair);
 	} else {
-		init_pair(pair, fg & 7, bg);
-		cursed = COLOR_PAIR(pair) | (fg & BRIGHT ? A_BOLD : 0);
+		if (fg >= 8 && fg <= 15) {
+			/* fg colors 8..15 are special (0..7 + bold) */
+			init_pair(pair, fg & 7, bg);
+			cursed = COLOR_PAIR(pair) | (fg & BRIGHT ? A_BOLD : 0);
+		} else {
+			init_pair(pair, fg, bg);
+			cursed = COLOR_PAIR(pair);
+		}
 	}
 	pair++;
 	return cursed;
