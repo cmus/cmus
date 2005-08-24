@@ -1468,6 +1468,7 @@ static void display_options_help(WINDOW *w)
 	mvwaddstr(w, row++, col, "output_plugin           - output plugin (alsa, arts, oss)");
 	mvwaddstr(w, row++, col, "buffer_seconds          - size of player buffer in seconds (1-10)");
 	mvwaddstr(w, row++, col, "dsp.*, mixer.*          - output plugin options");
+	mvwaddstr(w, row++, col, "color_*                 - user interface colors");
 	mvwaddstr(w, row++, col, "format_current          - format of the line showing currently played track");
 	mvwaddstr(w, row++, col, "format_playlist         - format of text in shuffle and sorted windows");
 	mvwaddstr(w, row++, col, "format_title            - format of window title");
@@ -1478,9 +1479,8 @@ static void display_options_help(WINDOW *w)
 	mvwaddstr(w, row++, col, "                          tracknumber, discnumber, date, genre, filename)");
 	mvwaddstr(w, row++, col, "status_display_program  - script to run when player status changes");
 	row++;
+	mvwaddstr(w, row++, col, "Example:  :set sort=genre,date");
 	mvwaddstr(w, row++, col, "Use <tab> to cycle through all options.");
-	mvwaddstr(w, row++, col, "To customize colors, quit cmus and edit *_fg and *_bg in:");
-	mvwprintw(w, row++, col, "  %s", config_filename);
 }
 
 static void display_last_help(WINDOW *w)
@@ -1558,7 +1558,7 @@ static void display_help(void)
 				page++;
 				break;
 			}
-			if (ch == 127 && page > 0) {
+			if ((ch == 127 || ch == KEY_BACKSPACE) && page > 0) {
 				page--;
 				break;
 			}
