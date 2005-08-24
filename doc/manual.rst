@@ -161,7 +161,8 @@ Option                  Description
 ======================  ===========
 output_plugin           output plugin (alsa, arts, oss)
 buffer_seconds          size of player buffer in seconds (1-10)
-dsp.\*, mixer.\*         output plugin options (use tab to cycle through all possible options)
+dsp.\*, mixer.\*        output plugin options (use tab to cycle through all possible options)
+color\_\*               user interface colors (See `User Interface Colors`_)
 format_current          format of the line showing currently played track
 format_playlist         format of text in shuffle and sorted windows
 format_title            format of window title
@@ -320,36 +321,46 @@ Example Script (cmus-status-display)
 User Interface Colors
 ==========================
 
-If you want to customize colors edit ``~/.config/cmus/config``.  Change
-``*_fg`` and ``*_bg`` variables.  Don't change these while cmus is running
-because it overwrites the config file at exit.
+Change ``color_*`` options to customize colors. 
+
+Example::
+
+	:set color_statusline_bg=4
+
+**Tip:** command ``:set color_<tab>`` to cycle through all color option
+variables.
 
 Colors
 --------------------------
 
-=====  =====
-Value  Color
-=====  =====
--1     default color. use this if you want transparency
-0      black
-1      red
-2      green
-3      brown (or yellow)
-4      blue
-5      magenta
-6      cyan
-7      gray
-8      dark gray
-9      bright red
-10     bright green
-11     bright yellow
-12     bright blue
-13     bright magenta
-14     bright cyan
-15     white
-=====  =====
+======  =====
+Value   Color
+======  =====
+-1      default color. use this if you want transparency
+0       black
+1       red
+2       green
+3       brown (or yellow)
+4       blue
+5       magenta
+6       cyan
+7       gray
+8       dark gray
+9       bright red
+10      bright green
+11      bright yellow
+12      bright blue
+13      bright magenta
+14      bright cyan
+15      white
+16-255  more colors, not supported by every terminal
+======  =====
 
-**Note:** Colors 8-15 work for foreground only.
+**Note:** On terminals supporting only 16 colors you can use colors 8-15 for
+foreground only.
+
+rxvt-unicode supports 88 colors, xterm suppots all 256 colors and
+gnome-terminal supports only 16 colors.
 
 Bugs
 ==========================
