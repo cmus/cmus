@@ -362,6 +362,27 @@ foreground only.
 rxvt-unicode supports 88 colors, xterm suppots all 256 colors and
 gnome-terminal supports only 16 colors.
 
+Files
+==========================
+
+~/.config/cmus/config
+  configuration options
+
+~/.config/cmus/playlist.pl
+  automatically saved playlist
+
+~/.cache/cmus/trackdb.dat, ~/.cache/cmus/trackdb.idx
+  cached tags
+
+~/.cache/cmus/ui_curses_cmd_history
+  command mode history
+
+~/.cache/cmus/ui_curses_search_history
+  search mode history
+
+You can override location of these files by setting ``XDG_CONFIG_HOME`` and/or
+``XDG_CACHE_HOME`` environment variables.
+
 Bugs
 ==========================
 
