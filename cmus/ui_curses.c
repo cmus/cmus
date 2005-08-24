@@ -1032,16 +1032,21 @@ static void update_titleline(void)
 	player_info_unlock();
 }
 
-static void fix_cursor_pos(void)
+static void post_update(void)
 {
+	/* refresh makes cursor visible at least for urxvt */
 	if (ui_curses_input_mode == SEARCH_MODE) {
 		move(LINES - 1, min(search_history.current_cpos + 1, COLS - 1));
+		refresh();
 		curs_set(1);
 	} else if (ui_curses_input_mode == COMMAND_MODE) {
 		move(LINES - 1, min(cmd_history.current_cpos + 1, COLS - 1));
+		refresh();
 		curs_set(1);
 	} else {
 		move(LINES - 1, 0);
+		refresh();
+		curs_set(0);
 	}
 }
 
@@ -1049,32 +1054,28 @@ void ui_curses_update_titleline(void)
 {
 	curs_set(0);
 	update_titleline();
-	fix_cursor_pos();
-	refresh();
+	post_update();
 }
 
 static void ui_curses_update_commandline(void)
 {
 	curs_set(0);
 	update_commandline();
-	fix_cursor_pos();
-	refresh();
+	post_update();
 }
 
 void ui_curses_update_statusline(void)
 {
 	curs_set(0);
 	update_statusline();
-	fix_cursor_pos();
-	refresh();
+	post_update();
 }
 
 void ui_curses_update_view(void)
 {
 	curs_set(0);
 	update_view();
-	fix_cursor_pos();
-	refresh();
+	post_update();
 }
 
 void ui_curses_display_info_msg(const char *format, ...)
@@ -1177,16 +1178,14 @@ static void ui_curses_update_play_queue(void)
 {
 	curs_set(0);
 	update_play_queue_window();
-	fix_cursor_pos();
-	refresh();
+	post_update();
 }
 
 void ui_curses_update_browser(void)
 {
 	curs_set(0);
 	update_browser_window();
-	fix_cursor_pos();
-	refresh();
+	post_update();
 }
 
 static int cursed_color(int pair, int fg, int bg)
@@ -1241,8 +1240,7 @@ static void full_update(void)
 	update_titleline();
 	update_statusline();
 	update_commandline();
-	fix_cursor_pos();
-	refresh();
+	post_update();
 }
 
 void ui_curses_set_color(const char *name, const char *value)
@@ -1575,12 +1573,7 @@ static void display_help(void)
 	}
 
 	delwin(w);
-
-	update_view();
-	update_titleline();
-	update_statusline();
-	update_commandline();
-	refresh();
+	full_update();
 }
 
 static void clear_error(void)
@@ -1671,6 +1664,7 @@ static int pl_ch(uchar ch)
 				update_tree_window();
 				update_track_window();
 				refresh();
+				curs_set(0);
 			}
 			pl_unlock();
 		}
@@ -2291,15 +2285,13 @@ static void ui_curses_start(void)
 				update_view();
 			if (needs_title_update)
 				update_titleline();
-			if (needs_command_update)
-				update_commandline();
 			if (needs_status_update) {
 				/* don't lock pl before this */
 				update_statusline();
 			}
-
-			fix_cursor_pos();
-			refresh();
+			if (needs_command_update)
+				update_commandline();
+			post_update();
 		}
 
 		FD_ZERO(&set);
