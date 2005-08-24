@@ -118,12 +118,23 @@ static int nr_options = 0;
 static void add_option(const char *name, option_func *func, void *func_data)
 {
 	struct command_mode_option *opt;
+	struct list_head *item;
 
 	opt = xnew(struct command_mode_option, 1);
 	opt->name = xstrdup(name);
 	opt->func = func;
 	opt->func_data = func_data;
-	list_add_tail(&opt->node, &options_head);
+
+	item = options_head.next;
+	while (item != &options_head) {
+		struct command_mode_option *o = container_of(item, struct command_mode_option, node);
+
+		if (strcmp(name, o->name) < 0)
+			break;
+		item = item->next;
+	}
+	/* add before item */
+	list_add_tail(&opt->node, item);
 	nr_options++;
 }
 
