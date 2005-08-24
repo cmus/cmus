@@ -1,3 +1,13 @@
+2005-08-24: 1.5.5
+~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen
+  o add support for 256 colors
+  o add color_* options (see manual)
+  o fix cursor hiding
+  o make backspace go to previous help page
+  o documentation update
+
 2005-08-20: 1.5.4
 ~~~~~~~~~~~~~~~~~
 
