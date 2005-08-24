@@ -612,6 +612,11 @@ void command_mode_key(int key)
 
 /* options */
 
+static void set_color_option(void *data, const char *key, const char *value)
+{
+	ui_curses_set_color(key, value);
+}
+
 static void set_format_option(void *data, const char *key, const char *value)
 {
 	char **var = data;
@@ -681,9 +686,20 @@ static void player_option_callback(void *data, const char *key)
 
 void commands_init(void)
 {
+	int i;
+
 	cmd_history_filename = xstrjoin(cmus_cache_dir, "/ui_curses_cmd_history");
 	history_init(&cmd_history, 100);
 	history_load(&cmd_history, cmd_history_filename);
+
+	for (i = 0; color_names[i]; i++) {
+		char buf[64];
+
+		snprintf(buf, sizeof(buf), "color_%s_bg", color_names[i]);
+		add_option(buf, set_color_option, NULL);
+		snprintf(buf, sizeof(buf), "color_%s_fg", color_names[i]);
+		add_option(buf, set_color_option, NULL);
+	}
 
 	add_format_option("altformat_current",  " %F%= %d ",                    &current_alt_format);
 	add_format_option("altformat_playlist", " %f%= %d ",                    &list_win_alt_format);

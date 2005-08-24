@@ -61,10 +61,16 @@ extern char *window_title_alt_format;
 /* program to run when status changes */
 extern char *status_display_program;
 
+/* NULL terminated array of color variable names
+ * add color_ prefix and _bg or _fg suffix
+ */
+extern const char * const color_names[];
+
 extern void ui_curses_update_browser(void);
 extern void ui_curses_update_statusline(void);
 extern void ui_curses_update_view(void);
 extern void ui_curses_update_titleline(void);
+extern void ui_curses_set_color(const char *name, const char *value);
 extern void ui_curses_set_sort(const char *value, int warn);
 extern void ui_curses_display_info_msg(const char *format, ...);
 extern void ui_curses_display_error_msg(const char *format, ...);

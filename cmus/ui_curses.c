@@ -114,26 +114,30 @@ static int track_win_w = 0;
 
 static int volume_step = 1;
 
-/* colors (cursed format) */
-/* active,selected,current */
-static int color_row[8];
-static int color_title;
-static int color_commandline;
-static int color_statusline;
-static int color_titleline;
-static int color_browser_dir;
-static int color_browser_file;
-static int color_error;
-static int color_info;
-
-/* separator line between tree and track windows */
-static int color_separator;
-
 #define BRIGHT (1 << 3)
 
-/* colors */
-/* active,selected,current */
-static int row_bg[8] = {
+enum {
+	COLOR_ROW,
+	COLOR_ROW_CUR,
+	COLOR_ROW_SEL,
+	COLOR_ROW_SEL_CUR,
+	COLOR_ROW_ACTIVE,
+	COLOR_ROW_ACTIVE_CUR,
+	COLOR_ROW_ACTIVE_SEL,
+	COLOR_ROW_ACTIVE_SEL_CUR,
+	COLOR_SEPARATOR,
+	COLOR_TITLE,
+	COLOR_COMMANDLINE,
+	COLOR_STATUSLINE,
+	COLOR_TITLELINE,
+	COLOR_BROWSER_DIR,
+	COLOR_BROWSER_FILE,
+	COLOR_ERROR,
+	COLOR_INFO,
+	NR_COLORS
+};
+
+static int bg_colors[NR_COLORS] = {
 	-1,
 	-1,
 	COLOR_WHITE,
@@ -141,9 +145,20 @@ static int row_bg[8] = {
 	-1,
 	-1,
 	COLOR_BLUE,
-	COLOR_BLUE
+	COLOR_BLUE,
+
+	-1,
+	COLOR_RED,
+	-1,
+	COLOR_WHITE,
+	COLOR_RED,
+	-1,
+	-1,
+	-1,
+	-1
 };
-static int row_fg[8] = {
+
+static int fg_colors[NR_COLORS] = {
 	-1,
 	COLOR_YELLOW | BRIGHT,
 	COLOR_BLACK,
@@ -151,24 +166,43 @@ static int row_fg[8] = {
 	-1,
 	COLOR_YELLOW | BRIGHT,
 	COLOR_WHITE | BRIGHT,
+	COLOR_YELLOW | BRIGHT,
+
+	COLOR_RED,
+	COLOR_WHITE | BRIGHT,
+	-1,
+	COLOR_BLACK,
+	COLOR_WHITE | BRIGHT,
+	COLOR_BLUE | BRIGHT,
+	-1,
+	COLOR_RED | BRIGHT,
 	COLOR_YELLOW | BRIGHT
 };
-static int title_bg = COLOR_RED;
-static int title_fg = COLOR_WHITE | BRIGHT;
-static int commandline_bg = -1;
-static int commandline_fg = -1;
-static int statusline_bg = COLOR_WHITE;
-static int statusline_fg = COLOR_BLACK;
-static int titleline_bg = COLOR_RED;
-static int titleline_fg = COLOR_WHITE | BRIGHT;
-static int browser_dir_bg = -1;
-static int browser_dir_fg = COLOR_BLUE | BRIGHT;
-static int browser_file_bg = -1;
-static int browser_file_fg = -1;
-static int error_bg = -1;
-static int error_fg = COLOR_RED | BRIGHT;
-static int info_bg = -1;
-static int info_fg = COLOR_YELLOW | BRIGHT;
+
+/* prefixes actually. "_bg" or "_fg" added at end */
+const char * const color_names[NR_COLORS + 1] = {
+	"row",
+	"row_cur",
+	"row_sel",
+	"row_sel_cur",
+	"row_active",
+	"row_active_cur",
+	"row_active_sel",
+	"row_active_sel_cur",
+	"separator",
+	"title",
+	"commandline",
+	"statusline",
+	"titleline",
+	"browser_dir",
+	"browser_file",
+	"error",
+	"info",
+	NULL
+};
+
+/* colors in curses format */
+static int cursed_colors[NR_COLORS];
 
 /*
  * printing
@@ -311,7 +345,7 @@ static void print_tree(struct window *win, int row, struct iter *iter)
 	window_get_sel(win, &sel);
 	selected = iters_equal(iter, &sel);
 	active = playlist.cur_win == TREE_WIN;
-	bkgdset(color_row[(active << 2) | (selected << 1) | current]);
+	bkgdset(cursed_colors[(active << 2) | (selected << 1) | current]);
 	if (album) {
 		sprint(tree_win_y + row + 1, tree_win_x, album->name ? : noname, tree_win_w, 2);
 	} else {
@@ -454,7 +488,7 @@ static void print_track(struct window *win, int row, struct iter *iter)
 	window_get_sel(win, &sel);
 	selected = iters_equal(iter, &sel);
 	active = playlist.cur_win == TRACK_WIN;
-	bkgdset(color_row[(active << 2) | (selected << 1) | current]);
+	bkgdset(cursed_colors[(active << 2) | (selected << 1) | current]);
 	fill_track_fopts(track);
 	if (track_info_has_tag(track->info)) {
 		format_print(print_buffer, print_buffer_size, track_win_w, track_win_format, track_fopts);
@@ -475,7 +509,7 @@ static void print_shuffle(struct window *win, int row, struct iter *iter)
 	window_get_sel(win, &sel);
 	selected = iters_equal(iter, &sel);
 	active = playlist.cur_win == SHUFFLE_WIN;
-	bkgdset(color_row[(active << 2) | (selected << 1) | current]);
+	bkgdset(cursed_colors[(active << 2) | (selected << 1) | current]);
 	fill_track_fopts(track);
 	if (track_info_has_tag(track->info)) {
 		format_print(print_buffer, print_buffer_size, COLS, list_win_format, track_fopts);
@@ -496,7 +530,7 @@ static void print_sorted(struct window *win, int row, struct iter *iter)
 	window_get_sel(win, &sel);
 	selected = iters_equal(iter, &sel);
 	active = playlist.cur_win == SORTED_WIN;
-	bkgdset(color_row[(active << 2) | (selected << 1) | current]);
+	bkgdset(cursed_colors[(active << 2) | (selected << 1) | current]);
 	fill_track_fopts(track);
 	if (track_info_has_tag(track->info)) {
 		format_print(print_buffer, print_buffer_size, COLS, list_win_format, track_fopts);
@@ -520,7 +554,7 @@ static void print_play_queue(struct window *win, int row, struct iter *iter)
 	current = 0;
 	selected = iters_equal(iter, &sel);
 	active = 1;
-	bkgdset(color_row[(active << 2) | (selected << 1) | current]);
+	bkgdset(cursed_colors[(active << 2) | (selected << 1) | current]);
 
 	fill_track_fopts_track_info(info);
 
@@ -545,12 +579,12 @@ static void print_browser(struct window *win, int row, struct iter *iter)
 		int active = 1;
 		int current = 0;
 
-		bkgdset(color_row[(active << 2) | (selected << 1) | current]);
+		bkgdset(cursed_colors[(active << 2) | (selected << 1) | current]);
 	} else {
 		if (e->type == BROWSER_ENTRY_DIR) {
-			bkgdset(color_browser_dir);
+			bkgdset(cursed_colors[COLOR_BROWSER_DIR]);
 		} else {
-			bkgdset(color_browser_file);
+			bkgdset(cursed_colors[COLOR_BROWSER_FILE]);
 		}
 	}
 
@@ -569,7 +603,7 @@ static void update_window(struct window *win, int x, int y, int w, const char *t
 	int nr_rows;
 	int c, i;
 
-	bkgdset(color_title);
+	bkgdset(cursed_colors[COLOR_TITLE]);
 	c = snprintf(print_buffer, w + 1, " %s", title);
 	if (c > w)
 		c = w;
@@ -587,7 +621,7 @@ static void update_window(struct window *win, int x, int y, int w, const char *t
 		}
 	}
 
-	bkgdset(color_row[0]);
+	bkgdset(cursed_colors[0]);
 	memset(print_buffer, ' ', w);
 	print_buffer[w] = 0;
 	while (i < nr_rows) {
@@ -698,9 +732,9 @@ static void draw_separator(void)
 {
 	int row;
 
-	bkgdset(color_title);
+	bkgdset(cursed_colors[COLOR_TITLE]);
 	mvaddch(0, tree_win_w, ' ');
-	bkgdset(color_separator);
+	bkgdset(cursed_colors[COLOR_SEPARATOR]);
 	for (row = 1; row < LINES - 3; row++)
 		mvaddch(row, tree_win_w, ACS_VLINE);
 }
@@ -833,7 +867,7 @@ static void update_statusline(void)
 
 	player_info_unlock();
 
-	bkgdset(color_statusline);
+	bkgdset(cursed_colors[COLOR_STATUSLINE]);
 	dump_print_buffer(LINES - 2, 0);
 
 	if (msg) {
@@ -856,10 +890,10 @@ static void update_commandline(void)
 {
 	move(LINES - 1, 0);
 	if (error_msg[0]) {
-		bkgdset(color_error);
+		bkgdset(cursed_colors[COLOR_ERROR]);
 		addstr(error_msg);
 	} else {
-		bkgdset(color_commandline);
+		bkgdset(cursed_colors[COLOR_COMMANDLINE]);
 		if (ui_curses_input_mode == COMMAND_MODE) {
 			if (cmd_history.current_clen <= COLS - 2) {
 				addch(':');
@@ -911,7 +945,7 @@ static const char *get_stream_title(const char *metadata)
 
 static void update_titleline(void)
 {
-	bkgdset(color_titleline);
+	bkgdset(cursed_colors[COLOR_TITLELINE]);
 	player_info_lock();
 	if (cur_track_info) {
 		const char *filename;
@@ -1077,7 +1111,7 @@ int ui_curses_yes_no_query(const char *format, ...)
 	va_end(ap);
 
 	move(LINES - 1, 0);
-	bkgdset(color_info);
+	bkgdset(cursed_colors[COLOR_INFO]);
 
 	/* no need to convert buffer.
 	 * it is always encoded in the right charset (assuming filenames are
@@ -1153,6 +1187,99 @@ void ui_curses_update_browser(void)
 	update_browser_window();
 	fix_cursor_pos();
 	refresh();
+}
+
+static int cursed_color(int pair, int fg, int bg)
+{
+	int cursed;
+
+	/* first color pair is 1 */
+	pair++;
+
+	if (COLORS > 8) {
+		/* some terminals support 88 or 256 colors */
+		fg = clamp(fg, -1, COLORS - 1);
+		bg = clamp(bg, -1, COLORS - 1);
+	} else {
+		/* assume 8 colors (16/8 actually) */
+		fg = clamp(fg, -1, 15);
+		bg = clamp(bg, -1, 7);
+	}
+	if (fg == -1) {
+		init_pair(pair, fg, bg);
+		cursed = COLOR_PAIR(pair);
+	} else {
+		if (fg >= 8 && fg <= 15) {
+			/* fg colors 8..15 are special (0..7 + bold) */
+			init_pair(pair, fg & 7, bg);
+			cursed = COLOR_PAIR(pair) | (fg & BRIGHT ? A_BOLD : 0);
+		} else {
+			init_pair(pair, fg, bg);
+			cursed = COLOR_PAIR(pair);
+		}
+	}
+	pair++;
+	return cursed;
+}
+
+static int color_index(const char *name)
+{
+	int i;
+
+	for (i = 0; i < NR_COLORS; i++) {
+		if (strcmp(color_names[i], name) == 0)
+			return i;
+	}
+	BUG("not a color `%s'\n", name);
+	return 0;
+}
+
+static void full_update(void)
+{
+	curs_set(0);
+	update_view();
+	update_titleline();
+	update_statusline();
+	update_commandline();
+	fix_cursor_pos();
+	refresh();
+}
+
+void ui_curses_set_color(const char *name, const char *value)
+{
+	long int color;
+	int len, i, color_max = max(16, COLORS);
+	char buf[64];
+
+	if (str_to_int(value, &color) || color < -1 || color >= color_max) {
+		ui_curses_display_error_msg("color value must be -1..%d", color_max);
+		return;
+	}
+
+	if (strncmp(name, "color_", 6))
+		goto error;
+	name += 6;
+	len = strlen(name);
+	if (len < 4)
+		goto error;
+	memcpy(buf, name, len - 3);
+	buf[len - 3] = 0;
+	i = color_index(buf);
+
+	if (strcmp(name + len - 3, "_bg") == 0) {
+		bg_colors[i] = color;
+		cursed_colors[i] = cursed_color(i, fg_colors[i], bg_colors[i]);
+		full_update();
+		return;
+	}
+	if (strcmp(name + len - 3, "_fg") == 0) {
+		fg_colors[i] = color;
+		cursed_colors[i] = cursed_color(i, fg_colors[i], bg_colors[i]);
+		full_update();
+		return;
+	}
+error:
+	BUG("invalid option name `%s'\n", name);
 }
 
 void ui_curses_set_sort(const char *value, int warn)
@@ -1872,82 +1999,28 @@ static void resize_playlist(int w, int h)
 
 static void get_colors(void)
 {
-	sconf_get_int_option(&sconf_head, "row_bg", &row_bg[0]);
-	sconf_get_int_option(&sconf_head, "row_fg", &row_fg[0]);
-	sconf_get_int_option(&sconf_head, "row_cur_bg", &row_bg[1]);
-	sconf_get_int_option(&sconf_head, "row_cur_fg", &row_fg[1]);
-	sconf_get_int_option(&sconf_head, "row_sel_bg", &row_bg[2]);
-	sconf_get_int_option(&sconf_head, "row_sel_fg", &row_fg[2]);
-	sconf_get_int_option(&sconf_head, "row_sel_cur_bg", &row_bg[3]);
-	sconf_get_int_option(&sconf_head, "row_sel_cur_fg", &row_fg[3]);
-
-	sconf_get_int_option(&sconf_head, "row_active_bg", &row_bg[4]);
-	sconf_get_int_option(&sconf_head, "row_active_fg", &row_fg[4]);
-	sconf_get_int_option(&sconf_head, "row_active_cur_bg", &row_bg[5]);
-	sconf_get_int_option(&sconf_head, "row_active_cur_fg", &row_fg[5]);
-	sconf_get_int_option(&sconf_head, "row_active_sel_bg", &row_bg[6]);
-	sconf_get_int_option(&sconf_head, "row_active_sel_fg", &row_fg[6]);
-	sconf_get_int_option(&sconf_head, "row_active_sel_cur_bg", &row_bg[7]);
-	sconf_get_int_option(&sconf_head, "row_active_sel_cur_fg", &row_fg[7]);
-
-	sconf_get_int_option(&sconf_head, "title_bg", &title_bg);
-	sconf_get_int_option(&sconf_head, "title_fg", &title_fg);
-	sconf_get_int_option(&sconf_head, "commandline_bg", &commandline_bg);
-	sconf_get_int_option(&sconf_head, "commandline_fg", &commandline_fg);
-	sconf_get_int_option(&sconf_head, "statusline_bg", &statusline_bg);
-	sconf_get_int_option(&sconf_head, "statusline_fg", &statusline_fg);
-	sconf_get_int_option(&sconf_head, "titleline_bg", &titleline_bg);
-	sconf_get_int_option(&sconf_head, "titleline_fg", &titleline_fg);
-
-	sconf_get_int_option(&sconf_head, "browser_dir_bg", &browser_dir_bg);
-	sconf_get_int_option(&sconf_head, "browser_dir_fg", &browser_dir_fg);
-	sconf_get_int_option(&sconf_head, "browser_file_bg", &browser_file_bg);
-	sconf_get_int_option(&sconf_head, "browser_file_fg", &browser_file_fg);
-
-	sconf_get_int_option(&sconf_head, "error_bg", &error_bg);
-	sconf_get_int_option(&sconf_head, "error_fg", &error_fg);
-	sconf_get_int_option(&sconf_head, "info_bg", &info_bg);
-	sconf_get_int_option(&sconf_head, "info_fg", &info_fg);
+	char buf[64];
+	int i;
+	
+	for (i = 0; i < NR_COLORS; i++) {
+		snprintf(buf, sizeof(buf), "%s_bg", color_names[i]);
+		sconf_get_int_option(&sconf_head, buf, &bg_colors[i]);
+		snprintf(buf, sizeof(buf), "%s_fg", color_names[i]);
+		sconf_get_int_option(&sconf_head, buf, &fg_colors[i]);
+	}
 }
 
 static void set_colors(void)
 {
-	sconf_set_int_option(&sconf_head, "row_bg", row_bg[0]);
-	sconf_set_int_option(&sconf_head, "row_fg", row_fg[0]);
-	sconf_set_int_option(&sconf_head, "row_cur_bg", row_bg[1]);
-	sconf_set_int_option(&sconf_head, "row_cur_fg", row_fg[1]);
-	sconf_set_int_option(&sconf_head, "row_sel_bg", row_bg[2]);
-	sconf_set_int_option(&sconf_head, "row_sel_fg", row_fg[2]);
-	sconf_set_int_option(&sconf_head, "row_sel_cur_bg", row_bg[3]);
-	sconf_set_int_option(&sconf_head, "row_sel_cur_fg", row_fg[3]);
-
-	sconf_set_int_option(&sconf_head, "row_active_bg", row_bg[4]);
-	sconf_set_int_option(&sconf_head, "row_active_fg", row_fg[4]);
-	sconf_set_int_option(&sconf_head, "row_active_cur_bg", row_bg[5]);
-	sconf_set_int_option(&sconf_head, "row_active_cur_fg", row_fg[5]);
-	sconf_set_int_option(&sconf_head, "row_active_sel_bg", row_bg[6]);
-	sconf_set_int_option(&sconf_head, "row_active_sel_fg", row_fg[6]);
-	sconf_set_int_option(&sconf_head, "row_active_sel_cur_bg", row_bg[7]);
-	sconf_set_int_option(&sconf_head, "row_active_sel_cur_fg", row_fg[7]);
-
-	sconf_set_int_option(&sconf_head, "title_bg", title_bg);
-	sconf_set_int_option(&sconf_head, "title_fg", title_fg);
-	sconf_set_int_option(&sconf_head, "commandline_bg", commandline_bg);
-	sconf_set_int_option(&sconf_head, "commandline_fg", commandline_fg);
-	sconf_set_int_option(&sconf_head, "statusline_bg", statusline_bg);
-	sconf_set_int_option(&sconf_head, "statusline_fg", statusline_fg);
-	sconf_set_int_option(&sconf_head, "titleline_bg", titleline_bg);
-	sconf_set_int_option(&sconf_head, "titleline_fg", titleline_fg);
-
-	sconf_set_int_option(&sconf_head, "browser_dir_bg", browser_dir_bg);
-	sconf_set_int_option(&sconf_head, "browser_dir_fg", browser_dir_fg);
-	sconf_set_int_option(&sconf_head, "browser_file_bg", browser_file_bg);
-	sconf_set_int_option(&sconf_head, "browser_file_fg", browser_file_fg);
-
-	sconf_set_int_option(&sconf_head, "error_bg", error_bg);
-	sconf_set_int_option(&sconf_head, "error_fg", error_fg);
-	sconf_set_int_option(&sconf_head, "info_bg", info_bg);
-	sconf_set_int_option(&sconf_head, "info_fg", info_fg);
+	char buf[64];
+	int i;
+	
+	for (i = 0; i < NR_COLORS; i++) {
+		snprintf(buf, sizeof(buf), "%s_bg", color_names[i]);
+		sconf_set_int_option(&sconf_head, buf, bg_colors[i]);
+		snprintf(buf, sizeof(buf), "%s_fg", color_names[i]);
+		sconf_set_int_option(&sconf_head, buf, fg_colors[i]);
+	}
 }
 
 /* irman {{{ */
@@ -2090,38 +2163,6 @@ static int u_getch(uchar *uch, int *keyp)
 	return 0;
 }
 
-static int cursed_color(int fg, int bg)
-{
-	/* first color pair is 1 */
-	static int pair = 1;
-	int cursed;
-
-	if (COLORS > 8) {
-		/* some terminals support 88 or 256 colors */
-		fg = clamp(fg, -1, COLORS);
-		bg = clamp(bg, -1, COLORS);
-	} else {
-		/* assume 8 colors (16/8 actually) */
-		fg = clamp(fg, -1, 15);
-		bg = clamp(bg, -1, 7);
-	}
-	if (fg == -1) {
-		init_pair(pair, fg, bg);
-		cursed = COLOR_PAIR(pair);
-	} else {
-		if (fg >= 8 && fg <= 15) {
-			/* fg colors 8..15 are special (0..7 + bold) */
-			init_pair(pair, fg & 7, bg);
-			cursed = COLOR_PAIR(pair) | (fg & BRIGHT ? A_BOLD : 0);
-		} else {
-			init_pair(pair, fg, bg);
-			cursed = COLOR_PAIR(pair);
-		}
-	}
-	pair++;
-	return cursed;
-}
-
 static void ui_curses_start(void)
 {
 	struct sigaction act;
@@ -2155,21 +2196,8 @@ static void ui_curses_start(void)
 
 		start_color();
 		use_default_colors();
-		for (i = 0; i < 8; i++)
-			color_row[i] = cursed_color(row_fg[i], row_bg[i]);
-
-		color_title = cursed_color(title_fg, title_bg);
-		color_commandline = cursed_color(commandline_fg, commandline_bg);
-		color_statusline = cursed_color(statusline_fg, statusline_bg);
-		color_titleline = cursed_color(titleline_fg, titleline_bg);
-
-		color_browser_dir = cursed_color(browser_dir_fg, browser_dir_bg);
-		color_browser_file = cursed_color(browser_file_fg, browser_file_bg);
-
-		color_error = cursed_color(error_fg, error_bg);
-		color_info = cursed_color(info_fg, info_bg);
-
-		color_separator = cursed_color(title_bg, row_bg[0]);
+		for (i = 0; i < NR_COLORS; i++)
+			cursed_colors[i] = cursed_color(i, fg_colors[i], bg_colors[i]);
 	}
 
 	while (running) {
