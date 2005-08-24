@@ -1195,15 +1195,8 @@ static int cursed_color(int pair, int fg, int bg)
 	/* first color pair is 1 */
 	pair++;
 
-	if (COLORS > 8) {
-		/* some terminals support 88 or 256 colors */
-		fg = clamp(fg, -1, COLORS - 1);
-		bg = clamp(bg, -1, COLORS - 1);
-	} else {
-		/* assume 8 colors (16/8 actually) */
-		fg = clamp(fg, -1, 15);
-		bg = clamp(bg, -1, 7);
-	}
+	fg = clamp(fg, -1, 255);
+	bg = clamp(bg, -1, 255);
 	if (fg == -1) {
 		init_pair(pair, fg, bg);
 		cursed = COLOR_PAIR(pair);
@@ -1217,7 +1210,6 @@ static int cursed_color(int pair, int fg, int bg)
 			cursed = COLOR_PAIR(pair);
 		}
 	}
-	pair++;
 	return cursed;
 }
 
@@ -1246,10 +1238,10 @@ static void full_update(void)
 void ui_curses_set_color(const char *name, const char *value)
 {
 	long int color;
-	int len, i, color_max = max(16, COLORS);
+	int len, i, color_max = 255;
 	char buf[64];
 
-	if (str_to_int(value, &color) || color < -1 || color >= color_max) {
+	if (str_to_int(value, &color) || color < -1 || color > color_max) {
 		ui_curses_display_error_msg("color value must be -1..%d", color_max);
 		return;
 	}
@@ -1545,7 +1537,7 @@ static void display_help(void)
 #define LAST_HELP_PAGE 5
 		case LAST_HELP_PAGE:
 			display_last_help(w);
-			mvwaddstr(w, HELP_H, (HELP_W - 42) / 2, "Press <space> or <enter> to return to cmus");
+			mvwaddstr(w, HELP_H, (HELP_W - 57) / 2, "Press <space> for first page or <enter> to return to cmus");
 			break;
 		}
 		if (page < LAST_HELP_PAGE)
@@ -1555,11 +1547,19 @@ static void display_help(void)
 			int ch = getch();
 
 			if (ch == ' ') {
-				page++;
+				if (page == LAST_HELP_PAGE) {
+					page = 0;
+				} else {
+					page++;
+				}
 				break;
 			}
-			if ((ch == 127 || ch == KEY_BACKSPACE) && page > 0) {
-				page--;
+			if (ch == 127 || ch == KEY_BACKSPACE) {
+				if (page == 0) {
+					page = LAST_HELP_PAGE;
+				} else {
+					page--;
+				}
 				break;
 			}
 			if (ch == '\n') {
@@ -2193,6 +2193,7 @@ static void ui_curses_start(void)
 		for (i = 0; i < NR_COLORS; i++)
 			cursed_colors[i] = cursed_color(i, fg_colors[i], bg_colors[i]);
 	}
+	d_print("Number of supported colors: %d\n", COLORS);
 
 	while (running) {
 		int needs_view_update = 0;
