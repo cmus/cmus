@@ -327,7 +327,7 @@ Example::
 
 	:set color_statusline_bg=4
 
-**Tip:** command ``:set color_<tab>`` to cycle through all color option
+**Tip:** type ``:set color_<tab>`` to cycle through all color option
 variables.
 
 Colors
@@ -359,8 +359,14 @@ Value   Color
 **Note:** On terminals supporting only 16 colors you can use colors 8-15 for
 foreground only.
 
-rxvt-unicode supports 88 colors, xterm suppots all 256 colors and
-gnome-terminal supports only 16 colors.
+==============  ==============
+Terminal Type   Number of Colors Supported
+==============  ==============
+gnome-terminal  16
+rxvt-unicode    88
+xterm           256
+GNU Screen      as many as the terminal inside which screen is running
+==============  ==============
 
 Files
 ==========================
