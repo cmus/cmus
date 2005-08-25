@@ -1,5 +1,5 @@
 #
-# Copyright 2005 Timo Hirvonen <tihirvon@ee.oulu.fi>
+# Copyright 2005 Timo Hirvonen
 #
 # This file is licensed under the GPLv2.
 

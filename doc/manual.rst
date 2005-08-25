@@ -405,7 +405,7 @@ crashed.
 Author
 ==========================
 
-Timo Hirvonen <tihirvon AT ee.oulu.fi>
+Timo Hirvonen <tihirvon AT gmail.com>
 
 .. _VIM: http://www.vim.org
 .. _WMI: http://wmi.modprobe.de

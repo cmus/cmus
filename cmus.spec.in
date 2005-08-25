@@ -5,7 +5,7 @@
 # Written Eugene Vlasov <eugvv@altlinux.ru> for ALTLinux
 # distribution (www.altlinux.org)
 # 
-# Modified by Timo Hirvonen <tihirvon@ee.oulu.fi>
+# Modified by Timo Hirvonen
 #
 # Separate packages for plugins:
 #   cmus-in-flac

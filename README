@@ -56,7 +56,7 @@ Reporting Bugs
 ==============
 
 After a crash send bug report with last lines of /tmp/cmus-debug to
-tihirvon@ee.oulu.fi.  /tmp/cmus-debug file exists only if you configured
+tihirvon@gmail.com.  /tmp/cmus-debug file exists only if you configured
 cmus with maximum debug level (./configure DEBUG=2).
 
 Also it would be good to know what distribution/kernel you are using, so
