@@ -34,22 +34,25 @@ void debug_init(FILE *stream)
 #endif
 }
 
-void __debug_warn(const char *file, int line, const char *function, const char *fmt, ...)
+void __debug_bug(const char *function, const char *fmt, ...)
 {
 #if DEBUG > 0
-	const char *format = "\n%s: %s:%d: %s: BUG: ";
+	const char *format = "\n%s: %s: BUG: ";
 	va_list ap;
 
+	fprintf(debug_stream, format, program_name, function);
 	va_start(ap, fmt);
-	fprintf(debug_stream, format, program_name, file, line, function);
 	vfprintf(debug_stream, fmt, ap);
+	va_end(ap);
 	fflush(debug_stream);
 	if (debug_stream != stdout && debug_stream != stderr) {
-		fprintf(stderr, format, program_name, file, line, function);
+		fprintf(stderr, format, program_name, function);
+		va_start(ap, fmt);
 		vfprintf(stderr, fmt, ap);
+		va_end(ap);
 		fflush(stderr);
 	}
-	va_end(ap);
+	exit(127);
 #endif
 }
 

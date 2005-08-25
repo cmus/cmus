@@ -22,8 +22,8 @@
  *
  * DEBUG levels:
  *     0:
- *     1: WARN, BUG, WARN_ON, BUG_ON
- *     2: WARN, BUG, WARN_ON, BUG_ON, d_print
+ *     1: BUG, BUG_ON
+ *     2: BUG, BUG_ON, d_print
  * 
  * void debug_init(FILE *stream)
  *     Call this before any other functions in this file.
@@ -32,15 +32,10 @@
  * void d_print(const char *format, ...)
  *     Print debugging information to the debug stream.
  *
- * void WARN(const char *format, ...)
+ * void BUG(const char *format, ...)
  *     Print debugging information to the debug stream and to
  *     stderr if debug stream is NOT stdout or stderr.
- *
- * void BUG(const char *format, ...)
- *     Calls WARN. Exits with return value 127.
- *
- * void WARN_ON(int condition)
- *     Calls WARN if condition is true.
+ *     Exits with return value 127.
  *
  * void BUG_ON(int condition)
  *     Calls BUG if condition is true.
@@ -49,10 +44,12 @@
 #ifndef _DEBUG_H
 #define _DEBUG_H
 
+/* unlikely() */
+#include <xmalloc.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
-
 #include <sys/time.h>
 #include <inttypes.h>
 
@@ -71,30 +68,18 @@
 #endif
 
 extern void debug_init(FILE *stream);
-extern void __debug_warn(const char *file, int line, const char *function, const char *fmt, ...) __format_check(4, 5);
+extern void __debug_bug(const char *function, const char *fmt, ...) __format_check(2, 3) __noreturn;
 extern void __debug_print(const char *function, const char *fmt, ...) __format_check(2, 3);
 
 /* ------------------------------------------------------------------------ */
 
 #if DEBUG == 0
 
-#define WARN(...) \
-do { \
-} while (0)
-
-#define BUG(...) \
-do { \
-} while (0)
+#define BUG(...) do { } while (0)
 
 #else /* >0 */
 
-#define WARN(...) __debug_warn(__FILE__, __LINE__, __FUNCTION__, __VA_ARGS__)
-
-#define BUG(...) \
-do { \
-	WARN(__VA_ARGS__); \
-	exit(127); \
-} while (0)
+#define BUG(...) __debug_bug(__FUNCTION__, __VA_ARGS__)
 
 #endif
 
@@ -102,9 +87,7 @@ do { \
 
 #if DEBUG == 0 || DEBUG == 1
 
-#define d_print(...) \
-do { \
-} while (0)
+#define d_print(...) do { } while (0)
 
 static inline void timer_get(uint64_t *usec)
 {
@@ -141,15 +124,9 @@ static inline void timer_print(const char *what, uint64_t usec)
 
 #define __STR(a) #a
 
-#define WARN_ON(a) \
-do { \
-	if (a) \
-		WARN("%s\n", __STR(a)); \
-} while (0)
-
 #define BUG_ON(a) \
 do { \
-	if (a) \
+	if (unlikely(a)) \
 		BUG("%s\n", __STR(a)); \
 } while (0)
 

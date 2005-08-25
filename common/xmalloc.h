@@ -29,17 +29,19 @@
 
 #define likely(x)	__builtin_expect(!!(x), 1)
 #define unlikely(x)	__builtin_expect(!!(x), 0)
+#define __noreturn	__attribute__((__noreturn__))
 
 #else
 
 #define likely(x)	(x)
 #define unlikely(x)	(x)
+#define __noreturn
 
 #endif
 
 #endif /* !defined(likely) */
 
-extern void malloc_fail(void) __attribute__((noreturn));
+extern void malloc_fail(void) __noreturn;
 
 #define xnew(type, n)		(type *)xmalloc(sizeof(type) * (n))
 #define xnew0(type, n)		(type *)xmalloc0(sizeof(type) * (n))
