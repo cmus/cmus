@@ -18,13 +18,9 @@
  */
 
 #include <pls.h>
-#include <utils.h>
 #include <xmalloc.h>
 
-#include <unistd.h>
-
-/* get next non-empty line
- */
+/* get next non-empty line */
 static int get_line(const char *contents, int *posp, char **linep, size_t *sizep)
 {
 	int pos = *posp;
@@ -77,16 +73,23 @@ static int get_key_val(const char *contents, int *posp, char **linep, size_t *si
 	return 1;
 }
 
-int pls_for_each(const char *contents, void (*cb)(void *data, const char *file, const char *title, int duration), void *cb_data)
+char **pls_get_files(const char *contents)
 {
 	int pos = 0;
 	char *line = NULL;
 	size_t size = 0;
+	int fcount, falloc;
+	char **files;
 
 	if (!get_line(contents, &pos, &line, &size) || strncasecmp(line, "[playlist]", 10)) {
 		free(line);
-		return -1;
+		return NULL;
 	}
+
+	fcount = 0;
+	falloc = 8;
+	files = xnew(char *, falloc);
+
 	while (1) {
 		/*
 		 * FileN=...
@@ -94,72 +97,29 @@ int pls_for_each(const char *contents, void (*cb)(void *data, const char *file, 
 		 * LengthN=...
 		 */
 		char *val;
-		char *file;
-		char *title;
-		long int len;
 		int rc;
 
 		rc = get_key_val(contents, &pos, &line, &size, &val);
-		if (rc == 0 || rc == -1) {
+		if (rc == 0) {
 			free(line);
-			return rc;
+			files[fcount] = NULL;
+			return files;
+		}
+		if (rc == -1) {
+			free(line);
+			files[fcount] = NULL;
+			free_str_array(files);
+			return NULL;
 		}
 
 		/* just ignore useless crap */
 		if (strncasecmp(line, "File", 4))
 			continue;
-		file = xstrdup(val);
 
-		if (get_key_val(contents, &pos, &line, &size, &val) != 1 || strncasecmp(line, "Title", 5)) {
-			free(file);
-			free(line);
-			return -1;
+		if (fcount == falloc - 1) {
+			falloc *= 2;
+			files = xrenew(char *, files, falloc);
 		}
-		title = xstrdup(val);
-
-		if (get_key_val(contents, &pos, &line, &size, &val) != 1 || strncasecmp(line, "Length", 6) || str_to_int(val, &len)) {
-			free(title);
-			free(file);
-			free(line);
-			return -1;
-		}
-
-		cb(cb_data, file, title, len);
-		free(title);
-		free(file);
+		files[fcount++] = xstrdup(val);
 	}
-}
-
-struct cb_data {
-	char **files;
-	int size;
-	int count;
-};
-
-static void cb(void *data, const char *file, const char *title, int duration)
-{
-	struct cb_data *d = data;
-
-	if (d->count == d->size - 1) {
-		d->size *= 2;
-		d->files = xrenew(char *, d->files, d->size);
-	}
-	d->files[d->count++] = xstrdup(file);
-}
-
-char **pls_get_files(const char *contents)
-{
-	struct cb_data data;
-	int rc;
-
-	data.count = 0;
-	data.size = 8;
-	data.files = xnew0(char *, data.size);
-	rc = pls_for_each(contents, cb, &data);
-	if (rc) {
-		free(data.files);
-		return NULL;
-	}
-	data.files[data.count] = NULL;
-	return data.files;
 }

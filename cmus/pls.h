@@ -20,9 +20,6 @@
 #ifndef _PLS_H
 #define _PLS_H
 
-extern int pls_for_each(const char *contents,
-		void (*cb)(void *data, const char *file, const char *title, int duration),
-		void *cb_data);
 extern char **pls_get_files(const char *contents);
 
 #endif
