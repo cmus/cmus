@@ -23,13 +23,6 @@
 typedef unsigned int uchar;
 
 /*
- * 0xxxxxxx
- * 110xxxxx 10xxxxxx
- * 1110xxxx 10xxxxxx 10xxxxxx
- * 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
- */
-
-/*
  * @byte  any byte in UTF-8 string
  *
  * Returns 1 if @byte is the first byte of unicode char, 0 otherwise
@@ -96,26 +89,26 @@ extern void u_get_char(const char *str, int *idx, uchar *uch);
 extern void u_set_char(char *str, int *idx, uchar uch);
 
 /*
- * @dst  destination buffer (size >= @len)
- * @src  null-terminated UTF-8 string
- * @len  number of UTF-8 characters to copy
+ * @dst    destination buffer
+ * @src    null-terminated UTF-8 string
+ * @count  number of UTF-8 characters to copy
  *
- * Copies at most @len characters, less if null byte was hit.
+ * Copies at most @count characters, less if null byte was hit.
  * Null byte is _never_ copied.
  *
  * Returns number of _bytes_ copied.
  */
-extern int u_copy_chars(char *dst, const char *src, int len);
+extern int u_copy_chars(char *dst, const char *src, int count);
 
 /*
- * @str  null-terminated UTF-8 string, length >= @len
- * @len  number of UTF-8 characters to skip
+ * @str    null-terminated UTF-8 string, length >= @count
+ * @count  number of UTF-8 characters to skip
  *
- * Skips @len UTF-8 characters.
+ * Skips @count UTF-8 characters.
  *
  * Returns number of _bytes_ skipped.
  */
-extern int u_skip_chars(const char *str, int len);
+extern int u_skip_chars(const char *str, int count);
 
 extern char *u_strcasestr(const char *text, const char *part);
 

@@ -21,59 +21,99 @@
 
 #include <stdlib.h>
 
-static int u_get_char_bytes(const char *str)
-{
-	int i = 0;
-	int bit = 7;
-	int mask = (1 << 7);
-	int c, count;
-	uchar ch;
+/*
+ * Byte Sequence                                             Min       Min        Max
+ * ----------------------------------------------------------------------------------
+ * 0xxxxxxx                                              0000000   0x00000   0x00007f
+ * 110xxxxx 10xxxxxx                                000 10000000   0x00080   0x0007ff
+ * 1110xxxx 10xxxxxx 10xxxxxx                  00001000 00000000   0x00800   0x00ffff
+ * 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx   00001 00000000 00000000   0x10000   0x10ffff (not 0x1fffff)
+ *
+ * max: 100   001111   111111   111111  (0x10ffff)
+ */
 
-	ch = (unsigned char)str[i++];
-	while (bit > 0 && ch & mask) {
-		mask >>= 1;
-		bit--;
-	}
+/* Length of UTF-8 byte sequence.
+ * Table index is the first byte of UTF-8 sequence.
+ */
+static const signed char len_tab[256] = {
+	/*   0-127  0xxxxxxx */
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+	1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 
-	if (bit == 7)
-		return 1;
-	count = 6 - bit;
-	if (count == 0 || count > 3)
-		return -1;
-	for (c = 0; c < count; c++) {
-		if (u_is_first_byte(str[i++]))
-			return -1;
-	}
-	return count + 1;
-}
+	/* 128-191  10xxxxxx (invalid first byte) */
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+
+	/* 192-223  110xxxxx */
+	2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+	2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+
+	/* 224-239  1110xxxx */
+	3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
+
+	/* 240-244  11110xxx (000 - 100) */
+	4, 4, 4, 4, 4,
+
+	/* 11110xxx (101 - 111) (always invalid) */
+	-1, -1, -1,
+
+	/* 11111xxx (always invalid) */
+	-1, -1, -1, -1, -1, -1, -1, -1
+};
+
+/* index is length of the UTF-8 sequence - 1 */
+static int min_val[4] = { 0x000000, 0x000080, 0x000800, 0x010000 };
+static int max_val[4] = { 0x00007f, 0x0007ff, 0x00ffff, 0x10ffff };
+
+/* get value bits from the first UTF-8 sequence byte */
+static unsigned int first_byte_mask[4] = { 0x7f, 0x1f, 0x0f, 0x07 };
 
 int u_is_valid(const char *str)
 {
-	while (*str) {
-		int skip = u_get_char_bytes(str);
+	const unsigned char *s = str;
+	int i = 0;
 
-		if (skip == -1)
+	while (s[i]) {
+		unsigned char ch = s[i++];
+		int len = len_tab[ch];
+
+		if (len <= 0)
 			return 0;
-		str += skip;
+
+		if (len > 1) {
+			/* len - 1 10xxxxxx bytes */
+			int c = len - 1;
+			uchar u = ch & first_byte_mask[len];
+
+			do {
+				ch = s[i++];
+				if (len_tab[ch] != 0)
+					return 0;
+				u = (u << 6) | (ch & 0x3f);
+			} while (--c);
+
+			if (u < min_val[len] || u > max_val[len])
+				return 0;
+		}
 	}
 	return 1;
 }
 
 int u_strlen(const char *str)
 {
-	int i = 0;
+	const unsigned char *s = str;
 	int len = 0;
 
-	while (str[i]) {
-		unsigned char ch;
-
-		ch = str[i++];
-		if (ch & (1 << 7)) {
-			do {
-				ch = str[i++];
-			} while (!u_is_first_byte(ch));
-			i--;
-		}
+	while (*s) {
+		s += len_tab[*s];
 		len++;
 	}
 	return len;
@@ -81,34 +121,21 @@ int u_strlen(const char *str)
 
 void u_get_char(const char *str, int *idx, uchar *uch)
 {
-	int i = *idx;
-	int bit = 7;
-	uchar u, ch;
-	int mask = (1 << 7);
+	const unsigned char *s = str;
+	int len, i = *idx;
+	unsigned char ch;
+	uchar u;
 
-	ch = (unsigned char)str[i++];
-	while (bit > 0 && ch & mask) {
-		mask >>= 1;
-		bit--;
+	ch = s[i++];
+	len = len_tab[ch] - 1;
+	u = ch & first_byte_mask[len];
+	while (len > 0) {
+		ch = s[i++];
+		u = (u << 6) | (ch & 0x3f);
+		len--;
 	}
-	if (bit == 7) {
-		/* ascii */
-		u = ch;
-		*uch = u;
-		*idx = i;
-	} else {
-		int count;
-
-		u = ch & ((1 << bit) - 1);
-		count = 6 - bit;
-		while (count) {
-			ch = (unsigned char)str[i++];
-			u = (u << 6) | (ch & 63);
-			count--;
-		}
-		*uch = u;
-		*idx = i;
-	}
+	*idx = i;
+	*uch = u;
 }
 
 void u_set_char(char *str, int *idx, uchar uch)
@@ -156,15 +183,14 @@ int u_copy_chars(char *dst, const char *src, int len)
 	return i;
 }
 
-int u_skip_chars(const char *str, int len)
+int u_skip_chars(const char *str, int count)
 {
+	const unsigned char *s = str;
 	int i = 0;
 
-	while (len) {
-		do {
-			i++;
-		} while (!u_is_first_byte(str[i]));
-		len--;
+	while (count) {
+		i += len_tab[s[i]];
+		count--;
 	}
 	return i;
 }
