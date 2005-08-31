@@ -9,7 +9,7 @@ PACKAGE_NAME="C* Music Player"
 
 check_ncurses()
 {
-	local libs=-lncurses
+	local libs=-lncursesw
 
 	if check_lib "ncurses ($libs)" "$libs"
 	then
