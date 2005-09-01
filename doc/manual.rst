@@ -127,7 +127,7 @@ Command Mode
 ==========================
 
 Press ':' any time to enter command mode. The command mode works much like
-VIM_'s Ex mode.  Tabulator expansion works for files/dirs, commands and
+VIM_'s command mode.  Tabulator expansion works for files/dirs, commands and
 options. There's command history too (up/down arrow keys). Press 'ESC' to
 leave command mode and return to `Normal Mode`_.
 
