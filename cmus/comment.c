@@ -23,14 +23,14 @@
 
 #include <string.h>
 
-struct comment *comments_dup(const struct comment *comments)
+struct keyval *comments_dup(const struct keyval *comments)
 {
-	struct comment *c;
+	struct keyval *c;
 	int i;
 
 	for (i = 0; comments[i].key; i++)
 		; /* nothing */
-	c = xnew(struct comment, i + 1);
+	c = xnew(struct keyval, i + 1);
 	for (i = 0; comments[i].key; i++) {
 		c[i].key = xstrdup(comments[i].key);
 		c[i].val = xstrdup(comments[i].val);
@@ -40,7 +40,7 @@ struct comment *comments_dup(const struct comment *comments)
 	return c;
 }
 
-void comments_free(struct comment *comments)
+void comments_free(struct keyval *comments)
 {
 	int i;
 
@@ -51,7 +51,7 @@ void comments_free(struct comment *comments)
 	free(comments);
 }
 
-const char *comments_get_val(const struct comment *comments, const char *key)
+const char *comments_get_val(const struct keyval *comments, const char *key)
 {
 	int i;
 
@@ -62,7 +62,7 @@ const char *comments_get_val(const struct comment *comments, const char *key)
 	return NULL;
 }
 
-int comments_get_int(const struct comment *comments, const char *key)
+int comments_get_int(const struct keyval *comments, const char *key)
 {
 	const char *val;
 	long int ival;

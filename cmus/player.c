@@ -1087,7 +1087,7 @@ void player_set_cont(int value)
 }
 
 int player_get_fileinfo(const char *filename, int *duration,
-		struct comment **comments)
+		struct keyval **comments)
 {
 	struct input_plugin *plug;
 	int rc;
@@ -1096,7 +1096,7 @@ int player_get_fileinfo(const char *filename, int *duration,
 	*duration = -1;
 	plug = ip_new(filename);
 	if (ip_is_remote(plug)) {
-		*comments = xnew0(struct comment, 1);
+		*comments = xnew0(struct keyval, 1);
 		ip_delete(plug);
 		return 0;
 	}

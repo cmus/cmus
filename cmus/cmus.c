@@ -101,7 +101,7 @@ static void add_url(unsigned int flags, const char *filename)
 	ti = xnew(struct track_info, 1);
 	ti->ref = 1;
 	ti->filename = xstrdup(filename);
-	ti->comments = xnew0(struct comment, 1);
+	ti->comments = xnew0(struct keyval, 1);
 	ti->duration = -1;
 	ti->mtime = -1;
 
@@ -478,7 +478,7 @@ struct track_info *cmus_get_track_info(const char *name)
 		ti = xnew(struct track_info, 1);
 		ti->ref = 1;
 		ti->filename = xstrdup(name);
-		ti->comments = xnew0(struct comment, 1);
+		ti->comments = xnew0(struct keyval, 1);
 		ti->duration = -1;
 		ti->mtime = -1;
 		return ti;

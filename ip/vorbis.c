@@ -209,9 +209,9 @@ static int vorbis_seek(struct input_plugin_data *ip_data, double offset)
 }
 
 static int vorbis_read_comments(struct input_plugin_data *ip_data,
-		struct comment **comments)
+		struct keyval **comments)
 {
-	struct comment *c;
+	struct keyval *c;
 	struct vorbis_private *priv;
 	vorbis_comment *vc;
 	int i, s, d;
@@ -220,10 +220,10 @@ static int vorbis_read_comments(struct input_plugin_data *ip_data,
 	vc = ov_comment(&priv->vf, -1);
 	if (vc == NULL) {
 		d_print("vc == NULL\n");
-		*comments = xnew0(struct comment, 1);
+		*comments = xnew0(struct keyval, 1);
 		return 0;
 	}
-	c = xnew0(struct comment, vc->comments + 1);
+	c = xnew0(struct keyval, vc->comments + 1);
 	for (s = 0, d = 0; s < vc->comments; s++) {
 		const char *str = vc->user_comments[s];
 

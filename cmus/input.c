@@ -673,7 +673,7 @@ int ip_seek(struct input_plugin *ip, double offset)
 	return rc;
 }
 
-int ip_read_comments(struct input_plugin *ip, struct comment **comments)
+int ip_read_comments(struct input_plugin *ip, struct keyval **comments)
 {
 	int rc;
 

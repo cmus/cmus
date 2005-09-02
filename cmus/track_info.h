@@ -24,7 +24,7 @@
 
 struct track_info {
 	char *filename;
-	struct comment *comments;
+	struct keyval *comments;
 	time_t mtime;
 	int duration;
 	int ref;

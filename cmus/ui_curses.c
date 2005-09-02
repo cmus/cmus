@@ -950,7 +950,7 @@ static void update_titleline(void)
 	if (cur_track_info) {
 		const char *filename;
 		int use_alt_format = 0;
-		struct comment *cur_comments = cur_track_info->comments;
+		struct keyval *cur_comments = cur_track_info->comments;
 		
 		if (cur_comments[0].key == NULL) {
 			const char *title = get_stream_title(player_info.metadata);

@@ -70,7 +70,7 @@ struct input_plugin_ops {
 	int (*read)(struct input_plugin_data *ip_data, char *buffer, int count);
 	int (*seek)(struct input_plugin_data *ip_data, double offset);
 	int (*read_comments)(struct input_plugin_data *ip_data,
-			struct comment **comments);
+			struct keyval **comments);
 	int (*duration)(struct input_plugin_data *ip_data);
 };
 

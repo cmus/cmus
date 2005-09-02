@@ -20,16 +20,16 @@
 #ifndef _COMMENT_H
 #define _COMMENT_H
 
-struct comment {
+struct keyval {
 	char *key;
 	char *val;
 };
 
-extern struct comment *comments_dup(const struct comment *comments);
-extern void comments_free(struct comment *comments);
+extern struct keyval *comments_dup(const struct keyval *comments);
+extern void comments_free(struct keyval *comments);
 
 /* case insensitive key */
-extern const char *comments_get_val(const struct comment *comments, const char *key);
-extern int comments_get_int(const struct comment *comments, const char *key);
+extern const char *comments_get_val(const struct keyval *comments, const char *key);
+extern int comments_get_int(const struct keyval *comments, const char *key);
 
 #endif

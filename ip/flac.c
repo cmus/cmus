@@ -49,7 +49,7 @@ struct flac_private {
 	unsigned int buf_wpos;
 	unsigned int buf_rpos;
 
-	struct comment *comments;
+	struct keyval *comments;
 	int duration;
 
 	unsigned int eof : 1;
@@ -244,11 +244,11 @@ static void metadata_cb(const Dec *dec, const FLAC__StreamMetadata *metadata, vo
 		if (priv->comments) {
 			d_print("Ignoring\n");
 		} else {
-			struct comment *c;
+			struct keyval *c;
 			int s, d, nr;
 
 			nr = metadata->data.vorbis_comment.num_comments;
-			c = xnew0(struct comment, nr + 1);
+			c = xnew0(struct keyval, nr + 1);
 			for (s = 0, d = 0; s < nr; s++) {
 				const char *str = (const char *)metadata->data.vorbis_comment.comments[s].entry;
 				int i;
@@ -445,14 +445,14 @@ static int flac_seek(struct input_plugin_data *ip_data, double offset)
 	return 0;
 }
 
-static int flac_read_comments(struct input_plugin_data *ip_data, struct comment **comments)
+static int flac_read_comments(struct input_plugin_data *ip_data, struct keyval **comments)
 {
 	struct flac_private *priv = ip_data->private;
 
 	if (priv->comments) {
 		*comments = comments_dup(priv->comments);
 	} else {
-		*comments = xnew0(struct comment, 1);
+		*comments = xnew0(struct keyval, 1);
 	}
 	return 0;
 }

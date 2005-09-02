@@ -46,7 +46,7 @@ extern int ip_seek(struct input_plugin *ip, double offset);
 /*
  * errors: IP_ERROR_{ERRNO}
  */
-extern int ip_read_comments(struct input_plugin *ip, struct comment **comments);
+extern int ip_read_comments(struct input_plugin *ip, struct keyval **comments);
 
 /*
  * errors: IP_ERROR_{ERRNO, FUNCTION_NOT_SUPPORTED}

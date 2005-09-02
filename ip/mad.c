@@ -112,7 +112,7 @@ static int mad_seek(struct input_plugin_data *ip_data, double offset)
 	return nomad_time_seek(nomad, offset);
 }
 
-static void get_comment(struct comment *c, int *iptr, ID3 *id3, enum id3_key key, const char *key_name)
+static void get_comment(struct keyval *c, int *iptr, ID3 *id3, enum id3_key key, const char *key_name)
 {
 	int i = *iptr;
 
@@ -124,10 +124,10 @@ static void get_comment(struct comment *c, int *iptr, ID3 *id3, enum id3_key key
 }
 
 static int mad_read_comments(struct input_plugin_data *ip_data,
-		struct comment **comments)
+		struct keyval **comments)
 {
 	ID3 *id3;
-	struct comment *c;
+	struct keyval *c;
 	int fd, rc, save, i;
 
 	fd = open(ip_data->filename, O_RDONLY);
@@ -146,11 +146,11 @@ static int mad_read_comments(struct input_plugin_data *ip_data,
 			return -1;
 		}
 		d_print("corrupted tag?\n");
-		*comments = xnew0(struct comment, 1);
+		*comments = xnew0(struct keyval, 1);
 		return 0;
 	}
 
-	c = xnew0(struct comment, NUM_ID3_KEYS + 1);
+	c = xnew0(struct keyval, NUM_ID3_KEYS + 1);
 	i = 0;
 	get_comment(c, &i, id3, ID3_ARTIST, "artist");
 	get_comment(c, &i, id3, ID3_ALBUM, "album");

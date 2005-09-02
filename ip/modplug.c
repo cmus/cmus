@@ -127,13 +127,13 @@ static int mod_seek(struct input_plugin_data *ip_data, double offset)
 	return 0;
 }
 
-static int mod_read_comments(struct input_plugin_data *ip_data, struct comment **comments)
+static int mod_read_comments(struct input_plugin_data *ip_data, struct keyval **comments)
 {
 	struct mod_private *priv = ip_data->private;
-	struct comment *c;
+	struct keyval *c;
 	const char *name;
 
-	c = xnew0(struct comment, 2);
+	c = xnew0(struct keyval, 2);
 	name = ModPlug_GetName(priv->file);
 	if (name != NULL && *name != 0) {
 		c[0].key = xstrdup("title");

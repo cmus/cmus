@@ -98,8 +98,7 @@ extern int player_get_buffer_size(void);
 extern void player_set_buffer_seconds(unsigned int seconds);
 extern void player_toggle_cont(void);
 extern void player_set_cont(int value);
-extern int player_get_fileinfo(const char *filename, int *duration,
-		struct comment **comments);
+extern int player_get_fileinfo(const char *filename, int *duration, struct keyval **comments);
 
 /* volume: 0 - 100 */
 

@@ -700,7 +700,7 @@ void commands_init(void)
 	int i;
 
 	cmd_history_filename = xstrjoin(cmus_cache_dir, "/ui_curses_cmd_history");
-	history_init(&cmd_history, 100);
+	history_init(&cmd_history, 2000);
 	history_load(&cmd_history, cmd_history_filename);
 
 	for (i = 0; color_names[i]; i++) {

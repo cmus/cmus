@@ -235,9 +235,9 @@ static int wav_seek(struct input_plugin_data *ip_data, double _offset)
 }
 
 static int wav_read_comments(struct input_plugin_data *ip_data,
-		struct comment **comments)
+		struct keyval **comments)
 {
-	*comments = xnew0(struct comment, 1);
+	*comments = xnew0(struct keyval, 1);
 	return 0;
 }
 

@@ -130,7 +130,7 @@ static struct track_info *data_to_track_info(const void *data, unsigned int data
 		}
 		count /= 2;
 	}
-	ti->comments = xnew(struct comment, count + 1);
+	ti->comments = xnew(struct keyval, count + 1);
 	for (i = 0; i < count; i++) {
 		int len;
 		char *s;
@@ -155,7 +155,7 @@ static struct track_info *data_to_track_info(const void *data, unsigned int data
 struct track_info *track_db_get_track(struct track_db *db, const char *filename)
 {
 	struct track_info *ti;
-	struct comment *comments;
+	struct keyval *comments;
 	int duration;
 	void *data;
 	unsigned int data_size;
