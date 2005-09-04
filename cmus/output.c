@@ -657,6 +657,9 @@ char *op_get_error_msg(int rc, const char *arg)
 		snprintf(buffer, sizeof(buffer),
 				"%s: no such option", arg);
 		break;
+	case OP_ERROR_INTERNAL:
+		snprintf(buffer, sizeof(buffer), "%s: internal error", arg);
+		break;
 	case OP_ERROR_SUCCESS:
 	default:
 		snprintf(buffer, sizeof(buffer),

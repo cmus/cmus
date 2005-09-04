@@ -96,6 +96,17 @@ static unsigned int alsa_period_time = 50e3;
 
 #define SET_BUFFERTIME
 
+static int alsa_error_to_op_error(int err)
+{
+	BUG_ON(err >= 0);
+	err = -err;
+	if (err < SND_ERROR_BEGIN) {
+		errno = err;
+		return -OP_ERROR_ERRNO;
+	}
+	return -OP_ERROR_INTERNAL;
+}
+
 static int op_alsa_init(void)
 {
 	int rc;
@@ -107,7 +118,7 @@ static int op_alsa_init(void)
 		free(alsa_dsp_device);
 		alsa_dsp_device = NULL;
 		errno = ENOMEM;
-		return -1;
+		return -OP_ERROR_ERRNO;
 	}
 	return 0;
 }
@@ -207,10 +218,7 @@ static int alsa_set_hw_params(void)
 	return 0;
 error:
 	d_print("%s: error: %s\n", cmd, snd_strerror(rc));
-	snd_pcm_close(alsa_handle);
-	/* FIXME: return code */
-	errno = EINVAL;
-	return -1;
+	return rc;
 }
 
 /* randomize sw params */
@@ -266,10 +274,7 @@ static int alsa_set_sw_params(void)
 	return 0;
 error:
 	d_print("%s: error: %s\n", cmd, snd_strerror(rc));
-	snd_pcm_close(alsa_handle);
-	/* FIXME: return code */
-	errno = EINVAL;
-	return -1;
+	return rc;
 }
 
 static int op_alsa_open(sample_format_t sf)
@@ -280,25 +285,29 @@ static int op_alsa_open(sample_format_t sf)
 	alsa_frame_size = sf_get_frame_size(alsa_sf);
 
 	rc = snd_pcm_open(&alsa_handle, alsa_dsp_device, SND_PCM_STREAM_PLAYBACK, 0);
-	if (rc < 0)
-		return rc;
+	if (rc < 0) {
+		d_print("snd_pcm_open: error: %s\n", snd_strerror(rc));
+		goto error;
+	}
 
 	rc = alsa_set_hw_params();
 	if (rc)
-		return rc;
+		goto close_error;
 	rc = alsa_set_sw_params();
 	if (rc)
-		return rc;
+		goto close_error;
 
 	rc = snd_pcm_prepare(alsa_handle);
 	if (rc < 0) {
-		d_print("%s: error: %s\n", "snd_pcm_prepare", snd_strerror(rc));
-		snd_pcm_close(alsa_handle);
-		/* FIXME: return code */
-		return -1;
+		d_print("snd_pcm_prepare: error: %s\n", snd_strerror(rc));
+		goto close_error;
 	}
 	d_print("opened\n");
 	return 0;
+close_error:
+	snd_pcm_close(alsa_handle);
+error:
+	return alsa_error_to_op_error(rc);
 }
 
 static int op_alsa_close(void)
@@ -364,11 +373,9 @@ static int op_alsa_write(const char *buffer, int count)
 			return -1;
 		}
 		return rc * alsa_frame_size;
-	} else if (rc == -EAGAIN) {
-		errno = EAGAIN;
-		return -1;
 	} else {
-		return -1;
+		/* this handles EAGAIN too which is not critical error */
+		return alsa_error_to_op_error(rc);
 	}
 }
 
@@ -380,7 +387,7 @@ static int op_alsa_buffer_space(void)
 	rc = snd_pcm_status(alsa_handle, status);
 	if (rc < 0) {
 		d_print("snd_pcm_status returned %d %s\n", rc, snd_strerror(rc));
-		return -1;
+		return alsa_error_to_op_error(rc);
 	}
 
 	f = snd_pcm_status_get_avail(status);

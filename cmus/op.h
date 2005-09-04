@@ -36,7 +36,9 @@ enum {
 	/* plugin does not support the sample format */
 	OP_ERROR_SAMPLE_FORMAT,
 	/* plugin does not have this option */
-	OP_ERROR_NOT_OPTION
+	OP_ERROR_NOT_OPTION,
+	/*  */
+	OP_ERROR_INTERNAL
 };
 
 struct output_plugin_ops {
