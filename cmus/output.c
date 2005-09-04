@@ -50,6 +50,7 @@ struct output_plugin {
 	unsigned int mixer_open : 1;
 };
 
+static const char * const plugin_dir = LIBDIR "/" PACKAGE "/op";
 static LIST_HEAD(op_head);
 static struct output_plugin *op = NULL;
 static sample_format_t current_sf = 0;
@@ -64,13 +65,12 @@ static void dump_option(void *data, const char *key)
 
 static void load_plugins(void)
 {
-	static const char *dirname = LIBDIR "/" PACKAGE "/op";
 	DIR *dir;
 	struct dirent *d;
 
-	dir = opendir(dirname);
+	dir = opendir(plugin_dir);
 	if (dir == NULL) {
-		fprintf(stderr, "couldn't open directory `%s': %s\n", dirname, strerror(errno));
+		fprintf(stderr, "couldn't open directory `%s': %s\n", plugin_dir, strerror(errno));
 		return;
 	}
 	while ((d = readdir(dir)) != NULL) {
@@ -87,7 +87,7 @@ static void load_plugins(void)
 		if (strcmp(ext, ".so"))
 			continue;
 
-		snprintf(filename, sizeof(filename), "%s/%s", dirname, d->d_name);
+		snprintf(filename, sizeof(filename), "%s/%s", plugin_dir, d->d_name);
 
 		so = dlopen(filename, RTLD_NOW);
 		if (so == NULL) {
@@ -674,7 +674,7 @@ void op_dump_plugins(void)
 {
 	struct output_plugin *o;
 
-	printf("\nOutput Plugins:\n");
+	printf("\nOutput Plugins: %s\n", plugin_dir);
 	list_for_each_entry(o, &op_head, node) {
 		printf("  %s\n", o->name);
 	}

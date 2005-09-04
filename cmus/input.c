@@ -72,6 +72,7 @@ struct ip {
 	const struct input_plugin_ops *ops;
 };
 
+static const char * const plugin_dir = LIBDIR "/" PACKAGE "/ip";
 static LIST_HEAD(ip_head);
 
 /* timeouts (ms) */
@@ -393,13 +394,12 @@ static int open_file(struct input_plugin *ip)
 
 void ip_init_plugins(void)
 {
-	static const char *dirname = LIBDIR "/" PACKAGE "/ip";
 	DIR *dir;
 	struct dirent *d;
 
-	dir = opendir(dirname);
+	dir = opendir(plugin_dir);
 	if (dir == NULL) {
-		fprintf(stderr, "couldn't open directory `%s': %s\n", dirname, strerror(errno));
+		fprintf(stderr, "couldn't open directory `%s': %s\n", plugin_dir, strerror(errno));
 		return;
 	}
 	while ((d = readdir(dir)) != NULL) {
@@ -416,7 +416,7 @@ void ip_init_plugins(void)
 		if (strcmp(ext, ".so"))
 			continue;
 
-		snprintf(filename, sizeof(filename), "%s/%s", dirname, d->d_name);
+		snprintf(filename, sizeof(filename), "%s/%s", plugin_dir, d->d_name);
 
 		so = dlopen(filename, RTLD_NOW);
 		if (so == NULL) {
@@ -819,7 +819,7 @@ void ip_dump_plugins(void)
 	struct ip *ip;
 	int i;
 
-	printf("Input Plugins:\n");
+	printf("Input Plugins: %s\n", plugin_dir);
 	list_for_each_entry(ip, &ip_head, node) {
 		printf("  %s:\n    File Types:", ip->name);
 		for (i = 0; ip->extensions[i]; i++)
