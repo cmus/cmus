@@ -20,34 +20,18 @@
 #ifndef _XMALLOC_H
 #define _XMALLOC_H
 
+#include <compiler.h>
+
 #include <stdlib.h>
 #include <string.h>
 
-#if !defined(likely)
-
-#if defined(__GNUC__) && (__GNUC__ > 2)
-
-#define likely(x)	__builtin_expect(!!(x), 1)
-#define unlikely(x)	__builtin_expect(!!(x), 0)
-#define __noreturn	__attribute__((__noreturn__))
-
-#else
-
-#define likely(x)	(x)
-#define unlikely(x)	(x)
-#define __noreturn
-
-#endif
-
-#endif /* !defined(likely) */
-
-extern void malloc_fail(void) __noreturn;
+extern void malloc_fail(void) __NORETURN;
 
 #define xnew(type, n)		(type *)xmalloc(sizeof(type) * (n))
 #define xnew0(type, n)		(type *)xmalloc0(sizeof(type) * (n))
 #define xrenew(type, mem, n)	(type *)xrealloc(mem, sizeof(type) * (n))
 
-static inline void *xmalloc(size_t size)
+static inline void * __MALLOC xmalloc(size_t size)
 {
 	void *ptr = malloc(size);
 
@@ -56,7 +40,7 @@ static inline void *xmalloc(size_t size)
 	return ptr;
 }
 
-static inline void *xmalloc0(size_t size)
+static inline void * __MALLOC xmalloc0(size_t size)
 {
 	void *ptr = calloc(1, size);
 
@@ -65,7 +49,7 @@ static inline void *xmalloc0(size_t size)
 	return ptr;
 }
 
-static inline void *xrealloc(void *ptr, size_t size)
+static inline void * __MALLOC xrealloc(void *ptr, size_t size)
 {
 	ptr = realloc(ptr, size);
 	if (unlikely(ptr == NULL))
@@ -73,7 +57,7 @@ static inline void *xrealloc(void *ptr, size_t size)
 	return ptr;
 }
 
-static inline char *xstrdup(const char *str)
+static inline char * __MALLOC xstrdup(const char *str)
 {
 	char *s = strdup(str);
 
@@ -82,9 +66,9 @@ static inline char *xstrdup(const char *str)
 	return s;
 }
 
-extern char *xstrndup(const char *str, size_t n);
+extern char * __MALLOC xstrndup(const char *str, size_t n);
 
-static inline char *xxstrdup(const char *str)
+static inline char * __MALLOC xxstrdup(const char *str)
 {
 	if (str == NULL)
 		return NULL;

@@ -25,6 +25,7 @@
 #include <utils.h>
 #include <xmalloc.h>
 #include <debug.h>
+#include <compiler.h>
 
 #include <stdlib.h>
 #include <pthread.h>
@@ -186,7 +187,7 @@ static void player_error(const char *msg)
 	d_print("ERROR: '%s'\n", msg);
 }
 
-static void player_ip_error(int rc, const char *format, ...)
+static void __FORMAT(2, 3) player_ip_error(int rc, const char *format, ...)
 {
 	char buffer[1024];
 	va_list ap;
@@ -203,7 +204,7 @@ static void player_ip_error(int rc, const char *format, ...)
 	free(msg);
 }
 
-static void player_op_error(int rc, const char *format, ...)
+static void __FORMAT(2, 3) player_op_error(int rc, const char *format, ...)
 {
 	char buffer[1024];
 	va_list ap;

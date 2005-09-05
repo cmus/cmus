@@ -44,8 +44,7 @@
 #ifndef _DEBUG_H
 #define _DEBUG_H
 
-/* unlikely() */
-#include <xmalloc.h>
+#include <compiler.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -61,15 +60,9 @@
 #error DEBUG must be >= 0
 #endif
 
-#if DEBUG > 1
-#define __format_check(fmt, first) __attribute__((format(printf, (fmt), (first))))
-#else
-#define __format_check(fmt, first)
-#endif
-
 extern void debug_init(FILE *stream);
-extern void __debug_bug(const char *function, const char *fmt, ...) __format_check(2, 3) __noreturn;
-extern void __debug_print(const char *function, const char *fmt, ...) __format_check(2, 3);
+extern void __debug_bug(const char *function, const char *fmt, ...) __FORMAT(2, 3) __NORETURN;
+extern void __debug_print(const char *function, const char *fmt, ...) __FORMAT(2, 3);
 
 /* ------------------------------------------------------------------------ */
 
