@@ -102,6 +102,34 @@ check_oss()
 	fi
 }
 
+flag_debug()
+{
+	# $1 = "debug"
+	# $2 = arg (--debug=arg)
+	case $2 in
+		[0-2])
+			DEBUG=$2
+			;;
+		*)
+			die "argument for --debug must be 0-2"
+			;;
+	esac
+}
+
+flag_dev()
+{
+	CFLAGS="-std=gnu99 -O2 -ggdb -Wall -Wshadow -Wdeclaration-after-statement -Wredundant-decls -Wmissing-prototypes -Werror -pipe"
+	DEBUG=2
+	prefix=$HOME
+	#libdir=$(pwd)/..
+}
+
+# default debugging level
+DEBUG=1
+
+add_flag debug yes flag_debug "Debugging level [$DEBUG]" "=[0-2]"
+add_flag dev   no  flag_dev   "This should be used only by developers"
+
 add_check check_cc
 add_check check_ar
 add_check check_endianness
@@ -126,19 +154,6 @@ enable_use_config_h yes
 enable_flag irman   no   CONFIG_IRMAN   "Irman support"
 
 parse_command_line "$@"
-
-case $DEBUG in
-	[0-2])
-		;;
-	'')
-		DEBUG=1
-		;;
-	*)
-		warn "DEBUG must be 0-2, setting to 1"
-		DEBUG=1
-		;;
-esac
-
 run_checks
 
 CFLAGS="${CFLAGS} -DDEBUG=$DEBUG"
