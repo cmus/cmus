@@ -18,6 +18,9 @@ enable_flags=""
 enable_use_config_h_val=yes
 enable_use_config_mk_val=yes
 
+# option flags
+opt_flags=""
+
 # For each --enable-$NAME there are
 #   enable_value_$NAME
 #   enable_desc_$NAME
@@ -40,17 +43,6 @@ set_install_dir_vars=""
 
 checks=""
 
-print_enables()
-{
-	local flag
-
-	for flag in $enable_flags
-	do
-		lprint "  --enable-${flag//_/-}" 24
-		echo "  $(get_var enable_desc_${flag}) [$(get_var enable_value_${flag})]"
-	done
-}
-
 get_dir_val()
 {
 	local val
@@ -69,8 +61,6 @@ show_help()
 {
 	local _bindir _sbindir _libexecdir _datadir _sysconfdir _sharedstatedir _localstatedir _libdir _includedir _infodir _mandir
 
-	argc 0
-
 	_bindir=$(get_dir_val bindir EPREFIX/bin)
 	_sbindir=$(get_dir_val sbindir EPREFIX/sbin)
 	_libexecdir=$(get_dir_val libexecdir EPREFIX/libexec)
@@ -85,18 +75,12 @@ show_help()
 
 	cat <<EOT
 Usage: ./configure [options] [VARIABLE=VALUE]...
+
 Installation directories:
   --prefix=PREFIX         install architecture-independent files in PREFIX
                           [/usr/local]
   --exec-prefix=EPREFIX   install architecture-dependent files in EPREFIX
                           [PREFIX]
-
-By default, \`make install' will install all the files in
-\`/usr/local/bin', \`/usr/local/lib' etc.  You can specify
-an installation prefix other than \`/usr/local' using \`--prefix',
-for instance \`--prefix=\$HOME'.
-
-For better control, use the options below.
 
 Fine tuning of the installation directories:
   --bindir=DIR           user executables [$_bindir]
@@ -115,11 +99,25 @@ Optional Features:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE (ARG=yes|no|auto) [ARG=yes]
 EOT
-	print_enables
-	echo
-	echo "Some influential environment variables:"
-	echo "  CC CFLAGS LD LDFLAGS SOFLAGS"
-	echo "  CXX CXXFLAGS CXXLD CXXLDFLAGS"
+	local i tmp text=
+	for i in $enable_flags
+	do
+		strpad "--enable-${i//_/-}" 22
+		text="${text}  $strpad_ret  $(get_var enable_desc_${i}) [$(get_var enable_value_${i})]\n"
+	done
+	if [[ -n $opt_flags ]]
+	then
+		text="${text}\n"
+		for i in $opt_flags
+		do
+			tmp=flag_argdesc_${i}
+			strpad "--${i//_/-}${!tmp}" 22
+			tmp=flag_desc_${i}
+			text="${text}  $strpad_ret  ${!tmp}\n"
+		done
+	fi
+	echo -ne "$text\nSome influential environment variables:\n  CC CFLAGS LD LDFLAGS SOFLAGS\n  CXX CXXFLAGS CXXLD CXXLDFLAGS\n"
+	exit 0
 }
 
 is_enable_flag()
@@ -247,6 +245,8 @@ parse_command_line()
 		[[ -z $(get_var $name) ]] && die "$name must be defined in 'configure'"
 	done
 
+	add_flag help no show_help "show this help and exit"
+
 	# parse flags (--*)
 	while [[ $# -gt 0 ]]
 	do
@@ -268,10 +268,6 @@ parse_command_line()
 				key=${1##--disable-}
 				handle_enable "${key//-/_}" "no"
 				;;
-			--h|--he|--hel|--help)
-				show_help
-				exit 0
-				;;
 			--prefix=*|--exec-prefix=*|--bindir=*|--sbindir=*|--libexecdir=*|--datadir=*|--sysconfdir=*|--sharedstatedir=*|--localstatedir=*|--libdir=*|--includedir=*|--infodir=*|--mandir=*)
 				kv=${1##--}
 				key=${kv%%=*}
@@ -285,7 +281,30 @@ parse_command_line()
 				break
 				;;
 			--*)
-				die "unrecognized option \`$1'"
+				local name found f
+				kv=${1##--}
+				key=${kv%%=*}
+				name="${key//-/_}"
+				found=0
+				for f in $opt_flags
+				do
+					if [[ $f = $name ]]
+					then
+						if [[ $key = $kv ]]
+						then
+							# '--foo'
+							[[ $(get_var flag_hasarg_${name}) = yes ]] && die "--${key} requires an argument (--${key}$(get_var flag_argdesc_${name}))"
+							$(get_var flag_func_${name}) ${key}
+						else
+							# '--foo=bar'
+							[[ $(get_var flag_hasarg_${name}) = no ]] && die "--${key} must not have an argument"
+							$(get_var flag_func_${name}) ${key} "${kv##*=}"
+						fi
+						found=1
+						break
+					fi
+				done
+				[[ $found -eq 0 ]] && die "unrecognized option \`$1'"
 				;;
 			*)
 				break
@@ -374,8 +393,8 @@ run_checks()
 var_print()
 {
 	argc 1
-	lprint "$1:" 20
-	echo " $(get_var $1)"
+	strpad "$1:" 20
+	echo "${strpad_ret} $(get_var $1)"
 }
 
 config_var()

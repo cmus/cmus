@@ -155,6 +155,39 @@ enable_use_config_mk()
 	enable_use_config_mk_val=$1
 }
 
+# Add an option flag
+#
+# @flag:          'foo' -> --foo[=ARG]
+# @has_arg:       does --@flag take an argument? 'yes' or 'no'
+# @function:      function to run if --@flag is given
+# @description:   help text
+# @arg_desc:      argument description shown in --help
+add_flag()
+{
+	local flag hasarg func desc name
+
+	argc 4 5
+	flag="$1"
+	hasarg="$2"
+	func="$3"
+	desc="$4"
+	argdesc="$5"
+	case $hasarg in
+		yes|no)
+			;;
+		*)
+			die "argument 2 for $FUNCNAME flag must be 'yes' or 'no'"
+			;;
+	esac
+	is_function "${func}" || die "function \`${func}' not defined"
+	name="${flag//-/_}"
+	opt_flags="$opt_flags $name"
+	set_var flag_hasarg_${name} "${hasarg}"
+	set_var flag_func_${name} "${func}"
+	set_var flag_desc_${name} "${desc}"
+	set_var flag_argdesc_${name} "${argdesc}"
+}
+
 # usage: 'configure_simple "$@"'
 # 
 #  o parse command line
@@ -308,7 +341,8 @@ print_config()
 	echo "Configuration:"
 	for flag in $enable_flags
 	do
-		lprint "${flag}: " 21
+		strpad "${flag}: " 21
+		echo -n "$strpad_ret"
 		get_var enable_value_${flag}
 	done
 }
@@ -368,7 +402,8 @@ print_install_dirs()
 	names=$(for name in prefix $set_install_dir_vars; do echo $name; done | sort | uniq)
 	for name in $names
 	do
-		lprint "$name:" 20
-		echo " $(get_var $name)"
+		strpad "$name: " 21
+		echo -n "$strpad_ret"
+		get_var $name
 	done
 }

@@ -233,20 +233,21 @@ out()
 	fi
 }
 
-# @str: string to print
-# @len: minimum length of field
-lprint()
+# @str: string to pad with spaces
+# @len: minimum length of the string
+#
+# returned string is $strpad_ret
+strpad()
 {
-	local str len
+	local len
 
 	argc 2
-	str="$1"
+	strpad_ret="$1"
 	len="$2"
-	len=$(($len - ${#str}))
-	echo -n "$str"
+	len=$(($len - ${#strpad_ret}))
 	while [[ $len -gt 0 ]]
 	do
-		echo -n " "
+		strpad_ret="${strpad_ret} "
 		len=$(($len - 1))
 	done
 }
