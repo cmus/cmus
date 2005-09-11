@@ -576,18 +576,6 @@ static const struct searchable_ops sorted_search_ops = {
 
 /* search }}} */
 
-static int xstrcmp(const char *a, const char *b)
-{
-	if (a == NULL) {
-		if (b == NULL)
-			return 0;
-		return -1;
-	} else if (b == NULL) {
-		return 1;
-	}
-	return strcmp(a, b);
-}
-
 static int xstrcasecmp(const char *a, const char *b)
 {
 	if (a == NULL) {
@@ -692,11 +680,11 @@ static void find_artist_and_album(const char *artist_name,
 	list_for_each_entry(artist, &playlist.artist_head, node) {
 		int res;
 		
-		res = xstrcmp(artist->name, artist_name);
+		res = xstrcasecmp(artist->name, artist_name);
 		if (res == 0) {
 			*_artist = artist;
 			list_for_each_entry(album, &artist->album_head, node) {
-				res = xstrcmp(album->name, album_name);
+				res = xstrcasecmp(album->name, album_name);
 				if (res == 0) {
 					*_album = album;
 					return;
