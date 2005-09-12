@@ -20,6 +20,13 @@ check_bash_version()
 
 check_bash_version
 
+if [[ -n $CDPATH ]]
+then
+	echo "Exporting CDPATH is dangerous!"
+	echo
+fi
+unset CDPATH
+
 srcdir="$(dirname $0)"
 srcdir=$(cd $srcdir && pwd)
 [[ -z $srcdir ]] && exit 1
