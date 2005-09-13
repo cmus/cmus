@@ -89,7 +89,12 @@ static int show_remaining_time = 0;
 static int update_window_title = 0;
 
 static int running = 1;
+
+/* shown error message and time stamp
+ * error is cleared if it is older than 3s and key was pressed
+ */
 static char error_msg[512];
+static time_t error_time = 0;
 
 static char *server_address = NULL;
 static int remote_socket = -1;
@@ -1098,6 +1103,7 @@ void ui_curses_display_error_msg(const char *format, ...)
 	vsnprintf(error_msg + 7, sizeof(error_msg) - 7, format, ap);
 	va_end(ap);
 
+	error_time = time(NULL);
 	ui_curses_update_commandline();
 }
 
@@ -1578,7 +1584,14 @@ static void display_help(void)
 
 static void clear_error(void)
 {
+	time_t t = time(NULL);
+
+	/* error msg is visible at least 3s */
+	if (t - error_time < 3)
+		return;
+
 	if (error_msg[0]) {
+		error_time = 0;
 		error_msg[0] = 0;
 		ui_curses_update_commandline();
 	}
