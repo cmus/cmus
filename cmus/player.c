@@ -503,6 +503,13 @@ static void __consumer_handle_eof(void)
 {
 	char *filename;
 
+	if (ip_is_remote(ip)) {
+		__producer_stop();
+		__consumer_drain_and_stop();
+		player_error("lost connection");
+		return;
+	}
+
 	if (get_next(&filename) == 0) {
 		int rc;
 
