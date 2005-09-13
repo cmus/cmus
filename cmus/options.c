@@ -96,11 +96,13 @@ static void set_output_plugin(const struct command_mode_option *opt, const char 
 	player_set_op(value);
 }
 
+#define SECOND_SIZE (44100 * 16 / 8 * 2)
+
 static void get_buffer_seconds(const struct command_mode_option *opt, char **value)
 {
 	char buf[32];
 
-	snprintf(buf, sizeof(buf), "%d", player_get_buffer_size() * CHUNK_SIZE / (44100 * 16 / 8 * 2));
+	snprintf(buf, sizeof(buf), "%d", (player_get_buffer_chunks() * CHUNK_SIZE + SECOND_SIZE / 2) / SECOND_SIZE);
 	*value = xstrdup(buf);
 }
 
@@ -112,7 +114,7 @@ static void set_buffer_seconds(const struct command_mode_option *opt, const char
 		ui_curses_display_error_msg("invalid format string");
 		return;
 	}
-	player_set_buffer_size(seconds * 44100 * 16 / 8 * 2 / CHUNK_SIZE);
+	player_set_buffer_chunks((seconds * SECOND_SIZE + CHUNK_SIZE / 2) / CHUNK_SIZE);
 }
 
 static void get_status_display_program(const struct command_mode_option *opt, char **value)

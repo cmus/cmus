@@ -2374,7 +2374,7 @@ static int ui_curses_init(void)
 			btmp = 3;
 		if (btmp > 30)
 			btmp = 30;
-		player_set_buffer_size(btmp);
+		player_set_buffer_chunks(btmp);
 	}
 	get_colors();
 
@@ -2403,7 +2403,7 @@ static void ui_curses_exit(void)
 	cmus_save_playlist(playlist_autosave_filename);
 
 	pl_get_status(&repeat, &playlist_mode, &play_mode, &total_time);
-	buffer_chunks = player_get_buffer_size();
+	buffer_chunks = player_get_buffer_chunks();
 
 	player_exit();
 	pl_exit();

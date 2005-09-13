@@ -1053,7 +1053,7 @@ char *player_get_op(void)
 	return op_get_current();
 }
 
-void player_set_buffer_size(unsigned int nr_chunks)
+void player_set_buffer_chunks(unsigned int nr_chunks)
 {
 	if (nr_chunks < 3)
 		nr_chunks = 3;
@@ -1068,7 +1068,7 @@ void player_set_buffer_size(unsigned int nr_chunks)
 	player_unlock();
 }
 
-int player_get_buffer_size(void)
+int player_get_buffer_chunks(void)
 {
 	int nr_chunks;
 
