@@ -23,10 +23,24 @@
 #include <history.h>
 #include <uchar.h>
 
+struct command_mode_option;
+
+typedef void (*option_get_func)(const struct command_mode_option *opt, char **value);
+typedef void (*option_set_func)(const struct command_mode_option *opt, const char *value);
+
+struct command_mode_option {
+	struct list_head node;
+	const char *name;
+	option_get_func get;
+	option_set_func set;
+	void *data;
+};
+
 extern struct history cmd_history;
 
 extern void command_mode_ch(uchar ch);
 extern void command_mode_key(int key);
+extern void option_add(const char *name, option_get_func get, option_set_func set, void *data);
 extern void commands_init(void);
 extern void commands_exit(void);
 

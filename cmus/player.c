@@ -1048,6 +1048,11 @@ int player_set_op(const char *name)
 	return rc;
 }
 
+char *player_get_op(void)
+{
+	return op_get_current();
+}
+
 void player_set_buffer_size(unsigned int nr_chunks)
 {
 	if (nr_chunks < 3)
@@ -1061,11 +1066,6 @@ void player_set_buffer_size(unsigned int nr_chunks)
 	buffer_resize(&player_buffer, nr_chunks);
 	__player_status_changed();
 	player_unlock();
-}
-
-void player_set_buffer_seconds(unsigned int seconds)
-{
-	player_set_buffer_size(seconds * 44100 * 16 / 8 * 2 / CHUNK_SIZE);
 }
 
 int player_get_buffer_size(void)

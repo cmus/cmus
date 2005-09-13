@@ -13,6 +13,7 @@ objs-y := \
 	load_dir.o \
 	mergesort.o \
 	misc.o \
+	options.o \
 	output.o \
 	pcm.o \
 	pl.o \

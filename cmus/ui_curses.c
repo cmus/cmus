@@ -20,6 +20,7 @@
 #include <ui_curses.h>
 #include <search_mode.h>
 #include <command_mode.h>
+#include <options.h>
 #include <play_queue.h>
 #include <browser.h>
 #include <cmus.h>
@@ -80,6 +81,73 @@ char *window_title_format = NULL;
 char *window_title_alt_format = NULL;
 char *status_display_program = NULL;
 
+char *sort_string = NULL;
+
+#define BRIGHT (1 << 3)
+
+int bg_colors[NR_COLORS] = {
+	-1,
+	-1,
+	COLOR_WHITE,
+	COLOR_WHITE,
+	-1,
+	-1,
+	COLOR_BLUE,
+	COLOR_BLUE,
+
+	-1,
+	COLOR_RED,
+	-1,
+	COLOR_WHITE,
+	COLOR_RED,
+	-1,
+	-1,
+	-1,
+	-1
+};
+
+int fg_colors[NR_COLORS] = {
+	-1,
+	COLOR_YELLOW | BRIGHT,
+	COLOR_BLACK,
+	COLOR_YELLOW | BRIGHT,
+	-1,
+	COLOR_YELLOW | BRIGHT,
+	COLOR_WHITE | BRIGHT,
+	COLOR_YELLOW | BRIGHT,
+
+	COLOR_RED,
+	COLOR_WHITE | BRIGHT,
+	-1,
+	COLOR_BLACK,
+	COLOR_WHITE | BRIGHT,
+	COLOR_BLUE | BRIGHT,
+	-1,
+	COLOR_RED | BRIGHT,
+	COLOR_YELLOW | BRIGHT
+};
+
+/* prefixes actually. "_bg" or "_fg" added at end */
+const char * const color_names[NR_COLORS] = {
+	"row",
+	"row_cur",
+	"row_sel",
+	"row_sel_cur",
+	"row_active",
+	"row_active_cur",
+	"row_active_sel",
+	"row_active_sel_cur",
+	"separator",
+	"title",
+	"commandline",
+	"statusline",
+	"titleline",
+	"browser_dir",
+	"browser_file",
+	"error",
+	"info",
+};
+
 /* ------------------------------------------------------------------------- */
 
 /* currently playing file */
@@ -118,93 +186,6 @@ static int track_win_y = 0;
 static int track_win_w = 0;
 
 static int volume_step = 1;
-
-#define BRIGHT (1 << 3)
-
-enum {
-	COLOR_ROW,
-	COLOR_ROW_CUR,
-	COLOR_ROW_SEL,
-	COLOR_ROW_SEL_CUR,
-	COLOR_ROW_ACTIVE,
-	COLOR_ROW_ACTIVE_CUR,
-	COLOR_ROW_ACTIVE_SEL,
-	COLOR_ROW_ACTIVE_SEL_CUR,
-	COLOR_SEPARATOR,
-	COLOR_TITLE,
-	COLOR_COMMANDLINE,
-	COLOR_STATUSLINE,
-	COLOR_TITLELINE,
-	COLOR_BROWSER_DIR,
-	COLOR_BROWSER_FILE,
-	COLOR_ERROR,
-	COLOR_INFO,
-	NR_COLORS
-};
-
-static int bg_colors[NR_COLORS] = {
-	-1,
-	-1,
-	COLOR_WHITE,
-	COLOR_WHITE,
-	-1,
-	-1,
-	COLOR_BLUE,
-	COLOR_BLUE,
-
-	-1,
-	COLOR_RED,
-	-1,
-	COLOR_WHITE,
-	COLOR_RED,
-	-1,
-	-1,
-	-1,
-	-1
-};
-
-static int fg_colors[NR_COLORS] = {
-	-1,
-	COLOR_YELLOW | BRIGHT,
-	COLOR_BLACK,
-	COLOR_YELLOW | BRIGHT,
-	-1,
-	COLOR_YELLOW | BRIGHT,
-	COLOR_WHITE | BRIGHT,
-	COLOR_YELLOW | BRIGHT,
-
-	COLOR_RED,
-	COLOR_WHITE | BRIGHT,
-	-1,
-	COLOR_BLACK,
-	COLOR_WHITE | BRIGHT,
-	COLOR_BLUE | BRIGHT,
-	-1,
-	COLOR_RED | BRIGHT,
-	COLOR_YELLOW | BRIGHT
-};
-
-/* prefixes actually. "_bg" or "_fg" added at end */
-const char * const color_names[NR_COLORS + 1] = {
-	"row",
-	"row_cur",
-	"row_sel",
-	"row_sel_cur",
-	"row_active",
-	"row_active_cur",
-	"row_active_sel",
-	"row_active_sel_cur",
-	"separator",
-	"title",
-	"commandline",
-	"statusline",
-	"titleline",
-	"browser_dir",
-	"browser_file",
-	"error",
-	"info",
-	NULL
-};
 
 /* colors in curses format */
 static int cursed_colors[NR_COLORS];
@@ -669,32 +650,10 @@ static void update_shuffle_window(void)
 	update_window(playlist.shuffle_win, 0, 0, COLS, title, print_shuffle);
 }
 
-static char *get_sort(void)
-{
-	char *keys, *ptr;
-	int i, len;
-
-	len = 0;
-	for (i = 0; playlist.sort_keys[i]; i++)
-		len += strlen(playlist.sort_keys[i]) + 1;
-	keys = xnew(char, len);
-	ptr = keys;
-	for (i = 0; playlist.sort_keys[i]; i++) {
-		len = strlen(playlist.sort_keys[i]);
-		memcpy(ptr, playlist.sort_keys[i], len);
-		ptr += len;
-		*ptr++ = ',';
-	}
-	if (ptr != keys)
-		ptr--;
-	*ptr = 0;
-	return keys;
-}
-
 static void update_sorted_window(void)
 {
 	char title[512];
-	char *filename, *sort;
+	char *filename;
 
 	filename = playlist_filename ? playlist_filename : playlist_autosave_filename;
 	if (using_utf8) {
@@ -703,9 +662,7 @@ static void update_sorted_window(void)
 		utf8_encode(filename);
 		filename = conv_buffer;
 	}
-	sort = get_sort();
-	snprintf(title, sizeof(title), "Sorted by '%s' - %s", sort, filename);
-	free(sort);
+	snprintf(title, sizeof(title), "Sorted by '%s' - %s", sort_string, filename);
 	playlist.sorted_win_changed = 0;
 	update_window(playlist.sorted_win, 0, 0, COLS, title, print_sorted);
 }
@@ -1194,15 +1151,14 @@ void ui_curses_update_browser(void)
 	post_update();
 }
 
-static int cursed_color(int pair, int fg, int bg)
+void ui_curses_update_color(int idx)
 {
-	int cursed;
-
 	/* first color pair is 1 */
-	pair++;
+	int pair = idx + 1;
+	int fg, bg, cursed;
 
-	fg = clamp(fg, -1, 255);
-	bg = clamp(bg, -1, 255);
+	fg = clamp(fg_colors[idx], -1, 255);
+	bg = clamp(bg_colors[idx], -1, 255);
 	if (fg == -1) {
 		init_pair(pair, fg, bg);
 		cursed = COLOR_PAIR(pair);
@@ -1216,19 +1172,7 @@ static int cursed_color(int pair, int fg, int bg)
 			cursed = COLOR_PAIR(pair);
 		}
 	}
-	return cursed;
-}
-
-static int color_index(const char *name)
-{
-	int i;
-
-	for (i = 0; i < NR_COLORS; i++) {
-		if (strcmp(color_names[i], name) == 0)
-			return i;
-	}
-	BUG("not a color `%s'\n", name);
-	return 0;
+	cursed_colors[idx] = cursed;
 }
 
 static void full_update(void)
@@ -1239,43 +1183,6 @@ static void full_update(void)
 	update_statusline();
 	update_commandline();
 	post_update();
-}
-
-void ui_curses_set_color(const char *name, const char *value)
-{
-	long int color;
-	int len, i, color_max = 255;
-	char buf[64];
-
-	if (str_to_int(value, &color) || color < -1 || color > color_max) {
-		ui_curses_display_error_msg("color value must be -1..%d", color_max);
-		return;
-	}
-
-	if (strncmp(name, "color_", 6))
-		goto error;
-	name += 6;
-	len = strlen(name);
-	if (len < 4)
-		goto error;
-	memcpy(buf, name, len - 3);
-	buf[len - 3] = 0;
-	i = color_index(buf);
-
-	if (strcmp(name + len - 3, "_bg") == 0) {
-		bg_colors[i] = color;
-		cursed_colors[i] = cursed_color(i, fg_colors[i], bg_colors[i]);
-		full_update();
-		return;
-	}
-	if (strcmp(name + len - 3, "_fg") == 0) {
-		fg_colors[i] = color;
-		cursed_colors[i] = cursed_color(i, fg_colors[i], bg_colors[i]);
-		full_update();
-		return;
-	}
-error:
-	BUG("invalid option name `%s'\n", name);
 }
 
 void ui_curses_set_sort(const char *value, int warn)
@@ -1313,6 +1220,8 @@ void ui_curses_set_sort(const char *value, int warn)
 		}
 	}
 	pl_set_sort_keys(keys);
+	free(sort_string);
+	sort_string = xstrdup(value);
 }
 
 #define HELP_WIDTH 80
@@ -1803,6 +1712,8 @@ static int common_ch(uchar ch)
 		ui_curses_set_view(BROWSER_VIEW);
 		break;
 	case ':':
+		error_msg[0] = 0;
+		error_time = 0;
 		ui_curses_input_mode = COMMAND_MODE;
 		ui_curses_update_commandline();
 		break;
@@ -2204,7 +2115,7 @@ static void ui_curses_start(void)
 		start_color();
 		use_default_colors();
 		for (i = 0; i < NR_COLORS; i++)
-			cursed_colors[i] = cursed_color(i, fg_colors[i], bg_colors[i]);
+			ui_curses_update_color(i);
 	}
 	d_print("Number of supported colors: %d\n", COLORS);
 
@@ -2453,6 +2364,7 @@ static int ui_curses_init(void)
 	}
 	sconf_get_bool_option(&sconf_head, "show_remaining_time", &show_remaining_time);
 	sconf_get_str_option(&sconf_head, "status_display_program", &status_display_program);
+	ui_curses_set_sort("artist,album,discnumber,tracknumber,title,filename", 0);
 	if (sconf_get_str_option(&sconf_head, "sort", &sort) == 0) {
 		ui_curses_set_sort(sort, 0);
 		free(sort);
@@ -2469,6 +2381,7 @@ static int ui_curses_init(void)
 	browser_init();
 	/* commands_init must be after player_init */
 	commands_init();
+	options_init();
 	search_mode_init();
 	playlist_autosave_filename = xstrjoin(cmus_config_dir, "/playlist.pl");
 	player_get_volume(&player_info.vol_left, &player_info.vol_right);
@@ -2480,7 +2393,6 @@ static void ui_curses_exit(void)
 	int repeat, total_time, buffer_chunks;
 	enum playlist_mode playlist_mode;
 	enum play_mode play_mode;
-	char *sort;
 
 #if defined(CONFIG_IRMAN)
 	ir_exit();
@@ -2490,7 +2402,6 @@ static void ui_curses_exit(void)
 	cmus_exit();
 	cmus_save_playlist(playlist_autosave_filename);
 
-	sort = get_sort();
 	pl_get_status(&repeat, &playlist_mode, &play_mode, &total_time);
 	buffer_chunks = player_get_buffer_size();
 
@@ -2507,14 +2418,15 @@ static void ui_curses_exit(void)
 	sconf_set_bool_option(&sconf_head, "show_remaining_time", show_remaining_time);
 	sconf_set_str_option(&sconf_head, "status_display_program",
 			status_display_program ? status_display_program : "");
-	sconf_set_str_option(&sconf_head, "sort", sort);
+	sconf_set_str_option(&sconf_head, "sort", sort_string);
 	sconf_set_int_option(&sconf_head, "buffer_chunks", buffer_chunks);
 	set_colors();
 
 	free(playlist_autosave_filename);
 	free(status_display_program);
-	free(sort);
+	free(sort_string);
 
+	options_exit();
 	commands_exit();
 	search_mode_exit();
 	browser_exit();

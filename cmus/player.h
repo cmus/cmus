@@ -93,6 +93,7 @@ extern void player_stop(void);
 extern void player_pause(void);
 extern void player_seek(double offset, int whence);
 extern int player_set_op(const char *name);
+extern char *player_get_op(void);
 extern void player_set_buffer_size(unsigned int nr_chunks);
 extern int player_get_buffer_size(void);
 extern void player_set_buffer_seconds(unsigned int seconds);

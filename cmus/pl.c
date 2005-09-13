@@ -1459,7 +1459,6 @@ void pl_reshuffle(void)
 int pl_init(void)
 {
 	struct iter iter;
-	int i;
 
 	cmus_mutex_init(&playlist.mutex);
 
@@ -1477,15 +1476,8 @@ int pl_init(void)
 	playlist.playlist_mode = PLAYLIST_MODE_ALL;
 	playlist.play_mode = PLAY_MODE_TREE;
 
-	playlist.sort_keys = xnew(char *, 7);
-	i = 0;
-	playlist.sort_keys[i++] = xstrdup("artist");
-	playlist.sort_keys[i++] = xstrdup("album");
-	playlist.sort_keys[i++] = xstrdup("discnumber");
-	playlist.sort_keys[i++] = xstrdup("tracknumber");
-	playlist.sort_keys[i++] = xstrdup("title");
-	playlist.sort_keys[i++] = xstrdup("filename");
-	playlist.sort_keys[i++] = NULL;
+	playlist.sort_keys = xnew(char *, 1);
+	playlist.sort_keys[0] = NULL;
 
 	playlist.tree_win = window_new(tree_get_prev, tree_get_next);
 	playlist.track_win = window_new(track_get_prev, track_get_next);

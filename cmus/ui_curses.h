@@ -33,6 +33,27 @@ enum ui_curses_input_mode {
 #define PLAY_QUEUE_VIEW 3
 #define BROWSER_VIEW    4
 
+enum {
+	COLOR_ROW,
+	COLOR_ROW_CUR,
+	COLOR_ROW_SEL,
+	COLOR_ROW_SEL_CUR,
+	COLOR_ROW_ACTIVE,
+	COLOR_ROW_ACTIVE_CUR,
+	COLOR_ROW_ACTIVE_SEL,
+	COLOR_ROW_ACTIVE_SEL_CUR,
+	COLOR_SEPARATOR,
+	COLOR_TITLE,
+	COLOR_COMMANDLINE,
+	COLOR_STATUSLINE,
+	COLOR_TITLELINE,
+	COLOR_BROWSER_DIR,
+	COLOR_BROWSER_FILE,
+	COLOR_ERROR,
+	COLOR_INFO,
+	NR_COLORS
+};
+
 extern enum ui_curses_input_mode ui_curses_input_mode;
 extern int ui_curses_view;
 extern struct searchable *searchable;
@@ -62,16 +83,19 @@ extern char *window_title_alt_format;
 /* program to run when status changes */
 extern char *status_display_program;
 
-/* NULL terminated array of color variable names
- * add color_ prefix and _bg or _fg suffix
- */
-extern const char * const color_names[];
+/* list of keywords separated by ',' */
+extern char *sort_string;
+
+/* add color_ prefix and _bg or _fg suffix */
+extern const char * const color_names[NR_COLORS];
+extern int bg_colors[NR_COLORS];
+extern int fg_colors[NR_COLORS];
 
 extern void ui_curses_update_browser(void);
 extern void ui_curses_update_statusline(void);
 extern void ui_curses_update_view(void);
 extern void ui_curses_update_titleline(void);
-extern void ui_curses_set_color(const char *name, const char *value);
+extern void ui_curses_update_color(int idx);
 extern void ui_curses_set_sort(const char *value, int warn);
 extern void ui_curses_display_info_msg(const char *format, ...) __FORMAT(1, 2);
 extern void ui_curses_display_error_msg(const char *format, ...) __FORMAT(1, 2);

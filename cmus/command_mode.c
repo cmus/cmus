@@ -105,38 +105,8 @@ static char *expand_filename(const char *name)
 
 typedef void option_func(void *data, const char *key, const char *value);
 
-struct command_mode_option {
-	struct list_head node;
-	const char *name;
-	option_func *func;
-	void *func_data;
-};
-
 static LIST_HEAD(options_head);
 static int nr_options = 0;
-
-static void add_option(const char *name, option_func *func, void *func_data)
-{
-	struct command_mode_option *opt;
-	struct list_head *item;
-
-	opt = xnew(struct command_mode_option, 1);
-	opt->name = xstrdup(name);
-	opt->func = func;
-	opt->func_data = func_data;
-
-	item = options_head.next;
-	while (item != &options_head) {
-		struct command_mode_option *o = container_of(item, struct command_mode_option, node);
-
-		if (strcmp(name, o->name) < 0)
-			break;
-		item = item->next;
-	}
-	/* add before item */
-	list_add_tail(&opt->node, item);
-	nr_options++;
-}
 
 typedef void cmd_func(char *arg);
 
@@ -163,7 +133,7 @@ static void cmd_set(char *arg)
 		
 		opt = list_entry(item, struct command_mode_option, node);
 		if (strcmp(name, opt->name) == 0) {
-			opt->func(opt->func_data, opt->name, value);
+			opt->set(opt, value);
 			return;
 		}
 	}
@@ -345,29 +315,49 @@ static void load_matching_commands(struct tabexp *tabexp, const char *str)
 
 static void load_matching_cm_options(struct tabexp *tabexp, const char *str)
 {
-	struct list_head *item;
-	int len, pos;
+	struct command_mode_option *opt;
+	int len;
 	char **tails;
 
 	/* tabexp is resetted */
 	len = strlen(str);
-	tails = xnew(char *, nr_options + 1);
-	pos = 0;
-	list_for_each(item, &options_head) {
-		struct command_mode_option *opt;
-		
-		opt = list_entry(item, struct command_mode_option, node);
-		if (strncmp(str, opt->name, len) == 0)
-			tails[pos++] = xstrdup(opt->name + len);
-	}
-	if (pos > 0) {
-		tails[pos] = NULL;
-		tabexp->head = xstrdup(str);
-		tabexp->tails = tails;
-		tabexp->nr_tails = pos;
-		tabexp->index = 0;
+	if (len > 1 && str[len - 1] == '=') {
+		/* expand value */
+		char *var = xstrndup(str, len - 1);
+
+		list_for_each_entry(opt, &options_head, node) {
+			if (strcmp(var, opt->name) == 0) {
+				tails = xnew(char *, 1);
+				opt->get(opt, &tails[0]);
+				tails[1] = NULL;
+				tabexp->head = xstrdup(str);
+				tabexp->tails = tails;
+				tabexp->nr_tails = 1;
+				tabexp->index = 0;
+				free(var);
+				return;
+			}
+		}
+		free(var);
 	} else {
-		free(tails);
+		/* expand variable */
+		int pos;
+
+		tails = xnew(char *, nr_options + 1);
+		pos = 0;
+		list_for_each_entry(opt, &options_head, node) {
+			if (strncmp(str, opt->name, len) == 0)
+				tails[pos++] = xstrdup(opt->name + len);
+		}
+		if (pos > 0) {
+			tails[pos] = NULL;
+			tabexp->head = xstrdup(str);
+			tabexp->tails = tails;
+			tabexp->nr_tails = pos;
+			tabexp->index = 0;
+		} else {
+			free(tails);
+		}
 	}
 }
 
@@ -621,113 +611,35 @@ void command_mode_key(int key)
 	reset_tab_expansion();
 }
 
-/* options */
-
-static void set_color_option(void *data, const char *key, const char *value)
+void option_add(const char *name, option_get_func get, option_set_func set, void *data)
 {
-	ui_curses_set_color(key, value);
-}
+	struct command_mode_option *opt;
+	struct list_head *item;
 
-static void set_format_option(void *data, const char *key, const char *value)
-{
-	char **var = data;
+	opt = xnew(struct command_mode_option, 1);
+	opt->name = xstrdup(name);
+	opt->get = get;
+	opt->set = set;
+	opt->data = data;
 
-	d_print("%s=%s (old=%s)\n", key, value, *var);
-	if (!format_valid(value)) {
-		ui_curses_display_error_msg("invalid format string");
-		return;
+	item = options_head.next;
+	while (item != &options_head) {
+		struct command_mode_option *o = container_of(item, struct command_mode_option, node);
+
+		if (strcmp(name, o->name) < 0)
+			break;
+		item = item->next;
 	}
-	free(*var);
-	*var = xstrdup(value);
-	ui_curses_update_view();
-	ui_curses_update_titleline();
-}
-
-static void set_op(void *data, const char *key, const char *value)
-{
-	player_set_op(value);
-}
-
-static void set_buffer_seconds(void *data, const char *key, const char *value)
-{
-	long int seconds;
-
-	if (str_to_int(value, &seconds) == -1) {
-		ui_curses_display_error_msg("invalid format string");
-		return;
-	}
-	player_set_buffer_seconds(seconds);
-}
-
-static void set_status_display_program(void *data, const char *key, const char *value)
-{
-	free(status_display_program);
-	if (strcmp(value, "") == 0) {
-		status_display_program = NULL;
-		return;
-	}
-	status_display_program = xstrdup(value);
-}
-
-static void set_sort(void *data, const char *key, const char *value)
-{
-	ui_curses_set_sort(value, 1);
-	ui_curses_update_view();
-}
-
-static void add_format_option(const char *key, const char *default_value, char **var)
-{
-	if (sconf_get_str_option(&sconf_head, key, var))
-		*var = xstrdup(default_value);
-	add_option(key, set_format_option, var);
-}
-
-static void set_op_option(void *data, const char *key, const char *value)
-{
-	d_print("%s=%s\n", key, value);
-	BUG_ON(data != NULL);
-	player_set_op_option(key, value);
-}
-
-static void player_option_callback(void *data, const char *key)
-{
-	d_print("adding player option %s\n", key);
-	add_option(key, set_op_option, data);
+	/* add before item */
+	list_add_tail(&opt->node, item);
+	nr_options++;
 }
 
 void commands_init(void)
 {
-	int i;
-
 	cmd_history_filename = xstrjoin(cmus_cache_dir, "/ui_curses_cmd_history");
 	history_init(&cmd_history, 2000);
 	history_load(&cmd_history, cmd_history_filename);
-
-	for (i = 0; color_names[i]; i++) {
-		char buf[64];
-
-		snprintf(buf, sizeof(buf), "color_%s_bg", color_names[i]);
-		add_option(buf, set_color_option, NULL);
-		snprintf(buf, sizeof(buf), "color_%s_fg", color_names[i]);
-		add_option(buf, set_color_option, NULL);
-	}
-
-	add_format_option("altformat_current",  " %F%= %d ",                    &current_alt_format);
-	add_format_option("altformat_playlist", " %f%= %d ",                    &list_win_alt_format);
-	add_format_option("altformat_title",    "%f",                           &window_title_alt_format);
-	add_format_option("altformat_trackwin", " %f%= %d ",                    &track_win_alt_format);
-
-	player_for_each_op_option(player_option_callback, NULL);
-	
-	add_format_option("format_current",     " %a - %l - %02n. %t%= %y %d ", &current_format);
-	add_format_option("format_playlist",    " %a - %l - %02n. %t%= %y %d ", &list_win_format);
-	add_format_option("format_title",       "%a - %l - %t (%y)",            &window_title_format);
-	add_format_option("format_trackwin",    " %02n. %t%= %y %d ",           &track_win_format);
-
-	add_option("output_plugin", set_op, NULL);
-	add_option("buffer_seconds", set_buffer_seconds, NULL);
-	add_option("status_display_program", set_status_display_program, NULL);
-	add_option("sort", set_sort, NULL);
 
 	filedir_tabexp = tabexp_file_new(TABEXP_FILE_FLAG_FILES, NULL);
 	dir_tabexp = tabexp_file_new(0, NULL);
@@ -737,16 +649,6 @@ void commands_init(void)
 
 void commands_exit(void)
 {
-	sconf_set_str_option(&sconf_head, "altformat_current", current_alt_format);
-	sconf_set_str_option(&sconf_head, "altformat_playlist", list_win_alt_format);
-	sconf_set_str_option(&sconf_head, "altformat_title", window_title_alt_format);
-	sconf_set_str_option(&sconf_head, "altformat_trackwin", track_win_alt_format);
-
-	sconf_set_str_option(&sconf_head, "format_current", current_format);
-	sconf_set_str_option(&sconf_head, "format_playlist", list_win_format);
-	sconf_set_str_option(&sconf_head, "format_title", window_title_format);
-	sconf_set_str_option(&sconf_head, "format_trackwin", track_win_format);
-
 	history_save(&cmd_history, cmd_history_filename);
 	history_free(&cmd_history);
 	free(cmd_history_filename);

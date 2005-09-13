@@ -679,3 +679,10 @@ void op_dump_plugins(void)
 		printf("  %s\n", o->name);
 	}
 }
+
+char *op_get_current(void)
+{
+	if (op)
+		return xstrdup(op->name);
+	return NULL;
+}
