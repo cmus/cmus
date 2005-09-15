@@ -101,9 +101,9 @@ do-help:
 	@echo "  make V=2            verbose build"
 	@echo "  make -s             same as 'make V=0'"
 
-local-help:
+extra-help:
 
-help: do-help local-help
+help: do-help extra-help
 
 tags:
 	@if [[ -z "$(currelpath)" ]]; \

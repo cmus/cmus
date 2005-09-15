@@ -174,6 +174,8 @@ add_flag()
 	local flag hasarg func desc name
 
 	argc 4 5
+	before parse_command_line
+
 	flag="$1"
 	hasarg="$2"
 	func="$3"

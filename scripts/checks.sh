@@ -224,6 +224,51 @@ pkg_check_modules()
 	fi
 }
 
+# run <name>-config
+#
+# @name:    name
+#
+# example:
+#   ---
+#   check_cppunit()
+#   {
+#     app_config cppunit
+#     return $?
+#   }
+#
+#   add_check check_cppunit
+#   ---
+#   CPPUNIT_CFLAGS and CPPUNIT_LIBS are automatically added to Makefile
+app_config()
+{
+	local name program i
+
+	argc 1
+	name="$1"
+
+	msg_checking "$name"
+	program=$(path_find "${name}-config")
+	if [[ $? -ne 0 ]]
+	then
+		msg_error "no"
+		return 1
+	fi
+
+	msg_result "yes"
+	i=${#module_names[@]}
+
+	msg_checking "CFLAGS for $name"
+	module_cflags[$i]="$($program --cflags)"
+	msg_result ${module_cflags[$i]}
+
+	msg_checking "LIBS for $name"
+	module_libs[$i]="$($program --libs)"
+	msg_result ${module_libs[$i]}
+
+	module_names[$i]="$name"
+	return 0
+}
+
 try_compile()
 {
 	local file src obj exe
