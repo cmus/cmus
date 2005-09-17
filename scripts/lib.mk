@@ -45,11 +45,17 @@ COMMA		:= ,
 %.o: %.cc
 	$(call cmd,cxx)
 
+%.o: %.cpp
+	$(call cmd,cxx)
+
 # object files for shared libs
 %.lo: %.c
 	$(call cmd,cc_lo)
 
 %.lo: %.cc
+	$(call cmd,cxx_lo)
+
+%.lo: %.cpp
 	$(call cmd,cxx_lo)
 
 # CC for programs and shared libraries
