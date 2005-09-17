@@ -901,6 +901,7 @@ void pl_add_track(struct track_info *ti)
 
 	if (!filename_hash_insert(track->info->filename)) {
 		/* duplicate files not allowed */
+		track_free(track);
 		pl_unlock();
 		return;
 	}

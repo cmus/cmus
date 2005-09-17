@@ -66,8 +66,12 @@ int load_dir(const char *dirname, char ***names, int *count, int dir_append_slas
 	}
 	free(full_dir_name);
 	closedir(d);
-	if (nr_ptrs)
+	if (nr_ptrs) {
 		qsort(ptrs, nr_ptrs, sizeof(char *), compare);
+	} else {
+		free(ptrs);
+		ptrs = NULL;
+	}
 	*names = ptrs;
 	*count = nr_ptrs;
 	return 0;

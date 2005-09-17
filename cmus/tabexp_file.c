@@ -131,23 +131,30 @@ static void tabexp_load_dir(struct tabexp *tabexp, const char *dir, const char *
 {
 	struct tabexp_file_private *priv = tabexp->private_data;
 	char **ptrs;
-	int nr_ptrs;
+	int nr_ptrs, rc;
 	char *full_dir_name;
 
+	/* tabexp is resetted */
 	full_dir_name = get_full_dir_name(dir);
 	if (full_dir_name == NULL)
 		return;
 
 	priv->start = start;
-	load_dir(full_dir_name, &ptrs, &nr_ptrs, 1, filter, strptrcmp, priv);
+	rc = load_dir(full_dir_name, &ptrs, &nr_ptrs, 1, filter, strptrcmp, priv);
 	free(full_dir_name);
-
-	if (nr_ptrs > 0) {
-		tabexp->head = xstrdup(dir);
-		tabexp->tails = ptrs;
-		tabexp->nr_tails = nr_ptrs;
-		tabexp->index = 0;
+	if (rc) {
+		/* opendir failed, usually permission denied */
+		return;
 	}
+	if (nr_ptrs == 0) {
+		/* no matches */
+		return;
+	}
+
+	tabexp->head = xstrdup(dir);
+	tabexp->tails = ptrs;
+	tabexp->nr_tails = nr_ptrs;
+	tabexp->index = 0;
 }
 
 static void load_matching_files(struct tabexp *tabexp, const char *src)
