@@ -30,9 +30,8 @@ static int numlen(int num)
 {
 	int digits;
 
-	if (num == -1)
+	if (num < 0)
 		return 1; /* '?' */
-	BUG_ON(num < 0);
 	digits = 0;
 	do {
 		num /= 10;
