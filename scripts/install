@@ -218,7 +218,6 @@ main()
 
 	if [[ $auto -eq 1 ]]
 	then
-		[[ $# -lt 1 ]] && pdie "too few arguments"
 		for file in "$@"
 		do
 			case $file in

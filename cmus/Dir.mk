@@ -44,11 +44,8 @@ CFLAGS += -I$(top_builddir) -I$(top_srcdir)/common -I$(srcdir) -g $(PTHREAD_CFLA
 cmus: $(objs-y) $(top_builddir)/common/common.a
 	$(call cmd,ld,$(PTHREAD_LIBS) $(NCURSES_LIBS) $(ICONV_LIBS) $(DL_LIBS) -lm)
 
-install-exec:
-	$(INSTALL) --fmode=0755 $(bindir) cmus
-
-targets-y	+= cmus
-clean		+= $(objs-y) $(objs-n)
+exec-y	+= cmus
+clean	+= $(objs-y) $(objs-n)
 
 # If config.mk changes, rebuild all sources that include debug.h
 #

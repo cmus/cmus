@@ -52,8 +52,16 @@ clean		:=
 distclean	:=
 targets-n	:=
 targets-y	:=
+exec-n		:=
+exec-y		:=
+data-n		:=
+data-y		:=
 extra-targets-n	:=
 extra-targets-y	:=
+extra-exec-n	:=
+extra-exec-y	:=
+extra-data-n	:=
+extra-data-y	:=
 subdirs		:=
 ctags-languages	:= all,-html
 ctags-dirs	:=
@@ -61,6 +69,12 @@ ctags-dirs	:=
 include $(scriptdir)/lib.mk
 -include $(top_srcdir)/common.mk
 include $(srcdir)/Dir.mk
+
+# auto install
+targets-y	+= $(exec-y)
+targets-n	+= $(exec-n)
+extra-targets-y	+= $(extra-exec-y)
+extra-targets-n	+= $(extra-exec-n)
 
 # clean target files
 clean		+= $(targets-y) $(targets-n) $(extra-targets-y) $(extra-targets-n)
@@ -172,6 +186,24 @@ endif
 
 endif
 
+# auto install rules
+install-exec: auto-install-exec
+install-data: auto-install-data
+extra-install-exec: extra-auto-install-exec
+extra-install-data: extra-auto-install-data
+
+auto-install-exec: $(exec-y)
+	$(INSTALL) --auto $^
+
+auto-install-data: $(data-y)
+	$(INSTALL) --auto $^
+
+extra-auto-install-exec: $(extra-exec-y)
+	$(INSTALL) --auto $^
+
+extra-auto-install-data: $(extra-data-y)
+	$(INSTALL) --auto $^
+
 _targets		:= build install install-exec install-data
 _targets		+= extra-build extra-install extra-install-exec extra-install-data
 _targets		+= clean distclean
@@ -181,6 +213,7 @@ $(_recursive_targets):
 	$(call recurse)
 
 .PHONY: $(_targets) $(_recursive_targets)
+.PHONY: auto-install-exec auto-install-data extra-auto-install-exec extra-auto-install-data
 
 ifneq ($(dep-files),)
 -include $(dep-files)
