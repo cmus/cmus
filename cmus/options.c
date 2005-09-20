@@ -149,7 +149,11 @@ static void set_sort(const struct command_mode_option *opt, const char *value)
 
 static void get_op_option(const struct command_mode_option *opt, char **value)
 {
-	*value = xstrdup("");
+	int rc;
+
+	rc = player_get_op_option(opt->name, value);
+	if (value == NULL)
+		*value = xstrdup("");
 }
 
 static void set_op_option(const struct command_mode_option *opt, const char *value)

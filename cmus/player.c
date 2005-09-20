@@ -1167,14 +1167,25 @@ int player_add_volume(int left, int right)
 
 int player_set_op_option(const char *key, const char *val)
 {
+	int rc;
+
 	player_lock();
 	__consumer_stop();
 	__producer_stop();
-	d_print("'%s=%s'\n", key, val);
-	op_set_option(key, val);
+	rc = op_set_option(key, val);
 	__player_status_changed();
 	player_unlock();
-	return 0;
+	return rc;
+}
+
+int player_get_op_option(const char *key, char **val)
+{
+	int rc;
+
+	player_lock();
+	rc = op_get_option(key, val);
+	player_unlock();
+	return rc;
 }
 
 int player_for_each_op_option(void (*callback)(void *data, const char *key), void *data)

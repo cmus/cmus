@@ -536,71 +536,125 @@ int op_volume_changed(int *left, int *right)
 	return 0;
 }
 
-int op_set_option(const char *key, const char *val)
+static const struct output_plugin_ops *dsp_option(const char *key, int *optidx)
 {
 	struct output_plugin *o;
-	int j, len;
+	char opname[32];
+	int i;
 
-	/*
-	 * dsp.alsa.device
-	 * mixer.oss.channel
-	 * ...
-	 */
-	d_print("begin '%s=%s'\n", key, val);
-	if (strncasecmp(key, "dsp.", 4) == 0) {
-		key += 4;
-		for (len = 0; key[len] != '.'; len++) {
-			if (key[len] == 0)
-				return -OP_ERROR_NOT_OPTION;
-		}
-/* 		d_print("dsp: '%s'\n", key); */
-		list_for_each_entry(o, &op_head, node) {
-			if (strncasecmp(o->name, key, len))
-				continue;
-
-			key += len + 1;
-			BUG_ON(o->pcm_ops->set_option == NULL);
-			for (j = 0; o->pcm_options[j]; j++) {
-/* 				d_print("dsp.%s.%s\n", o->name, o->pcm_options[j]); */
-				if (strcasecmp(key, o->pcm_options[j]) == 0) {
-					d_print("setting to '%s'\n", val);
-					return o->pcm_ops->set_option(j, val);
-				}
-			}
-			break;
-		}
-	} else if (strncasecmp(key, "mixer.", 6) == 0) {
-		key += 6;
-		for (len = 0; key[len] != '.'; len++) {
-			if (key[len] == 0)
-				return -OP_ERROR_NOT_OPTION;
-		}
-/* 		d_print("mixer: '%s'\n", key); */
-		list_for_each_entry(o, &op_head, node) {
-			if (strncasecmp(o->name, key, len))
-				continue;
-			if (o->mixer_ops == NULL)
-				continue;
-
-			key += len + 1;
-			BUG_ON(o->mixer_ops->set_option == NULL);
-			for (j = 0; o->mixer_options[j]; j++) {
-/* 				d_print("mixer.%s.%s\n", o->name, o->mixer_options[j]); */
-				if (strcasecmp(key, o->mixer_options[j]) == 0) {
-					int rc;
-
-					d_print("setting to '%s'\n", val);
-					rc = o->mixer_ops->set_option(j, val);
-					if (rc == 0) {
-						close_mixer();
-						open_mixer();
-					}
-					return rc;
-				}
-			}
-			break;
-		}
+	if (strncasecmp(key, "dsp.", 4))
+		return NULL;
+	key += 4;
+	for (i = 0; key[i] != '.'; i++) {
+		if (key[i] == 0)
+			return NULL;
 	}
+	if (i >= sizeof(opname))
+		return NULL;
+
+	/* op name */
+	strncpy(opname, key, i);
+	opname[i] = 0;
+
+	/* option name */
+	key += i + 1;
+
+	list_for_each_entry(o, &op_head, node) {
+		if (strcasecmp(o->name, opname))
+			continue;
+
+		for (i = 0; o->pcm_options[i]; i++) {
+			if (strcasecmp(key, o->pcm_options[i]) == 0) {
+				d_print("mixer.%s.%s\n", opname, o->pcm_options[i]);
+				*optidx = i;
+				return o->pcm_ops;
+			}
+		}
+		break;
+	}
+	return NULL;
+}
+
+static const struct mixer_plugin_ops *mixer_option(const char *key, int *optidx)
+{
+	struct output_plugin *o;
+	char opname[32];
+	int i;
+
+	if (strncasecmp(key, "mixer.", 6))
+		return NULL;
+	key += 6;
+	for (i = 0; key[i] != '.'; i++) {
+		if (key[i] == 0)
+			return NULL;
+	}
+	if (i >= sizeof(opname))
+		return NULL;
+
+	/* op name */
+	strncpy(opname, key, i);
+	opname[i] = 0;
+
+	/* option name */
+	key += i + 1;
+
+	list_for_each_entry(o, &op_head, node) {
+		if (strcasecmp(o->name, opname))
+			continue;
+		if (o->mixer_ops == NULL)
+			continue;
+
+		for (i = 0; o->mixer_options[i]; i++) {
+			if (strcasecmp(key, o->mixer_options[i]) == 0) {
+				d_print("mixer.%s.%s\n", opname, o->mixer_options[i]);
+				*optidx = i;
+				return o->mixer_ops;
+			}
+		}
+		break;
+	}
+	return NULL;
+}
+
+int op_set_option(const char *key, const char *val)
+{
+	const struct output_plugin_ops *oo;
+	const struct mixer_plugin_ops *mo;
+	int idx, rc;
+
+	oo = dsp_option(key, &idx);
+	if (oo) {
+		/* dsp is always stopped when setting options, no need to reopen */
+		return oo->set_option(idx, val);
+	}
+
+	mo = mixer_option(key, &idx);
+	if (mo) {
+		rc = mo->set_option(idx, val);
+		if (rc == 0 && op && op->mixer_ops == mo && op->mixer_open) {
+			/* option of the current op was set and the mixer is open
+			 * need to reopen the mixer */
+			close_mixer();
+			open_mixer();
+		}
+		return rc;
+	}
+	return -OP_ERROR_NOT_OPTION;
+}
+
+int op_get_option(const char *key, char **val)
+{
+	const struct output_plugin_ops *oo;
+	const struct mixer_plugin_ops *mo;
+	int idx;
+
+	oo = dsp_option(key, &idx);
+	if (oo)
+		return oo->get_option(idx, val);
+
+	mo = mixer_option(key, &idx);
+	if (mo)
+		return mo->get_option(idx, val);
 	return -OP_ERROR_NOT_OPTION;
 }
 

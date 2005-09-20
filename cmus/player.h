@@ -108,6 +108,7 @@ extern int player_set_volume(int left, int right);
 extern int player_add_volume(int left, int right);
 
 extern int player_set_op_option(const char *key, const char *val);
+extern int player_get_op_option(const char *key, char **val);
 extern int player_for_each_op_option(void (*callback)(void *data, const char *key), void *data);
 extern char **player_get_supported_extensions(void);
 extern void player_dump_plugins(void);
