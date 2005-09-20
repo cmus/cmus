@@ -1,3 +1,17 @@
+2005-09-20: 1.5.7
+~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen
+  o Fix returning error codes in alsa op
+  o Display plugin directories in cmus --plugins
+  o Case insensitive artist/album adding
+  o Show 'lost connection' error msg on EOF if ip is remote
+  o Show error messages at least 3 seconds
+  o Make :set to expand variable values
+  o Remove unnecessary BUG_ON when printing negative FO_INT values
+  o Build system changes
+  o Documentation update
+
 2005-09-01: 1.5.6
 ~~~~~~~~~~~~~~~~~
 
