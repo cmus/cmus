@@ -164,9 +164,9 @@ buffer_seconds          size of player buffer in seconds (1-10)
 dsp.\*, mixer.\*        output plugin options (use tab to cycle through all possible options)
 color\_\*               user interface colors (See `User Interface Colors`_)
 format_current          format of the line showing currently played track
-format_playlist         format of text in shuffle and sorted windows
-format_title            format of window title
-format_track_win        format of text in track window
+format_playlist         format of text in views 2-4
+format_title            format of terminal window title
+format_track_win        format of text in track window (view 1)
 altformat\_\*           format strings used when file has no tags
 _`sort`                 comma separated list of sort keys for the sorted view (3). Valid keys: artist, album, title, tracknumber, discnumber, date, genre, filename)
 status_display_program  script to run when player status changes (See `Status Display`_)
@@ -201,6 +201,8 @@ Examples
 
 	:set format_trackwin= %02n. %t (%y)%= %d
 	:set format_current= %n. %-30t %40F (%y)%= %d
+
+To see current value of an option type ``:set option=<TAB>``.
 
 ID3 Tags
 ========
@@ -248,8 +250,8 @@ In view 5 words are compared to filename without path.
 Streaming
 =========
 
-CMus supports Shoutcast/Icecast streams (Ogg and MP3).  Only way to add stream
-to playlist is using the command mode.
+CMus supports Shoutcast/Icecast streams (Ogg and MP3).  To add stream
+to playlist use ``:add`` command or ``cmus-remote``.
 
 ::
 
