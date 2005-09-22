@@ -273,15 +273,20 @@ static int is_v1(const char *buf)
 	return buf[0] == 'T' && buf[1] == 'A' && buf[2] == 'G';
 }
 
-static uint32_t u32_unsync(const unsigned char *buf)
+static int u32_unsync(const unsigned char *buf, uint32_t *up)
 {
-	uint32_t b0, b1, b2, b3;
+	uint32_t b, u = 0;
+	int i;
 
-	b3 = buf[0];
-	b2 = buf[1];
-	b1 = buf[2];
-	b0 = buf[3];
-	return (b3 << 21) | (b2 << 14) | (b1 << 7) | b0;
+	for (i = 0; i < 4; i++) {
+		b = buf[i];
+		if (b >= 0x80)
+			return 0;
+		u <<= 7;
+		u |= b;
+	}
+	*up = u;
+	return 1;
 }
 
 static int v2_header_footer_parse(struct v2_header *header, const char *buf)
@@ -289,8 +294,9 @@ static int v2_header_footer_parse(struct v2_header *header, const char *buf)
 	header->ver_major = buf[3];
 	header->ver_minor = buf[4];
 	header->flags = buf[5];
-	header->size = u32_unsync((const unsigned char *)(buf + 6));
-	return 1;
+	if (header->ver_major == 0xff || header->ver_minor == 0xff)
+		return 0;
+	return u32_unsync((const unsigned char *)(buf + 6), &header->size);
 }
 
 static int v2_header_parse(struct v2_header *header, const char *buf)
@@ -309,8 +315,7 @@ static int v2_footer_parse(struct v2_header *header, const char *buf)
 
 static int v2_extended_header_parse(struct v2_extended_header *header, const char *buf)
 {
-	header->size = u32_unsync((const unsigned char *)buf);
-	return 1;
+	return u32_unsync((const unsigned char *)buf, &header->size);
 }
 
 static int is_frame_id_char(char ch)
@@ -327,7 +332,8 @@ static int v2_frame_header_parse(struct v2_frame_header *header, const char *buf
 			return 0;
 		header->id[i] = buf[i];
 	}
-	header->size = u32_unsync((const unsigned char *)(buf + 4));
+	if (!u32_unsync((const unsigned char *)(buf + 4), &header->size))
+		return 0;
 	header->flags = (buf[8] << 8) | buf[9];
 	if (header->size == 0)
 		return 0;
