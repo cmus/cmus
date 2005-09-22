@@ -821,7 +821,7 @@ void player_play(void)
 void player_pause(void)
 {
 	player_lock();
-	if (ip_is_remote(ip)) {
+	if (ip && ip_is_remote(ip)) {
 		/* pausing not allowed */
 		player_unlock();
 		return;
