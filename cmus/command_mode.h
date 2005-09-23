@@ -20,7 +20,7 @@
 #ifndef _COMMAND_MODE_H
 #define _COMMAND_MODE_H
 
-#include <history.h>
+#include <list.h>
 #include <uchar.h>
 
 struct command_mode_option;
@@ -35,8 +35,6 @@ struct command_mode_option {
 	option_set_func set;
 	void *data;
 };
-
-extern struct history cmd_history;
 
 extern void command_mode_ch(uchar ch);
 extern void command_mode_key(int key);

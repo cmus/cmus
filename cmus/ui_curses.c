@@ -18,6 +18,7 @@
  */
 
 #include <ui_curses.h>
+#include <cmdline.h>
 #include <search_mode.h>
 #include <command_mode.h>
 #include <options.h>
@@ -856,26 +857,19 @@ static void update_commandline(void)
 		addstr(error_msg);
 	} else {
 		bkgdset(cursed_colors[COLOR_COMMANDLINE]);
-		if (ui_curses_input_mode == COMMAND_MODE) {
-			if (cmd_history.current_clen <= COLS - 2) {
-				addch(':');
-				dump_buffer(cmd_history.current);
+		if (ui_curses_input_mode == COMMAND_MODE || ui_curses_input_mode == SEARCH_MODE) {
+			if (cmdline.clen <= COLS - 2) {
+				char ch = ':';
+
+				if (ui_curses_input_mode == SEARCH_MODE)
+					ch = search_direction == SEARCH_FORWARD ? '/' : '?';
+				addch(ch);
+				dump_buffer(cmdline.line);
 			} else {
-				char *str = cmd_history.current;
+				char *str = cmdline.line;
 				int idx;
 
-				idx = u_skip_chars(str, cmd_history.current_clen - COLS + 1);
-				dump_buffer(str + idx);
-			}
-		} else if (ui_curses_input_mode == SEARCH_MODE) {
-			if (search_history.current_clen <= COLS - 2) {
-				addch(search_direction == SEARCH_FORWARD ? '/' : '?');
-				dump_buffer(search_history.current);
-			} else {
-				char *str = search_history.current;
-				int idx;
-
-				idx = u_skip_chars(str, cmd_history.current_clen - COLS + 1);
+				idx = u_skip_chars(str, cmdline.clen - COLS + 1);
 				dump_buffer(str + idx);
 			}
 		}
@@ -997,12 +991,8 @@ static void update_titleline(void)
 static void post_update(void)
 {
 	/* refresh makes cursor visible at least for urxvt */
-	if (ui_curses_input_mode == SEARCH_MODE) {
-		move(LINES - 1, min(search_history.current_cpos + 1, COLS - 1));
-		refresh();
-		curs_set(1);
-	} else if (ui_curses_input_mode == COMMAND_MODE) {
-		move(LINES - 1, min(cmd_history.current_cpos + 1, COLS - 1));
+	if (ui_curses_input_mode == COMMAND_MODE || ui_curses_input_mode == SEARCH_MODE) {
+		move(LINES - 1, min(cmdline.cpos + 1, COLS - 1));
 		refresh();
 		curs_set(1);
 	} else {
@@ -2107,11 +2097,16 @@ static void ui_curses_start(void)
 
 	initscr();
 
-	// ?
+	/* turn off kb buffering */
 	cbreak();
 
 	keypad(stdscr, TRUE);
-	halfdelay(5);	/* 5 * 0.1 s */
+
+	/* wait max 5 * 0.1 s if there are no keys available
+	 * doesn't really matter because we use select()
+	 */
+	halfdelay(5);
+
 	noecho();
 	if (has_colors()) {
 		int i;
@@ -2383,6 +2378,7 @@ static int ui_curses_init(void)
 	get_colors();
 
 	browser_init();
+	cmdline_init();
 	/* commands_init must be after player_init */
 	commands_init();
 	options_init();

@@ -21,52 +21,20 @@
 #define _HISTORY_H
 
 #include <list.h>
-#include <uchar.h>
-
-struct history_entry {
-	struct list_head node;
-	char *text;
-};
 
 struct history {
 	struct list_head head;
 	struct list_head *search_pos;
-
-	/* allocated size */
-	int current_size;
-
-	/* length in bytes */
-	int current_blen;
-
-	/* length in characters */
-	int current_clen;
-
-	/* pos in bytes */
-	int current_bpos;
-
-	/* pos in characters */
-	int current_cpos;
-
+	char *filename;
 	int max_lines;
 	int lines;
-	char *current;
-	char *search;
-	char *save;
 };
 
-extern void history_init(struct history *history, int max_lines);
-extern void history_insert_ch(struct history *history, uchar ch);
-extern int history_backspace(struct history *history);
-extern int history_delete_ch(struct history *history);
-extern void history_current_save(struct history *history);
-extern void history_move_left(struct history *history);
-extern void history_move_right(struct history *history);
-extern void history_move_home(struct history *history);
-extern void history_move_end(struct history *history);
-extern void history_free(struct history *history);
-extern int history_search_forward(struct history *history);
-extern int history_search_backward(struct history *history);
-extern int history_load(struct history *history, const char *filename);
-extern int history_save(struct history *history, const char *filename);
+void history_load(struct history *history, char *filename, int max_lines);
+void history_save(struct history *history);
+void history_add_line(struct history *history, const char *line);
+void history_reset_search(struct history *history);
+const char *history_search_forward(struct history *history, const char *text);
+const char *history_search_backward(struct history *history, const char *text);
 
 #endif

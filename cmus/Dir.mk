@@ -1,5 +1,6 @@
 objs-y := \
 	browser.o \
+	cmdline.o \
 	cmus.o \
 	command_mode.o \
 	comment.o \

@@ -18,6 +18,7 @@
  */
 
 #include <command_mode.h>
+#include <cmdline.h>
 #include <ui_curses.h>
 #include <history.h>
 #include <tabexp.h>
@@ -42,9 +43,9 @@
 #include <sys/types.h>
 #include <pwd.h>
 
-struct history cmd_history;
-
+static struct history cmd_history;
 static char *cmd_history_filename;
+static char *history_search_text = NULL;
 
 static char *get_home_dir(const char *username)
 {
@@ -445,14 +446,14 @@ static void tab_expand(void)
 	int pos;
 
 	pos = 0;
-	while (cmd_history.current[pos] == ' ' && pos < cmd_history.current_bpos)
+	while (cmdline.line[pos] == ' ' && pos < cmdline.bpos)
 		pos++;
 	/* white space */
-	s1 = xstrndup(cmd_history.current, pos);
+	s1 = xstrndup(cmdline.line, pos);
 	/* string to expand */
-	s2 = xstrndup(cmd_history.current + pos, cmd_history.current_bpos - pos);
+	s2 = xstrndup(cmdline.line + pos, cmdline.bpos - pos);
 	/* tail */
-	s3 = xstrdup(cmd_history.current + cmd_history.current_bpos);
+	s3 = xstrdup(cmdline.line + cmdline.bpos);
 	tmp = expand(s2);
 	if (tmp) {
 		/* s1.tmp.s3 */
@@ -461,16 +462,16 @@ static void tab_expand(void)
 		l1 = strlen(s1);
 		l2 = strlen(tmp);
 		l3 = strlen(s3);
-		cmd_history.current_blen = l1 + l2 + l3;
-		if (cmd_history.current_blen >= cmd_history.current_size) {
-			while (cmd_history.current_blen >= cmd_history.current_size)
-				cmd_history.current_size *= 2;
-			cmd_history.current = xrenew(char, cmd_history.current, cmd_history.current_size);
+		cmdline.blen = l1 + l2 + l3;
+		if (cmdline.blen >= cmdline.size) {
+			while (cmdline.blen >= cmdline.size)
+				cmdline.size *= 2;
+			cmdline.line = xrenew(char, cmdline.line, cmdline.size);
 		}
-		sprintf(cmd_history.current, "%s%s%s", s1, tmp, s3);
-		cmd_history.current_bpos = l1 + l2;
-		cmd_history.current_cpos = u_strlen(s1) + u_strlen(tmp);
-		cmd_history.current_clen = u_strlen(cmd_history.current);
+		sprintf(cmdline.line, "%s%s%s", s1, tmp, s3);
+		cmdline.bpos = l1 + l2;
+		cmdline.cpos = u_strlen(s1) + u_strlen(tmp);
+		cmdline.clen = u_strlen(cmdline.line);
 		free(tmp);
 	}
 	free(s1);
@@ -547,19 +548,37 @@ static void run_command(const char *buf)
 	free(cmd);
 }
 
+static void reset_history_search(void)
+{
+	history_reset_search(&cmd_history);
+	free(history_search_text);
+	history_search_text = NULL;
+}
+
+static void backspace(void)
+{
+	if (cmdline.clen > 0) {
+		cmdline_backspace();
+	} else {
+		ui_curses_input_mode = NORMAL_MODE;
+	}
+}
+
 void command_mode_ch(uchar ch)
 {
 	switch (ch) {
 	case 0x1B:
-		if (cmd_history.current_blen) {
-			history_current_save(&cmd_history);
+		if (cmdline.blen) {
+			history_add_line(&cmd_history, cmdline.line);
+			cmdline_clear();
 		}
 		ui_curses_input_mode = NORMAL_MODE;
 		break;
 	case 0x0A:
-		if (cmd_history.current_blen) {
-			run_command(cmd_history.current);
-			history_current_save(&cmd_history);
+		if (cmdline.blen) {
+			run_command(cmdline.line);
+			history_add_line(&cmd_history, cmdline.line);
+			cmdline_clear();
 		}
 		ui_curses_input_mode = NORMAL_MODE;
 		break;
@@ -567,48 +586,65 @@ void command_mode_ch(uchar ch)
 		tab_expand();
 		break;
 	case 127:
-		if (history_backspace(&cmd_history))
-			ui_curses_input_mode = NORMAL_MODE;
+		backspace();
 		break;
 	default:
-		history_insert_ch(&cmd_history, ch);
+		cmdline_insert_ch(ch);
 	}
+	reset_history_search();
 	if (ch != 0x09)
 		reset_tab_expansion();
 }
 
 void command_mode_key(int key)
 {
+	reset_tab_expansion();
 	switch (key) {
 	case KEY_DC:
-		history_delete_ch(&cmd_history);
+		cmdline_delete_ch();
 		break;
 	case KEY_BACKSPACE:
-		if (history_backspace(&cmd_history))
-			ui_curses_input_mode = NORMAL_MODE;
+		backspace();
 		break;
 	case KEY_LEFT:
-		history_move_left(&cmd_history);
-		break;
+		cmdline_move_left();
+		return;
 	case KEY_RIGHT:
-		history_move_right(&cmd_history);
-		break;
-	case KEY_UP:
-		history_search_forward(&cmd_history);
-		break;
-	case KEY_DOWN:
-		history_search_backward(&cmd_history);
-		break;
+		cmdline_move_right();
+		return;
 	case KEY_HOME:
-		history_move_home(&cmd_history);
-		break;
+		cmdline_move_home();
+		return;
 	case KEY_END:
-		history_move_end(&cmd_history);
-		break;
+		cmdline_move_end();
+		return;
+	case KEY_UP:
+		{
+			const char *s;
+
+			if (history_search_text == NULL)
+				history_search_text = xstrdup(cmdline.line);
+			s = history_search_forward(&cmd_history, history_search_text);
+			if (s)
+				cmdline_set_text(s);
+		}
+		return;
+	case KEY_DOWN:
+		if (history_search_text) {
+			const char *s;
+			
+			s = history_search_backward(&cmd_history, history_search_text);
+			if (s) {
+				cmdline_set_text(s);
+			} else {
+				cmdline_set_text(history_search_text);
+			}
+		}
+		return;
 	default:
 		d_print("key = %c (%d)\n", key, key);
 	}
-	reset_tab_expansion();
+	reset_history_search();
 }
 
 void option_add(const char *name, option_get_func get, option_set_func set, void *data)
@@ -638,8 +674,7 @@ void option_add(const char *name, option_get_func get, option_set_func set, void
 void commands_init(void)
 {
 	cmd_history_filename = xstrjoin(cmus_cache_dir, "/ui_curses_cmd_history");
-	history_init(&cmd_history, 2000);
-	history_load(&cmd_history, cmd_history_filename);
+	history_load(&cmd_history, cmd_history_filename, 2000);
 
 	filedir_tabexp = tabexp_file_new(TABEXP_FILE_FLAG_FILES, NULL);
 	dir_tabexp = tabexp_file_new(0, NULL);
@@ -649,8 +684,7 @@ void commands_init(void)
 
 void commands_exit(void)
 {
-	history_save(&cmd_history, cmd_history_filename);
-	history_free(&cmd_history);
+	history_save(&cmd_history);
 	free(cmd_history_filename);
 
 	tabexp_file_free(filedir_tabexp);

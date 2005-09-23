@@ -20,11 +20,9 @@
 #ifndef _SEARCH_MODE_H
 #define _SEARCH_MODE_H
 
-#include <history.h>
-#include <pl.h>
+#include <search.h>
 #include <uchar.h>
 
-extern struct history search_history;
 extern char *search_str;
 extern enum search_direction search_direction;
 

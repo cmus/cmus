@@ -28,110 +28,61 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#define SANITY_CHECK() \
-	do { \
-		BUG_ON(!u_is_first_byte(history->current[history->current_bpos])); \
-		BUG_ON(history->current_bpos > history->current_blen); \
-		BUG_ON(history->current_bpos < 0); \
-		BUG_ON(history->current_cpos < 0); \
-	} while (0)
+struct history_entry {
+	struct list_head node;
+	char *text;
+};
 
-void history_init(struct history *history, int max_lines)
+static void history_add_tail(void *data, const char *line)
+{
+	struct history *history = data;
+
+	if (history->lines < history->max_lines) {
+		struct history_entry *new;
+
+		new = xnew(struct history_entry, 1);
+		new->text = xstrdup(line);
+		list_add_tail(&new->node, &history->head);
+		history->lines++;
+	}
+}
+
+void history_load(struct history *history, char *filename, int max_lines)
 {
 	list_init(&history->head);
 	history->max_lines = max_lines;
 	history->lines = 0;
 	history->search_pos = NULL;
-	history->current_cpos = 0;
-	history->current_bpos = 0;
-	history->current_clen = 0;
-	history->current_blen = 0;
-	history->current_size = 128;
-	history->current = xnew(char, history->current_size);
-	history->current[0] = 0;
-	history->search = NULL;
-	history->save = NULL;
+	history->filename = filename;
+	file_load(filename, history_add_tail, history);
 }
 
-void history_insert_ch(struct history *history, uchar ch)
+void history_save(struct history *history)
 {
-	int size;
+	struct list_head *item;
+	int fd;
 
-	SANITY_CHECK();
-	if (!u_is_unicode(ch))
+	fd = open(history->filename, O_CREAT | O_WRONLY | O_TRUNC, 0666);
+	if (fd == -1)
 		return;
+	list_for_each(item, &history->head) {
+		struct history_entry *history_entry;
+		const char nl = '\n';
 
-	size = u_char_size(ch);
-	if (history->current_blen + size > history->current_size) {
-		history->current_size *= 2;
-		history->current = xrenew(char, history->current, history->current_size);
+		history_entry = list_entry(item, struct history_entry, node);
+		write(fd, history_entry->text, strlen(history_entry->text));
+		write(fd, &nl, 1);
 	}
-	memmove(
-			history->current + history->current_bpos + size,
-			history->current + history->current_bpos,
-			history->current_blen - history->current_bpos + 1);
-	u_set_char(history->current, &history->current_bpos, ch);
-	history->current_cpos++;
-	history->current_blen += size;
-	history->current_clen++;
-	history->search_pos = NULL;
+	close(fd);
 }
 
-int history_backspace(struct history *history)
-{
-	int bpos, size;
-
-	SANITY_CHECK();
-
-	history->search_pos = NULL;
-	if (history->current_bpos == 0)
-		return -1;
-	bpos = history->current_bpos - 1;
-	while (!u_is_first_byte(history->current[bpos]))
-		bpos--;
-	size = history->current_bpos - bpos;
-	memmove(
-			history->current + bpos,
-			history->current + history->current_bpos,
-			history->current_blen - history->current_bpos + 1);
-	history->current_bpos -= size;
-	history->current_cpos--;
-	history->current_blen -= size;
-	history->current_clen--;
-	return 0;
-}
-
-int history_delete_ch(struct history *history)
-{
-	uchar ch;
-	int size, bpos;
-
-	SANITY_CHECK();
-
-	history->search_pos = NULL;
-	if (history->current_bpos == history->current_blen)
-		return -1;
-	bpos = history->current_bpos;
-	u_get_char(history->current, &bpos, &ch);
-	size = u_char_size(ch);
-	history->current_blen -= size;
-	history->current_clen--;
-	memmove(
-			history->current + history->current_bpos,
-			history->current + history->current_bpos + size,
-			history->current_blen - history->current_bpos + 1);
-	return 0;
-}
-
-void history_current_save(struct history *history)
+void history_add_line(struct history *history, const char *line)
 {
 	struct history_entry *new;
 	struct list_head *item;
 
-	SANITY_CHECK();
-
 	new = xnew(struct history_entry, 1);
-	new->text = xstrdup(history->current);
+	new->text = xstrdup(line);
 	list_add(&new->node, &history->head);
 	history->lines++;
 
@@ -163,198 +114,57 @@ void history_current_save(struct history *history)
 		free(hentry);
 		history->lines--;
 	}
+}
 
-	history->current_cpos = 0;
-	history->current_bpos = 0;
-	history->current_blen = 0;
-	history->current_clen = 0;
-	history->current[0] = 0;
+void history_reset_search(struct history *history)
+{
 	history->search_pos = NULL;
 }
 
-void history_move_left(struct history *history)
-{
-	SANITY_CHECK();
-
-	if (history->current_bpos > 0) {
-		history->current_cpos--;
-		history->current_bpos--;
-		while (!u_is_first_byte(history->current[history->current_bpos]))
-			history->current_bpos--;
-	}
-}
-
-void history_move_right(struct history *history)
-{
-	SANITY_CHECK();
-
-	if (history->current_bpos < history->current_blen) {
-		uchar ch;
-
-		u_get_char(history->current, &history->current_bpos, &ch);
-		history->current_cpos++;
-	}
-}
-
-void history_move_home(struct history *history)
-{
-	SANITY_CHECK();
-
-	history->current_cpos = 0;
-	history->current_bpos = 0;
-}
-
-void history_move_end(struct history *history)
-{
-	SANITY_CHECK();
-
-	history->current_cpos = history->current_clen;
-	history->current_bpos = history->current_blen;
-}
-
-void history_free(struct history *history)
-{
-	struct list_head *item;
-
-	SANITY_CHECK();
-
-	item = history->head.next;
-	while (item != &history->head) {
-		struct history_entry *hentry;
-		
-		hentry = list_entry(item, struct history_entry, node);
-		item = item->next;
-		free(hentry->text);
-		free(hentry);
-	}
-	free(history->current);
-	free(history->search);
-	free(history->save);
-}
-
-int history_search_forward(struct history *history)
+const char *history_search_forward(struct history *history, const char *text)
 {
 	struct list_head *item;
 	int search_len;
-
-	SANITY_CHECK();
 
 	if (history->search_pos == NULL) {
 		/* first time to search. set search */
 		item = history->head.next;
-		free(history->search);
-		history->search = xstrdup(history->current);
-		free(history->save);
-		history->save = xstrdup(history->current);
 	} else {
 		item = history->search_pos->next;
 	}
-	search_len = strlen(history->search);
+	search_len = strlen(text);
 	while (item != &history->head) {
 		struct history_entry *hentry;
 		
 		hentry = list_entry(item, struct history_entry, node);
-		if (strncmp(history->search, hentry->text, search_len) == 0) {
-			int len = strlen(hentry->text);
-
-			if (len >= history->current_size) {
-				while (len >= history->current_size)
-					history->current_size *= 2;
-				history->current = xrenew(char, history->current, history->current_size);
-			}
-			memcpy(history->current, hentry->text, len + 1);
-			history->current_cpos = u_strlen(history->current);
-			history->current_bpos = len;
-			history->current_clen = history->current_cpos;
-			history->current_blen = len;
-
+		if (strncmp(text, hentry->text, search_len) == 0) {
 			history->search_pos = item;
-			return 1;
+			return hentry->text;
 		}
 		item = item->next;
 	}
-	return 0;
+	return NULL;
 }
 
-int history_search_backward(struct history *history)
+const char *history_search_backward(struct history *history, const char *text)
 {
 	struct list_head *item;
 	int search_len;
 
-	SANITY_CHECK();
-
 	if (history->search_pos == NULL)
-		return 0;
+		return NULL;
 	item = history->search_pos->prev;
-	search_len = strlen(history->search);
+	search_len = strlen(text);
 	while (item != &history->head) {
 		struct history_entry *hentry;
 		
 		hentry = list_entry(item, struct history_entry, node);
-		if (strncmp(history->search, hentry->text, search_len) == 0) {
-			int len = strlen(hentry->text);
-
-			if (len >= history->current_size) {
-				while (len >= history->current_size)
-					history->current_size *= 2;
-				history->current = xrenew(char, history->current, history->current_size);
-			}
-			memcpy(history->current, hentry->text, len + 1);
-			history->current_cpos = u_strlen(history->current);
-			history->current_bpos = len;
-			history->current_clen = history->current_cpos;
-			history->current_blen = len;
-
+		if (strncmp(text, hentry->text, search_len) == 0) {
 			history->search_pos = item;
-			return 1;
+			return hentry->text;
 		}
 		item = item->prev;
 	}
-	strcpy(history->current, history->save);
-	history->current_cpos = u_strlen(history->current);
-	history->current_blen = strlen(history->current);
-	history->current_clen = history->current_cpos;
-	history->current_bpos = history->current_blen;
-
 	history->search_pos = NULL;
-	return 0;
-}
-
-static void history_add_tail(void *data, const char *line)
-{
-	struct history *history = data;
-
-	if (history->lines < history->max_lines) {
-		struct history_entry *new;
-
-		new = xnew(struct history_entry, 1);
-		new->text = xstrdup(line);
-		list_add_tail(&new->node, &history->head);
-		history->lines++;
-	}
-}
-
-int history_load(struct history *history, const char *filename)
-{
-	return file_load(filename, history_add_tail, history);
-}
-
-int history_save(struct history *history, const char *filename)
-{
-	struct list_head *item;
-	int fd;
-
-	fd = open(filename, O_CREAT | O_WRONLY | O_TRUNC, 0666);
-	if (fd == -1)
-		return -1;
-	list_for_each(item, &history->head) {
-		struct history_entry *history_entry;
-		const char nl = '\n';
-
-		history_entry = list_entry(item, struct history_entry, node);
-		write(fd, history_entry->text, strlen(history_entry->text));
-		write(fd, &nl, 1);
-	}
-	close(fd);
-	return 0;
+	return NULL;
 }
