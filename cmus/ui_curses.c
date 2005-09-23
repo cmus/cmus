@@ -1718,11 +1718,15 @@ static int common_ch(uchar ch)
 		ui_curses_update_commandline();
 		break;
 	case '/':
+		error_msg[0] = 0;
+		error_time = 0;
 		ui_curses_input_mode = SEARCH_MODE;
 		search_direction = SEARCH_FORWARD;
 		ui_curses_update_commandline();
 		break;
 	case '?':
+		error_msg[0] = 0;
+		error_time = 0;
 		ui_curses_input_mode = SEARCH_MODE;
 		search_direction = SEARCH_BACKWARD;
 		ui_curses_update_commandline();
