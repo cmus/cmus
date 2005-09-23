@@ -30,7 +30,7 @@ struct searchable_ops {
 	int (*get_prev)(struct iter *iter);
 	int (*get_next)(struct iter *iter);
 	int (*get_current)(void *data, struct iter *iter);
-	int (*matches)(void *data, struct iter *iter, const char *text);
+	int (*matches)(void *data, struct iter *iter, const char *text, int restricted);
 };
 
 struct searchable;
@@ -38,7 +38,7 @@ struct searchable;
 extern struct searchable *searchable_new(void *data, const struct iter *head, const struct searchable_ops *ops);
 extern void searchable_free(struct searchable *s);
 
-extern int search(struct searchable *s, const char *text, enum search_direction dir, int beginning);
-extern int search_next(struct searchable *s, const char *text, enum search_direction dir);
+extern int search(struct searchable *s, const char *text, enum search_direction dir, int restricted, int beginning);
+extern int search_next(struct searchable *s, const char *text, enum search_direction dir, int restricted);
 
 #endif

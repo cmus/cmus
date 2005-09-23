@@ -26,6 +26,9 @@
 extern char *search_str;
 extern enum search_direction search_direction;
 
+/* //WORDS or ??WORDS search mode */
+extern int search_restricted;
+
 extern void search_mode_ch(uchar ch);
 extern void search_mode_key(int key);
 extern void search_mode_init(void);

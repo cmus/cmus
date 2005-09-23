@@ -100,5 +100,6 @@ extern void ui_curses_set_sort(const char *value, int warn);
 extern void ui_curses_display_info_msg(const char *format, ...) __FORMAT(1, 2);
 extern void ui_curses_display_error_msg(const char *format, ...) __FORMAT(1, 2);
 extern int ui_curses_yes_no_query(const char *format, ...) __FORMAT(1, 2);
+extern void ui_curses_search_not_found(void);
 
 #endif

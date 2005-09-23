@@ -103,12 +103,16 @@ static int play_queue_search_get_current(void *data, struct iter *iter)
 	return window_get_sel(play_queue_win, iter);
 }
 
-static int play_queue_search_matches(void *data, struct iter *iter, const char *text)
+static int play_queue_search_matches(void *data, struct iter *iter, const char *text, int restricted)
 {
 	struct play_queue_entry *e;
+	unsigned int flags = TI_MATCH_TITLE;
+
+	if (!restricted)
+		flags |= TI_MATCH_ARTIST | TI_MATCH_ALBUM;
 
 	e = iter_to_play_queue_entry(iter);
-	if (!track_info_matches(e->track_info, text))
+	if (!track_info_matches(e->track_info, text, flags))
 		return 0;
 	window_set_sel(play_queue_win, iter);
 	play_queue_changed = 1;

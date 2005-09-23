@@ -25,22 +25,27 @@
 #include <xmalloc.h>
 #include <xstrjoin.h>
 #include <misc.h>
+#include <pl.h>
 
 #include <curses.h>
 #include <ctype.h>
 
-char *search_str = NULL;
+/* this is set in ui_curses.c */
 enum search_direction search_direction = SEARCH_FORWARD;
+
+/* current search string, this is set _only_ when user presses enter
+ * this string is used when 'n' or 'N' is pressed
+ * incremental search does not use this, it uses cmdline.line directly
+ */
+char *search_str = NULL;
+int search_restricted = 0;
 
 static int search_found = 0;
 static struct history search_history;
 static char *search_history_filename;
 static char *history_search_text = NULL;
 
-/* //WORDS or ??WORDS search mode */
-static int search_restricted = 0;
-
-static void update_search_line(const char *text)
+static void update_search_line(const char *text, int restricted)
 {
 	int len = strlen(text);
 	char ch = search_direction == SEARCH_FORWARD ? '/' : '?';
@@ -48,7 +53,7 @@ static void update_search_line(const char *text)
 
 	buf = xnew(char, len + 2);
 	ptr = buf;
-	if (search_restricted)
+	if (restricted)
 		*ptr++ = ch;
 	memcpy(ptr, text, len + 1);
 	cmdline_set_text(buf);
@@ -67,16 +72,17 @@ static int search_line_empty(void)
 	return cmdline.line[0] == ch;
 }
 
-static void do_search(void)
+static void parse_line(const char **text, int *restricted)
 {
 	char ch = search_direction == SEARCH_FORWARD ? '/' : '?';
-	int restricted = 0;
+	int r = 0;
 
 	if (cmdline.line[0] == ch) {
 		/* //WORDS or ??WORDS */
-		restricted = 1;
+		r = 1;
 	}
-	search_found = search(searchable, cmdline.line + restricted, search_direction, 0);
+	*text = cmdline.line + r;
+	*restricted = r;
 }
 
 static void reset_history_search(void)
@@ -90,8 +96,6 @@ static void backspace(void)
 {
 	if (cmdline.clen > 0) {
 		cmdline_backspace();
-		if (cmdline.clen > 0)
-			do_search();
 	} else {
 		ui_curses_input_mode = NORMAL_MODE;
 	}
@@ -99,44 +103,56 @@ static void backspace(void)
 
 void search_mode_ch(uchar ch)
 {
+	const char *text;
+	int restricted;
+
 	switch (ch) {
 	case 0x1B:
-		if (cmdline.blen) {
-			history_add_line(&search_history, cmdline.line);
+		parse_line(&text, &restricted);
+		if (text[0]) {
+			history_add_line(&search_history, text);
 			cmdline_clear();
 		}
 		ui_curses_input_mode = NORMAL_MODE;
 		break;
 	case 0x0A:
-		if (search_line_empty()) {
-			/* use old search string */
+		parse_line(&text, &restricted);
+		if (text[0] == 0) {
+			/* cmdline is "/", "?", "//" or "??" */
 			if (search_str) {
-				search_found = search_next(searchable, search_str, search_direction);
+				/* use old search string */
+				search_restricted = restricted;
+				search_found = search_next(searchable, search_str, search_direction, search_restricted);
 			}
 		} else {
 			/* set new search string and add it to the history */
 			free(search_str);
-			search_str = xstrdup(cmdline.line);
-			history_add_line(&search_history, cmdline.line);
+			search_str = xstrdup(text);
+			history_add_line(&search_history, text);
 
 			/* search not yet done if up or down arrow was pressed */
-			do_search();
+			search_restricted = restricted;
+			search_found = search(searchable, search_str, search_direction, 0, search_restricted);
 			cmdline_clear();
 		}
 		if (!search_found)
-			ui_curses_display_info_msg("Pattern not found: %s", search_str ? : "");
+			ui_curses_search_not_found();
 		ui_curses_input_mode = NORMAL_MODE;
 		break;
 	case 127:
 		backspace();
 		break;
 	default:
-		if (ch < 0x20)
+		if (ch < 0x20) {
 			return;
-		cmdline_insert_ch(ch);
-		// FIXME FALKDFpsakdfsadfasf
-		search_found = search(searchable, cmdline.line, search_direction, cmdline.clen == 1);
-		do_search(1);
+		} else {
+			/* start from beginning if this is first char */
+			int beginning = search_line_empty();
+
+			cmdline_insert_ch(ch);
+			parse_line(&text, &restricted);
+			search_found = search(searchable, text, search_direction, beginning, restricted);
+		}
 		break;
 	}
 	reset_history_search();
@@ -144,10 +160,15 @@ void search_mode_ch(uchar ch)
 
 void search_mode_key(int key)
 {
+	const char *text;
+	int restricted;
+
 	switch (key) {
 	case KEY_DC:
 		cmdline_delete_ch();
-		do_search();
+		parse_line(&text, &restricted);
+		if (text[0])
+			search_found = search(searchable, text, search_direction, 0, restricted);
 		break;
 	case KEY_BACKSPACE:
 		backspace();
@@ -165,36 +186,21 @@ void search_mode_key(int key)
 		cmdline_move_end();
 		return;
 	case KEY_UP:
-		{
-			const char *s;
-
-			if (history_search_text == NULL) {
-				char ch = search_direction == SEARCH_FORWARD ? '/' : '?';
-
-				if (cmdline.line[0] == ch) {
-					/* //WORDS or ??WORDS */
-					history_search_text = xstrdup(cmdline.line + 1);
-					search_restricted = 1;
-				} else {
-					/* /WORDS or ?WORDS */
-					history_search_text = xstrdup(cmdline.line);
-					search_restricted = 0;
-				}
-			}
-			s = history_search_forward(&search_history, history_search_text);
-			if (s)
-				update_search_line(s);
-		}
+		parse_line(&text, &restricted);
+		if (history_search_text == NULL)
+			history_search_text = xstrdup(text);
+		text = history_search_forward(&search_history, history_search_text);
+		if (text)
+			update_search_line(text, restricted);
 		return;
 	case KEY_DOWN:
 		if (history_search_text) {
-			const char *s;
-			
-			s = history_search_backward(&search_history, history_search_text);
-			if (s) {
-				update_search_line(s);
+			parse_line(&text, &restricted);
+			text = history_search_backward(&search_history, history_search_text);
+			if (text) {
+				update_search_line(text, restricted);
 			} else {
-				update_search_line(history_search_text);
+				update_search_line(history_search_text, restricted);
 			}
 		}
 		return;

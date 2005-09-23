@@ -54,36 +54,26 @@ int track_info_has_tag(const struct track_info *ti)
 		comments_get_val(ti->comments, "title");
 }
 
-int track_info_matches(struct track_info *ti, const char *text)
+int track_info_matches(struct track_info *ti, const char *text, unsigned int flags)
 {
 	const char *artist = comments_get_val(ti->comments, "artist");
 	const char *album = comments_get_val(ti->comments, "album");
 	const char *title = comments_get_val(ti->comments, "title");
 	char **words;
 	int i, matched = 1;
-	int search_match_artist = 1;
-	int search_match_album = 1;
 
-	if (text[0] == '/' || text[0] == '?') {
-		/* //PATTERN... or ??PATTERN...
-		 * compare titles only
-		 */
-		text++;
-		search_match_artist = 0;
-		search_match_album = 0;
-	}
 	words = get_words(text);
 	if (words[0] == NULL)
 		matched = 0;
 	for (i = 0; words[i]; i++) {
 		const char *word = words[i];
 
-		if ((search_match_artist && artist) || (search_match_album && album) || title) {
-			if (search_match_artist && artist && u_strcasestr(artist, word))
+		if ((flags & TI_MATCH_ARTIST && artist) || (flags & TI_MATCH_ALBUM && album) || (flags & TI_MATCH_TITLE && title)) {
+			if (flags & TI_MATCH_ARTIST && artist && u_strcasestr(artist, word))
 				continue;
-			if (search_match_album && album && u_strcasestr(album, word))
+			if (flags & TI_MATCH_ALBUM && album && u_strcasestr(album, word))
 				continue;
-			if (title && u_strcasestr(title, word))
+			if (flags & TI_MATCH_TITLE && title && u_strcasestr(title, word))
 				continue;
 		} else {
 			/* compare with filename (without path) */

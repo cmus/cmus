@@ -486,24 +486,32 @@ static int tree_search_get_current(void *data, struct iter *iter)
 	return 1;
 }
 
-static int shuffle_search_matches(void *data, struct iter *iter, const char *text)
+static int shuffle_search_matches(void *data, struct iter *iter, const char *text, int restricted)
 {
 	struct track *track;
+	unsigned int flags = TI_MATCH_TITLE;
+
+	if (!restricted)
+		flags |= TI_MATCH_ARTIST | TI_MATCH_ALBUM;
 
 	track = iter_to_shuffle_track(iter);
-	if (!track_info_matches(track->info, text))
+	if (!track_info_matches(track->info, text, flags))
 		return 0;
 	window_set_sel(playlist.shuffle_win, iter);
 	shuffle_win_changed();
 	return 1;
 }
 
-static int sorted_search_matches(void *data, struct iter *iter, const char *text)
+static int sorted_search_matches(void *data, struct iter *iter, const char *text, int restricted)
 {
 	struct track *track;
+	unsigned int flags = TI_MATCH_TITLE;
+
+	if (!restricted)
+		flags |= TI_MATCH_ARTIST | TI_MATCH_ALBUM;
 
 	track = iter_to_sorted_track(iter);
-	if (!track_info_matches(track->info, text))
+	if (!track_info_matches(track->info, text, flags))
 		return 0;
 	window_set_sel(playlist.sorted_win, iter);
 	sorted_win_changed();
@@ -516,13 +524,16 @@ static inline struct track *iter_to_tree_search_track(const struct iter *iter)
 	return iter->data1;
 }
 
-static int tree_search_matches(void *data, struct iter *iter, const char *text)
+static int tree_search_matches(void *data, struct iter *iter, const char *text, int restricted)
 {
 	struct track *track;
 	struct iter tmpiter;
+	unsigned int flags = TI_MATCH_ARTIST | TI_MATCH_ALBUM;
 
+	if (!restricted)
+		flags |= TI_MATCH_TITLE;
 	track = iter_to_tree_search_track(iter);
-	if (!track_info_matches(track->info, text))
+	if (!track_info_matches(track->info, text, flags))
 		return 0;
 	track->album->artist->expanded = 1;
 	album_to_iter(track->album, &tmpiter);

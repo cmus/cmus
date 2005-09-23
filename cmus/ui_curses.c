@@ -1089,6 +1089,40 @@ int ui_curses_yes_no_query(const char *format, ...)
 	return ret;
 }
 
+void ui_curses_search_not_found(void)
+{
+	const char *what = "Track";
+
+	if (search_restricted) {
+		switch (ui_curses_view) {
+		case TREE_VIEW:
+			what = "Artist/album";
+			break;
+		case SHUFFLE_VIEW:
+		case SORTED_VIEW:
+		case PLAY_QUEUE_VIEW:
+			what = "Title";
+			break;
+		case BROWSER_VIEW:
+			what = "File/Directory";
+			break;
+		}
+	} else {
+		switch (ui_curses_view) {
+		case TREE_VIEW:
+		case SHUFFLE_VIEW:
+		case SORTED_VIEW:
+		case PLAY_QUEUE_VIEW:
+			what = "Track";
+			break;
+		case BROWSER_VIEW:
+			what = "File/Directory";
+			break;
+		}
+	}
+	ui_curses_display_info_msg("%s not found: %s", what, search_str ? : "");
+}
+
 static void ui_curses_set_view(int view)
 {
 	if (view == ui_curses_view)
@@ -1723,14 +1757,14 @@ static int common_ch(uchar ch)
 		break;
 	case 'n':
 		if (search_str) {
-			if (!search_next(searchable, search_str, search_direction))
-				ui_curses_display_info_msg("Pattern not found: %s", search_str);
+			if (!search_next(searchable, search_str, search_direction, search_restricted))
+				ui_curses_search_not_found();
 		}
 		break;
 	case 'N':
 		if (search_str) {
-			if (!search_next(searchable, search_str, !search_direction))
-				ui_curses_display_info_msg("Pattern not found: %s", search_str);
+			if (!search_next(searchable, search_str, !search_direction, search_restricted))
+				ui_curses_search_not_found();
 		}
 		break;
 	default:

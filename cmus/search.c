@@ -27,10 +27,10 @@ struct searchable {
 };
 
 /* returns next matching track (can be current!) or NULL if not found */
-static int do_search(struct searchable *s, struct iter *iter, const char *text, int direction)
+static int do_search(struct searchable *s, struct iter *iter, const char *text, int direction, int restricted)
 {
 	while (1) {
-		if (s->ops.matches(s->data, iter, text))
+		if (s->ops.matches(s->data, iter, text, restricted))
 			return 1;
 		if (direction == SEARCH_FORWARD) {
 			if (!s->ops.get_next(iter))
@@ -58,7 +58,7 @@ void searchable_free(struct searchable *s)
 	free(s);
 }
 
-int search(struct searchable *s, const char *text, enum search_direction dir, int beginning)
+int search(struct searchable *s, const char *text, enum search_direction dir, int beginning, int restricted)
 {
 	struct iter iter;
 	int ret;
@@ -77,12 +77,12 @@ int search(struct searchable *s, const char *text, enum search_direction dir, in
 		ret = s->ops.get_current(s->data, &iter);
 	}
 	if (ret)
-		ret = do_search(s, &iter, text, dir);
+		ret = do_search(s, &iter, text, dir, restricted);
 	s->ops.unlock(s->data);
 	return ret;
 }
 
-int search_next(struct searchable *s, const char *text, enum search_direction dir)
+int search_next(struct searchable *s, const char *text, enum search_direction dir, int restricted)
 {
 	struct iter iter;
 	int ret;
@@ -98,7 +98,7 @@ int search_next(struct searchable *s, const char *text, enum search_direction di
 		ret = s->ops.get_prev(&iter);
 	}
 	if (ret)
-		ret = do_search(s, &iter, text, dir);
+		ret = do_search(s, &iter, text, dir, restricted);
 	s->ops.unlock(s->data);
 	return ret;
 }
