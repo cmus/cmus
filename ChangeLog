@@ -1,3 +1,13 @@
+2005-09-28: 1.5.8
+~~~~~~~~~~~~~~~~~
+
+Timo Hirvonen
+  o Fix ID3v2 parsing
+  o Fix crash in player_pause() when ip is not set
+    This bug was reported by Martin Stubenschrott
+  o Improved searching
+  o Documentation update
+
 2005-09-20: 1.5.7
 ~~~~~~~~~~~~~~~~~
 
