@@ -229,11 +229,11 @@ Searching
 Key      Description
 =======  ===========
 /WORDS   search forward
-?WORDS   search backwards
-//WORDS  search forward comparing to titles only
-??WORDS  search backwards comparing to titles only
-/        search forward using previous pattern
-?        search backwards using previous pattern
+?WORDS   search backward
+//WORDS  search forward (see below)
+??WORDS  search backward (see below)
+/        search forward for the latest used pattern
+?        search backward for the latest used pattern
 n        search next
 N        search previous
 =======  ===========
@@ -241,9 +241,10 @@ N        search previous
 WORDS is list of words separated by spaces.  Search is case insensitive and
 works in every view.                                                    
 
-In views 1-4 words are compared to artist, album and title tags.  Use //WORDS
-and ??WORDS to search only titles.  If the file doesn't have tags words are
-compared to filename without path.  
+In views 1-4 words are compared to artist, album and title tags.  Use
+//WORDS and ??WORDS to search only artists/albums in view 1 or titles in
+views 2-4.  If the file doesn't have tags words are compared to filename
+without path.
 
 In view 5 words are compared to filename without path.
 
