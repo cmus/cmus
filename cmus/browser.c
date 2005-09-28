@@ -271,7 +271,7 @@ static int browser_search_get_current(void *data, struct iter *iter)
 	return window_get_sel(browser_win, iter);
 }
 
-static int browser_search_matches(void *data, struct iter *iter, const char *text, int restricted)
+static int browser_search_matches(void *data, struct iter *iter, const char *text)
 {
 	char **words = get_words(text);
 	int matched = 0;

@@ -23,6 +23,7 @@
 #include <list.h>
 #include <xmalloc.h>
 #include <window.h>
+#include <search_mode.h>
 #include <file.h>
 #include <mergesort.h>
 #include <debug.h>
@@ -55,7 +56,7 @@ static int tree_search_get_prev(struct iter *iter)
 		return 1;
 	}
 	/* prev track */
-	if (track->node.prev == &track->album->track_head) {
+	if (track->node.prev == &track->album->track_head || search_restricted) {
 		/* prev album */
 		if (track->album->node.prev == &track->album->artist->album_head) {
 			/* prev artist */
@@ -97,7 +98,7 @@ static int tree_search_get_next(struct iter *iter)
 		return 1;
 	}
 	/* next track */
-	if (track->node.next == &track->album->track_head) {
+	if (track->node.next == &track->album->track_head || search_restricted) {
 		/* next album */
 		if (track->album->node.next == &track->album->artist->album_head) {
 			/* next artist */
@@ -486,12 +487,12 @@ static int tree_search_get_current(void *data, struct iter *iter)
 	return 1;
 }
 
-static int shuffle_search_matches(void *data, struct iter *iter, const char *text, int restricted)
+static int shuffle_search_matches(void *data, struct iter *iter, const char *text)
 {
 	struct track *track;
 	unsigned int flags = TI_MATCH_TITLE;
 
-	if (!restricted)
+	if (!search_restricted)
 		flags |= TI_MATCH_ARTIST | TI_MATCH_ALBUM;
 
 	track = iter_to_shuffle_track(iter);
@@ -502,12 +503,12 @@ static int shuffle_search_matches(void *data, struct iter *iter, const char *tex
 	return 1;
 }
 
-static int sorted_search_matches(void *data, struct iter *iter, const char *text, int restricted)
+static int sorted_search_matches(void *data, struct iter *iter, const char *text)
 {
 	struct track *track;
 	unsigned int flags = TI_MATCH_TITLE;
 
-	if (!restricted)
+	if (!search_restricted)
 		flags |= TI_MATCH_ARTIST | TI_MATCH_ALBUM;
 
 	track = iter_to_sorted_track(iter);
@@ -524,13 +525,13 @@ static inline struct track *iter_to_tree_search_track(const struct iter *iter)
 	return iter->data1;
 }
 
-static int tree_search_matches(void *data, struct iter *iter, const char *text, int restricted)
+static int tree_search_matches(void *data, struct iter *iter, const char *text)
 {
 	struct track *track;
 	struct iter tmpiter;
 	unsigned int flags = TI_MATCH_ARTIST | TI_MATCH_ALBUM;
 
-	if (!restricted)
+	if (!search_restricted)
 		flags |= TI_MATCH_TITLE;
 	track = iter_to_tree_search_track(iter);
 	if (!track_info_matches(track->info, text, flags))

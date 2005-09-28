@@ -1757,13 +1757,13 @@ static int common_ch(uchar ch)
 		break;
 	case 'n':
 		if (search_str) {
-			if (!search_next(searchable, search_str, search_direction, search_restricted))
+			if (!search_next(searchable, search_str, search_direction))
 				ui_curses_search_not_found();
 		}
 		break;
 	case 'N':
 		if (search_str) {
-			if (!search_next(searchable, search_str, !search_direction, search_restricted))
+			if (!search_next(searchable, search_str, !search_direction))
 				ui_curses_search_not_found();
 		}
 		break;

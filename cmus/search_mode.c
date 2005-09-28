@@ -122,7 +122,7 @@ void search_mode_ch(uchar ch)
 			if (search_str) {
 				/* use old search string */
 				search_restricted = restricted;
-				search_found = search_next(searchable, search_str, search_direction, search_restricted);
+				search_found = search_next(searchable, search_str, search_direction);
 			}
 		} else {
 			/* set new search string and add it to the history */
@@ -132,9 +132,9 @@ void search_mode_ch(uchar ch)
 
 			/* search not yet done if up or down arrow was pressed */
 			search_restricted = restricted;
-			search_found = search(searchable, search_str, search_direction, 0, search_restricted);
-			cmdline_clear();
+			search_found = search(searchable, search_str, search_direction, 0);
 		}
+		cmdline_clear();
 		if (!search_found)
 			ui_curses_search_not_found();
 		ui_curses_input_mode = NORMAL_MODE;
@@ -149,9 +149,19 @@ void search_mode_ch(uchar ch)
 			/* start from beginning if this is first char */
 			int beginning = search_line_empty();
 
+			/* save old value
+			 *
+			 * don't set search_{str,restricted} here because
+			 * search can be cancelled by pressing ESC
+			 */
+			restricted = search_restricted;
+
 			cmdline_insert_ch(ch);
-			parse_line(&text, &restricted);
-			search_found = search(searchable, text, search_direction, beginning, restricted);
+			parse_line(&text, &search_restricted);
+			search_found = search(searchable, text, search_direction, beginning);
+
+			/* restore old value */
+			search_restricted = restricted;
 		}
 		break;
 	}
@@ -165,10 +175,16 @@ void search_mode_key(int key)
 
 	switch (key) {
 	case KEY_DC:
+		/* save old value */
+		restricted = search_restricted;
+
 		cmdline_delete_ch();
-		parse_line(&text, &restricted);
+		parse_line(&text, &search_restricted);
 		if (text[0])
-			search_found = search(searchable, text, search_direction, 0, restricted);
+			search_found = search(searchable, text, search_direction, 0);
+
+		/* restore old value */
+		search_restricted = restricted;
 		break;
 	case KEY_BACKSPACE:
 		backspace();

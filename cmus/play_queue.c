@@ -19,6 +19,7 @@
 
 #include <play_queue.h>
 #include <ui_curses.h>
+#include <search_mode.h>
 #include <window.h>
 #include <misc.h>
 #include <xmalloc.h>
@@ -103,12 +104,12 @@ static int play_queue_search_get_current(void *data, struct iter *iter)
 	return window_get_sel(play_queue_win, iter);
 }
 
-static int play_queue_search_matches(void *data, struct iter *iter, const char *text, int restricted)
+static int play_queue_search_matches(void *data, struct iter *iter, const char *text)
 {
 	struct play_queue_entry *e;
 	unsigned int flags = TI_MATCH_TITLE;
 
-	if (!restricted)
+	if (!search_restricted)
 		flags |= TI_MATCH_ARTIST | TI_MATCH_ALBUM;
 
 	e = iter_to_play_queue_entry(iter);
