@@ -1345,19 +1345,19 @@ static void display_search_mode_help(WINDOW *w)
 	mvwaddstr(w, row++, (HELP_W - 9) / 2, "~~~~~~~~~");
 	row++;
 	mvwaddstr(w, row++, col, "/WORDS  - search forward");
-	mvwaddstr(w, row++, col, "?WORDS  - search backwards");
-	mvwaddstr(w, row++, col, "//WORDS - search forward comparing to titles only");
-	mvwaddstr(w, row++, col, "??WORDS - search backwards comparing to titles only");
-	mvwaddstr(w, row++, col, "/       - search forward using previous pattern");
-	mvwaddstr(w, row++, col, "?       - search backwards using previous pattern");
+	mvwaddstr(w, row++, col, "?WORDS  - search backward");
+	mvwaddstr(w, row++, col, "//WORDS - search forward (see below)");
+	mvwaddstr(w, row++, col, "??WORDS - search backward (see below)");
+	mvwaddstr(w, row++, col, "/       - search forward for the latest used pattern");
+	mvwaddstr(w, row++, col, "?       - search backward for the latest used pattern");
 	mvwaddstr(w, row++, col, "n       - search next");
 	mvwaddstr(w, row++, col, "N       - search previous");
 	row++;
 	mvwaddstr(w, row++, col, "WORDS is list of words separated by spaces.  Search is case insensitive");
-	mvwaddstr(w, row++, col, "and works in every view.  ");
+	mvwaddstr(w, row++, col, "and works in every view.");
 	row++;
 	mvwaddstr(w, row++, col, "In views 1-4 words are compared to artist, album and title tags.  Use");
-	mvwaddstr(w, row++, col, "//WORDS and ??WORDS to search only artists/albums in view 1 or titles in ");
+	mvwaddstr(w, row++, col, "//WORDS and ??WORDS to search only artists/albums in view 1 or titles in");
 	mvwaddstr(w, row++, col, "views 2-4.  If the file doesn't have tags words are compared to filename");
 	mvwaddstr(w, row++, col, "without path.  In view 5 words are compared to filename without path.");
 }
