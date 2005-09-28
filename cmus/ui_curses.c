@@ -1357,9 +1357,9 @@ static void display_search_mode_help(WINDOW *w)
 	mvwaddstr(w, row++, col, "and works in every view.  ");
 	row++;
 	mvwaddstr(w, row++, col, "In views 1-4 words are compared to artist, album and title tags.  Use");
-	mvwaddstr(w, row++, col, "//WORDS and ??WORDS to search only titles.  If the file doesn't have tags");
-	mvwaddstr(w, row++, col, "words are compared to filename without path.  In view 5 words are compared");
-	mvwaddstr(w, row++, col, "to filename without path.");
+	mvwaddstr(w, row++, col, "//WORDS and ??WORDS to search only artists/albums in view 1 or titles in ");
+	mvwaddstr(w, row++, col, "views 2-4.  If the file doesn't have tags words are compared to filename");
+	mvwaddstr(w, row++, col, "without path.  In view 5 words are compared to filename without path.");
 }
 
 static void display_command_mode_help(WINDOW *w)
