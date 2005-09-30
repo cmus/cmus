@@ -23,11 +23,16 @@ ifneq ($(findstring s,$(MAKEFLAGS)),)
   BUILD_VERBOSITY := 0
 endif
 
+BUILD_CHECK := 0
+ifeq ($(origin C),command line)
+  BUILD_CHECK := $(C)
+endif
+
 export pkglibdir	:= $(libdir)/$(PACKAGE)
 export pkgincludedir	:= $(includedir)/$(PACKAGE)
 export pkgdatadir	:= $(datadir)/$(PACKAGE)
 export install_log	:= $(top_builddir)/install.log
-export BUILD_VERBOSITY
+export BUILD_VERBOSITY BUILD_CHECK
 
 MAKEFLAGS	+= --no-print-directory
 
@@ -94,6 +99,10 @@ do-help:
 	@echo "  dist                build \$$DISTDIR/$(PACKAGE)-$(VERSION).tar.bz2 file"
 	@echo "  tags                generate tags (requires ctags)"
 	@echo "  help                show this help"
+	@echo
+	@echo "Checking source code:"
+	@echo "  make C=1            check all C source with sparse"
+	@echo "  make C=2            force check all C source with sparse"
 	@echo
 	@echo "Build verbosity:"
 	@echo "  make V=0            quiet build"

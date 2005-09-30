@@ -27,6 +27,8 @@ SRCDIR_INSTALL	:= @cd $(srcdir) && $(scriptdir)/install
 RST2HTML	:= rst2html.py
 RST2HTML_FLAGS	:=
 CTAGS		:= ctags
+SPARSE		?= sparse
+SPARSE_FLAGS	?= -D__i386__
 
 EMPTY		:=
 SPACE		:= $(EMPTY) $(EMPTY)
@@ -40,6 +42,7 @@ COMMA		:= ,
 
 # object files for programs and static libs
 %.o: %.c
+	$(call cmd,sparse)
 	$(call cmd,cc)
 
 %.o: %.cc
@@ -50,6 +53,7 @@ COMMA		:= ,
 
 # object files for shared libs
 %.lo: %.c
+	$(call cmd,sparse)
 	$(call cmd,cc_lo)
 
 %.lo: %.cc
@@ -111,6 +115,16 @@ quiet_cmd_sed_in = SED    $@
 # .rst (restructured text) -> .html
 quiet_cmd_rst = RST    $@
       cmd_rst = $(RST2HTML) $(RST2HTML_FLAGS) $< $@
+
+# source code checker
+ifneq ($(BUILD_CHECK),0)
+quiet_cmd_sparse = SPARSE $<
+  ifeq ($(BUILD_CHECK),2)
+      cmd_sparse = $(SPARSE) $(CFLAGS) $(SPARSE_FLAGS) $< 
+  else
+      cmd_sparse = $(SPARSE) $(CFLAGS) $(SPARSE_FLAGS) $< ; true
+  endif
+endif
 
 # quiet_cmd_clean = CLEAN  Temporary files
       cmd_clean = rm -f $(clean)

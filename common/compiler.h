@@ -15,7 +15,7 @@
 #define unlikely(x)	__builtin_expect(!!(x), 0)
 
 /* Always inline */
-#define inline		inline	__attribute__((__always_inline__))
+#define inline		inline	__attribute__((always_inline))
 
 /* Never inline */
 #define noinline		__attribute__((__noinline__))
