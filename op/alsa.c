@@ -182,12 +182,14 @@ static int alsa_set_hw_params(void)
 	alsa_period_time = 50e3;
 
 	cmd = "snd_pcm_hw_params_set_buffer_time_near";
-	rc = snd_pcm_hw_params_set_buffer_time_near(alsa_handle, hwparams, &alsa_buffer_time, 0);
+	dir = 0;
+	rc = snd_pcm_hw_params_set_buffer_time_near(alsa_handle, hwparams, &alsa_buffer_time, &dir);
 	if (rc < 0)
 		goto error;
 
 	cmd = "snd_pcm_hw_params_set_period_time_near";
-	rc = snd_pcm_hw_params_set_period_time_near(alsa_handle, hwparams, &alsa_period_time, 0);
+	dir = 0;
+	rc = snd_pcm_hw_params_set_period_time_near(alsa_handle, hwparams, &alsa_period_time, &dir);
 	if (rc < 0)
 		goto error;
 #endif
