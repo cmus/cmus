@@ -139,7 +139,6 @@ static int print_time(char *buf, int t, int width, int align_left, char pad)
  */
 static void print_str(char *buf, int *idx, const char *str, int width, int align_left)
 {
-	uchar u;
 	int s, d;
 
 	s = 0;
@@ -149,22 +148,19 @@ static void print_str(char *buf, int *idx, const char *str, int width, int align
 		int i = 0;
 
 		if (align_left) {
-			while (i < width) {
-				u_get_char(str, &s, &u);
-				if (u == 0)
-					break;
-				u_set_char(buf, &d, u);
-				i++;
-			}
+			int c;
+
+			i = width;
+			c = u_copy_chars(buf + d, str + s, &i);
+			s += c;
+			d += c;
+
 			ws_len = width - i;
 			memset(buf + d, ' ', ws_len);
 			d += ws_len;
 			i += ws_len;
 		} else {
-			int str_len;
-
-			str_len = u_strlen(str);
-			ws_len = width - str_len;
+			ws_len = width - u_str_width(str);
 
 			if (ws_len > 0) {
 				memset(buf + d, ' ', ws_len);
@@ -172,24 +168,25 @@ static void print_str(char *buf, int *idx, const char *str, int width, int align
 				i += ws_len;
 			}
 
-			if (ws_len < 0)
-				s += u_skip_chars(str, -ws_len);
+			if (ws_len < 0) {
+				int w = -ws_len;
+
+				s += u_skip_chars(str, &w);
+				if (w != -ws_len)
+					buf[d++] = ' ';
+			}
 
 			if (width - i > 0) {
-				int c;
+				int c, w = width - i;
 
-				c = u_copy_chars(buf + d, str + s, width - i);
+				c = u_copy_chars(buf + d, str + s, &w);
 				s += c;
 				d += c;
 			}
 		}
 	} else {
-		while (1) {
-			u_get_char(str, &s, &u);
-			if (u == 0)
-				break;
-			u_set_char(buf, &d, u);
-		}
+		while (str[s])
+			buf[d++] = str[s++];
 	}
 	*idx = d;
 }
@@ -290,7 +287,7 @@ int format_print(char *str, int str_size, int width, const char *format,
 
 		u_get_char(format, &s, &u);
 		if (u != '%') {
-			(*len)++;
+			(*len) += u_char_width(u);
 			continue;
 		}
 		u_get_char(format, &s, &u);
@@ -322,7 +319,7 @@ int format_print(char *str, int str_size, int width, const char *format,
 				if (fopts[j].empty) {
 					/* nothing */
 				} else if (fopts[j].type == FO_STR) {
-					l = u_strlen(fopts[j].u.fo_str);
+					l = u_str_width(fopts[j].u.fo_str);
 				} else if (fopts[j].type == FO_INT) {
 					l = numlen(fopts[j].u.fo_int);
 				} else if (fopts[j].type == FO_TIME) {
@@ -371,24 +368,25 @@ int format_print(char *str, int str_size, int width, const char *format,
 	r_str[0] = 0;
 
 	if (lsize > 0) {
-		int ul;
-
 		print(l_str, format, fopts);
-		ul = u_strlen(l_str);
-		if (ul != llen)
-			d_print("L %d != %d: size=%d '%s'\n", ul, llen, lsize, l_str);
-/* 		d_print("L %3d: '%s'\n", u_strlen(l_str), l_str); */
+#if DEBUG > 1
+		{
+			int ul = u_str_width(l_str);
+			if (ul != llen)
+				d_print("L %d != %d: size=%d '%s'\n", ul, llen, lsize, l_str);
+		}
+#endif
 	}
 	if (rsize > 0) {
-		int ul;
-
 		print(r_str, format + eq_pos + 1, fopts);
-		ul = u_strlen(r_str);
-		if (ul != rlen)
-			d_print("R %d != %d: size=%d '%s'\n", ul, rlen, rsize, r_str);
-/* 		d_print("R %3d: '%s'\n", u_strlen(r_str), r_str); */
+#if DEBUG > 1
+		{
+			int ul = u_str_width(r_str);
+			if (ul != rlen)
+				d_print("R %d != %d: size=%d '%s'\n", ul, rlen, rsize, r_str);
+		}
+#endif
 	}
-	/* l_str and r_str can be NULL! */
 
 	if (llen + rlen <= width) {
 		/* both fit */
@@ -408,9 +406,14 @@ int format_print(char *str, int str_size, int width, const char *format,
 		int idx = 0;
 
 		if (l_space > 0)
-			pos = u_copy_chars(str, l_str, l_space);
-		if (l_space < 0)
-			idx = u_skip_chars(r_str, -l_space);
+			pos = u_copy_chars(str, l_str, &l_space);
+		if (l_space < 0) {
+			int w = -l_space;
+
+			idx = u_skip_chars(r_str, &w);
+			if (w != -l_space)
+				str[pos++] = ' ';
+		}
 		strcpy(str + pos, r_str + idx);
 	}
 	return 0;

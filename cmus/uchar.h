@@ -61,6 +61,11 @@ static inline int u_char_size(uchar uch)
 }
 
 /*
+ * Returns width of @uch (1 or 2)
+ */
+extern int u_char_width(uchar uch);
+
+/*
  * @str  any null-terminated string
  *
  * Returns 1 if @str is valid UTF-8 string, 0 otherwise.
@@ -73,6 +78,13 @@ extern int u_is_valid(const char *str);
  * Retuns length of @str in UTF-8 characters.
  */
 extern int u_strlen(const char *str);
+
+/*
+ * @str  null-terminated UTF-8 string
+ *
+ * Retuns width of @str.
+ */
+extern int u_str_width(const char *str);
 
 /*
  * @str  null-terminated UTF-8 string
@@ -91,24 +103,28 @@ extern void u_set_char(char *str, int *idx, uchar uch);
 /*
  * @dst    destination buffer
  * @src    null-terminated UTF-8 string
- * @count  number of UTF-8 characters to copy
+ * @width  how much to copy
  *
  * Copies at most @count characters, less if null byte was hit.
  * Null byte is _never_ copied.
+ * Actual width of copied characters is stored to @width.
  *
  * Returns number of _bytes_ copied.
  */
-extern int u_copy_chars(char *dst, const char *src, int count);
+extern int u_copy_chars(char *dst, const char *src, int *width);
 
 /*
- * @str    null-terminated UTF-8 string, length >= @count
- * @count  number of UTF-8 characters to skip
+ * @str    null-terminated UTF-8 string, must be long enough
+ * @width  how much to skip
  *
  * Skips @count UTF-8 characters.
+ * Total width of skipped characters is stored to @width.
+ * Returned @width can be the given @width + 1 if the last skipped
+ * character was double width.
  *
  * Returns number of _bytes_ skipped.
  */
-extern int u_skip_chars(const char *str, int count);
+extern int u_skip_chars(const char *str, int *width);
 
 extern char *u_strcasestr(const char *text, const char *part);
 

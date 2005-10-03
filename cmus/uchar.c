@@ -119,6 +119,82 @@ int u_strlen(const char *str)
 	return len;
 }
 
+int u_char_width(uchar u)
+{
+	if (u < 0x1100)
+		goto narrow;
+
+	/* Hangul Jamo init. consonants */ 
+	if (u <= 0x115f)
+		goto wide;
+
+	/* angle brackets */
+	if (u == 0x2329 || u == 0x232a)
+		goto wide;
+
+	if (u < 0x2e80)
+		goto narrow;
+	/* CJK ... Yi */
+	if (u < 0x302a)
+		goto wide;
+	if (u <= 0x302f)
+		goto narrow;
+	if (u == 0x303f)
+		goto narrow;
+	if (u == 0x3099)
+		goto narrow;
+	if (u == 0x309a)
+		goto narrow;
+	/* CJK ... Yi */
+	if (u <= 0xa4cf)
+		goto wide;
+
+	/* Hangul Syllables */
+	if (u >= 0xac00 && u <= 0xd7a3)
+		goto wide;
+
+	/* CJK Compatibility Ideographs */
+	if (u >= 0xf900 && u <= 0xfaff)
+		goto wide;
+
+	/* CJK Compatibility Forms */
+	if (u >= 0xfe30 && u <= 0xfe6f)
+		goto wide;
+
+	/* Fullwidth Forms */
+	if (u >= 0xff00 && u <= 0xff60)
+		goto wide;
+
+	/* Fullwidth Forms */
+	if (u >= 0xffe0 && u <= 0xffe6)
+		goto wide;
+
+	/* CJK extra stuff */
+	if (u >= 0x20000 && u <= 0x2fffd)
+		goto wide;
+
+	/* ? */
+	if (u >= 0x30000 && u <= 0x3fffd)
+		goto wide;
+narrow:
+	return 1;
+wide:
+	return 2;
+}
+
+int u_str_width(const char *str)
+{
+	int idx = 0, w = 0;
+
+	while (str[idx]) {
+		uchar u;
+
+		u_get_char(str, &idx, &u);
+		w += u_char_width(u);
+	}
+	return w;
+}
+
 void u_get_char(const char *str, int *idx, uchar *uch)
 {
 	const unsigned char *s = str;
@@ -166,33 +242,54 @@ void u_set_char(char *str, int *idx, uchar uch)
 	}
 }
 
-int u_copy_chars(char *dst, const char *src, int len)
+int u_copy_chars(char *dst, const char *src, int *width)
 {
-	unsigned char ch = src[0];
-	int i = 0;
+	int w = *width;
+	int len = 0;
+	int idx = 0;
 
-	while (len) {
+	while (w > 0) {
+		unsigned char ch = src[idx];
+		uchar u;
+		int i;
+
 		if (ch == 0)
 			break;
-		do {
-			dst[i++] = ch;
-			ch = src[i];
-		} while (!u_is_first_byte(ch));
-		len--;
+
+		dst[idx++] = ch;
+		len = len_tab[ch];
+		u = ch & first_byte_mask[len - 1];
+		for (i = 1; i < len; i++) {
+			ch = src[idx];
+			u = (u << 6) | (ch & 0x3f);
+			dst[idx++] = ch;
+		}
+		w -= u_char_width(u);
 	}
-	return i;
+	if (w < 0) {
+		/* the last char was double width and didn't fit */
+		idx -= len;
+		dst[idx++] = ' ';
+		w = 0;
+	}
+	*width -= w;
+	return idx;
 }
 
-int u_skip_chars(const char *str, int count)
+int u_skip_chars(const char *str, int *width)
 {
-	const unsigned char *s = str;
-	int i = 0;
+	int w = *width;
+	int idx = 0;
 
-	while (count) {
-		i += len_tab[s[i]];
-		count--;
+	while (w > 0) {
+		uchar u;
+
+		u_get_char(str, &idx, &u);
+		w -= u_char_width(u);
 	}
-	return i;
+	/* add 1 if skipped 'too much' (the last char was double width) */
+	*width -= w;
+	return idx;
 }
 
 // FIXME

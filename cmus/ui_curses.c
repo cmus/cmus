@@ -263,18 +263,19 @@ static void dump_print_buffer(int row, int col)
 	}
 }
 
-static void sprint(int row, int col, const char *str, int len, int indent)
+static void sprint(int row, int col, const char *str, int width, int indent)
 {
-	int d, l;
+	int d, w;
 
-	l = u_strlen(str);
-	len -= 2 + indent;
+	w = u_str_width(str);
+	width -= 2 + indent;
 	indent++;
 
 	memset(print_buffer, ' ', indent);
 	d = indent;
-	if (l > len) {
-		d += u_copy_chars(print_buffer + d, str, len - 3);
+	if (w > width) {
+		width -= 3;
+		d += u_copy_chars(print_buffer + d, str, &width);
 		print_buffer[d++] = '.';
 		print_buffer[d++] = '.';
 		print_buffer[d++] = '.';
@@ -284,8 +285,8 @@ static void sprint(int row, int col, const char *str, int len, int indent)
 		while (str[s])
 			print_buffer[d++] = str[s++];
 
-		memset(print_buffer + d, ' ', len - l);
-		d += len - l;
+		memset(print_buffer + d, ' ', width - w);
+		d += width - w;
 	}
 	print_buffer[d++] = ' ';
 	print_buffer[d++] = 0;
@@ -867,9 +868,9 @@ static void update_commandline(void)
 				dump_buffer(cmdline.line);
 			} else {
 				char *str = cmdline.line;
-				int idx;
+				int idx, w = cmdline.clen - COLS + 1;
 
-				idx = u_skip_chars(str, cmdline.clen - COLS + 1);
+				idx = u_skip_chars(str, &w);
 				dump_buffer(str + idx);
 			}
 		}
