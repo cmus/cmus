@@ -824,6 +824,72 @@ static void album_add_track(struct album *album, struct track *track)
 	list_add_tail(&track->node, item);
 }
 
+/* add track to views 1-3 */
+static void views_add_track(struct track_info *ti)
+{
+	const char *album_name, *artist_name;
+	struct artist *artist;
+	struct album *album;
+	struct track *track;
+
+	track = xnew(struct track, 1);
+	track->info = ti;
+	track->name = xxstrdup(comments_get_val(ti->comments, "title"));
+	track->url = is_url(ti->filename);
+	track->disc = comments_get_int(ti->comments, "discnumber");
+	track->num = comments_get_int(ti->comments, "tracknumber");
+
+	album_name = comments_get_val(ti->comments, "album");
+	artist_name = comments_get_val(ti->comments, "artist");
+
+	if (track->url && artist_name == NULL && album_name == NULL) {
+		artist_name = "<Stream>";
+		album_name = "<Stream>";
+	}
+
+	find_artist_and_album(artist_name, album_name, &artist, &album);
+	if (album) {
+		album_add_track(album, track);
+
+		/* is the album where we added the track selected? */
+		if (album_selected(album)) {
+			/* update track window */
+			window_changed(playlist.track_win);
+			track_win_changed();
+		}
+	} else if (artist) {
+		album = artist_add_album(artist, album_name);
+		album_add_track(album, track);
+
+		if (artist->expanded) {
+			/* update tree window */
+			window_changed(playlist.tree_win);
+			tree_win_changed();
+			/* album is not selected => no need to update track_win */
+		}
+	} else {
+		artist = playlist_add_artist(artist_name);
+		album = artist_add_album(artist, album_name);
+		album_add_track(album, track);
+
+		window_changed(playlist.tree_win);
+		tree_win_changed();
+	}
+
+	shuffle_list_add_track(track, playlist.nr_tracks);
+	window_changed(playlist.shuffle_win);
+	shuffle_win_changed();
+
+	sorted_list_add_track(track);
+	window_changed(playlist.sorted_win);
+	sorted_win_changed();
+
+	if (track->info->duration != -1)
+		playlist.total_time += track->info->duration;
+	playlist.nr_tracks++;
+	status_changed();
+}
+
 struct fh_entry {
 	struct fh_entry *next;
 	const char *filename;
@@ -887,79 +953,14 @@ static void filename_hash_remove(const char *filename)
 
 void pl_add_track(struct track_info *ti)
 {
-	const char *album_name, *artist_name;
-	struct artist *artist;
-	struct album *album;
-	struct track *track;
-
-	track_info_ref(ti);
-
-	track = xnew(struct track, 1);
-	track->info = ti;
-	track->name = xxstrdup(comments_get_val(ti->comments, "title"));
-	track->url = is_url(ti->filename);
-	track->disc = comments_get_int(ti->comments, "discnumber");
-	track->num = comments_get_int(ti->comments, "tracknumber");
-
-	album_name = comments_get_val(ti->comments, "album");
-	artist_name = comments_get_val(ti->comments, "artist");
-
-	if (track->url && artist_name == NULL && album_name == NULL) {
-		artist_name = "<Stream>";
-		album_name = "<Stream>";
-	}
-
 	pl_lock();
-
-	if (!filename_hash_insert(track->info->filename)) {
+	if (!filename_hash_insert(ti->filename)) {
 		/* duplicate files not allowed */
-		track_free(track);
 		pl_unlock();
 		return;
 	}
-
-	find_artist_and_album(artist_name, album_name, &artist, &album);
-	if (album) {
-		album_add_track(album, track);
-
-		/* is the album where we added the track selected? */
-		if (album_selected(album)) {
-			/* update track window */
-			window_changed(playlist.track_win);
-			track_win_changed();
-		}
-	} else if (artist) {
-		album = artist_add_album(artist, album_name);
-		album_add_track(album, track);
-
-		if (artist->expanded) {
-			/* update tree window */
-			window_changed(playlist.tree_win);
-			tree_win_changed();
-			/* album is not selected => no need to update track_win */
-		}
-	} else {
-		artist = playlist_add_artist(artist_name);
-		album = artist_add_album(artist, album_name);
-		album_add_track(album, track);
-
-		window_changed(playlist.tree_win);
-		tree_win_changed();
-	}
-
-	shuffle_list_add_track(track, playlist.nr_tracks);
-	window_changed(playlist.shuffle_win);
-	shuffle_win_changed();
-
-	sorted_list_add_track(track);
-	window_changed(playlist.sorted_win);
-	sorted_win_changed();
-
-	if (track->info->duration != -1)
-		playlist.total_time += track->info->duration;
-	playlist.nr_tracks++;
-	status_changed();
-
+	track_info_ref(ti);
+	views_add_track(ti);
 	pl_unlock();
 }
 
