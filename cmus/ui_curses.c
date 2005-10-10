@@ -1332,6 +1332,7 @@ static void display_global_help(WINDOW *w)
 	mvwaddstr(w, row++, col, "3 - show sorted view");
 	mvwaddstr(w, row++, col, "4 - show play queue view");
 	mvwaddstr(w, row++, col, "5 - show directory browser");
+	mvwaddstr(w, row++, col, "6 - show filter view");
 	mvwaddstr(w, row++, col, "up,   k           - move up");
 	mvwaddstr(w, row++, col, "down, j           - move down");
 	mvwaddstr(w, row++, col, "page up,   ctrl-b - move page up");
@@ -1360,15 +1361,14 @@ static void display_misc_help(WINDOW *w)
 	mvwaddstr(w, row++, col, "enter  - play selected track");
 	mvwaddstr(w, row++, col, "space  - show/hide albums");
 	mvwaddstr(w, row++, col, "tab    - switch tree/track windows");
-
-	row = 1;
-	col = 40;
+	row++;
 	mvwaddstr(w, row++, col, "Play Queue Keys");
 	mvwaddstr(w, row++, col, "~~~~~~~~~~~~~~~");
 	row++;
 	mvwaddstr(w, row++, col, "D, del - remove selected track");
-	row++;
-	row++;
+
+	row = 1;
+	col = 40;
 	mvwaddstr(w, row++, col, "Directory Browser Keys");
 	mvwaddstr(w, row++, col, "~~~~~~~~~~~~~~~~~~~~~~");
 	row++;
@@ -1381,6 +1381,13 @@ static void display_misc_help(WINDOW *w)
 	mvwaddstr(w, row++, col, "enter     - cd to dir/playlist");
 	mvwaddstr(w, row++, col, "            or play file");
 	mvwaddstr(w, row++, col, "backspace - cd to parent directory");
+	row++;
+	mvwaddstr(w, row++, col, "Filter View Keys");
+	mvwaddstr(w, row++, col, "~~~~~~~~~~~~~~~~");
+	row++;
+	mvwaddstr(w, row++, col, "D, del - remove selected filter");
+	mvwaddstr(w, row++, col, "space  - select/unselect filter");
+	mvwaddstr(w, row++, col, "enter  - apply selected filters");
 }
 
 static void display_search_mode_help(WINDOW *w)
@@ -1423,6 +1430,7 @@ static void display_command_mode_help(WINDOW *w)
 	mvwaddstr(w, row++, col, ":cd [dir]                  - change directory");
 	mvwaddstr(w, row++, col, ":clear                     - clear playlist");
 	mvwaddstr(w, row++, col, ":enqueue file/dir/playlist - add to play queue");
+	mvwaddstr(w, row++, col, ":fset name=value           - add or replace filter");
 	mvwaddstr(w, row++, col, ":load filename             - load playlist");
 	mvwaddstr(w, row++, col, ":save [filename]           - save playlist");
 	mvwaddstr(w, row++, col, ":seek POS[mh]              - seek to absolute position");
