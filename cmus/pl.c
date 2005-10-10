@@ -2134,17 +2134,21 @@ int pl_for_each_selected(int (*cb)(void *data, struct track_info *ti), void *dat
 	return rc;
 }
 
-/* FIXME: _all_ tracks, not just those that are visible */
 int pl_for_each(int (*cb)(void *data, struct track_info *ti), void *data)
 {
-	struct track *track;
-	int rc = 0;
+	int i, rc = 0;
 
 	pl_lock();
-	list_for_each_entry(track, &playlist.sorted_head, sorted_node) {
-		rc = cb(data, track->info);
-		if (rc)
-			break;
+	for (i = 0; i < FH_SIZE; i++) {
+		struct fh_entry *e;
+
+		e = ti_hash[i];
+		while (e) {
+			rc = cb(data, e->ti);
+			if (rc)
+				break;
+			e = e->next;
+		}
 	}
 	pl_unlock();
 	return rc;
