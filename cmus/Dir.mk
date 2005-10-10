@@ -6,8 +6,11 @@ objs-y := \
 	comment.o \
 	db.o \
 	debug.o \
+	expr.o \
 	file_load.o \
+	filters.o \
 	format_print.o \
+	glob.o \
 	history.o \
 	http.o \
 	input.o \

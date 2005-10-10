@@ -24,6 +24,7 @@
 #include <options.h>
 #include <play_queue.h>
 #include <browser.h>
+#include <filters.h>
 #include <cmus.h>
 #include <player.h>
 #include <utils.h>
@@ -67,7 +68,6 @@
 char *program_name = NULL;
 
 enum ui_curses_input_mode ui_curses_input_mode = NORMAL_MODE;
-int ui_curses_view = TREE_VIEW;
 struct searchable *searchable;
 
 char *playlist_autosave_filename;
@@ -158,6 +158,7 @@ static int show_remaining_time = 0;
 static int update_window_title = 0;
 
 static int running = 1;
+static int ui_curses_view = TREE_VIEW;
 
 /* shown error message and time stamp
  * error is cleared if it is older than 3s and key was pressed
@@ -584,6 +585,26 @@ static void print_browser(struct window *win, int row, struct iter *iter)
 	}
 }
 
+static void print_filter(struct window *win, int row, struct iter *iter)
+{
+	char buf[256];
+	struct filter_entry *e = iter_to_filter_entry(iter);
+	struct iter sel;
+	/* window active? */
+	int active = 1;
+	/* row selected? */
+	int selected;
+	/* is the filter currently active? */
+	int current = e->active;
+
+	window_get_sel(win, &sel);
+	selected = iters_equal(iter, &sel);
+	bkgdset(cursed_colors[(active << 2) | (selected << 1) | current]);
+
+	snprintf(buf, sizeof(buf), "%c %-15s  %s", e->selected ? '*' : ' ', e->name, e->filter);
+	sprint(row + 1, 0, buf, COLS, 0);
+}
+
 static void update_window(struct window *win, int x, int y, int w, const char *title,
 		void (*print)(struct window *, int, struct iter *))
 {
@@ -692,6 +713,12 @@ static void update_browser_window(void)
 	update_window(browser_win, 0, 0, COLS, title, print_browser);
 }
 
+static void update_filters_window(void)
+{
+	filters_changed = 0;
+	update_window(filters_win, 0, 0, COLS, "Filters", print_filter);
+}
+
 static void draw_separator(void)
 {
 	int row;
@@ -730,6 +757,9 @@ static void update_view(void)
 		break;
 	case BROWSER_VIEW:
 		update_browser_window();
+		break;
+	case FILTERS_VIEW:
+		update_filters_window();
 		break;
 	}
 }
@@ -1107,6 +1137,9 @@ void ui_curses_search_not_found(void)
 		case BROWSER_VIEW:
 			what = "File/Directory";
 			break;
+		case FILTERS_VIEW:
+			what = "Filter";
+			break;
 		}
 	} else {
 		switch (ui_curses_view) {
@@ -1118,6 +1151,9 @@ void ui_curses_search_not_found(void)
 			break;
 		case BROWSER_VIEW:
 			what = "File/Directory";
+			break;
+		case FILTERS_VIEW:
+			what = "Filter";
 			break;
 		}
 	}
@@ -1156,6 +1192,10 @@ static void ui_curses_set_view(int view)
 		searchable = browser_searchable;
 		update_browser_window();
 		break;
+	case FILTERS_VIEW:
+		searchable = filters_searchable;
+		update_filters_window();
+		break;
 	}
 	pl_unlock();
 
@@ -1173,6 +1213,13 @@ void ui_curses_update_browser(void)
 {
 	curs_set(0);
 	update_browser_window();
+	post_update();
+}
+
+static void ui_curses_update_filters(void)
+{
+	curs_set(0);
+	update_filters_window();
 	post_update();
 }
 
@@ -1736,6 +1783,9 @@ static int common_ch(uchar ch)
 	case 'a':
 		ui_curses_set_view(BROWSER_VIEW);
 		break;
+	case '6':
+		ui_curses_set_view(FILTERS_VIEW);
+		break;
 	case ':':
 		error_msg[0] = 0;
 		error_time = 0;
@@ -1813,6 +1863,12 @@ static void normal_mode_ch(uchar ch)
 			return;
 		}
 		break;
+	case FILTERS_VIEW:
+		if (filters_ch(ch)) {
+			ui_curses_update_filters();
+			return;
+		}
+		break;
 	}
 	if (common_ch(ch))
 		return;
@@ -1837,6 +1893,12 @@ static void normal_mode_key(int key)
 	case BROWSER_VIEW:
 		if (browser_key(key)) {
 			ui_curses_update_browser();
+			return;
+		}
+		break;
+	case FILTERS_VIEW:
+		if (filters_key(key)) {
+			ui_curses_update_filters();
 			return;
 		}
 		break;
@@ -2177,6 +2239,7 @@ static void ui_curses_start(void)
 				if (h < 8)
 					h = 8;
 				resize_playlist(w, h);
+				window_set_nr_rows(filters_win, h - 1);
 				window_set_nr_rows(browser_win, h - 1);
 				window_set_nr_rows(play_queue_win, h - 1);
 				needs_view_update = 1;
@@ -2229,6 +2292,9 @@ static void ui_curses_start(void)
 			break;
 		case BROWSER_VIEW:
 			needs_view_update += browser_changed;
+			break;
+		case FILTERS_VIEW:
+			needs_view_update += filters_changed;
 			break;
 		}
 		pl_unlock();
@@ -2413,6 +2479,7 @@ static int ui_curses_init(void)
 	get_colors();
 
 	browser_init();
+	filters_init();
 	cmdline_init();
 	/* commands_init must be after player_init */
 	commands_init();
@@ -2464,6 +2531,7 @@ static void ui_curses_exit(void)
 	options_exit();
 	commands_exit();
 	search_mode_exit();
+	filters_exit();
 	browser_exit();
 }
 

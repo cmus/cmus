@@ -32,6 +32,7 @@ enum ui_curses_input_mode {
 /* other views are defined in pl.h */
 #define PLAY_QUEUE_VIEW 3
 #define BROWSER_VIEW    4
+#define FILTERS_VIEW    5
 
 enum {
 	COLOR_ROW,
@@ -55,7 +56,6 @@ enum {
 };
 
 extern enum ui_curses_input_mode ui_curses_input_mode;
-extern int ui_curses_view;
 extern struct searchable *searchable;
 
 /* usually ~/.config/cmus/playlist.pl */

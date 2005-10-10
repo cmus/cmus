@@ -214,157 +214,14 @@ static int tree_get_next(struct iter *iter)
 }
 /* }}} */
 
-/* track window iterators {{{ */
-static int track_get_prev(struct iter *iter)
-{
-	struct list_head *head = iter->data0;
-	struct track *track = iter->data1;
+static GENERIC_ITER_PREV(track_get_prev, struct track, node)
+static GENERIC_ITER_NEXT(track_get_next, struct track, node)
 
-	BUG_ON(iter->data2);
-	if (head == NULL)
-		return 0;
-	if (track == NULL) {
-		/* head, get last track */
-		if (head->prev == head) {
-			/* empty, iter points to the head already */
-			return 0;
-		}
-		iter->data1 = container_of(head->prev, struct track, node);
-		return 1;
-	}
-	if (track->node.prev == head) {
-		iter->data1 = NULL;
-		return 0;
-	}
-	iter->data1 = container_of(track->node.prev, struct track, node);
-	return 1;
-}
+static GENERIC_ITER_PREV(shuffle_get_prev, struct track, shuffle_node)
+static GENERIC_ITER_NEXT(shuffle_get_next, struct track, shuffle_node)
 
-static int track_get_next(struct iter *iter)
-{
-	struct list_head *head = iter->data0;
-	struct track *track = iter->data1;
-
-	BUG_ON(iter->data2);
-	if (head == NULL)
-		return 0;
-	if (track == NULL) {
-		/* head, get first track */
-		if (head->next == head) {
-			/* empty, iter points to the head already */
-			return 0;
-		}
-		iter->data1 = container_of(head->next, struct track, node);
-		return 1;
-	}
-	if (track->node.next == head) {
-		iter->data1 = NULL;
-		return 0;
-	}
-	iter->data1 = container_of(track->node.next, struct track, node);
-	return 1;
-}
-/* }}} */
-
-/* shuffle window iterators {{{ */
-static int shuffle_get_prev(struct iter *iter)
-{
-	struct list_head *head = iter->data0;
-	struct track *track = iter->data1;
-
-	BUG_ON(head == NULL);
-	BUG_ON(iter->data2);
-	if (track == NULL) {
-		/* head, get last track */
-		if (head->prev == head) {
-			/* empty, iter points to the head already */
-			return 0;
-		}
-		iter->data1 = container_of(head->prev, struct track, shuffle_node);
-		return 1;
-	}
-	if (track->shuffle_node.prev == head) {
-		iter->data1 = NULL;
-		return 0;
-	}
-	iter->data1 = container_of(track->shuffle_node.prev, struct track, shuffle_node);
-	return 1;
-}
-
-static int shuffle_get_next(struct iter *iter)
-{
-	struct list_head *head = iter->data0;
-	struct track *track = iter->data1;
-
-	BUG_ON(head == NULL);
-	BUG_ON(iter->data2);
-	if (track == NULL) {
-		/* head, get first track */
-		if (head->next == head) {
-			/* empty, iter points to the head already */
-			return 0;
-		}
-		iter->data1 = container_of(head->next, struct track, shuffle_node);
-		return 1;
-	}
-	if (track->shuffle_node.next == head) {
-		iter->data1 = NULL;
-		return 0;
-	}
-	iter->data1 = container_of(track->shuffle_node.next, struct track, shuffle_node);
-	return 1;
-}
-/* }}} */
-
-/* sorted window iterators {{{ */
-static int sorted_get_prev(struct iter *iter)
-{
-	struct list_head *head = iter->data0;
-	struct track *track = iter->data1;
-
-	BUG_ON(head == NULL);
-	BUG_ON(iter->data2);
-	if (track == NULL) {
-		/* head, get last track */
-		if (head->prev == head) {
-			/* empty, iter points to the head already */
-			return 0;
-		}
-		iter->data1 = container_of(head->prev, struct track, sorted_node);
-		return 1;
-	}
-	if (track->sorted_node.prev == head) {
-		iter->data1 = NULL;
-		return 0;
-	}
-	iter->data1 = container_of(track->sorted_node.prev, struct track, sorted_node);
-	return 1;
-}
-
-static int sorted_get_next(struct iter *iter)
-{
-	struct list_head *head = iter->data0;
-	struct track *track = iter->data1;
-
-	BUG_ON(head == NULL);
-	BUG_ON(iter->data2);
-	if (track == NULL) {
-		/* head, get first track */
-		if (head->next == head) {
-			/* empty, iter points to the head already */
-			return 0;
-		}
-		iter->data1 = container_of(head->next, struct track, sorted_node);
-		return 1;
-	}
-	if (track->sorted_node.next == head) {
-		iter->data1 = NULL;
-		return 0;
-	}
-	iter->data1 = container_of(track->sorted_node.next, struct track, sorted_node);
-	return 1;
-}
-/* }}} */
+static GENERIC_ITER_PREV(sorted_get_prev, struct track, sorted_node)
+static GENERIC_ITER_NEXT(sorted_get_next, struct track, sorted_node)
 
 static inline void tree_search_track_to_iter(struct track *track, struct iter *iter)
 {
@@ -676,7 +533,8 @@ static void album_free(struct album *album)
 static void track_free(struct track *track)
 {
 	free(track->name);
-	track_info_unref(track->info);
+	/* don't unref track->info, it is still in the track info store */
+/* 	track_info_unref(track->info); */
 	free(track);
 }
 
@@ -892,11 +750,19 @@ static void views_add_track(struct track_info *ti)
 
 struct fh_entry {
 	struct fh_entry *next;
-	const char *filename;
+/* 	const char *filename; */
+
+	/* ref count is increased when added to this hash
+	 *
+	 * playlist itself doesn't increment ref count for tracks it
+	 * contains because when track is in the playlist views it is in
+	 * this hash too
+	 */
+	struct track_info *ti;
 };
 
 #define FH_SIZE (1024)
-static struct fh_entry *filename_hash[FH_SIZE] = { NULL, };
+static struct fh_entry *ti_hash[FH_SIZE] = { NULL, };
 
 /* this is from glib */
 static unsigned int str_hash(const char *str)
@@ -909,16 +775,17 @@ static unsigned int str_hash(const char *str)
 	return hash;
 }
 
-static int filename_hash_insert(const char *filename)
+static int hash_insert(struct track_info *ti)
 {
+	const char *filename = ti->filename;
 	unsigned int pos = str_hash(filename) % FH_SIZE;
 	struct fh_entry **entryp;
 	struct fh_entry *e;
 
-	entryp = &filename_hash[pos];
+	entryp = &ti_hash[pos];
 	e = *entryp;
 	while (e) {
-		if (strcmp(e->filename, filename) == 0) {
+		if (strcmp(e->ti->filename, filename) == 0) {
 			/* found, don't insert */
 			return 0;
 		}
@@ -926,24 +793,27 @@ static int filename_hash_insert(const char *filename)
 	}
 
 	e = xnew(struct fh_entry, 1);
-	e->filename = filename;
+	track_info_ref(ti);
+	e->ti = ti;
 	e->next = *entryp;
 	*entryp = e;
 	return 1;
 }
 
-static void filename_hash_remove(const char *filename)
+static void hash_remove(struct track_info *ti)
 {
+	const char *filename = ti->filename;
 	unsigned int pos = str_hash(filename) % FH_SIZE;
 	struct fh_entry **entryp;
 
-	entryp = &filename_hash[pos];
+	entryp = &ti_hash[pos];
 	while (1) {
 		struct fh_entry *e = *entryp;
 
 		BUG_ON(e == NULL);
-		if (strcmp(e->filename, filename) == 0) {
+		if (strcmp(e->ti->filename, filename) == 0) {
 			*entryp = e->next;
+			track_info_unref(e->ti);
 			free(e);
 			break;
 		}
@@ -954,13 +824,13 @@ static void filename_hash_remove(const char *filename)
 void pl_add_track(struct track_info *ti)
 {
 	pl_lock();
-	if (!filename_hash_insert(ti->filename)) {
+	if (!hash_insert(ti)) {
 		/* duplicate files not allowed */
 		pl_unlock();
 		return;
 	}
-	track_info_ref(ti);
-	views_add_track(ti);
+	if (playlist.filter == NULL || expr_eval(playlist.filter, ti))
+		views_add_track(ti);
 	pl_unlock();
 }
 
@@ -1017,7 +887,7 @@ static void __pl_remove_artist(struct artist *artist)
 	list_del(&artist->node);
 }
 
-static void remove_and_free_track(struct track *track)
+static void remove_track(struct track *track)
 {
 	struct album *album = track->album;
 	struct artist *sel_artist;
@@ -1027,7 +897,6 @@ static void remove_and_free_track(struct track *track)
 
 	tree_win_get_selected(&sel_artist, &sel_album);
 
-	filename_hash_remove(track->info->filename);
 	__shuffle_list_remove_track(track);
 	__sorted_list_remove_track(track);
 	__album_remove_track(track);
@@ -1076,6 +945,17 @@ static void remove_and_free_track(struct track *track)
 			}
 		}
 	}
+}
+
+/* remove track from views and hash table and then free the track */
+static void remove_and_free_track(struct track *track)
+{
+	struct track_info *ti = track->info;
+
+	/* frees track */
+	remove_track(track);
+	/* frees ti (if ref count falls to zero) */
+	hash_remove(ti);
 }
 
 static void remove_sel_artist(struct artist *artist)
@@ -1175,6 +1055,67 @@ static void sorted_win_remove_sel(void)
 		BUG_ON(track == NULL);
 		remove_and_free_track(track);
 		all_wins_changed();
+	}
+}
+
+static void clear_views(void)
+{
+	struct list_head *item, *head;
+
+	head = &playlist.artist_head;
+	item = head->next;
+	while (item != head) {
+		struct list_head *next = item->next;
+		struct artist *artist;
+		struct list_head *aitem, *ahead;
+
+		artist = list_entry(item, struct artist, node);
+
+		ahead = &artist->album_head;
+		aitem = ahead->next;
+		while (aitem != ahead) {
+			struct list_head *anext = aitem->next;
+			struct album *album;
+			struct list_head *titem, *thead;
+
+			album = list_entry(aitem, struct album, node);
+
+			thead = &album->track_head;
+			titem = thead->next;
+			while (titem != thead) {
+				struct list_head *tnext = titem->next;
+				struct track *track;
+
+				track = list_entry(titem, struct track, node);
+/* 				remove_and_free_track(track); */
+				remove_track(track);
+				titem = tnext;
+			}
+
+			aitem = anext;
+		}
+
+		item = next;
+	}
+	all_wins_changed();
+	status_changed();
+}
+
+static void clear_store(void)
+{
+	int i;
+
+	for (i = 0; i < FH_SIZE; i++) {
+		struct fh_entry *e, *next;
+
+		e = ti_hash[i];
+		while (e) {
+			next = e->next;
+			track_info_unref(e->ti);
+			free(e);
+			e = next;
+		}
+		ti_hash[i] = NULL;
 	}
 }
 
@@ -1493,6 +1434,8 @@ int pl_init(void)
 	playlist.sort_keys = xnew(char *, 1);
 	playlist.sort_keys[0] = NULL;
 
+	playlist.filter = NULL;
+
 	playlist.tree_win = window_new(tree_get_prev, tree_get_next);
 	playlist.track_win = window_new(track_get_prev, track_get_next);
 	playlist.shuffle_win = window_new(shuffle_get_prev, shuffle_get_next);
@@ -1693,45 +1636,35 @@ void pl_set_sort_keys(char **keys)
 
 void pl_clear(void)
 {
-	struct list_head *item, *head;
+	pl_lock();
+	clear_views();
+	clear_store();
+	pl_unlock();
+}
+
+void pl_set_filter(struct expr *filter)
+{
+	int i;
 
 	pl_lock();
-	head = &playlist.artist_head;
-	item = head->next;
-	while (item != head) {
-		struct list_head *next = item->next;
-		struct artist *artist;
-		struct list_head *aitem, *ahead;
+	clear_views();
 
-		artist = list_entry(item, struct artist, node);
+	if (playlist.filter)
+		expr_free(playlist.filter);
+	playlist.filter = filter;
 
-		ahead = &artist->album_head;
-		aitem = ahead->next;
-		while (aitem != ahead) {
-			struct list_head *anext = aitem->next;
-			struct album *album;
-			struct list_head *titem, *thead;
+	for (i = 0; i < FH_SIZE; i++) {
+		struct fh_entry *e;
 
-			album = list_entry(aitem, struct album, node);
+		e = ti_hash[i];
+		while (e) {
+			struct track_info *ti = e->ti;
 
-			thead = &album->track_head;
-			titem = thead->next;
-			while (titem != thead) {
-				struct list_head *tnext = titem->next;
-				struct track *track;
-
-				track = list_entry(titem, struct track, node);
-				remove_and_free_track(track);
-				titem = tnext;
-			}
-
-			aitem = anext;
+			if (filter == NULL || expr_eval(filter, ti))
+				views_add_track(ti);
+			e = e->next;
 		}
-
-		item = next;
 	}
-	all_wins_changed();
-	status_changed();
 	pl_unlock();
 }
 
@@ -1744,6 +1677,8 @@ void pl_remove(struct track_info *ti)
 	struct track *track;
 
 	pl_lock();
+	hash_remove(ti);
+
 	artist_name = comments_get_val(ti->comments, "artist");
 	album_name = comments_get_val(ti->comments, "album");
 	find_artist_and_album(artist_name, album_name, &artist, &album);
@@ -1755,7 +1690,8 @@ void pl_remove(struct track_info *ti)
 	list_for_each_entry(track, &album->track_head, node) {
 		if (ti == track->info) {
 			d_print("removing %s\n", ti->filename);
-			remove_and_free_track(track);
+			/* remove only from the views */
+			remove_track(track);
 			break;
 		}
 	}
@@ -2198,6 +2134,7 @@ int pl_for_each_selected(int (*cb)(void *data, struct track_info *ti), void *dat
 	return rc;
 }
 
+/* FIXME: _all_ tracks, not just those that are visible */
 int pl_for_each(int (*cb)(void *data, struct track_info *ti), void *data)
 {
 	struct track *track;

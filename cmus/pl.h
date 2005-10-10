@@ -25,6 +25,7 @@
 #include <window.h>
 #include <search.h>
 #include <track_info.h>
+#include <expr.h>
 #include <locking.h>
 #include <debug.h>
 
@@ -105,6 +106,8 @@ struct playlist {
 	/* for sorted window */
 	char **sort_keys;
 
+	struct expr *filter;
+
 	struct window *tree_win;
 	struct window *track_win;
 	struct window *shuffle_win;
@@ -144,6 +147,7 @@ extern void pl_add_track(struct track_info *track_info);
 
 extern void pl_set_sort_keys(char **keys);
 extern void pl_clear(void);
+extern void pl_set_filter(struct expr *expr);
 extern void pl_remove(struct track_info *ti);
 extern void pl_remove_sel(void);
 extern void pl_toggle_expand_artist(void);
