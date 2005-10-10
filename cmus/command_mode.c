@@ -311,6 +311,13 @@ static void load_matching_commands(struct tabexp *tabexp, const char *str)
 			tails[pos++] = xstrdup(commands[i].name + len);
 	}
 	if (pos > 0) {
+		if (pos == 1) {
+			/* only one command matches, add ' ' */
+			char *tmp = xstrjoin(tails[0], " ");
+
+			free(tails[0]);
+			tails[0] = tmp;
+		}
 		tails[pos] = NULL;
 		tabexp->head = xstrdup(str);
 		tabexp->tails = tails;
