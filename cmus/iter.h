@@ -70,4 +70,56 @@ static inline int iter_is_empty(struct iter *iter)
 	return iter->data0 == NULL || (iter->data1 == NULL && iter->data2 == NULL);
 }
 
+#define GENERIC_ITER_PREV(FUNC, TYPE, MEMBER)				\
+int FUNC(struct iter *iter)						\
+{									\
+	struct list_head *head = iter->data0;				\
+	TYPE *e = iter->data1;						\
+									\
+	BUG_ON(iter->data2);						\
+	if (head == NULL)						\
+		return 0;						\
+	if (e == NULL) {						\
+		/* head, get last */					\
+		if (head->prev == head) {				\
+			/* empty, iter points to the head already */	\
+			return 0;					\
+		}							\
+		iter->data1 = container_of(head->prev, TYPE, MEMBER);	\
+		return 1;						\
+	}								\
+	if (e->MEMBER.prev == head) {					\
+		iter->data1 = NULL;					\
+		return 0;						\
+	}								\
+	iter->data1 = container_of(e->MEMBER.prev, TYPE, MEMBER);	\
+	return 1;							\
+}
+
+#define GENERIC_ITER_NEXT(FUNC, TYPE, MEMBER)				\
+int FUNC(struct iter *iter)						\
+{									\
+	struct list_head *head = iter->data0;				\
+	TYPE *e = iter->data1;						\
+									\
+	BUG_ON(iter->data2);						\
+	if (head == NULL)						\
+		return 0;						\
+	if (e == NULL) {						\
+		/* head, get first */					\
+		if (head->next == head) {				\
+			/* empty, iter points to the head already */	\
+			return 0;					\
+		}							\
+		iter->data1 = container_of(head->next, TYPE, MEMBER);	\
+		return 1;						\
+	}								\
+	if (e->MEMBER.next == head) {					\
+		iter->data1 = NULL;					\
+		return 0;						\
+	}								\
+	iter->data1 = container_of(e->MEMBER.next, TYPE, MEMBER);	\
+	return 1;							\
+}
+
 #endif

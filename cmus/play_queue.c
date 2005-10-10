@@ -41,53 +41,8 @@ static inline void play_queue_entry_to_iter(struct play_queue_entry *e, struct i
 	iter->data2 = NULL;
 }
 
-static int play_queue_get_prev(struct iter *iter)
-{
-	struct list_head *head = iter->data0;
-	struct play_queue_entry *e = iter->data1;
-
-	BUG_ON(iter->data0 == NULL);
-	BUG_ON(iter->data2);
-	if (e == NULL) {
-		/* head, get last */
-		if (head->prev == head) {
-			/* empty, iter points to the head already */
-			return 0;
-		}
-		iter->data1 = container_of(head->prev, struct play_queue_entry, node);
-		return 1;
-	}
-	if (e->node.prev == head) {
-		iter->data1 = NULL;
-		return 0;
-	}
-	iter->data1 = container_of(e->node.prev, struct play_queue_entry, node);
-	return 1;
-}
-
-static int play_queue_get_next(struct iter *iter)
-{
-	struct list_head *head = iter->data0;
-	struct play_queue_entry *e = iter->data1;
-
-	BUG_ON(iter->data0 == NULL);
-	BUG_ON(iter->data2);
-	if (e == NULL) {
-		/* head, get first */
-		if (head->next == head) {
-			/* empty, iter points to the head already */
-			return 0;
-		}
-		iter->data1 = container_of(head->next, struct play_queue_entry, node);
-		return 1;
-	}
-	if (e->node.next == head) {
-		iter->data1 = NULL;
-		return 0;
-	}
-	iter->data1 = container_of(e->node.next, struct play_queue_entry, node);
-	return 1;
-}
+static GENERIC_ITER_PREV(play_queue_get_prev, struct play_queue_entry, node)
+static GENERIC_ITER_NEXT(play_queue_get_next, struct play_queue_entry, node)
 
 static void play_queue_search_lock(void *data)
 {

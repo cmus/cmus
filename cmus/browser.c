@@ -214,53 +214,8 @@ static int browser_load(const char *name)
 	return 0;
 }
 
-static int browser_get_prev(struct iter *iter)
-{
-	struct list_head *head = iter->data0;
-	struct browser_entry *e = iter->data1;
-
-	BUG_ON(iter->data0 == NULL);
-	BUG_ON(iter->data2);
-	if (e == NULL) {
-		/* head, get last */
-		if (head->prev == head) {
-			/* empty, iter points to the head already */
-			return 0;
-		}
-		iter->data1 = container_of(head->prev, struct browser_entry, node);
-		return 1;
-	}
-	if (e->node.prev == head) {
-		iter->data1 = NULL;
-		return 0;
-	}
-	iter->data1 = container_of(e->node.prev, struct browser_entry, node);
-	return 1;
-}
-
-static int browser_get_next(struct iter *iter)
-{
-	struct list_head *head = iter->data0;
-	struct browser_entry *e = iter->data1;
-
-	BUG_ON(iter->data0 == NULL);
-	BUG_ON(iter->data2);
-	if (e == NULL) {
-		/* head, get first */
-		if (head->next == head) {
-			/* empty, iter points to the head already */
-			return 0;
-		}
-		iter->data1 = container_of(head->next, struct browser_entry, node);
-		return 1;
-	}
-	if (e->node.next == head) {
-		iter->data1 = NULL;
-		return 0;
-	}
-	iter->data1 = container_of(e->node.next, struct browser_entry, node);
-	return 1;
-}
+static GENERIC_ITER_PREV(browser_get_prev, struct browser_entry, node)
+static GENERIC_ITER_NEXT(browser_get_next, struct browser_entry, node)
 
 static void dummy(void *data)
 {
