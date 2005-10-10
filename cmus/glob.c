@@ -7,6 +7,8 @@
 #include <list.h>
 #include <xmalloc.h>
 
+#include <string.h>
+
 struct glob_item {
 	struct list_head node;
 	enum {
@@ -179,7 +181,8 @@ static int do_glob_match(struct list_head *head, struct list_head *first, const 
 		ritem = container_of(item, struct glob_item, node);
 		if (ritem->type == GLOB_TEXT) {
 			int len = strlen(ritem->text);
-			if (strncmp(ritem->text, text, len))
+			/* FIXME: UTF-8 */
+			if (strncasecmp(ritem->text, text, len))
 				return 0;
 			text += len;
 		} else if (ritem->type == GLOB_QMARK) {

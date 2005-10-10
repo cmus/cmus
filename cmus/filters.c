@@ -146,6 +146,7 @@ static void set_filters(void)
 		} else {
 			ui_curses_display_error_msg("error parsing filter: %s", expr_error());
 		}
+		expr_free(expr);
 		return;
 	}
 

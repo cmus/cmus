@@ -16,7 +16,6 @@
 #include <ctype.h>
 #include <stdarg.h>
 
-/* #define DEBUG_TOKENS */
 /* #define DEBUG_EXPR */
 
 enum token_type {
