@@ -149,13 +149,11 @@ static void set_filters(void)
 		return;
 	}
 
-	/* update active/selected flags */
+	/* update active flag */
 	list_for_each_entry(f, &filters_head, node) {
 		f->active = 0;
-		if (f->selected) {
-			f->selected = 0;
+		if (f->selected)
 			f->active = 1;
-		}
 	}
 	pl_set_filter(expr);
 }
@@ -186,9 +184,99 @@ static void delete_filter(void)
 	}
 }
 
+static int validate_filter_name(const char *name)
+{
+	int i;
+
+	for (i = 0; name[i]; i++) {
+		if (isalnum(name[i]))
+			continue;
+		if (name[i] == '_' || name[i] == '-')
+			continue;
+		return 0;
+	}
+	return i != 0;
+}
+
+static void do_filters_set_filter(const char *keyval, int active)
+{
+	const char *eq = strchr(keyval, '=');
+	char *key, *val;
+	struct expr *expr;
+	struct filter_entry *new;
+	struct list_head *item;
+
+	if (eq == NULL) {
+		if (interactive)
+			ui_curses_display_error_msg("invalid argument ('key=value' expected)");
+		return;
+	}
+	key = xstrndup(keyval, eq - keyval);
+	val = xstrdup(eq + 1);
+	if (!validate_filter_name(key)) {
+		if (interactive)
+			ui_curses_display_error_msg("invalid filter name (can only contain 'a-zA-Z0-9_-' characters)");
+		free(key);
+		free(val);
+		return;
+	}
+	expr = expr_parse(val);
+	if (expr == NULL) {
+		if (interactive)
+			ui_curses_display_error_msg("error parsing filter %s: %s", val, expr_error());
+		free(key);
+		free(val);
+		return;
+	}
+	expr_free(expr);
+
+	new = xnew(struct filter_entry, 1);
+	new->name = key;
+	new->filter = val;
+	new->active = active;
+	new->selected = active;
+
+	/* add or replace filter */
+	list_for_each(item, &filters_head) {
+		struct filter_entry *e = container_of(item, struct filter_entry, node);
+		int res = strcmp(key, e->name);
+
+		if (res < 0)
+			break;
+		if (res == 0) {
+			/* replace */
+			struct iter iter;
+
+			if (interactive) {
+				filter_entry_to_iter(e, &iter);
+				window_row_vanishes(filters_win, &iter);
+			}
+			item = item->next;
+			list_del(&e->node);
+			free_filter(e);
+			break;
+		}
+	}
+	/* add before item */
+	list_add_tail(&new->node, item);
+	if (interactive) {
+		window_changed(filters_win);
+		filters_changed = 1;
+	}
+}
+
 static void handle_line(void *data, const char *line)
 {
-	filters_set_filter(line);
+	char ch = line[0];
+	int active = 0;
+
+	if (ch == '*') {
+		active = 1;
+	} else if (ch != ' ') {
+		/* currupt */
+		return;
+	}
+	do_filters_set_filter(line + 1, active);
 }
 
 void filters_init(void)
@@ -226,92 +314,16 @@ void filters_exit(void)
 		struct list_head *next = item->next;
 		struct filter_entry *e = container_of(item, struct filter_entry, node);
 
-		fprintf(f, "%s=%s\n", e->name, e->filter);
+		fprintf(f, "%c%s=%s\n", e->active ? '*' : ' ', e->name, e->filter);
 		free_filter(e);
 		item = next;
 	}
 	fclose(f);
 }
 
-static int validate_filter_name(const char *name)
-{
-	int i;
-
-	for (i = 0; name[i]; i++) {
-		if (isalnum(name[i]))
-			continue;
-		if (name[i] == '_' || name[i] == '-')
-			continue;
-		return 0;
-	}
-	return i != 0;
-}
-
 void filters_set_filter(const char *keyval)
 {
-	const char *eq = strchr(keyval, '=');
-	char *key, *val;
-	struct expr *expr;
-	struct filter_entry *new;
-	struct list_head *item;
-
-	if (eq == NULL) {
-		if (interactive)
-			ui_curses_display_error_msg("invalid argument ('key=value' expected)");
-		return;
-	}
-	key = xstrndup(keyval, eq - keyval);
-	val = xstrdup(eq + 1);
-	if (!validate_filter_name(key)) {
-		if (interactive)
-			ui_curses_display_error_msg("invalid filter name (can only contain 'a-zA-Z0-9_-' characters)");
-		free(key);
-		free(val);
-		return;
-	}
-	expr = expr_parse(val);
-	if (expr == NULL) {
-		if (interactive)
-			ui_curses_display_error_msg("error parsing filter %s: %s", val, expr_error());
-		free(key);
-		free(val);
-		return;
-	}
-	expr_free(expr);
-
-	new = xnew(struct filter_entry, 1);
-	new->name = key;
-	new->filter = val;
-	new->active = 0;
-	new->selected = 0;
-
-	/* add or replace filter */
-	list_for_each(item, &filters_head) {
-		struct filter_entry *e = container_of(item, struct filter_entry, node);
-		int res = strcmp(key, e->name);
-
-		if (res < 0)
-			break;
-		if (res == 0) {
-			/* replace */
-			struct iter iter;
-
-			if (interactive) {
-				filter_entry_to_iter(e, &iter);
-				window_row_vanishes(filters_win, &iter);
-			}
-			item = item->next;
-			list_del(&e->node);
-			free_filter(e);
-			break;
-		}
-	}
-	/* add before item */
-	list_add_tail(&new->node, item);
-	if (interactive) {
-		window_changed(filters_win);
-		filters_changed = 1;
-	}
+	do_filters_set_filter(keyval, 0);
 }
 
 int filters_ch(uchar ch)
