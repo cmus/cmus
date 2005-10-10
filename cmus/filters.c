@@ -298,6 +298,8 @@ void filters_init(void)
 
 	/* now we can display error messages on the command line */
 	interactive = 1;
+
+	set_filters();
 }
 
 void filters_exit(void)
