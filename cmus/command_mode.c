@@ -24,6 +24,7 @@
 #include <tabexp.h>
 #include <tabexp_file.h>
 #include <browser.h>
+#include <filters.h>
 #include <player.h>
 #include <pl.h>
 #include <cmus.h>
@@ -174,6 +175,11 @@ static void cmd_seek(char *arg)
 	player_seek(seek, seek_mode);
 }
 
+static void cmd_fset(char *arg)
+{
+	filters_set_filter(arg);
+}
+
 static void cmd_add(char *arg)
 {
 	char *name;
@@ -276,6 +282,7 @@ static struct command commands[] = {
 	{ "cd",         cmd_cd,         0, 1, TE_DIR },
 	{ "clear",      cmd_clear,      0, 0, TE_NONE },
 	{ "enqueue",    cmd_enqueue,    1, 1, TE_FILEDIR },
+	{ "fset",       cmd_fset,       1, 1, TE_NONE },
 	{ "load",       cmd_load,       1, 1, TE_FILEDIR },
 	{ "save",       cmd_save,       0, 1, TE_FILEDIR },
 	{ "seek",       cmd_seek,       1, 1, TE_NONE },
