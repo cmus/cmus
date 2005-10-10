@@ -21,13 +21,14 @@ See ``cmus-remote --help`` for more information.
 Views
 =====
 
-There are 5 views in cmus:
+There are 6 views in cmus:
 
 * Artist/Album/Track Tree View (1)
 * Shuffle List (2)
 * Sorted List (3)
 * Play Queue (4)
 * Directory Browser (5)
+* Filter View (6)
 
 To switch between the views use keys '1' - '5'. Views 1-3 display current
 playlist.  View 3 can be sorted (see sort_ option).
@@ -40,10 +41,12 @@ View 5 allows you to browse filesystem, add tracks to playlist, enqueue
 tracks, delete files and even play tracks directly from the browser.  You can
 also 'cd' into a playlist.
 
+View 6 displays user defined `Playlist Filters`_.
+
 Normal Mode
 ==========================
 
-Global Keys (Views 1-5)
+Global Keys (Views 1-6)
 --------------------------
 
 =================  ===========
@@ -123,6 +126,17 @@ enter      cd to selected directory/playlist or play selected file
 backspace  cd to parent directory
 =========  ===========
 
+Filter View Keys (View 6)
+-------------------------
+
+=======  ===========
+Key      Description
+=======  ===========
+del, D   remove selected filter
+space    select/unselect filter
+enter    apply selected filters
+=======  ===========
+
 Command Mode
 ==========================
 
@@ -132,7 +146,7 @@ options. There's command history too (up/down arrow keys). Press 'ESC' to
 leave command mode and return to `Normal Mode`_.
 
 You don't have to type whole command name if it is unambiguous.  For example
-``:a somefile.mp3``.
+``:a some-file.mp3``.
 
 Commands
 --------------------------
@@ -142,15 +156,16 @@ Use the ``:set`` command to set options.
 ===============================  ===========
 Command                          Description
 ===============================  ===========
-:load filename                   Clear playlist and then load a new one. Simple one track/line lists and .pls playlists are supported.
-:save [filename]                 Save playlist.  Default filename is the last used one.
 :add dir/file/playlist/url       Add dir/file/playlist/url to playlist. This command can be used to join playlists.
 :cd [directory]                  Change directory.  Default directory is ``$HOME``.
 :clear                           Clear playlist.
 :enqueue\ dir/file/playlist/url  Add dir/file/playlist/url to the play queue.
-:shuffle                         Reshuffle playlist.
+:fset name=value                 Add or replace filter
+:load filename                   Clear playlist and then load a new one. Simple one track/line lists and .pls playlists are supported.
+:save [filename]                 Save playlist.  Default filename is the last used one.
 :seek [+-]POS                    Seek top POS (seconds). POS can be suffixed with 'm' (minutes) or 'h' (hours).
 :set OPTION=VALUE                Set option (See Options_).
+:shuffle                         Reshuffle playlist.
 ===============================  ===========
 
 Options
@@ -257,6 +272,68 @@ to playlist use ``:add`` command or ``cmus-remote``.
 ::
 
 	:add http://example.com/path/to/stream
+
+_`Playlist Filters`
+===================
+
+
+Add filters using ``:fset`` command, select filters with `space` and then
+apply selected filters by pressing `enter`.  Only tracks matching the
+activated filters will be shown in the playlist (views 1-3).  Filters do not
+change the actual playlist content, i.e.  ``:save`` command will still save
+all tracks to playlist file whether they are visible or not.
+
+========  =======  ===========
+Filter    Type     Description
+========  =======  ===========
+filename  string
+artist    string
+album     string
+title     string
+genre     string   music genre
+date      integer  year
+duration  integer  seconds
+stream    boolean  true if track is a stream
+tag       boolean  true if track has tags
+========  =======  ===========
+
+Strings are case insensitive. ``?`` matches exactly one character and ``*``
+zero or more characters.  To match literal '?' or '*' you need to escape it
+with backslash ('\\?' and '\\*', to get literal backslash use '\\\\').
+
+Integers are non-zero and -1 means the value is not set.  For example
+``date=-1`` tests if date is not set.
+
+========  ===========
+Type      Comparators
+========  ===========
+boolean   none (filter name itself has value true or false)
+integer   <, <=, =, >=, >, !=
+string    =, != 
+========  ===========
+
+Filters are separated with ``&`` (and) or ``|`` (or). Parenthesis can be used
+to group expressions and ``!`` (not) inverts expression value.
+
+Filter names are case sensitive and can contain only these characters:
+``a-zA-Z0-9_-``
+
+Examples
+--------
+
+::
+
+	:fset ogg=filename="*.ogg"
+
+	# use the filter above, user defined filters are like booleans
+	:fset ogg-rock=ogg&genre="*rock*"
+
+	# not 80s music unless artist is Iron Maiden
+	:fset foo=!(date>=1980&date<1990)|artist="iron maiden"
+
+	# regular files, not streams
+	:fset files=!stream
+
 
 Status Display
 ==========================
@@ -376,6 +453,9 @@ Files
 
 ~/.config/cmus/config
   configuration options
+
+~/.config/cmus/filters
+  playlist filters
 
 ~/.config/cmus/playlist.pl
   automatically saved playlist
