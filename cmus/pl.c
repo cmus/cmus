@@ -533,9 +533,8 @@ static void album_free(struct album *album)
 
 static void track_free(struct track *track)
 {
-	free(track->name);
 	/* don't unref track->info, it is still in the track info store */
-/* 	track_info_unref(track->info); */
+	free(track->name);
 	free(track);
 }
 
@@ -684,12 +683,8 @@ static void album_add_track(struct album *album, struct track *track)
 	list_add_tail(&track->node, item);
 }
 
-/* add track to views 1-3 */
-static void views_add_track(struct track_info *ti)
+static struct track *track_new(struct track_info *ti)
 {
-	const char *album_name, *artist_name;
-	struct artist *artist;
-	struct album *album;
 	struct track *track;
 
 	track = xnew(struct track, 1);
@@ -698,6 +693,16 @@ static void views_add_track(struct track_info *ti)
 	track->url = is_url(ti->filename);
 	track->disc = comments_get_int(ti->comments, "discnumber");
 	track->num = comments_get_int(ti->comments, "tracknumber");
+	return track;
+}
+
+/* add track to view 1 */
+static void tree_add_track(struct track *track)
+{
+	const struct track_info *ti = track->info;
+	const char *album_name, *artist_name;
+	struct artist *artist;
+	struct album *album;
 
 	album_name = comments_get_val(ti->comments, "album");
 	artist_name = comments_get_val(ti->comments, "artist");
@@ -735,6 +740,16 @@ static void views_add_track(struct track_info *ti)
 		window_changed(playlist.tree_win);
 		tree_win_changed();
 	}
+}
+
+/* add track to views 1-3 */
+static void views_add_track(struct track_info *ti)
+{
+	struct track *track;
+
+	track = track_new(ti);
+
+	tree_add_track(track);
 
 	shuffle_list_add_track(track, playlist.nr_tracks);
 	window_changed(playlist.shuffle_win);
@@ -750,9 +765,45 @@ static void views_add_track(struct track_info *ti)
 	status_changed();
 }
 
+/* add track to views 1-3 lazily
+ * call views_update() after all tracks added */
+static void views_add_track_lazy(struct track_info *ti)
+{
+	struct track *track;
+
+	track = track_new(ti);
+
+	tree_add_track(track);
+	shuffle_list_add_track(track, playlist.nr_tracks);
+	list_add(&track->sorted_node, &playlist.sorted_head);
+
+	if (track->info->duration != -1)
+		playlist.total_time += track->info->duration;
+	playlist.nr_tracks++;
+}
+
+/* call this after adding tracks using views_add_track_lazy() */
+static void views_update(void)
+{
+	sort_sorted_list();
+
+	if (playlist.cur_win == TRACK_WIN)
+		playlist.cur_win = TREE_WIN;
+	window_goto_top(playlist.tree_win);
+	window_set_empty(playlist.track_win);
+
+	window_changed(playlist.shuffle_win);
+	window_changed(playlist.sorted_win);
+
+	window_goto_top(playlist.shuffle_win);
+	window_goto_top(playlist.sorted_win);
+
+	all_wins_changed();
+	status_changed();
+}
+
 struct fh_entry {
 	struct fh_entry *next;
-/* 	const char *filename; */
 
 	/* ref count is increased when added to this hash
 	 *
@@ -1089,7 +1140,6 @@ static void clear_views(void)
 				struct track *track;
 
 				track = list_entry(titem, struct track, node);
-/* 				remove_and_free_track(track); */
 				remove_track(track);
 				titem = tnext;
 			}
@@ -1646,9 +1696,17 @@ void pl_clear(void)
 
 void pl_set_filter(struct expr *filter)
 {
+	struct track_info *cur_ti = NULL;
 	int i;
 
 	pl_lock();
+
+	/* try to save cur_track */
+	if (playlist.cur_track) {
+		cur_ti = playlist.cur_track->info;
+		track_info_ref(cur_ti);
+	}
+
 	clear_views();
 
 	if (playlist.filter)
@@ -1663,10 +1721,27 @@ void pl_set_filter(struct expr *filter)
 			struct track_info *ti = e->ti;
 
 			if (filter == NULL || expr_eval(filter, ti))
-				views_add_track(ti);
+				views_add_track_lazy(ti);
 			e = e->next;
 		}
 	}
+	views_update();
+
+	/* restore cur_track */
+	if (cur_ti) {
+		struct track *track;
+
+		list_for_each_entry(track, &playlist.sorted_head, sorted_node) {
+			if (strcmp(track->info->filename, cur_ti->filename) == 0) {
+				playlist.cur_track = track;
+				playlist.cur_album = track->album;
+				playlist.cur_artist = track->album->artist;
+				break;
+			}
+		}
+		track_info_unref(cur_ti);
+	}
+
 	pl_unlock();
 }
 
