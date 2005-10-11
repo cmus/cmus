@@ -454,7 +454,7 @@ static int xstrcasecmp(const char *a, const char *b)
 	} else if (b == NULL) {
 		return 1;
 	}
-	return strcasecmp(a, b);
+	return u_strcasecmp(a, b);
 }
 
 static inline int album_selected(struct album *album)
@@ -500,6 +500,7 @@ static int sorted_view_cmp(const struct list_head *a_head, const struct list_hea
 				break;
 		}
 		if (strcmp(key, "filename") == 0) {
+			/* NOTE: filenames are not necessarily UTF-8 */
 			res = strcasecmp(a->info->filename, b->info->filename);
 			if (res)
 				break;
@@ -665,6 +666,7 @@ static void album_add_track(struct album *album, struct track *track)
 		if (track->disc == t->disc) {
 			if (track->num == -1 || t->num == -1) {
 				/* can't sort by track number => sort by filename */
+				/* NOTE: filenames are not necessarily UTF-8 */
 				if (strcasecmp(track->info->filename, t->info->filename) < 0)
 					break;
 			} else {
