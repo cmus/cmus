@@ -20,6 +20,8 @@
 #include <uchar.h>
 
 #include <stdlib.h>
+#include <string.h>
+#include <wctype.h>
 
 /*
  * Byte Sequence                                             Min       Min        Max
@@ -90,9 +92,12 @@ int u_is_valid(const char *str)
 
 		if (len > 1) {
 			/* len - 1 10xxxxxx bytes */
-			int c = len - 1;
-			uchar u = ch & first_byte_mask[len];
+			uchar u;
+			int c;
 
+			len--;
+			u = ch & first_byte_mask[len];
+			c = len;
 			do {
 				ch = s[i++];
 				if (len_tab[ch] != 0)
@@ -292,31 +297,74 @@ int u_skip_chars(const char *str, int *width)
 	return idx;
 }
 
-// FIXME
-#include <ctype.h>
-static inline int chcasecmp(char a, char b)
+static inline int chcasecmp(int a, int b)
 {
-	return toupper(a) - toupper(b);
+	return towupper(a) - towupper(b);
+}
+
+int u_strcasecmp(const char *a, const char *b)
+{
+	int ai = 0;
+	int bi = 0;
+	int res;
+
+	do {
+		uchar au, bu;
+
+		u_get_char(a, &ai, &au);
+		u_get_char(b, &bi, &bu);
+		res = chcasecmp(au, bu);
+		if (res)
+			break;
+		if (au == 0) {
+			/* bu is 0 too */
+			break;
+		}
+	} while (1);
+	return res;
+}
+
+int u_strncasecmp(const char *a, const char *b, int len)
+{
+	int ai = 0;
+	int bi = 0;
+
+	while (len > 0) {
+		uchar au, bu;
+		int res;
+
+		u_get_char(a, &ai, &au);
+		u_get_char(b, &bi, &bu);
+		res = chcasecmp(au, bu);
+		if (res)
+			return res;
+		if (au == 0) {
+			/* bu is 0 too */
+			return 0;
+		}
+		len--;
+	}
+	return 0;
 }
 
 char *u_strcasestr(const char *text, const char *part)
 {
-	int i, j, save;
+	/* strlen is faster and works here */
+	int text_len = strlen(text);
+	int part_len = u_strlen(part);
 
-	i = 0;
 	do {
-		save = i;
-		j = 0;
-		while (chcasecmp(part[j], text[i]) == 0) {
-			if (part[j] == 0)
-				return (char *)text + i - j;
-			i++;
-			j++;
-		}
-		if (part[j] == 0)
-			return (char *)text + i - j;
-		if (text[i] == 0)
+		unsigned char ch;
+		int clen;
+
+		if (text_len < part_len)
 			return NULL;
-		i = save + 1;
+		if (u_strncasecmp(part, text, part_len) == 0)
+			return (char *)text;
+
+		ch = *text;
+		clen = len_tab[ch];
+		text += clen;
+		text_len -= clen;
 	} while (1);
 }

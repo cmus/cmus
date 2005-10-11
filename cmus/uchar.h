@@ -126,6 +126,8 @@ extern int u_copy_chars(char *dst, const char *src, int *width);
  */
 extern int u_skip_chars(const char *str, int *width);
 
+extern int u_strcasecmp(const char *a, const char *b);
+extern int u_strncasecmp(const char *a, const char *b, int len);
 extern char *u_strcasestr(const char *text, const char *part);
 
 #endif
