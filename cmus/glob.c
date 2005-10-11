@@ -6,6 +6,7 @@
 #include <uchar.h>
 #include <list.h>
 #include <xmalloc.h>
+#include <debug.h>
 
 #include <string.h>
 
@@ -38,15 +39,14 @@ static void simplify(struct list_head *head)
 
 		i = item;
 		do {
-			struct glob_item *ri;
+			struct glob_item *gi;
 
-			ri = container_of(i, struct glob_item, node);
-			if (ri->type == GLOB_STAR) {
+			gi = container_of(i, struct glob_item, node);
+			if (gi->type == GLOB_STAR) {
 				scount++;
-			} else if (ri->type == GLOB_QMARK) {
+			} else if (gi->type == GLOB_QMARK) {
 				qcount++;
 			} else {
-				/* */
 				i = i->next;
 				break;
 			}
@@ -62,28 +62,27 @@ static void simplify(struct list_head *head)
 
 			i = item;
 			while (qcount) {
-				struct glob_item *ri;
+				struct glob_item *gi;
 
-				ri = container_of(i, struct glob_item, node);
+				gi = container_of(i, struct glob_item, node);
 				i = i->next;
-				if (ri->type == GLOB_QMARK) {
-					list_del(&ri->node);
-					list_add(&ri->node, insert_after);
-					insert_after = &ri->node;
+				if (gi->type == GLOB_QMARK) {
+					list_del(&gi->node);
+					list_add(&gi->node, insert_after);
 					qcount--;
 				}
 			}
 
 			i = item;
 			while (scount > 1) {
-				struct glob_item *ri;
+				struct glob_item *gi;
 
-				ri = container_of(i, struct glob_item, node);
+				gi = container_of(i, struct glob_item, node);
 				i = i->next;
-				if (ri->type == GLOB_STAR) {
-					list_del(&ri->node);
-					free(ri->text);
-					free(ri);
+				if (gi->type == GLOB_STAR) {
+					list_del(&gi->node);
+					free(gi->text);
+					free(gi);
 					scount--;
 				}
 			}
@@ -176,39 +175,41 @@ static int do_glob_match(struct list_head *head, struct list_head *first, const 
 	struct list_head *item = first;
 
 	while (item != head) {
-		struct glob_item *ritem;
+		struct glob_item *gitem;
 
-		ritem = container_of(item, struct glob_item, node);
-		if (ritem->type == GLOB_TEXT) {
-			int len = strlen(ritem->text);
-			/* FIXME: UTF-8 */
-			if (strncasecmp(ritem->text, text, len))
+		gitem = container_of(item, struct glob_item, node);
+		if (gitem->type == GLOB_TEXT) {
+			int len = u_strlen(gitem->text);
+
+			if (u_strncasecmp(gitem->text, text, len))
 				return 0;
-			text += len;
-		} else if (ritem->type == GLOB_QMARK) {
-			if (text[0] == 0)
+			text += strlen(gitem->text);
+		} else if (gitem->type == GLOB_QMARK) {
+			uchar u;
+			int idx = 0;
+
+			u_get_char(text, &idx, &u);
+			if (u == 0)
 				return 0;
-			text++;
-		} else if (ritem->type == GLOB_STAR) {
+			text += idx;
+		} else if (gitem->type == GLOB_STAR) {
 			/* after star there MUST be normal text (or nothing),
 			 * question marks have been moved before this star and
 			 * other stars have been sripped (see simplify)
 			 */
-			struct list_head *i;
-			struct glob_item *gi;
+			struct list_head *next;
+			struct glob_item *next_gi;
 			const char *t;
 			int tlen;
 
-			i = item->next;
-			if (i == head) {
+			next = item->next;
+			if (next == head) {
 				/* this star was the last item => matched */
 				return 1;
 			}
-			gi = container_of(i, struct glob_item, node);
-			if (gi->type != GLOB_TEXT) {
-				return 0;
-			}
-			t = gi->text;
+			next_gi = container_of(next, struct glob_item, node);
+			BUG_ON(next_gi->type != GLOB_TEXT);
+			t = next_gi->text;
 			tlen = strlen(t);
 			while (1) {
 				const char *pos;
@@ -216,7 +217,7 @@ static int do_glob_match(struct list_head *head, struct list_head *first, const 
 				pos = u_strcasestr(text, t);
 				if (pos == NULL)
 					return 0;
-				if (do_glob_match(head, i->next, pos + tlen))
+				if (do_glob_match(head, next->next, pos + tlen))
 					return 1;
 				text = pos + 1;
 			}
