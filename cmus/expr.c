@@ -613,6 +613,7 @@ void expr_free(struct expr *expr)
 	free(expr->key);
 	if (expr->type == EXPR_STR)
 		glob_free(&expr->estr.glob_head);
+	free(expr);
 }
 
 const char *expr_error(void)
