@@ -162,6 +162,7 @@ Command                          Description
 :enqueue\ dir/file/playlist/url  Add dir/file/playlist/url to the play queue.
 :fset name=value                 Add or replace filter
 :load filename                   Clear playlist and then load a new one. Simple one track/line lists and .pls playlists are supported.
+:run command                     Execute command for the currently selected files (See `Running Programs`_).
 :save [filename]                 Save playlist.  Default filename is the last used one.
 :seek [+-]POS                    Seek top POS (seconds). POS can be suffixed with 'm' (minutes) or 'h' (hours).
 :set OPTION=VALUE                Set option (See Options_).
@@ -286,7 +287,7 @@ all tracks to playlist file whether they are visible or not.
 ========  =======  ===========
 Filter    Type     Description
 ========  =======  ===========
-filename  string
+filename  string   filename or URI
 artist    string
 album     string
 title     string
@@ -333,6 +334,41 @@ Examples
 
 	# regular files, not streams
 	:fset files=!stream
+
+Running Programs
+================
+
+You can execute external commands for the currently selected files by
+executing ``:run command``.  Playlist view (1, 2 or 3) must be active when
+running commands.  In view 1 you can run any command for files of the selected
+track, album or artist.  In views 2 and 3 command is executed for the only
+selected file, of course. CMus will ask confirmation if there are more than
+one selected files.
+
+``{}`` in the command is replaced with the selected files. If the command
+doesn't contain ``{}`` the selected files are automatically appended to the
+command.  `/bin/sh` compatible quoting are supported (single/double quotes and
+escaping with ``\``).
+
+Both stdout and stderr are redirected to /dev/null and stdin is closed so you
+can't run interactive text mode programs.  GUI programs should work just fine.
+
+Examples
+--------
+
+These examples assume that view 1 is active and the selected album contains
+only files `file1.ogg` and `file2.ogg`.
+
+::
+
+	# rm -f file1.ogg file2.ogg
+	:run rm -f
+
+	# tagger -uniq -date 2004 file1.ogg file2.ogg
+	:run tagger -uniq -date 2004
+
+	# cp file1.ogg file2.ogg /tmp
+	:run cp {} /tmp/
 
 
 Status Display

@@ -1432,6 +1432,7 @@ static void display_command_mode_help(WINDOW *w)
 	mvwaddstr(w, row++, col, ":enqueue file/dir/playlist - add to play queue");
 	mvwaddstr(w, row++, col, ":fset name=value           - add or replace filter");
 	mvwaddstr(w, row++, col, ":load filename             - load playlist");
+	mvwaddstr(w, row++, col, ":run command               - run `command' for the selected files");
 	mvwaddstr(w, row++, col, ":save [filename]           - save playlist");
 	mvwaddstr(w, row++, col, ":seek POS[mh]              - seek to absolute position");
 	mvwaddstr(w, row++, col, "                             POS is seconds, minutes (m) or hours (h)");
