@@ -470,6 +470,18 @@ void cmus_update_playlist(void)
 	worker_add_job(WORKER_TYPE_UPDATE, update_playlist_job, data);
 }
 
+void cmus_update_selected(void)
+{
+	struct update_data *data;
+
+	data = xnew(struct update_data, 1);
+	data->size = 0;
+	data->used = 0;
+	data->ti = NULL;
+	pl_for_each_selected(update_cb, data, 0);
+	worker_add_job(WORKER_TYPE_UPDATE, update_playlist_job, data);
+}
+
 struct track_info *cmus_get_track_info(const char *name)
 {
 	struct track_info *ti;

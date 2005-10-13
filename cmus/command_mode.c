@@ -537,6 +537,9 @@ static void cmd_run(char *arg)
 			}
 			if (WIFSIGNALED(status))
 				ui_curses_display_error_msg("%s received signal %d", argv[0], WTERMSIG(status));
+
+			/* remove non-existed files, update tags for changed files */
+			cmus_update_selected();
 		}
 	}
 
