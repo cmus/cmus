@@ -1966,7 +1966,7 @@ static void spawn_status_program(void)
 		}
 	}
 	argv[i++] = NULL;
-	if (spawn(argv) == -1)
+	if (spawn(argv, &status) == -1)
 		ui_curses_display_error_msg("couldn't run `%s': %s", status_display_program, strerror(errno));
 	for (i = 0; argv[i]; i++)
 		free(argv[i]);

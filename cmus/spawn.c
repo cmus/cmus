@@ -27,7 +27,7 @@
 #include <fcntl.h>
 #include <errno.h>
 
-int spawn(char *argv[])
+int spawn(char *argv[], int *status)
 {
 	pid_t pid;
 	int err_pipe[2];
@@ -53,6 +53,9 @@ int spawn(char *argv[])
 			dup2(dev_null, 2);
 		}
 
+		/* not interactive, close stdin */
+		close(0);
+
 		execvp(argv[0], argv);
 
 		/* error */
@@ -61,14 +64,14 @@ int spawn(char *argv[])
 		exit(1);
 	} else {
 		/* parent */
-		int rc, errno_save, child_errno, status;
+		int rc, errno_save, child_errno;
 
 		close(err_pipe[1]);
 		rc = read_all(err_pipe[0], &child_errno, sizeof(int));
 		errno_save = errno;
 		close(err_pipe[0]);
 
-		waitpid(pid, &status, 0);
+		waitpid(pid, status, 0);
 
 		if (rc == -1) {
 			errno = errno_save;

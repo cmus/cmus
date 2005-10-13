@@ -20,6 +20,6 @@
 #ifndef _SPAWN_H
 #define _SPAWN_H
 
-extern int spawn(char *argv[]);
+int spawn(char *argv[], int *status);
 
 #endif
