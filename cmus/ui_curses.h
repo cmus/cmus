@@ -56,6 +56,7 @@ enum {
 };
 
 extern enum ui_curses_input_mode ui_curses_input_mode;
+extern int ui_curses_view;
 extern struct searchable *searchable;
 
 /* usually ~/.config/cmus/playlist.pl */

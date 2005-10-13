@@ -68,6 +68,7 @@
 char *program_name = NULL;
 
 enum ui_curses_input_mode ui_curses_input_mode = NORMAL_MODE;
+int ui_curses_view = TREE_VIEW;
 struct searchable *searchable;
 
 char *playlist_autosave_filename;
@@ -158,7 +159,6 @@ static int show_remaining_time = 0;
 static int update_window_title = 0;
 
 static int running = 1;
-static int ui_curses_view = TREE_VIEW;
 
 /* shown error message and time stamp
  * error is cleared if it is older than 3s and key was pressed

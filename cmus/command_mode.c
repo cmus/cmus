@@ -34,6 +34,7 @@
 #include <sconf.h>
 #include <path.h>
 #include <format_print.h>
+#include <spawn.h>
 #include <utils.h>
 #include <list.h>
 #include <debug.h>
@@ -42,6 +43,7 @@
 #include <curses.h>
 #include <ctype.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <pwd.h>
 
 static struct history cmd_history;
@@ -264,6 +266,283 @@ static void cmd_reshuffle(char *arg)
 	pl_reshuffle();
 }
 
+/*
+ * \" inside double-quotes becomes "
+ * \\ inside double-quotes becomes \
+ */
+static char *parse_quoted(const char **strp)
+{
+	const char *str = *strp;
+	const char *start;
+	char *ret, *dst;
+
+	str++;
+	start = str;
+	while (1) {
+		int c = *str++;
+
+		if (c == 0)
+			goto error;
+		if (c == '"')
+			break;
+		if (c == '\\') {
+			if (*str++ == 0)
+				goto error;
+		}
+	}
+	*strp = str;
+	ret = xnew(char, str - start);
+	str = start;
+	dst = ret;
+	while (1) {
+		int c = *str++;
+
+		if (c == '"')
+			break;
+		if (c == '\\') {
+			c = *str++;
+			if (c != '"' && c != '\\')
+				*dst++ = '\\';
+		}
+		*dst++ = c;
+	}
+	*dst = 0;
+	return ret;
+error:
+	ui_curses_display_error_msg("`\"' expected");
+	return NULL;
+}
+
+static char *parse_escaped(const char **strp)
+{
+	const char *str = *strp;
+	const char *start;
+	char *ret, *dst;
+
+	start = str;
+	while (1) {
+		int c = *str;
+
+		if (c == 0 || c == ' ' || c == '\'' || c == '"')
+			break;
+
+		str++;
+		if (c == '\\') {
+			c = *str;
+			if (c == 0)
+				break;
+			str++;
+		}
+	}
+	*strp = str;
+	ret = xnew(char, str - start + 1);
+	str = start;
+	dst = ret;
+	while (1) {
+		int c = *str;
+
+		if (c == 0 || c == ' ' || c == '\'' || c == '"')
+			break;
+
+		str++;
+		if (c == '\\') {
+			c = *str;
+			if (c == 0) {
+				*dst++ = '\\';
+				break;
+			}
+			str++;
+		}
+		*dst++ = c;
+	}
+	*dst = 0;
+	return ret;
+}
+
+static char *parse_one(const char **strp)
+{
+	const char *str = *strp;
+	char *ret = NULL;
+
+	while (1) {
+		char *part;
+		int c = *str;
+
+		if (!c || c == ' ')
+			break;
+		if (c == '"') {
+			part = parse_quoted(&str);
+			if (part == NULL)
+				goto error;
+		} else if (c == '\'') {
+			/* backslashes are normal chars inside single-quotes */
+			const char *end;
+
+			str++;
+			end = strchr(str, '\'');
+			if (end == NULL)
+				goto sq_missing;
+			part = xstrndup(str, end - str);
+			str = end + 1;
+		} else {
+			part = parse_escaped(&str);
+		}
+
+		if (ret == NULL) {
+			ret = part;
+		} else {
+			char *tmp = xstrjoin(ret, part);
+			free(ret);
+			ret = tmp;
+		}
+	}
+	*strp = str;
+	return ret;
+sq_missing:
+	ui_curses_display_error_msg("`'' expected");
+error:
+	free(ret);
+	return NULL;
+}
+
+static char **parse_cmd(const char *cmd, int *args_idx, int *ac)
+{
+	char **av = NULL;
+	int nr = 0;
+	int alloc = 0;
+
+	while (*cmd) {
+		char *arg;
+
+		/* there can't be spaces at start of command
+		 * and there is at least one argument */
+		if (cmd[0] == '{' && cmd[1] == '}' && (cmd[2] == ' ' || cmd[2] == 0)) {
+			/* {} is replaced with file arguments */
+			if (*args_idx != -1)
+				goto only_once_please;
+			*args_idx = nr;
+			cmd += 2;
+			goto skip_spaces;
+		} else {
+			arg = parse_one(&cmd);
+			if (arg == NULL)
+				goto error;
+		}
+
+		if (nr == alloc) {
+			alloc = alloc ? alloc * 2 : 4;
+			av = xrenew(char *, av, alloc + 1);
+		}
+		av[nr++] = arg;
+skip_spaces:
+		while (*cmd == ' ')
+			cmd++;
+	}
+	av[nr] = NULL;
+	*ac = nr;
+	return av;
+only_once_please:
+	ui_curses_display_error_msg("{} can be used only once");
+error:
+	while (nr > 0)
+		free(av[--nr]);
+	free(av);
+	return NULL;
+}
+
+static char **sel_files;
+static int sel_files_alloc;
+static int sel_files_nr;
+
+static int add_file(void *data, struct track_info *ti)
+{
+	if (sel_files_nr == sel_files_alloc) {
+		sel_files_alloc = sel_files_alloc ? sel_files_alloc * 2 : 8;
+		sel_files = xrenew(char *, sel_files, sel_files_alloc);
+	}
+	sel_files[sel_files_nr++] = xstrdup(ti->filename);
+	return 0;
+}
+
+static void cmd_run(char *arg)
+{
+	char **av, **argv;
+	int ac, argc, i, run, files_idx = -1;
+
+	if (ui_curses_view > SORTED_VIEW) {
+		ui_curses_display_info_msg("Command execution is supported only if view 1, 2 or 3 is active");
+		return;
+	}
+
+	av = parse_cmd(arg, &files_idx, &ac);
+	if (av == NULL) {
+		return;
+	}
+
+	/* collect selected files */
+	sel_files = NULL;
+	sel_files_alloc = 0;
+	sel_files_nr = 0;
+	pl_for_each_selected(add_file, NULL, 0);
+	if (sel_files_nr == 0) {
+		/* no files selected, do nothing */
+		free_str_array(av);
+		return;
+	}
+	sel_files[sel_files_nr] = NULL;
+
+	/* build argv */
+	argv = xnew(char *, ac + sel_files_nr + 1);
+	argc = 0;
+	if (files_idx == -1) {
+		/* add selected files after rest of the args */
+		for (i = 0; i < ac; i++)
+			argv[argc++] = av[i];
+		for (i = 0; i < sel_files_nr; i++)
+			argv[argc++] = sel_files[i];
+	} else {
+		for (i = 0; i < files_idx; i++)
+			argv[argc++] = av[i];
+		for (i = 0; i < sel_files_nr; i++)
+			argv[argc++] = sel_files[i];
+		for (i = files_idx; i < ac; i++)
+			argv[argc++] = av[i];
+	}
+	argv[argc] = NULL;
+
+	free(av);
+	free(sel_files);
+
+	for (i = 0; argv[i]; i++)
+		d_print("ARG: '%s'\n", argv[i]);
+
+	run = 1;
+	if (sel_files_nr > 1 || strcmp(argv[0], "rm") == 0) {
+		if (!ui_curses_yes_no_query("Execute %s for the %d selected files? [y/N]", arg, sel_files_nr)) {
+			ui_curses_display_info_msg("Aborted");
+			run = 0;
+		}
+	}
+	if (run) {
+		int status;
+
+		if (spawn(argv, &status)) {
+			ui_curses_display_error_msg("executing %s: %s", argv[0], strerror(errno));
+		} else {
+			if (WIFEXITED(status)) {
+				int rc = WEXITSTATUS(status);
+
+				if (rc)
+					ui_curses_display_error_msg("%s returned %d", argv[0], rc);
+			}
+			if (WIFSIGNALED(status))
+				ui_curses_display_error_msg("%s received signal %d", argv[0], WTERMSIG(status));
+		}
+	}
+
+	free_str_array(argv);
+}
+
 struct command {
 	const char *name;
 	cmd_func *func;
@@ -284,6 +563,7 @@ static struct command commands[] = {
 	{ "enqueue",    cmd_enqueue,    1, 1, TE_FILEDIR },
 	{ "fset",       cmd_fset,       1, 1, TE_NONE },
 	{ "load",       cmd_load,       1, 1, TE_FILEDIR },
+	{ "run",        cmd_run,        1,-1, TE_NONE },
 	{ "save",       cmd_save,       0, 1, TE_FILEDIR },
 	{ "seek",       cmd_seek,       1, 1, TE_NONE },
 	{ "set",        cmd_set,        1, 1, TE_OPTION },
