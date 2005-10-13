@@ -31,7 +31,6 @@
 #include <xmalloc.h>
 #include <xstrjoin.h>
 #include <misc.h>
-#include <sconf.h>
 #include <path.h>
 #include <format_print.h>
 #include <spawn.h>
@@ -45,6 +44,8 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <pwd.h>
+
+int confirm_run = 1;
 
 static struct history cmd_history;
 static char *cmd_history_filename;
@@ -517,7 +518,7 @@ static void cmd_run(char *arg)
 		d_print("ARG: '%s'\n", argv[i]);
 
 	run = 1;
-	if (sel_files_nr > 1 || strcmp(argv[0], "rm") == 0) {
+	if (confirm_run && (sel_files_nr > 1 || strcmp(argv[0], "rm") == 0)) {
 		if (!ui_curses_yes_no_query("Execute %s for the %d selected files? [y/N]", arg, sel_files_nr)) {
 			ui_curses_display_info_msg("Aborted");
 			run = 0;

@@ -36,6 +36,8 @@ struct command_mode_option {
 	void *data;
 };
 
+extern int confirm_run;
+
 extern void command_mode_ch(uchar ch);
 extern void command_mode_key(int key);
 extern void option_add(const char *name, option_get_func get, option_set_func set, void *data);

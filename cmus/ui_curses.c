@@ -1455,6 +1455,7 @@ static void display_options_help(WINDOW *w)
 	row++;
 	mvwaddstr(w, row++, col, "output_plugin           - output plugin (alsa, arts, oss)");
 	mvwaddstr(w, row++, col, "buffer_seconds          - size of player buffer in seconds (1-10)");
+	mvwaddstr(w, row++, col, "confirm_run             - confirm :run with >1 files (true/false)");
 	mvwaddstr(w, row++, col, "dsp.*, mixer.*          - output plugin options");
 	mvwaddstr(w, row++, col, "color_*                 - user interface colors");
 	mvwaddstr(w, row++, col, "format_current          - format of the line showing currently played track");

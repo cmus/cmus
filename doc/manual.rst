@@ -177,6 +177,7 @@ Option                  Description
 ======================  ===========
 output_plugin           output plugin (alsa, arts, oss)
 buffer_seconds          size of player buffer in seconds (1-10)
+confirm_run             confirm :run with >1 files (true/false)
 dsp.\*, mixer.\*        output plugin options (use tab to cycle through all possible options)
 color\_\*               user interface colors (See `User Interface Colors`_)
 format_current          format of the line showing currently played track
@@ -343,7 +344,7 @@ executing ``:run command``.  Playlist view (1, 2 or 3) must be active when
 running commands.  In view 1 you can run any command for files of the selected
 track, album or artist.  In views 2 and 3 command is executed for the only
 selected file, of course. CMus will ask confirmation if there are more than
-one selected files.
+one selected files unless ``confirm_run`` is ``false``.
 
 ``{}`` in the command is replaced with the selected files. If the command
 doesn't contain ``{}`` the selected files are automatically appended to the

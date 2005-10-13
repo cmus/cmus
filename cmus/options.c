@@ -110,8 +110,8 @@ static void set_buffer_seconds(const struct command_mode_option *opt, const char
 {
 	long int seconds;
 
-	if (str_to_int(value, &seconds) == -1) {
-		ui_curses_display_error_msg("invalid format string");
+	if (str_to_int(value, &seconds) == -1 || seconds < 1) {
+		ui_curses_display_error_msg("buffer_seconds must be positive integer");
 		return;
 	}
 	player_set_buffer_chunks((seconds * SECOND_SIZE + CHUNK_SIZE / 2) / CHUNK_SIZE);
@@ -145,6 +145,27 @@ static void set_sort(const struct command_mode_option *opt, const char *value)
 {
 	ui_curses_set_sort(value, 1);
 	ui_curses_update_view();
+}
+
+static void get_confirm_run(const struct command_mode_option *opt, char **value)
+{
+	if (confirm_run) {
+		*value = xstrdup("true");
+	} else {
+		*value = xstrdup("false");
+	}
+}
+
+static void set_confirm_run(const struct command_mode_option *opt, const char *value)
+{
+	if (strcmp(value, "true") == 0) {
+		confirm_run = 1;
+	} else if (strcmp(value, "false") == 0) {
+		confirm_run = 0;
+	} else {
+		ui_curses_display_error_msg("confirm_run must be 'true' or 'false'");
+		return;
+	}
 }
 
 static void get_op_option(const struct command_mode_option *opt, char **value)
@@ -225,10 +246,13 @@ void options_init(void)
 		option_add(buf, get_color, set_color, (void *)(i + NR_COLORS));
 	}
 
+	sconf_get_bool_option(&sconf_head, "confirm_run", &confirm_run);
+
 	option_add("output_plugin", get_output_plugin, set_output_plugin, NULL);
 	option_add("buffer_seconds", get_buffer_seconds, set_buffer_seconds, NULL);
 	option_add("status_display_program", get_status_display_program, set_status_display_program, NULL);
 	option_add("sort", get_sort, set_sort, NULL);
+	option_add("confirm_run", get_confirm_run, set_confirm_run, NULL);
 
 	player_for_each_op_option(player_option_callback, NULL);
 }
@@ -239,4 +263,5 @@ void options_exit(void)
 
 	for (i = 0; i < NR_FMTS; i++)
 		sconf_set_str_option(&sconf_head, fmt_names[i], *fmt_vars[i]);
+	sconf_set_bool_option(&sconf_head, "confirm_run", confirm_run);
 }
