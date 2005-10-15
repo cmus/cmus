@@ -882,30 +882,68 @@ static void dump_buffer(const char *buffer)
 
 static void update_commandline(void)
 {
+	int w;
+	char ch;
+
 	move(LINES - 1, 0);
 	if (error_msg[0]) {
 		bkgdset(cursed_colors[COLOR_ERROR]);
 		addstr(error_msg);
+		clrtoeol();
+		return;
+	}
+	bkgdset(cursed_colors[COLOR_COMMANDLINE]);
+	if (ui_curses_input_mode == NORMAL_MODE) {
+		clrtoeol();
+		return;
+	}
+
+	/* COMMAND_MODE or SEARCH_MODE */
+	w = u_str_width(cmdline.line);
+	ch = ':';
+	if (ui_curses_input_mode == SEARCH_MODE)
+		ch = search_direction == SEARCH_FORWARD ? '/' : '?';
+
+	if (w <= COLS - 2) {
+		addch(ch);
+		dump_buffer(cmdline.line);
+		clrtoeol();
 	} else {
-		bkgdset(cursed_colors[COLOR_COMMANDLINE]);
-		if (ui_curses_input_mode == COMMAND_MODE || ui_curses_input_mode == SEARCH_MODE) {
-			if (cmdline.clen <= COLS - 2) {
-				char ch = ':';
+		/* keep cursor as far right as possible */
+		int skip, width, cw, idx;
 
-				if (ui_curses_input_mode == SEARCH_MODE)
-					ch = search_direction == SEARCH_FORWARD ? '/' : '?';
-				addch(ch);
-				dump_buffer(cmdline.line);
-			} else {
-				char *str = cmdline.line;
-				int idx, w = cmdline.clen - COLS + 1;
+		/* cursor pos (width, not chars. doesn't count the ':') */
+		cw = u_str_nwidth(cmdline.line, cmdline.cpos);
 
-				idx = u_skip_chars(str, &w);
-				dump_buffer(str + idx);
+		skip = cw + 2 - COLS;
+		if (skip > 0) {
+			/* skip the ':' */
+			skip--;
+
+			/* skip rest (if any) */
+			idx = u_skip_chars(cmdline.line, &skip);
+
+			width = COLS;
+			idx = u_copy_chars(print_buffer, cmdline.line + idx, &width);
+			while (width < COLS) {
+				/* cursor is at end of the buffer
+				 * print a space (or 2 if the last skipped character
+				 * was double-width)
+				 */
+				print_buffer[idx++] = ' ';
+				width++;
 			}
+			print_buffer[idx] = 0;
+			dump_buffer(print_buffer);
+		} else {
+			/* print ':' + COLS - 1 chars */
+			addch(ch);
+			width = COLS - 1;
+			idx = u_copy_chars(print_buffer, cmdline.line, &width);
+			print_buffer[idx] = 0;
+			dump_buffer(print_buffer);
 		}
 	}
-	clrtoeol();
 }
 
 /* lock player_info! */
@@ -1019,11 +1057,43 @@ static void update_titleline(void)
 	player_info_unlock();
 }
 
+static int cmdline_cursor_column(void)
+{
+	int cw, skip, s;
+
+	/* width of the text in the buffer before cursor */
+	cw = u_str_nwidth(cmdline.line, cmdline.cpos);
+
+	if (1 + cw < COLS) {
+		/* whole line is visible */
+		return 1 + cw;
+	}
+
+	/* beginning of cmdline is not visible */
+
+	/* check if the first visible char in cmdline would be halved
+	 * double-width character which is not possible.  we need to skip the
+	 * whole character and move cursor to COLS - 2 column. */
+	skip = cw + 2 - COLS;
+
+	/* skip the ':' */
+	skip--;
+
+	/* skip rest */
+	s = skip;
+	u_skip_chars(cmdline.line, &s);
+	if (s > skip) {
+		/* the last skipped char was double-width */
+		return COLS - 2;
+	}
+	return COLS - 1;
+}
+
 static void post_update(void)
 {
 	/* refresh makes cursor visible at least for urxvt */
 	if (ui_curses_input_mode == COMMAND_MODE || ui_curses_input_mode == SEARCH_MODE) {
-		move(LINES - 1, min(cmdline.cpos + 1, COLS - 1));
+		move(LINES - 1, cmdline_cursor_column());
 		refresh();
 		curs_set(1);
 	} else {

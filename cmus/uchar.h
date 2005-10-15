@@ -88,6 +88,14 @@ extern int u_str_width(const char *str);
 
 /*
  * @str  null-terminated UTF-8 string
+ * @len  number of characters to measure
+ *
+ * Retuns width of the first @len characters in @str.
+ */
+extern int u_str_nwidth(const char *str, int len);
+
+/*
+ * @str  null-terminated UTF-8 string
  * @idx  pointer to byte index in @str (not UTF-8 character index!)
  * @uch  pointer to returned unicode character
  */

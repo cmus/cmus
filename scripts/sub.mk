@@ -47,7 +47,7 @@ extra: extra-build
 # constants
 builddir	:= .
 
-# variables used in Dir.mk and commmon.mk
+# variables used in Dir.mk and common.mk
 clean		:=
 distclean	:=
 targets-n	:=
