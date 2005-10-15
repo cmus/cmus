@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <wctype.h>
+#include <ctype.h>
 
 /*
  * Byte Sequence                                             Min       Min        Max
@@ -383,4 +384,39 @@ char *u_strcasestr(const char *text, const char *part)
 		text += clen;
 		text_len -= clen;
 	} while (1);
+}
+
+static inline int ascii_chcasecmp(char a, char b)
+{
+	return toupper(a) - toupper(b);
+}
+
+static char *strcasestr(const char *text, const char *part)
+{
+	int i, j, save;
+
+	i = 0;
+	do {
+		save = i;
+		j = 0;
+		while (ascii_chcasecmp(part[j], text[i]) == 0) {
+			if (part[j] == 0)
+				return (char *)text + i - j;
+			i++;
+			j++;
+		}
+		if (part[j] == 0)
+			return (char *)text + i - j;
+		if (text[i] == 0)
+			return NULL;
+		i = save + 1;
+	} while (1);
+}
+
+char *u_strcasestr_filename(const char *text, const char *part)
+{
+	/* FIXME: implement and use slow & safe u_strcasestr_safe if locale is UTF-8 */
+	if (u_is_valid(text))
+		return u_strcasestr(text, part);
+	return strcasestr(text, part);
 }

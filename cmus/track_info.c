@@ -84,7 +84,7 @@ int track_info_matches(struct track_info *ti, const char *text, unsigned int fla
 			} else {
 				filename++;
 			}
-			if (u_strcasestr(filename, word))
+			if (u_strcasestr_filename(filename, word))
 				continue;
 		}
 		matched = 0;

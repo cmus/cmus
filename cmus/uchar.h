@@ -138,4 +138,9 @@ extern int u_strcasecmp(const char *a, const char *b);
 extern int u_strncasecmp(const char *a, const char *b, int len);
 extern char *u_strcasestr(const char *text, const char *part);
 
+/* @text  filename (locale's encoding)
+ * @part  UTF-8 string
+ */
+extern char *u_strcasestr_filename(const char *text, const char *part);
+
 #endif

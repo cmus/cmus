@@ -243,7 +243,7 @@ static int browser_search_matches(void *data, struct iter *iter, const char *tex
 				matched = 1;
 				break;
 			}
-			if (u_strcasestr(e->name, words[i]) == NULL)
+			if (u_strcasestr_filename(e->name, words[i]) == NULL)
 				break;
 		}
 	}
