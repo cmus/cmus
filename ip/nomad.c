@@ -217,7 +217,8 @@ static void handle_lost_sync(struct nomad *nomad)
 		frame = nomad->info.nr_frames;
 	}
 
-	size = id3_tag_size(nomad->stream.this_frame, nomad->stream.bufend - nomad->stream.this_frame);
+	size = id3_tag_size((const char *)nomad->stream.this_frame,
+			nomad->stream.bufend - nomad->stream.this_frame);
 	if (size > 0) {
 		d_print("frame %ld, skipping ID3 tag (%d bytes)\n", frame, size);
 		mad_stream_skip(&nomad->stream, size);

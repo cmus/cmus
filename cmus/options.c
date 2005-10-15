@@ -23,7 +23,7 @@
  */
 static void get_color(const struct command_mode_option *opt, char **value)
 {
-	int i = (int)opt->data;
+	int i = (int)(long)opt->data;
 	int color;
 	char buf[32];
 
@@ -41,7 +41,7 @@ static void get_color(const struct command_mode_option *opt, char **value)
 
 static void set_color(const struct command_mode_option *opt, const char *value)
 {
-	int i = (int)opt->data;
+	int i = (int)(long)opt->data;
 	int color_max = 255;
 	long int color;
 
@@ -241,9 +241,9 @@ void options_init(void)
 		char buf[64];
 
 		snprintf(buf, sizeof(buf), "color_%s_bg", color_names[i]);
-		option_add(buf, get_color, set_color, (void *)i);
+		option_add(buf, get_color, set_color, (void *)(long)i);
 		snprintf(buf, sizeof(buf), "color_%s_fg", color_names[i]);
-		option_add(buf, get_color, set_color, (void *)(i + NR_COLORS));
+		option_add(buf, get_color, set_color, (void *)(long)(i + NR_COLORS));
 	}
 
 	sconf_get_bool_option(&sconf_head, "confirm_run", &confirm_run);

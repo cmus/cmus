@@ -81,7 +81,7 @@ static unsigned int first_byte_mask[4] = { 0x7f, 0x1f, 0x0f, 0x07 };
 
 int u_is_valid(const char *str)
 {
-	const unsigned char *s = str;
+	const unsigned char *s = (const unsigned char *)str;
 	int i = 0;
 
 	while (s[i]) {
@@ -115,7 +115,7 @@ int u_is_valid(const char *str)
 
 int u_strlen(const char *str)
 {
-	const unsigned char *s = str;
+	const unsigned char *s = (const unsigned char *)str;
 	int len = 0;
 
 	while (*s) {
@@ -219,7 +219,7 @@ int u_str_nwidth(const char *str, int len)
 
 void u_get_char(const char *str, int *idx, uchar *uch)
 {
-	const unsigned char *s = str;
+	const unsigned char *s = (const unsigned char *)str;
 	int len, i = *idx;
 	unsigned char ch;
 	uchar u;
