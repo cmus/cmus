@@ -60,6 +60,8 @@ struct album {
 
 	struct artist *artist;
 	char *name;
+	/* date of the first track added to this album */
+	int date;
 };
 
 struct artist {

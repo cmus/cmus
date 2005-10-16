@@ -590,19 +590,24 @@ static struct artist *playlist_add_artist(const char *name)
 	return artist;
 }
 
-static struct album *artist_add_album(struct artist *artist, const char *name)
+static struct album *artist_add_album(struct artist *artist, const char *name, int date)
 {
 	struct list_head *item;
 	struct album *album;
 
 	album = xnew(struct album, 1);
 	album->name = xxstrdup(name);
+	album->date = date;
 	list_init(&album->track_head);
 	album->artist = artist;
 	list_for_each(item, &artist->album_head) {
 		struct album *a;
 
 		a = list_entry(item, struct album, node);
+		if (date < a->date)
+			break;
+		if (date > a->date)
+			continue;
 		if (xstrcasecmp(name, a->name) < 0)
 			break;
 	}
@@ -703,6 +708,7 @@ static void tree_add_track(struct track *track)
 	const char *album_name, *artist_name;
 	struct artist *artist;
 	struct album *album;
+	int date;
 
 	album_name = comments_get_val(ti->comments, "album");
 	artist_name = comments_get_val(ti->comments, "artist");
@@ -723,7 +729,8 @@ static void tree_add_track(struct track *track)
 			track_win_changed();
 		}
 	} else if (artist) {
-		album = artist_add_album(artist, album_name);
+		date = comments_get_int(ti->comments, "date");
+		album = artist_add_album(artist, album_name, date);
 		album_add_track(album, track);
 
 		if (artist->expanded) {
@@ -733,8 +740,9 @@ static void tree_add_track(struct track *track)
 			/* album is not selected => no need to update track_win */
 		}
 	} else {
+		date = comments_get_int(ti->comments, "date");
 		artist = playlist_add_artist(artist_name);
-		album = artist_add_album(artist, album_name);
+		album = artist_add_album(artist, album_name, date);
 		album_add_track(album, track);
 
 		window_changed(playlist.tree_win);
