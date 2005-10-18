@@ -160,6 +160,7 @@ Command                          Description
 :cd [directory]                  Change directory.  Default directory is ``$HOME``.
 :clear                           Clear playlist.
 :enqueue\ dir/file/playlist/url  Add dir/file/playlist/url to the play queue.
+:filter [value]                  Set temporary playlist filter. If no value is given filtering is disabled.
 :fset name=value                 Add or replace filter
 :load filename                   Clear playlist and then load a new one. Simple one track/line lists and .pls playlists are supported.
 :run command                     Execute command for the currently selected files (See `Running Programs`_).
@@ -320,6 +321,10 @@ to group expressions and ``!`` (not) inverts expression value.
 Filter names are case sensitive and can contain only these characters:
 ``a-zA-Z0-9_-``
 
+Sometimes you may want to set temporary playlist filter which you only use
+once (you don't want to add it to the filter list).  Use ``:filter`` to set
+temporary filter or disable filtering if no argument given.
+
 Examples
 --------
 
@@ -335,6 +340,13 @@ Examples
 
 	# regular files, not streams
 	:fset files=!stream
+
+	# temporarily filter ogg files or streams
+	# 'ogg' is user defined filter (see above)
+	:filter ogg|stream
+
+	# disable any filters
+	:filter
 
 Running Programs
 ================

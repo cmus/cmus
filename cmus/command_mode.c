@@ -178,6 +178,11 @@ static void cmd_seek(char *arg)
 	player_seek(seek, seek_mode);
 }
 
+static void cmd_filter(char *arg)
+{
+	filters_set_anonymous(arg);
+}
+
 static void cmd_fset(char *arg)
 {
 	filters_set_filter(arg);
@@ -565,6 +570,7 @@ static struct command commands[] = {
 	{ "cd",         cmd_cd,         0, 1, TE_DIR },
 	{ "clear",      cmd_clear,      0, 0, TE_NONE },
 	{ "enqueue",    cmd_enqueue,    1, 1, TE_FILEDIR },
+	{ "filter",     cmd_filter,     0, 1, TE_NONE },
 	{ "fset",       cmd_fset,       1, 1, TE_NONE },
 	{ "load",       cmd_load,       1, 1, TE_FILEDIR },
 	{ "run",        cmd_run,        1,-1, TE_NONE },

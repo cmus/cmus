@@ -31,7 +31,19 @@ extern int filters_changed;
 
 void filters_init(void);
 void filters_exit(void);
+
+/* add filter to filter list (replaces old filter with same name)
+ *
+ * @keyval  "name=value" where value is filter
+ */
 void filters_set_filter(const char *keyval);
+
+/* set throwaway filter (not saved to the filter list)
+ *
+ * @val   filter or NULL to disable filtering
+ */
+void filters_set_anonymous(const char *val);
+
 int filters_ch(uchar ch);
 int filters_key(int key);
 

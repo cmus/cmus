@@ -329,6 +329,40 @@ void filters_set_filter(const char *keyval)
 	do_filters_set_filter(keyval, 0);
 }
 
+void filters_set_anonymous(const char *val)
+{
+	struct expr *e = NULL;
+	struct filter_entry *f;
+
+	if (val) {
+		e = expr_parse(val);
+		if (e == NULL) {
+			ui_curses_display_error_msg("error parsing filter %s: %s", val, expr_error());
+			return;
+		}
+	}
+
+	/* mark all unvisited so that we can check recursion */
+	list_for_each_entry(f, &filters_head, node)
+		f->visited = 0;
+
+	recursive_filter = NULL;
+	if (e && expr_check_leaves(&e, get_filter)) {
+		if (recursive_filter) {
+			ui_curses_display_error_msg("recursion detected in filter %s", recursive_filter);
+		} else {
+			ui_curses_display_error_msg("error parsing filter: %s", expr_error());
+		}
+		expr_free(e);
+		return;
+	}
+
+	/* deactive all filters */
+	list_for_each_entry(f, &filters_head, node)
+		f->active = 0;
+	pl_set_filter(e);
+}
+
 int filters_ch(uchar ch)
 {
 	switch (ch) {
