@@ -1500,6 +1500,7 @@ static void display_command_mode_help(WINDOW *w)
 	mvwaddstr(w, row++, col, ":cd [dir]                  - change directory");
 	mvwaddstr(w, row++, col, ":clear                     - clear playlist");
 	mvwaddstr(w, row++, col, ":enqueue file/dir/playlist - add to play queue");
+	mvwaddstr(w, row++, col, ":filter [value]            - set temporary playlist filter");
 	mvwaddstr(w, row++, col, ":fset name=value           - add or replace filter");
 	mvwaddstr(w, row++, col, ":load filename             - load playlist");
 	mvwaddstr(w, row++, col, ":run command               - run `command' for the selected files");
