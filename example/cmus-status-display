@@ -27,9 +27,9 @@ output()
 
 while [[ $# -ge 2 ]]
 do
-  eval _$1=\"$2\"
-  shift
-  shift
+	eval _$1='$2'
+	shift
+	shift
 done
 
 if [[ -n $_file ]]
