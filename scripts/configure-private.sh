@@ -43,6 +43,8 @@ set_install_dir_vars=""
 
 checks=""
 
+CROSS=
+
 get_dir_val()
 {
 	local val
@@ -81,6 +83,9 @@ Installation directories:
                           [/usr/local]
   --exec-prefix=EPREFIX   install architecture-dependent files in EPREFIX
                           [PREFIX]
+
+Cross compiling:
+  --cross=MACHINE        cross-compile []
 
 Fine tuning of the installation directories:
   --bindir=DIR           user executables [$_bindir]
@@ -275,6 +280,9 @@ parse_command_line()
 				var=${key/-/_}
 				set_var ${var} "$val"
 				set_install_dir_vars="${set_install_dir_vars} ${var}"
+				;;
+			--cross=*)
+				CROSS=${1##--cross=}
 				;;
 			--)
 				shift

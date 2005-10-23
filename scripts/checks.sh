@@ -83,7 +83,7 @@ check_cxx_flag()
 # c compiler
 check_cc()
 {
-	var_default CC gcc
+	var_default CC ${CROSS}gcc
 	var_default LD $CC
 	var_default CFLAGS "-O2 -Wall -g"
 	var_default LDFLAGS ""
@@ -105,7 +105,7 @@ check_cc()
 # c++ compiler
 check_cxx()
 {
-	var_default CXX g++
+	var_default CXX ${CROSS}g++
 	var_default CXXLD $CXX
 	var_default CXXFLAGS "-O2 -Wall -g"
 	var_default CXXLDFLAGS ""
@@ -125,7 +125,7 @@ check_cxx()
 
 check_ar()
 {
-	var_default AR ar
+	var_default AR ${CROSS}ar
 	var_default ARFLAGS "-cr"
 	if check_program $AR
 	then
@@ -137,7 +137,7 @@ check_ar()
 
 check_as()
 {
-	var_default AS gcc
+	var_default AS ${CROSS}gcc
 	if check_program $AS
 	then
 		makefile_env_vars AS
