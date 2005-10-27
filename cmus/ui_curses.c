@@ -1390,7 +1390,7 @@ static void display_global_help(WINDOW *w)
 	mvwaddstr(w, row++, col, "m - toggle playlist mode");
 	mvwaddstr(w, row++, col, "p - toggle play mode");
 	mvwaddstr(w, row++, col, "t - toggle time elapsed/remaining");
-	mvwaddstr(w, row++, col, "q - quit");
+	mvwaddstr(w, row++, col, "Q - quit");
 	mvwaddstr(w, row++, col, ": - command mode");
 	mvwaddstr(w, row++, col, "left,  h - seek 5 seconds back");
 	mvwaddstr(w, row++, col, "right, l - seek 5 seconds forward");
@@ -1798,7 +1798,7 @@ static int common_ch(uchar ch)
 	case 'c':
 		player_pause();
 		break;
-	case 'q':
+	case 'Q':
 		running = 0;
 		break;
 	case 'p':
@@ -1898,6 +1898,9 @@ static int common_ch(uchar ch)
 			if (!search_next(searchable, search_str, !search_direction))
 				ui_curses_search_not_found();
 		}
+		break;
+	case 'q':
+		ui_curses_display_info_msg("Press Q to quit");
 		break;
 	default:
 		return 0;

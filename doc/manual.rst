@@ -63,7 +63,7 @@ r                  toggle repeat
 m                  toggle playlist mode (all, artist, album)
 p                  toggle play mode (tree (view 1), shuffle (view 2), sorted (view 3))
 t                  toggle time elapsed/remaining
-q                  quit
+Q                  quit
 :                  enter command mode
 left, h            skip 5 seconds back in song
 right, l           skip 5 seconds forward in song
