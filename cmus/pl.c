@@ -1780,6 +1780,7 @@ void pl_remove(struct track_info *ti)
 			break;
 		}
 	}
+	all_wins_changed();
 	pl_unlock();
 }
 
