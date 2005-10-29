@@ -26,7 +26,7 @@ INSTALL		:= @$(scriptdir)/install
 SRCDIR_INSTALL	:= @cd $(srcdir) && $(scriptdir)/install
 RST2HTML	:= rst2html.py
 RST2HTML_FLAGS	:=
-CTAGS		:= ctags
+CTAGS		?= exuberant-ctags
 SPARSE		?= sparse
 SPARSE_FLAGS	?= -D__i386__
 
