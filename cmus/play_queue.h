@@ -47,14 +47,16 @@ extern void play_queue_exit(void);
 extern void __play_queue_append(struct track_info *track_info);
 extern void __play_queue_prepend(struct track_info *track_info);
 
-extern void play_queue_append(struct track_info *track_info);
-extern void play_queue_prepend(struct track_info *track_info);
-
 extern struct track_info *play_queue_remove(void);
 extern int play_queue_ch(uchar ch);
 extern int play_queue_key(int key);
 
 #define play_queue_lock() cmus_mutex_lock(&play_queue_mutex)
 #define play_queue_unlock() cmus_mutex_unlock(&play_queue_mutex)
+
+/* bindable */
+extern void play_queue_append(struct track_info *track_info);
+extern void play_queue_prepend(struct track_info *track_info);
+extern void play_queue_delete(void);
 
 #endif

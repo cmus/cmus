@@ -1901,8 +1901,9 @@ void __pl_set_view(int view)
 	}
 }
 
-int __pl_toggle_active_window(void)
+void pl_toggle_active_window(void)
 {
+	pl_lock();
 	if (playlist.cur_win == TREE_WIN) {
 		struct artist *artist;
 		struct album *album;
@@ -1910,13 +1911,15 @@ int __pl_toggle_active_window(void)
 		tree_win_get_selected(&artist, &album);
 		if (album) {
 			playlist.cur_win = TRACK_WIN;
-			return 1;
+			tree_win_changed();
+			track_win_changed();
 		}
 	} else if (playlist.cur_win == TRACK_WIN) {
 		playlist.cur_win = TREE_WIN;
-		return 1;
+		tree_win_changed();
+		track_win_changed();
 	}
-	return 0;
+	pl_unlock();
 }
 
 void pl_remove_sel(void)
@@ -1977,17 +1980,17 @@ static void pl_sel_move(int rows)
 	}
 }
 
-void pl_sel_up(int rows)
+void pl_sel_up(void)
 {
 	pl_lock();
-	pl_sel_move(-rows);
+	pl_sel_move(-1);
 	pl_unlock();
 }
 
-void pl_sel_down(int rows)
+void pl_sel_down(void)
 {
 	pl_lock();
-	pl_sel_move(rows);
+	pl_sel_move(1);
 	pl_unlock();
 }
 

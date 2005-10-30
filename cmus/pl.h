@@ -164,10 +164,10 @@ extern void pl_get_status(int *repeat, enum playlist_mode *playlist_mode, enum p
 
 /* these are unlocked */
 extern void __pl_set_view(int view);
-extern int __pl_toggle_active_window(void);
 
-extern void pl_sel_up(int rows);
-extern void pl_sel_down(int rows);
+extern void pl_toggle_active_window(void);
+extern void pl_sel_up(void);
+extern void pl_sel_down(void);
 extern void pl_sel_page_up(void);
 extern void pl_sel_page_down(void);
 extern void pl_sel_top(void);

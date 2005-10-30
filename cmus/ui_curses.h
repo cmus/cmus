@@ -92,8 +92,7 @@ extern const char * const color_names[NR_COLORS];
 extern int bg_colors[NR_COLORS];
 extern int fg_colors[NR_COLORS];
 
-extern void ui_curses_update_browser(void);
-extern void ui_curses_update_statusline(void);
+extern void display_help(void);
 extern void ui_curses_update_view(void);
 extern void ui_curses_update_titleline(void);
 extern void ui_curses_update_color(int idx);
@@ -102,5 +101,18 @@ extern void ui_curses_display_info_msg(const char *format, ...) __FORMAT(1, 2);
 extern void ui_curses_display_error_msg(const char *format, ...) __FORMAT(1, 2);
 extern int ui_curses_yes_no_query(const char *format, ...) __FORMAT(1, 2);
 extern void ui_curses_search_not_found(void);
+
+/* bindable */
+extern void ui_curses_toggle_remaining_time(void);
+extern void ui_curses_tree_view(void);
+extern void ui_curses_shuffle_view(void);
+extern void ui_curses_sorted_view(void);
+extern void ui_curses_play_queue_view(void);
+extern void ui_curses_browser_view(void);
+extern void ui_curses_filters_view(void);
+extern void ui_curses_command_mode(void);
+extern void ui_curses_search_mode(void);
+extern void ui_curses_search_backward_mode(void);
+extern void ui_curses_quit(void);
 
 #endif

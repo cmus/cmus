@@ -25,8 +25,6 @@
 #include <xmalloc.h>
 #include <debug.h>
 
-#include <curses.h>
-
 struct window *play_queue_win;
 struct searchable *play_queue_searchable;
 int play_queue_changed = 0;
@@ -187,7 +185,7 @@ struct track_info *play_queue_remove(void)
 	return info;
 }
 
-static void play_queue_delete(void)
+void play_queue_delete(void)
 {
 	struct iter iter;
 
@@ -201,74 +199,4 @@ static void play_queue_delete(void)
 		track_info_unref(e->track_info);
 		free(e);
 	}
-}
-
-int play_queue_ch(uchar ch)
-{
-	int rc = 1;
-
-	play_queue_lock();
-	switch (ch) {
-	case 'D':
-		play_queue_delete();
-		break;
-	case 'j':
-		window_move(play_queue_win, 1);
-		break;
-	case 'k':
-		window_move(play_queue_win, -1);
-		break;
-	case 6: /* ^f */
-		window_page_down(play_queue_win);
-		break;
-	case 2: /* ^b */
-		window_page_up(play_queue_win);
-		break;
-	case 'g':
-		window_goto_top(play_queue_win);
-		break;
-	case 'G':
-		window_goto_bottom(play_queue_win);
-		break;
-	default:
-		rc = 0;
-		break;
-	}
-	play_queue_unlock();
-	return rc;
-}
-
-int play_queue_key(int key)
-{
-	int rc = 1;
-
-	play_queue_lock();
-	switch (key) {
-	case KEY_DC:
-		play_queue_delete();
-		break;
-	case KEY_UP:
-		window_move(play_queue_win, -1);
-		break;
-	case KEY_DOWN:
-		window_move(play_queue_win, 1);
-		break;
-	case KEY_PPAGE:
-		window_page_up(play_queue_win);
-		break;
-	case KEY_NPAGE:
-		window_page_down(play_queue_win);
-		break;
-	case KEY_HOME:
-		window_goto_top(play_queue_win);
-		break;
-	case KEY_END:
-		window_goto_bottom(play_queue_win);
-		break;
-	default:
-		rc = 0;
-		break;
-	}
-	play_queue_unlock();
-	return rc;
 }

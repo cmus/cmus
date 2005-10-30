@@ -14,7 +14,6 @@
 #include <xmalloc.h>
 #include <debug.h>
 
-#include <curses.h>
 #include <ctype.h>
 
 struct window *filters_win;
@@ -103,7 +102,7 @@ static const char *get_filter(const char *name)
 	return NULL;
 }
 
-static void set_filters(void)
+void filters_activate(void)
 {
 	struct filter_entry *f;
 	struct expr *e, *expr = NULL;
@@ -159,7 +158,7 @@ static void set_filters(void)
 	pl_set_filter(expr);
 }
 
-static void toggle_filter(void)
+void filters_toggle_filter(void)
 {
 	struct iter iter;
 
@@ -171,7 +170,7 @@ static void toggle_filter(void)
 	}
 }
 
-static void delete_filter(void)
+void filters_delete_filter(void)
 {
 	struct iter iter;
 
@@ -300,7 +299,7 @@ void filters_init(void)
 	/* now we can display error messages on the command line */
 	interactive = 1;
 
-	set_filters();
+	filters_activate();
 }
 
 void filters_exit(void)
@@ -363,68 +362,3 @@ void filters_set_anonymous(const char *val)
 	pl_set_filter(e);
 }
 
-int filters_ch(uchar ch)
-{
-	switch (ch) {
-	case 0x0A:
-		set_filters();
-		break;
-	case ' ':
-		toggle_filter();
-		break;
-	case 'D':
-		delete_filter();
-		break;
-	case 'j':
-		window_move(filters_win, 1);
-		break;
-	case 'k':
-		window_move(filters_win, -1);
-		break;
-	case 6: /* ^f */
-		window_page_down(filters_win);
-		break;
-	case 2: /* ^b */
-		window_page_up(filters_win);
-		break;
-	case 'g':
-		window_goto_top(filters_win);
-		break;
-	case 'G':
-		window_goto_bottom(filters_win);
-		break;
-	default:
-		return 0;
-	}
-	return 1;
-}
-
-int filters_key(int key)
-{
-	switch (key) {
-	case KEY_DC:
-		delete_filter();
-		break;
-	case KEY_UP:
-		window_move(filters_win, -1);
-		break;
-	case KEY_DOWN:
-		window_move(filters_win, 1);
-		break;
-	case KEY_PPAGE:
-		window_page_up(filters_win);
-		break;
-	case KEY_NPAGE:
-		window_page_down(filters_win);
-		break;
-	case KEY_HOME:
-		window_goto_top(filters_win);
-		break;
-	case KEY_END:
-		window_goto_bottom(filters_win);
-		break;
-	default:
-		return 0;
-	}
-	return 1;
-}

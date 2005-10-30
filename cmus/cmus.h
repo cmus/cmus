@@ -24,8 +24,6 @@
 
 extern int cmus_init(void);
 extern void cmus_exit(void);
-extern void cmus_next(void);
-extern void cmus_prev(void);
 extern void cmus_play_file(const char *filename);
 
 extern int cmus_enqueue(const char *name, int prepend);
@@ -40,5 +38,17 @@ extern struct track_info *cmus_get_track_info(const char *name);
 extern int cmus_is_playlist(const char *filename);
 extern void cmus_update_selected(void);
 extern char **cmus_playlist_get_files(const char *filename);
+
+/* bindable */
+extern void cmus_next(void);
+extern void cmus_prev(void);
+extern void cmus_seek_bwd(void);
+extern void cmus_seek_fwd(void);
+extern void cmus_vol_up(void);
+extern void cmus_vol_down(void);
+extern void cmus_vol_left_up(void);
+extern void cmus_vol_left_down(void);
+extern void cmus_vol_right_up(void);
+extern void cmus_vol_right_down(void);
 
 #endif

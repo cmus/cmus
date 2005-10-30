@@ -28,6 +28,7 @@
 #include <player.h>
 #include <pl.h>
 #include <cmus.h>
+#include <keys.h>
 #include <xmalloc.h>
 #include <xstrjoin.h>
 #include <misc.h>
@@ -265,6 +266,53 @@ static void cmd_load(char *arg)
 		free(playlist_filename);
 		playlist_filename = name;
 	}
+}
+
+static void cmd_bind(char *arg)
+{
+	char *key, *func;
+
+	key = strchr(arg, ' ');
+	if (key == NULL)
+		goto err;
+	*key++ = 0;
+	while (*key == ' ')
+		key++;
+
+	func = strchr(key, ' ');
+	if (func == NULL)
+		goto err;
+	*func++ = 0;
+	while (*func == ' ')
+		func++;
+	if (*func == 0)
+		goto err;
+
+	key_bind(arg, key, func);
+	return;
+err:
+	ui_curses_display_error_msg("expecting 3 arguments (context, key and function)\n");
+}
+
+static void cmd_unbind(char *arg)
+{
+	char *key;
+
+	key = strchr(arg, ' ');
+	if (key == NULL)
+		goto err;
+	*key++ = 0;
+	while (*key == ' ')
+		key++;
+	if (*key == 0)
+		goto err;
+
+	/* FIXME: remove spaces at end */
+
+	key_unbind(arg, key);
+	return;
+err:
+	ui_curses_display_error_msg("expecting 2 arguments (context and key)\n");
 }
 
 static void cmd_reshuffle(char *arg)
@@ -567,6 +615,7 @@ struct command {
 /* sort by name */
 static struct command commands[] = {
 	{ "add",        cmd_add,        1, 1, TE_FILEDIR },
+	{ "bind",       cmd_bind,       1, 1, TE_NONE },
 	{ "cd",         cmd_cd,         0, 1, TE_DIR },
 	{ "clear",      cmd_clear,      0, 0, TE_NONE },
 	{ "enqueue",    cmd_enqueue,    1, 1, TE_FILEDIR },
@@ -578,7 +627,8 @@ static struct command commands[] = {
 	{ "seek",       cmd_seek,       1, 1, TE_NONE },
 	{ "set",        cmd_set,        1, 1, TE_OPTION },
 	{ "shuffle",    cmd_reshuffle,  0, 0, TE_NONE },
-	{ NULL,         NULL,           0, 0, 0 },
+	{ "unbind",     cmd_unbind,     1, 1, TE_NONE },
+	{ NULL,         NULL,           0, 0, 0 }
 };
 
 static int arg_expand_cmd = -1;

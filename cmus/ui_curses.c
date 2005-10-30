@@ -42,6 +42,7 @@
 #include <server.h>
 #include <path.h>
 #include <config.h>
+#include <keys.h>
 
 #if defined(CONFIG_IRMAN)
 #include <irman.h>
@@ -186,8 +187,6 @@ static int tree_win_w = 0;
 static int track_win_x = 0;
 static int track_win_y = 0;
 static int track_win_w = 0;
-
-static int volume_step = 1;
 
 /* colors in curses format */
 static int cursed_colors[NR_COLORS];
@@ -1117,7 +1116,7 @@ static void ui_curses_update_commandline(void)
 	post_update();
 }
 
-void ui_curses_update_statusline(void)
+static void ui_curses_update_statusline(void)
 {
 	curs_set(0);
 	update_statusline();
@@ -1230,7 +1229,7 @@ void ui_curses_search_not_found(void)
 	ui_curses_display_info_msg("%s not found: %s", what, search_str ? : "");
 }
 
-static void ui_curses_set_view(int view)
+static void set_view(int view)
 {
 	if (view == ui_curses_view)
 		return;
@@ -1272,25 +1271,71 @@ static void ui_curses_set_view(int view)
 	refresh();
 }
 
-static void ui_curses_update_play_queue(void)
+void ui_curses_toggle_remaining_time(void)
 {
-	curs_set(0);
-	update_play_queue_window();
-	post_update();
+	show_remaining_time ^= 1;
+	ui_curses_update_statusline();
 }
 
-void ui_curses_update_browser(void)
+void ui_curses_tree_view(void)
 {
-	curs_set(0);
-	update_browser_window();
-	post_update();
+	set_view(TREE_VIEW);
 }
 
-static void ui_curses_update_filters(void)
+void ui_curses_shuffle_view(void)
 {
-	curs_set(0);
-	update_filters_window();
-	post_update();
+	set_view(SHUFFLE_VIEW);
+}
+
+void ui_curses_sorted_view(void)
+{
+	set_view(SORTED_VIEW);
+}
+
+void ui_curses_play_queue_view(void)
+{
+	set_view(PLAY_QUEUE_VIEW);
+}
+
+void ui_curses_browser_view(void)
+{
+	set_view(BROWSER_VIEW);
+}
+
+void ui_curses_filters_view(void)
+{
+	set_view(FILTERS_VIEW);
+}
+
+void ui_curses_command_mode(void)
+{
+	error_msg[0] = 0;
+	error_time = 0;
+	ui_curses_input_mode = COMMAND_MODE;
+	ui_curses_update_commandline();
+}
+
+void ui_curses_search_mode(void)
+{
+	error_msg[0] = 0;
+	error_time = 0;
+	ui_curses_input_mode = SEARCH_MODE;
+	search_direction = SEARCH_FORWARD;
+	ui_curses_update_commandline();
+}
+
+void ui_curses_search_backward_mode(void)
+{
+	error_msg[0] = 0;
+	error_time = 0;
+	ui_curses_input_mode = SEARCH_MODE;
+	search_direction = SEARCH_BACKWARD;
+	ui_curses_update_commandline();
+}
+
+void ui_curses_quit(void)
+{
+	running = 0;
 }
 
 void ui_curses_update_color(int idx)
@@ -1565,7 +1610,7 @@ static void display_last_help(WINDOW *w)
 	mvwaddstr(w, row++, col, "Send bug reports, patches etc. to " PACKAGE_BUGREPORT);
 }
 
-static void display_help(void)
+void display_help(void)
 {
 	int x, y, page;
 	WINDOW *w;
@@ -1660,339 +1705,6 @@ static void clear_error(void)
 }
 
 /* screen updates }}} */
-
-static int queue_append_cb(void *data, struct track_info *ti)
-{
-	__play_queue_append(ti);
-	return 0;
-}
-
-static int queue_prepend_cb(void *data, struct track_info *ti)
-{
-	__play_queue_prepend(ti);
-	return 0;
-}
-
-/* keys {{{ */
-
-static int pl_ch(uchar ch)
-{
-	switch (ch) {
-	case 0x0A:
-		{
-			struct track_info *info;
-
-			info = pl_set_selected();
-			if (info) {
-				player_play_file(info->filename);
-				track_info_unref(info);
-			}
-		}
-		break;
-	case 6: /* ^f */
-		pl_sel_page_down();
-		break;
-	case 2: /* ^b */
-		pl_sel_page_up();
-		break;
-	case 'e':
-		play_queue_lock();
-		pl_for_each_selected(queue_append_cb, NULL, 0);
-		pl_sel_down(1);
-		play_queue_unlock();
-		break;
-	case 'E':
-		play_queue_lock();
-		pl_for_each_selected(queue_prepend_cb, NULL, 1);
-		pl_sel_down(1);
-		play_queue_unlock();
-		break;
-	case 'g':
-		pl_sel_top();
-		break;
-	case 'G':
-		pl_sel_bottom();
-		break;
-	case 7: /* ^g */
-	case 'i':
-		pl_sel_current();
-		break;
-	case 'j':
-		pl_sel_down(1);
-		break;
-	case 'k':
-		pl_sel_up(1);
-		break;
-	case 'D':
-		pl_remove_sel();
-		break;
-	case 'u':
-		cmus_update_playlist();
-		break;
-	case ' ':
-		pl_toggle_expand_artist();
-		break;
-	case 0x09:
-		if (ui_curses_view == TREE_VIEW) {
-			pl_lock();
-			if (__pl_toggle_active_window()) {
-				update_tree_window();
-				update_track_window();
-				refresh();
-				curs_set(0);
-			}
-			pl_unlock();
-		}
-		break;
-	default:
-		return 0;
-	}
-	return 1;
-}
-
-static int pl_key(int key)
-{
-	switch (key) {
-	case KEY_DOWN:
-		pl_sel_down(1);
-		break;
-	case KEY_UP:
-		pl_sel_up(1);
-		break;
-	case KEY_NPAGE:
-		pl_sel_page_down();
-		break;
-	case KEY_PPAGE:
-		pl_sel_page_up();
-		break;
-	case KEY_HOME:
-		pl_sel_top();
-		break;
-	case KEY_END:
-		pl_sel_bottom();
-		break;
-	case KEY_DC:
-		pl_remove_sel();
-		break;
-	default:
-		return 0;
-	}
-	return 1;
-}
-
-static int common_ch(uchar ch)
-{
-	switch (ch) {
-	case 'v':
-		player_stop();
-		break;
-	case 'x':
-		player_play();
-		break;
-	case 'h':
-		player_seek(-5.0, SEEK_CUR);
-		break;
-	case 'l':
-		player_seek(5.0, SEEK_CUR);
-		break;
-	case 'c':
-		player_pause();
-		break;
-	case 'Q':
-		running = 0;
-		break;
-	case 'p':
-		pl_toggle_play_mode();
-		break;
-	case 'r':
-		pl_toggle_repeat();
-		break;
-	case 'm':
-		pl_toggle_playlist_mode();
-		break;
-	case 'C':
-		player_toggle_cont();
-		break;
-	case 'b':
-		cmus_next();
-		break;
-	case 'z':
-		cmus_prev();
-		break;
-	case '-':
-		player_add_volume(-volume_step, -volume_step);
-		ui_curses_update_statusline();
-		break;
-	case '+':
-	case '=':
-		player_add_volume(volume_step, volume_step);
-		ui_curses_update_statusline();
-		break;
-	case '[':
-		player_add_volume(volume_step, 0);
-		ui_curses_update_statusline();
-		break;
-	case ']':
-		player_add_volume(0, volume_step);
-		ui_curses_update_statusline();
-		break;
-	case '{':
-		player_add_volume(-volume_step, 0);
-		ui_curses_update_statusline();
-		break;
-	case '}':
-		player_add_volume(0, -volume_step);
-		ui_curses_update_statusline();
-		break;
-	case 't':
-		show_remaining_time ^= 1;
-		ui_curses_update_statusline();
-		break;
-	case '1':
-		ui_curses_set_view(TREE_VIEW);
-		break;
-	case '2':
-		ui_curses_set_view(SHUFFLE_VIEW);
-		break;
-	case '3':
-		ui_curses_set_view(SORTED_VIEW);
-		break;
-	case '4':
-		ui_curses_set_view(PLAY_QUEUE_VIEW);
-		break;
-	case '5':
-	case 'a':
-		ui_curses_set_view(BROWSER_VIEW);
-		break;
-	case '6':
-		ui_curses_set_view(FILTERS_VIEW);
-		break;
-	case ':':
-		error_msg[0] = 0;
-		error_time = 0;
-		ui_curses_input_mode = COMMAND_MODE;
-		ui_curses_update_commandline();
-		break;
-	case '/':
-		error_msg[0] = 0;
-		error_time = 0;
-		ui_curses_input_mode = SEARCH_MODE;
-		search_direction = SEARCH_FORWARD;
-		ui_curses_update_commandline();
-		break;
-	case '?':
-		error_msg[0] = 0;
-		error_time = 0;
-		ui_curses_input_mode = SEARCH_MODE;
-		search_direction = SEARCH_BACKWARD;
-		ui_curses_update_commandline();
-		break;
-	case 'n':
-		if (search_str) {
-			if (!search_next(searchable, search_str, search_direction))
-				ui_curses_search_not_found();
-		}
-		break;
-	case 'N':
-		if (search_str) {
-			if (!search_next(searchable, search_str, !search_direction))
-				ui_curses_search_not_found();
-		}
-		break;
-	case 'q':
-		ui_curses_display_info_msg("Press Q to quit");
-		break;
-	default:
-		return 0;
-	}
-	return 1;
-}
-
-static int common_key(int key)
-{
-	switch (key) {
-	case KEY_LEFT:
-		player_seek(-5.0, SEEK_CUR);
-		break;
-	case KEY_RIGHT:
-		player_seek(5.0, SEEK_CUR);
-		break;
-	case KEY_F(1):
-		display_help();
-		break;
-	default:
-		return 0;
-	}
-	return 1;
-}
-
-static void normal_mode_ch(uchar ch)
-{
-	switch (ui_curses_view) {
-	case TREE_VIEW:
-	case SHUFFLE_VIEW:
-	case SORTED_VIEW:
-		if (pl_ch(ch))
-			return;
-		break;
-	case PLAY_QUEUE_VIEW:
-		if (play_queue_ch(ch)) {
-			ui_curses_update_play_queue();
-			return;
-		}
-		break;
-	case BROWSER_VIEW:
-		if (browser_ch(ch)) {
-			ui_curses_update_browser();
-			return;
-		}
-		break;
-	case FILTERS_VIEW:
-		if (filters_ch(ch)) {
-			ui_curses_update_filters();
-			return;
-		}
-		break;
-	}
-	if (common_ch(ch))
-		return;
-	d_print("unknown ch: %d, '%c'\n", ch, ch);
-}
-
-static void normal_mode_key(int key)
-{
-	switch (ui_curses_view) {
-	case TREE_VIEW:
-	case SHUFFLE_VIEW:
-	case SORTED_VIEW:
-		if (pl_key(key))
-			return;
-		break;
-	case PLAY_QUEUE_VIEW:
-		if (play_queue_key(key)) {
-			ui_curses_update_play_queue();
-			return;
-		}
-		break;
-	case BROWSER_VIEW:
-		if (browser_key(key)) {
-			ui_curses_update_browser();
-			return;
-		}
-		break;
-	case FILTERS_VIEW:
-		if (filters_key(key)) {
-			ui_curses_update_filters();
-			return;
-		}
-		break;
-	}
-	if (common_key(key))
-		return;
-	d_print("unknown key: %d, '%c'\n", key, key);
-}
-
-/* keys }}} */
 
 static void spawn_status_program(void)
 {
@@ -2123,26 +1835,6 @@ static struct irman *irman = NULL;
 static char *irman_device = NULL;
 static int irman_fd = -1;
 
-static void ir_seek_bwd(void)
-{
-	player_seek(-5.0, SEEK_CUR);
-}
-
-static void ir_seek_fwd(void)
-{
-	player_seek(5.0, SEEK_CUR);
-}
-
-static void ir_vol_up(void)
-{
-	player_add_volume(volume_step, volume_step);
-}
-
-static void ir_vol_down(void)
-{
-	player_add_volume(-volume_step, -volume_step);
-}
-
 static struct {
 	void (*function)(void);
 	const char *option;
@@ -2153,10 +1845,10 @@ static struct {
 	{ player_pause, "btn_pause", NULL },
 	{ cmus_prev, "btn_prev", NULL },
 	{ cmus_next, "btn_next", NULL },
-	{ ir_seek_bwd, "btn_seek_bwd", NULL },
-	{ ir_seek_fwd, "btn_seek_fwd", NULL },
-	{ ir_vol_up, "btn_vol_up", NULL },
-	{ ir_vol_down, "btn_vol_down", NULL },
+	{ cmus_seek_bwd, "btn_seek_bwd", NULL },
+	{ cmus_seek_fwd, "btn_seek_fwd", NULL },
+	{ cmus_vol_up, "btn_vol_up", NULL },
+	{ cmus_vol_down, "btn_vol_down", NULL },
 	{ pl_toggle_play_mode, "btn_play_mode", NULL },
 	{ pl_toggle_repeat, "btn_repeat", NULL },
 	{ player_toggle_cont, "btn_continue", NULL },
@@ -2569,6 +2261,7 @@ static int ui_curses_init(void)
 	commands_init();
 	options_init();
 	search_mode_init();
+	keys_init();
 	playlist_autosave_filename = xstrjoin(cmus_config_dir, "/playlist.pl");
 	player_get_volume(&player_info.vol_left, &player_info.vol_right);
 	return 0;
@@ -2612,6 +2305,7 @@ static void ui_curses_exit(void)
 	free(status_display_program);
 	free(sort_string);
 
+	keys_exit();
 	options_exit();
 	commands_exit();
 	search_mode_exit();

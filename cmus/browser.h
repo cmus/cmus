@@ -44,8 +44,16 @@ extern int browser_changed;
 
 extern void browser_init(void);
 extern void browser_exit(void);
-extern int browser_ch(uchar ch);
-extern int browser_key(int key);
 extern int browser_chdir(const char *dir);
+
+/* bindable */
+extern void browser_cd_parent(void);
+extern void browser_enter(void);
+extern void browser_add(void);
+extern void browser_queue_append(void);
+extern void browser_queue_prepend(void);
+extern void browser_delete(void);
+extern void browser_reload(void);
+extern void browser_toggle_show_hidden(void);
 
 #endif

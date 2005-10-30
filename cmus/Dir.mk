@@ -14,6 +14,7 @@ objs-y := \
 	history.o \
 	http.o \
 	input.o \
+	keys.o \
 	load_dir.o \
 	mergesort.o \
 	misc.o \

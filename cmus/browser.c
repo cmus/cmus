@@ -33,7 +33,6 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <string.h>
-#include <curses.h>
 
 struct window *browser_win;
 struct searchable *browser_searchable;
@@ -300,7 +299,14 @@ void browser_exit(void)
 	free_str_array(supported_extensions);
 }
 
-static void browser_cd_parent(void)
+int browser_chdir(const char *dir)
+{
+	if (browser_load(dir)) {
+	}
+	return 0;
+}
+
+void browser_cd_parent(void)
 {
 	char *new, *ptr, *pos;
 	struct browser_entry *e;
@@ -369,7 +375,7 @@ static void browser_cd_playlist(const char *filename)
 		ui_curses_display_error_msg("could not read playlist '%s': %s\n", filename, strerror(errno));
 }
 
-static void browser_enter(void)
+void browser_enter(void)
 {
 	struct browser_entry *e;
 	struct iter sel;
@@ -400,7 +406,7 @@ static void browser_enter(void)
 	}
 }
 
-static void browser_add(void)
+void browser_add(void)
 {
 	struct browser_entry *e;
 	struct iter sel;
@@ -417,6 +423,7 @@ static void browser_add(void)
 		cmus_add(full);
 		free(full);
 	}
+	window_move(browser_win, 1);
 }
 
 static void browser_enqueue(int prepend)
@@ -436,9 +443,20 @@ static void browser_enqueue(int prepend)
 		cmus_enqueue(full, prepend);
 		free(full);
 	}
+	window_move(browser_win, 1);
 }
 
-static void browser_delete(void)
+void browser_queue_append(void)
+{
+	browser_enqueue(0);
+}
+
+void browser_queue_prepend(void)
+{
+	browser_enqueue(1);
+}
+
+void browser_delete(void)
 {
 	struct browser_entry *e;
 	struct iter sel;
@@ -469,7 +487,7 @@ static void browser_delete(void)
 	}
 }
 
-static void browser_reload(void)
+void browser_reload(void)
 {
 	char *tmp = xstrdup(browser_dir);
 	char *sel = NULL;
@@ -505,97 +523,8 @@ static void browser_reload(void)
 	free(sel);
 }
 
-int browser_ch(uchar ch)
+void browser_toggle_show_hidden(void)
 {
-	switch (ch) {
-	case 0x0A:
-		browser_enter();
-		break;
-	case 'D':
-		browser_delete();
-		break;
-	case 'a':
-		browser_add();
-		window_move(browser_win, 1);
-		break;
-	case 'e':
-		browser_enqueue(0);
-		window_move(browser_win, 1);
-		break;
-	case 'E':
-		browser_enqueue(1);
-		window_move(browser_win, 1);
-		break;
-	case 'i':
-		show_hidden ^= 1;
-		browser_reload();
-		break;
-	case 'u':
-		browser_reload();
-		break;
-	case 'j':
-		window_move(browser_win, 1);
-		break;
-	case 'k':
-		window_move(browser_win, -1);
-		break;
-	case 6: /* ^f */
-		window_page_down(browser_win);
-		break;
-	case 2: /* ^b */
-		window_page_up(browser_win);
-		break;
-	case 'g':
-		window_goto_top(browser_win);
-		break;
-	case 'G':
-		window_goto_bottom(browser_win);
-		break;
-	case 127:
-		browser_cd_parent();
-		break;
-	default:
-		return 0;
-	}
-	return 1;
-}
-
-int browser_key(int key)
-{
-	switch (key) {
-	case KEY_BACKSPACE:
-		browser_cd_parent();
-		break;
-	case KEY_DC:
-		browser_delete();
-		break;
-	case KEY_UP:
-		window_move(browser_win, -1);
-		break;
-	case KEY_DOWN:
-		window_move(browser_win, 1);
-		break;
-	case KEY_PPAGE:
-		window_page_up(browser_win);
-		break;
-	case KEY_NPAGE:
-		window_page_down(browser_win);
-		break;
-	case KEY_HOME:
-		window_goto_top(browser_win);
-		break;
-	case KEY_END:
-		window_goto_bottom(browser_win);
-		break;
-	default:
-		return 0;
-	}
-	return 1;
-}
-
-int browser_chdir(const char *dir)
-{
-	if (browser_load(dir)) {
-	}
-	return 0;
+	show_hidden ^= 1;
+	browser_reload();
 }

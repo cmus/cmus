@@ -44,7 +44,9 @@ void filters_set_filter(const char *keyval);
  */
 void filters_set_anonymous(const char *val);
 
-int filters_ch(uchar ch);
-int filters_key(int key);
+/* bindable */
+void filters_activate(void);
+void filters_toggle_filter(void);
+void filters_delete_filter(void);
 
 #endif
