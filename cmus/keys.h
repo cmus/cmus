@@ -38,8 +38,15 @@ struct key_function {
 	void (*func)(void);
 };
 
+struct key {
+	const char *name;
+	int key;
+	uchar ch;
+};
+
 extern const char * const key_context_names[NR_CTXS + 1];
 extern const struct key_function *key_functions[NR_CTXS + 1];
+extern const struct key key_table[];
 
 int keys_init(void);
 void keys_exit(void);

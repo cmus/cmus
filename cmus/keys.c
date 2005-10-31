@@ -39,12 +39,6 @@
 #include <stdio.h>
 #include <ctype.h>
 
-struct key {
-	const char *name;
-	int key;
-	uchar ch;
-};
-
 struct binding {
 	struct binding *next;
 	const struct key *key;
@@ -385,8 +379,8 @@ const struct key_function *key_functions[NR_CTXS + 1] = {
 	NULL
 };
 
-/* keys {{{ */
-static const struct key keys[] = {
+/* key_table {{{ */
+const struct key key_table[] = {
 	{ "!",			KEY_IS_CHAR,		33	},
 	{ "#",			KEY_IS_CHAR,		35	},
 	{ "$",			KEY_IS_CHAR,		36	},
@@ -853,9 +847,9 @@ static const struct key *find_key(const char *name)
 {
 	int i;
 
-	for (i = 0; keys[i].name; i++) {
-		if (strcmp(name, keys[i].name) == 0)
-			return &keys[i];
+	for (i = 0; key_table[i].name; i++) {
+		if (strcmp(name, key_table[i].name) == 0)
+			return &key_table[i];
 	}
 	if (initializing) {
 		fprintf(stderr, "invalid key '%s'\n", name);
@@ -1089,9 +1083,9 @@ static const struct key *ch_to_key(uchar ch)
 {
 	int i;
 
-	for (i = 0; keys[i].name; i++) {
-		if (keys[i].key == KEY_IS_CHAR && keys[i].ch == ch)
-			return &keys[i];
+	for (i = 0; key_table[i].name; i++) {
+		if (key_table[i].key == KEY_IS_CHAR && key_table[i].ch == ch)
+			return &key_table[i];
 	}
 	return NULL;
 }
@@ -1100,9 +1094,9 @@ static const struct key *keycode_to_key(int key)
 {
 	int i;
 
-	for (i = 0; keys[i].name; i++) {
-		if (keys[i].key != KEY_IS_CHAR && keys[i].key == key)
-			return &keys[i];
+	for (i = 0; key_table[i].name; i++) {
+		if (key_table[i].key != KEY_IS_CHAR && key_table[i].key == key)
+			return &key_table[i];
 	}
 	return NULL;
 }
