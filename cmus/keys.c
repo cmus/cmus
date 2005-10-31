@@ -39,57 +39,43 @@
 #include <stdio.h>
 #include <ctype.h>
 
-enum context {
-	CTX_COMMON,
-
-	CTX_PLAYLIST,
-	CTX_PLAY_QUEUE,
-	CTX_BROWSER,
-	CTX_FILTERS
-};
-#define NR_CTXS (CTX_FILTERS + 1)
-
 struct key {
 	const char *name;
 	int key;
 	uchar ch;
 };
 
-struct function {
-	char *name;
-	void (*func)(void);
-};
-
 struct binding {
 	struct binding *next;
 	const struct key *key;
-	const struct function *func;
+	const struct key_function *func;
 };
 
-static const char * const context_names[NR_CTXS] = {
-	"common",
-	"playlist",
-	"play_queue",
+const char * const key_context_names[NR_CTXS + 1] = {
 	"browser",
-	"filters"
+	"common",
+	"filters",
+	"play_queue",
+	"playlist",
+	NULL
 };
 
-static const enum context view_to_context[] = {
+static const enum key_context view_to_context[] = {
 	CTX_PLAYLIST,
 	CTX_PLAYLIST,
 	CTX_PLAYLIST,
 	CTX_PLAY_QUEUE,
 	CTX_BROWSER,
-	CTX_FILTERS,
+	CTX_FILTERS
 };
-
-static struct binding *bindings[NR_CTXS] = { NULL, };
 
 #define KEY_IS_CHAR -255
 
+static struct binding *bindings[NR_CTXS] = { NULL, };
 static int initializing = 1;
 static char *filename;
 
+/* bindable functions {{{ */
 static void win_activate_next(void)
 {
 	if (ui_curses_view == TREE_VIEW)
@@ -98,7 +84,7 @@ static void win_activate_next(void)
 
 static void win_bottom(void)
 {
-	enum context c = view_to_context[ui_curses_view];
+	enum key_context c = view_to_context[ui_curses_view];
 
 	switch (c) {
 	case CTX_COMMON:
@@ -125,7 +111,7 @@ static void win_bottom(void)
 
 static void win_down(void)
 {
-	enum context c = view_to_context[ui_curses_view];
+	enum key_context c = view_to_context[ui_curses_view];
 
 	switch (c) {
 	case CTX_COMMON:
@@ -152,7 +138,7 @@ static void win_down(void)
 
 static void win_page_down(void)
 {
-	enum context c = view_to_context[ui_curses_view];
+	enum key_context c = view_to_context[ui_curses_view];
 
 	switch (c) {
 	case CTX_COMMON:
@@ -179,7 +165,7 @@ static void win_page_down(void)
 
 static void win_page_up(void)
 {
-	enum context c = view_to_context[ui_curses_view];
+	enum key_context c = view_to_context[ui_curses_view];
 
 	switch (c) {
 	case CTX_COMMON:
@@ -206,7 +192,7 @@ static void win_page_up(void)
 
 static void win_top(void)
 {
-	enum context c = view_to_context[ui_curses_view];
+	enum key_context c = view_to_context[ui_curses_view];
 
 	switch (c) {
 	case CTX_COMMON:
@@ -233,7 +219,7 @@ static void win_top(void)
 
 static void win_up(void)
 {
-	enum context c = view_to_context[ui_curses_view];
+	enum key_context c = view_to_context[ui_curses_view];
 
 	switch (c) {
 	case CTX_COMMON:
@@ -312,9 +298,10 @@ static void search_next_backward(void)
 			ui_curses_search_not_found();
 	}
 }
+/* }}} */
 
 /* functions {{{ */
-static const struct function common_functions[] = {
+static const struct key_function common_functions[] = {
 	{ "help",			display_help			},
 	{ "next",			cmus_next			},
 	{ "pause",			player_pause			},
@@ -353,7 +340,7 @@ static const struct function common_functions[] = {
 	{ NULL,				NULL				}
 };
 
-static struct function playlist_functions[] = {
+static struct key_function playlist_functions[] = {
 	{ "expand_artist",	pl_toggle_expand_artist	},
 	{ "play_selected",	play_selected		},
 	{ "queue_append",	queue_append		},
@@ -364,12 +351,12 @@ static struct function playlist_functions[] = {
 	{ NULL,			NULL			}
 };
 
-static const struct function play_queue_functions[] = {
+static const struct key_function play_queue_functions[] = {
 	{ "remove",		play_queue_delete	},
 	{ NULL,			NULL			}
 };
 
-static const struct function browser_functions[] = {
+static const struct key_function browser_functions[] = {
 	{ "add",		browser_add			},
 	{ "cd_parent",		browser_cd_parent		},
 	{ "enter",		browser_enter			},
@@ -381,7 +368,7 @@ static const struct function browser_functions[] = {
 	{ NULL,			NULL				}
 };
 
-static const struct function filters_functions[] = {
+static const struct key_function filters_functions[] = {
 	{ "activate",		filters_activate	},
 	{ "delete_filter",	filters_delete_filter	},
 	{ "toggle_filter",	filters_toggle_filter	},
@@ -389,12 +376,13 @@ static const struct function filters_functions[] = {
 };
 /* }}} */
 
-static const struct function *all_functions[NR_CTXS] = {
-	common_functions,
-	playlist_functions,
-	play_queue_functions,
+const struct key_function *key_functions[NR_CTXS + 1] = {
 	browser_functions,
-	filters_functions
+	common_functions,
+	filters_functions,
+	play_queue_functions,
+	playlist_functions,
+	NULL
 };
 
 /* keys {{{ */
@@ -752,7 +740,7 @@ static const struct key keys[] = {
 
 /* default bindings {{{ */
 static const struct {
-	enum context context;
+	enum key_context context;
 	const char *key;
 	const char *func;
 } defaults[] = {
@@ -837,7 +825,7 @@ static void set_defaults(void)
 
 	d_print("setting default keybindings\n");
 	for (i = 0; defaults[i].key; i++)
-		key_bind(context_names[defaults[i].context], defaults[i].key, defaults[i].func);
+		key_bind(key_context_names[defaults[i].context], defaults[i].key, defaults[i].func);
 }
 
 
@@ -850,7 +838,7 @@ static int find_context(const char *name)
 	int i;
 
 	for (i = 0; i < NR_CTXS; i++) {
-		if (strcmp(name, context_names[i]) == 0)
+		if (strcmp(name, key_context_names[i]) == 0)
 			return i;
 	}
 	if (initializing) {
@@ -877,9 +865,9 @@ static const struct key *find_key(const char *name)
 	return NULL;
 }
 
-static const struct function *find_function(const char *name, enum context c)
+static const struct key_function *find_function(const char *name, enum key_context c)
 {
-	const struct function *functions = all_functions[c];
+	const struct key_function *functions = key_functions[c];
 	int i;
 
 	for (i = 0; functions[i].name; i++) {
@@ -887,14 +875,14 @@ static const struct function *find_function(const char *name, enum context c)
 			return &functions[i];
 	}
 	if (initializing) {
-		fprintf(stderr, "function '%s' not found in context %s\n", name, context_names[c]);
+		fprintf(stderr, "function '%s' not found in context %s\n", name, key_context_names[c]);
 	} else {
-		ui_curses_display_error_msg("function '%s' not in context %s", name, context_names[c]);
+		ui_curses_display_error_msg("function '%s' not in context %s", name, key_context_names[c]);
 	}
 	return NULL;
 }
 
-static struct binding *find_binding(enum context c, const struct key *k)
+static struct binding *find_binding(enum key_context c, const struct key *k)
 {
 	struct binding *b = bindings[c];
 
@@ -910,7 +898,7 @@ int key_bind(const char *context, const char *key, const char *func)
 {
 	int c;
 	const struct key *k;
-	const struct function *f;
+	const struct key_function *f;
 	struct binding *b;
 
 	c = find_context(context);
@@ -929,7 +917,7 @@ int key_bind(const char *context, const char *key, const char *func)
 	b = find_binding(c, k);
 	if (b)
 		goto bound;
-	if (context != CTX_COMMON) {
+	if (c != CTX_COMMON) {
 		/* always search CTX_COMMON because same key can't be bound
 		 * in CTX_COMMON _and_ any other context at the same time
 		 */
@@ -958,7 +946,7 @@ bound:
 
 int key_unbind(const char *context, const char *key)
 {
-	enum context c;
+	enum key_context c;
 	const struct key *k;
 	struct binding *b, *prev;
 
@@ -1075,7 +1063,7 @@ void keys_exit(void)
 	}
 	for (i = 0; i < NR_CTXS; i++) {
 		struct binding *b = bindings[i];
-		const char *name = context_names[i];
+		const char *name = key_context_names[i];
 
 		while (b) {
 			fprintf(f, "%s %-25s %s\n", name, b->key->name, b->func->name);
@@ -1121,7 +1109,7 @@ static const struct key *keycode_to_key(int key)
 
 void normal_mode_ch(uchar ch)
 {
-	enum context c;
+	enum key_context c;
 	const struct key *k;
 
 	/* you can't redefine these keys */
@@ -1151,13 +1139,13 @@ void normal_mode_ch(uchar ch)
 	}
 
 	/* common ch */
-	if (!handle_key(bindings[0], k))
-		d_print("key %s not bound in context %s or common\n", k->name, context_names[c]);
+	if (!handle_key(bindings[CTX_COMMON], k))
+		d_print("key %s not bound in context %s or common\n", k->name, key_context_names[c]);
 }
 
 void normal_mode_key(int key)
 {
-	enum context c = view_to_context[ui_curses_view];
+	enum key_context c = view_to_context[ui_curses_view];
 	const struct key *k = keycode_to_key(key);
 
 	if (k == NULL) {
@@ -1171,6 +1159,6 @@ void normal_mode_key(int key)
 	}
 
 	/* common key */
-	if (!handle_key(bindings[0], k))
-		d_print("key %s not bound in context %s or common\n", k->name, context_names[c]);
+	if (!handle_key(bindings[CTX_COMMON], k))
+		d_print("key %s not bound in context %s or common\n", k->name, key_context_names[c]);
 }

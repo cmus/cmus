@@ -24,6 +24,23 @@
 
 #include <uchar.h>
 
+enum key_context {
+	CTX_BROWSER,
+	CTX_COMMON,
+	CTX_FILTERS,
+	CTX_PLAY_QUEUE,
+	CTX_PLAYLIST
+};
+#define NR_CTXS (CTX_PLAYLIST + 1)
+
+struct key_function {
+	const char *name;
+	void (*func)(void);
+};
+
+extern const char * const key_context_names[NR_CTXS + 1];
+extern const struct key_function *key_functions[NR_CTXS + 1];
+
 int keys_init(void);
 void keys_exit(void);
 
