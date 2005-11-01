@@ -888,7 +888,7 @@ int key_bind(const char *context, const char *key, const char *func)
 	int c;
 	const struct key *k;
 	const struct key_function *f;
-	struct binding *b;
+	struct binding *b, *ptr, *prev;
 
 	c = find_context(context);
 	if (c < 0)
@@ -919,8 +919,21 @@ int key_bind(const char *context, const char *key, const char *func)
 	b->key = k;
 	b->func = f;
 
-	b->next = key_bindings[c];
-	key_bindings[c] = b;
+	/* insert keeping sorted by key */
+	prev = NULL;
+	ptr = key_bindings[c];
+	while (ptr) {
+		if (strcmp(b->key->name, ptr->key->name) < 0)
+			break;
+		prev = ptr;
+		ptr = ptr->next;
+	}
+	b->next = ptr;
+	if (prev) {
+		prev->next = b;
+	} else {
+		key_bindings[c] = b;
+	}
 
 	d_print("bound %s in %s to %s\n", key, context, func);
 	return 0;
