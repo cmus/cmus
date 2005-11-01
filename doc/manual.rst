@@ -157,6 +157,7 @@ Use the ``:set`` command to set options.
 Command                          Description
 ===============================  ===========
 :add dir/file/playlist/url       Add dir/file/playlist/url to playlist. This command can be used to join playlists.
+:bind context key command        Define keybinding (See `Keybindings`_).
 :cd [directory]                  Change directory.  Default directory is ``$HOME``.
 :clear                           Clear playlist.
 :enqueue\ dir/file/playlist/url  Add dir/file/playlist/url to the play queue.
@@ -168,6 +169,7 @@ Command                          Description
 :seek [+-]POS                    Seek top POS (seconds). POS can be suffixed with 'm' (minutes) or 'h' (hours).
 :set OPTION=VALUE                Set option (See Options_).
 :shuffle                         Reshuffle playlist.
+:unbind context key              Remove keybinding.
 ===============================  ===========
 
 Options
@@ -497,6 +499,130 @@ xterm           256
 GNU Screen      as many as the terminal inside which screen is running
 ==============  ==============
 
+Keybindings
+===========
+
+Use `:bind context key command` to bind a key and `:unbind context key` to
+remove existing keybinding.  Use tab to cycle through contexts, keys and
+functions.
+
+=============  ==============
+Context        Description
+=============  ==============
+browser        Directory browser
+common         All views
+filters        Filters view
+playlist       Views 1-3
+play_queue     Play Queue
+=============  ==============
+
+
+Functions Common for All Views
+------------------------------
+
+========================  ==============
+Function                  Description
+========================  ==============
+help
+next
+pause
+play
+prev
+quit
+search_next
+search_prev
+seek_backward
+seek_forward
+stop
+toggle_continue
+toggle_play_mode
+toggle_playlist_mode
+toggle_remaining_time
+toggle_repeat
+view_1
+view_2
+view_3
+view_4
+view_5
+view_6
+vol_down
+vol_left_down
+vol_left_up
+vol_right_down
+vol_right_up
+vol_up
+win_activate_next         toggle active window in view 1
+win_bottom                goto bottom
+win_down                  scroll down one row
+win_page_down             scroll down one page
+win_page_up               scroll up one page
+win_top                   goto top
+win_up                    scroll up one row
+========================  ==============
+
+Functions for Playlist Views (1-3)
+----------------------------------
+
+========================  ==============
+Function                  Description
+========================  ==============
+expand_artist             toggle showing albums for selected artist
+play_selected             play selected track
+queue_append              append to play queue
+queue_prepend             prepend to play queue
+remove                    remove artist/album/track from play queue
+select_current            jump to currently playing file
+update                    remove non-existent files from playlist and update tags for changed files
+========================  ==============
+
+Functions for Play Queue View (4)
+---------------------------------
+
+========================  ==============
+Function                  Description
+========================  ==============
+remove                    remove selected track from queue
+========================  ==============
+
+Functions for Directory Browser (5)
+-----------------------------------
+
+========================  ==============
+Function                  Description
+========================  ==============
+add                       add selection to playlist
+cd_parent                 cd ..
+enter                     enter directory/playlist or play file
+queue_append              append to play queue
+queue_prepend             prepend to play queue
+reload                    reload directory
+remove                    remove selected file
+toggle_show_hidden        toggle showing hidden files
+========================  ==============
+
+Functions for Filters View (6)
+------------------------------
+
+========================  ==============
+Function                  Description
+========================  ==============
+activate                  activate selected filters
+delete_filter             delete filter
+toggle_filter             select / deselect filter
+========================  ==============
+
+Examples
+--------
+
+::
+
+	# make control-h toggle showing hidden files
+	:bind browser ^H toggle_show_hidden
+
+	# remove binding for F1 key (help by default)
+	:unbind common F1
+
+
 Files
 ==========================
 
@@ -505,6 +631,9 @@ Files
 
 ~/.config/cmus/filters
   playlist filters
+
+~/.config/cmus/keybindings
+  keybindings
 
 ~/.config/cmus/playlist.pl
   automatically saved playlist

@@ -1412,7 +1412,7 @@ void ui_curses_set_sort(const char *value, int warn)
 }
 
 #define HELP_WIDTH 80
-#define HELP_HEIGHT 23
+#define HELP_HEIGHT 24
 #define HELP_W (HELP_WIDTH - 2)
 #define HELP_H (HELP_HEIGHT - 2)
 
@@ -1542,6 +1542,7 @@ static void display_command_mode_help(WINDOW *w)
 	mvwaddstr(w, row++, (HELP_W - 12) / 2, "~~~~~~~~~~~~");
 	row++;
 	mvwaddstr(w, row++, col, ":add file/dir/playlist     - add to playlist");
+	mvwaddstr(w, row++, col, ":bind context key command  - bind key");
 	mvwaddstr(w, row++, col, ":cd [dir]                  - change directory");
 	mvwaddstr(w, row++, col, ":clear                     - clear playlist");
 	mvwaddstr(w, row++, col, ":enqueue file/dir/playlist - add to play queue");
@@ -1550,13 +1551,13 @@ static void display_command_mode_help(WINDOW *w)
 	mvwaddstr(w, row++, col, ":load filename             - load playlist");
 	mvwaddstr(w, row++, col, ":run command               - run `command' for the selected files");
 	mvwaddstr(w, row++, col, ":save [filename]           - save playlist");
-	mvwaddstr(w, row++, col, ":seek POS[mh]              - seek to absolute position");
+	mvwaddstr(w, row++, col, ":seek [+-]POS[mh]          - seek to absolute or relative (+/-) position");
 	mvwaddstr(w, row++, col, "                             POS is seconds, minutes (m) or hours (h)");
-	mvwaddstr(w, row++, col, ":seek [+-]POS[mh]          - seek to relative position");
 	mvwaddstr(w, row++, col, ":set option=value          - see next page");
 	mvwaddstr(w, row++, col, ":shuffle                   - reshuffle playlist");
+	mvwaddstr(w, row++, col, ":unbind context key        - unbind key");
 	row++;
-	mvwaddstr(w, row++, col, "Use <tab> to expand commands, options, files and directories.");
+	mvwaddstr(w, row++, col, "Use <tab> to expand commands and their arguments.");
 	mvwaddstr(w, row++, col, "Unambiguous short commands work too (f.e: ':a file.ogg').");
 }
 
