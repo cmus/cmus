@@ -47,3 +47,18 @@ char *xstrndup(const char *str, size_t n)
 	s[n] = 0;
 	return s;
 }
+
+char **str_array_add(char **a, int *allocp, int *posp, char *str)
+{
+	int alloc = *allocp;
+	int pos = *posp;
+
+	if (pos + 1 >= alloc) {
+		alloc = (alloc + 16) * 3 / 2 + 1;
+		a = xrenew(char *, a, alloc);
+		*allocp = alloc;
+	}
+	a[pos++] = str;
+	*posp = pos;
+	return a;
+}

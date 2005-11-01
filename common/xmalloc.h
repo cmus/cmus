@@ -67,6 +67,7 @@ static inline char * __MALLOC xstrdup(const char *str)
 }
 
 extern char * __MALLOC xstrndup(const char *str, size_t n);
+extern char **str_array_add(char **a, int *allocp, int *posp, char *str);
 
 static inline char * __MALLOC xxstrdup(const char *str)
 {

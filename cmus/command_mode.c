@@ -612,6 +612,167 @@ static void expand_directories(const char *str)
 	expand_files_and_dirs(str);
 }
 
+/* buffer used for tab expansion */
+static char expbuf[512];
+
+/* fills tabexp struct */
+static void expand_bind_args(const char *str)
+{
+	/* :bind context key function
+	 *
+	 * possible values for str:
+	 *   c
+	 *   context k
+	 *   context key f
+	 *
+	 * you need to know context before you can expand function
+	 */
+	/* start and end pointers for context, key and function */
+	const char *cs, *ce, *ks, *ke, *fs;
+	char *tmp, **tails;
+	int i, c, k, len, pos, alloc;
+
+	cs = str;
+	ce = strchr(cs, ' ');
+	if (ce == NULL) {
+		/* expand context */
+		len = strlen(cs);
+		tails = xnew(char *, NR_CTXS + 1);
+		pos = 0;
+		for (i = 0; key_context_names[i]; i++) {
+			int cmp = strncmp(cs, key_context_names[i], len);
+			if (cmp > 0)
+				continue;
+			if (cmp < 0)
+				break;
+			tails[pos++] = xstrdup(key_context_names[i] + len);
+		}
+
+		if (pos == 0) {
+			free(tails);
+			return;
+		}
+		if (pos == 1) {
+			tmp = xstrjoin(tails[0], " ");
+			free(tails[0]);
+			tails[0] = tmp;
+		}
+		tails[pos] = NULL;
+		tabexp.head = xstrdup(cs);
+		tabexp.tails = tails;
+		tabexp.nr_tails = pos;
+		tabexp.index = 0;
+		return;
+	}
+
+	/* context must be expandable */
+	c = -1;
+	for (i = 0; key_context_names[i]; i++) {
+		if (strncmp(cs, key_context_names[i], ce - cs) == 0) {
+			if (c != -1) {
+				/* ambiguous */
+				c = -1;
+				break;
+			}
+			c = i;
+		}
+	}
+	if (c == -1) {
+		/* context is ambiguous or invalid */
+		return;
+	}
+
+	ks = ce;
+	while (*ks == ' ')
+		ks++;
+	ke = strchr(ks, ' ');
+	if (ke == NULL) {
+		/* expand key */
+		len = strlen(ks);
+		tails = NULL;
+		alloc = 0;
+		pos = 0;
+		for (i = 0; key_table[i].name; i++) {
+			int cmp = strncmp(ks, key_table[i].name, len);
+			if (cmp > 0)
+				continue;
+			if (cmp < 0)
+				break;
+			tails = str_array_add(tails, &alloc, &pos, xstrdup(key_table[i].name + len));
+		}
+
+		if (pos == 0) {
+			return;
+		}
+		if (pos == 1) {
+			tmp = xstrjoin(tails[0], " ");
+			free(tails[0]);
+			tails[0] = tmp;
+		}
+
+		snprintf(expbuf, sizeof(expbuf), "%s %s", key_context_names[c], ks);
+
+		tails[pos] = NULL;
+		tabexp.head = xstrdup(expbuf);
+		tabexp.tails = tails;
+		tabexp.nr_tails = pos;
+		tabexp.index = 0;
+		return;
+	}
+
+	/* key must be expandable */
+	k = -1;
+	for (i = 0; key_table[i].name; i++) {
+		if (strncmp(ks, key_table[i].name, ke - ks) == 0) {
+			if (k != -1) {
+				/* ambiguous */
+				k = -1;
+				break;
+			}
+			k = i;
+		}
+	}
+	if (k == -1) {
+		/* key is ambiguous or invalid */
+		return;
+	}
+
+	fs = ke;
+	while (*fs == ' ')
+		fs++;
+
+	/* expand function */
+	len = strlen(fs);
+	tails = NULL;
+	alloc = 0;
+	pos = 0;
+	for (i = 0; key_functions[c][i].name; i++) {
+		int cmp = strncmp(fs, key_functions[c][i].name, len);
+		if (cmp > 0)
+			continue;
+		if (cmp < 0)
+			break;
+		tails = str_array_add(tails, &alloc, &pos, xstrdup(key_functions[c][i].name + len));
+	}
+
+	if (pos == 0) {
+		return;
+	}
+	if (pos == 1) {
+		tmp = xstrjoin(tails[0], " ");
+		free(tails[0]);
+		tails[0] = tmp;
+	}
+
+	snprintf(expbuf, sizeof(expbuf), "%s %s %s", key_context_names[c], key_table[k].name, fs);
+
+	tails[pos] = NULL;
+	tabexp.head = xstrdup(expbuf);
+	tabexp.tails = tails;
+	tabexp.nr_tails = pos;
+	tabexp.index = 0;
+}
+
 /* fills tabexp struct */
 static void expand_options(const char *str)
 {
@@ -683,7 +844,7 @@ struct command {
 /* sort by name */
 static struct command commands[] = {
 	{ "add",	cmd_add,	1, 1, expand_files	},
-	{ "bind",	cmd_bind,	1, 1, NULL		},
+	{ "bind",	cmd_bind,	1, 1, expand_bind_args	},
 	{ "cd",		cmd_cd,		0, 1, expand_directories},
 	{ "clear",	cmd_clear,	0, 0, NULL		},
 	{ "enqueue",	cmd_enqueue,	1, 1, expand_files	},
