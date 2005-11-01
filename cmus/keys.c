@@ -1068,7 +1068,7 @@ void keys_exit(void)
 		const char *name = key_context_names[i];
 
 		while (b) {
-			fprintf(f, "%s %-25s %s\n", name, b->key->name, b->func->name);
+			fprintf(f, "%-10s %-20s %s\n", name, b->key->name, b->func->name);
 			b = b->next;
 		}
 	}
