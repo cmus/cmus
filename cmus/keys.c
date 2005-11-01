@@ -39,12 +39,6 @@
 #include <stdio.h>
 #include <ctype.h>
 
-struct binding {
-	struct binding *next;
-	const struct key *key;
-	const struct key_function *func;
-};
-
 const char * const key_context_names[NR_CTXS + 1] = {
 	"browser",
 	"common",
@@ -53,6 +47,8 @@ const char * const key_context_names[NR_CTXS + 1] = {
 	"playlist",
 	NULL
 };
+
+struct binding *key_bindings[NR_CTXS] = { NULL, };
 
 static const enum key_context view_to_context[] = {
 	CTX_PLAYLIST,
@@ -65,7 +61,6 @@ static const enum key_context view_to_context[] = {
 
 #define KEY_IS_CHAR -255
 
-static struct binding *bindings[NR_CTXS] = { NULL, };
 static int initializing = 1;
 static char *filename;
 
@@ -878,7 +873,7 @@ static const struct key_function *find_function(const char *name, enum key_conte
 
 static struct binding *find_binding(enum key_context c, const struct key *k)
 {
-	struct binding *b = bindings[c];
+	struct binding *b = key_bindings[c];
 
 	while (b) {
 		if (b->key == k)
@@ -924,8 +919,8 @@ int key_bind(const char *context, const char *key, const char *func)
 	b->key = k;
 	b->func = f;
 
-	b->next = bindings[c];
-	bindings[c] = b;
+	b->next = key_bindings[c];
+	key_bindings[c] = b;
 
 	d_print("bound %s in %s to %s\n", key, context, func);
 	return 0;
@@ -953,13 +948,13 @@ int key_unbind(const char *context, const char *key)
 		return -1;
 
 	prev = NULL;
-	b = bindings[c];
+	b = key_bindings[c];
 	while (b) {
 		if (b->key == k) {
 			if (prev) {
 				prev->next = b->next;
 			} else {
-				bindings[c] = b->next;
+				key_bindings[c] = b->next;
 			}
 			free(b);
 			return 0;
@@ -1034,7 +1029,7 @@ int keys_init(void)
 
 	/* set default keys only if no bingings */
 	for (i = 0; i < NR_CTXS; i++) {
-		if (bindings[i]) {
+		if (key_bindings[i]) {
 			d_print("user defined keys\n");
 			initializing = 0;
 			return 0;
@@ -1056,7 +1051,7 @@ void keys_exit(void)
 		return;
 	}
 	for (i = 0; i < NR_CTXS; i++) {
-		struct binding *b = bindings[i];
+		struct binding *b = key_bindings[i];
 		const char *name = key_context_names[i];
 
 		while (b) {
@@ -1127,13 +1122,13 @@ void normal_mode_ch(uchar ch)
 	}
 
 	/* view-specific ch */
-	if (handle_key(bindings[c], k)) {
+	if (handle_key(key_bindings[c], k)) {
 		ui_curses_update_view();
 		return;
 	}
 
 	/* common ch */
-	if (!handle_key(bindings[CTX_COMMON], k))
+	if (!handle_key(key_bindings[CTX_COMMON], k))
 		d_print("key %s not bound in context %s or common\n", k->name, key_context_names[c]);
 }
 
@@ -1147,12 +1142,12 @@ void normal_mode_key(int key)
 	}
 
 	/* view-specific key */
-	if (handle_key(bindings[c], k)) {
+	if (handle_key(key_bindings[c], k)) {
 		ui_curses_update_view();
 		return;
 	}
 
 	/* common key */
-	if (!handle_key(bindings[CTX_COMMON], k))
+	if (!handle_key(key_bindings[CTX_COMMON], k))
 		d_print("key %s not bound in context %s or common\n", k->name, key_context_names[c]);
 }

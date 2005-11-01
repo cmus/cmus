@@ -44,9 +44,16 @@ struct key {
 	uchar ch;
 };
 
+struct binding {
+	struct binding *next;
+	const struct key *key;
+	const struct key_function *func;
+};
+
 extern const char * const key_context_names[NR_CTXS + 1];
 extern const struct key_function *key_functions[NR_CTXS + 1];
 extern const struct key key_table[];
+extern struct binding *key_bindings[NR_CTXS];
 
 int keys_init(void);
 void keys_exit(void);
