@@ -24,71 +24,46 @@
 
 #include <stdlib.h>
 
-struct tabexp *tabexp_new(void (*load_matches)(struct tabexp *tabexp, const char *src), void *private_data)
+struct tabexp tabexp = { NULL, NULL, 0, -1 };
+
+char *tabexp_expand(const char *src, void (*load_matches)(const char *src))
 {
-	struct tabexp *tabexp = xnew(struct tabexp, 1);
-
-	tabexp->tails = NULL;
-	tabexp->head = NULL;
-	tabexp->nr_tails = 0;
-	tabexp->index = -1;
-	tabexp->load_matches = load_matches;
-	tabexp->private_data = private_data;
-	return tabexp;
-}
-
-void tabexp_reset(struct tabexp *tabexp)
-{
-	int i;
-
-	for (i = 0; i < tabexp->nr_tails; i++)
-		free(tabexp->tails[i]);
-	free(tabexp->tails);
-	free(tabexp->head);
-	tabexp->tails = NULL;
-	tabexp->head = NULL;
-	tabexp->nr_tails = 0;
-	tabexp->index = -1;
-}
-
-void tabexp_free(struct tabexp *tabexp)
-{
-	tabexp_reset(tabexp);
-	free(tabexp);
-}
-
-char *tabexp_expand(struct tabexp *tabexp, const char *src)
-{
-	if (tabexp->tails == NULL) {
+	if (tabexp.tails == NULL) {
 		char *expanded;
 
-		BUG_ON(tabexp->head != NULL);
-		BUG_ON(tabexp->nr_tails != 0);
-		BUG_ON(tabexp->index != -1);
-
-		tabexp->load_matches(tabexp, src);
-		if (tabexp->tails == NULL) {
-			BUG_ON(tabexp->head != NULL);
-			BUG_ON(tabexp->nr_tails != 0);
-			BUG_ON(tabexp->index != -1);
+		load_matches(src);
+		if (tabexp.tails == NULL) {
+			BUG_ON(tabexp.head != NULL);
+			BUG_ON(tabexp.nr_tails != 0);
+			BUG_ON(tabexp.index != -1);
 			return NULL;
 		}
 
-		BUG_ON(tabexp->head == NULL);
-		BUG_ON(tabexp->nr_tails < 1);
-		BUG_ON(tabexp->index != 0);
+		BUG_ON(tabexp.head == NULL);
+		BUG_ON(tabexp.nr_tails < 1);
+		BUG_ON(tabexp.index != 0);
 
-		expanded = xstrjoin(tabexp->head, tabexp->tails[tabexp->index]);
-		if (tabexp->nr_tails == 1)
-			tabexp_reset(tabexp);
+		expanded = xstrjoin(tabexp.head, tabexp.tails[tabexp.index]);
+		if (tabexp.nr_tails == 1)
+			tabexp_reset();
 		return expanded;
 	} else {
-		BUG_ON(tabexp->head == NULL);
-		BUG_ON(tabexp->nr_tails == 0);
-		BUG_ON(tabexp->index == -1);
-
-		tabexp->index++;
-		tabexp->index %= tabexp->nr_tails;
-		return xstrjoin(tabexp->head, tabexp->tails[tabexp->index]);
+		tabexp.index++;
+		tabexp.index %= tabexp.nr_tails;
+		return xstrjoin(tabexp.head, tabexp.tails[tabexp.index]);
 	}
+}
+
+void tabexp_reset(void)
+{
+	int i;
+
+	for (i = 0; i < tabexp.nr_tails; i++)
+		free(tabexp.tails[i]);
+	free(tabexp.tails);
+	free(tabexp.head);
+	tabexp.tails = NULL;
+	tabexp.head = NULL;
+	tabexp.nr_tails = 0;
+	tabexp.index = -1;
 }

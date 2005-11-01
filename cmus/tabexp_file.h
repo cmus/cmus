@@ -20,11 +20,8 @@
 #ifndef _TABEXP_FILE_H
 #define _TABEXP_FILE_H
 
-#include <tabexp.h>
+extern int tabexp_files;
 
-#define TABEXP_FILE_FLAG_FILES	(1 << 0)
-
-extern struct tabexp *tabexp_file_new(unsigned int flags, char **extensions);
-extern void tabexp_file_free(struct tabexp *tabexp);
+void expand_files_and_dirs(const char *src);
 
 #endif

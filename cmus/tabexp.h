@@ -25,26 +25,13 @@ struct tabexp {
 	char **tails;
 	int nr_tails;
 	int index;
-	/* tabexp is in resetted state when this is called
-	 * if no matches then tabexp must be left in resetted state
-	 */
-	void (*load_matches)(struct tabexp *tabexp, const char *src);
-
-	/* the private_data arg given to tabexp_new() */
-	void *private_data;
 };
 
-extern struct tabexp *tabexp_new(void (*load_matches)(struct tabexp *tabexp, const char *src), void *private_data);
-extern void tabexp_free(struct tabexp *tabexp);
-
-/* head = NULL
- * tails = NULL
- * nr_tails = 0
- * index = -1
- */
-extern void tabexp_reset(struct tabexp *tabexp);
+extern struct tabexp tabexp;
 
 /* return expanded src or NULL */
-extern char *tabexp_expand(struct tabexp *tabexp, const char *src);
+char *tabexp_expand(const char *src, void (*load_matches)(const char *src));
+
+void tabexp_reset(void);
 
 #endif

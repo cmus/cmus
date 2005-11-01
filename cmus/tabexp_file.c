@@ -29,11 +29,8 @@
 #include <pwd.h>
 #include <dirent.h>
 
-struct tabexp_file_private {
-	char **extensions;
-	unsigned int flags;
-	const char *start;
-};
+/* expand files too? directories are always expanded */
+int tabexp_files;
 
 static char *get_home(const char *user)
 {
@@ -89,37 +86,18 @@ static int strptrcmp(const void *a, const void *b)
 
 static int filter(const char *name, const struct stat *s, void *data)
 {
-	struct tabexp_file_private *priv = data;
-	const char *start = priv->start;
-	const char *ext;
-	int start_len, i;
+	const char *starting_with = data;
+	int len = strlen(starting_with);
 
-	start_len = strlen(start);
-	if (start_len == 0) {
+	if (len == 0) {
 		if (name[0] == '.')
 			return 0;
 	} else {
-		if (strncmp(name, start, start_len))
+		if (strncmp(name, starting_with, len))
 			return 0;
 	}
-	if (S_ISDIR(s->st_mode))
+	if (tabexp_files || S_ISDIR(s->st_mode))
 		return 1;
-
-	if ((priv->flags & TABEXP_FILE_FLAG_FILES) == 0)
-		return 0;
-
-	if (priv->extensions == NULL) {
-		/* no extensions => accept all */
-		return 1;
-	}
-	ext = strrchr(name, '.');
-	if (ext == NULL)
-		return 0;
-	ext++;
-	for (i = 0; priv->extensions[i]; i++) {
-		if (strcmp(priv->extensions[i], ext) == 0)
-			return 1;
-	}
 	return 0;
 }
 
@@ -127,9 +105,8 @@ static int filter(const char *name, const struct stat *s, void *data)
  * load all directory entries from directory 'dir' starting with 'start' and
  * filtered with 'filter'
  */
-static void tabexp_load_dir(struct tabexp *tabexp, const char *dir, const char *start)
+static void tabexp_load_dir(const char *dir, const char *start)
 {
-	struct tabexp_file_private *priv = tabexp->private_data;
 	char **ptrs;
 	int nr_ptrs, rc;
 	char *full_dir_name;
@@ -139,8 +116,7 @@ static void tabexp_load_dir(struct tabexp *tabexp, const char *dir, const char *
 	if (full_dir_name == NULL)
 		return;
 
-	priv->start = start;
-	rc = load_dir(full_dir_name, &ptrs, &nr_ptrs, 1, filter, strptrcmp, priv);
+	rc = load_dir(full_dir_name, &ptrs, &nr_ptrs, 1, filter, strptrcmp, (void *)start);
 	free(full_dir_name);
 	if (rc) {
 		/* opendir failed, usually permission denied */
@@ -151,13 +127,13 @@ static void tabexp_load_dir(struct tabexp *tabexp, const char *dir, const char *
 		return;
 	}
 
-	tabexp->head = xstrdup(dir);
-	tabexp->tails = ptrs;
-	tabexp->nr_tails = nr_ptrs;
-	tabexp->index = 0;
+	tabexp.head = xstrdup(dir);
+	tabexp.tails = ptrs;
+	tabexp.nr_tails = nr_ptrs;
+	tabexp.index = 0;
 }
 
-static void load_matching_files(struct tabexp *tabexp, const char *src)
+void expand_files_and_dirs(const char *src)
 {
 	char *slash;
 
@@ -173,40 +149,22 @@ static void load_matching_files(struct tabexp *tabexp, const char *src)
 		dir = xstrndup(src, slash - src + 1);
 		file = slash + 1;
 		/* get all dentries starting with file from dir */
-		tabexp_load_dir(tabexp, dir, file);
+		tabexp_load_dir(dir, file);
 		free(dir);
 	} else {
 		if (src[0] == '~') {
 			char *home = get_home(src + 1);
 
 			if (home) {
-				tabexp->head = xstrdup("");
-				tabexp->nr_tails = 1;
-				tabexp->index = 0;
-				tabexp->tails = xnew(char *, 2);
-				tabexp->tails[0] = home;
-				tabexp->tails[1] = NULL;
+				tabexp.head = xstrdup("");
+				tabexp.nr_tails = 1;
+				tabexp.index = 0;
+				tabexp.tails = xnew(char *, 2);
+				tabexp.tails[0] = home;
+				tabexp.tails[1] = NULL;
 			}
 		} else {
-			tabexp_load_dir(tabexp, "", src);
+			tabexp_load_dir("", src);
 		}
 	}
-}
-
-struct tabexp *tabexp_file_new(unsigned int flags, char **extensions)
-{
-	struct tabexp_file_private *priv;
-
-	priv = xnew(struct tabexp_file_private, 1);
-	priv->flags = flags;
-	priv->extensions = extensions;
-	return tabexp_new(load_matching_files, priv);
-}
-
-void tabexp_file_free(struct tabexp *tabexp)
-{
-	struct tabexp_file_private *priv = tabexp->private_data;
-
-	free(priv);
-	tabexp_free(tabexp);
 }

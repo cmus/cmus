@@ -46,11 +46,16 @@
 #include <sys/wait.h>
 #include <pwd.h>
 
+/* typedef void option_func(void *data, const char *key, const char *value); */
+
 int confirm_run = 1;
 
 static struct history cmd_history;
 static char *cmd_history_filename;
 static char *history_search_text = NULL;
+static LIST_HEAD(options_head);
+static int nr_options = 0;
+static int arg_expand_cmd = -1;
 
 static char *get_home_dir(const char *username)
 {
@@ -108,13 +113,6 @@ static char *expand_filename(const char *name)
 		return xstrdup(name);
 	}
 }
-
-typedef void option_func(void *data, const char *key, const char *value);
-
-static LIST_HEAD(options_head);
-static int nr_options = 0;
-
-typedef void cmd_func(char *arg);
 
 static void cmd_set(char *arg)
 {
@@ -600,75 +598,22 @@ static void cmd_run(char *arg)
 	free_str_array(argv);
 }
 
-struct command {
-	const char *name;
-	cmd_func *func;
-
-	/* min/max number of arguments */
-	int min_args;
-	int max_args;
-
-	/* type of tab expansion*/
-	enum { TE_NONE, TE_FILEDIR, TE_DIR, TE_OPTION } expand;
-};
-
-/* sort by name */
-static struct command commands[] = {
-	{ "add",        cmd_add,        1, 1, TE_FILEDIR },
-	{ "bind",       cmd_bind,       1, 1, TE_NONE },
-	{ "cd",         cmd_cd,         0, 1, TE_DIR },
-	{ "clear",      cmd_clear,      0, 0, TE_NONE },
-	{ "enqueue",    cmd_enqueue,    1, 1, TE_FILEDIR },
-	{ "filter",     cmd_filter,     0, 1, TE_NONE },
-	{ "fset",       cmd_fset,       1, 1, TE_NONE },
-	{ "load",       cmd_load,       1, 1, TE_FILEDIR },
-	{ "run",        cmd_run,        1,-1, TE_NONE },
-	{ "save",       cmd_save,       0, 1, TE_FILEDIR },
-	{ "seek",       cmd_seek,       1, 1, TE_NONE },
-	{ "set",        cmd_set,        1, 1, TE_OPTION },
-	{ "shuffle",    cmd_reshuffle,  0, 0, TE_NONE },
-	{ "unbind",     cmd_unbind,     1, 1, TE_NONE },
-	{ NULL,         NULL,           0, 0, 0 }
-};
-
-static int arg_expand_cmd = -1;
-static struct tabexp *filedir_tabexp;
-static struct tabexp *dir_tabexp;
-static struct tabexp *cmd_tabexp;
-static struct tabexp *option_tabexp;
-
-static void load_matching_commands(struct tabexp *tabexp, const char *str)
+/* fills tabexp struct */
+static void expand_files(const char *str)
 {
-	int i, len, pos;
-	char **tails;
-
-	/* tabexp is resetted */
-	tails = xnew(char *, sizeof(commands) / sizeof(struct command));
-	len = strlen(str);
-	pos = 0;
-	for (i = 0; commands[i].name; i++) {
-		if (strncmp(str, commands[i].name, len) == 0)
-			tails[pos++] = xstrdup(commands[i].name + len);
-	}
-	if (pos > 0) {
-		if (pos == 1) {
-			/* only one command matches, add ' ' */
-			char *tmp = xstrjoin(tails[0], " ");
-
-			free(tails[0]);
-			tails[0] = tmp;
-		}
-		tails[pos] = NULL;
-		tabexp->head = xstrdup(str);
-		tabexp->tails = tails;
-		tabexp->nr_tails = pos;
-		tabexp->index = 0;
-	} else {
-		free(tails);
-	}
+	tabexp_files = 1;
+	expand_files_and_dirs(str);
 }
 
-static void load_matching_cm_options(struct tabexp *tabexp, const char *str)
+/* fills tabexp struct */
+static void expand_directories(const char *str)
+{
+	tabexp_files = 0;
+	expand_files_and_dirs(str);
+}
+
+/* fills tabexp struct */
+static void expand_options(const char *str)
 {
 	struct command_mode_option *opt;
 	int len;
@@ -685,10 +630,10 @@ static void load_matching_cm_options(struct tabexp *tabexp, const char *str)
 				tails = xnew(char *, 1);
 				opt->get(opt, &tails[0]);
 				tails[1] = NULL;
-				tabexp->head = xstrdup(str);
-				tabexp->tails = tails;
-				tabexp->nr_tails = 1;
-				tabexp->index = 0;
+				tabexp.head = xstrdup(str);
+				tabexp.tails = tails;
+				tabexp.nr_tails = 1;
+				tabexp.index = 0;
 				free(var);
 				return;
 			}
@@ -714,13 +659,75 @@ static void load_matching_cm_options(struct tabexp *tabexp, const char *str)
 			}
 
 			tails[pos] = NULL;
-			tabexp->head = xstrdup(str);
-			tabexp->tails = tails;
-			tabexp->nr_tails = pos;
-			tabexp->index = 0;
+			tabexp.head = xstrdup(str);
+			tabexp.tails = tails;
+			tabexp.nr_tails = pos;
+			tabexp.index = 0;
 		} else {
 			free(tails);
 		}
+	}
+}
+
+struct command {
+	const char *name;
+	void (*func)(char *arg);
+
+	/* min/max number of arguments */
+	int min_args;
+	int max_args;
+
+	void (*expand)(const char *str);
+};
+
+/* sort by name */
+static struct command commands[] = {
+	{ "add",	cmd_add,	1, 1, expand_files	},
+	{ "bind",	cmd_bind,	1, 1, NULL		},
+	{ "cd",		cmd_cd,		0, 1, expand_directories},
+	{ "clear",	cmd_clear,	0, 0, NULL		},
+	{ "enqueue",	cmd_enqueue,	1, 1, expand_files	},
+	{ "filter",	cmd_filter,	0, 1, NULL		},
+	{ "fset",	cmd_fset,	1, 1, NULL		},
+	{ "load",	cmd_load,	1, 1, expand_files	},
+	{ "run",	cmd_run,	1,-1, NULL		},
+	{ "save",	cmd_save,	0, 1, expand_files	},
+	{ "seek",	cmd_seek,	1, 1, NULL		},
+	{ "set",	cmd_set,	1, 1, expand_options	},
+	{ "shuffle",	cmd_reshuffle,	0, 0, NULL		},
+	{ "unbind",	cmd_unbind,	1, 1, NULL		},
+	{ NULL,		NULL,		0, 0, 0			}
+};
+
+/* fills tabexp struct */
+static void expand_commands(const char *str)
+{
+	int i, len, pos;
+	char **tails;
+
+	/* tabexp is resetted */
+	tails = xnew(char *, sizeof(commands) / sizeof(struct command));
+	len = strlen(str);
+	pos = 0;
+	for (i = 0; commands[i].name; i++) {
+		if (strncmp(str, commands[i].name, len) == 0)
+			tails[pos++] = xstrdup(commands[i].name + len);
+	}
+	if (pos > 0) {
+		if (pos == 1) {
+			/* only one command matches, add ' ' */
+			char *tmp = xstrjoin(tails[0], " ");
+
+			free(tails[0]);
+			tails[0] = tmp;
+		}
+		tails[pos] = NULL;
+		tabexp.head = xstrdup(str);
+		tabexp.tails = tails;
+		tabexp.nr_tails = pos;
+		tabexp.index = 0;
+	} else {
+		free(tails);
 	}
 }
 
@@ -740,7 +747,7 @@ static char *expand(const char *str)
 		char *cmd_head = xstrndup(str, cmd_len);
 		char *expanded = NULL;
 
-		expanded = tabexp_expand(cmd_tabexp, cmd_head);
+		expanded = tabexp_expand(cmd_head, expand_commands);
 		if (expanded) {
 			char *s;
 			
@@ -773,19 +780,8 @@ static char *expand(const char *str)
 		}
 		if (arg_expand_cmd == -1)
 			return NULL;
-		switch (commands[arg_expand_cmd].expand) {
-		case TE_NONE:
-			break;
-		case TE_FILEDIR:
-			expanded = tabexp_expand(filedir_tabexp, str + arg_start);
-			break;
-		case TE_DIR:
-			expanded = tabexp_expand(dir_tabexp, str + arg_start);
-			break;
-		case TE_OPTION:
-			expanded = tabexp_expand(option_tabexp, str + arg_start);
-			break;
-		}
+		if (commands[arg_expand_cmd].expand)
+			expanded = tabexp_expand(str + arg_start, commands[arg_expand_cmd].expand);
 		if (expanded) {
 			char *s;
 			int expanded_len;
@@ -843,10 +839,7 @@ static void tab_expand(void)
 
 static void reset_tab_expansion(void)
 {
-	tabexp_reset(filedir_tabexp);
-	tabexp_reset(dir_tabexp);
-	tabexp_reset(option_tabexp);
-	tabexp_reset(cmd_tabexp);
+	tabexp_reset();
 	arg_expand_cmd = -1;
 }
 
@@ -1037,20 +1030,11 @@ void commands_init(void)
 {
 	cmd_history_filename = xstrjoin(cmus_cache_dir, "/ui_curses_cmd_history");
 	history_load(&cmd_history, cmd_history_filename, 2000);
-
-	filedir_tabexp = tabexp_file_new(TABEXP_FILE_FLAG_FILES, NULL);
-	dir_tabexp = tabexp_file_new(0, NULL);
-	option_tabexp = tabexp_new(load_matching_cm_options, NULL);
-	cmd_tabexp = tabexp_new(load_matching_commands, NULL);
 }
 
 void commands_exit(void)
 {
 	history_save(&cmd_history);
 	free(cmd_history_filename);
-
-	tabexp_file_free(filedir_tabexp);
-	tabexp_file_free(dir_tabexp);
-	tabexp_free(option_tabexp);
-	tabexp_free(cmd_tabexp);
+	tabexp_reset();
 }
