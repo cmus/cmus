@@ -911,8 +911,10 @@ int key_bind(const char *context, const char *key, const char *func)
 		 * in CTX_COMMON _and_ any other context at the same time
 		 */
 		b = find_binding(CTX_COMMON, k);
-		if (b)
+		if (b) {
+			c = CTX_COMMON;
 			goto bound;
+		}
 	}
 
 	b = xnew(struct binding, 1);
@@ -939,9 +941,9 @@ int key_bind(const char *context, const char *key, const char *func)
 	return 0;
 bound:
 	if (initializing) {
-		fprintf(stderr, "key %s already bound in context %s\n", key, context);
+		fprintf(stderr, "key %s already bound in context %s\n", key, key_context_names[c]);
 	} else {
-		ui_curses_display_error_msg("key %s already bound in context %s", key, context);
+		ui_curses_display_error_msg("key %s already bound in context %s", key, key_context_names[c]);
 	}
 	return -1;
 }
