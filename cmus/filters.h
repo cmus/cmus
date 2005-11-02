@@ -27,7 +27,6 @@ static inline struct filter_entry *iter_to_filter_entry(struct iter *iter)
 
 extern struct window *filters_win;
 extern struct searchable *filters_searchable;
-extern int filters_changed;
 
 void filters_init(void);
 void filters_exit(void);

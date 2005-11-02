@@ -36,7 +36,6 @@
 
 struct window *browser_win;
 struct searchable *browser_searchable;
-int browser_changed = 0;
 
 /* absolute */
 char *browser_dir;
@@ -209,7 +208,6 @@ static int browser_load(const char *name)
 	window_set_contents(browser_win, &browser_head);
 	free(browser_dir);
 	browser_dir = xstrdup(name);
-	browser_changed = 1;
 	return 0;
 }
 
@@ -238,7 +236,6 @@ static int browser_search_matches(void *data, struct iter *iter, const char *tex
 		for (i = 0; ; i++) {
 			if (words[i] == NULL) {
 				window_set_sel(browser_win, iter);
-				browser_changed = 1;
 				matched = 1;
 				break;
 			}
@@ -423,7 +420,7 @@ void browser_add(void)
 		cmus_add(full);
 		free(full);
 	}
-	window_move(browser_win, 1);
+	window_down(browser_win, 1);
 }
 
 static void browser_enqueue(int prepend)
@@ -443,7 +440,7 @@ static void browser_enqueue(int prepend)
 		cmus_enqueue(full, prepend);
 		free(full);
 	}
-	window_move(browser_win, 1);
+	window_down(browser_win, 1);
 }
 
 void browser_queue_append(void)
@@ -480,7 +477,6 @@ void browser_delete(void)
 				list_del(&e->node);
 				free(e->name);
 				free(e);
-				browser_changed = 1;
 			}
 		}
 		free(name);

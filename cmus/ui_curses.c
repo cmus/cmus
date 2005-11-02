@@ -612,6 +612,8 @@ static void update_window(struct window *win, int x, int y, int w, const char *t
 	int nr_rows;
 	int c, i;
 
+	win->changed = 0;
+
 	bkgdset(cursed_colors[COLOR_TITLE]);
 	c = snprintf(print_buffer, w + 1, " %s", title);
 	if (c > w)
@@ -641,7 +643,6 @@ static void update_window(struct window *win, int x, int y, int w, const char *t
 
 static void update_tree_window(void)
 {
-	playlist.tree_win_changed = 0;
 	update_window(playlist.tree_win, tree_win_x, tree_win_y,
 			tree_win_w, "Artist / Album", print_tree);
 }
@@ -651,7 +652,6 @@ static void update_track_window(void)
 	char title[512];
 
 	format_print(title, sizeof(title), track_win_w - 2, "Track%=Press F1 for Help", track_fopts);
-	playlist.track_win_changed = 0;
 	update_window(playlist.track_win, track_win_x, track_win_y,
 			track_win_w, title, print_track);
 }
@@ -669,7 +669,6 @@ static void update_shuffle_window(void)
 		filename = conv_buffer;
 	}
 	snprintf(title, sizeof(title), "Shuffle List - %s", filename);
-	playlist.shuffle_win_changed = 0;
 	update_window(playlist.shuffle_win, 0, 0, COLS, title, print_shuffle);
 }
 
@@ -686,13 +685,11 @@ static void update_sorted_window(void)
 		filename = conv_buffer;
 	}
 	snprintf(title, sizeof(title), "Sorted by '%s' - %s", sort_string, filename);
-	playlist.sorted_win_changed = 0;
 	update_window(playlist.sorted_win, 0, 0, COLS, title, print_sorted);
 }
 
 static void update_play_queue_window(void)
 {
-	play_queue_changed = 0;
 	update_window(play_queue_win, 0, 0, COLS, "Play Queue", print_play_queue);
 }
 
@@ -701,7 +698,6 @@ static void update_browser_window(void)
 	char title[512];
 	char *dirname;
 
-	browser_changed = 0;
 	if (using_utf8) {
 		/* already UTF-8 */
 		dirname = browser_dir;
@@ -715,7 +711,6 @@ static void update_browser_window(void)
 
 static void update_filters_window(void)
 {
-	filters_changed = 0;
 	update_window(filters_win, 0, 0, COLS, "Filters", print_filter);
 }
 
@@ -2063,22 +2058,22 @@ static void ui_curses_start(void)
 		}
 		switch (ui_curses_view) {
 		case TREE_VIEW:
-			needs_view_update += playlist.tree_win_changed || playlist.track_win_changed;
+			needs_view_update += playlist.tree_win->changed || playlist.track_win->changed;
 			break;
 		case SHUFFLE_VIEW:
-			needs_view_update += playlist.shuffle_win_changed;
+			needs_view_update += playlist.shuffle_win->changed;
 			break;
 		case SORTED_VIEW:
-			needs_view_update += playlist.sorted_win_changed;
+			needs_view_update += playlist.sorted_win->changed;
 			break;
 		case PLAY_QUEUE_VIEW:
-			needs_view_update += play_queue_changed;
+			needs_view_update += play_queue_win->changed;
 			break;
 		case BROWSER_VIEW:
-			needs_view_update += browser_changed;
+			needs_view_update += browser_win->changed;
 			break;
 		case FILTERS_VIEW:
-			needs_view_update += filters_changed;
+			needs_view_update += filters_win->changed;
 			break;
 		}
 		pl_unlock();

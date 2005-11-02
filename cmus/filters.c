@@ -18,7 +18,6 @@
 
 struct window *filters_win;
 struct searchable *filters_searchable;
-int filters_changed;
 
 static LIST_HEAD(filters_head);
 static char filename[512];
@@ -56,7 +55,6 @@ static int filters_search_matches(void *data, struct iter *iter, const char *tex
 		for (i = 0; ; i++) {
 			if (words[i] == NULL) {
 				window_set_sel(filters_win, iter);
-				filters_changed = 1;
 				matched = 1;
 				break;
 			}
@@ -258,10 +256,8 @@ static void do_filters_set_filter(const char *keyval, int active)
 	}
 	/* add before item */
 	list_add_tail(&new->node, item);
-	if (ui_initialized) {
+	if (ui_initialized)
 		window_changed(filters_win);
-		filters_changed = 1;
-	}
 }
 
 static void handle_line(void *data, const char *line)

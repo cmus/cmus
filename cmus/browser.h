@@ -40,7 +40,6 @@ static inline struct browser_entry *iter_to_browser_entry(struct iter *iter)
 extern struct window *browser_win;
 extern char *browser_dir;
 extern struct searchable *browser_searchable;
-extern int browser_changed;
 
 extern void browser_init(void);
 extern void browser_exit(void);

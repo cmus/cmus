@@ -23,24 +23,6 @@
 
 #include <stdlib.h>
 
-struct window {
-	/* head of the row list */
-	struct iter head;
-
-	/* top row */
-	struct iter top;
-
-	/* selected row */
-	struct iter sel;
-
-	/* window height */
-	int nr_rows;
-
-	/* return 1 if got next/prev, otherwise 0 */
-	int (*get_prev)(struct iter *iter);
-	int (*get_next)(struct iter *iter);
-};
-
 struct window *window_new(int (*get_prev)(struct iter *), int (*get_next)(struct iter *))
 {
 	struct window *win;
@@ -49,6 +31,7 @@ struct window *window_new(int (*get_prev)(struct iter *), int (*get_next)(struct
 	win->get_next = get_next;
 	win->get_prev = get_prev;
 	win->nr_rows = 1;
+	win->changed = 1;
 	iter_init(&win->head);
 	iter_init(&win->top);
 	iter_init(&win->sel);
@@ -65,6 +48,7 @@ void window_set_empty(struct window *win)
 	iter_init(&win->head);
 	iter_init(&win->top);
 	iter_init(&win->sel);
+	win->changed = 1;
 }
 
 void window_set_contents(struct window *win, void *head)
@@ -78,6 +62,7 @@ void window_set_contents(struct window *win, void *head)
 	win->get_next(&first);
 	win->top = first;
 	win->sel = first;
+	win->changed = 1;
 }
 
 int window_set_nr_rows(struct window *win, int nr_rows)
@@ -92,7 +77,7 @@ int window_set_nr_rows(struct window *win, int nr_rows)
 	return !iters_equal(&win->sel, &old_sel);
 }
 
-static int window_up(struct window *win, int rows)
+int window_up(struct window *win, int rows)
 {
 	int i;
 
@@ -105,10 +90,13 @@ static int window_up(struct window *win, int rows)
 			win->top = prev;
 		win->sel = prev;
 	}
-	return i;
+	if (i == 0)
+		return 0;
+	win->changed = 1;
+	return 1;
 }
 
-static int window_down(struct window *win, int rows)
+int window_down(struct window *win, int rows)
 {
 	struct iter iter;
 	int delta, sel_down, top_down;
@@ -133,7 +121,10 @@ static int window_down(struct window *win, int rows)
 		win->get_next(&win->top);
 		top_down--;
 	}
-	return sel_down;
+	if (sel_down == 0)
+		return 0;
+	win->changed = 1;
+	return 1;
 }
 
 int window_move(struct window *win, int rows)
@@ -168,6 +159,7 @@ void window_changed(struct window *win)
 	if (iter_is_head(&win->top)) {
 		win->get_next(&win->top);
 		win->sel = win->top;
+		win->changed = 1;
 		return;
 	}
 
@@ -207,6 +199,7 @@ minimize:
 		win->top = iter;
 		rows++;
 	}
+	win->changed = 1;
 }
 
 void window_row_vanishes(struct window *win, struct iter *iter)
@@ -222,6 +215,7 @@ void window_row_vanishes(struct window *win, struct iter *iter)
 		win->top = new;
 	if (iters_equal(&win->sel, iter))
 		win->sel = new;
+	win->changed = 1;
 }
 
 int window_get_top(struct window *win, struct iter *iter)
@@ -256,6 +250,9 @@ void window_set_sel(struct window *win, struct iter *iter)
 	BUG_ON(iter_is_empty(&win->sel));
 	BUG_ON(iter_is_empty(iter));
 	BUG_ON(iter->data0 != win->head.data0);
+
+	if (iters_equal(&win->sel, iter))
+		return;
 	win->sel = *iter;
 
 	tmp = win->head;
@@ -280,6 +277,7 @@ void window_set_sel(struct window *win, struct iter *iter)
 		BUG_ON(!win->get_next(&win->top));
 		top_nr++;
 	}
+	win->changed = 1;
 }
 
 int window_goto_top(struct window *win)
@@ -290,7 +288,10 @@ int window_goto_top(struct window *win)
 	win->sel = win->head;
 	win->get_next(&win->sel);
 	win->top = win->sel;
-	return !iters_equal(&old_sel, &win->sel);
+	if (iters_equal(&old_sel, &win->sel))
+		return 0;
+	win->changed = 1;
+	return 1;
 }
 
 int window_goto_bottom(struct window *win)
@@ -311,17 +312,20 @@ int window_goto_bottom(struct window *win)
 		win->top = iter;
 		count--;
 	}
-	return !iters_equal(&old_sel, &win->sel);
+	if (iters_equal(&old_sel, &win->sel))
+		return 0;
+	win->changed = 1;
+	return 1;
 }
 
 int window_page_up(struct window *win)
 {
-	return window_move(win, -(win->nr_rows - 1));
+	return window_up(win, win->nr_rows - 1);
 }
 
 int window_page_down(struct window *win)
 {
-	return window_move(win, win->nr_rows - 1);
+	return window_down(win, win->nr_rows - 1);
 }
 
 int window_get_nr_rows(struct window *win)

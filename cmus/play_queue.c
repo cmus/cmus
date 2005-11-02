@@ -27,7 +27,6 @@
 
 struct window *play_queue_win;
 struct searchable *play_queue_searchable;
-int play_queue_changed = 0;
 pthread_mutex_t play_queue_mutex = CMUS_MUTEX_INITIALIZER;
 
 static LIST_HEAD(play_queue_head);
@@ -69,7 +68,6 @@ static int play_queue_search_matches(void *data, struct iter *iter, const char *
 	if (!track_info_matches(e->track_info, text, flags))
 		return 0;
 	window_set_sel(play_queue_win, iter);
-	play_queue_changed = 1;
 	return 1;
 }
 
@@ -125,7 +123,6 @@ void __play_queue_append(struct track_info *track_info)
 	e->track_info = track_info;
 	list_add_tail(&e->node, &play_queue_head);
 	window_changed(play_queue_win);
-	play_queue_changed = 1;
 }
 
 void __play_queue_prepend(struct track_info *track_info)
@@ -138,7 +135,6 @@ void __play_queue_prepend(struct track_info *track_info)
 	e->track_info = track_info;
 	list_add(&e->node, &play_queue_head);
 	window_changed(play_queue_win);
-	play_queue_changed = 1;
 }
 
 void play_queue_append(struct track_info *track_info)
@@ -176,11 +172,6 @@ struct track_info *play_queue_remove(void)
 
 	info = e->track_info;
 	free(e);
-
-	/* can't update directly because this might have been called from
-	 * the player thread */
-	play_queue_changed = 1;
-
 	play_queue_unlock();
 	return info;
 }

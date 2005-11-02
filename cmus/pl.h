@@ -122,11 +122,6 @@ struct playlist {
 	unsigned int total_time;
 
 	unsigned int status_changed : 1;
-	unsigned int track_win_changed : 1;
-	unsigned int tree_win_changed : 1;
-	unsigned int shuffle_win_changed : 1;
-	unsigned int sorted_win_changed : 1;
-
 	unsigned int repeat : 1;
 
 	pthread_mutex_t mutex;

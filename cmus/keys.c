@@ -82,17 +82,14 @@ static void win_bottom(void)
 		break;
 	case CTX_PLAY_QUEUE:
 		play_queue_lock();
-		if (window_goto_bottom(play_queue_win))
-			play_queue_changed = 1;
+		window_goto_bottom(play_queue_win);
 		play_queue_unlock();
 		break;
 	case CTX_BROWSER:
-		if (window_goto_bottom(browser_win))
-			browser_changed = 1;
+		window_goto_bottom(browser_win);
 		break;
 	case CTX_FILTERS:
-		if (window_goto_bottom(filters_win))
-			filters_changed = 1;
+		window_goto_bottom(filters_win);
 		break;
 	}
 }
@@ -109,17 +106,14 @@ static void win_down(void)
 		break;
 	case CTX_PLAY_QUEUE:
 		play_queue_lock();
-		if (window_move(play_queue_win, 1))
-			play_queue_changed = 1;
+		window_down(play_queue_win, 1);
 		play_queue_unlock();
 		break;
 	case CTX_BROWSER:
-		if (window_move(browser_win, 1))
-			browser_changed = 1;
+		window_down(browser_win, 1);
 		break;
 	case CTX_FILTERS:
-		if (window_move(filters_win, 1))
-			filters_changed = 1;
+		window_down(filters_win, 1);
 		break;
 	}
 }
@@ -136,17 +130,14 @@ static void win_page_down(void)
 		break;
 	case CTX_PLAY_QUEUE:
 		play_queue_lock();
-		if (window_page_down(play_queue_win))
-			play_queue_changed = 1;
+		window_page_down(play_queue_win);
 		play_queue_unlock();
 		break;
 	case CTX_BROWSER:
-		if (window_page_down(browser_win))
-			browser_changed = 1;
+		window_page_down(browser_win);
 		break;
 	case CTX_FILTERS:
-		if (window_page_down(filters_win))
-			filters_changed = 1;
+		window_page_down(filters_win);
 		break;
 	}
 }
@@ -163,17 +154,14 @@ static void win_page_up(void)
 		break;
 	case CTX_PLAY_QUEUE:
 		play_queue_lock();
-		if (window_page_up(play_queue_win))
-			play_queue_changed = 1;
+		window_page_up(play_queue_win);
 		play_queue_unlock();
 		break;
 	case CTX_BROWSER:
-		if (window_page_up(browser_win))
-			browser_changed = 1;
+		window_page_up(browser_win);
 		break;
 	case CTX_FILTERS:
-		if (window_page_up(filters_win))
-			filters_changed = 1;
+		window_page_up(filters_win);
 		break;
 	}
 }
@@ -190,17 +178,14 @@ static void win_top(void)
 		break;
 	case CTX_PLAY_QUEUE:
 		play_queue_lock();
-		if (window_goto_top(play_queue_win))
-			play_queue_changed = 1;
+		window_goto_top(play_queue_win);
 		play_queue_unlock();
 		break;
 	case CTX_BROWSER:
-		if (window_goto_top(browser_win))
-			browser_changed = 1;
+		window_goto_top(browser_win);
 		break;
 	case CTX_FILTERS:
-		if (window_goto_top(filters_win))
-			filters_changed = 1;
+		window_goto_top(filters_win);
 		break;
 	}
 }
@@ -217,17 +202,14 @@ static void win_up(void)
 		break;
 	case CTX_PLAY_QUEUE:
 		play_queue_lock();
-		if (window_move(play_queue_win, -1))
-			play_queue_changed = 1;
+		window_up(play_queue_win, 1);
 		play_queue_unlock();
 		break;
 	case CTX_BROWSER:
-		if (window_move(browser_win, -1))
-			browser_changed = 1;
+		window_up(browser_win, 1);
 		break;
 	case CTX_FILTERS:
-		if (window_move(filters_win, -1))
-			filters_changed = 1;
+		window_up(filters_win, 1);
 		break;
 	}
 }

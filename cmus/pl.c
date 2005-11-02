@@ -279,32 +279,12 @@ static inline void status_changed(void)
 	playlist.status_changed = 1;
 }
 
-static inline void track_win_changed(void)
-{
-	playlist.track_win_changed = 1;
-}
-
-static inline void tree_win_changed(void)
-{
-	playlist.tree_win_changed = 1;
-}
-
-static inline void shuffle_win_changed(void)
-{
-	playlist.shuffle_win_changed = 1;
-}
-
-static inline void sorted_win_changed(void)
-{
-	playlist.sorted_win_changed = 1;
-}
-
 static void all_wins_changed(void)
 {
-	tree_win_changed();
-	track_win_changed();
-	shuffle_win_changed();
-	sorted_win_changed();
+	playlist.tree_win->changed = 1;
+	playlist.track_win->changed = 1;
+	playlist.shuffle_win->changed = 1;
+	playlist.sorted_win->changed = 1;
 }
 
 /* search {{{ */
@@ -356,7 +336,6 @@ static int shuffle_search_matches(void *data, struct iter *iter, const char *tex
 	if (!track_info_matches(track->info, text, flags))
 		return 0;
 	window_set_sel(playlist.shuffle_win, iter);
-	shuffle_win_changed();
 	return 1;
 }
 
@@ -372,7 +351,6 @@ static int sorted_search_matches(void *data, struct iter *iter, const char *text
 	if (!track_info_matches(track->info, text, flags))
 		return 0;
 	window_set_sel(playlist.sorted_win, iter);
-	sorted_win_changed();
 	return 1;
 }
 
@@ -400,9 +378,6 @@ static int tree_search_matches(void *data, struct iter *iter, const char *text)
 	window_set_contents(playlist.track_win, &track->album->track_head);
 	track_to_iter(track, &tmpiter);
 	window_set_sel(playlist.track_win, &tmpiter);
-
-	tree_win_changed();
-	track_win_changed();
 	return 1;
 }
 
@@ -726,7 +701,6 @@ static void tree_add_track(struct track *track)
 		if (album_selected(album)) {
 			/* update track window */
 			window_changed(playlist.track_win);
-			track_win_changed();
 		}
 	} else if (artist) {
 		date = comments_get_int(ti->comments, "date");
@@ -736,7 +710,6 @@ static void tree_add_track(struct track *track)
 		if (artist->expanded) {
 			/* update tree window */
 			window_changed(playlist.tree_win);
-			tree_win_changed();
 			/* album is not selected => no need to update track_win */
 		}
 	} else {
@@ -746,7 +719,6 @@ static void tree_add_track(struct track *track)
 		album_add_track(album, track);
 
 		window_changed(playlist.tree_win);
-		tree_win_changed();
 	}
 }
 
@@ -761,11 +733,9 @@ static void views_add_track(struct track_info *ti)
 
 	shuffle_list_add_track(track, playlist.nr_tracks);
 	window_changed(playlist.shuffle_win);
-	shuffle_win_changed();
 
 	sorted_list_add_track(track);
 	window_changed(playlist.sorted_win);
-	sorted_win_changed();
 
 	if (track->info->duration != -1)
 		playlist.total_time += track->info->duration;
@@ -806,7 +776,6 @@ static void views_update(void)
 	window_goto_top(playlist.shuffle_win);
 	window_goto_top(playlist.sorted_win);
 
-	all_wins_changed();
 	status_changed();
 }
 
@@ -1073,10 +1042,8 @@ static void tree_win_remove_sel(void)
 	tree_win_get_selected(&artist, &album);
 	if (album) {
 		remove_sel_album(album);
-		all_wins_changed();
 	} else if (artist) {
 		remove_sel_artist(artist);
-		all_wins_changed();
 	}
 }
 
@@ -1089,7 +1056,6 @@ static void track_win_remove_sel(void)
 		track = iter_to_track(&sel);
 		BUG_ON(track == NULL);
 		remove_and_free_track(track);
-		all_wins_changed();
 	}
 }
 
@@ -1102,7 +1068,6 @@ static void shuffle_win_remove_sel(void)
 		track = iter_to_shuffle_track(&sel);
 		BUG_ON(track == NULL);
 		remove_and_free_track(track);
-		all_wins_changed();
 	}
 }
 
@@ -1115,7 +1080,6 @@ static void sorted_win_remove_sel(void)
 		track = iter_to_sorted_track(&sel);
 		BUG_ON(track == NULL);
 		remove_and_free_track(track);
-		all_wins_changed();
 	}
 }
 
@@ -1157,7 +1121,6 @@ static void clear_views(void)
 
 		item = next;
 	}
-	all_wins_changed();
 	status_changed();
 }
 
@@ -1467,7 +1430,6 @@ void pl_reshuffle(void)
 		item = next;
 	}
 	window_changed(playlist.shuffle_win);
-	shuffle_win_changed();
 	pl_unlock();
 }
 
@@ -1555,9 +1517,7 @@ void pl_set_tree_win_nr_rows(int nr_rows)
 		} else {
 			window_set_contents(playlist.track_win, &album->track_head);
 		}
-		track_win_changed();
 	}
-	tree_win_changed();
 	pl_unlock();
 }
 
@@ -1565,7 +1525,6 @@ void pl_set_track_win_nr_rows(int nr_rows)
 {
 	pl_lock();
 	window_set_nr_rows(playlist.track_win, nr_rows);
-	track_win_changed();
 	pl_unlock();
 }
 
@@ -1573,7 +1532,6 @@ void pl_set_shuffle_win_nr_rows(int nr_rows)
 {
 	pl_lock();
 	window_set_nr_rows(playlist.shuffle_win, nr_rows);
-	shuffle_win_changed();
 	pl_unlock();
 }
 
@@ -1581,7 +1539,6 @@ void pl_set_sorted_win_nr_rows(int nr_rows)
 {
 	pl_lock();
 	window_set_nr_rows(playlist.sorted_win, nr_rows);
-	sorted_win_changed();
 	pl_unlock();
 }
 
@@ -1780,7 +1737,6 @@ void pl_remove(struct track_info *ti)
 			break;
 		}
 	}
-	all_wins_changed();
 	pl_unlock();
 }
 
@@ -1801,14 +1757,12 @@ void pl_toggle_expand_artist(void)
 
 				window_set_empty(playlist.track_win);
 				artist->expanded = 0;
-				track_win_changed();
 
 				playlist.cur_win = TREE_WIN;
 			} else {
 				artist->expanded = 1;
 			}
 			window_changed(playlist.tree_win);
-			tree_win_changed();
 		}
 	}
 	pl_unlock();
@@ -1911,13 +1865,13 @@ void pl_toggle_active_window(void)
 		tree_win_get_selected(&artist, &album);
 		if (album) {
 			playlist.cur_win = TRACK_WIN;
-			tree_win_changed();
-			track_win_changed();
+			playlist.tree_win->changed = 1;
+			playlist.track_win->changed = 1;
 		}
 	} else if (playlist.cur_win == TRACK_WIN) {
 		playlist.cur_win = TREE_WIN;
-		tree_win_changed();
-		track_win_changed();
+		playlist.tree_win->changed = 1;
+		playlist.track_win->changed = 1;
 	}
 	pl_unlock();
 }
@@ -1958,24 +1912,16 @@ static void pl_sel_move(int rows)
 			} else {
 				window_set_contents(playlist.track_win, &album->track_head);
 			}
-			tree_win_changed();
-			track_win_changed();
 		}
 		break;
 	case TRACK_WIN:
-		if (window_move(playlist.track_win, rows)) {
-			track_win_changed();
-		}
+		window_move(playlist.track_win, rows);
 		break;
 	case SHUFFLE_WIN:
-		if (window_move(playlist.shuffle_win, rows)) {
-			shuffle_win_changed();
-		}
+		window_move(playlist.shuffle_win, rows);
 		break;
 	case SORTED_WIN:
-		if (window_move(playlist.sorted_win, rows)) {
-			sorted_win_changed();
-		}
+		window_move(playlist.sorted_win, rows);
 		break;
 	}
 }
@@ -2039,24 +1985,16 @@ void pl_sel_top(void)
 		if (window_goto_top(playlist.tree_win)) {
 			/* only artist selected so track win must be empty */
 			window_set_empty(playlist.track_win);
-			tree_win_changed();
-			track_win_changed();
 		}
 		break;
 	case TRACK_WIN:
-		if (window_goto_top(playlist.track_win)) {
-			track_win_changed();
-		}
+		window_goto_top(playlist.track_win);
 		break;
 	case SHUFFLE_WIN:
-		if (window_goto_top(playlist.shuffle_win)) {
-			shuffle_win_changed();
-		}
+		window_goto_top(playlist.shuffle_win);
 		break;
 	case SORTED_WIN:
-		if (window_goto_top(playlist.sorted_win)) {
-			sorted_win_changed();
-		}
+		window_goto_top(playlist.sorted_win);
 		break;
 	}
 	pl_unlock();
@@ -2078,24 +2016,16 @@ void pl_sel_bottom(void)
 			} else {
 				window_set_contents(playlist.track_win, &album->track_head);
 			}
-			tree_win_changed();
-			track_win_changed();
 		}
 		break;
 	case TRACK_WIN:
-		if (window_goto_bottom(playlist.track_win)) {
-			track_win_changed();
-		}
+		window_goto_bottom(playlist.track_win);
 		break;
 	case SHUFFLE_WIN:
-		if (window_goto_bottom(playlist.shuffle_win)) {
-			shuffle_win_changed();
-		}
+		window_goto_bottom(playlist.shuffle_win);
 		break;
 	case SORTED_WIN:
-		if (window_goto_bottom(playlist.sorted_win)) {
-			sorted_win_changed();
-		}
+		window_goto_bottom(playlist.sorted_win);
 		break;
 	}
 	pl_unlock();
@@ -2110,11 +2040,9 @@ void pl_sel_current(void)
 		if (playlist.cur_win == SHUFFLE_WIN) {
 			shuffle_track_to_iter(playlist.cur_track, &iter);
 			window_set_sel(playlist.shuffle_win, &iter);
-			shuffle_win_changed();
 		} else if (playlist.cur_win == SORTED_WIN) {
 			sorted_track_to_iter(playlist.cur_track, &iter);
 			window_set_sel(playlist.sorted_win, &iter);
-			sorted_win_changed();
 		} else {
 			playlist.cur_artist->expanded = 1;
 			album_to_iter(playlist.cur_album, &iter);
@@ -2122,9 +2050,6 @@ void pl_sel_current(void)
 			window_set_contents(playlist.track_win, &playlist.cur_album->track_head);
 			track_to_iter(playlist.cur_track, &iter);
 			window_set_sel(playlist.track_win, &iter);
-
-			tree_win_changed();
-			track_win_changed();
 
 			playlist.cur_win = TRACK_WIN;
 		}

@@ -35,7 +35,25 @@
  * these return 1 if the new row is real row (not head), 0 otherwise
  */
 
-struct window;
+struct window {
+	/* head of the row list */
+	struct iter head;
+
+	/* top row */
+	struct iter top;
+
+	/* selected row */
+	struct iter sel;
+
+	/* window height */
+	int nr_rows;
+
+	unsigned changed : 1;
+
+	/* return 1 if got next/prev, otherwise 0 */
+	int (*get_prev)(struct iter *iter);
+	int (*get_next)(struct iter *iter);
+};
 
 extern struct window *window_new(int (*get_prev)(struct iter *), int (*get_next)(struct iter *));
 extern void window_free(struct window *win);
@@ -64,6 +82,8 @@ extern void window_set_sel(struct window *win, struct iter *iter);
 
 /* these return >0 if selection changed, 0 otherwise */
 extern int window_set_nr_rows(struct window *win, int nr_rows);
+extern int window_up(struct window *win, int rows);
+extern int window_down(struct window *win, int rows);
 extern int window_move(struct window *win, int rows);
 extern int window_goto_top(struct window *win);
 extern int window_goto_bottom(struct window *win);
@@ -71,5 +91,7 @@ extern int window_page_up(struct window *win);
 extern int window_page_down(struct window *win);
 
 extern int window_get_nr_rows(struct window *win);
+
+extern int window_has_changed(struct window *win);
 
 #endif
