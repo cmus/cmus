@@ -23,7 +23,6 @@ int filters_changed;
 static LIST_HEAD(filters_head);
 static char filename[512];
 static const char *recursive_filter;
-static int interactive = 0;
 
 static inline void filter_entry_to_iter(struct filter_entry *e, struct iter *iter)
 {
@@ -207,14 +206,14 @@ static void do_filters_set_filter(const char *keyval, int active)
 	struct list_head *item;
 
 	if (eq == NULL) {
-		if (interactive)
+		if (ui_initialized)
 			ui_curses_display_error_msg("invalid argument ('key=value' expected)");
 		return;
 	}
 	key = xstrndup(keyval, eq - keyval);
 	val = xstrdup(eq + 1);
 	if (!validate_filter_name(key)) {
-		if (interactive)
+		if (ui_initialized)
 			ui_curses_display_error_msg("invalid filter name (can only contain 'a-zA-Z0-9_-' characters)");
 		free(key);
 		free(val);
@@ -222,7 +221,7 @@ static void do_filters_set_filter(const char *keyval, int active)
 	}
 	expr = expr_parse(val);
 	if (expr == NULL) {
-		if (interactive)
+		if (ui_initialized)
 			ui_curses_display_error_msg("error parsing filter %s: %s", val, expr_error());
 		free(key);
 		free(val);
@@ -247,7 +246,7 @@ static void do_filters_set_filter(const char *keyval, int active)
 			/* replace */
 			struct iter iter;
 
-			if (interactive) {
+			if (ui_initialized) {
 				filter_entry_to_iter(e, &iter);
 				window_row_vanishes(filters_win, &iter);
 			}
@@ -259,7 +258,7 @@ static void do_filters_set_filter(const char *keyval, int active)
 	}
 	/* add before item */
 	list_add_tail(&new->node, item);
-	if (interactive) {
+	if (ui_initialized) {
 		window_changed(filters_win);
 		filters_changed = 1;
 	}
@@ -295,9 +294,6 @@ void filters_init(void)
 	iter.data1 = NULL;
 	iter.data2 = NULL;
 	filters_searchable = searchable_new(NULL, &iter, &filters_search_ops);
-
-	/* now we can display error messages on the command line */
-	interactive = 1;
 
 	filters_activate();
 }

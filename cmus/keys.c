@@ -61,7 +61,6 @@ static const enum key_context view_to_context[] = {
 
 #define KEY_IS_CHAR -255
 
-static int initializing = 1;
 static char *filename;
 
 /* bindable functions {{{ */
@@ -830,11 +829,7 @@ static int find_context(const char *name)
 		if (strcmp(name, key_context_names[i]) == 0)
 			return i;
 	}
-	if (initializing) {
-		fprintf(stderr, "invalid context '%s'\n", name);
-	} else {
-		ui_curses_display_error_msg("invalid context '%s'", name);
-	}
+	ui_curses_display_error_msg("invalid context '%s'", name);
 	return -1;
 }
 
@@ -846,11 +841,7 @@ static const struct key *find_key(const char *name)
 		if (strcmp(name, key_table[i].name) == 0)
 			return &key_table[i];
 	}
-	if (initializing) {
-		fprintf(stderr, "invalid key '%s'\n", name);
-	} else {
-		ui_curses_display_error_msg("invalid key '%s'", name);
-	}
+	ui_curses_display_error_msg("invalid key '%s'", name);
 	return NULL;
 }
 
@@ -863,11 +854,7 @@ static const struct key_function *find_function(const char *name, enum key_conte
 		if (strcmp(name, functions[i].name) == 0)
 			return &functions[i];
 	}
-	if (initializing) {
-		fprintf(stderr, "function '%s' not found in context %s\n", name, key_context_names[c]);
-	} else {
-		ui_curses_display_error_msg("function '%s' not in context %s", name, key_context_names[c]);
-	}
+	ui_curses_display_error_msg("function '%s' not in context %s", name, key_context_names[c]);
 	return NULL;
 }
 
@@ -940,11 +927,7 @@ int key_bind(const char *context, const char *key, const char *func)
 	d_print("bound %s in %s to %s\n", key, context, func);
 	return 0;
 bound:
-	if (initializing) {
-		fprintf(stderr, "key %s already bound in context %s\n", key, key_context_names[c]);
-	} else {
-		ui_curses_display_error_msg("key %s already bound in context %s", key, key_context_names[c]);
-	}
+	ui_curses_display_error_msg("key %s already bound in context %s", key, key_context_names[c]);
 	return -1;
 }
 
@@ -1046,12 +1029,10 @@ int keys_init(void)
 	for (i = 0; i < NR_CTXS; i++) {
 		if (key_bindings[i]) {
 			d_print("user defined keys\n");
-			initializing = 0;
 			return 0;
 		}
 	}
 	set_defaults();
-	initializing = 0;
 	return 0;
 }
 

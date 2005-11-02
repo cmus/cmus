@@ -68,6 +68,7 @@
 
 char *program_name = NULL;
 
+int ui_initialized = 0;
 enum ui_curses_input_mode ui_curses_input_mode = NORMAL_MODE;
 int ui_curses_view = TREE_VIEW;
 struct searchable *searchable;
@@ -1150,8 +1151,13 @@ void ui_curses_display_error_msg(const char *format, ...)
 	vsnprintf(error_msg + 7, sizeof(error_msg) - 7, format, ap);
 	va_end(ap);
 
-	error_time = time(NULL);
-	ui_curses_update_commandline();
+	if (ui_initialized) {
+		error_time = time(NULL);
+		ui_curses_update_commandline();
+	} else {
+		fprintf(stderr, "%s\n", error_msg);
+		error_msg[0] = 0;
+	}
 }
 
 int ui_curses_yes_no_query(const char *format, ...)
@@ -1992,6 +1998,7 @@ static void ui_curses_start(void)
 	}
 	d_print("Number of supported colors: %d\n", COLORS);
 
+	ui_initialized = 1;
 	while (running) {
 		int needs_view_update = 0;
 		int needs_title_update = 0;

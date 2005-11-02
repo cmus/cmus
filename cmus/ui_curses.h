@@ -55,6 +55,7 @@ enum {
 	NR_COLORS
 };
 
+extern int ui_initialized;
 extern enum ui_curses_input_mode ui_curses_input_mode;
 extern int ui_curses_view;
 extern struct searchable *searchable;
