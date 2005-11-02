@@ -649,18 +649,21 @@ static void expand_key_context(const char *str)
 
 static int get_context(const char *str, int len)
 {
-	int i, c = -1;
+	int i, c = -1, count = 0;
 
 	for (i = 0; key_context_names[i]; i++) {
 		if (strncmp(str, key_context_names[i], len) == 0) {
-			if (c != -1) {
-				/* ambiguous */
-				return -1;
+			if (key_context_names[i][len] == 0) {
+				/* exact */
+				return i;
 			}
 			c = i;
+			count++;
 		}
 	}
-	return c;
+	if (count == 1)
+		return c;
+	return -1;
 }
 
 /* fills tabexp struct */
@@ -678,7 +681,7 @@ static void expand_bind_args(const char *str)
 	/* start and end pointers for context, key and function */
 	const char *cs, *ce, *ks, *ke, *fs;
 	char *tmp, **tails;
-	int i, c, k, len, pos, alloc;
+	int i, c, k, len, pos, alloc, count;
 
 	cs = str;
 	ce = strchr(cs, ' ');
@@ -734,17 +737,20 @@ static void expand_bind_args(const char *str)
 
 	/* key must be expandable */
 	k = -1;
+	count = 0;
 	for (i = 0; key_table[i].name; i++) {
 		if (strncmp(ks, key_table[i].name, ke - ks) == 0) {
-			if (k != -1) {
-				/* ambiguous */
-				k = -1;
+			if (key_table[i].name[ke - ks] == 0) {
+				/* exact */
+				k = i;
+				count = 1;
 				break;
 			}
 			k = i;
+			count++;
 		}
 	}
-	if (k == -1) {
+	if (count != 1) {
 		/* key is ambiguous or invalid */
 		return;
 	}
