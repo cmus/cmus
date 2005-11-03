@@ -64,6 +64,7 @@ struct v2_frame_header {
 static char *default_charset = NULL;
 
 #define NR_GENRES 148
+/* genres {{{ */
 static const char *genres[NR_GENRES] = {
 	"Blues",
 	"Classic Rock",
@@ -214,9 +215,13 @@ static const char *genres[NR_GENRES] = {
 	"JPop",
 	"Synthpop"
 };
+/* }}} */
 
-/* #define id3_debug(...) d_print(__VA_ARGS__) */
+#if 1
+#define id3_debug(...) d_print(__VA_ARGS__)
+#else
 #define id3_debug(...) do { } while (0)
+#endif
 
 static char *utf16_to_utf8(const char *buf, int buf_size)
 {
@@ -289,6 +294,19 @@ static int u32_unsync(const unsigned char *buf, uint32_t *up)
 	return 1;
 }
 
+static void get_u24(const unsigned char *buf, uint32_t *up)
+{
+	uint32_t b, u = 0;
+	int i;
+
+	for (i = 0; i < 3; i++) {
+		b = buf[i];
+		u <<= 8;
+		u |= b;
+	}
+	*up = u;
+}
+
 static int v2_header_footer_parse(struct v2_header *header, const char *buf)
 {
 	header->ver_major = buf[3];
@@ -323,7 +341,43 @@ static int is_frame_id_char(char ch)
 	return (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9');
 }
 
-static int v2_frame_header_parse(struct v2_frame_header *header, const char *buf)
+/* XXXYYY
+ *
+ * X = [A-Z0-9]
+ * Y = byte
+ *
+ * XXX is frame
+ * YYY is frame size excluding this 6 byte header
+ */
+static int v2_2_0_frame_header_parse(struct v2_frame_header *header, const char *buf)
+{
+	int i;
+
+	for (i = 0; i < 3; i++) {
+		if (!is_frame_id_char(buf[i]))
+			return 0;
+		header->id[i] = buf[i];
+	}
+	header->id[3] = 0;
+	get_u24((const unsigned char *)(buf + 3), &header->size);
+	header->flags = 0;
+	if (header->size == 0)
+		return 0;
+	id3_debug("%c%c%c %d\n", header->id[0], header->id[1], header->id[2], header->size);
+	return 1;
+}
+
+/* XXXXYYYYZZ
+ *
+ * X = [A-Z0-9]
+ * Y = byte
+ * Z = byte
+ *
+ * XXXX is frame
+ * YYYY is frame size excluding this 10 byte header
+ * ZZ   is flags
+ */
+static int v2_3_0_frame_header_parse(struct v2_frame_header *header, const char *buf)
 {
 	int i;
 
@@ -337,7 +391,7 @@ static int v2_frame_header_parse(struct v2_frame_header *header, const char *buf
 	header->flags = (buf[8] << 8) | buf[9];
 	if (header->size == 0)
 		return 0;
-/* 	id3_debug("%c%c%c%c %d\n", header->id[0], header->id[1], header->id[2], header->id[3], header->size); */
+	id3_debug("%c%c%c%c %d\n", header->id[0], header->id[1], header->id[2], header->id[3], header->size);
 	return 1;
 }
 
@@ -358,73 +412,151 @@ static int read_all(int fd, char *buf, size_t size)
 	return 0;
 }
 
-/*
- * Frames:
+/* (.*).+   = .+
+ * (RX)     = Remix
+ * (CR)     = Cover
+ * ([0-9]+) = genres[id]
  *
- * TALB  album
- * TIT2  title
- * TPE1  artist
- * TYER  year
- * TCON  genre
- * TRCK  tracknumber  1 or 1/10
- * TPOS  discnumber   1 or 1/2
- *
- * http://www.id3.org/id3v2.4.0-structure.txt
  */
+static char *parse_genre(char *str)
+{
+	char *id, *s;
+	int i;
+
+	if (*str != '(')
+		return str;
+
+	id = str + 1;
+	s = strchr(id, ')');
+	if (s == NULL) {
+		/* ([^)]* */
+		return str;
+	}
+
+	if (s == id) {
+		/* ().* */
+		return str;
+	}
+
+	if (s[1]) {
+		/* (.+)GENRE => GENRE */
+		s = xstrdup(s + 1);
+		free(str);
+		return s;
+	}
+
+	/* (.+) */
+	if (strncmp(id, "RX", s - id) == 0) {
+		free(str);
+		return xstrdup("Remix");
+	}
+	if (strncmp(id, "CR", s - id) == 0) {
+		free(str);
+		return xstrdup("Cover");
+	}
+
+	i = 0;
+	while (id < s) {
+		char ch = *id++;
+
+		if (ch < '0')
+			return str;
+		if (ch > '9')
+			return str;
+		i *= 10;
+		i += ch - '0';
+	}
+	if (i >= NR_GENRES)
+		return str;
+	free(str);
+	return xstrdup(genres[i]);
+}
+
+/* http://www.id3.org/id3v2.4.0-structure.txt */
+static struct {
+	const char name[8];
+	enum id3_key key;
+} frame_tab[] = {
+	/* >= 2.3.0 */
+	{ "TPE1", ID3_ARTIST },
+	{ "TALB", ID3_ALBUM },
+	{ "TIT2", ID3_TITLE },
+	{ "TYER", ID3_DATE },
+	{ "TCON", ID3_GENRE },
+	{ "TPOS", ID3_DISC },
+	{ "TRCK", ID3_TRACK },
+
+	/* obsolete frames (2.2.0) */
+	{ "TP1",  ID3_ARTIST },
+	{ "TAL",  ID3_ALBUM },
+	{ "TT2",  ID3_TITLE },
+	{ "TYE",  ID3_DATE },
+	{ "TCO",  ID3_GENRE },
+	{ "TPA",  ID3_DISC },
+	{ "TRK",  ID3_TRACK },
+
+	{ "", -1 }
+};
+
 static int v2_add_frame(ID3 *id3, struct v2_frame_header *fh, const char *buf)
 {
-	static const char * const frames[NUM_ID3_KEYS] = { "TPE1", "TALB", "TIT2", "TYER", "TCON", "DISC", "TRCK" };
 	int i;
 
 	if (buf[0] > 3)
 		return 0;
 
-	for (i = 0; i < NUM_ID3_KEYS; i++) {
-		if (strncmp(fh->id, frames[i], 4) == 0) {
-			char *in, *out;
-			int rc;
+	for (i = 0; frame_tab[i].key != -1; i++) {
+		enum id3_key key = frame_tab[i].key;
+		char *in, *out;
+		int rc;
 
-			switch (buf[0]) {
-			case 0x00: /* ISO-8859-1 */
-				in = xstrndup(buf + 1, fh->size - 1);
+		if (strncmp(fh->id, frame_tab[i].name, 4))
+			continue;
+
+		switch (buf[0]) {
+		case 0x00: /* ISO-8859-1 */
+			in = xstrndup(buf + 1, fh->size - 1);
+			rc = utf8_encode(in, default_charset, &out);
+			free(in);
+			if (rc)
+				return 0;
+			break;
+		case 0x03: /* UTF-8 */
+			in = xstrndup(buf + 1, fh->size - 1);
+			if (u_is_valid(in)) {
+				out = in;
+			} else {
 				rc = utf8_encode(in, default_charset, &out);
 				free(in);
-				if (rc) 
+				if (rc)
 					return 0;
-				break;
-			case 0x03: /* UTF-8 */
-				in = xstrndup(buf + 1, fh->size - 1);
-				if (u_is_valid(in)) {
-					out = in;
-				} else {
-					rc = utf8_encode(in, default_charset, &out);
-					free(in);
-					if (rc)
-						return 0;
-				}
-				break;
-			case 0x01: /* UTF-16 */
-				out = utf16_to_utf8(buf + 1, fh->size - 1);
-				if (out == NULL)
-					return 0;
-				break;
-			case 0x02: /* UTF-16BE */
-				out = utf16be_to_utf8(buf + 1, fh->size - 1);
-				if (out == NULL)
-					return 0;
-				break;
 			}
-			if (i > 4) {
-				char *slash = strchr(out, '/');
-
-				if (slash)
-					*slash = 0;
-			}
-			free(id3->v2[i]);
-			id3->v2[i] = out;
-			id3_debug("%s '%s'\n", frames[i], out);
-			return 1;
+			break;
+		case 0x01: /* UTF-16 */
+			out = utf16_to_utf8(buf + 1, fh->size - 1);
+			if (out == NULL)
+				return 0;
+			break;
+		case 0x02: /* UTF-16BE */
+			out = utf16be_to_utf8(buf + 1, fh->size - 1);
+			if (out == NULL)
+				return 0;
+			break;
 		}
+		if (key == ID3_TRACK || key == ID3_DISC) {
+			char *slash = strchr(out, '/');
+
+			if (slash)
+				*slash = 0;
+		}
+		if (key == ID3_GENRE) {
+			id3_debug("genre before: '%s'\n", out);
+			out = parse_genre(out);
+		}
+		free(id3->v2[key]);
+		id3->v2[key] = out;
+		id3_debug("%s '%s'\n", frame_tab[i].name, out);
+		return 1;
 	}
 	return 0;
 }
@@ -434,6 +566,7 @@ static int v2_read(ID3 *id3, int fd, const struct v2_header *header)
 	char *buf;
 	int rc, buf_size;
 	int frame_start, i;
+	int frame_header_size;
 
 	buf_size = header->size;
 	buf = xnew(char, buf_size);
@@ -457,14 +590,22 @@ static int v2_read(ID3 *id3, int fd, const struct v2_header *header)
 		/* should check if update flag is set */
 	}
 
+	frame_header_size = 10;
+	if (header->ver_major == 2)
+		frame_header_size = 6;
+
 	i = frame_start;
-	while (i < buf_size - 10) {
+	while (i < buf_size - frame_header_size) {
 		struct v2_frame_header fh;
 
-		if (!v2_frame_header_parse(&fh, buf + i)) {
+		if (header->ver_major == 2) {
+			if (!v2_2_0_frame_header_parse(&fh, buf + i))
+				break;
+		} else if (!v2_3_0_frame_header_parse(&fh, buf + i)) {
 			break;
 		}
-		i += 10;
+
+		i += frame_header_size;
 		if (fh.size > buf_size - i) {
 			id3_debug("frame too big\n");
 			break;
@@ -488,15 +629,15 @@ int id3_tag_size(const char *buf, int buf_size)
 	if (v2_header_parse(&header, buf)) {
 		if (header.flags & V2_HEADER_FOOTER) {
 			/* header + data + footer */
-			d_print("v2 with footer\n");
+			id3_debug("v2.%d.%d with footer\n", header.ver_major, header.ver_minor);
 			return 10 + header.size + 10;
 		}
 		/* header */
-		d_print("v2\n");
+		id3_debug("v2.%d.%d\n", header.ver_major, header.ver_minor);
 		return 10 + header.size;
 	}
 	if (buf_size >= 3 && is_v1(buf)) {
-		d_print("v1\n");
+		id3_debug("v1\n");
 		return 128;
 	}
 	return 0;
