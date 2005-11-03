@@ -793,7 +793,6 @@ static void set_defaults(void)
 {
 	int i;
 
-	d_print("setting default keybindings\n");
 	for (i = 0; defaults[i].key; i++)
 		key_bind(key_context_names[defaults[i].context], defaults[i].key, defaults[i].func);
 }
@@ -905,8 +904,6 @@ int key_bind(const char *context, const char *key, const char *func)
 	} else {
 		key_bindings[c] = b;
 	}
-
-	d_print("bound %s in %s to %s\n", key, context, func);
 	return 0;
 bound:
 	ui_curses_display_error_msg("key %s already bound in context %s", key, key_context_names[c]);
@@ -1009,10 +1006,8 @@ int keys_init(void)
 
 	/* set default keys only if no bingings */
 	for (i = 0; i < NR_CTXS; i++) {
-		if (key_bindings[i]) {
-			d_print("user defined keys\n");
+		if (key_bindings[i])
 			return 0;
-		}
 	}
 	set_defaults();
 	return 0;
