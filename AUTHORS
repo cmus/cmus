@@ -18,3 +18,6 @@ original RPM spec file by Eugene Vlasov <eugene@ikz.ru>
 Claes Nästen <pekdon@gmail.com>
   :seek command
   --volume option for cmus-remote
+
+Frank Terbeck <frank.terbeck@rwth-aachen.de>
+  dynamic keybindings patch

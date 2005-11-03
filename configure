@@ -3,7 +3,7 @@
 source $(dirname $0)/scripts/configure.sh || exit 1
 
 PACKAGE="cmus"
-VERSION="1.6.2"
+VERSION="1.6.3"
 PACKAGE_BUGREPORT="tihirvon@gmail.com"
 PACKAGE_NAME="C* Music Player"
 

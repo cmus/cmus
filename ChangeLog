@@ -1,3 +1,15 @@
+2005-11-04: 1.6.3
+~~~~~~~~~~~~~~~~~
+
+Frank Terbeck & Timo Hirvonen
+  o Dynamic keybindings (:bind and :unbind commands)
+
+Timo Hirvonen
+  o Support obsolete ID3 v2.2.0 frames
+  o Fix FLAC tag parsing
+  o Code clean ups
+  o Documentation update
+
 2005-10-21: 1.6.2
 ~~~~~~~~~~~~~~~~~
 
