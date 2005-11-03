@@ -23,6 +23,7 @@
 #include <debug.h>
 
 #include <FLAC/seekable_stream_decoder.h>
+#include <FLAC/metadata.h>
 #include <inttypes.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -250,20 +251,12 @@ static void metadata_cb(const Dec *dec, const FLAC__StreamMetadata *metadata, vo
 			nr = metadata->data.vorbis_comment.num_comments;
 			c = xnew0(struct keyval, nr + 1);
 			for (s = 0, d = 0; s < nr; s++) {
-				const char *str = (const char *)metadata->data.vorbis_comment.comments[s].entry;
-				int i;
-
-				d_print("comment: %s\n", str);
-				for (i = 0; str[i]; i++) {
-					if (str[i] == '=')
-						break;
-				}
-				if (str[i] != '=') {
-					d_print("invalid comment: '%s' ('=' expected)\n", str);
+				/* until you have finished reading this function name
+				 * you have already forgot WTF you're doing */
+				if (!FLAC__metadata_object_vorbiscomment_entry_to_name_value_pair(metadata->data.vorbis_comment.comments[s],
+						&c[d].key, &c[d].val))
 					continue;
-				}
-				c[d].key = xstrndup(str, i);
-				c[d].val = xstrdup(str + i + 1);
+				d_print("comment: '%s=%s'\n", c[d].key, c[d].val);
 				d++;
 			}
 			priv->comments = c;
