@@ -227,6 +227,7 @@ pkg_check_modules()
 # run <name>-config
 #
 # @name:    name
+# @program: the -config program, default is ${name}-config
 #
 # example:
 #   ---
@@ -243,11 +244,17 @@ app_config()
 {
 	local name program i
 
-	argc 1
+	argc 1 2
 	name="$1"
+	if [[ $# -eq 2 ]]
+	then
+		program="$2"
+	else
+		program="${name}-config"
+	fi
 
 	msg_checking "$name"
-	program=$(path_find "${name}-config")
+	program=$(path_find "$program")
 	if [[ $? -ne 0 ]]
 	then
 		msg_error "no"
