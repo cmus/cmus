@@ -68,25 +68,8 @@ check_alsa()
 
 check_arts()
 {
-	local artsc_config
-
-	if ! check_program artsc-config ARTSC_CONFIG
-	then
-		msg_error "*** The artsc-config script could not be found."
-		return 1
-	fi
-
-	msg_checking "CFLAGS for artsc"
-	ARTS_CFLAGS="$($ARTSC_CONFIG --cflags)"
-	msg_result $ARTS_CFLAGS
-
-	msg_checking "LIBS for artsc"
-	ARTS_LIBS="$($ARTSC_CONFIG --libs)"
-	msg_result $ARTS_LIBS
-
-	makefile_var ARTS_CFLAGS "$ARTS_CFLAGS"
-	makefile_var ARTS_LIBS "$ARTS_LIBS"
-	return 0
+	app_config arts artsc-config
+	return $?
 }
 
 check_oss()
