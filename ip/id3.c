@@ -2,7 +2,7 @@
  * Copyright 2005 Timo Hirvonen
  */
 
-#include <id3.h>
+#include "id3.h"
 #include <misc.h>
 #include <sconf.h>
 #include <xmalloc.h>

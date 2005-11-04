@@ -23,7 +23,7 @@
  */
 
 #include <nomad.h>
-#include <id3.h>
+#include "id3.h"
 #include <xmalloc.h>
 #include <debug.h>
 

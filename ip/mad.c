@@ -19,7 +19,7 @@
 
 #include <ip.h>
 #include <nomad.h>
-#include <id3.h>
+#include "id3.h"
 #include <xmalloc.h>
 #include <read_wrapper.h>
 #include <debug.h>
