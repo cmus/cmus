@@ -72,6 +72,7 @@ right, l           skip 5 seconds forward in song
 3                  switch to sorted view
 4                  switch to play queue view
 5                  switch to directory browser view
+6                  switch to filters view
 up, k              move up
 down, j            move down
 page up, ctrl-b    move page up
