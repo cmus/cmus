@@ -33,6 +33,8 @@
  * get_next(&iter) always stores next row to the iter
  *
  * these return 1 if the new row is real row (not head), 0 otherwise
+ *
+ * sel_changed callback is called if not NULL and selection has changed
  */
 
 struct window {
@@ -53,6 +55,7 @@ struct window {
 	/* return 1 if got next/prev, otherwise 0 */
 	int (*get_prev)(struct iter *iter);
 	int (*get_next)(struct iter *iter);
+	void (*sel_changed)(void);
 };
 
 extern struct window *window_new(int (*get_prev)(struct iter *), int (*get_next)(struct iter *));

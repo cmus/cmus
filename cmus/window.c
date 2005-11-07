@@ -23,6 +23,13 @@
 
 #include <stdlib.h>
 
+static void sel_changed(struct window *win)
+{
+	if (win->sel_changed)
+		win->sel_changed();
+	win->changed = 1;
+}
+
 struct window *window_new(int (*get_prev)(struct iter *), int (*get_next)(struct iter *))
 {
 	struct window *win;
@@ -30,6 +37,7 @@ struct window *window_new(int (*get_prev)(struct iter *), int (*get_next)(struct
 	win = xnew(struct window, 1);
 	win->get_next = get_next;
 	win->get_prev = get_prev;
+	win->sel_changed = NULL;
 	win->nr_rows = 1;
 	win->changed = 1;
 	iter_init(&win->head);
@@ -48,7 +56,7 @@ void window_set_empty(struct window *win)
 	iter_init(&win->head);
 	iter_init(&win->top);
 	iter_init(&win->sel);
-	win->changed = 1;
+	sel_changed(win);
 }
 
 void window_set_contents(struct window *win, void *head)
@@ -62,7 +70,7 @@ void window_set_contents(struct window *win, void *head)
 	win->get_next(&first);
 	win->top = first;
 	win->sel = first;
-	win->changed = 1;
+	sel_changed(win);
 }
 
 int window_set_nr_rows(struct window *win, int nr_rows)
@@ -92,7 +100,7 @@ int window_up(struct window *win, int rows)
 	}
 	if (i == 0)
 		return 0;
-	win->changed = 1;
+	sel_changed(win);
 	return 1;
 }
 
@@ -123,7 +131,7 @@ int window_down(struct window *win, int rows)
 	}
 	if (sel_down == 0)
 		return 0;
-	win->changed = 1;
+	sel_changed(win);
 	return 1;
 }
 
@@ -159,7 +167,7 @@ void window_changed(struct window *win)
 	if (iter_is_head(&win->top)) {
 		win->get_next(&win->top);
 		win->sel = win->top;
-		win->changed = 1;
+		sel_changed(win);
 		return;
 	}
 
@@ -213,8 +221,10 @@ void window_row_vanishes(struct window *win, struct iter *iter)
 	}
 	if (iters_equal(&win->top, iter))
 		win->top = new;
-	if (iters_equal(&win->sel, iter))
+	if (iters_equal(&win->sel, iter)) {
 		win->sel = new;
+		sel_changed(win);
+	}
 	win->changed = 1;
 }
 
@@ -277,7 +287,7 @@ void window_set_sel(struct window *win, struct iter *iter)
 		BUG_ON(!win->get_next(&win->top));
 		top_nr++;
 	}
-	win->changed = 1;
+	sel_changed(win);
 }
 
 int window_goto_top(struct window *win)
@@ -290,7 +300,7 @@ int window_goto_top(struct window *win)
 	win->top = win->sel;
 	if (iters_equal(&old_sel, &win->sel))
 		return 0;
-	win->changed = 1;
+	sel_changed(win);
 	return 1;
 }
 
@@ -314,7 +324,7 @@ int window_goto_bottom(struct window *win)
 	}
 	if (iters_equal(&old_sel, &win->sel))
 		return 0;
-	win->changed = 1;
+	sel_changed(win);
 	return 1;
 }
 

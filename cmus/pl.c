@@ -287,6 +287,20 @@ static void all_wins_changed(void)
 	playlist.sorted_win->changed = 1;
 }
 
+static void tree_sel_changed(void)
+{
+	struct iter sel;
+	struct album *album;
+
+	window_get_sel(playlist.tree_win, &sel);
+	album = iter_to_album(&sel);
+	if (album == NULL) {
+		window_set_empty(playlist.track_win);
+	} else {
+		window_set_contents(playlist.track_win, &album->track_head);
+	}
+}
+
 /* search {{{ */
 
 static int shuffle_search_get_current(void *data, struct iter *iter)
@@ -375,7 +389,6 @@ static int tree_search_matches(void *data, struct iter *iter, const char *text)
 	album_to_iter(track->album, &tmpiter);
 	window_set_sel(playlist.tree_win, &tmpiter);
 
-	window_set_contents(playlist.track_win, &track->album->track_head);
 	track_to_iter(track, &tmpiter);
 	window_set_sel(playlist.track_win, &tmpiter);
 	return 1;
@@ -768,7 +781,6 @@ static void views_update(void)
 	if (playlist.cur_win == TRACK_WIN)
 		playlist.cur_win = TREE_WIN;
 	window_goto_top(playlist.tree_win);
-	window_set_empty(playlist.track_win);
 
 	window_changed(playlist.shuffle_win);
 	window_changed(playlist.sorted_win);
@@ -945,7 +957,7 @@ static void remove_track(struct track *track)
 	if (list_empty(&album->track_head)) {
 		struct artist *artist = album->artist;
 
-		if (playlist.cur_win == TRACK_WIN)
+		if (sel_album == album && playlist.cur_win == TRACK_WIN)
 			playlist.cur_win = TREE_WIN;
 
 		__artist_remove_album(album);
@@ -955,24 +967,6 @@ static void remove_track(struct track *track)
 			artist->expanded = 0;
 			__pl_remove_artist(artist);
 			artist_free(artist);
-
-			if (list_empty(&playlist.artist_head)) {
-				window_set_empty(playlist.track_win);
-			} else if (sel_artist == artist) {
-				tree_win_get_selected(&sel_artist, &sel_album);
-				if (sel_album == NULL) {
-					window_set_empty(playlist.track_win);
-				} else {
-					window_set_contents(playlist.track_win, &sel_album->track_head);
-				}
-			}
-		} else if (sel_album == album) {
-			tree_win_get_selected(&sel_artist, &sel_album);
-			if (sel_album == NULL) {
-				window_set_empty(playlist.track_win);
-			} else {
-				window_set_contents(playlist.track_win, &sel_album->track_head);
-			}
 		}
 	}
 }
@@ -1463,8 +1457,10 @@ int pl_init(void)
 	playlist.shuffle_win = window_new(shuffle_get_prev, shuffle_get_next);
 	playlist.sorted_win = window_new(sorted_get_prev, sorted_get_next);
 
-	window_set_contents(playlist.tree_win, &playlist.artist_head);
+	playlist.tree_win->sel_changed = tree_sel_changed;
+
 	window_set_empty(playlist.track_win);
+	window_set_contents(playlist.tree_win, &playlist.artist_head);
 	window_set_contents(playlist.shuffle_win, &playlist.shuffle_head);
 	window_set_contents(playlist.sorted_win, &playlist.sorted_head);
 	playlist.cur_win = TREE_WIN;
@@ -1506,18 +1502,7 @@ int pl_exit(void)
 void pl_set_tree_win_nr_rows(int nr_rows)
 {
 	pl_lock();
-	if (window_set_nr_rows(playlist.tree_win, nr_rows)) {
-		struct iter sel;
-		struct album *album;
-
-		window_get_sel(playlist.tree_win, &sel);
-		album = iter_to_album(&sel);
-		if (album == NULL) {
-			window_set_empty(playlist.track_win);
-		} else {
-			window_set_contents(playlist.track_win, &album->track_head);
-		}
-	}
+	window_set_nr_rows(playlist.tree_win, nr_rows);
 	pl_unlock();
 }
 
@@ -1755,9 +1740,7 @@ void pl_toggle_expand_artist(void)
 				artist_to_iter(artist, &sel);
 				window_set_sel(playlist.tree_win, &sel);
 
-				window_set_empty(playlist.track_win);
 				artist->expanded = 0;
-
 				playlist.cur_win = TREE_WIN;
 			} else {
 				artist->expanded = 1;
@@ -1901,18 +1884,7 @@ static void pl_sel_move(int rows)
 {
 	switch (playlist.cur_win) {
 	case TREE_WIN:
-		if (window_move(playlist.tree_win, rows)) {
-			struct iter sel;
-			struct album *album;
-
-			window_get_sel(playlist.tree_win, &sel);
-			album = iter_to_album(&sel);
-			if (album == NULL) {
-				window_set_empty(playlist.track_win);
-			} else {
-				window_set_contents(playlist.track_win, &album->track_head);
-			}
-		}
+		window_move(playlist.tree_win, rows);
 		break;
 	case TRACK_WIN:
 		window_move(playlist.track_win, rows);
@@ -1982,10 +1954,7 @@ void pl_sel_top(void)
 	pl_lock();
 	switch (playlist.cur_win) {
 	case TREE_WIN:
-		if (window_goto_top(playlist.tree_win)) {
-			/* only artist selected so track win must be empty */
-			window_set_empty(playlist.track_win);
-		}
+		window_goto_top(playlist.tree_win);
 		break;
 	case TRACK_WIN:
 		window_goto_top(playlist.track_win);
@@ -2005,18 +1974,7 @@ void pl_sel_bottom(void)
 	pl_lock();
 	switch (playlist.cur_win) {
 	case TREE_WIN:
-		if (window_goto_bottom(playlist.tree_win)) {
-			struct iter sel;
-			struct album *album;
-
-			window_get_sel(playlist.tree_win, &sel);
-			album = iter_to_album(&sel);
-			if (album == NULL) {
-				window_set_empty(playlist.track_win);
-			} else {
-				window_set_contents(playlist.track_win, &album->track_head);
-			}
-		}
+		window_goto_bottom(playlist.tree_win);
 		break;
 	case TRACK_WIN:
 		window_goto_bottom(playlist.track_win);
@@ -2045,13 +2003,13 @@ void pl_sel_current(void)
 			window_set_sel(playlist.sorted_win, &iter);
 		} else {
 			playlist.cur_artist->expanded = 1;
+			playlist.cur_win = TRACK_WIN;
+
 			album_to_iter(playlist.cur_album, &iter);
 			window_set_sel(playlist.tree_win, &iter);
-			window_set_contents(playlist.track_win, &playlist.cur_album->track_head);
+
 			track_to_iter(playlist.cur_track, &iter);
 			window_set_sel(playlist.track_win, &iter);
-
-			playlist.cur_win = TRACK_WIN;
 		}
 	}
 	pl_unlock();
