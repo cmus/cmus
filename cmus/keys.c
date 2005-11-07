@@ -63,6 +63,41 @@ static const enum key_context view_to_context[] = {
 
 static char *filename;
 
+static void view_lock(void)
+{
+	if (ui_curses_view < 3) {
+		pl_lock();
+	} else if (ui_curses_view == PLAY_QUEUE_VIEW) {
+		play_queue_lock();
+	}
+}
+
+static void view_unlock(void)
+{
+	if (ui_curses_view < 3) {
+		pl_unlock();
+	} else if (ui_curses_view == PLAY_QUEUE_VIEW) {
+		play_queue_unlock();
+	}
+}
+
+static struct window *current_win(void)
+{
+	switch (ui_curses_view) {
+	case TREE_VIEW:
+	case SHUFFLE_VIEW:
+	case SORTED_VIEW:
+		return playlist.cur_win;
+	case PLAY_QUEUE_VIEW:
+		return play_queue_win;
+	case BROWSER_VIEW:
+		return browser_win;
+	case FILTERS_VIEW:
+	default:
+		return filters_win;
+	}
+}
+
 /* bindable functions {{{ */
 static void win_activate_next(void)
 {
@@ -72,146 +107,44 @@ static void win_activate_next(void)
 
 static void win_bottom(void)
 {
-	enum key_context c = view_to_context[ui_curses_view];
-
-	switch (c) {
-	case CTX_COMMON:
-		break;
-	case CTX_PLAYLIST:
-		pl_sel_bottom();
-		break;
-	case CTX_PLAY_QUEUE:
-		play_queue_lock();
-		window_goto_bottom(play_queue_win);
-		play_queue_unlock();
-		break;
-	case CTX_BROWSER:
-		window_goto_bottom(browser_win);
-		break;
-	case CTX_FILTERS:
-		window_goto_bottom(filters_win);
-		break;
-	}
+	view_lock();
+	window_goto_bottom(current_win());
+	view_unlock();
 }
 
 static void win_down(void)
 {
-	enum key_context c = view_to_context[ui_curses_view];
-
-	switch (c) {
-	case CTX_COMMON:
-		break;
-	case CTX_PLAYLIST:
-		pl_sel_down();
-		break;
-	case CTX_PLAY_QUEUE:
-		play_queue_lock();
-		window_down(play_queue_win, 1);
-		play_queue_unlock();
-		break;
-	case CTX_BROWSER:
-		window_down(browser_win, 1);
-		break;
-	case CTX_FILTERS:
-		window_down(filters_win, 1);
-		break;
-	}
+	view_lock();
+	window_down(current_win(), 1);
+	view_unlock();
 }
 
 static void win_page_down(void)
 {
-	enum key_context c = view_to_context[ui_curses_view];
-
-	switch (c) {
-	case CTX_COMMON:
-		break;
-	case CTX_PLAYLIST:
-		pl_sel_page_down();
-		break;
-	case CTX_PLAY_QUEUE:
-		play_queue_lock();
-		window_page_down(play_queue_win);
-		play_queue_unlock();
-		break;
-	case CTX_BROWSER:
-		window_page_down(browser_win);
-		break;
-	case CTX_FILTERS:
-		window_page_down(filters_win);
-		break;
-	}
+	view_lock();
+	window_page_down(current_win());
+	view_unlock();
 }
 
 static void win_page_up(void)
 {
-	enum key_context c = view_to_context[ui_curses_view];
-
-	switch (c) {
-	case CTX_COMMON:
-		break;
-	case CTX_PLAYLIST:
-		pl_sel_page_up();
-		break;
-	case CTX_PLAY_QUEUE:
-		play_queue_lock();
-		window_page_up(play_queue_win);
-		play_queue_unlock();
-		break;
-	case CTX_BROWSER:
-		window_page_up(browser_win);
-		break;
-	case CTX_FILTERS:
-		window_page_up(filters_win);
-		break;
-	}
+	view_lock();
+	window_page_up(current_win());
+	view_unlock();
 }
 
 static void win_top(void)
 {
-	enum key_context c = view_to_context[ui_curses_view];
-
-	switch (c) {
-	case CTX_COMMON:
-		break;
-	case CTX_PLAYLIST:
-		pl_sel_top();
-		break;
-	case CTX_PLAY_QUEUE:
-		play_queue_lock();
-		window_goto_top(play_queue_win);
-		play_queue_unlock();
-		break;
-	case CTX_BROWSER:
-		window_goto_top(browser_win);
-		break;
-	case CTX_FILTERS:
-		window_goto_top(filters_win);
-		break;
-	}
+	view_lock();
+	window_goto_top(current_win());
+	view_unlock();
 }
 
 static void win_up(void)
 {
-	enum key_context c = view_to_context[ui_curses_view];
-
-	switch (c) {
-	case CTX_COMMON:
-		break;
-	case CTX_PLAYLIST:
-		pl_sel_up();
-		break;
-	case CTX_PLAY_QUEUE:
-		play_queue_lock();
-		window_up(play_queue_win, 1);
-		play_queue_unlock();
-		break;
-	case CTX_BROWSER:
-		window_up(browser_win, 1);
-		break;
-	case CTX_FILTERS:
-		window_up(filters_win, 1);
-		break;
-	}
+	view_lock();
+	window_up(current_win(), 1);
+	view_unlock();
 }
 
 static void play_selected(void)
@@ -240,16 +173,20 @@ static int queue_prepend_cb(void *data, struct track_info *ti)
 static void queue_append(void)
 {
 	play_queue_lock();
-	pl_for_each_selected(queue_append_cb, NULL, 0);
-	pl_sel_down();
+	pl_lock();
+	__pl_for_each_selected(queue_append_cb, NULL, 0);
+	window_down(current_win(), 1);
+	pl_unlock();
 	play_queue_unlock();
 }
 
 static void queue_prepend(void)
 {
 	play_queue_lock();
-	pl_for_each_selected(queue_prepend_cb, NULL, 1);
-	pl_sel_down();
+	pl_lock();
+	__pl_for_each_selected(queue_prepend_cb, NULL, 1);
+	window_down(current_win(), 1);
+	pl_unlock();
 	play_queue_unlock();
 }
 

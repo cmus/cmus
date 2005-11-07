@@ -87,7 +87,6 @@ extern void window_set_sel(struct window *win, struct iter *iter);
 extern int window_set_nr_rows(struct window *win, int nr_rows);
 extern int window_up(struct window *win, int rows);
 extern int window_down(struct window *win, int rows);
-extern int window_move(struct window *win, int rows);
 extern int window_goto_top(struct window *win);
 extern int window_goto_bottom(struct window *win);
 extern int window_page_up(struct window *win);

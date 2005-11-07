@@ -778,8 +778,8 @@ static void views_update(void)
 {
 	sort_sorted_list();
 
-	if (playlist.cur_win == TRACK_WIN)
-		playlist.cur_win = TREE_WIN;
+	if (playlist.cur_win == playlist.track_win)
+		playlist.cur_win = playlist.tree_win;
 	window_goto_top(playlist.tree_win);
 
 	window_changed(playlist.shuffle_win);
@@ -957,8 +957,8 @@ static void remove_track(struct track *track)
 	if (list_empty(&album->track_head)) {
 		struct artist *artist = album->artist;
 
-		if (sel_album == album && playlist.cur_win == TRACK_WIN)
-			playlist.cur_win = TREE_WIN;
+		if (sel_album == album && playlist.cur_win == playlist.track_win)
+			playlist.cur_win = playlist.tree_win;
 
 		__artist_remove_album(album);
 		album_free(album);
@@ -1463,7 +1463,7 @@ int pl_init(void)
 	window_set_contents(playlist.tree_win, &playlist.artist_head);
 	window_set_contents(playlist.shuffle_win, &playlist.shuffle_head);
 	window_set_contents(playlist.sorted_win, &playlist.sorted_head);
-	playlist.cur_win = TREE_WIN;
+	playlist.cur_win = playlist.tree_win;
 	pl_set_tree_win_nr_rows(1);
 	pl_set_track_win_nr_rows(1);
 	pl_set_shuffle_win_nr_rows(1);
@@ -1592,10 +1592,10 @@ struct track_info *pl_set_selected(void)
 		pl_unlock();
 		return NULL;
 	}
-	if (playlist.cur_win == SHUFFLE_WIN) {
+	if (playlist.cur_win == playlist.shuffle_win) {
 		window_get_sel(playlist.shuffle_win, &sel);
 		track = iter_to_shuffle_track(&sel);
-	} else if (playlist.cur_win == SORTED_WIN) {
+	} else if (playlist.cur_win == playlist.sorted_win) {
 		window_get_sel(playlist.sorted_win, &sel);
 		track = iter_to_sorted_track(&sel);
 	} else {
@@ -1728,7 +1728,7 @@ void pl_remove(struct track_info *ti)
 void pl_toggle_expand_artist(void)
 {
 	pl_lock();
-	if (playlist.cur_win == TREE_WIN || playlist.cur_win == TRACK_WIN) {
+	if (playlist.cur_win == playlist.tree_win || playlist.cur_win == playlist.track_win) {
 		struct iter sel;
 		struct artist *artist;
 
@@ -1741,7 +1741,7 @@ void pl_toggle_expand_artist(void)
 				window_set_sel(playlist.tree_win, &sel);
 
 				artist->expanded = 0;
-				playlist.cur_win = TREE_WIN;
+				playlist.cur_win = playlist.tree_win;
 			} else {
 				artist->expanded = 1;
 			}
@@ -1814,25 +1814,24 @@ void pl_get_status(int *repeat, enum playlist_mode *playlist_mode, enum play_mod
 
 void __pl_set_view(int view)
 {
-	/* TREE_WIN or TRACK_WIN */
-	static int tree_view_active_win = TREE_WIN;
+	/* playlist.tree_win or playlist.track_win */
+	static struct window *tree_view_active_win = NULL;
 
 	BUG_ON(view < 0);
 	BUG_ON(view > 2);
 
 	if (view == TREE_VIEW) {
-		if (playlist.cur_win != TREE_WIN && playlist.cur_win != TRACK_WIN) {
+		if (playlist.cur_win != playlist.tree_win && playlist.cur_win != playlist.track_win)
 			playlist.cur_win = tree_view_active_win;
-		}
 	} else {
-		if (playlist.cur_win == TREE_WIN || playlist.cur_win == TRACK_WIN)
+		if (playlist.cur_win == playlist.tree_win || playlist.cur_win == playlist.track_win)
 			tree_view_active_win = playlist.cur_win;
 		switch (view) {
 		case SHUFFLE_VIEW:
-			playlist.cur_win = SHUFFLE_WIN;
+			playlist.cur_win = playlist.shuffle_win;
 			break;
 		case SORTED_VIEW:
-			playlist.cur_win = SORTED_WIN;
+			playlist.cur_win = playlist.sorted_win;
 			break;
 		}
 	}
@@ -1841,18 +1840,18 @@ void __pl_set_view(int view)
 void pl_toggle_active_window(void)
 {
 	pl_lock();
-	if (playlist.cur_win == TREE_WIN) {
+	if (playlist.cur_win == playlist.tree_win) {
 		struct artist *artist;
 		struct album *album;
 
 		tree_win_get_selected(&artist, &album);
 		if (album) {
-			playlist.cur_win = TRACK_WIN;
+			playlist.cur_win = playlist.track_win;
 			playlist.tree_win->changed = 1;
 			playlist.track_win->changed = 1;
 		}
-	} else if (playlist.cur_win == TRACK_WIN) {
-		playlist.cur_win = TREE_WIN;
+	} else if (playlist.cur_win == playlist.track_win) {
+		playlist.cur_win = playlist.tree_win;
 		playlist.tree_win->changed = 1;
 		playlist.track_win->changed = 1;
 	}
@@ -1862,130 +1861,16 @@ void pl_toggle_active_window(void)
 void pl_remove_sel(void)
 {
 	pl_lock();
-	switch (playlist.cur_win) {
-	case TREE_WIN:
+	if (playlist.cur_win == playlist.tree_win) {
 		tree_win_remove_sel();
-		break;
-	case TRACK_WIN:
+	} else if (playlist.cur_win == playlist.track_win) {
 		track_win_remove_sel();
-		break;
-	case SHUFFLE_WIN:
+	} else if (playlist.cur_win == playlist.shuffle_win) {
 		shuffle_win_remove_sel();
-		break;
-	case SORTED_WIN:
+	} else if (playlist.cur_win == playlist.sorted_win) {
 		sorted_win_remove_sel();
-		break;
 	}
 	status_changed();
-	pl_unlock();
-}
-
-static void pl_sel_move(int rows)
-{
-	switch (playlist.cur_win) {
-	case TREE_WIN:
-		window_move(playlist.tree_win, rows);
-		break;
-	case TRACK_WIN:
-		window_move(playlist.track_win, rows);
-		break;
-	case SHUFFLE_WIN:
-		window_move(playlist.shuffle_win, rows);
-		break;
-	case SORTED_WIN:
-		window_move(playlist.sorted_win, rows);
-		break;
-	}
-}
-
-void pl_sel_up(void)
-{
-	pl_lock();
-	pl_sel_move(-1);
-	pl_unlock();
-}
-
-void pl_sel_down(void)
-{
-	pl_lock();
-	pl_sel_move(1);
-	pl_unlock();
-}
-
-static int get_cur_win_nr_rows(void)
-{
-	struct window *win;
-
-	switch (playlist.cur_win) {
-	case TREE_WIN:
-		win = playlist.tree_win;
-		break;
-	case TRACK_WIN:
-		win = playlist.track_win;
-		break;
-	case SHUFFLE_WIN:
-		win = playlist.shuffle_win;
-		break;
-	case SORTED_WIN:
-		win = playlist.sorted_win;
-		break;
-	default:
-		return 0;
-	}
-	return window_get_nr_rows(win);
-}
-
-void pl_sel_page_up(void)
-{
-	pl_lock();
-	pl_sel_move(-(get_cur_win_nr_rows() - 1));
-	pl_unlock();
-}
-
-void pl_sel_page_down(void)
-{
-	pl_lock();
-	pl_sel_move(get_cur_win_nr_rows() - 1);
-	pl_unlock();
-}
-
-void pl_sel_top(void)
-{
-	pl_lock();
-	switch (playlist.cur_win) {
-	case TREE_WIN:
-		window_goto_top(playlist.tree_win);
-		break;
-	case TRACK_WIN:
-		window_goto_top(playlist.track_win);
-		break;
-	case SHUFFLE_WIN:
-		window_goto_top(playlist.shuffle_win);
-		break;
-	case SORTED_WIN:
-		window_goto_top(playlist.sorted_win);
-		break;
-	}
-	pl_unlock();
-}
-
-void pl_sel_bottom(void)
-{
-	pl_lock();
-	switch (playlist.cur_win) {
-	case TREE_WIN:
-		window_goto_bottom(playlist.tree_win);
-		break;
-	case TRACK_WIN:
-		window_goto_bottom(playlist.track_win);
-		break;
-	case SHUFFLE_WIN:
-		window_goto_bottom(playlist.shuffle_win);
-		break;
-	case SORTED_WIN:
-		window_goto_bottom(playlist.sorted_win);
-		break;
-	}
 	pl_unlock();
 }
 
@@ -1995,15 +1880,15 @@ void pl_sel_current(void)
 	if (playlist.cur_track) {
 		struct iter iter;
 
-		if (playlist.cur_win == SHUFFLE_WIN) {
+		if (playlist.cur_win == playlist.shuffle_win) {
 			shuffle_track_to_iter(playlist.cur_track, &iter);
 			window_set_sel(playlist.shuffle_win, &iter);
-		} else if (playlist.cur_win == SORTED_WIN) {
+		} else if (playlist.cur_win == playlist.sorted_win) {
 			sorted_track_to_iter(playlist.cur_track, &iter);
 			window_set_sel(playlist.sorted_win, &iter);
 		} else {
 			playlist.cur_artist->expanded = 1;
-			playlist.cur_win = TRACK_WIN;
+			playlist.cur_win = playlist.track_win;
 
 			album_to_iter(playlist.cur_album, &iter);
 			window_set_sel(playlist.tree_win, &iter);
@@ -2057,15 +1942,13 @@ static int artist_for_each_track(struct artist *artist, int (*cb)(void *data, st
 	return rc;
 }
 
-int pl_for_each_selected(int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
+int __pl_for_each_selected(int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
 {
 	struct iter sel;
 	struct track *track;
 	int rc = 0;
 
-	pl_lock();
-	switch (playlist.cur_win) {
-	case TREE_WIN:
+	if (playlist.cur_win == playlist.tree_win) {
 		if (window_get_sel(playlist.tree_win, &sel)) {
 			struct artist *artist;
 			struct album *album;
@@ -2079,29 +1962,34 @@ int pl_for_each_selected(int (*cb)(void *data, struct track_info *ti), void *dat
 				rc = album_for_each_track(album, cb, data, reverse);
 			}
 		}
-		break;
-	case TRACK_WIN:
+	} else if (playlist.cur_win == playlist.track_win) {
 		if (window_get_sel(playlist.track_win, &sel)) {
 			track = iter_to_track(&sel);
 			BUG_ON(track == NULL);
 			rc = cb(data, track->info);
 		}
-		break;
-	case SHUFFLE_WIN:
+	} else if (playlist.cur_win == playlist.shuffle_win) {
 		if (window_get_sel(playlist.shuffle_win, &sel)) {
 			track = iter_to_shuffle_track(&sel);
 			BUG_ON(track == NULL);
 			rc = cb(data, track->info);
 		}
-		break;
-	case SORTED_WIN:
+	} else if (playlist.cur_win == playlist.sorted_win) {
 		if (window_get_sel(playlist.sorted_win, &sel)) {
 			track = iter_to_sorted_track(&sel);
 			BUG_ON(track == NULL);
 			rc = cb(data, track->info);
 		}
-		break;
 	}
+	return rc;
+}
+
+int pl_for_each_selected(int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
+{
+	int rc;
+
+	pl_lock();
+	rc = __pl_for_each_selected(cb, data, reverse);
 	pl_unlock();
 	return rc;
 }

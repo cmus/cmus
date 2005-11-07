@@ -135,17 +135,6 @@ int window_down(struct window *win, int rows)
 	return 1;
 }
 
-int window_move(struct window *win, int rows)
-{
-	if (rows > 0) {
-		return window_down(win, rows);
-	} else if (rows < 0) {
-		return window_up(win, -rows);
-	} else {
-		return 0;
-	}
-}
-
 /*
  * minimize number of empty lines visible
  * make sure selection is visible

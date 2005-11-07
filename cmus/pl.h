@@ -114,7 +114,10 @@ struct playlist {
 	struct window *track_win;
 	struct window *shuffle_win;
 	struct window *sorted_win;
-	enum { TREE_WIN, TRACK_WIN, SHUFFLE_WIN, SORTED_WIN } cur_win;
+
+	/* one of the above windows */
+	struct window *cur_win;
+
 	enum play_mode play_mode;
 	enum playlist_mode playlist_mode;
 
@@ -161,12 +164,6 @@ extern void pl_get_status(int *repeat, enum playlist_mode *playlist_mode, enum p
 extern void __pl_set_view(int view);
 
 extern void pl_toggle_active_window(void);
-extern void pl_sel_up(void);
-extern void pl_sel_down(void);
-extern void pl_sel_page_up(void);
-extern void pl_sel_page_down(void);
-extern void pl_sel_top(void);
-extern void pl_sel_bottom(void);
 extern void pl_sel_current(void);
 
 extern void pl_set_tree_win_nr_rows(int nr_rows);
@@ -185,6 +182,7 @@ extern void pl_reshuffle(void);
  *
  * Returns: return value of last @cb call or 0 if @cb not called at all.
  */
+extern int __pl_for_each_selected(int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
 extern int pl_for_each_selected(int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
 extern int pl_for_each(int (*cb)(void *data, struct track_info *ti), void *data);
 

@@ -388,7 +388,7 @@ static void print_tree(struct window *win, int row, struct iter *iter)
 	}
 	window_get_sel(win, &sel);
 	selected = iters_equal(iter, &sel);
-	active = playlist.cur_win == TREE_WIN;
+	active = playlist.cur_win == playlist.tree_win;
 	bkgdset(cursed_colors[(active << 2) | (selected << 1) | current]);
 	if (album) {
 		sprint(tree_win_y + row + 1, tree_win_x, album->name ? : noname, tree_win_w, 2);
@@ -502,7 +502,7 @@ static void print_track(struct window *win, int row, struct iter *iter)
 	current = playlist.cur_track == track;
 	window_get_sel(win, &sel);
 	selected = iters_equal(iter, &sel);
-	active = playlist.cur_win == TRACK_WIN;
+	active = playlist.cur_win == playlist.track_win;
 	bkgdset(cursed_colors[(active << 2) | (selected << 1) | current]);
 	fill_track_fopts(track);
 	if (track_info_has_tag(track->info)) {
@@ -517,13 +517,12 @@ static void print_shuffle(struct window *win, int row, struct iter *iter)
 {
 	struct track *track;
 	struct iter sel;
-	int current, selected, active;
+	int current, selected, active = 1;
 
 	track = iter_to_shuffle_track(iter);
 	current = playlist.cur_track == track;
 	window_get_sel(win, &sel);
 	selected = iters_equal(iter, &sel);
-	active = playlist.cur_win == SHUFFLE_WIN;
 	bkgdset(cursed_colors[(active << 2) | (selected << 1) | current]);
 	fill_track_fopts(track);
 	if (track_info_has_tag(track->info)) {
@@ -538,13 +537,12 @@ static void print_sorted(struct window *win, int row, struct iter *iter)
 {
 	struct track *track;
 	struct iter sel;
-	int current, selected, active;
+	int current, selected, active = 1;
 
 	track = iter_to_sorted_track(iter);
 	current = playlist.cur_track == track;
 	window_get_sel(win, &sel);
 	selected = iters_equal(iter, &sel);
-	active = playlist.cur_win == SORTED_WIN;
 	bkgdset(cursed_colors[(active << 2) | (selected << 1) | current]);
 	fill_track_fopts(track);
 	if (track_info_has_tag(track->info)) {
