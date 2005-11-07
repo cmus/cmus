@@ -14,9 +14,6 @@
 /* Optimization: Condition @x is unlikely */
 #define unlikely(x)	__builtin_expect(!!(x), 0)
 
-/* Always inline */
-#define inline		inline	__attribute__((always_inline))
-
 /* Never inline */
 #define noinline		__attribute__((__noinline__))
 
@@ -64,7 +61,6 @@
 #define likely(x)	(x)
 #define unlikely(x)	(x)
 
-/* #define inline */
 #define noinline
 
 #define __PURE

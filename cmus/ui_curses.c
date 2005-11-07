@@ -60,7 +60,6 @@
 #include <locale.h>
 #include <langinfo.h>
 #include <iconv.h>
-#undef inline
 #include <signal.h>
 
 /* globals. documented in ui_curses.h */
