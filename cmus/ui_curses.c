@@ -40,16 +40,14 @@
 #include <file.h>
 #include <get_option.h>
 #include <server.h>
-#include <path.h>
-#include <config.h>
 #include <keys.h>
+#include <debug.h>
+#include <config.h>
 
 #if defined(CONFIG_IRMAN)
 #include <irman.h>
 #include <irman_config.h>
 #endif
-
-#include <debug.h>
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -57,12 +55,13 @@
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <curses.h>
-#include <signal.h>
 #include <ctype.h>
 #include <dirent.h>
 #include <locale.h>
 #include <langinfo.h>
 #include <iconv.h>
+#undef inline
+#include <signal.h>
 
 /* globals. documented in ui_curses.h */
 
@@ -192,9 +191,65 @@ static int track_win_w = 0;
 /* colors in curses format */
 static int cursed_colors[NR_COLORS];
 
-/*
- * printing
- */
+enum {
+	TF_ARTIST,
+	TF_ALBUM,
+	TF_DISC,
+	TF_TRACK,
+	TF_TITLE,
+	TF_YEAR,
+	TF_GENRE,
+	TF_DURATION,
+	TF_PATHFILE,
+	TF_FILE,
+	NR_TFS
+};
+
+static struct format_option track_fopts[NR_TFS + 1] = {
+	DEF_FO_STR('a'),
+	DEF_FO_STR('l'),
+	DEF_FO_INT('D'),
+	DEF_FO_INT('n'),
+	DEF_FO_STR('t'),
+	DEF_FO_STR('y'),
+	DEF_FO_STR('g'),
+	DEF_FO_TIME('d'),
+	DEF_FO_STR('f'),
+	DEF_FO_STR('F'),
+	DEF_FO_END
+};
+
+enum {
+	SF_STATUS,
+	SF_POSITION,
+	SF_DURATION,
+	SF_TOTAL,
+	SF_VOLUME,
+	SF_LVOLUME,
+	SF_RVOLUME,
+	SF_BUFFER,
+	SF_REPEAT,
+	SF_CONTINUE,
+	SF_PLAYMODE,
+	SF_PLAYLISTMODE,
+	NR_SFS
+};
+
+static struct format_option status_fopts[NR_SFS + 1] = {
+	DEF_FO_STR('s'),
+	DEF_FO_TIME('p'),
+	DEF_FO_TIME('d'),
+	DEF_FO_TIME('t'),
+	DEF_FO_INT('v'),
+	DEF_FO_INT('l'),
+	DEF_FO_INT('r'),
+	DEF_FO_INT('b'),
+	DEF_FO_STR('R'),
+	DEF_FO_STR('C'),
+	DEF_FO_STR('P'),
+	DEF_FO_STR('L'),
+	DEF_FO_END
+};
 
 static void utf8_encode(const char *buffer)
 {
@@ -342,40 +397,11 @@ static void print_tree(struct window *win, int row, struct iter *iter)
 	}
 }
 
-enum {
-	TF_ARTIST,
-	TF_ALBUM,
-	TF_DISC,
-	TF_TRACK,
-	TF_TITLE,
-	TF_YEAR,
-	TF_GENRE,
-	TF_DURATION,
-	TF_PATHFILE,
-	TF_FILE,
-	NR_TFS
-};
-
-/* artist, album, disc number, track number, title, year, duration, path+filename, filename */
-static struct format_option track_fopts[NR_TFS + 1] = {
-	{ { 0 }, 0, FO_STR, 'a' },
-	{ { 0 }, 0, FO_STR, 'l' },
-	{ { 0 }, 0, FO_INT, 'D' },
-	{ { 0 }, 0, FO_INT, 'n' },
-	{ { 0 }, 0, FO_STR, 't' },
-	{ { 0 }, 0, FO_STR, 'y' },
-	{ { 0 }, 0, FO_STR, 'g' },
-	{ { 0 }, 0, FO_TIME, 'd' },
-	{ { 0 }, 0, FO_STR, 'f' },
-	{ { 0 }, 0, FO_STR, 'F' },
-	{ { 0 }, 0, 0, 0 }
-};
-
 static inline void fopt_set_str(struct format_option *fopt, const char *str)
 {
 	BUG_ON(fopt->type != FO_STR);
 	if (str) {
-		fopt->u.fo_str = str;
+		fopt->fo_str = str;
 		fopt->empty = 0;
 	} else {
 		fopt->empty = 1;
@@ -385,14 +411,14 @@ static inline void fopt_set_str(struct format_option *fopt, const char *str)
 static inline void fopt_set_int(struct format_option *fopt, int value, int empty)
 {
 	BUG_ON(fopt->type != FO_INT);
-	fopt->u.fo_int = value;
+	fopt->fo_int = value;
 	fopt->empty = empty;
 }
 
 static inline void fopt_set_time(struct format_option *fopt, int value, int empty)
 {
 	BUG_ON(fopt->type != FO_TIME);
-	fopt->u.fo_time = value;
+	fopt->fo_time = value;
 	fopt->empty = empty;
 }
 
@@ -480,9 +506,9 @@ static void print_track(struct window *win, int row, struct iter *iter)
 	bkgdset(cursed_colors[(active << 2) | (selected << 1) | current]);
 	fill_track_fopts(track);
 	if (track_info_has_tag(track->info)) {
-		format_print(print_buffer, print_buffer_size, track_win_w, track_win_format, track_fopts);
+		format_print(print_buffer, track_win_w, track_win_format, track_fopts);
 	} else {
-		format_print(print_buffer, print_buffer_size, track_win_w, track_win_alt_format, track_fopts);
+		format_print(print_buffer, track_win_w, track_win_alt_format, track_fopts);
 	}
 	dump_print_buffer(track_win_y + row + 1, track_win_x);
 }
@@ -501,9 +527,9 @@ static void print_shuffle(struct window *win, int row, struct iter *iter)
 	bkgdset(cursed_colors[(active << 2) | (selected << 1) | current]);
 	fill_track_fopts(track);
 	if (track_info_has_tag(track->info)) {
-		format_print(print_buffer, print_buffer_size, COLS, list_win_format, track_fopts);
+		format_print(print_buffer, COLS, list_win_format, track_fopts);
 	} else {
-		format_print(print_buffer, print_buffer_size, COLS, list_win_alt_format, track_fopts);
+		format_print(print_buffer, COLS, list_win_alt_format, track_fopts);
 	}
 	dump_print_buffer(row + 1, 0);
 }
@@ -522,9 +548,9 @@ static void print_sorted(struct window *win, int row, struct iter *iter)
 	bkgdset(cursed_colors[(active << 2) | (selected << 1) | current]);
 	fill_track_fopts(track);
 	if (track_info_has_tag(track->info)) {
-		format_print(print_buffer, print_buffer_size, COLS, list_win_format, track_fopts);
+		format_print(print_buffer, COLS, list_win_format, track_fopts);
 	} else {
-		format_print(print_buffer, print_buffer_size, COLS, list_win_alt_format, track_fopts);
+		format_print(print_buffer, COLS, list_win_alt_format, track_fopts);
 	}
 	dump_print_buffer(row + 1, 0);
 }
@@ -548,9 +574,9 @@ static void print_play_queue(struct window *win, int row, struct iter *iter)
 	fill_track_fopts_track_info(info);
 
 	if (track_info_has_tag(info)) {
-		format_print(print_buffer, print_buffer_size, COLS, list_win_format, track_fopts);
+		format_print(print_buffer, COLS, list_win_format, track_fopts);
 	} else {
-		format_print(print_buffer, print_buffer_size, COLS, list_win_alt_format, track_fopts);
+		format_print(print_buffer, COLS, list_win_alt_format, track_fopts);
 	}
 	dump_print_buffer(row + 1, 0);
 }
@@ -651,7 +677,7 @@ static void update_track_window(void)
 {
 	char title[512];
 
-	format_print(title, sizeof(title), track_win_w - 2, "Track%=Press F1 for Help", track_fopts);
+	format_print(title, track_win_w - 2, "Track%=Press F1 for Help", track_fopts);
 	update_window(playlist.track_win, track_win_x, track_win_y,
 			track_win_w, title, print_track);
 }
@@ -759,40 +785,6 @@ static void update_view(void)
 	}
 }
 
-enum {
-	SF_STATUS,
-	SF_POSITION,
-	SF_DURATION,
-	SF_TOTAL,
-	SF_VOLUME,
-	SF_LVOLUME,
-	SF_RVOLUME,
-	SF_BUFFER,
-	SF_REPEAT,
-	SF_CONTINUE,
-	SF_PLAYMODE,
-	SF_PLAYLISTMODE,
-	NR_SFS
-};
-
-/* status, position, duration, total duration, volume, left vol, right vol, buf,
- * repeat, continue, playmode, playlist_mode */
-static struct format_option status_fopts[NR_SFS + 1] = {
-	{ { 0 }, 0, FO_STR, 's' },
-	{ { 0 }, 0, FO_TIME, 'p' },
-	{ { 0 }, 0, FO_TIME, 'd' },
-	{ { 0 }, 0, FO_TIME, 't' },
-	{ { 0 }, 0, FO_INT, 'v' },
-	{ { 0 }, 0, FO_INT, 'l' },
-	{ { 0 }, 0, FO_INT, 'r' },
-	{ { 0 }, 0, FO_INT, 'b' },
-	{ { 0 }, 0, FO_STR, 'R' },
-	{ { 0 }, 0, FO_STR, 'C' },
-	{ { 0 }, 0, FO_STR, 'P' },
-	{ { 0 }, 0, FO_STR, 'L' },
-	{ { 0 }, 0, 0, 0 }
-};
-
 static void update_statusline(void)
 {
 	static char *status_strs[] = { ".", ">", "|" };
@@ -849,7 +841,7 @@ static void update_statusline(void)
 	if (cur_track_info && is_url(cur_track_info->filename))
 		strcat(format, "buf: %b ");
 	strcat(format, "%=%3R | %4C | %-7P | %-6L ");
-	format_print(print_buffer, print_buffer_size, COLS, format, status_fopts);
+	format_print(print_buffer, COLS, format, status_fopts);
 
 	msg = player_info.error_msg;
 	player_info.error_msg = NULL;
@@ -1008,9 +1000,9 @@ static void update_titleline(void)
 			}
 		}
 		if (use_alt_format) {
-			format_print(print_buffer, print_buffer_size, COLS, current_alt_format, track_fopts);
+			format_print(print_buffer, COLS, current_alt_format, track_fopts);
 		} else {
-			format_print(print_buffer, print_buffer_size, COLS, current_format, track_fopts);
+			format_print(print_buffer, COLS, current_format, track_fopts);
 		}
 		dump_print_buffer(LINES - 3, 0);
 
@@ -1019,9 +1011,9 @@ static void update_titleline(void)
 			int i;
 
 			if (use_alt_format) {
-				format_print(print_buffer, print_buffer_size, sizeof(print_buffer) - 1, window_title_alt_format, track_fopts);
+				format_print(print_buffer, sizeof(print_buffer) - 1, window_title_alt_format, track_fopts);
 			} else {
-				format_print(print_buffer, print_buffer_size, sizeof(print_buffer) - 1, window_title_format, track_fopts);
+				format_print(print_buffer, sizeof(print_buffer) - 1, window_title_format, track_fopts);
 			}
 
 			/* remove whitespace */

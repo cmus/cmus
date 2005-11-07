@@ -1,5 +1,5 @@
 /* 
- * Copyright 2004 Timo Hirvonen
+ * Copyright 2004-2005 Timo Hirvonen
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -25,19 +25,21 @@ struct format_option {
 		/* NULL is treated like "" */
 		const char *fo_str;
 		int fo_int;
-		/* in seconds. fo_time >= 3600 ? "h:mm:ss" : "mm:ss"
-		 * can be negative */
-/* 		unsigned int fo_time; */
+		/* [h:]mm:ss. can be negative */
 		int fo_time;
-	} u;
+	};
 	/* set to 1 if you want to disable printing */
 	unsigned int empty : 1;
 	enum { FO_STR, FO_INT, FO_TIME } type;
 	char ch;
 };
 
-extern int format_print(char *str, int str_size, int width, const char *format,
-		struct format_option *fopts);
-extern int format_valid(const char *format);
+#define DEF_FO_STR(ch)	{ { .fo_str  = NULL }, 0, FO_STR,  ch }
+#define DEF_FO_INT(ch)	{ { .fo_int  = 0    }, 0, FO_INT,  ch }
+#define DEF_FO_TIME(ch)	{ { .fo_time = 0    }, 0, FO_TIME, ch }
+#define DEF_FO_END	{ { .fo_str  = NULL }, 0, 0,       0  }
+
+int format_print(char *str, int width, const char *format, const struct format_option *fopts);
+int format_valid(const char *format);
 
 #endif

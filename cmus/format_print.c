@@ -191,18 +191,11 @@ static void print_str(char *buf, int *idx, const char *str, int width, int align
 	*idx = d;
 }
 
-/*
- * str_size:
- *     size of str in bytes. allocated size is str_size + 1
- */
-static void print(char *str, const char *format, struct format_option *fopts)
+static void print(char *str, const char *format, const struct format_option *fopts)
 {
-	int s, d;
+	/* format and str indices */
+	int s = 0, d = 0;
 
-	/* pos in format (source) */
-	s = 0;
-	/* pos in str (destination) */
-	d = 0;
 	while (format[s]) {
 		uchar u;
 		int nlen, align_left, pad, j;
@@ -249,11 +242,11 @@ static void print(char *str, const char *format, struct format_option *fopts)
 					memset(str + d, ' ', nlen);
 					d += nlen;
 				} else if (fopts[j].type == FO_STR) {
-					print_str(str, &d, fopts[j].u.fo_str, nlen, align_left);
+					print_str(str, &d, fopts[j].fo_str, nlen, align_left);
 				} else if (fopts[j].type == FO_INT) {
-					d += print_num(str + d, fopts[j].u.fo_int, nlen, align_left, pad);
+					d += print_num(str + d, fopts[j].fo_int, nlen, align_left, pad);
 				} else if (fopts[j].type == FO_TIME) {
-					d += print_time(str + d, fopts[j].u.fo_time, nlen, align_left, pad);
+					d += print_time(str + d, fopts[j].fo_time, nlen, align_left, pad);
 				}
 				break;
 			}
@@ -269,8 +262,7 @@ static char *r_str = NULL;
 static int l_str_size = -1;
 static int r_str_size = -1;
 
-int format_print(char *str, int str_size, int width, const char *format,
-		struct format_option *fopts)
+int format_print(char *str, int width, const char *format, const struct format_option *fopts)
 {
 	/* lengths of left and right aligned texts */
 	int llen = 0;
@@ -319,11 +311,11 @@ int format_print(char *str, int str_size, int width, const char *format,
 				if (fopts[j].empty) {
 					/* nothing */
 				} else if (fopts[j].type == FO_STR) {
-					l = u_str_width(fopts[j].u.fo_str);
+					l = u_str_width(fopts[j].fo_str);
 				} else if (fopts[j].type == FO_INT) {
-					l = numlen(fopts[j].u.fo_int);
+					l = numlen(fopts[j].fo_int);
 				} else if (fopts[j].type == FO_TIME) {
-					int t = fopts[j].u.fo_time;
+					int t = fopts[j].fo_time;
 
 					if (t < 0) {
 						t *= -1;
