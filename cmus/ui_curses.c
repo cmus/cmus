@@ -753,8 +753,10 @@ static void update_view(void)
 	switch (ui_curses_view) {
 	case TREE_VIEW:
 		pl_lock();
-		update_tree_window();
-		update_track_window();
+		if (playlist.tree_win->changed)
+			update_tree_window();
+		if (playlist.track_win->changed)
+			update_track_window();
 		pl_unlock();
 		draw_separator();
 		break;
@@ -1108,13 +1110,6 @@ static void ui_curses_update_statusline(void)
 	post_update();
 }
 
-void ui_curses_update_view(void)
-{
-	curs_set(0);
-	update_view();
-	post_update();
-}
-
 void ui_curses_display_info_msg(const char *format, ...)
 {
 	va_list ap;
@@ -1399,6 +1394,10 @@ void ui_curses_set_sort(const char *value, int warn)
 	pl_set_sort_keys(keys);
 	free(sort_string);
 	sort_string = xstrdup(value);
+
+	pl_lock();
+	playlist.sorted_win->changed = 1;
+	pl_unlock();
 }
 
 #define HELP_WIDTH 80
@@ -2010,7 +2009,6 @@ static void ui_curses_start(void)
 				window_set_nr_rows(filters_win, h - 1);
 				window_set_nr_rows(browser_win, h - 1);
 				window_set_nr_rows(play_queue_win, h - 1);
-				needs_view_update = 1;
 				needs_title_update = 1;
 				needs_status_update = 1;
 				needs_command_update = 1;
@@ -2078,10 +2076,8 @@ static void ui_curses_start(void)
 				update_view();
 			if (needs_title_update)
 				update_titleline();
-			if (needs_status_update) {
-				/* don't lock pl before this */
+			if (needs_status_update)
 				update_statusline();
-			}
 			if (needs_command_update)
 				update_commandline();
 			post_update();
@@ -2232,10 +2228,11 @@ static int ui_curses_init(void)
 	}
 	sconf_get_bool_option(&sconf_head, "show_remaining_time", &show_remaining_time);
 	sconf_get_str_option(&sconf_head, "status_display_program", &status_display_program);
-	ui_curses_set_sort("artist,album,discnumber,tracknumber,title,filename", 0);
 	if (sconf_get_str_option(&sconf_head, "sort", &sort) == 0) {
 		ui_curses_set_sort(sort, 0);
 		free(sort);
+	} else {
+		ui_curses_set_sort("artist,album,discnumber,tracknumber,title,filename", 0);
 	}
 	if (sconf_get_int_option(&sconf_head, "buffer_chunks", &btmp) == 0) {
 		if (btmp < 3)

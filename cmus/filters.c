@@ -153,6 +153,7 @@ void filters_activate(void)
 			f->active = 1;
 	}
 	pl_set_filter(expr);
+	filters_win->changed = 1;
 }
 
 void filters_toggle_filter(void)
@@ -164,6 +165,7 @@ void filters_toggle_filter(void)
 
 		e = iter_to_filter_entry(&iter);
 		e->selected ^= 1;
+		filters_win->changed = 1;
 	}
 }
 

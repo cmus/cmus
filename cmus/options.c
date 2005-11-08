@@ -8,6 +8,8 @@
 #include <command_mode.h>
 #include <ui_curses.h>
 #include <format_print.h>
+#include <pl.h>
+#include <play_queue.h>
 #include <player.h>
 #include <buffer.h>
 #include <sconf.h>
@@ -80,7 +82,24 @@ static void set_format(const struct command_mode_option *opt, const char *value)
 	}
 	free(*var);
 	*var = xstrdup(value);
-	ui_curses_update_view();
+
+	switch (ui_curses_view) {
+	case TREE_VIEW:
+	case SHUFFLE_VIEW:
+	case SORTED_VIEW:
+		pl_lock();
+		playlist.tree_win->changed = 1;
+		playlist.shuffle_win->changed = 1;
+		playlist.sorted_win->changed = 1;
+		pl_unlock();
+		break;
+	case PLAY_QUEUE_VIEW:
+		play_queue_lock();
+		play_queue_win->changed = 1;
+		play_queue_unlock();
+		break;
+	}
+
 	ui_curses_update_titleline();
 }
 
@@ -144,7 +163,6 @@ static void get_sort(const struct command_mode_option *opt, char **value)
 static void set_sort(const struct command_mode_option *opt, const char *value)
 {
 	ui_curses_set_sort(value, 1);
-	ui_curses_update_view();
 }
 
 static void get_confirm_run(const struct command_mode_option *opt, char **value)

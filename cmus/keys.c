@@ -1032,10 +1032,8 @@ void normal_mode_ch(uchar ch)
 	}
 
 	/* view-specific ch */
-	if (handle_key(key_bindings[c], k)) {
-		ui_curses_update_view();
+	if (handle_key(key_bindings[c], k))
 		return;
-	}
 
 	/* common ch */
 	if (!handle_key(key_bindings[CTX_COMMON], k))
@@ -1052,10 +1050,8 @@ void normal_mode_key(int key)
 	}
 
 	/* view-specific key */
-	if (handle_key(key_bindings[c], k)) {
-		ui_curses_update_view();
+	if (handle_key(key_bindings[c], k))
 		return;
-	}
 
 	/* common key */
 	if (!handle_key(key_bindings[CTX_COMMON], k))

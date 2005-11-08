@@ -94,7 +94,6 @@ extern int bg_colors[NR_COLORS];
 extern int fg_colors[NR_COLORS];
 
 extern void display_help(void);
-extern void ui_curses_update_view(void);
 extern void ui_curses_update_titleline(void);
 extern void ui_curses_update_color(int idx);
 extern void ui_curses_set_sort(const char *value, int warn);
