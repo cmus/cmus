@@ -292,7 +292,11 @@ const struct key_function *key_functions[NR_CTXS + 1] = {
 	NULL
 };
 
-/* key_table {{{ */
+/* key_table {{{
+ *
+ * key: KEY_IS_CHAR, not a key
+ * ch:  0, not a char
+ */
 const struct key key_table[] = {
 	{ "!",			KEY_IS_CHAR,		33	},
 	{ "\"",			KEY_IS_CHAR,		34	},
@@ -525,7 +529,6 @@ const struct key key_table[] = {
 	{ "\\",			KEY_IS_CHAR,		92	},
 	{ "]",			KEY_IS_CHAR,		93	},
 	{ "^",			KEY_IS_CHAR,		94	},
-	{ "^?",			KEY_IS_CHAR,		127	},
 	{ "^A",			KEY_IS_CHAR,		1	},
 	{ "^B",			KEY_IS_CHAR,		2	},
 	{ "^C",			KEY_IS_CHAR,		3	},
@@ -559,7 +562,7 @@ const struct key key_table[] = {
 	{ "a",			KEY_IS_CHAR,		97	},
 	{ "b",			KEY_IS_CHAR,		98	},
 	{ "back_tab",		KEY_BTAB,		0	},
-	{ "backspace",		KEY_BACKSPACE,		0	},
+	{ "backspace",		KEY_BACKSPACE,		127	}, /* NOTE: both key and ch */
 	{ "begin",		KEY_BEG,		0	},
 	{ "c",			KEY_IS_CHAR,		99	},
 	{ "cancel",		KEY_CANCEL,		0	},
@@ -989,7 +992,7 @@ static const struct key *ch_to_key(uchar ch)
 	int i;
 
 	for (i = 0; key_table[i].name; i++) {
-		if (key_table[i].key == KEY_IS_CHAR && key_table[i].ch == ch)
+		if (key_table[i].ch == ch)
 			return &key_table[i];
 	}
 	return NULL;
