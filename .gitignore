@@ -1,0 +1,16 @@
+# normal ignores
+.*
+*.[ao]
+*.html
+*.lo
+*.so
+Makefile
+tags
+!.gitignore
+
+# top-level ignores
+/*.spec
+/config.h
+/config.mk
+/install.log
+!/.dist-exclude
