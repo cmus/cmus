@@ -1350,6 +1350,8 @@ void ui_curses_update_color(int idx)
 static void full_update(void)
 {
 	curs_set(0);
+	playlist.tree_win->changed = 1;
+	playlist.track_win->changed = 1;
 	update_view();
 	update_titleline();
 	update_statusline();
