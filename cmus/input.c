@@ -27,6 +27,7 @@
 #include <symbol.h>
 #include <pls.h>
 #include <list.h>
+#include <misc.h>
 #include <debug.h>
 #include <config.h>
 
@@ -399,7 +400,7 @@ void ip_init_plugins(void)
 
 	dir = opendir(plugin_dir);
 	if (dir == NULL) {
-		fprintf(stderr, "couldn't open directory `%s': %s\n", plugin_dir, strerror(errno));
+		warn_errno("couldn't open directory `%s'", plugin_dir);
 		return;
 	}
 	while ((d = readdir(dir)) != NULL) {
@@ -420,7 +421,7 @@ void ip_init_plugins(void)
 
 		so = dlopen(filename, RTLD_NOW);
 		if (so == NULL) {
-			fprintf(stderr, "%s\n", dlerror());
+			warn("%s\n", dlerror());
 			continue;
 		}
 

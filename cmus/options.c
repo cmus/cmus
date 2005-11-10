@@ -162,7 +162,7 @@ static void get_sort(const struct command_mode_option *opt, char **value)
 
 static void set_sort(const struct command_mode_option *opt, const char *value)
 {
-	ui_curses_set_sort(value, 1);
+	ui_curses_set_sort(value);
 }
 
 static void get_confirm_run(const struct command_mode_option *opt, char **value)

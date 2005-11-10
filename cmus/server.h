@@ -22,14 +22,8 @@
 
 #include <remote.h>
 
-/*
- * initializes socket. fails if already running 
- * returns socket or -1 on error 
- */
-extern int remote_server_init(const char *address);
-
-extern int remote_server_serve(void);
-
-extern void remote_server_exit(void);
+int remote_server_init(const char *address);
+int remote_server_serve(void);
+void remote_server_exit(void);
 
 #endif

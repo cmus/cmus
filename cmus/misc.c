@@ -29,6 +29,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <dirent.h>
+#include <stdarg.h>
 
 extern char *program_name;
 
@@ -73,6 +74,48 @@ char **get_words(const char *text)
 	return words;
 }
 
+void warn(const char *format, ...)
+{
+	va_list ap;
+
+	va_start(ap, format);
+	vfprintf(stderr, format, ap);
+	va_end(ap);
+}
+
+void warn_errno(const char *format, ...)
+{
+	int e = errno;
+	va_list ap;
+
+	va_start(ap, format);
+	vfprintf(stderr, format, ap);
+	va_end(ap);
+	fprintf(stderr, ": %s\n", strerror(e));
+}
+
+void __NORETURN die(const char *format, ...)
+{
+	va_list ap;
+
+	va_start(ap, format);
+	vfprintf(stderr, format, ap);
+	va_end(ap);
+	exit(1);
+}
+
+void __NORETURN die_errno(const char *format, ...)
+{
+	int e = errno;
+	va_list ap;
+
+	va_start(ap, format);
+	vfprintf(stderr, format, ap);
+	va_end(ap);
+	fprintf(stderr, ": %s\n", strerror(e));
+	exit(1);
+}
+
 static int dir_exists(const char *dirname)
 {
 	DIR *dir;
@@ -94,17 +137,13 @@ static void xdg_make_dir(const char *dirname)
 	rc = dir_exists(dirname);
 	if (rc == 1)
 		return;
-	if (rc == -1) {
-		fprintf(stderr, "%s: error: opening `%s': %s\n",
-				program_name, dirname, strerror(errno));
-		exit(1);
-	}
+	if (rc == -1)
+		die_errno("%s: error: opening `%s'",
+				program_name, dirname);
 	rc = mkdir(dirname, 0700);
-	if (rc == -1) {
-		fprintf(stderr, "%s: error: creating directory `%s': %s\n",
-				program_name, dirname, strerror(errno));
-		exit(1);
-	}
+	if (rc == -1)
+		die_errno("%s: error: creating directory `%s'",
+				program_name, dirname);
 }
 
 static char *get_non_empty_env(const char *name)
@@ -122,20 +161,14 @@ int misc_init(void)
 	char *xdg_config_home, *xdg_cache_home, *old_cmus_config_dir;
 
 	home_dir = get_non_empty_env("HOME");
-	if (home_dir == NULL) {
-		fprintf(stderr, "%s: error: environment variable HOME not set\n",
-				program_name);
-		exit(1);
-	}
+	if (home_dir == NULL)
+		die("%s: error: environment variable HOME not set\n", program_name);
 
 	user_name = get_non_empty_env("USER");
 	if (user_name == NULL) {
 		user_name = get_non_empty_env("USERNAME");
-		if (user_name == NULL) {
-			fprintf(stderr, "%s: error: neither USER or USERNAME environment variable set\n",
-					program_name);
-			exit(1);
-		}
+		if (user_name == NULL)
+			die("%s: error: neither USER or USERNAME environment variable set\n", program_name);
 	}
 
 	/* ensure that configuration directories exist */
@@ -156,8 +189,8 @@ int misc_init(void)
 	xdg_make_dir(cmus_cache_dir);
 
 	old_cmus_config_dir = xstrjoin(home_dir, "/.cmus");
-	if (dir_exists(old_cmus_config_dir) == 1) {
-		fprintf(stderr, "%s: old configuration directory ~/.cmus/ found.\n"
+	if (dir_exists(old_cmus_config_dir) == 1)
+		die("%s: old configuration directory ~/.cmus/ found.\n"
 				"\n"
 				"New locations:\n"
 				"  Configuration files: $XDG_CONFIG_HOME/cmus/ (%s)\n"
@@ -170,8 +203,6 @@ int misc_init(void)
 				"Or you can just remove ~/.cmus/ if you don't mind losing your settings.\n",
 				program_name, cmus_config_dir, cmus_cache_dir,
 				cmus_config_dir, cmus_cache_dir);
-		exit(1);
-	}
 	free(old_cmus_config_dir);
 	return 0;
 }

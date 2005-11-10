@@ -154,7 +154,7 @@ static void read_commands(int fd)
 	do {
 		rc = read_all(fd, &header, sizeof(struct remote_command_header));
 		if (rc == -1) {
-			perror("read");
+			d_print("read: %s\n", strerror(errno));
 			return;
 		} else if (rc == 0) {
 			/* eof */
@@ -198,54 +198,42 @@ int remote_server_init(const char *address)
 {
 	/* create socket - domain, type, protocol (IP) */
 	remote_socket = socket(PF_UNIX, SOCK_STREAM, 0);
-	if (remote_socket == -1) {
-		perror("socket");
-		return -1;
-	}
+	if (remote_socket == -1)
+		die_errno("socket");
 	addr.sun_family = AF_UNIX;
 	strncpy(addr.sun_path, address, sizeof(addr.sun_path) - 1);
 
 	if (bind(remote_socket, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
 		int sock;
 
-		if (errno != EADDRINUSE) {
-			perror("bind");
-			return -1;
-		}
+		if (errno != EADDRINUSE)
+			die_errno("bind");
+
 		/* address already in use */
 
 		/* try to connect to server */
 		sock = socket(PF_UNIX, SOCK_STREAM, 0);
-		if (sock == -1) {
-			perror("socket");
-			return -1;
-		}
+		if (sock == -1)
+			die_errno("socket");
 
 		if (connect(sock, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
-			if (errno != ENOENT && errno != ECONNREFUSED) {
-				perror("connect");
-				close(sock);
-				return -1;
-			}
+			if (errno != ENOENT && errno != ECONNREFUSED)
+				die_errno("connect");
+
 			close(sock);
 			/* server not running => dead socket */
 
 			/* try to remove dead socket */
-			if (unlink(addr.sun_path) == -1 && errno != ENOENT) {
-				perror("unlink");
-				return -1;
-			}
-			if (bind(remote_socket, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
-				perror("bind");
-				return -1;
-			}
+			if (unlink(addr.sun_path) == -1 && errno != ENOENT)
+				die_errno("unlink");
+			if (bind(remote_socket, (struct sockaddr *)&addr, sizeof(addr)) == -1)
+				die_errno("bind");
 		} else {
 			/* server already running */
 			close(sock);
-			fprintf(stderr, "%s: " PACKAGE " is already listening socket %s\n"
+			die("%s: " PACKAGE " is already listening socket %s\n"
 					"Try `%s --help' for more information.\n",
 					program_name, address, program_name);
-			return -2;
 		}
 	}
 	/* start listening */

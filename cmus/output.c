@@ -70,7 +70,7 @@ static void load_plugins(void)
 
 	dir = opendir(plugin_dir);
 	if (dir == NULL) {
-		fprintf(stderr, "couldn't open directory `%s': %s\n", plugin_dir, strerror(errno));
+		warn("couldn't open directory `%s': %s\n", plugin_dir, strerror(errno));
 		return;
 	}
 	while ((d = readdir(dir)) != NULL) {
@@ -91,7 +91,7 @@ static void load_plugins(void)
 
 		so = dlopen(filename, RTLD_NOW);
 		if (so == NULL) {
-			fprintf(stderr, "%s\n", dlerror());
+			warn("%s\n", dlerror());
 			continue;
 		}
 

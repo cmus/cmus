@@ -1134,7 +1134,7 @@ void ui_curses_display_error_msg(const char *format, ...)
 		error_time = time(NULL);
 		ui_curses_update_commandline();
 	} else {
-		fprintf(stderr, "%s\n", error_msg);
+		warn("%s\n", error_msg);
 		error_msg[0] = 0;
 	}
 }
@@ -1357,7 +1357,7 @@ static void full_update(void)
 	post_update();
 }
 
-void ui_curses_set_sort(const char *value, int warn)
+void ui_curses_set_sort(const char *value)
 {
 	static const char *valid[] = {
 		"artist",
@@ -1385,8 +1385,7 @@ void ui_curses_set_sort(const char *value, int warn)
 				break;
 		}
 		if (valid[j] == NULL) {
-			if (warn)
-				ui_curses_display_error_msg("invalid sort key '%s'", keys[i]);
+			ui_curses_display_error_msg("invalid sort key '%s'", keys[i]);
 			free_str_array(keys);
 			return;
 		}
@@ -1875,13 +1874,13 @@ static int ir_init(void)
 	for (i = 0; ir_commands[i].function; i++)
 		sconf_get_str_option(&sconf_head, ir_commands[i].option, &ir_commands[i].text);
 	if (irman_device == NULL) {
-		fprintf(stderr, "%s: irman device not set (run `" PACKAGE " --irman-config')\n",
+		warn("%s: irman device not set (run `" PACKAGE " --irman-config')\n",
 				program_name);
 		return 1;
 	}
 	irman = irman_open(irman_device);
 	if (irman == NULL) {
-		fprintf(stderr, "%s: error opening irman device `%s': %s\n",
+		warn("%s: error opening irman device `%s': %s\n",
 				program_name, irman_device,
 				strerror(errno));
 		return 1;
@@ -2179,13 +2178,10 @@ static int ui_curses_init(void)
 		update_window_title = 1;
 
 	remote_socket = remote_server_init(server_address);
-	if (remote_socket < 0)
-		return 1;
 
 	rc = player_init(&player_callbacks);
 	if (rc) {
-		fprintf(stderr, "%s: could not init player\n",
-				program_name);
+		warn("%s: could not init player\n", program_name);
 		remote_server_exit();
 		return rc;
 	}
@@ -2229,10 +2225,10 @@ static int ui_curses_init(void)
 	sconf_get_bool_option(&sconf_head, "show_remaining_time", &show_remaining_time);
 	sconf_get_str_option(&sconf_head, "status_display_program", &status_display_program);
 	if (sconf_get_str_option(&sconf_head, "sort", &sort) == 0) {
-		ui_curses_set_sort(sort, 0);
+		ui_curses_set_sort(sort);
 		free(sort);
 	} else {
-		ui_curses_set_sort("artist,album,discnumber,tracknumber,title,filename", 0);
+		ui_curses_set_sort("artist,album,discnumber,tracknumber,title,filename");
 	}
 	if (sconf_get_int_option(&sconf_head, "buffer_chunks", &btmp) == 0) {
 		if (btmp < 3)
@@ -2308,18 +2304,14 @@ static void load_config(void)
 
 	config_filename = xstrjoin(cmus_config_dir, "/config");
 	rc = sconf_load(&sconf_head, config_filename, &line);
-	if (rc == -SCONF_ERROR_ERRNO && errno != ENOENT) {
-		fprintf(stderr, "%s: error loading config file `%s': %s\n",
+	if (rc == -SCONF_ERROR_ERRNO && errno != ENOENT)
+		die_errno("%s: error loading config file `%s'",
 				program_name,
-				config_filename,
-				strerror(errno));
-		exit(1);
-	} else if (rc == -SCONF_ERROR_SYNTAX) {
-		fprintf(stderr, "%s: syntax error in file `%s' on line %d\n",
+				config_filename);
+	if (rc == -SCONF_ERROR_SYNTAX)
+		die("%s: syntax error in file `%s' on line %d\n",
 				program_name,
 				config_filename, line);
-		exit(1);
-	}
 }
 
 enum {
@@ -2413,11 +2405,9 @@ int main(int argc, char *argv[])
 		const char *debug_filename = "/tmp/cmus-debug";
 		FILE *f = fopen(debug_filename, "w");
 
-		if (f == NULL) {
-			fprintf(stderr, "%s: error opening `%s' for writing: %s\n",
-					program_name, debug_filename, strerror(errno));
-			return 1;
-		}
+		if (f == NULL)
+			die_errno("%s: error opening `%s' for writing", program_name, debug_filename);
+
 		/* lots of debugging messages printed.
 		 * use log file. bugs are printed to stderr also.
 		 */
@@ -2450,10 +2440,8 @@ int main(int argc, char *argv[])
 		ui_curses_exit();
 	}
 
-	if (sconf_save(&sconf_head, config_filename)) {
-		fprintf(stderr, "%s: error saving `%s': %s\n", program_name,
-				config_filename, strerror(errno));
-	}
+	if (sconf_save(&sconf_head, config_filename))
+		warn("%s: error saving `%s': %s\n", program_name, config_filename, strerror(errno));
 	sconf_free(&sconf_head);
 	free(config_filename);
 	return 0;
