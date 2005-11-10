@@ -29,5 +29,6 @@ release: extra cmus.spec
 
 install-data:
 	$(SRCDIR_INSTALL) --fmode=0755 $(pkgdatadir)/example example/cmus-status-display
+	$(SRCDIR_INSTALL) --fmode=0644 $(pkgdatadir) keybindings
 
 subdirs	:= common cmus ip op remote doc

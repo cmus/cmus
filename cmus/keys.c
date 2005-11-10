@@ -34,6 +34,7 @@
 #include <file_load.h>
 #include <xmalloc.h>
 #include <xstrjoin.h>
+#include <config.h>
 
 #include <curses.h>
 #include <stdio.h>
@@ -648,96 +649,6 @@ const struct key key_table[] = {
 };
 /* }}} */
 
-/* default bindings {{{ */
-static const struct {
-	enum key_context context;
-	const char *key;
-	const char *func;
-} defaults[] = {
-	{ CTX_COMMON,	"F1",		"help"			},
-	{ CTX_COMMON,	"b",		"next"			},
-	{ CTX_COMMON,	"c",		"pause"			},
-	{ CTX_COMMON,	"x",		"play"			},
-	{ CTX_COMMON,	"z",		"prev"			},
-	{ CTX_COMMON,	"Q",		"quit"			},
-	{ CTX_COMMON,	"n",		"search_next"		},
-	{ CTX_COMMON,	"N",		"search_prev"		},
-	{ CTX_COMMON,	"h",		"seek_backward"		},
-	{ CTX_COMMON,	"l",		"seek_forward"		},
-	{ CTX_COMMON,	"left",		"seek_backward"		},
-	{ CTX_COMMON,	"right",	"seek_forward"		},
-	{ CTX_COMMON,	"v",		"stop"			},
-	{ CTX_COMMON,	"C",		"toggle_continue"	},
-	{ CTX_COMMON,	"p",		"toggle_play_mode"	},
-	{ CTX_COMMON,	"m",		"toggle_playlist_mode"	},
-	{ CTX_COMMON,	"t",		"toggle_remaining_time"	},
-	{ CTX_COMMON,	"r",		"toggle_repeat"		},
-	{ CTX_COMMON,	"1",		"view_1"		},
-	{ CTX_COMMON,	"2",		"view_2"		},
-	{ CTX_COMMON,	"3",		"view_3"		},
-	{ CTX_COMMON,	"4",		"view_4"		},
-	{ CTX_COMMON,	"5",		"view_5"		},
-	{ CTX_COMMON,	"6",		"view_6"		},
-	{ CTX_COMMON,	"-",		"vol_down"		},
-	{ CTX_COMMON,	"{",		"vol_left_down"		},
-	{ CTX_COMMON,	"[",		"vol_left_up"		},
-	{ CTX_COMMON,	"}",		"vol_right_down"	},
-	{ CTX_COMMON,	"]",		"vol_right_up"		},
-	{ CTX_COMMON,	"=",		"vol_up"		},
-	{ CTX_COMMON,	"+",		"vol_up"		},
-	{ CTX_COMMON,	"tab",		"win_activate_next"	},
-	{ CTX_COMMON,	"G",		"win_bottom"		},
-	{ CTX_COMMON,	"j",		"win_down"		},
-	{ CTX_COMMON,	"^F",		"win_page_down"		},
-	{ CTX_COMMON,	"^B",		"win_page_up"		},
-	{ CTX_COMMON,	"g",		"win_top"		},
-	{ CTX_COMMON,	"k",		"win_up"		},
-	{ CTX_COMMON,	"end",		"win_bottom"		},
-	{ CTX_COMMON,	"down",		"win_down"		},
-	{ CTX_COMMON,	"page_down",	"win_page_down"		},
-	{ CTX_COMMON,	"page_up",	"win_page_up"		},
-	{ CTX_COMMON,	"home",		"win_top"		},
-	{ CTX_COMMON,	"up",		"win_up"		},
-
-	{ CTX_PLAYLIST,	"space",	"expand_artist"		},
-	{ CTX_PLAYLIST,	"enter",	"play_selected"		},
-	{ CTX_PLAYLIST,	"e",		"queue_append"		},
-	{ CTX_PLAYLIST,	"E",		"queue_prepend"		},
-	{ CTX_PLAYLIST,	"D",		"remove"		},
-	{ CTX_PLAYLIST,	"delete",	"remove"		},
-	{ CTX_PLAYLIST,	"i",		"select_current"	},
-	{ CTX_PLAYLIST,	"u",		"update"		},
-
-	{ CTX_PLAY_QUEUE, "D",		"remove"		},
-	{ CTX_PLAY_QUEUE, "delete",	"remove"		},
-
-	{ CTX_BROWSER,	"a",		"add"			},
-	{ CTX_BROWSER,	"backspace",	"cd_parent"		},
-	{ CTX_BROWSER,	"enter",	"enter"			},
-	{ CTX_BROWSER,	"e",		"queue_append"		},
-	{ CTX_BROWSER,	"E",		"queue_prepend"		},
-	{ CTX_BROWSER,	"u",		"reload"		},
-	{ CTX_BROWSER,	"D",		"remove"		},
-	{ CTX_BROWSER,	"delete",	"remove"		},
-	{ CTX_BROWSER,	"i",		"toggle_show_hidden"	},
-
-	{ CTX_FILTERS,	"enter",	"activate"		},
-	{ CTX_FILTERS,	"D",		"delete_filter"		},
-	{ CTX_FILTERS,	"delete",	"delete_filter"		},
-	{ CTX_FILTERS,	"space",	"toggle_filter"		},
-	{ -1,		NULL,		NULL			}
-};
-/* }}} */
-
-static void set_defaults(void)
-{
-	int i;
-
-	for (i = 0; defaults[i].key; i++)
-		key_bind(key_context_names[defaults[i].context], defaults[i].key, defaults[i].func);
-}
-
-
 /*
  * TODO: tables are sorted, do binary search
  */
@@ -927,30 +838,24 @@ static void handle_line(void *data, const char *line)
 	return;
 }
 
-static int load_keys(void)
+static int load_keys(const char *file)
 {
-	filename = xstrjoin(cmus_config_dir, "/keybindings");
-	if (file_load(filename, handle_line, NULL) && errno != ENOENT) {
-		fprintf(stderr, "error: opening file %s: %s\n", filename, strerror(errno));
-		return -1;
-	}
-	return 0;
+	return file_load(file, handle_line, NULL);
 }
 
-int keys_init(void)
+void keys_init(void)
 {
-	int i;
+	filename = xstrjoin(cmus_config_dir, "/keybindings");
+	if (load_keys(filename)) {
+		if (errno == ENOENT) {
+			const char *default_bindings = DATADIR "/cmus/keybindings";
 
-	if (load_keys())
-		return -1;
-
-	/* set default keys only if no bingings */
-	for (i = 0; i < NR_CTXS; i++) {
-		if (key_bindings[i])
-			return 0;
+			if (load_keys(default_bindings))
+				die_errno("error: loading keybindings %s", default_bindings);
+		} else {
+			die_errno("error: loading keybindings %s", filename);
+		}
 	}
-	set_defaults();
-	return 0;
 }
 
 void keys_exit(void)
@@ -960,7 +865,7 @@ void keys_exit(void)
 
 	f = fopen(filename, "w");
 	if (f == NULL) {
-		fprintf(stderr, "error: creating %s: %s\n", filename, strerror(errno));
+		warn("error: creating %s: %s\n", filename, strerror(errno));
 		return;
 	}
 	for (i = 0; i < NR_CTXS; i++) {

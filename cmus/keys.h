@@ -55,7 +55,7 @@ extern const struct key_function *key_functions[NR_CTXS + 1];
 extern const struct key key_table[];
 extern struct binding *key_bindings[NR_CTXS];
 
-int keys_init(void);
+void keys_init(void);
 void keys_exit(void);
 
 int key_bind(const char *context, const char *key, const char *func);
