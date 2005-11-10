@@ -1427,7 +1427,7 @@ void pl_reshuffle(void)
 	pl_unlock();
 }
 
-int pl_init(void)
+void pl_init(void)
 {
 	struct iter iter;
 
@@ -1482,10 +1482,9 @@ int pl_init(void)
 
 	iter.data0 = &playlist.sorted_head;
 	sorted_searchable = searchable_new(NULL, &iter, &sorted_search_ops);
-	return 0;
 }
 
-int pl_exit(void)
+void pl_exit(void)
 {
 	pl_clear();
 	searchable_free(tree_searchable);
@@ -1496,7 +1495,6 @@ int pl_exit(void)
 	window_free(playlist.shuffle_win);
 	window_free(playlist.sorted_win);
 	free_str_array(playlist.sort_keys);
-	return 0;
 }
 
 void pl_set_tree_win_nr_rows(int nr_rows)

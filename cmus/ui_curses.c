@@ -2186,12 +2186,7 @@ static int ui_curses_init(void)
 		return rc;
 	}
 
-	rc = pl_init();
-	if (rc) {
-		player_exit();
-		remote_server_exit();
-		return rc;
-	}
+	pl_init();
 	searchable = tree_searchable;
 
 	cmus_init();

@@ -135,8 +135,8 @@ extern struct searchable *tree_searchable;
 extern struct searchable *shuffle_searchable;
 extern struct searchable *sorted_searchable;
 
-extern int pl_init(void);
-extern int pl_exit(void);
+extern void pl_init(void);
+extern void pl_exit(void);
 
 /* set current track, these return track_info on success */
 extern struct track_info *pl_set_next(void);
