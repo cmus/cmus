@@ -135,7 +135,7 @@ char **file_get_lines(const char *filename)
 {
 	char **lines;
 	char *contents;
-	int len;
+	int len, i;
 
 	contents = file_get_contents(filename, &len);
 	if (contents == NULL)
@@ -150,5 +150,14 @@ char **file_get_lines(const char *filename)
 		contents[--len] = 0;
 	lines = bsplit(contents, len, '\n', 0);
 	free(contents);
+
+	for (i = 0; lines[i]; i++) {
+		char *ptr = lines[i];
+
+		len = strlen(ptr);
+		if (len && ptr[len - 1] == '\r')
+			ptr[len - 1] = 0;
+	}
+
 	return lines;
 }
