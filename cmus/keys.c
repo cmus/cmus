@@ -35,6 +35,7 @@
 #include <xmalloc.h>
 #include <xstrjoin.h>
 #include <config.h>
+#include <command_mode.h>
 
 #include <curses.h>
 #include <stdio.h>
@@ -706,7 +707,7 @@ int key_bind(const char *context, const char *key, const char *func)
 {
 	int c;
 	const struct key *k;
-	const struct key_function *f;
+	const struct key_function *f = NULL;
 	struct binding *b, *ptr, *prev;
 
 	c = find_context(context);
@@ -717,9 +718,11 @@ int key_bind(const char *context, const char *key, const char *func)
 	if (k == NULL)
 		return -1;
 
-	f = find_function(func, c);
-	if (f == NULL)
-		return -1;
+	if (func[0] != ':') {
+		f = find_function(func, c);
+		if (f == NULL)
+			return -1;
+	}
 
 	/* check if already bound */
 	b = find_binding(c, k);
@@ -739,6 +742,12 @@ int key_bind(const char *context, const char *key, const char *func)
 	b = xnew(struct binding, 1);
 	b->key = k;
 	b->func = f;
+	if (f == NULL) {
+		/* ":command", skip the ':' */
+		b->arg = xstrdup(func + 1);
+	} else {
+		b->arg = NULL;
+	}
 
 	/* insert keeping sorted by key */
 	prev = NULL;
@@ -784,6 +793,7 @@ int key_unbind(const char *context, const char *key)
 			} else {
 				key_bindings[c] = b->next;
 			}
+			free(b->arg);
 			free(b);
 			return 0;
 		}
@@ -816,7 +826,8 @@ static int parse_words(char *s, char **words, int nr)
 		if (i == nr)
 			return -1;
 		words[i++] = s;
-
+		if (i == nr && *s == ':')
+			return 0;
 		s = find_space(s);
 		if (s == NULL)
 			break;
@@ -873,7 +884,10 @@ void keys_exit(void)
 		const char *name = key_context_names[i];
 
 		while (b) {
-			fprintf(f, "%-10s %-20s %s\n", name, b->key->name, b->func->name);
+			if (b->func != NULL)
+				fprintf(f, "%-10s %-20s %s\n", name, b->key->name, b->func->name);
+			else
+				fprintf(f, "%-10s %-20s :%s\n", name, b->key->name, b->arg);
 			b = b->next;
 		}
 	}
@@ -884,7 +898,10 @@ static int handle_key(const struct binding *b, const struct key *k)
 {
 	while (b) {
 		if (b->key == k) {
-			b->func->func();
+			if (b->arg != NULL)
+				run_command(b->arg);
+			else
+				b->func->func();
 			return 1;
 		}
 		b = b->next;

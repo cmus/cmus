@@ -48,6 +48,7 @@ struct binding {
 	struct binding *next;
 	const struct key *key;
 	const struct key_function *func;
+	char *arg;
 };
 
 extern const char * const key_context_names[NR_CTXS + 1];

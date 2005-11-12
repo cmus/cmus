@@ -1067,7 +1067,7 @@ static void reset_tab_expansion(void)
 }
 
 /* FIXME: parse all arguments */
-static void run_command(const char *buf)
+void run_command(const char *buf)
 {
 	char *cmd, *arg;
 	int cmd_start, cmd_end;

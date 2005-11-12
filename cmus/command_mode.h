@@ -43,5 +43,6 @@ extern void command_mode_key(int key);
 extern void option_add(const char *name, option_get_func get, option_set_func set, void *data);
 extern void commands_init(void);
 extern void commands_exit(void);
+extern void run_command(const char *buf);
 
 #endif
