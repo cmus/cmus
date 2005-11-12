@@ -46,8 +46,6 @@
 #include <sys/wait.h>
 #include <pwd.h>
 
-/* typedef void option_func(void *data, const char *key, const char *value); */
-
 int confirm_run = 1;
 
 static struct history cmd_history;
@@ -666,6 +664,8 @@ static int get_context(const char *str, int len)
 	return -1;
 }
 
+static void expand_command_line(const char *str);
+
 /* fills tabexp struct */
 static void expand_bind_args(const char *str)
 {
@@ -758,6 +758,27 @@ static void expand_bind_args(const char *str)
 	fs = ke;
 	while (*fs == ' ')
 		fs++;
+
+	if (*fs == ':') {
+		/* expand :com [arg...] */
+		expand_command_line(fs + 1);
+		if (tabexp.head == NULL) {
+			/* command expand failed */
+			return;
+		}
+
+		/*
+		 * tabexp.head is now "com"
+		 * tabexp.tails is [ mand1 mand2 ... ]
+		 *
+		 * need to change tabexp.head to "context key :com"
+		 */
+
+		snprintf(expbuf, sizeof(expbuf), "%s %s :%s", key_context_names[c], key_table[k].name, tabexp.head);
+		free(tabexp.head);
+		tabexp.head = xstrdup(expbuf);
+		return;
+	}
 
 	/* expand function */
 	len = strlen(fs);
@@ -954,110 +975,119 @@ static void expand_commands(const char *str)
 	}
 }
 
-/* '<command> *[argument]' */
-static char *expand(const char *str)
+static const struct command *get_command(const char *str, int len)
 {
-	int cmd_len, arg_start, i;
+	int i;
 
-	cmd_len = 0;
-	while (str[cmd_len] != ' ' && str[cmd_len])
-		cmd_len++;
-	arg_start = cmd_len;
-	while (str[arg_start] == ' ')
-		arg_start++;
-	if (str[cmd_len] == 0) {
-		/* expand command */
-		char *cmd_head = xstrndup(str, cmd_len);
-		char *expanded = NULL;
+	for (i = 0; commands[i].name; i++) {
+		if (strncmp(str, commands[i].name, len))
+			continue;
 
-		expanded = tabexp_expand(cmd_head, expand_commands);
-		if (expanded) {
-			char *s;
-			
-			s = xstrjoin(expanded, str + cmd_len);
-			free(cmd_head);
-			free(expanded);
-			return s;
-		} else {
-			free(cmd_head);
+		if (commands[i].name[len] == 0) {
+			/* exact */
+			return &commands[i];
+		}
+
+		if (commands[i + 1].name && strncmp(str, commands[i + 1].name, len) == 0) {
+			/* ambiguous */
 			return NULL;
 		}
-	} else {
-		/* expand argument */
-		char *expanded = NULL;
-
-		if (arg_expand_cmd == -1) {
-			/* not expanded before */
-
-			/* get the command */
-			for (i = 0; commands[i].name; i++) {
-				if (strncmp(str, commands[i].name, cmd_len) == 0) {
-					break;
-				}
-			}
-			if (commands[i].name) {
-				if (commands[i + 1].name && strncmp(str, commands[i + 1].name, cmd_len) == 0)
-					return NULL;
-				arg_expand_cmd = i;
-			}
-		}
-		if (arg_expand_cmd == -1)
-			return NULL;
-		if (commands[arg_expand_cmd].expand)
-			expanded = tabexp_expand(str + arg_start, commands[arg_expand_cmd].expand);
-		if (expanded) {
-			char *s;
-			int expanded_len;
-
-			expanded_len = strlen(expanded);
-			s = xnew(char, arg_start + expanded_len + 1);
-			memcpy(s, str, arg_start);
-			memcpy(s + arg_start, expanded, expanded_len + 1);
-			free(expanded);
-			return s;
-		} else {
-			return NULL;
-		}
+		return &commands[i];
 	}
+	return NULL;
+}
+
+/* fills tabexp struct */
+static void expand_command_line(const char *str)
+{
+	/* :command [arg]...
+	 *
+	 * examples:
+	 *
+	 * str      expanded value (tabexp.head)
+	 * -------------------------------------
+	 *   fs     fset
+	 *   b c    bind common
+	 *   se     se          (tabexp.tails = [ ek t ])
+	 */
+	/* command start/end, argument start */
+	const char *cs, *ce, *as;
+	const struct command *cmd;
+
+	cs = str;
+	ce = strchr(cs, ' ');
+	if (ce == NULL) {
+		/* expand command */
+		expand_commands(cs);
+		return;
+	}
+
+	/* command must be expandable */
+	cmd = get_command(cs, ce - cs);
+	if (cmd == NULL) {
+		/* command ambiguous or invalid */
+		return;
+	}
+
+	if (cmd->expand == NULL) {
+		/* can't expand argument */
+		return;
+	}
+
+	as = ce;
+	while (*as == ' ')
+		as++;
+
+	/* expand argument */
+	cmd->expand(as);
+	if (tabexp.head == NULL) {
+		/* argument expansion failed */
+		return;
+	}
+
+	/* tabexp.head is now start of the argument string */
+	snprintf(expbuf, sizeof(expbuf), "%s %s", cmd->name, tabexp.head);
+	free(tabexp.head);
+	tabexp.head = xstrdup(expbuf);
 }
 
 static void tab_expand(void)
 {
-	char *s1, *s2, *s3, *tmp;
+	char *s1, *s2, *tmp;
 	int pos;
 
+	/* strip white space */
 	pos = 0;
 	while (cmdline.line[pos] == ' ' && pos < cmdline.bpos)
 		pos++;
-	/* white space */
-	s1 = xstrndup(cmdline.line, pos);
-	/* string to expand */
-	s2 = xstrndup(cmdline.line + pos, cmdline.bpos - pos);
-	/* tail */
-	s3 = xstrdup(cmdline.line + cmdline.bpos);
-	tmp = expand(s2);
-	if (tmp) {
-		/* s1.tmp.s3 */
-		int l1, l2, l3;
 
-		l1 = strlen(s1);
-		l2 = strlen(tmp);
-		l3 = strlen(s3);
-		cmdline.blen = l1 + l2 + l3;
+	/* string to expand */
+	s1 = xstrndup(cmdline.line + pos, cmdline.bpos - pos);
+
+	/* tail */
+	s2 = xstrdup(cmdline.line + cmdline.bpos);
+
+	tmp = tabexp_expand(s1, expand_command_line);
+	if (tmp) {
+		/* tmp.s2 */
+		int l1, l2;
+
+		l1 = strlen(tmp);
+		l2 = strlen(s2);
+		cmdline.blen = l1 + l2;
 		if (cmdline.blen >= cmdline.size) {
 			while (cmdline.blen >= cmdline.size)
 				cmdline.size *= 2;
 			cmdline.line = xrenew(char, cmdline.line, cmdline.size);
 		}
-		sprintf(cmdline.line, "%s%s%s", s1, tmp, s3);
-		cmdline.bpos = l1 + l2;
-		cmdline.cpos = u_strlen(s1) + u_strlen(tmp);
+		sprintf(cmdline.line, "%s%s", tmp, s2);
+		cmdline.bpos = l1;
+		cmdline.cpos = u_strlen(tmp);
 		cmdline.clen = u_strlen(cmdline.line);
 		free(tmp);
 	}
 	free(s1);
 	free(s2);
-	free(s3);
 }
 
 static void reset_tab_expansion(void)
