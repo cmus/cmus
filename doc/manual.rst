@@ -152,8 +152,6 @@ You don't have to type whole command name if it is unambiguous.  For example
 Commands
 --------------------------
 
-Use the ``:set`` command to set options.
-
 ===============================  ===========
 Command                          Description
 ===============================  ===========
@@ -192,6 +190,8 @@ altformat\_\*           format strings used when file has no tags
 _`sort`                 comma separated list of sort keys for the sorted view (3). Valid keys: artist, album, title, tracknumber, discnumber, date, genre, filename)
 status_display_program  script to run when player status changes (See `Status Display`_)
 ======================  ===========
+
+Use the ``:set`` command to set options.
 
 Format Characters
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -524,6 +524,7 @@ Functions Common for All Views
 ========================  ==============
 Function                  Description
 ========================  ==============
+:command                  any `Command Mode`_ command
 help
 next
 pause
@@ -619,6 +620,10 @@ Examples
 
 	# make control-h toggle showing hidden files
 	:bind browser ^H toggle_show_hidden
+
+	# seek 1 minute back / forward
+	:bind common H :seek -1m
+	:bind common L :seek +1m
 
 	# remove binding for F1 key (help by default)
 	:unbind common F1
