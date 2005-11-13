@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #
 # Copyright 2005 Timo Hirvonen
 #
@@ -6,9 +6,8 @@
 
 # locals {{{
 
-module_names=()
-module_cflags=()
-module_libs=()
+# pkg_check_modules, app_config
+module_names=""
 
 # --enable-$NAME flags
 # $NAME must contain only [a-z0-9-] characters
@@ -27,14 +26,13 @@ opt_flags=""
 #   enable_var_$NAME
 # variables and check_$NAME function
 
-config_var_names=()
-config_var_values=()
-config_var_descriptions=()
-config_var_types=()
+# for each $config_vars there are
+#   cv_value_$NAME
+#   cv_desc_$NAME
+#   cv_type_$NAME
+config_vars=""
 
-mk_var_names=()
-mk_var_values=()
-
+# config.mk variable names
 mk_env_vars=""
 
 # these are environment variables
@@ -45,13 +43,39 @@ checks=""
 
 CROSS=
 
+did_run()
+{
+	set_var did_run_$1 yes
+}
+
+before()
+{
+	if test "$(get_var did_run_$1)" = yes
+	then
+		echo
+		echo "Bug in the configure script!"
+		echo "Function $2 was called after $1."
+		exit 1
+	fi
+}
+
+after()
+{
+	if test "$(get_var did_run_$1)" != yes
+	then
+		echo
+		echo "Bug in the configure script!"
+		echo "Function $2 was called before $1."
+		exit 1
+	fi
+}
+
 get_dir_val()
 {
 	local val
 
-	argc 2
 	val=$(get_var $1)
-	if [[ -z $val ]]
+	if test -z "$val"
 	then
 		echo "$2"
 	else
@@ -107,18 +131,18 @@ EOT
 	local i tmp text=
 	for i in $enable_flags
 	do
-		strpad "--enable-${i//_/-}" 22
+		strpad "--enable-$(echo $i | sed 's/_/-/g')" 22
 		text="${text}  $strpad_ret  $(get_var enable_desc_${i}) [$(get_var enable_value_${i})]\n"
 	done
-	if [[ -n $opt_flags ]]
+	if test -n "$opt_flags"
 	then
 		text="${text}\n"
 		for i in $opt_flags
 		do
-			tmp=flag_argdesc_${i}
-			strpad "--${i//_/-}${!tmp}" 22
-			tmp=flag_desc_${i}
-			text="${text}  $strpad_ret  ${!tmp}\n"
+			tmp=$(get_var flag_argdesc_${i})
+			strpad "--$(echo $i | sed 's/_/-/g')${tmp}" 22
+			tmp=$(get_var flag_desc_${i})
+			text="${text}  $strpad_ret  ${tmp}\n"
 		done
 	fi
 	echo -ne "$text\nSome influential environment variables:\n  CC CFLAGS LD LDFLAGS SOFLAGS\n  CXX CXXFLAGS CXXLD CXXLDFLAGS\n"
@@ -127,7 +151,6 @@ EOT
 
 is_enable_flag()
 {
-	argc 1
 	list_contains "$enable_flags" "$1"
 }
 
@@ -135,7 +158,6 @@ handle_enable()
 {
 	local flag val
 
-	argc 2
 	flag="$1"
 	val="$2"
 	is_enable_flag "$flag" || die "invalid option --enable-$key"
@@ -153,7 +175,6 @@ reset_vars()
 {
 	local name
 
-	argc 0
 	for name in $install_dir_vars PACKAGE VERSION PACKAGE_NAME PACKAGE_BUGREPORT
 	do
 		set_var $name ''
@@ -162,7 +183,6 @@ reset_vars()
 
 set_unset_install_dir_vars()
 {
-	argc 0
 	var_default prefix "/usr/local"
 	var_default exec_prefix "$prefix"
 	var_default bindir "$exec_prefix/bin"
@@ -182,14 +202,13 @@ set_makefile_variables()
 {
 	local flag i
 
-	argc 0
 	for flag in $enable_flags
 	do
 		local var=$(get_var enable_var_${flag})
-		if [[ -n $var ]] && [[ $(get_var enable_config_mk_${flag}) = yes ]]
+		if test -n "$var" && test "$(get_var enable_config_mk_${flag})" = yes
 		then
 			local v
-			if [[ $(get_var enable_value_${flag}) = yes ]]
+			if test "$(get_var enable_value_${flag})" = yes
 			then
 				v=y
 			else
@@ -199,13 +218,9 @@ set_makefile_variables()
 		fi
 	done
 
-	i=0
-	while [[ $i -lt ${#module_names[@]} ]]
+	for i in $module_names
 	do
-		local ucname=$(echo ${module_names[$i]} | to_upper)
-		makefile_var ${ucname}_CFLAGS "${module_cflags[$i]}"
-		makefile_var ${ucname}_LIBS "${module_libs[$i]}"
-		i=$(($i + 1))
+		makefile_env_vars ${i}_CFLAGS ${i}_LIBS
 	done
 
 	makefile_env_vars $install_dir_vars
@@ -215,16 +230,15 @@ set_config_h_variables()
 {
 	local flag name
 
-	argc 0
 	config_str PACKAGE "$PACKAGE" "package name (short)"
 	config_str VERSION "$VERSION" "packege version"
-	[[ -n $PACKAGE_NAME ]] && config_str PACKAGE_NAME "$PACKAGE_NAME" "package name (full)"
-	[[ -n $PACKAGE_BUGREPORT ]] && config_str PACKAGE_BUGREPORT "$PACKAGE_BUGREPORT" "address where bug reports should be sent"
+	test -n "$PACKAGE_NAME" && config_str PACKAGE_NAME "$PACKAGE_NAME" "package name (full)"
+	test -n "$PACKAGE_BUGREPORT" && config_str PACKAGE_BUGREPORT "$PACKAGE_BUGREPORT" "address where bug reports should be sent"
 
 	for flag in $enable_flags
 	do
 		local var=$(get_var enable_var_${flag})
-		if [[ -n $var ]] && [[ $(get_var enable_config_h_${flag}) = yes ]]
+		if test -n "$var" && test "$(get_var enable_config_h_${flag})" = yes
 		then
 			config_var "${var}" "$(get_var enable_value_${flag})" "$(get_var enable_desc_${flag})" bool
 		fi
@@ -243,23 +257,21 @@ parse_command_line()
 	local kv key var val
 	local name
 
-	only_once
-
 	for name in PACKAGE VERSION
 	do
-		[[ -z $(get_var $name) ]] && die "$name must be defined in 'configure'"
+		test -z "$(get_var $name)" && die "$name must be defined in 'configure'"
 	done
 
 	add_flag help no show_help "show this help and exit"
 
 	# parse flags (--*)
-	while [[ $# -gt 0 ]]
+	while test $# -gt 0
 	do
 		case $1 in
 			--enable-*)
 				kv=${1##--enable-}
 				key=${kv%%=*}
-				if [[ $key = $kv ]]
+				if test "$key" = "$kv"
 				then
 					# '--enable-foo'
 					val=yes
@@ -267,17 +279,17 @@ parse_command_line()
 					# '--enable-foo=bar'
 					val=${kv##*=}
 				fi
-				handle_enable "${key//-/_}" "$val"
+				handle_enable "$(echo $key | sed 's/-/_/g')" "$val"
 				;;
 			--disable-*)
 				key=${1##--disable-}
-				handle_enable "${key//-/_}" "no"
+				handle_enable "$(echo $key | sed 's/-/_/g')" "no"
 				;;
 			--prefix=*|--exec-prefix=*|--bindir=*|--sbindir=*|--libexecdir=*|--datadir=*|--sysconfdir=*|--sharedstatedir=*|--localstatedir=*|--libdir=*|--includedir=*|--infodir=*|--mandir=*)
 				kv=${1##--}
 				key=${kv%%=*}
 				val=${kv##*=}
-				var=${key/-/_}
+				var=$(echo $key | sed 's/-/_/g')
 				set_var ${var} "$val"
 				set_install_dir_vars="${set_install_dir_vars} ${var}"
 				;;
@@ -292,27 +304,27 @@ parse_command_line()
 				local name found f
 				kv=${1##--}
 				key=${kv%%=*}
-				name="${key//-/_}"
-				found=0
+				name="$(echo $key | sed 's/-/_/g')"
+				found=false
 				for f in $opt_flags
 				do
-					if [[ $f = $name ]]
+					if test "$f" = "$name"
 					then
-						if [[ $key = $kv ]]
+						if test "$key" = "$kv"
 						then
 							# '--foo'
-							[[ $(get_var flag_hasarg_${name}) = yes ]] && die "--${key} requires an argument (--${key}$(get_var flag_argdesc_${name}))"
+							test "$(get_var flag_hasarg_${name})" = yes && die "--${key} requires an argument (--${key}$(get_var flag_argdesc_${name}))"
 							$(get_var flag_func_${name}) ${key}
 						else
 							# '--foo=bar'
-							[[ $(get_var flag_hasarg_${name}) = no ]] && die "--${key} must not have an argument"
+							test "$(get_var flag_hasarg_${name})" = no && die "--${key} must not have an argument"
 							$(get_var flag_func_${name}) ${key} "${kv##*=}"
 						fi
-						found=1
+						found=true
 						break
 					fi
 				done
-				[[ $found -eq 0 ]] && die "unrecognized option \`$1'"
+				$found || die "unrecognized option \`$1'"
 				;;
 			*)
 				break
@@ -321,7 +333,7 @@ parse_command_line()
 		shift
 	done
 
-	while [[ $# -gt 0 ]]
+	while test $# -gt 0
 	do
 		case $1 in
 			*=*)
@@ -337,12 +349,12 @@ parse_command_line()
 	done
 
 	set_unset_install_dir_vars
-	did_run
+	did_run parse_command_line
 
 	top_srcdir=$(follow_links $srcdir)
-	[[ -z $top_srcdir ]] && exit 1
+	test -z "$top_srcdir" && exit 1
 	top_builddir=$(follow_links $PWD)
-	[[ -z $top_builddir ]] && exit 1
+	test -z "$top_builddir" && exit 1
 	makefile_env_vars PACKAGE VERSION top_builddir top_srcdir scriptdir
 
 	for i in PACKAGE VERSION PACKAGE_NAME PACKAGE_BUGREPORT top_builddir top_srcdir $install_dir_vars
@@ -355,9 +367,7 @@ run_checks()
 {
 	local check flag
 
-	argc 0
-	after parse_command_line
-	only_once
+	after parse_command_line run_checks
 
 	trap 'rm -f .tmp-*' 0 1 2 3 13 15
 	for check in $checks
@@ -367,11 +377,11 @@ run_checks()
 	for flag in $enable_flags
 	do
 		local val=$(get_var enable_value_${flag})
-		if [[ $val != no ]]
+		if test "$val" != no
 		then
 			if ! is_function check_${flag}
 			then
-# 				[[ $val = auto ]] && die ""
+# 				test "$val" = auto && die ""
 				continue
 			fi
 
@@ -381,9 +391,9 @@ run_checks()
 				set_var enable_value_${flag} yes
 			else
 				# check failed
-				if [[ $val = yes ]]
+				if test "$val" = yes
 				then
-					die "\nconfigure failed."
+					die "configure failed."
 				else
 					# auto
 					set_var enable_value_${flag} no
@@ -395,45 +405,33 @@ run_checks()
 	# .distclean has to be removed before calling generated_file()
 	# but not before configure has succeeded
 	rm -f .distclean
-	did_run
+	did_run run_checks
 }
 
 var_print()
 {
-	argc 1
 	strpad "$1:" 20
 	echo "${strpad_ret} $(get_var $1)"
 }
 
 config_var()
 {
-	argc 4
-	after parse_command_line
-	before generate_config_h
+	after parse_command_line config_var
+	before generate_config_h config_var
 
-	local i=${#config_var_names[@]}
-	config_var_names[$i]="$1"
-	config_var_values[$i]="$2"
-	config_var_descriptions[$i]="$3"
-	config_var_types[$i]="$4"
-}
-
-generated_file()
-{
-	argc 1
-	after run_checks
-
-	echo "$1" >> .distclean
+	config_vars="$config_vars $1"
+	set_var cv_value_$1 "$2"
+	set_var cv_desc_$1 "$3"
+	set_var cv_type_$1 "$4"
 }
 
 update_file()
 {
 	local old new
 
-	argc 2
 	new="$1"
 	old="$2"
-	if [[ -e $old ]]
+	if test -e "$old"
 	then
 		cmp "$old" "$new" 2>/dev/null 1>&2 && return 0
 	fi
@@ -444,9 +442,7 @@ generate_config_h()
 {
 	local tmp i
 
-	argc 0
-	after run_checks
-	only_once
+	after run_checks generate_config_h
 
 	set_config_h_variables
 	echo "Generating config.h"
@@ -454,56 +450,44 @@ generate_config_h()
 	output_file $tmp
 	out "#ifndef _CONFIG_H"
 	out "#define _CONFIG_H"
-	i=0
-	while [[ $i -lt ${#config_var_names[@]} ]]
+	for i in $config_vars
 	do
+		local v d t
+		v=$(get_var cv_value_${i})
+		d=$(get_var cv_desc_${i})
+		t=$(get_var cv_type_${i})
 		out
-		if [[ -n ${config_var_descriptions[$i]} ]]
-		then
-			out "/* ${config_var_descriptions[$i]} */"
-		fi
-		if [[ ${config_var_types[$i]} = bool ]]
-		then
-			case ${config_var_values[$i]} in
-				no)
-					out "/* #define ${config_var_names[$i]} */"
-					;;
-				yes)
-					out "#define ${config_var_names[$i]} 1"
-					;;
-				*)
-					die "invalid value \`${config_var_values[$i]}' for boolean ${config_var_names[$i]}"
-					;;
-			esac
-		else
-			out -n "#define ${config_var_names[$i]} "
-			case ${config_var_types[$i]} in
-				int)
-					out "${config_var_values[$i]}"
-					;;
-				str)
-					out "\"${config_var_values[$i]}\""
-					;;
-				*)
-					die "invalid config variable type \`${config_var_types[$i]}'"
-					;;
-			esac
-		fi
-		i=$(($i + 1))
+		test -n "$d" && out "/* $d */"
+		case $t in
+			bool)
+				case $v in
+					no)
+						out "/* #define $i */"
+						;;
+					yes)
+						out "#define $i 1"
+						;;
+				esac
+				;;
+			int)
+				out "#define $i $v"
+				;;
+			str)
+				out "#define $i \"$v\""
+				;;
+		esac
 	done
 	out
 	out "#endif"
 	update_file $tmp config.h
-	did_run
+	did_run generate_config_h
 }
 
 generate_config_mk()
 {
 	local i s c tmp
 
-	argc 0
-	after run_checks
-	only_once
+	after run_checks generate_config_mk
 
 	set_makefile_variables
 	echo "Generating config.mk"
@@ -515,30 +499,17 @@ generate_config_mk()
 	do
 		s="export ${i}"
 		c=$((24 - ${#s}))
-		while [[ $c -gt 0 ]]
+		while test $c -gt 0
 		do
 			s="${s} "
 			c=$(($c - 1))
 		done
 		out "${s} := $(get_var $i)"
 	done
-	i=0
-	while [[ $i -lt ${#mk_var_names[@]} ]]
-	do
-		s="export ${mk_var_names[$i]}"
-		c=$((24 - ${#s}))
-		while [[ $c -gt 0 ]]
-		do
-			s="${s} "
-			c=$(($c - 1))
-		done
-		out "${s} := ${mk_var_values[$i]}"
-		i=$(($i + 1))
-	done
 	out
 	out 'include $(scriptdir)/main.mk'
 	update_file $tmp config.mk
-	did_run
+	did_run generate_config_mk
 }
 
 reset_vars

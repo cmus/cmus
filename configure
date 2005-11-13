@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/bin/sh
 
-source $(dirname $0)/scripts/configure.sh || exit 1
+. $(dirname $0)/scripts/configure.sh || exit 1
 
 PACKAGE="cmus"
 VERSION="1.6.3"
@@ -140,11 +140,13 @@ parse_command_line "$@"
 run_checks
 
 CFLAGS="${CFLAGS} -DDEBUG=$DEBUG"
-[[ $WORDS_BIGENDIAN -eq 1 ]] && CFLAGS="${CFLAGS} -DWORDS_BIGENDIAN"
+test "$WORDS_BIGENDIAN" -eq 1 && CFLAGS="${CFLAGS} -DWORDS_BIGENDIAN"
 
 generate_config_h
 generate_config_mk
 generate_makefiles . cmus common doc ip op remote
+
+sed -e "s:@VERSION@:${VERSION}:g" < "$srcdir/cmus.spec.in" > cmus.spec
 
 print_config
 print_compiler_settings

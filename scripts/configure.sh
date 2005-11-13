@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #
 # Copyright 2005 Timo Hirvonen
 #
@@ -6,48 +6,34 @@
 
 # misc {{{
 
-check_bash_version()
-{
-	local tmp
-
-	[[ ${BASH_VERSINFO[0]} -gt 2 ]] && return 0
-	tmp=${BASH_VERSINFO[1]}
-	tmp=${tmp:0:2}
-	[[ ${BASH_VERSINFO[0]} -eq 2 ]] && [[ "${tmp}" = "05" ]] && return 0
-	echo "bash 2.05 or newer required." >&2
-	exit 1
-}
-
-check_bash_version
-
-if [[ -n $CDPATH ]]
+if test "$CDPATH"
 then
-	echo "Exporting CDPATH is dangerous!"
+	echo "Exporting CDPATH is dangerous and unnecessary!"
 	echo
 fi
 unset CDPATH
 
 srcdir="$(dirname $0)"
 srcdir=$(cd $srcdir && pwd)
-[[ -z $srcdir ]] && exit 1
+test -z "$srcdir" && exit 1
 
-[[ -z $scriptdir ]] && scriptdir="${srcdir}/scripts"
+test -z "$scriptdir" && scriptdir="${srcdir}/scripts"
 
-if [[ ! -d $srcdir ]]
+if ! test -d "$srcdir"
 then
-	echo "srcdir ($srcdir) is not directory"
+	echo "srcdir ($srcdir) is not a directory"
 	exit 1
 fi
 
-if [[ ! -d $scriptdir ]]
+if test ! -d "$scriptdir"
 then
 	echo "scriptdir ($scriptdir) is not directory"
 	exit 1
 fi
 
-source ${scriptdir}/utils.sh || exit 1
-source ${scriptdir}/checks.sh || exit 1
-source ${scriptdir}/configure-private.sh || exit 1
+. ${scriptdir}/utils.sh || exit 1
+. ${scriptdir}/checks.sh || exit 1
+. ${scriptdir}/configure-private.sh || exit 1
 
 check_source_dir()
 {
@@ -55,7 +41,7 @@ check_source_dir()
 
 	src=$(follow_links $srcdir)
 	bld=$(follow_links $(pwd))
-	if [[ $src != $bld ]] && [[ -e $src/Makefile ]]
+	if test "$src" != "$bld" && test -e "$src/Makefile"
 	then
 		echo "Source directory already configured. Please run \`make distclean' in there first."
 		exit 1
@@ -76,10 +62,9 @@ check_source_dir
 #   non-zero on failure. See checks.sh for more information.
 add_check()
 {
-	argc 1
-	before run_checks
+	before run_checks add_check
 
-	checks="${checks} $1"
+	checks="${checks} $*"
 }
 
 # Add --enable-FEATURE=ARG flag
@@ -105,8 +90,8 @@ enable_flag()
 {
 	local name value var desc
 
-	argc 4
-	before parse_command_line
+	test $# -eq 4 || die "enable_flag: expecting 4 arguments $FUNCNAME"
+	before parse_command_line enable_flag
 
 	name="$1"
 	value="$2"
@@ -138,7 +123,6 @@ enable_flag()
 
 enable_use_config_h()
 {
-	argc 1
 	case $1 in
 		yes|no)
 			;;
@@ -151,7 +135,6 @@ enable_use_config_h()
 
 enable_use_config_mk()
 {
-	argc 1
 	case $1 in
 		yes|no)
 			;;
@@ -173,8 +156,11 @@ add_flag()
 {
 	local flag hasarg func desc name
 
-	argc 4 5
-	before parse_command_line
+	if test $# -lt 4 || test $# -gt 5
+	then
+		die "add_flag: expecting 4-5 arguments"
+	fi
+	before parse_command_line add_flag
 
 	flag="$1"
 	hasarg="$2"
@@ -189,7 +175,7 @@ add_flag()
 			;;
 	esac
 	is_function "${func}" || die "function \`${func}' not defined"
-	name="${flag//-/_}"
+	name="$(echo $flag | sed 's/-/_/g')"
 	opt_flags="$opt_flags $name"
 	set_var flag_hasarg_${name} "${hasarg}"
 	set_var flag_func_${name} "${func}"
@@ -227,13 +213,13 @@ generate_makefiles()
 	after run_checks
 	for dir in "$@"
 	do
-		dir=${dir//\/\//\/}
-		if [[ $dir = "." ]]
+		dir=$(echo $dir | sed 's://:/:g')
+		if test "$dir" = "."
 		then
 			count=0
 			file="Makefile"
 		else
-			local tmp=${dir//\//}
+			local tmp=$(echo $dir | sed 's:/::g')
 			count=$((${#dir} - ${#tmp} + 1))
 			file="${dir}/Makefile"
 		fi
@@ -242,7 +228,7 @@ generate_makefiles()
 		output_file ${file}
 		out -n "include "
 		i=0
-		while [[ $i -lt $count ]]
+		while test $i -lt $count
 		do
 			out -n "../"
 			i=$(($i + 1))
@@ -257,15 +243,12 @@ generate_makefiles()
 # @value  value of the variable
 makefile_var()
 {
-	local i
+	test $# -eq 2 || die "makefile_var: expecting 2 arguments"
+	after parse_command_line makefile_var
+	before generate_config_mk makefile_var
 
-	argc 2
-	after parse_command_line
-	before generate_config_mk
-
-	i=${#mk_var_names[@]}
-	mk_var_names[$i]="$1"
-	mk_var_values[$i]="$2"
+	set_var $1 "$2"
+	makefile_env_vars $1
 }
 
 # Add environment variables to Makefile
@@ -273,8 +256,8 @@ makefile_var()
 # @var...  environment variable names
 makefile_env_vars()
 {
-	after parse_command_line
-	before generate_config_mk
+	after parse_command_line makefile_env_vars
+	before generate_config_mk makefile_env_vars
 
 	mk_env_vars="$mk_env_vars $@"
 }
@@ -286,9 +269,12 @@ makefile_env_vars()
 # @description  OPTIONAL
 config_str()
 {
-	argc 2 3
-	after run_checks
-	before generate_config_h
+	if test $# -lt 2 || test $# -gt 3
+	then
+		die "config_str: expecting 2-3 arguments"
+	fi
+	after run_checks config_str
+	before generate_config_h config_str
 
 	config_var "$1" "$2" "$3" "str"
 }
@@ -300,9 +286,12 @@ config_str()
 # @description  OPTIONAL
 config_int()
 {
-	argc 2 3
-	after run_checks
-	before generate_config_h
+	if test $# -lt 2 || test $# -gt 3
+	then
+		die "config_int: expecting 2-3 arguments"
+	fi
+	after run_checks config_int
+	before generate_config_h config_int
 
 	config_var "$1" "$2" "$3" "int"
 }
@@ -314,27 +303,14 @@ config_int()
 # @description  OPTIONAL
 config_bool()
 {
-	argc 2 3
-	after run_checks
-	before generate_config_h
+	if test $# -lt 2 || test $# -gt 3
+	then
+		die "config_bool: expecting 2-3 arguments"
+	fi
+	after run_checks config_bool
+	before generate_config_h config_bool
 
 	config_var "$1" "$2" "$3" "bool"
-}
-
-filter_in_files()
-{
-	local i o
-
-	after run_checks
-	for o in "$@"
-	do
-		i=${srcdir}/${o}.in
-		[[ -f ${i} ]] || die "${i} doesn't exist"
-		echo "Generating $o"
-		generated_file $o
-		mkdir -p $(dirname $o) || exit 1
-		$scriptdir/sedin $i $o || exit 1
-	done
 }
 
 # Print configuration
@@ -343,7 +319,6 @@ print_config()
 {
 	local flag
 
-	argc 0
 	after generate_config_mk
 
 	echo
@@ -360,7 +335,6 @@ print_config()
 # Useful at end of configure script.
 print_compiler_settings()
 {
-	argc 0
 	after generate_config_mk
 
 	echo
@@ -403,7 +377,6 @@ print_install_dirs()
 {
 	local names name
 
-	argc 0
 	after generate_config_mk
 
 	echo

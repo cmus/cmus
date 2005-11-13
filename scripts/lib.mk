@@ -20,7 +20,6 @@ ifeq ($(srcdir),)
 $(error srcdir not defined)
 endif
 
-SHELL		:= /bin/bash
 VPATH		:= $(srcdir)
 INSTALL		:= @$(scriptdir)/install
 SRCDIR_INSTALL	:= @cd $(srcdir) && $(scriptdir)/install
@@ -33,9 +32,6 @@ SPARSE_FLAGS	?= -D__i386__
 EMPTY		:=
 SPACE		:= $(EMPTY) $(EMPTY)
 COMMA		:= ,
-
-%: %.in $(top_builddir)/Makefile
-	$(call cmd,sed_in)
 
 %.o: %.S
 	$(call cmd,as)
@@ -108,10 +104,6 @@ quiet_cmd_ar = AR     $@
 quiet_cmd_as = AS     $@
       cmd_as = $(AS) -c $(ASFLAGS) -o $@ $<
 
-# filter file (.in) with sed
-quiet_cmd_sed_in = SED    $@
-      cmd_sed_in = $(scriptdir)/sedin $< $@
-
 # .rst (restructured text) -> .html
 quiet_cmd_rst = RST    $@
       cmd_rst = $(RST2HTML) $(RST2HTML_FLAGS) $< $@
@@ -148,10 +140,10 @@ cmd = @$(if $($(quiet)cmd_$(1)),echo '   $(call $(quiet)cmd_$(1),$(2))' &&) $(ca
 # NOTE: 'for subdir in ;' does not work with old bash, but
 #       'subdirs=""; for subdir in $subdirs;' does!
 define recurse
-	+@fail=no; \
+	+@ret=true; \
 	subdirs="$(subdirs)"; \
 	dir=$(currelpath); \
-	[[ -n $$dir ]] && dir=$$dir/; \
+	test -n "$$dir" && dir=$$dir/; \
 	for subdir in $$subdirs; \
 	do \
 		target=$(subst recursive-,,$@); \
@@ -166,9 +158,9 @@ define recurse
 		esac; \
 		if ! $$cmd; \
 		then \
-			fail=yes; \
-			[[ -z "$(filter -k,$(MAKEFLAGS))" ]] && break; \
+			ret=false; \
+			test -z "$(filter -k,$(MAKEFLAGS))" && break; \
 		fi; \
 	done; \
-	[[ $$fail = no ]]
+	$$ret
 endef

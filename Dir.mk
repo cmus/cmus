@@ -2,14 +2,14 @@ release	:= $(PACKAGE)-$(VERSION)
 tmpdir	:= /tmp
 tarball	:= $(DISTDIR)/$(release).tar.bz2
 
-release: extra cmus.spec
+release: extra
 	@dir=$(tmpdir)/$(release); \
-	if [[ -e $$dir ]]; \
+	if test -e "$$dir"; \
 	then \
 		echo "$$dir exists" >&2; \
 		exit 1; \
 	fi; \
-	if [[ -e $(tarball) ]]; \
+	if test -e "$(tarball)"; \
 	then \
 		echo -n "\`$(tarball)' already exists. overwrite? [n] "; \
 		read key; \

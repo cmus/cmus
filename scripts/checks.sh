@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #
 # Copyright 2005 Timo Hirvonen
 #
@@ -27,16 +27,19 @@ check_program()
 {
 	local program varname filename
 
-	argc 1 2
+	if test $# -lt 1 || test $# -gt 2
+	then
+		die "check_program: expecting 1-2 arguments"
+	fi
 	program="$1"
 	varname="$2"
 
 	msg_checking "for program ${program}"
 	filename=$(path_find "${program}")
-	if [[ $? -eq 0 ]]
+	if test $? -eq 0
 	then
 		msg_result $filename
-		[[ $# -eq 2 ]] && set_var $varname $filename
+		test $# -eq 2 && set_var $varname $filename
 		return 0
 	else
 		msg_result "no"
@@ -49,8 +52,9 @@ check_program()
 # check if $CC supports @flag
 check_cc_flag()
 {
-	argc 1 100
-	[[ -z $CC ]] && die "$FUNCNAME: CC not set"
+	test $# -lt 1 && die "check_cc_flag: expecting at least 1 argument"
+
+	test -z "$CC" && die "$FUNCNAME: CC not set"
 	msg_checking "for CC flag $@"
 	if $CC "$@" -S -o /dev/null -x c /dev/null &> /dev/null
 	then
@@ -67,8 +71,9 @@ check_cc_flag()
 # check if $CXX supports @flag
 check_cxx_flag()
 {
-	argc 1 100
-	[[ -z $CXX ]] && die "$FUNCNAME: CXX not set"
+	test $# -lt 1 && die "check_cxx_flag: expecting at least 1 argument"
+
+	test -z "$CXX" && die "$FUNCNAME: CXX not set"
 	msg_checking "for CXX flag $@"
 	if $CXX "$@" -S -o /dev/null -x c /dev/null &> /dev/null
 	then
@@ -148,7 +153,7 @@ check_as()
 
 check_pkgconfig()
 {
-	if [[ -z $PKG_CONFIG ]]
+	if test -z "$PKG_CONFIG"
 	then
 		if check_program pkg-config PKG_CONFIG
 		then
@@ -182,12 +187,12 @@ pkg_check_modules()
 {
 	local name modules
 
-	argc 2
+	test $# -eq 2 || die "pkg_check_modules: expecting 2 arguments"
 	name="$1"
 	modules="$2"
 	
 	check_pkgconfig
-	if [[ $PKG_CONFIG = "no" ]]
+	if test "$PKG_CONFIG" = "no"
 	then
 		msg_error "*** The pkg-config script could not be found. Make sure it is"
 		msg_error "*** in your path, or set the PKG_CONFIG environment variable"
@@ -199,21 +204,20 @@ pkg_check_modules()
 	msg_checking "$modules"
 	if $PKG_CONFIG --exists "$modules"
 	then
-		local i
+		local uc
 
 		msg_result "yes"
-
-		i=${#module_names[@]}
+		uc=$(echo $name | to_upper)
 
 		msg_checking "CFLAGS for $name"
-		module_cflags[$i]="$($PKG_CONFIG --cflags ""${modules}"")"
-		msg_result ${module_cflags[$i]}
+		set_var ${uc}_CFLAGS "$($PKG_CONFIG --cflags ""$modules"")"
+		msg_result $(get_var ${uc}_CFLAGS)
 
 		msg_checking "LIBS for $name"
-		module_libs[$i]="$($PKG_CONFIG --libs ""${modules}"")"
-		msg_result ${module_libs[$i]}
+		set_var ${uc}_LIBS "$($PKG_CONFIG --libs ""$modules"")"
+		msg_result $(get_var ${uc}_LIBS)
 
-		module_names[$i]="$name"
+		module_names="$module_names $uc"
 		return 0
 	else
 		msg_result "no"
@@ -242,37 +246,39 @@ pkg_check_modules()
 #   CPPUNIT_CFLAGS and CPPUNIT_LIBS are automatically added to Makefile
 app_config()
 {
-	local name program i
+	local name program uc
 
-	argc 1 2
 	name="$1"
-	if [[ $# -eq 2 ]]
+	if test $# -eq 1
+	then
+		program="${name}-config"
+	elif test $# -eq 2
 	then
 		program="$2"
 	else
-		program="${name}-config"
+		die "app_config: expecting 1-2 arguments"
 	fi
 
 	msg_checking "$name"
 	program=$(path_find "$program")
-	if [[ $? -ne 0 ]]
+	if test $? -ne 0
 	then
 		msg_error "no"
 		return 1
 	fi
 
 	msg_result "yes"
-	i=${#module_names[@]}
+	uc=$(echo $name | to_upper)
 
 	msg_checking "CFLAGS for $name"
-	module_cflags[$i]="$($program --cflags)"
-	msg_result ${module_cflags[$i]}
+	set_var ${uc}_CFLAGS "$($program --cflags)"
+	msg_result $(get_var ${uc}_CFLAGS)
 
 	msg_checking "LIBS for $name"
-	module_libs[$i]="$($program --libs)"
-	msg_result ${module_libs[$i]}
+	set_var ${uc}_LIBS "$($program --libs)"
+	msg_result $(get_var ${uc}_LIBS)
 
-	module_names[$i]="$name"
+	module_names="$module_names $uc"
 	return 0
 }
 
@@ -280,7 +286,7 @@ try_compile()
 {
 	local file src obj exe
 
-	argc 1
+	test $# -eq 1 || die "try_compile: expecting 1 argument"
 	file="$1"
 	src=$(tmp_file prog.c)
 	obj=$(tmp_file prog.o)
@@ -299,7 +305,7 @@ try_link()
 	local ldadd
 	local file src obj exe
 
-	argc 1
+	test $# -eq 1 || die "try_link: expecting 1 argument"
 	ldadd="$1"
 	file="
 int main(int argc, char *argv[])
@@ -321,7 +327,6 @@ check_endianness()
 {
 	local file src obj exe
 
-	argc 0
 	file="
 int main(int argc, char *argv[])
 {
@@ -355,12 +360,12 @@ check_lib()
 	local name ldadd
 	local output
 
-	argc 2
+	test $# -eq 2 || die "check_lib: expecting 2 arguments"
 	name="$1"
 	ldadd="$2"
 	msg_checking "$name"
 	output=$(try_link "$ldadd" 2>&1)
-	if [[ $? -eq 0 ]]
+	if test $? -eq 0
 	then
 		msg_result "yes"
 		return 0
@@ -399,7 +404,7 @@ check_pthread()
 
 	for libs in "$PTHREAD_LIBS" -lpthread -lc_r -lkse
 	do
-		[[ -z $libs ]] && continue
+		test -z "$libs" && continue
 		if check_lib "POSIX Threads ($libs)" "$libs"
 		then
 			makefile_var PTHREAD_CFLAGS "-D_REENTRANT"

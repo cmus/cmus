@@ -89,36 +89,16 @@ endif
 
 # create directories
 ifneq ($(top_builddir),$(top_srcdir))
-_dummy := $(foreach d,$(subdirs),$(shell [ -d $(d) ] || mkdir $(d)))
+_dummy := $(foreach d,$(subdirs),$(shell test -d $(d) || mkdir $(d)))
 endif
 
 clean: recursive-clean
 	$(call cmd,clean)
 
-define top_distclean
-	@if [[ -f .distclean ]]; \
-	then \
-		exec < .distclean || exit 0; \
-		while read line; \
-		do \
-			rm -f $$line; \
-			dir=$$(dirname $$line); \
-			if [[ $(top_srcdir) != $(top_builddir) ]] && [[ $$dir != . ]]; \
-			then \
-				rmdir -p $$dir 2>/dev/null; \
-			fi; \
-		done; \
-		rm -f .distclean; \
-	fi
-endef
-
 ifeq ($(restricted),0)
 distclean: recursive-distclean
 	$(call cmd,clean)
 	$(call cmd,distclean)
-ifeq ($(currelpath),)
-	$(call top_distclean)
-endif
 	$(Q)rm -f $(srcdir)/tags
 ifneq ($(top_builddir),$(top_srcdir))
 	$(shell rmdir $(subdirs) 2>/dev/null || exit 0)
@@ -126,7 +106,7 @@ endif
 else
 distclean:
 	@echo "can't make $@ in a subdir" >&2
-	@/bin/false
+	@false
 endif
 
 build: $(targets-y) recursive-build

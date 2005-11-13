@@ -44,7 +44,7 @@ ifeq ($(restricted),0)
 # topdir make
 
 uninstall:
-	@if [[ -f $(install_log) ]]; \
+	@if test -f "$(install_log)"; \
 	then \
 		sort $(install_log) | uniq > $(install_log).tmp || exit 1; \
 		mv $(install_log).tmp $(install_log) || exit 1; \
@@ -71,7 +71,7 @@ else
 
 uninstall dist:
 	@echo "can't make $@ in a subdir" >&2
-	@/bin/false
+	@false
 
 endif
 
@@ -115,11 +115,11 @@ extra-help:
 help: do-help extra-help
 
 tags:
-	@if [[ -z "$(currelpath)" ]]; \
+	@if test -z "$(currelpath)"; \
 	then \
 		if cd $(top_srcdir); \
 		then \
-			[[ $(BUILD_VERBOSITY) -gt 0 ]] && echo "   TAGS   [global]"; \
+			test $(BUILD_VERBOSITY) -gt 0 && echo "   TAGS   [global]"; \
 			$(CTAGS) --file-scope=no --languages="$(ctags-languages)" -R $(ctags-dirs); \
 		fi; \
 		dirs="$(ctags-dirs)"; \
@@ -127,19 +127,19 @@ tags:
 		do \
 			if cd $(top_srcdir)/$$dir; \
 			then \
-				[[ $(BUILD_VERBOSITY) -gt 0 ]] && echo "   TAGS   $$dir/"; \
-				[[ -n $$(ls) ]] && $(CTAGS) --languages="$(ctags-languages)" *; \
+				test $(BUILD_VERBOSITY) -gt 0 && echo "   TAGS   $$dir/"; \
+				test -n $$(ls) && $(CTAGS) --languages="$(ctags-languages)" *; \
 			fi; \
 		done; \
 	else \
-		if [[ -z "$(filter $(currelpath),$(ctags-dirs))" ]]; \
+		if test -z "$(filter $(currelpath),$(ctags-dirs))"; \
 		then \
 			echo $(currelpath) is not in ctags-dirs; \
 		else \
 			if cd $(top_srcdir)/$(currelpath); \
 			then \
-				[[ $(BUILD_VERBOSITY) -gt 0 ]] && echo "   TAGS   $(currelpath)/"; \
-				[[ -n $$(ls) ]] && $(CTAGS) --languages="$(ctags-languages)" *; \
+				test $(BUILD_VERBOSITY) -gt 0 && echo "   TAGS   $(currelpath)/"; \
+				test -n "$$(ls)" && $(CTAGS) --languages="$(ctags-languages)" *; \
 			fi; \
 		fi; \
 	fi
