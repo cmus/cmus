@@ -132,20 +132,23 @@ EOT
 	for i in $enable_flags
 	do
 		strpad "--enable-$(echo $i | sed 's/_/-/g')" 22
-		text="${text}  $strpad_ret  $(get_var enable_desc_${i}) [$(get_var enable_value_${i})]\n"
+		echo "  $strpad_ret  $(get_var enable_desc_${i}) [$(get_var enable_value_${i})]"
 	done
 	if test -n "$opt_flags"
 	then
-		text="${text}\n"
+		echo
 		for i in $opt_flags
 		do
 			tmp=$(get_var flag_argdesc_${i})
 			strpad "--$(echo $i | sed 's/_/-/g')${tmp}" 22
 			tmp=$(get_var flag_desc_${i})
-			text="${text}  $strpad_ret  ${tmp}\n"
+			echo "  $strpad_ret  ${tmp}"
 		done
 	fi
-	echo -ne "$text\nSome influential environment variables:\n  CC CFLAGS LD LDFLAGS SOFLAGS\n  CXX CXXFLAGS CXXLD CXXLDFLAGS\n"
+	echo
+	echo "Some influential environment variables:"
+	echo "  CC CFLAGS LD LDFLAGS SOFLAGS"
+	echo "  CXX CXXFLAGS CXXLD CXXLDFLAGS"
 	exit 0
 }
 
