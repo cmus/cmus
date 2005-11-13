@@ -311,6 +311,10 @@ err:
 	ui_curses_display_error_msg("expecting 2 arguments (context and key)\n");
 }
 
+static void cmd_quit(char *arg)
+{
+	ui_curses_quit();
+}
 static void cmd_reshuffle(char *arg)
 {
 	pl_reshuffle();
@@ -934,6 +938,7 @@ static struct command commands[] = {
 	{ "filter",	cmd_filter,	0, 1, NULL		},
 	{ "fset",	cmd_fset,	1, 1, NULL		},
 	{ "load",	cmd_load,	1, 1, expand_files	},
+	{ "quit",	cmd_quit,	0, 0, NULL		},
 	{ "run",	cmd_run,	1,-1, NULL		},
 	{ "save",	cmd_save,	0, 1, expand_files	},
 	{ "seek",	cmd_seek,	1, 1, NULL		},

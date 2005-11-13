@@ -854,18 +854,31 @@ static int load_keys(const char *file)
 	return file_load(file, handle_line, NULL);
 }
 
+static int bindings_empty(void)
+{
+	int i;
+	for ( i = 0; i < NR_CTXS; i++ )
+		if (key_bindings[i] != NULL)
+			return 0;
+ 	return 1;
+}
+
 void keys_init(void)
 {
+	const char *default_bindings = DATADIR "/cmus/keybindings";
 	filename = xstrjoin(cmus_config_dir, "/keybindings");
 	if (load_keys(filename)) {
 		if (errno == ENOENT) {
-			const char *default_bindings = DATADIR "/cmus/keybindings";
-
 			if (load_keys(default_bindings))
 				die_errno("error: loading keybindings %s", default_bindings);
 		} else {
 			die_errno("error: loading keybindings %s", filename);
 		}
+	}
+	if (bindings_empty()) {
+		d_print("  bindings are empty! loading defaults!\n");
+		if (load_keys(default_bindings))
+			warn("error: loading keybindings %s\n", default_bindings);
 	}
 }
 
