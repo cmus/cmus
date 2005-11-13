@@ -79,7 +79,7 @@ copy_file()
 	test "$BUILD_VERBOSITY" -ne 2 && echo "   INSTALL $dst"
 	$cmd_prefix cp "$src" "$dst" || exit 1
 	log_install "$dst"
-	if -n "$owner_group"
+	if test -n "$owner_group"
 	then
 		$cmd_prefix chown $owner_group "$dst" || exit 1
 	fi
