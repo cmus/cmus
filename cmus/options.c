@@ -88,7 +88,7 @@ static void set_format(const struct command_mode_option *opt, const char *value)
 	case SHUFFLE_VIEW:
 	case SORTED_VIEW:
 		pl_lock();
-		playlist.tree_win->changed = 1;
+		playlist.track_win->changed = 1;
 		playlist.shuffle_win->changed = 1;
 		playlist.sorted_win->changed = 1;
 		pl_unlock();
