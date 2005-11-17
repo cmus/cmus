@@ -23,13 +23,18 @@ installing dependencies you need to run ./configure again, of course.
 Building
 --------
 
-  make help
   make
 
 Installation
 ------------
 
   make install
+
+Or to install to a temporary directory:
+
+  make DESTDIR=/tmp/cmus install
+
+This is useful when creating binary packages.
 
 
 Documentation
@@ -57,7 +62,7 @@ Reporting Bugs
 
 After a crash send bug report with last lines of /tmp/cmus-debug to
 tihirvon@gmail.com.  /tmp/cmus-debug file exists only if you configured
-cmus with maximum debug level (./configure DEBUG=2).
+cmus with maximum debug level (./configure --debug=2).
 
 Also it would be good to know what distribution/kernel you are using, so
 please include output of 'uname -a' command in the bug report.
