@@ -232,9 +232,10 @@ EOF
 %_bindir/cmus-remote
 %_libdir/cmus/ip/wav.so
 %_libdir/cmus/op/oss.so
+%_datadir/cmus/cmus-status-display
 %_datadir/cmus/doc/cmus.html
-%_datadir/cmus/example/cmus-status-display
-%doc AUTHORS ChangeLog COPYING README TODO
+%_datadir/cmus/keybindings
+%doc AUTHORS ChangeLog COPYING README
 %if %altlinux
 %_menudir/cmus
 %endif
