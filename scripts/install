@@ -4,6 +4,20 @@
 #
 # This file is licensed under the GPLv2.
 
+flags=""
+while test $# -gt 0
+do
+	case $1 in
+		-*)
+			flags="$flags $1"
+			;;
+		*)
+			break
+			;;
+	esac
+	shift
+done
+
 if test $# -lt 2
 then
 	echo "expecting at least 2 arguments"
@@ -15,5 +29,5 @@ install -d -m755 "${to}"
 for i in "$@"
 do
 	echo "INSTALL ${to}/${i}"
-	install "$i" "${to}"
+	install $flags "$i" "${to}"
 done
