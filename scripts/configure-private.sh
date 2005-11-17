@@ -28,19 +28,16 @@ opt_flags=""
 
 # for each $config_vars there are
 #   cv_value_$NAME
-#   cv_desc_$NAME
 #   cv_type_$NAME
 config_vars=""
 
 # config.mk variable names
 mk_env_vars=""
 
-# these are environment variables
-install_dir_vars="prefix exec_prefix bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir infodir mandir"
-set_install_dir_vars=""
-
 checks=""
 
+PACKAGE=""
+VERSION=""
 CROSS=
 
 did_run()
@@ -85,120 +82,56 @@ get_dir_val()
 
 show_help()
 {
-	local _bindir _sbindir _libexecdir _datadir _sysconfdir _sharedstatedir _localstatedir _libdir _includedir _infodir _mandir
-
-	_bindir=$(get_dir_val bindir EPREFIX/bin)
-	_sbindir=$(get_dir_val sbindir EPREFIX/sbin)
-	_libexecdir=$(get_dir_val libexecdir EPREFIX/libexec)
-	_datadir=$(get_dir_val datadir PREFIX/share)
-	_sysconfdir=$(get_dir_val sysconfdir PREFIX/etc)
-	_sharedstatedir=$(get_dir_val sharedstatedir PREFIX/com)
-	_localstatedir=$(get_dir_val localstatedir PREFIX/var)
-	_libdir=$(get_dir_val libdir EPREFIX/lib)
-	_includedir=$(get_dir_val includedir PREFIX/include)
-	_infodir=$(get_dir_val infodir PREFIX/info)
-	_mandir=$(get_dir_val mandir PREFIX/share/man)
+	local i tmp
 
 	cat <<EOT
 Usage: ./configure [options] [VARIABLE=VALUE]...
 
-Installation directories:
-  --prefix=PREFIX         install architecture-independent files in PREFIX
-                          [/usr/local]
-  --exec-prefix=EPREFIX   install architecture-dependent files in EPREFIX
-                          [PREFIX]
-
-Cross compiling:
-  --cross=MACHINE        cross-compile []
-
-Fine tuning of the installation directories:
-  --bindir=DIR           user executables [$_bindir]
-  --sbindir=DIR          system admin executables [$_sbindir]
-  --libexecdir=DIR       program executables [$_libexecdir]
-  --datadir=DIR          read-only architecture-independent data [$_datadir]
-  --sysconfdir=DIR       read-only single-machine data [$_sysconfdir]
-  --sharedstatedir=DIR   modifiable architecture-independent data [$_sharedstatedir]
-  --localstatedir=DIR    modifiable single-machine data [$_localstatedir]
-  --libdir=DIR           object code libraries [$_libdir]
-  --includedir=DIR       C header files [$_includedir]
-  --infodir=DIR          info documentation [$_infodir]
-  --mandir=DIR           man documentation [$_mandir]
+  --cross=MACHINE         cross-compile []
+EOT
+	for i in $opt_flags
+	do
+		tmp=$(get_var flag_argdesc_${i})
+		strpad "--$(echo $i | sed 's/_/-/g')${tmp}" 22
+		tmp=$(get_var flag_desc_${i})
+		echo "  $strpad_ret  ${tmp}"
+	done
+	cat <<EOT
 
 Optional Features:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE (ARG=yes|no|auto) [ARG=yes]
 EOT
-	local i tmp text=
 	for i in $enable_flags
 	do
 		strpad "--enable-$(echo $i | sed 's/_/-/g')" 22
 		echo "  $strpad_ret  $(get_var enable_desc_${i}) [$(get_var enable_value_${i})]"
 	done
-	if test -n "$opt_flags"
-	then
-		echo
-		for i in $opt_flags
-		do
-			tmp=$(get_var flag_argdesc_${i})
-			strpad "--$(echo $i | sed 's/_/-/g')${tmp}" 22
-			tmp=$(get_var flag_desc_${i})
-			echo "  $strpad_ret  ${tmp}"
-		done
-	fi
-	echo
-	echo "Some influential environment variables:"
-	echo "  CC CFLAGS LD LDFLAGS SOFLAGS"
-	echo "  CXX CXXFLAGS CXXLD CXXLDFLAGS"
 	exit 0
-}
-
-is_enable_flag()
-{
-	list_contains "$enable_flags" "$1"
 }
 
 handle_enable()
 {
-	local flag val
+	local flag val i
 
 	flag="$1"
 	val="$2"
-	is_enable_flag "$flag" || die "invalid option --enable-$key"
-	case $val in
-		yes|no|auto)
-			set_var enable_value_${flag} $val
-			;;
-		*)
-			die "invalid argument for --enable-${flag}"
-			;;
-	esac
-}
 
-reset_vars()
-{
-	local name
-
-	for name in $install_dir_vars PACKAGE VERSION PACKAGE_NAME PACKAGE_BUGREPORT
+	for i in $enable_flags
 	do
-		set_var $name ''
-	done
-}
+		test "$i" = "$flag" || continue
 
-set_unset_install_dir_vars()
-{
-	var_default prefix "/usr/local"
-	var_default exec_prefix "$prefix"
-	var_default bindir "$exec_prefix/bin"
-	var_default sbindir "$exec_prefix/sbin"
-	var_default libexecdir "$exec_prefix/libexec"
-	var_default datadir "$prefix/share"
-	var_default sysconfdir "$prefix/etc"
-	var_default sharedstatedir "$prefix/com"
-	var_default localstatedir "$prefix/var"
-	var_default libdir "$exec_prefix/lib"
-	var_default includedir "$prefix/include"
-	var_default infodir "$prefix/info"
-	var_default mandir "$prefix/share/man"
+		case $val in
+			yes|no|auto)
+				set_var enable_value_${flag} $val
+				return 0
+				;;
+			*)
+				die "invalid argument for --enable-${flag}"
+				;;
+		esac
+	done
+	die "invalid option --enable-$flag"
 }
 
 set_makefile_variables()
@@ -225,31 +158,19 @@ set_makefile_variables()
 	do
 		makefile_env_vars ${i}_CFLAGS ${i}_LIBS
 	done
-
-	makefile_env_vars $install_dir_vars
 }
 
 set_config_h_variables()
 {
 	local flag name
 
-	config_str PACKAGE "$PACKAGE" "package name (short)"
-	config_str VERSION "$VERSION" "packege version"
-	test -n "$PACKAGE_NAME" && config_str PACKAGE_NAME "$PACKAGE_NAME" "package name (full)"
-	test -n "$PACKAGE_BUGREPORT" && config_str PACKAGE_BUGREPORT "$PACKAGE_BUGREPORT" "address where bug reports should be sent"
-
 	for flag in $enable_flags
 	do
 		local var=$(get_var enable_var_${flag})
 		if test -n "$var" && test "$(get_var enable_config_h_${flag})" = yes
 		then
-			config_var "${var}" "$(get_var enable_value_${flag})" "$(get_var enable_desc_${flag})" bool
+			config_var "${var}" "$(get_var enable_value_${flag})" bool
 		fi
-	done
-
-	for name in $install_dir_vars
-	do
-		config_str $(echo $name | to_upper) "$(get_var $name)"
 	done
 }
 
@@ -287,14 +208,6 @@ parse_command_line()
 			--disable-*)
 				key=${1##--disable-}
 				handle_enable "$(echo $key | sed 's/-/_/g')" "no"
-				;;
-			--prefix=*|--exec-prefix=*|--bindir=*|--sbindir=*|--libexecdir=*|--datadir=*|--sysconfdir=*|--sharedstatedir=*|--localstatedir=*|--libdir=*|--includedir=*|--infodir=*|--mandir=*)
-				kv=${1##--}
-				key=${kv%%=*}
-				val=${kv##*=}
-				var=$(echo $key | sed 's/-/_/g')
-				set_var ${var} "$val"
-				set_install_dir_vars="${set_install_dir_vars} ${var}"
 				;;
 			--cross=*)
 				CROSS=${1##--cross=}
@@ -351,19 +264,9 @@ parse_command_line()
 		shift
 	done
 
-	set_unset_install_dir_vars
 	did_run parse_command_line
 
-	top_srcdir=$(follow_links $srcdir)
-	test -z "$top_srcdir" && exit 1
-	top_builddir=$(follow_links $PWD)
-	test -z "$top_builddir" && exit 1
-	makefile_env_vars PACKAGE VERSION top_builddir top_srcdir scriptdir
-
-	for i in PACKAGE VERSION PACKAGE_NAME PACKAGE_BUGREPORT top_builddir top_srcdir $install_dir_vars
-	do
-		export $i
-	done
+	makefile_env_vars PACKAGE VERSION
 }
 
 run_checks()
@@ -372,7 +275,7 @@ run_checks()
 
 	after parse_command_line run_checks
 
-	trap 'rm -f .tmp-*' 0 1 2 3 13 15
+	trap 'rm -f .tmp-[0-9]*-*' 0 1 2 3 13 15
 	for check in $checks
 	do
 		$check || die -e "\nconfigure failed."
@@ -404,10 +307,6 @@ run_checks()
 			fi
 		fi
 	done
-
-	# .distclean has to be removed before calling generated_file()
-	# but not before configure has succeeded
-	rm -f .distclean
 	did_run run_checks
 }
 
@@ -424,8 +323,7 @@ config_var()
 
 	config_vars="$config_vars $1"
 	set_var cv_value_$1 "$2"
-	set_var cv_desc_$1 "$3"
-	set_var cv_type_$1 "$4"
+	set_var cv_type_$1 "$3"
 }
 
 update_file()
@@ -441,6 +339,18 @@ update_file()
 	mv -f "$new" "$old"
 }
 
+redirect_stdout()
+{
+	exec 8>&1
+	exec > "$1"
+}
+
+restore_stdout()
+{
+	exec >&8
+	exec 8>&-
+}
+
 generate_config_h()
 {
 	local tmp i
@@ -450,69 +360,61 @@ generate_config_h()
 	set_config_h_variables
 	echo "Generating config.h"
 	tmp=$(tmp_file config.h)
-	output_file $tmp
-	out "#ifndef _CONFIG_H"
-	out "#define _CONFIG_H"
+	redirect_stdout $tmp
+
+	echo "#ifndef CONFIG_H"
+	echo "#define CONFIG_H"
+	echo
 	for i in $config_vars
 	do
-		local v d t
+		local v t
 		v=$(get_var cv_value_${i})
-		d=$(get_var cv_desc_${i})
 		t=$(get_var cv_type_${i})
-		out
-		test -n "$d" && out "/* $d */"
 		case $t in
 			bool)
 				case $v in
 					no)
-						out "/* #define $i */"
+						echo "/* #define $i */"
 						;;
 					yes)
-						out "#define $i 1"
+						echo "#define $i 1"
 						;;
 				esac
 				;;
 			int)
-				out "#define $i $v"
+				echo "#define $i $v"
 				;;
 			str)
-				out "#define $i \"$v\""
+				echo "#define $i \"$v\""
 				;;
 		esac
 	done
-	out
-	out "#endif"
+	echo
+	echo "#endif"
+
+	restore_stdout
 	update_file $tmp config.h
 	did_run generate_config_h
 }
 
 generate_config_mk()
 {
-	local i s c tmp
+	local i tmp
 
 	after run_checks generate_config_mk
 
 	set_makefile_variables
 	echo "Generating config.mk"
 	tmp=$(tmp_file config.mk)
-	output_file $tmp
-	out '# run "make help" for usage information'
-	out
+	redirect_stdout $tmp
+
 	for i in $mk_env_vars
 	do
-		s="export ${i}"
-		c=$((24 - ${#s}))
-		while test $c -gt 0
-		do
-			s="${s} "
-			c=$(($c - 1))
-		done
-		out "${s} := $(get_var $i)"
+		strpad "$i" 17
+		echo "${strpad_ret} := $(get_var $i)"
 	done
-	out
-	out 'include $(scriptdir)/main.mk'
+
+	restore_stdout
 	update_file $tmp config.mk
 	did_run generate_config_mk
 }
-
-reset_vars

@@ -3,11 +3,24 @@
 #
 # This file is licensed under the GPLv2.
 
-ifeq ($(BUILD_VERBOSITY),2)
+# build verbosity (0-2), default is 1
+ifneq ($(origin V),command line)
+  V := 1
+endif
+ifneq ($(findstring s,$(MAKEFLAGS)),)
+  V := 0
+endif
+
+# check source code with sparse?
+ifneq ($(origin C),command line)
+  C := 0
+endif
+
+ifeq ($(V),2)
   quiet =
   Q =
 else
-  ifeq ($(BUILD_VERBOSITY),1)
+  ifeq ($(V),1)
     quiet = quiet_
     Q = @
   else
@@ -16,22 +29,11 @@ else
   endif
 endif
 
-ifeq ($(srcdir),)
-$(error srcdir not defined)
-endif
-
-VPATH		:= $(srcdir)
-INSTALL		:= @$(scriptdir)/install
-SRCDIR_INSTALL	:= @cd $(srcdir) && $(scriptdir)/install
+INSTALL		:= scripts/install
 RST2HTML	:= rst2html.py
 RST2HTML_FLAGS	:=
-CTAGS		?= exuberant-ctags
 SPARSE		?= sparse
 SPARSE_FLAGS	?= -D__i386__
-
-EMPTY		:=
-SPACE		:= $(EMPTY) $(EMPTY)
-COMMA		:= ,
 
 %.o: %.S
 	$(call cmd,as)
@@ -109,58 +111,13 @@ quiet_cmd_rst = RST    $@
       cmd_rst = $(RST2HTML) $(RST2HTML_FLAGS) $< $@
 
 # source code checker
-ifneq ($(BUILD_CHECK),0)
+ifneq ($(C),0)
 quiet_cmd_sparse = SPARSE $<
-  ifeq ($(BUILD_CHECK),2)
+  ifeq ($(C),2)
       cmd_sparse = $(SPARSE) $(CFLAGS) $(SPARSE_FLAGS) $< 
   else
       cmd_sparse = $(SPARSE) $(CFLAGS) $(SPARSE_FLAGS) $< ; true
   endif
 endif
 
-# quiet_cmd_clean = CLEAN  Temporary files
-      cmd_clean = rm -f $(clean)
-
-# quiet_cmd_distclean = CLEAN  All generated files
-      cmd_distclean = rm -f $(distclean)
-
 cmd = @$(if $($(quiet)cmd_$(1)),echo '   $(call $(quiet)cmd_$(1),$(2))' &&) $(call cmd_$(1),$(2))
-
-# Run target recursively
-#
-# Usage:
-#     recursive-SOMETHING:
-#             $(call recurse)
-#
-#     SOMETHING:
-#             ...
-#
-#     .PHONY: recursive-SOMETHING SOMETHING
-#
-# NOTE: 'for subdir in ;' does not work with old bash, but
-#       'subdirs=""; for subdir in $subdirs;' does!
-define recurse
-	+@ret=true; \
-	subdirs="$(subdirs)"; \
-	dir=$(currelpath); \
-	test -n "$$dir" && dir=$$dir/; \
-	for subdir in $$subdirs; \
-	do \
-		target=$(subst recursive-,,$@); \
-		cmd="$(MAKE) -f $(scriptdir)/sub.mk -C $$subdir $$target"; \
-		case $(BUILD_VERBOSITY) in \
-			1) \
-				echo " * Making $$target in $$dir$$subdir"; \
-				;; \
-			2) \
-				echo "$$cmd"; \
-				;; \
-		esac; \
-		if ! $$cmd; \
-		then \
-			ret=false; \
-			test -z "$(filter -k,$(MAKEFLAGS))" && break; \
-		fi; \
-	done; \
-	$$ret
-endef

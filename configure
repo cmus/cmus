@@ -1,11 +1,10 @@
 #!/bin/sh
 
-. $(dirname $0)/scripts/configure.sh || exit 1
+. scripts/configure.sh || exit 1
 
 PACKAGE="cmus"
 VERSION="1.6.3"
 PACKAGE_BUGREPORT="tihirvon@gmail.com"
-PACKAGE_NAME="C* Music Player"
 
 check_ncurses()
 {
@@ -85,6 +84,11 @@ check_oss()
 	fi
 }
 
+flag_dir()
+{
+	set_var $1 "$2"
+}
+
 flag_debug()
 {
 	# $1 = "debug"
@@ -104,17 +108,24 @@ flag_dev()
 	CFLAGS="-std=gnu99 -O2 -ggdb -Wall -Wshadow -Wdeclaration-after-statement -Wredundant-decls -Wmissing-prototypes -Werror -pipe"
 	DEBUG=2
 	prefix=$HOME
-	#libdir=$(pwd)/..
 }
 
-# default debugging level
+# defaults
+prefix=/usr/local
+bindir=""
+datadir=""
+libdir=""
 DEBUG=1
 
-add_flag debug yes flag_debug "Debugging level [$DEBUG]" "=[0-2]"
-add_flag dev   no  flag_dev   "This should be used only by developers"
+add_flag prefix    yes flag_dir   "Installation prefix [$prefix]" "=DIR"
+add_flag bindir    yes flag_dir   "User executables [PREFIX/bin]" "=DIR"
+add_flag datadir   yes flag_dir   "Read-only data [PREFIX/share]" "=DIR"
+add_flag libdir    yes flag_dir   "Libraries [PREFIX/lib]" "=DIR"
+
+add_flag debug     yes flag_debug "Debugging level [$DEBUG]" "=[0-2]"
+add_flag dev       no  flag_dev   "This should be used only by developers"
 
 add_check check_cc
-add_check check_ar
 add_check check_endianness
 add_check check_dl
 add_check check_pthread
@@ -139,15 +150,39 @@ enable_flag irman   no   CONFIG_IRMAN   "Irman support"
 parse_command_line "$@"
 run_checks
 
+var_default bindir "${prefix}/bin"
+var_default datadir "${prefix}/share"
+var_default libdir "${prefix}/lib"
+
+config_str PACKAGE $PACKAGE
+config_str VERSION $VERSION
+config_str PACKAGE_BUGREPORT "$PACKAGE_BUGREPORT"
+config_str BINDIR "$bindir"
+config_str DATADIR "$datadir"
+config_str LIBDIR "$libdir"
+makefile_env_vars bindir datadir libdir
+
 CFLAGS="${CFLAGS} -DDEBUG=$DEBUG"
 test "$WORDS_BIGENDIAN" -eq 1 && CFLAGS="${CFLAGS} -DWORDS_BIGENDIAN"
 
 generate_config_h
 generate_config_mk
-generate_makefiles . cmus common doc ip op remote
 
-sed -e "s:@VERSION@:${VERSION}:g" < "$srcdir/cmus.spec.in" > cmus.spec
+sed -e "s:@VERSION@:${VERSION}:g" < "cmus.spec.in" > cmus.spec
 
 print_config
-print_compiler_settings
-print_install_dirs
+
+cat <<EOF
+
+Compiler Settings:
+CC:                  ${CC}
+LD:                  ${LD}
+CFLAGS:              ${CFLAGS}
+LDFLAGS:             ${LDFLAGS}
+SOFLAGS:             ${SOFLAGS}
+
+Installation Directories:
+bindir:              ${bindir}
+datadir:             ${datadir}
+libdir:              ${libdir}
+EOF

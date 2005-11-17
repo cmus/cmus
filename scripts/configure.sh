@@ -13,43 +13,9 @@ then
 fi
 unset CDPATH
 
-srcdir="$(dirname $0)"
-srcdir=$(cd $srcdir && pwd)
-test -z "$srcdir" && exit 1
-
-test -z "$scriptdir" && scriptdir="${srcdir}/scripts"
-
-if ! test -d "$srcdir"
-then
-	echo "srcdir ($srcdir) is not a directory"
-	exit 1
-fi
-
-if test ! -d "$scriptdir"
-then
-	echo "scriptdir ($scriptdir) is not directory"
-	exit 1
-fi
-
-. ${scriptdir}/utils.sh || exit 1
-. ${scriptdir}/checks.sh || exit 1
-. ${scriptdir}/configure-private.sh || exit 1
-
-check_source_dir()
-{
-	local src bld
-
-	src=$(follow_links $srcdir)
-	bld=$(follow_links $(pwd))
-	if test "$src" != "$bld" && test -e "$src/Makefile"
-	then
-		echo "Source directory already configured. Please run \`make distclean' in there first."
-		exit 1
-	fi
-	return 0
-}
-
-check_source_dir
+. scripts/utils.sh || exit 1
+. scripts/checks.sh || exit 1
+. scripts/configure-private.sh || exit 1
 
 # }}}
 
@@ -90,7 +56,7 @@ enable_flag()
 {
 	local name value var desc
 
-	test $# -eq 4 || die "enable_flag: expecting 4 arguments $FUNCNAME"
+	argc enable_flag $# 4 4
 	before parse_command_line enable_flag
 
 	name="$1"
@@ -127,7 +93,7 @@ enable_use_config_h()
 		yes|no)
 			;;
 		*)
-			die "parameter for $FUNCNAME must be 'yes' or 'no'"
+			die "parameter for enable_use_config_h must be 'yes' or 'no'"
 			;;
 	esac
 	enable_use_config_h_val=$1
@@ -139,7 +105,7 @@ enable_use_config_mk()
 		yes|no)
 			;;
 		*)
-			die "parameter for $FUNCNAME must be 'yes' or 'no'"
+			die "parameter for enable_use_config_mk must be 'yes' or 'no'"
 			;;
 	esac
 	enable_use_config_mk_val=$1
@@ -156,10 +122,7 @@ add_flag()
 {
 	local flag hasarg func desc name
 
-	if test $# -lt 4 || test $# -gt 5
-	then
-		die "add_flag: expecting 4-5 arguments"
-	fi
+	argc add_flag $# 4 5
 	before parse_command_line add_flag
 
 	flag="$1"
@@ -171,7 +134,7 @@ add_flag()
 		yes|no)
 			;;
 		*)
-			die "argument 2 for $FUNCNAME flag must be 'yes' or 'no'"
+			die "argument 2 for add_flag must be 'yes' or 'no'"
 			;;
 	esac
 	is_function "${func}" || die "function \`${func}' not defined"
@@ -183,67 +146,13 @@ add_flag()
 	set_var flag_argdesc_${name} "${argdesc}"
 }
 
-# usage: 'configure_simple "$@"'
-# 
-#  o parse command line
-#  o run checks
-#  o generate Makefile
-#  o generate config.h
-# 
-# If you need to add variables to Makefile/config.h you can run
-#   parse_command_line,
-#   run_checks,
-#   generate_config_mk and
-#   generate_config_h
-# manually.  generate_config_h is optional. Add variables to Makefile or
-# config.h with config_{bool,int,str} or makefile_var / makefile_env_vars.
-configure_simple()
-{
-	parse_command_line "$@"
-	run_checks
-	generate_config_h
-	generate_config_mk
-	generate_makefiles .
-}
-
-generate_makefiles()
-{
-	local dir file i count
-
-	after run_checks
-	for dir in "$@"
-	do
-		dir=$(echo $dir | sed 's://:/:g')
-		if test "$dir" = "."
-		then
-			count=0
-			file="Makefile"
-		else
-			local tmp=$(echo $dir | sed 's:/::g')
-			count=$((${#dir} - ${#tmp} + 1))
-			file="${dir}/Makefile"
-		fi
-		echo "Generating ${file}"
-		mkdir -p $dir || exit 1
-		output_file ${file}
-		out -n "include "
-		i=0
-		while test $i -lt $count
-		do
-			out -n "../"
-			i=$(($i + 1))
-		done
-		out "config.mk"
-	done
-}
-
 # Add variable to Makefile
 #
 # @name   name of the variable
 # @value  value of the variable
 makefile_var()
 {
-	test $# -eq 2 || die "makefile_var: expecting 2 arguments"
+	argc makefile_var $# 2 2
 	after parse_command_line makefile_var
 	before generate_config_mk makefile_var
 
@@ -269,14 +178,11 @@ makefile_env_vars()
 # @description  OPTIONAL
 config_str()
 {
-	if test $# -lt 2 || test $# -gt 3
-	then
-		die "config_str: expecting 2-3 arguments"
-	fi
+	argc config_str $# 2 2
 	after run_checks config_str
 	before generate_config_h config_str
 
-	config_var "$1" "$2" "$3" "str"
+	config_var "$1" "$2" "str"
 }
 
 # Add integer variable to config.h
@@ -286,14 +192,11 @@ config_str()
 # @description  OPTIONAL
 config_int()
 {
-	if test $# -lt 2 || test $# -gt 3
-	then
-		die "config_int: expecting 2-3 arguments"
-	fi
+	argc config_int $# 2 2
 	after run_checks config_int
 	before generate_config_h config_int
 
-	config_var "$1" "$2" "$3" "int"
+	config_var "$1" "$2" "int"
 }
 
 # Add boolean variable to config.h
@@ -303,14 +206,11 @@ config_int()
 # @description  OPTIONAL
 config_bool()
 {
-	if test $# -lt 2 || test $# -gt 3
-	then
-		die "config_bool: expecting 2-3 arguments"
-	fi
+	argc config_bool $# 2 2
 	after run_checks config_bool
 	before generate_config_h config_bool
 
-	config_var "$1" "$2" "$3" "bool"
+	config_var "$1" "$2" "bool"
 }
 
 # Print configuration
@@ -319,7 +219,7 @@ print_config()
 {
 	local flag
 
-	after generate_config_mk
+	after generate_config_mk print_config
 
 	echo
 	echo "Configuration:"
@@ -328,64 +228,5 @@ print_config()
 		strpad "${flag}: " 21
 		echo -n "$strpad_ret"
 		get_var enable_value_${flag}
-	done
-}
-
-# Print compiler settings (CC CFLAGS etc)
-# Useful at end of configure script.
-print_compiler_settings()
-{
-	after generate_config_mk
-
-	echo
-	echo "Compiler Settings:"
-
-	if list_contains "$checks" check_cc
-	then
-		var_print CC
-		var_print LD
-		var_print CFLAGS
-		var_print LDFLAGS
-		var_print SOFLAGS
-	fi
-
-	if list_contains "$checks" check_cxx
-	then
-		var_print CXX
-		var_print CXXLD
-		var_print CXXFLAGS
-		var_print CXXLDFLAGS
-	fi
-
-	if list_contains "$checks" check_ar
-	then
-		var_print AR
-		var_print ARFLAGS
-	fi
-
-	if list_contains "$checks" check_as
-	then
-		var_print AS
-	fi
-}
-
-# Print install dir variables (prefix, bindir...)
-# Useful at end of configure script.
-#
-# NOTE:  This does not print variables that were not set by user.
-print_install_dirs()
-{
-	local names name
-
-	after generate_config_mk
-
-	echo
-	echo "Installation Directories:"
-	names=$(for name in prefix $set_install_dir_vars; do echo $name; done | sort | uniq)
-	for name in $names
-	do
-		strpad "$name: " 21
-		echo -n "$strpad_ret"
-		get_var $name
 	done
 }

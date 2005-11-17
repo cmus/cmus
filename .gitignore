@@ -4,7 +4,6 @@
 *.html
 *.lo
 *.so
-Makefile
 tags
 !.gitignore
 
@@ -12,5 +11,5 @@ tags
 /*.spec
 /config.h
 /config.mk
-/install.log
-!/.dist-exclude
+/cmus
+/cmus-remote

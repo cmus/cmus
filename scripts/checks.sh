@@ -27,10 +27,7 @@ check_program()
 {
 	local program varname filename
 
-	if test $# -lt 1 || test $# -gt 2
-	then
-		die "check_program: expecting 1-2 arguments"
-	fi
+	argc check_program $# 1 2
 	program="$1"
 	varname="$2"
 
@@ -52,9 +49,9 @@ check_program()
 # check if $CC supports @flag
 check_cc_flag()
 {
-	test $# -lt 1 && die "check_cc_flag: expecting at least 1 argument"
+	argc check_cc_flag $# 1
 
-	test -z "$CC" && die "$FUNCNAME: CC not set"
+	test -z "$CC" && die "check_cc_flag: CC not set"
 	msg_checking "for CC flag $@"
 	if $CC "$@" -S -o /dev/null -x c /dev/null &> /dev/null
 	then
@@ -71,9 +68,9 @@ check_cc_flag()
 # check if $CXX supports @flag
 check_cxx_flag()
 {
-	test $# -lt 1 && die "check_cxx_flag: expecting at least 1 argument"
+	argc check_cxx_flag $# 1
 
-	test -z "$CXX" && die "$FUNCNAME: CXX not set"
+	test -z "$CXX" && die "check_cxx_flag: CXX not set"
 	msg_checking "for CXX flag $@"
 	if $CXX "$@" -S -o /dev/null -x c /dev/null &> /dev/null
 	then
@@ -187,7 +184,7 @@ pkg_check_modules()
 {
 	local name modules
 
-	test $# -eq 2 || die "pkg_check_modules: expecting 2 arguments"
+	argc pkg_check_modules $# 2 2
 	name="$1"
 	modules="$2"
 	
@@ -248,15 +245,13 @@ app_config()
 {
 	local name program uc
 
+	argc app_config $# 1 2
 	name="$1"
 	if test $# -eq 1
 	then
 		program="${name}-config"
-	elif test $# -eq 2
-	then
-		program="$2"
 	else
-		die "app_config: expecting 1-2 arguments"
+		program="$2"
 	fi
 
 	msg_checking "$name"
@@ -286,7 +281,7 @@ try_compile()
 {
 	local file src obj exe
 
-	test $# -eq 1 || die "try_compile: expecting 1 argument"
+	argc try_compile $# 1 1
 	file="$1"
 	src=$(tmp_file prog.c)
 	obj=$(tmp_file prog.o)
@@ -305,7 +300,7 @@ try_link()
 	local ldadd
 	local file src obj exe
 
-	test $# -eq 1 || die "try_link: expecting 1 argument"
+	argc try_link $# 1 1
 	ldadd="$1"
 	file="
 int main(int argc, char *argv[])
@@ -360,7 +355,7 @@ check_lib()
 	local name ldadd
 	local output
 
-	test $# -eq 2 || die "check_lib: expecting 2 arguments"
+	argc check_lib $# 2 2
 	name="$1"
 	ldadd="$2"
 	msg_checking "$name"
