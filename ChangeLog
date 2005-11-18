@@ -1,3 +1,22 @@
+2005-11-18: 1.6.4
+~~~~~~~~~~~~~~~~~
+
+Frank Terbeck
+  o Support for binding :commands to keys
+  o Set default keybindings if ~/.config/cmus/keybindings is empty
+  o :quit command
+
+Timo Hirvonen
+  o Fix including id3.h
+  o Make backspace work inside GNU Screen
+  o Separate default keybindings to a file
+  o Support CR+LF line endings in playlist files
+  o Improved tab expansion
+  o Convert ./configure from bash to sh
+  o Filters: duration of a stream is 'infinite', fix comparing string values to NULL
+  o Code clean ups
+  o Documentation update
+
 2005-11-04: 1.6.3
 ~~~~~~~~~~~~~~~~~
 
