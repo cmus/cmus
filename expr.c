@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <stdarg.h>
+#include <limits.h>
 
 /* #define DEBUG_EXPR */
 
@@ -551,8 +552,11 @@ int expr_eval(struct expr *expr, struct track_info *ti)
 		} else {
 			val = comments_get_val(ti->comments, key);
 			if (val == NULL) {
-				/* FIXME: would be a nice to be able to compare to NULL */
-				return 0;
+				/* NULL="something" is false */
+				if (expr->estr.op == SOP_EQ)
+					return 0;
+				/* NULL!="something" is true */
+				return 1;
 			}
 		}
 		res = glob_match(&expr->estr.glob_head, val);
@@ -563,8 +567,10 @@ int expr_eval(struct expr *expr, struct track_info *ti)
 		int val, res;
 
 		if (strcmp(key, "duration") == 0) {
-			/* FIXME: what to do with streams? set res=1? */
 			val = ti->duration;
+			/* duration of a stream is infinite (well, almost) */
+			if (is_url(ti->filename))
+				val = INT_MAX;
 		} else {
 			val = comments_get_int(ti->comments, key);
 		}
