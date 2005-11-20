@@ -83,17 +83,14 @@ extern int window_get_next(struct window *win, struct iter *iter);
 /* set selected row */
 extern void window_set_sel(struct window *win, struct iter *iter);
 
-/* these return >0 if selection changed, 0 otherwise */
-extern int window_set_nr_rows(struct window *win, int nr_rows);
-extern int window_up(struct window *win, int rows);
-extern int window_down(struct window *win, int rows);
-extern int window_goto_top(struct window *win);
-extern int window_goto_bottom(struct window *win);
-extern int window_page_up(struct window *win);
-extern int window_page_down(struct window *win);
+extern void window_set_nr_rows(struct window *win, int nr_rows);
+extern void window_up(struct window *win, int rows);
+extern void window_down(struct window *win, int rows);
+extern void window_goto_top(struct window *win);
+extern void window_goto_bottom(struct window *win);
+extern void window_page_up(struct window *win);
+extern void window_page_down(struct window *win);
 
 extern int window_get_nr_rows(struct window *win);
-
-extern int window_has_changed(struct window *win);
 
 #endif

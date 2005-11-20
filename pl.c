@@ -1464,10 +1464,6 @@ void pl_init(void)
 	window_set_contents(playlist.shuffle_win, &playlist.shuffle_head);
 	window_set_contents(playlist.sorted_win, &playlist.sorted_head);
 	playlist.cur_win = playlist.tree_win;
-	pl_set_tree_win_nr_rows(1);
-	pl_set_track_win_nr_rows(1);
-	pl_set_shuffle_win_nr_rows(1);
-	pl_set_sorted_win_nr_rows(1);
 
 	srand(time(NULL));
 
@@ -1495,34 +1491,6 @@ void pl_exit(void)
 	window_free(playlist.shuffle_win);
 	window_free(playlist.sorted_win);
 	free_str_array(playlist.sort_keys);
-}
-
-void pl_set_tree_win_nr_rows(int nr_rows)
-{
-	pl_lock();
-	window_set_nr_rows(playlist.tree_win, nr_rows);
-	pl_unlock();
-}
-
-void pl_set_track_win_nr_rows(int nr_rows)
-{
-	pl_lock();
-	window_set_nr_rows(playlist.track_win, nr_rows);
-	pl_unlock();
-}
-
-void pl_set_shuffle_win_nr_rows(int nr_rows)
-{
-	pl_lock();
-	window_set_nr_rows(playlist.shuffle_win, nr_rows);
-	pl_unlock();
-}
-
-void pl_set_sorted_win_nr_rows(int nr_rows)
-{
-	pl_lock();
-	window_set_nr_rows(playlist.sorted_win, nr_rows);
-	pl_unlock();
 }
 
 struct track_info *pl_set_next(void)

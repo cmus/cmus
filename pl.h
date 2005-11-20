@@ -166,11 +166,6 @@ extern void __pl_set_view(int view);
 extern void pl_toggle_active_window(void);
 extern void pl_sel_current(void);
 
-extern void pl_set_tree_win_nr_rows(int nr_rows);
-extern void pl_set_track_win_nr_rows(int nr_rows);
-extern void pl_set_shuffle_win_nr_rows(int nr_rows);
-extern void pl_set_sorted_win_nr_rows(int nr_rows);
-
 extern void pl_reshuffle(void);
 
 /*

@@ -1787,10 +1787,13 @@ static void resize_playlist(int w, int h)
 	track_win_x = tree_win_w + 1;
 	track_win_y = 0;
 
-	pl_set_tree_win_nr_rows(h - 1);
-	pl_set_track_win_nr_rows(h - 1);
-	pl_set_shuffle_win_nr_rows(h - 1);
-	pl_set_sorted_win_nr_rows(h - 1);
+	h--;
+	pl_lock();
+	window_set_nr_rows(playlist.tree_win, h);
+	window_set_nr_rows(playlist.track_win, h);
+	window_set_nr_rows(playlist.shuffle_win, h);
+	window_set_nr_rows(playlist.sorted_win, h);
+	pl_unlock();
 }
 
 static void get_colors(void)

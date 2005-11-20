@@ -73,19 +73,19 @@ void window_set_contents(struct window *win, void *head)
 	sel_changed(win);
 }
 
-int window_set_nr_rows(struct window *win, int nr_rows)
+void window_set_nr_rows(struct window *win, int nr_rows)
 {
 	struct iter old_sel;
 
 	if (nr_rows < 1)
-		return 0;
+		return;
 	win->nr_rows = nr_rows;
 	old_sel = win->sel;
 	window_changed(win);
-	return !iters_equal(&win->sel, &old_sel);
+	win->changed = 1;
 }
 
-int window_up(struct window *win, int rows)
+void window_up(struct window *win, int rows)
 {
 	int i;
 
@@ -98,13 +98,11 @@ int window_up(struct window *win, int rows)
 			win->top = prev;
 		win->sel = prev;
 	}
-	if (i == 0)
-		return 0;
-	sel_changed(win);
-	return 1;
+	if (i)
+		sel_changed(win);
 }
 
-int window_down(struct window *win, int rows)
+void window_down(struct window *win, int rows)
 {
 	struct iter iter;
 	int delta, sel_down, top_down;
@@ -129,10 +127,8 @@ int window_down(struct window *win, int rows)
 		win->get_next(&win->top);
 		top_down--;
 	}
-	if (sel_down == 0)
-		return 0;
-	sel_changed(win);
-	return 1;
+	if (sel_down)
+		sel_changed(win);
 }
 
 /*
@@ -279,7 +275,7 @@ void window_set_sel(struct window *win, struct iter *iter)
 	sel_changed(win);
 }
 
-int window_goto_top(struct window *win)
+void window_goto_top(struct window *win)
 {
 	struct iter old_sel;
 
@@ -287,13 +283,11 @@ int window_goto_top(struct window *win)
 	win->sel = win->head;
 	win->get_next(&win->sel);
 	win->top = win->sel;
-	if (iters_equal(&old_sel, &win->sel))
-		return 0;
-	sel_changed(win);
-	return 1;
+	if (!iters_equal(&old_sel, &win->sel))
+		sel_changed(win);
 }
 
-int window_goto_bottom(struct window *win)
+void window_goto_bottom(struct window *win)
 {
 	struct iter old_sel;
 	int count;
@@ -311,20 +305,18 @@ int window_goto_bottom(struct window *win)
 		win->top = iter;
 		count--;
 	}
-	if (iters_equal(&old_sel, &win->sel))
-		return 0;
-	sel_changed(win);
-	return 1;
+	if (!iters_equal(&old_sel, &win->sel))
+		sel_changed(win);
 }
 
-int window_page_up(struct window *win)
+void window_page_up(struct window *win)
 {
-	return window_up(win, win->nr_rows - 1);
+	window_up(win, win->nr_rows - 1);
 }
 
-int window_page_down(struct window *win)
+void window_page_down(struct window *win)
 {
-	return window_down(win, win->nr_rows - 1);
+	window_down(win, win->nr_rows - 1);
 }
 
 int window_get_nr_rows(struct window *win)
