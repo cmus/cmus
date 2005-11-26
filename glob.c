@@ -214,7 +214,7 @@ static int do_glob_match(struct list_head *head, struct list_head *first, const 
 			while (1) {
 				const char *pos;
 
-				pos = u_strcasestr_filename(text, t);
+				pos = u_strcasestr(text, t);
 				if (pos == NULL)
 					return 0;
 				if (do_glob_match(head, next->next, pos + tlen))

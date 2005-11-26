@@ -18,11 +18,14 @@
  */
 
 #include <uchar.h>
+#include <compiler.h>
 
 #include <stdlib.h>
 #include <string.h>
 #include <wctype.h>
 #include <ctype.h>
+
+const char hex_tab[16] = "0123456789abcdef";
 
 /*
  * Byte Sequence                                             Min       Min        Max
@@ -119,7 +122,28 @@ int u_strlen(const char *str)
 	int len = 0;
 
 	while (*s) {
-		s += len_tab[*s];
+		int l = len_tab[*s];
+
+		if (unlikely(l > 1)) {
+			/* next l - 1 bytes must be 0x10xxxxxx */
+			int c = 1;
+			do {
+				if (len_tab[s[c]] != 0) {
+					/* invalid sequence */
+					goto single_char;
+				}
+				c++;
+			} while (c < l);
+
+			/* valid sequence */
+			s += l;
+			len++;
+			continue;
+		}
+single_char:
+		/* l is -1, 0 or 1
+		 * invalid chars counted as single characters */
+		s++;
 		len++;
 	}
 	return len;
@@ -127,61 +151,65 @@ int u_strlen(const char *str)
 
 int u_char_width(uchar u)
 {
-	if (u < 0x1100)
+	if (u < 0x1100U)
 		goto narrow;
 
 	/* Hangul Jamo init. consonants */ 
-	if (u <= 0x115f)
+	if (u <= 0x115fU)
 		goto wide;
 
 	/* angle brackets */
-	if (u == 0x2329 || u == 0x232a)
+	if (u == 0x2329U || u == 0x232aU)
 		goto wide;
 
-	if (u < 0x2e80)
+	if (u < 0x2e80U)
 		goto narrow;
 	/* CJK ... Yi */
-	if (u < 0x302a)
+	if (u < 0x302aU)
 		goto wide;
-	if (u <= 0x302f)
+	if (u <= 0x302fU)
 		goto narrow;
-	if (u == 0x303f)
+	if (u == 0x303fU)
 		goto narrow;
-	if (u == 0x3099)
+	if (u == 0x3099U)
 		goto narrow;
-	if (u == 0x309a)
+	if (u == 0x309aU)
 		goto narrow;
 	/* CJK ... Yi */
-	if (u <= 0xa4cf)
+	if (u <= 0xa4cfU)
 		goto wide;
 
 	/* Hangul Syllables */
-	if (u >= 0xac00 && u <= 0xd7a3)
+	if (u >= 0xac00U && u <= 0xd7a3U)
 		goto wide;
 
 	/* CJK Compatibility Ideographs */
-	if (u >= 0xf900 && u <= 0xfaff)
+	if (u >= 0xf900U && u <= 0xfaffU)
 		goto wide;
 
 	/* CJK Compatibility Forms */
-	if (u >= 0xfe30 && u <= 0xfe6f)
+	if (u >= 0xfe30U && u <= 0xfe6fU)
 		goto wide;
 
 	/* Fullwidth Forms */
-	if (u >= 0xff00 && u <= 0xff60)
+	if (u >= 0xff00U && u <= 0xff60U)
 		goto wide;
 
 	/* Fullwidth Forms */
-	if (u >= 0xffe0 && u <= 0xffe6)
+	if (u >= 0xffe0U && u <= 0xffe6U)
 		goto wide;
 
 	/* CJK extra stuff */
-	if (u >= 0x20000 && u <= 0x2fffd)
+	if (u >= 0x20000U && u <= 0x2fffdU)
 		goto wide;
 
 	/* ? */
-	if (u >= 0x30000 && u <= 0x3fffd)
+	if (u >= 0x30000U && u <= 0x3fffdU)
 		goto wide;
+
+	/* invalid bytes in unicode stream are rendered "<ff>" */
+	if (u & U_INVALID_MASK)
+		return 4;
 narrow:
 	return 1;
 wide:
@@ -217,24 +245,116 @@ int u_str_nwidth(const char *str, int len)
 	return w;
 }
 
+void u_prev_char_pos(const char *str, int *idx)
+{
+	const unsigned char *s = (const unsigned char *)str;
+	int c, len, i = *idx;
+	uchar ch;
+
+	ch = s[--i];
+	len = len_tab[ch];
+	if (len != 0) {
+		/* start of byte sequence or invelid uchar */
+		goto one;
+	}
+
+	c = 1;
+	while (1) {
+		if (i == 0) {
+			/* first byte of the sequence is missing */
+			break;
+		}
+
+		ch = s[--i];
+		len = len_tab[ch];
+		c++;
+
+		if (len == 0) {
+			if (c < 4)
+				continue;
+
+			/* too long sequence */
+			break;
+		}
+		if (len != c) {
+			/* incorrect length */
+			break;
+		}
+
+		/* ok */
+		*idx = i;
+		return;
+	}
+one:
+	*idx = *idx - 1;
+	return;
+}
+
 void u_get_char(const char *str, int *idx, uchar *uch)
 {
 	const unsigned char *s = (const unsigned char *)str;
 	int len, i = *idx;
-	unsigned char ch;
-	uchar u;
+	uchar ch, u;
 
 	ch = s[i++];
-	len = len_tab[ch] - 1;
+	len = len_tab[ch];
+	if (unlikely(len < 1))
+		goto invalid;
+
+	len--;
 	u = ch & first_byte_mask[len];
 	while (len > 0) {
 		ch = s[i++];
+		if (unlikely(len_tab[ch] != 0))
+			goto invalid;
 		u = (u << 6) | (ch & 0x3f);
 		len--;
 	}
 	*idx = i;
 	*uch = u;
+	return;
+invalid:
+	i = *idx;
+	u = s[i++];
+	*uch = u | U_INVALID_MASK;
+	*idx = i;
 }
+
+void u_set_char_raw(char *str, int *idx, uchar uch)
+{
+	int i = *idx;
+
+	if (uch <= 0x0000007fU) {
+		str[i++] = uch;
+		*idx = i;
+	} else if (uch <= 0x000007ffU) {
+		str[i + 1] = (uch & 63) | 0x80; uch >>= 6;
+		str[i + 0] = uch | 0x000000c0U;
+		i += 2;
+		*idx = i;
+	} else if (uch <= 0x0000ffffU) {
+		str[i + 2] = (uch & 63) | 0x80; uch >>= 6;
+		str[i + 1] = (uch & 63) | 0x80; uch >>= 6;
+		str[i + 0] = uch | 0x000000e0U;
+		i += 3;
+		*idx = i;
+	} else if (uch <= 0x0010ffffU) {
+		str[i + 3] = (uch & 63) | 0x80; uch >>= 6;
+		str[i + 2] = (uch & 63) | 0x80; uch >>= 6;
+		str[i + 1] = (uch & 63) | 0x80; uch >>= 6;
+		str[i + 0] = uch | 0x000000f0U;
+		i += 4;
+		*idx = i;
+	} else {
+		/* must be an invalid uchar */
+		str[i++] = uch & 0xff;
+		*idx = i;
+	}
+}
+
+/*
+ * Printing functions, these lose information
+ */
 
 void u_set_char(char *str, int *idx, uchar uch)
 {
@@ -261,41 +381,48 @@ void u_set_char(char *str, int *idx, uchar uch)
 		str[i + 0] = uch | 0x000000f0U;
 		i += 4;
 		*idx = i;
+	} else {
+		/* must be an invalid uchar */
+		str[i++] = '<';
+		str[i++] = hex_tab[(uch >> 4) & 0xf];
+		str[i++] = hex_tab[uch & 0xf];
+		str[i++] = '>';
+		*idx = i;
 	}
 }
 
 int u_copy_chars(char *dst, const char *src, int *width)
 {
 	int w = *width;
-	int len = 0;
-	int idx = 0;
+	int si = 0, di = 0;
+	int cw;
+	uchar u;
 
 	while (w > 0) {
-		unsigned char ch = src[idx];
-		uchar u;
-		int i;
-
-		if (ch == 0)
+		u_get_char(src, &si, &u);
+		if (u == 0)
 			break;
 
-		dst[idx++] = ch;
-		len = len_tab[ch];
-		u = ch & first_byte_mask[len - 1];
-		for (i = 1; i < len; i++) {
-			ch = src[idx];
-			u = (u << 6) | (ch & 0x3f);
-			dst[idx++] = ch;
+		cw = u_char_width(u);
+		w -= cw;
+
+		if (unlikely(w < 0)) {
+			if (cw == 2)
+				dst[di++] = ' ';
+			if (cw == 4) {
+				dst[di++] = '<';
+				if (w >= -2)
+					dst[di++] = hex_tab[(u >> 4) & 0xf];
+				if (w >= -1)
+					dst[di++] = hex_tab[u & 0xf];
+			}
+			w = 0;
+			break;
 		}
-		w -= u_char_width(u);
-	}
-	if (w < 0) {
-		/* the last char was double width and didn't fit */
-		idx -= len;
-		dst[idx++] = ' ';
-		w = 0;
+		u_set_char(dst, &di, u);
 	}
 	*width -= w;
-	return idx;
+	return di;
 }
 
 int u_skip_chars(const char *str, int *width)
@@ -309,10 +436,14 @@ int u_skip_chars(const char *str, int *width)
 		u_get_char(str, &idx, &u);
 		w -= u_char_width(u);
 	}
-	/* add 1 if skipped 'too much' (the last char was double width) */
+	/* add 1..3 if skipped 'too much' (the last char was double width or invalid (<xx>)) */
 	*width -= w;
 	return idx;
 }
+
+/*
+ * Comparison functions
+ */
 
 static inline int chcasecmp(int a, int b)
 {
@@ -364,59 +495,28 @@ int u_strncasecmp(const char *a, const char *b, int len)
 	return 0;
 }
 
-char *u_strcasestr(const char *text, const char *part)
+char *u_strcasestr(const char *haystack, const char *needle)
 {
+	const unsigned char *text = haystack;
+	const unsigned char *part = needle;
+
 	/* strlen is faster and works here */
 	int text_len = strlen(text);
 	int part_len = u_strlen(part);
 
 	do {
-		unsigned char ch;
-		int clen;
+		uchar u;
+		int idx;
 
 		if (text_len < part_len)
 			return NULL;
 		if (u_strncasecmp(part, text, part_len) == 0)
 			return (char *)text;
 
-		ch = *text;
-		clen = len_tab[ch];
-		text += clen;
-		text_len -= clen;
+		/* skip one char */
+		idx = 0;
+		u_get_char(text, &idx, &u);
+		text += idx;
+		text_len -= idx;
 	} while (1);
-}
-
-static inline int ascii_chcasecmp(char a, char b)
-{
-	return toupper(a) - toupper(b);
-}
-
-static char *strcasestr(const char *text, const char *part)
-{
-	int i, j, save;
-
-	i = 0;
-	do {
-		save = i;
-		j = 0;
-		while (ascii_chcasecmp(part[j], text[i]) == 0) {
-			if (part[j] == 0)
-				return (char *)text + i - j;
-			i++;
-			j++;
-		}
-		if (part[j] == 0)
-			return (char *)text + i - j;
-		if (text[i] == 0)
-			return NULL;
-		i = save + 1;
-	} while (1);
-}
-
-char *u_strcasestr_filename(const char *text, const char *part)
-{
-	/* FIXME: implement and use slow & safe u_strcasestr_safe if locale is UTF-8 */
-	if (u_is_valid(text))
-		return u_strcasestr(text, part);
-	return strcasestr(text, part);
 }

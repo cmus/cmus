@@ -12,7 +12,6 @@ struct cmdline cmdline;
 
 #define SANITY_CHECK() \
 	do { \
-		BUG_ON(!u_is_first_byte(cmdline.line[cmdline.bpos])); \
 		BUG_ON(cmdline.bpos > cmdline.blen); \
 		BUG_ON(cmdline.bpos < 0); \
 		BUG_ON(cmdline.cpos < 0); \
@@ -36,19 +35,15 @@ void cmdline_insert_ch(uchar ch)
 
 	SANITY_CHECK();
 
-	if (!u_is_unicode(ch))
-		return;
-
 	size = u_char_size(ch);
 	if (cmdline.blen + size > cmdline.size) {
 		cmdline.size *= 2;
 		cmdline.line = xrenew(char, cmdline.line, cmdline.size);
 	}
-	memmove(
-			cmdline.line + cmdline.bpos + size,
-			cmdline.line + cmdline.bpos,
-			cmdline.blen - cmdline.bpos + 1);
-	u_set_char(cmdline.line, &cmdline.bpos, ch);
+	memmove(cmdline.line + cmdline.bpos + size,
+		cmdline.line + cmdline.bpos,
+		cmdline.blen - cmdline.bpos + 1);
+	u_set_char_raw(cmdline.line, &cmdline.bpos, ch);
 	cmdline.cpos++;
 	cmdline.blen += size;
 	cmdline.clen++;
@@ -63,14 +58,13 @@ void cmdline_backspace(void)
 	if (cmdline.bpos == 0)
 		return;
 
-	bpos = cmdline.bpos - 1;
-	while (!u_is_first_byte(cmdline.line[bpos]))
-		bpos--;
+	bpos = cmdline.bpos;
+	u_prev_char_pos(cmdline.line, &bpos);
 	size = cmdline.bpos - bpos;
-	memmove(
-			cmdline.line + bpos,
-			cmdline.line + cmdline.bpos,
-			cmdline.blen - cmdline.bpos + 1);
+
+	memmove(cmdline.line + bpos,
+		cmdline.line + cmdline.bpos,
+		cmdline.blen - cmdline.bpos + 1);
 	cmdline.bpos -= size;
 	cmdline.cpos--;
 	cmdline.blen -= size;
@@ -91,10 +85,9 @@ void cmdline_delete_ch(void)
 	size = u_char_size(ch);
 	cmdline.blen -= size;
 	cmdline.clen--;
-	memmove(
-			cmdline.line + cmdline.bpos,
-			cmdline.line + cmdline.bpos + size,
-			cmdline.blen - cmdline.bpos + 1);
+	memmove(cmdline.line + cmdline.bpos,
+		cmdline.line + cmdline.bpos + size,
+		cmdline.blen - cmdline.bpos + 1);
 }
 
 void cmdline_set_text(const char *text)
@@ -128,9 +121,7 @@ void cmdline_move_left(void)
 
 	if (cmdline.bpos > 0) {
 		cmdline.cpos--;
-		cmdline.bpos--;
-		while (!u_is_first_byte(cmdline.line[cmdline.bpos]))
-			cmdline.bpos--;
+		u_prev_char_pos(cmdline.line, &cmdline.bpos);
 	}
 }
 

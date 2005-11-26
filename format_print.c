@@ -139,27 +139,22 @@ static int print_time(char *buf, int t, int width, int align_left, char pad)
  */
 static void print_str(char *buf, int *idx, const char *str, int width, int align_left)
 {
-	int s, d;
+	int d = *idx;
 
-	s = 0;
-	d = *idx;
 	if (width) {
 		int ws_len;
 		int i = 0;
 
 		if (align_left) {
-			int c;
-
 			i = width;
-			c = u_copy_chars(buf + d, str + s, &i);
-			s += c;
-			d += c;
+			d += u_copy_chars(buf + d, str, &i);
 
 			ws_len = width - i;
 			memset(buf + d, ' ', ws_len);
 			d += ws_len;
-			i += ws_len;
 		} else {
+			int s = 0;
+
 			ws_len = width - u_str_width(str);
 
 			if (ws_len > 0) {
@@ -169,24 +164,46 @@ static void print_str(char *buf, int *idx, const char *str, int width, int align
 			}
 
 			if (ws_len < 0) {
-				int w = -ws_len;
+				int w, c = -ws_len;
+				uchar u;
 
-				s += u_skip_chars(str, &w);
-				if (w != -ws_len)
-					buf[d++] = ' ';
+				while (c > 0) {
+					u_get_char(str, &s, &u);
+					w = u_char_width(u);
+					c -= w;
+				}
+				if (c < 0) {
+					/* gaah, skipped too much */
+					if (u_char_width(u) == 2) {
+						/* double-byte */
+						buf[d++] = ' ';
+					} else {
+						/* <xx> */
+						if (c == -3)
+							buf[d++] = hex_tab[(u >> 4) & 0xf];
+						if (c <= -2)
+							buf[d++] = hex_tab[u & 0xf];
+						buf[d++] = '>';
+					}
+				}
 			}
 
 			if (width - i > 0) {
-				int c, w = width - i;
+				int w = width - i;
 
-				c = u_copy_chars(buf + d, str + s, &w);
-				s += c;
-				d += c;
+				d += u_copy_chars(buf + d, str + s, &w);
 			}
 		}
 	} else {
-		while (str[s])
-			buf[d++] = str[s++];
+		int s = 0;
+		uchar u;
+
+		while (1) {
+			u_get_char(str, &s, &u);
+			if (u == 0)
+				break;
+			u_set_char(buf, &d, u);
+		}
 	}
 	*idx = d;
 }
@@ -379,6 +396,10 @@ int format_print(char *str, int width, const char *format, const struct format_o
 		}
 #endif
 	}
+
+	/* NOTE: any invalid UTF-8 bytes have already been converted to <xx>
+	 *       (ASCII) where x is hex digit
+	 */
 
 	if (llen + rlen <= width) {
 		/* both fit */

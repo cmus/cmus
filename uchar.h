@@ -22,15 +22,13 @@
 
 typedef unsigned int uchar;
 
+extern const char hex_tab[16];
+
 /*
- * @byte  any byte in UTF-8 string
- *
- * Returns 1 if @byte is the first byte of unicode char, 0 otherwise
+ * Invalid bytes are or'ed with this
+ * for example 0xff -> 0x100000ff
  */
-static inline int u_is_first_byte(unsigned char byte)
-{
-	return byte >> 6 != 2;
-}
+#define U_INVALID_MASK 0x10000000U
 
 /*
  * @uch  potential unicode character
@@ -56,12 +54,12 @@ static inline int u_char_size(uchar uch)
 	} else if (uch <= 0x0010ffffU) {
 		return 4;
 	} else {
-		return -1;
+		return 1;
 	}
 }
 
 /*
- * Returns width of @uch (1 or 2)
+ * Returns width of @uch (normally 1 or 2, 4 for invalid chars (<xx>))
  */
 extern int u_char_width(uchar uch);
 
@@ -94,6 +92,8 @@ extern int u_str_width(const char *str);
  */
 extern int u_str_nwidth(const char *str, int len);
 
+extern void u_prev_char_pos(const char *str, int *idx);
+
 /*
  * @str  null-terminated UTF-8 string
  * @idx  pointer to byte index in @str (not UTF-8 character index!)
@@ -106,6 +106,7 @@ extern void u_get_char(const char *str, int *idx, uchar *uch);
  * @idx  pointer to byte index in @str (not UTF-8 character index!)
  * @uch  unicode character
  */
+extern void u_set_char_raw(char *str, int *idx, uchar uch);
 extern void u_set_char(char *str, int *idx, uchar uch);
 
 /*
@@ -136,11 +137,11 @@ extern int u_skip_chars(const char *str, int *width);
 
 extern int u_strcasecmp(const char *a, const char *b);
 extern int u_strncasecmp(const char *a, const char *b, int len);
-extern char *u_strcasestr(const char *text, const char *part);
+extern char *u_strcasestr(const char *haystack, const char *needle);
 
-/* @text  filename (locale's encoding)
- * @part  UTF-8 string
- */
-extern char *u_strcasestr_filename(const char *text, const char *part);
+static inline char *u_strcasestr_filename(const char *haystack, const char *needle)
+{
+	return u_strcasestr(haystack, needle);
+}
 
 #endif

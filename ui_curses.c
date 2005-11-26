@@ -320,28 +320,36 @@ static void dump_print_buffer(int row, int col)
 
 static void sprint(int row, int col, const char *str, int width, int indent)
 {
-	int d, w;
+	int s, d, ellipsis_pos;
 
-	w = u_str_width(str);
 	width -= 2 + indent;
-	indent++;
+	d = indent + 1;
+	memset(print_buffer, ' ', d);
+	s = 0;
+	ellipsis_pos = 0;
+	while (1) {
+		uchar u;
 
-	memset(print_buffer, ' ', indent);
-	d = indent;
-	if (w > width) {
-		width -= 3;
-		d += u_copy_chars(print_buffer + d, str, &width);
-		print_buffer[d++] = '.';
-		print_buffer[d++] = '.';
-		print_buffer[d++] = '.';
-	} else {
-		int s = 0;
+		if (width == 3)
+			ellipsis_pos = d;
 
-		while (str[s])
-			print_buffer[d++] = str[s++];
+		u_get_char(str, &s, &u);
+		if (u == 0) {
+			memset(print_buffer + d, ' ', width);
+			d += width;
+			break;
+		}
 
-		memset(print_buffer + d, ' ', width - w);
-		d += width - w;
+		width -= u_char_width(u);
+		if (width < 0) {
+			/* does not fit */
+			d = ellipsis_pos;
+			print_buffer[d++] = '.';
+			print_buffer[d++] = '.';
+			print_buffer[d++] = '.';
+			break;
+		}
+		u_set_char(print_buffer, &d, u);
 	}
 	print_buffer[d++] = ' ';
 	print_buffer[d++] = 0;
@@ -868,7 +876,7 @@ static void dump_buffer(const char *buffer)
 
 static void update_commandline(void)
 {
-	int w;
+	int w, idx;
 	char ch;
 
 	move(LINES - 1, 0);
@@ -892,11 +900,13 @@ static void update_commandline(void)
 
 	if (w <= COLS - 2) {
 		addch(ch);
-		dump_buffer(cmdline.line);
+		idx = u_copy_chars(print_buffer, cmdline.line, &w);
+		print_buffer[idx] = 0;
+		dump_buffer(print_buffer);
 		clrtoeol();
 	} else {
 		/* keep cursor as far right as possible */
-		int skip, width, cw, idx;
+		int skip, width, cw;
 
 		/* cursor pos (width, not chars. doesn't count the ':') */
 		cw = u_str_nwidth(cmdline.line, cmdline.cpos);
@@ -1058,8 +1068,9 @@ static int cmdline_cursor_column(void)
 	/* beginning of cmdline is not visible */
 
 	/* check if the first visible char in cmdline would be halved
-	 * double-width character which is not possible.  we need to skip the
-	 * whole character and move cursor to COLS - 2 column. */
+	 * double-width character (or invalid byte <xx>) which is not possible.
+	 * we need to skip the whole character and move cursor to COLS - 2
+	 * column. */
 	skip = cw + 2 - COLS;
 
 	/* skip the ':' */
@@ -1069,8 +1080,8 @@ static int cmdline_cursor_column(void)
 	s = skip;
 	u_skip_chars(cmdline.line, &s);
 	if (s > skip) {
-		/* the last skipped char was double-width */
-		return COLS - 2;
+		/* the last skipped char was double-width or <xx> */
+		return COLS - 1 - (s - skip);
 	}
 	return COLS - 1;
 }
