@@ -30,8 +30,18 @@
 
 struct history_entry {
 	struct list_head node;
-	char *text;
+	char text[0];
 };
+
+static struct history_entry *history_entry_new(const char *text)
+{
+	struct history_entry *new;
+	int size = strlen(text) + 1;
+
+	new = xmalloc(sizeof(struct history_entry) + size);
+	memcpy(new->text, text, size);
+	return new;
+}
 
 static void history_add_tail(void *data, const char *line)
 {
@@ -40,8 +50,7 @@ static void history_add_tail(void *data, const char *line)
 	if (history->lines < history->max_lines) {
 		struct history_entry *new;
 
-		new = xnew(struct history_entry, 1);
-		new->text = xstrdup(line);
+		new = history_entry_new(line);
 		list_add_tail(&new->node, &history->head);
 		history->lines++;
 	}
@@ -81,8 +90,7 @@ void history_add_line(struct history *history, const char *line)
 	struct history_entry *new;
 	struct list_head *item;
 
-	new = xnew(struct history_entry, 1);
-	new->text = xstrdup(line);
+	new = history_entry_new(line);
 	list_add(&new->node, &history->head);
 	history->lines++;
 
@@ -95,7 +103,6 @@ void history_add_line(struct history *history, const char *line)
 		hentry = container_of(item, struct history_entry, node);
 		if (strcmp(hentry->text, new->text) == 0) {
 			list_del(item);
-			free(hentry->text);
 			free(hentry);
 			history->lines--;
 		}
@@ -110,7 +117,6 @@ void history_add_line(struct history *history, const char *line)
 		node = history->head.prev;
 		list_del(node);
 		hentry = list_entry(node, struct history_entry, node);
-		free(hentry->text);
 		free(hentry);
 		history->lines--;
 	}

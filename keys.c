@@ -739,15 +739,17 @@ int key_bind(const char *context, const char *key, const char *func)
 		}
 	}
 
-	b = xnew(struct binding, 1);
-	b->key = k;
-	b->func = f;
 	if (f == NULL) {
 		/* ":command", skip the ':' */
-		b->arg = xstrdup(func + 1);
+		int size = strlen(func + 1) + 1;
+
+		b = xmalloc(sizeof(struct binding) + size);
+		memcpy(b->arg, func + 1, size);
 	} else {
-		b->arg = NULL;
+		b = xnew(struct binding, 1);
 	}
+	b->key = k;
+	b->func = f;
 
 	/* insert keeping sorted by key */
 	prev = NULL;
@@ -793,7 +795,6 @@ int key_unbind(const char *context, const char *key)
 			} else {
 				key_bindings[c] = b->next;
 			}
-			free(b->arg);
 			free(b);
 			return 0;
 		}
@@ -911,10 +912,10 @@ static int handle_key(const struct binding *b, const struct key *k)
 {
 	while (b) {
 		if (b->key == k) {
-			if (b->arg != NULL)
-				run_command(b->arg);
-			else
+			if (b->func != NULL)
 				b->func->func();
+			else
+				run_command(b->arg);
 			return 1;
 		}
 		b = b->next;

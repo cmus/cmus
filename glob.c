@@ -17,7 +17,7 @@ struct glob_item {
 		GLOB_QMARK,
 		GLOB_TEXT
 	} type;
-	char *text;
+	char text[0];
 };
 
 /* simplification:
@@ -81,7 +81,6 @@ static void simplify(struct list_head *head)
 				i = i->next;
 				if (gi->type == GLOB_STAR) {
 					list_del(&gi->node);
-					free(gi->text);
 					free(gi);
 					scount--;
 				}
@@ -100,14 +99,13 @@ void glob_compile(struct list_head *head, const char *pattern)
 	while (pattern[i]) {
 		struct glob_item *item;
 
-		item = xnew(struct glob_item, 1);
 		if (pattern[i] == '*') {
+			item = xnew(struct glob_item, 1);
 			item->type = GLOB_STAR;
-			item->text = NULL;
 			i++;
 		} else if (pattern[i] == '?') {
+			item = xnew(struct glob_item, 1);
 			item->type = GLOB_QMARK;
-			item->text = NULL;
 			i++;
 		} else {
 			int start, len, j;
@@ -130,7 +128,11 @@ void glob_compile(struct list_head *head, const char *pattern)
 					len++;
 				}
 			}
-			str = xnew(char, len + 1);
+
+			item = xmalloc(sizeof(struct glob_item) + len + 1);
+			item->type = GLOB_TEXT;
+
+			str = item->text;
 			i = start;
 			j = 0;
 			while (j < len) {
@@ -146,9 +148,6 @@ void glob_compile(struct list_head *head, const char *pattern)
 				}
 			}
 			str[j] = 0;
-
-			item->type = GLOB_TEXT;
-			item->text = str;
 		}
 		list_add_tail(&item->node, head);
 	}
@@ -164,7 +163,6 @@ void glob_free(struct list_head *head)
 		struct list_head *next = item->next;
 
 		gi = container_of(item, struct glob_item, node);
-		free(gi->text);
 		free(gi);
 		item = next;
 	}

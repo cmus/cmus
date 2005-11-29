@@ -95,17 +95,20 @@ static struct job_data *job_data_new(const char *name)
 	return data;
 }
 
+static struct track_info *track_info_url_new(const char *url)
+{
+	struct track_info *ti = track_info_new(url);
+	ti->comments = xnew0(struct keyval, 1);
+	ti->duration = -1;
+	ti->mtime = -1;
+	return ti;
+}
+
 static void add_url(unsigned int flags, const char *filename)
 {
 	struct track_info *ti;
 
-	ti = xnew(struct track_info, 1);
-	ti->ref = 1;
-	ti->filename = xstrdup(filename);
-	ti->comments = xnew0(struct keyval, 1);
-	ti->duration = -1;
-	ti->mtime = -1;
-
+	ti = track_info_url_new(filename);
 	if (flags & JOB_FLAG_ENQUEUE) {
 		if (flags & JOB_FLAG_PREPEND) {
 			play_queue_prepend(ti);
@@ -527,15 +530,8 @@ struct track_info *cmus_get_track_info(const char *name)
 {
 	struct track_info *ti;
 
-	if (is_url(name)) {
-		ti = xnew(struct track_info, 1);
-		ti->ref = 1;
-		ti->filename = xstrdup(name);
-		ti->comments = xnew0(struct keyval, 1);
-		ti->duration = -1;
-		ti->mtime = -1;
-		return ti;
-	}
+	if (is_url(name))
+		return track_info_url_new(name);
 	track_db_lock();
 	ti = track_db_get_track(track_db, name);
 	track_db_unlock();

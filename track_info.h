@@ -23,16 +23,19 @@
 #include <time.h>
 
 struct track_info {
-	char *filename;
 	struct keyval *comments;
 	time_t mtime;
 	int duration;
 	int ref;
+	char filename[0];
 };
 
 #define TI_MATCH_ARTIST	(1 << 0)
 #define TI_MATCH_ALBUM	(1 << 1)
 #define TI_MATCH_TITLE	(1 << 2)
+
+/* initializes only filename and ref */
+extern struct track_info *track_info_new(const char *filename);
 
 extern void track_info_ref(struct track_info *ti);
 extern void track_info_unref(struct track_info *ti);

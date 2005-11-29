@@ -99,19 +99,14 @@ void track_db_insert(struct track_db *db, const char *filename, struct track_inf
 	}
 }
 
-static struct track_info *data_to_track_info(const void *data, unsigned int data_size)
+static int data_to_track_info(const void *data, unsigned int data_size, struct track_info *ti)
 {
-	struct track_info *ti;
-	const char *str;
+	const char *str = data;
 	int count, i;
 
 	if (data_size < 8)
-		return NULL;
-	ti = xnew(struct track_info, 1);
-	ti->ref = 1;
-	ti->filename = NULL;
+		return -1;
 
-	str = data;
 	ti->mtime = *(uint32_t *)str; str += 4;
 	ti->duration = *(uint32_t *)str; str += 4;
 
@@ -124,10 +119,8 @@ static struct track_info *data_to_track_info(const void *data, unsigned int data
 				count++;
 			pos++;
 		}
-		if (str[data_size - 9] != 0 || count % 2) {
-			free(ti);
-			return NULL;
-		}
+		if (str[data_size - 9] != 0 || count % 2)
+			return -1;
 		count /= 2;
 	}
 	ti->comments = xnew(struct keyval, count + 1);
@@ -149,7 +142,7 @@ static struct track_info *data_to_track_info(const void *data, unsigned int data
 	}
 	ti->comments[i].key = NULL;
 	ti->comments[i].val = NULL;
-	return ti;
+	return 0;
 }
 
 struct track_info *track_db_get_track(struct track_db *db, const char *filename)
@@ -165,11 +158,15 @@ struct track_info *track_db_get_track(struct track_db *db, const char *filename)
 	rc = db_query(db->db, filename, &data, &data_size);
 	if (rc == 1) {
 		/* found */
-		ti = data_to_track_info(data, data_size);
+		ti = track_info_new(filename);
+		if (data_to_track_info(data, data_size, ti)) {
+			free(ti);
+			free(data);
+			return NULL;
+		}
 		free(data);
 		if (mtime != -1 && ti->mtime == mtime) {
-			/* mtime not changed, return data */
-			ti->filename = xstrdup(filename);
+			/* mtime not changed, return the data */
 			return ti;
 		}
 
@@ -188,12 +185,12 @@ struct track_info *track_db_get_track(struct track_db *db, const char *filename)
 		d_print("INVALID: '%s'\n", filename);
 		return NULL;
 	}
-	ti = xnew(struct track_info, 1);
-	ti->ref = 1;
-	ti->filename = xstrdup(filename);
+
+	ti = track_info_new(filename);
 	ti->comments = comments;
 	ti->duration = duration;
 	ti->mtime = mtime;
+
 	track_db_insert(db, filename, ti);
 	return ti;
 }

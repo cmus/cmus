@@ -47,8 +47,10 @@ struct key {
 struct binding {
 	struct binding *next;
 	const struct key *key;
+
+	/* only one of these is used */
 	const struct key_function *func;
-	char *arg;
+	char arg[0];
 };
 
 extern const char * const key_context_names[NR_CTXS + 1];

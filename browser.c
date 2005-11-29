@@ -140,7 +140,6 @@ static void free_browser_list(void)
 		struct browser_entry *entry;
 
 		entry = list_entry(item, struct browser_entry, node);
-		free(entry->name);
 		free(entry);
 		item = next;
 	}
@@ -160,11 +159,13 @@ static int do_browser_load(const char *name)
 		free_browser_list();
 		for (i = 0; files[i]; i++) {
 			struct browser_entry *e;
+			int name_size = strlen(files[i]) + 1;
 
-			e = xnew(struct browser_entry, 1);
-			e->name = files[i];
+			e = xmalloc(sizeof(struct browser_entry) + name_size);
+			memcpy(e->name, files[i], name_size);
 			e->type = BROWSER_ENTRY_PLLINE;
 			list_add_tail(&e->node, &browser_head);
+			free(files[i]);
 		}
 		free(files);
 	} else {
@@ -182,15 +183,17 @@ static int do_browser_load(const char *name)
 		free_browser_list();
 		for (i = 0; i < count; i++) {
 			struct browser_entry *e;
+			int name_size = strlen(names[i]) + 1;
 
-			e = xnew(struct browser_entry, 1);
-			e->name = names[i];
+			e = xmalloc(sizeof(struct browser_entry) + name_size);
+			memcpy(e->name, names[i], name_size);
 			if (strchr(names[i], '/')) {
 				e->type = BROWSER_ENTRY_DIR;
 			} else {
 				e->type = BROWSER_ENTRY_FILE;
 			}
 			list_add_tail(&e->node, &browser_head);
+			free(names[i]);
 		}
 		free(names);
 	}

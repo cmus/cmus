@@ -52,7 +52,7 @@ struct token {
 	struct list_head node;
 	enum token_type type;
 	/* for TOK_KEY, TOK_INT_OR_KEY and TOK_STR */
-	char *str;
+	char str[0];
 };
 
 /* same order as TOK_* */
@@ -140,8 +140,9 @@ static struct token *get_str(const char *str, int *idxp)
 		e++;
 	}
 
-	tok = xnew(struct token, 1);
-	tok->str = xstrndup(str + s, e - s);
+	tok = xmalloc(sizeof(struct token) + e - s + 1);
+	memcpy(tok->str, str + s, e - s);
+	tok->str[e - s] = 0;
 	tok->type = TOK_STR;
 	*idxp = e + 1;
 	return tok;
@@ -176,11 +177,12 @@ static struct token *get_int_or_key(const char *str, int *idxp)
 		e++;
 	}
 out:
-	tok = xnew(struct token, 1);
+	tok = xmalloc(sizeof(struct token) + e - s + 1);
+	memcpy(tok->str, str + s, e - s);
+	tok->str[e - s] = 0;
 	tok->type = TOK_KEY;
 	if (digits_only)
 		tok->type = TOK_INT_OR_KEY;
-	tok->str = xstrndup(str + s, e - s);
 	*idxp = e;
 	return tok;
 }
@@ -199,7 +201,6 @@ static struct token *get_token(const char *str, int *idxp)
 
 		idx++;
 		tok = xnew(struct token, 1);
-		tok->str = NULL;
 		tok->type = i;
 		if (i < NR_COMBINATIONS && str[idx] == '=') {
 			tok->type = COMB_BASE + i;
@@ -221,7 +222,6 @@ static void free_tokens(struct list_head *head)
 		struct list_head *next = item->next;
 		struct token *tok = container_of(item, struct token, node);
 
-		free(tok->str);
 		free(tok);
 		item = next;
 	}
