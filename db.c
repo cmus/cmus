@@ -79,6 +79,18 @@ static void array_remove(void *array, size_t nmemb, size_t size, int idx)
 
 /* index {{{ */
 
+static uint32_t nbuf2l(const char *buf)
+{
+	uint32_t tmp;
+	int i;
+
+	tmp = 0;
+	i = 4;
+	while (i > 0)
+		tmp = (tmp << 8) + buf[--i];
+	return ntohl(tmp);
+}
+
 static int index_load(struct db *db)
 {
 	int fd, size, pos, rc, i;
@@ -109,7 +121,7 @@ static int index_load(struct db *db)
 	}
 	/* format: nr_rows, nr_rows * (pos, size, key_size, key) */
 	pos = 0;
-	db->nr_entries = ntohl(*(uint32_t *)(buf + pos)); pos += 4;
+	db->nr_entries = nbuf2l((char *)(buf + pos)); pos += 4;
 	db->entries = xnew(struct db_entry, db->nr_entries);
 	db->nr_allocated = db->nr_entries;
 	for (i = 0; i < db->nr_entries; i++) {
@@ -118,9 +130,9 @@ static int index_load(struct db *db)
 
 		if (size - pos < 3 * 4)
 			goto corrupt;
-		e->data_pos = ntohl(*(uint32_t *)(buf + pos)); pos += 4;
-		e->data_size = ntohl(*(uint32_t *)(buf + pos)); pos += 4;
-		key_size = ntohl(*(uint32_t *)(buf + pos)); pos += 4;
+		e->data_pos = nbuf2l(buf + pos); pos += 4;
+		e->data_size = nbuf2l(buf + pos); pos += 4;
+		key_size = nbuf2l(buf + pos); pos += 4;
 		if (size - pos < key_size)
 			goto corrupt;
 		e->key = xmalloc(key_size);
