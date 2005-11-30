@@ -1854,7 +1854,12 @@ void pl_sel_current(void)
 			window_set_sel(playlist.sorted_win, &iter);
 		} else {
 			playlist.cur_artist->expanded = 1;
-			playlist.cur_win = playlist.track_win;
+
+			if (playlist.cur_win != playlist.track_win) {
+				playlist.cur_win = playlist.track_win;
+				playlist.tree_win->changed = 1;
+				playlist.track_win->changed = 1;
+			}
 
 			album_to_iter(playlist.cur_album, &iter);
 			window_set_sel(playlist.tree_win, &iter);
