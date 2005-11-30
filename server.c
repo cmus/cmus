@@ -21,7 +21,7 @@
 #include <cmus.h>
 #include <player.h>
 #include <xmalloc.h>
-#include <misc.h>
+#include <prog.h>
 #include <file.h>
 #include <pl.h>
 #include <debug.h>
@@ -138,8 +138,6 @@ static cmd_func_t *commands[CMD_MAX] = {
 	cmd_mix_vol
 };
 
-extern char *program_name;
-
 static struct sockaddr_un addr;
 static int remote_socket = -1;
 
@@ -231,9 +229,7 @@ int remote_server_init(const char *address)
 		} else {
 			/* server already running */
 			close(sock);
-			die("%s: " PACKAGE " is already listening socket %s\n"
-					"Try `%s --help' for more information.\n",
-					program_name, address, program_name);
+			die(PACKAGE " is already listening on socket %s\n", address);
 		}
 	}
 	/* start listening */

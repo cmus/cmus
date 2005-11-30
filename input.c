@@ -27,7 +27,7 @@
 #include <symbol.h>
 #include <pls.h>
 #include <list.h>
-#include <misc.h>
+#include <prog.h>
 #include <debug.h>
 #include <config.h>
 

@@ -23,6 +23,7 @@
 #include <keys.h>
 #include <player.h>
 #include <misc.h>
+#include <prog.h>
 #include <cmus.h>
 #include <filters.h>
 #include <search_mode.h>

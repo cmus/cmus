@@ -23,6 +23,7 @@
 #include <sf.h>
 #include <sconf.h>
 #include <misc.h>
+#include <prog.h>
 #include <utils.h>
 #include <symbol.h>
 #include <xmalloc.h>

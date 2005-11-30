@@ -21,7 +21,6 @@
 #define _MISC_H
 
 #include <list.h>
-#include <compiler.h>
 
 extern const char *cmus_config_dir;
 extern const char *cmus_cache_dir;
@@ -32,10 +31,6 @@ extern const char *user_name;
 extern struct list_head sconf_head;
 
 char **get_words(const char *text);
-void warn(const char *format, ...) __FORMAT(1, 2);
-void warn_errno(const char *format, ...) __FORMAT(1, 2);
-void die(const char *format, ...) __FORMAT(1, 2) __NORETURN;
-void die_errno(const char *format, ...) __FORMAT(1, 2) __NORETURN;
 int misc_init(void);
 
 #endif

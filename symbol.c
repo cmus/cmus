@@ -3,7 +3,7 @@
  */
 
 #include <symbol.h>
-#include <misc.h>
+#include <prog.h>
 
 #include <dlfcn.h>
 #include <stdio.h>

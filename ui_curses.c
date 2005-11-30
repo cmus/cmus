@@ -35,10 +35,10 @@
 #include <format_print.h>
 #include <sconf.h>
 #include <misc.h>
+#include <prog.h>
 #include <uchar.h>
 #include <spawn.h>
 #include <file.h>
-#include <get_option.h>
 #include <server.h>
 #include <keys.h>
 #include <debug.h>
@@ -63,8 +63,6 @@
 #include <signal.h>
 
 /* globals. documented in ui_curses.h */
-
-char *program_name = NULL;
 
 int ui_initialized = 0;
 enum ui_curses_input_mode ui_curses_input_mode = NORMAL_MODE;
@@ -1890,15 +1888,12 @@ static int ir_init(void)
 	for (i = 0; ir_commands[i].function; i++)
 		sconf_get_str_option(&sconf_head, ir_commands[i].option, &ir_commands[i].text);
 	if (irman_device == NULL) {
-		warn("%s: irman device not set (run `" PACKAGE " --irman-config')\n",
-				program_name);
+		warn("irman device not set (run `" PACKAGE " --irman-config')\n");
 		return 1;
 	}
 	irman = irman_open(irman_device);
 	if (irman == NULL) {
-		warn("%s: error opening irman device `%s': %s\n",
-				program_name, irman_device,
-				strerror(errno));
+		warn_errno("error opening irman device `%s'", irman_device);
 		return 1;
 	}
 	irman_fd = irman_get_fd(irman);
@@ -2184,7 +2179,7 @@ static const struct player_callbacks player_callbacks = {
 	.get_next = get_next
 };
 
-static int ui_curses_init(void)
+static void ui_curses_init(void)
 {
 	int rc, btmp;
 	char *term, *sort;
@@ -2197,9 +2192,8 @@ static int ui_curses_init(void)
 
 	rc = player_init(&player_callbacks);
 	if (rc) {
-		warn("%s: could not init player\n", program_name);
 		remote_server_exit();
-		return rc;
+		die("could not initialize player\n");
 	}
 
 	pl_init();
@@ -2213,7 +2207,7 @@ static int ui_curses_init(void)
 		pl_exit();
 		player_exit();
 		remote_server_exit();
-		return rc;
+		exit(1);
 	}
 #endif
 
@@ -2260,7 +2254,6 @@ static int ui_curses_init(void)
 	keys_init();
 	playlist_autosave_filename = xstrjoin(cmus_config_dir, "/playlist.pl");
 	player_get_volume(&player_info.vol_left, &player_info.vol_right);
-	return 0;
 }
 
 static void ui_curses_exit(void)
@@ -2316,13 +2309,9 @@ static void load_config(void)
 	config_filename = xstrjoin(cmus_config_dir, "/config");
 	rc = sconf_load(&sconf_head, config_filename, &line);
 	if (rc == -SCONF_ERROR_ERRNO && errno != ENOENT)
-		die_errno("%s: error loading config file `%s'",
-				program_name,
-				config_filename);
+		die_errno("error loading config file `%s'", config_filename);
 	if (rc == -SCONF_ERROR_SYNTAX)
-		die("%s: syntax error in file `%s' on line %d\n",
-				program_name,
-				config_filename, line);
+		die("syntax error in file `%s' on line %d\n", config_filename, line);
 }
 
 enum {
@@ -2371,14 +2360,13 @@ int main(int argc, char *argv[])
 	program_name = argv[0];
 	argv++;
 	while (1) {
-		int rc, idx;
+		int idx;
 		char *arg;
 
-		rc = get_option(&argv, options, 1, &idx, &arg);
-		if (rc == 1)
+		idx = get_option(&argv, options, &arg);
+		if (idx < 0)
 			break;
-		if (rc > 1)
-			return 1;
+
 		switch (idx) {
 #if defined(CONFIG_IRMAN)
 		case FLAG_IRMAN_CONFIG:
@@ -2412,24 +2400,7 @@ int main(int argc, char *argv[])
 		server_address = xnew(char, 256);
 		snprintf(server_address, 256, "/tmp/cmus-%s", user_name);
 	}
-	if (DEBUG > 1) {
-		const char *debug_filename = "/tmp/cmus-debug";
-		FILE *f = fopen(debug_filename, "w");
-
-		if (f == NULL)
-			die_errno("%s: error opening `%s' for writing", program_name, debug_filename);
-
-		/* lots of debugging messages printed.
-		 * use log file. bugs are printed to stderr also.
-		 */
-		debug_init(f);
-	} else {
-		/*
-		 * DEBUG == 0: all debugging disabled
-		 * DEBUG == 1: only bugs are printed. use stderr instead of log file
-		 */
-		debug_init(stderr);
-	}
+	debug_init();
 	load_config();
 
 	d_print("charset = '%s'\n", charset);
@@ -2445,14 +2416,13 @@ int main(int argc, char *argv[])
 			player_dump_plugins();
 			return 0;
 		}
-		if (ui_curses_init())
-			return 1;
+		ui_curses_init();
 		ui_curses_start();
 		ui_curses_exit();
 	}
 
 	if (sconf_save(&sconf_head, config_filename))
-		warn("%s: error saving `%s': %s\n", program_name, config_filename, strerror(errno));
+		warn("error saving `%s': %s\n", config_filename, strerror(errno));
 	sconf_free(&sconf_head);
 	free(config_filename);
 	return 0;

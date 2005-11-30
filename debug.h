@@ -1,48 +1,9 @@
 /* 
  * Copyright 2004-2005 Timo Hirvonen
- * 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
- * 02111-1307, USA.
  */
 
-/*
- * DEBUG must be defined before including this file
- *
- * DEBUG levels:
- *     0:
- *     1: BUG, BUG_ON
- *     2: BUG, BUG_ON, d_print
- * 
- * void debug_init(FILE *stream)
- *     Call this before any other functions in this file.
- *     Sets the debug stream.
- *
- * void d_print(const char *format, ...)
- *     Print debugging information to the debug stream.
- *
- * void BUG(const char *format, ...)
- *     Print debugging information to the debug stream and to
- *     stderr if debug stream is NOT stdout or stderr.
- *     Exits with return value 127.
- *
- * void BUG_ON(int condition)
- *     Calls BUG if condition is true.
- */
-
-#ifndef _DEBUG_H
-#define _DEBUG_H
+#ifndef DEBUG_H
+#define DEBUG_H
 
 #include <compiler.h>
 
@@ -60,9 +21,9 @@
 #error DEBUG must be >= 0
 #endif
 
-extern void debug_init(FILE *stream);
-extern void __debug_bug(const char *function, const char *fmt, ...) __FORMAT(2, 3) __NORETURN;
-extern void __debug_print(const char *function, const char *fmt, ...) __FORMAT(2, 3);
+void debug_init(void);
+void __debug_bug(const char *function, const char *fmt, ...) __FORMAT(2, 3) __NORETURN;
+void __debug_print(const char *function, const char *fmt, ...) __FORMAT(2, 3);
 
 /* ------------------------------------------------------------------------ */
 

@@ -21,10 +21,10 @@ cmus-$(CONFIG_IRMAN)	+= irman.o irman_config.o
 
 $(cmus-y): CFLAGS += $(PTHREAD_CFLAGS) $(NCURSES_CFLAGS) $(ICONV_CFLAGS)
 
-cmus: $(cmus-y) file.o get_option.o path.o xmalloc.o
+cmus: $(cmus-y) file.o path.o prog.o xmalloc.o
 	$(call cmd,ld,$(PTHREAD_LIBS) $(NCURSES_LIBS) $(ICONV_LIBS) $(DL_LIBS) -lm)
 
-cmus-remote: main.o file.o get_option.o path.o xmalloc.o
+cmus-remote: main.o file.o path.o prog.o xmalloc.o
 	$(call cmd,ld,)
 # }}}
 

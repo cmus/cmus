@@ -18,10 +18,10 @@
  */
 
 #include <config.h>
+#include <prog.h>
 #include <file.h>
 #include <path.h>
 #include <remote.h>
-#include <get_option.h>
 #include <xmalloc.h>
 
 #include <unistd.h>
@@ -31,59 +31,39 @@
 #include <sys/socket.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <errno.h>
 
-char *program_name;
+static int sock;
 
-static int remote_connect(const char *server)
+static void remote_connect(const char *server)
 {
 	struct sockaddr_un addr;
-	int sock;
 
 	sock = socket(PF_UNIX, SOCK_STREAM, 0);
-	if (sock == -1) {
-		perror("socket");
-		exit(1);
-	}
+	if (sock == -1)
+		die_errno("socket");
 	addr.sun_family = AF_UNIX;
 	strncpy(addr.sun_path, server, sizeof(addr.sun_path) - 1);
 	if (connect(sock, (struct sockaddr *)&addr, sizeof(addr))) {
-		if (errno == ENOENT || errno == ECONNREFUSED) {
-			close(sock);
-			fprintf(stderr, "%s: " PACKAGE " is not running\n"
-					"Try `%s --help' for more information.\n",
-					program_name, program_name);
-			exit(255);
-		}
-		perror("connect");
-		close(sock);
-		exit(1);
+		if (errno == ENOENT || errno == ECONNREFUSED)
+			die(PACKAGE " is not running\n");
+		die_errno("connect");
 	}
-	return sock;
 }
 
-static int remote_send_cmd(int sock, enum remote_command cmd, void *data, size_t data_size)
+static void remote_send_cmd(enum remote_command cmd, void *data, size_t data_size)
 {
 	struct remote_command_header cmd_header;
 
 	cmd_header.cmd = cmd;
 	cmd_header.data_size = data_size;
-	if (write_all(sock, &cmd_header, sizeof(struct remote_command_header)) == -1) {
-		perror("write");
-		return -1;
-	}
+	if (write_all(sock, &cmd_header, sizeof(struct remote_command_header)) == -1)
+		die_errno("write");
 	if (data_size > 0) {
-		if (write_all(sock, data, data_size) == -1) {
-			perror("write");
-			return -1;
-		}
+		if (write_all(sock, data, data_size) == -1)
+			die_errno("write");
 	}
-	return 0;
-}
-
-static void remote_close(int sock)
-{
-	close(sock);
 }
 
 enum {
@@ -159,22 +139,21 @@ int main(int argc, char *argv[])
 {
 	char server_buf[256];
 	char *server = NULL;
-	int sock, i;
 	int volume = 0;
 	int seek = 0;
 	int nr_commands = 0;
+	int i;
 
 	program_name = argv[0];
 	argv++;
 	while (1) {
-		int rc, idx;
+		int idx;
 		char *arg;
 
-		rc = get_option(&argv, options, 1, &idx, &arg);
-		if (rc == 1)
+		idx = get_option(&argv, options, &arg);
+		if (idx < 0)
 			break;
-		if (rc > 1)
-			return 1;
+
 		flags[idx] = 1;
 		switch (idx) {
 		case FLAG_HELP:
@@ -191,10 +170,8 @@ int main(int argc, char *argv[])
 				char *end;
 
 				volume = strtol(arg, &end, 10);
-				if (*arg == 0 || *end != 0 || volume == 0) {
-					fprintf(stderr, "%s: argument for --volume must be non-zero integer\n", program_name);
-					return 1;
-				}
+				if (*arg == 0 || *end != 0 || volume == 0)
+					die("argument for --volume must be non-zero integer\n");
 				nr_commands++;
 			}
                        break;
@@ -203,10 +180,8 @@ int main(int argc, char *argv[])
 				char *end;
 
 				seek = strtol(arg, &end, 10);
-				if (*arg == 0 || *end != 0 || seek == 0) {
-					fprintf(stderr, "%s: argument for --seek must be non-zero integer\n", program_name);
-					return 1;
-				}
+				if (*arg == 0 || *end != 0 || seek == 0)
+					die("argument for --seek must be non-zero integer\n");
 				nr_commands++;
 			}
 			break;
@@ -216,12 +191,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	if (nr_commands == 0 && argv[0] == NULL) {
-		fprintf(stderr, "%s: too few arguments\n"
-				"Try `%s --help' for more information.\n",
-				program_name, program_name);
-		return 1;
-	}
+	if (nr_commands == 0 && argv[0] == NULL)
+		die("too few arguments\n");
 
 	if (server == NULL) {
 		const char *user_name;
@@ -229,18 +200,16 @@ int main(int argc, char *argv[])
 		user_name = getenv("USER");
 		if (user_name == NULL || user_name[0] == 0) {
 			user_name = getenv("USERNAME");
-			if (user_name == NULL || user_name[0] == 0) {
-				fprintf(stderr, "%s: neither USER or USERNAME environment varible is set\n", program_name);
-				return 1;
-			}
+			if (user_name == NULL || user_name[0] == 0)
+				die("neither USER or USERNAME environment varible is set\n");
 		}
 		snprintf(server_buf, sizeof(server_buf), "/tmp/cmus-%s", user_name);
 		server = server_buf;
 	}
 
-	sock = remote_connect(server);
+	remote_connect(server);
 	if (flags[FLAG_CLEAR])
-		remote_send_cmd(sock, CMD_PLCLEAR, NULL, 0);
+		remote_send_cmd(CMD_PLCLEAR, NULL, 0);
 	for (i = 0; argv[i]; i++) {
 		char *filename;
 
@@ -249,40 +218,38 @@ int main(int argc, char *argv[])
 		} else {
 			filename = path_absolute(argv[i]);
 			if (filename == NULL) {
-				fprintf(stderr, "%s: get_current_dir_name: %s\n",
-						program_name, strerror(errno));
+				warn_errno("get_current_dir_name");
 				continue;
 			}
 		}
 		if (flags[FLAG_ENQUEUE]) {
-			remote_send_cmd(sock, CMD_ENQUEUE, filename, strlen(filename) + 1);
+			remote_send_cmd(CMD_ENQUEUE, filename, strlen(filename) + 1);
 		} else {
-			remote_send_cmd(sock, CMD_PLADD, filename, strlen(filename) + 1);
+			remote_send_cmd(CMD_PLADD, filename, strlen(filename) + 1);
 		}
 		free(filename);
 	}
 	if (flags[FLAG_CONTINUE])
-		remote_send_cmd(sock, CMD_TCONT, NULL, 0);
+		remote_send_cmd(CMD_TCONT, NULL, 0);
 	if (flags[FLAG_REPEAT])
-		remote_send_cmd(sock, CMD_TREPEAT, NULL, 0);
+		remote_send_cmd(CMD_TREPEAT, NULL, 0);
 	if (flags[FLAG_PLAY_MODE])
-		remote_send_cmd(sock, CMD_TPLAYMODE, NULL, 0);
+		remote_send_cmd(CMD_TPLAYMODE, NULL, 0);
 	if (flags[FLAG_RESHUFFLE])
-		remote_send_cmd(sock, CMD_PLRESHUFFLE, NULL, 0);
+		remote_send_cmd(CMD_PLRESHUFFLE, NULL, 0);
 	if (flags[FLAG_STOP])
-		remote_send_cmd(sock, CMD_STOP, NULL, 0);
+		remote_send_cmd(CMD_STOP, NULL, 0);
 	if (flags[FLAG_NEXT])
-		remote_send_cmd(sock, CMD_NEXT, NULL, 0);
+		remote_send_cmd(CMD_NEXT, NULL, 0);
 	if (flags[FLAG_PREV])
-		remote_send_cmd(sock, CMD_PREV, NULL, 0);
+		remote_send_cmd(CMD_PREV, NULL, 0);
 	if (flags[FLAG_PLAY])
-		remote_send_cmd(sock, CMD_PLAY, NULL, 0);
+		remote_send_cmd(CMD_PLAY, NULL, 0);
 	if (flags[FLAG_PAUSE])
-		remote_send_cmd(sock, CMD_PAUSE, NULL, 0);
+		remote_send_cmd(CMD_PAUSE, NULL, 0);
 	if (volume)
-		remote_send_cmd(sock, CMD_MIX_VOL, &volume, sizeof(int));
+		remote_send_cmd(CMD_MIX_VOL, &volume, sizeof(int));
 	if (seek)
-		remote_send_cmd(sock, CMD_SEEK, &seek, sizeof(int));
-	remote_close(sock);
+		remote_send_cmd(CMD_SEEK, &seek, sizeof(int));
 	return 0;
 }
