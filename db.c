@@ -33,8 +33,7 @@
 struct db_entry {
 	uint32_t data_pos;
 	uint32_t data_size;
-	uint32_t key_size;
-	void *key;
+	char *key;
 };
 
 struct db {
@@ -115,17 +114,18 @@ static int index_load(struct db *db)
 	db->nr_allocated = db->nr_entries;
 	for (i = 0; i < db->nr_entries; i++) {
 		struct db_entry *e = &db->entries[i];
+		uint32_t key_size;
 
 		if (size - pos < 3 * 4)
 			goto corrupt;
 		e->data_pos = ntohl(*(uint32_t *)(buf + pos)); pos += 4;
 		e->data_size = ntohl(*(uint32_t *)(buf + pos)); pos += 4;
-		e->key_size = ntohl(*(uint32_t *)(buf + pos)); pos += 4;
-		if (size - pos < e->key_size)
+		key_size = ntohl(*(uint32_t *)(buf + pos)); pos += 4;
+		if (size - pos < key_size)
 			goto corrupt;
-		e->key = xmalloc(e->key_size);
-		memcpy(e->key, buf + pos, e->key_size);
-		pos += e->key_size;
+		e->key = xmalloc(key_size);
+		memcpy(e->key, buf + pos, key_size);
+		pos += key_size;
 	}
 	free(buf);
 	return 0;
@@ -150,16 +150,18 @@ static int index_save(struct db *db)
 	if (write_all(fd, &data, 4) != 4)
 		goto err;
 	for (i = 0; i < db->nr_entries; i++) {
+		uint32_t key_size = strlen(db->entries[i].key) + 1;
+
 		data = htonl(db->entries[i].data_pos);
 		if (write_all(fd, &data, 4) != 4)
 			goto err;
 		data = htonl(db->entries[i].data_size);
 		if (write_all(fd, &data, 4) != 4)
 			goto err;
-		data = htonl(db->entries[i].key_size);
+		data = htonl(key_size);
 		if (write_all(fd, &data, 4) != 4)
 			goto err;
-		if (write_all(fd, db->entries[i].key, db->entries[i].key_size) != db->entries[i].key_size)
+		if (write_all(fd, db->entries[i].key, key_size) != key_size)
 			goto err;
 	}
 	close(fd);
@@ -182,15 +184,15 @@ static void index_free(struct db *db)
 	db->nr_allocated = 0;
 }
 
-static struct db_entry *index_search(struct db *db, const void *key)
+static struct db_entry *index_search(struct db *db, const char *key)
 {
 	struct db_entry k;
 
-	k.key = (void *)key;
+	k.key = (char *)key;
 	return bsearch(&k, db->entries, db->nr_entries, sizeof(struct db_entry), db_entry_cmp);
 }
 
-static int index_remove(struct db *db, const void *key, unsigned int key_size)
+static int index_remove(struct db *db, const char *key)
 {
 	struct db_entry *e;
 
@@ -239,7 +241,6 @@ static int iq_flush(struct db *db)
 
 		d->data_pos = pos;
 		d->data_size = s->data_size;
-		d->key_size = s->key_size;
 		d->key = s->key;
 		db->nr_entries++;
 		pos += d->data_size;
@@ -261,7 +262,7 @@ static int iq_search(struct db *db, const void *key)
 	return -1;
 }
 
-static int iq_remove(struct db *db, const void *key, unsigned int key_size)
+static int iq_remove(struct db *db, const char *key)
 {
 	int i;
 
@@ -335,7 +336,7 @@ int db_close(struct db *db)
 	return rc;
 }
 
-int db_insert(struct db *db, void *key, unsigned int key_size, void *data, unsigned int data_size)
+int db_insert(struct db *db, char *key, void *data, unsigned int data_size)
 {
 	int i;
 
@@ -347,23 +348,22 @@ int db_insert(struct db *db, void *key, unsigned int key_size, void *data, unsig
 	i = db->iq_fill;
 	db->iq_entries[i].data_pos = 0;
 	db->iq_entries[i].data_size = data_size;
-	db->iq_entries[i].key_size = key_size;
 	db->iq_entries[i].key = key;
 	db->iq_datas[i] = data;
 	db->iq_fill++;
 	return 0;
 }
 
-int db_remove(struct db *db, const void *key, unsigned int key_size)
+int db_remove(struct db *db, const char *key)
 {
-	if (index_remove(db, key, key_size))
+	if (index_remove(db, key))
 		return 1;
-	if (iq_remove(db, key, key_size))
+	if (iq_remove(db, key))
 		return 1;
 	return 0;
 }
 
-int db_query(struct db *db, const void *key, void **datap, unsigned int *data_sizep)
+int db_query(struct db *db, const char *key, void **datap, unsigned int *data_sizep)
 {
 	struct db_entry *e;
 	void *buf;

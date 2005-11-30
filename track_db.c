@@ -92,7 +92,7 @@ void track_db_insert(struct track_db *db, const char *filename, struct track_inf
 		ptr += size;
 	}
 	key = xstrdup(filename);
-	rc = db_insert(db->db, key, strlen(key) + 1, data, data_size);
+	rc = db_insert(db->db, key, data, data_size);
 	if (rc) {
 		d_print("error: %s\n", strerror(errno));
 		free(data);
@@ -171,7 +171,7 @@ struct track_info *track_db_get_track(struct track_db *db, const char *filename)
 		}
 
 		/* db data not up to date, remove data  */
-		db_remove(db->db, filename, strlen(filename) + 1);
+		db_remove(db->db, filename);
 		track_info_unref(ti);
 	} else if (rc == 0) {
 		/* not found */
