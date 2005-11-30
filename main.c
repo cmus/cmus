@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
 	char *server = NULL;
 	int volume = 0;
 	int seek = 0;
-	int nr_commands = 0;
+	int need_file_args = 1;
 	int i;
 
 	program_name = argv[0];
@@ -172,7 +172,7 @@ int main(int argc, char *argv[])
 				volume = strtol(arg, &end, 10);
 				if (*arg == 0 || *end != 0 || volume == 0)
 					die("argument for --volume must be non-zero integer\n");
-				nr_commands++;
+				need_file_args = 0;
 			}
                        break;
 		case FLAG_SEEK:
@@ -182,16 +182,18 @@ int main(int argc, char *argv[])
 				seek = strtol(arg, &end, 10);
 				if (*arg == 0 || *end != 0 || seek == 0)
 					die("argument for --seek must be non-zero integer\n");
-				nr_commands++;
+				need_file_args = 0;
 			}
 			break;
+		case FLAG_ENQUEUE:
+			break;
 		default:
-			nr_commands++;
+			need_file_args = 0;
 			break;
 		}
 	}
 
-	if (nr_commands == 0 && argv[0] == NULL)
+	if (need_file_args && argv[0] == NULL)
 		die("too few arguments\n");
 
 	if (server == NULL) {
