@@ -457,15 +457,17 @@ static const struct {
 	const char *key;
 	enum expr_type type;
 } builtin[] = {
-	{ "filename",	EXPR_STR },
-	{ "artist",	EXPR_STR },
 	{ "album",	EXPR_STR },
-	{ "title",	EXPR_STR },
-	{ "genre",	EXPR_STR },
+	{ "artist",	EXPR_STR },
 	{ "date",	EXPR_INT },
+	{ "discnumber",	EXPR_INT },
 	{ "duration",	EXPR_INT },
+	{ "filename",	EXPR_STR },
+	{ "genre",	EXPR_STR },
 	{ "stream",	EXPR_BOOL },
 	{ "tag",	EXPR_BOOL },
+	{ "title",	EXPR_STR },
+	{ "tracknumber",EXPR_INT },
 	{ NULL,		-1 },
 };
 
@@ -485,14 +487,19 @@ int expr_check_leaves(struct expr **exprp, const char *(*get_filter)(const char 
 	}
 
 	for (i = 0; builtin[i].key; i++) {
-		if (strcmp(builtin[i].key, expr->key) == 0) {
-			if (builtin[i].type != expr->type) {
-				/* type mismatch */
-				set_error("%s is %s", builtin[i].key, expr_names[builtin[i].type]);
-				return -1;
-			}
-			return 0;
+		int cmp = strcmp(expr->key, builtin[i].key);
+
+		if (cmp > 0)
+			continue;
+		if (cmp < 0)
+			break;
+
+		if (builtin[i].type != expr->type) {
+			/* type mismatch */
+			set_error("%s is %s", builtin[i].key, expr_names[builtin[i].type]);
+			return -1;
 		}
+		return 0;
 	}
 	if (expr->type != EXPR_BOOL) {
 		/* unknown key */
