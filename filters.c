@@ -354,5 +354,6 @@ void filters_set_anonymous(const char *val)
 	list_for_each_entry(f, &filters_head, node)
 		f->active = 0;
 	pl_set_filter(e);
-}
 
+	filters_win->changed = 1;
+}
