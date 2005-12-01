@@ -79,16 +79,16 @@ static void array_remove(void *array, size_t nmemb, size_t size, int idx)
 
 /* index {{{ */
 
-static uint32_t nbuf2l(const char *buf)
+static uint32_t nbuf2l(const char *buffer)
 {
+	const unsigned char *buf = (const unsigned char *)buffer;
 	uint32_t tmp;
-	int i;
 
-	tmp = 0;
-	i = 4;
-	while (i > 0)
-		tmp = (tmp << 8) + buf[--i];
-	return ntohl(tmp);
+	tmp  = buf[0] << 24;
+	tmp |= buf[1] << 16;
+	tmp |= buf[2] << 8;
+	tmp |= buf[3];
+	return tmp;
 }
 
 static int index_load(struct db *db)
