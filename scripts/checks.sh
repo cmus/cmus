@@ -92,6 +92,12 @@ check_cc()
 	var_default SOFLAGS "-fPIC"
 	if check_program $CC
 	then
+		case $(uname -s) in
+			*BSD)
+				CFLAGS="$CFLAGS -I/usr/local/include"
+				LDFLAGS="$LDFLAGS -L/usr/local/lib"
+				;;
+		esac
 		makefile_env_vars CC LD CFLAGS LDFLAGS SOFLAGS
 		if check_cc_flag -MT /dev/null -MD -MP -MF /dev/null
 		then
@@ -113,6 +119,12 @@ check_cxx()
 	var_default CXXLDFLAGS ""
 	if check_program $CXX
 	then
+		case $(uname -s) in
+			*BSD)
+				CXXFLAGS="$CXXFLAGS -I/usr/local/include"
+				CXXLDFLAGS="$CXXLDFLAGS -L/usr/local/lib"
+				;;
+		esac
 		makefile_env_vars CXX CXXLD CXXFLAGS CXXLDFLAGS
 		if check_cxx_flag -MT /dev/null -MD -MP -MF /dev/null
 		then
@@ -418,12 +430,12 @@ check_pthread()
 # defines DL_LIBS in config.mk
 check_dl()
 {
-	local libs="-ldl -rdynamic"
+	local libs="-ldl -Wl,--export-dynamic"
 
 	msg_checking "dynamic linking loader"
 	if ! try_link "$libs" 2>/dev/null
 	then
-		libs="-rdynamic"
+		libs="-Wl,--export-dynamic"
 	fi
 	msg_result "$libs"
 	makefile_var DL_LIBS "$libs"
