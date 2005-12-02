@@ -713,7 +713,10 @@ void player_init_plugins(void)
 int player_init(const struct player_callbacks *callbacks)
 {
 	int rc, nr_chunks;
-	pthread_attr_t attr, *attrp;
+#if defined(__linux__) || defined(__FreeBSD__)
+	pthread_attr_t attr;
+#endif
+	pthread_attr_t *attrp = NULL;
 
 	/*  1 s is 176400 B (0.168 MB)
 	 * 10 s is 1.68 MB
@@ -732,12 +735,12 @@ int player_init(const struct player_callbacks *callbacks)
 		return rc;
 	}
 
+#if defined(__linux__) || defined(__FreeBSD__)
 	rc = pthread_attr_init(&attr);
 	BUG_ON(rc);
 	rc = pthread_attr_setschedpolicy(&attr, SCHED_RR);
 	if (rc) {
 		d_print("could not set real-time scheduling priority: %s\n", strerror(rc));
-		attrp = NULL;
 	} else {
 		struct sched_param param;
 
@@ -748,6 +751,7 @@ int player_init(const struct player_callbacks *callbacks)
 		BUG_ON(rc);
 		attrp = &attr;
 	}
+#endif
 
 	rc = pthread_create(&producer_thread, NULL, producer_loop, NULL);
 	BUG_ON(rc);
