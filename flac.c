@@ -29,6 +29,10 @@
 #include <unistd.h>
 #include <errno.h>
 
+#ifndef UINT64_MAX
+#define UINT64_MAX ((uint64_t)-1)
+#endif
+
 /* Reduce typing.  Namespaces are nice but FLAC API is fscking ridiculous.  */
 
 /* functions, types, enums */

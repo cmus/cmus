@@ -34,10 +34,12 @@ check_ncurses()
 
 check_flac()
 {
-	if check_lib FLAC -lFLAC
+	local libs="-lFLAC -lm"
+
+	if check_lib "FLAC ($libs)" "$libs"
 	then
 		makefile_var FLAC_CFLAGS ""
-		makefile_var FLAC_LIBS -lFLAC
+		makefile_var FLAC_LIBS "$libs"
 		return 0
 	fi
 	return 1
