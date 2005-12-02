@@ -289,25 +289,27 @@ activated filters will be shown in the playlist (views 1-3).  Filters do not
 change the actual playlist content, i.e.  ``:save`` command will still save
 all tracks to playlist file whether they are visible or not.
 
-========  =======  ===========
-Filter    Type     Description
-========  =======  ===========
-filename  string   filename or URI
-artist    string
-album     string
-title     string
-genre     string   music genre
-date      integer  year
-duration  integer  seconds
-stream    boolean  true if track is a stream
-tag       boolean  true if track has tags
-========  =======  ===========
+===========  =======  ===========
+Filter       Type     Description
+===========  =======  ===========
+filename     string   filename or URI
+artist       string
+album        string
+title        string
+genre        string   music genre
+discnumber   integer
+tracknumber  integer
+date         integer  year
+duration     integer  seconds
+stream       boolean  true if track is a stream
+tag          boolean  true if track has tags
+===========  =======  ===========
 
 Strings are case insensitive. ``?`` matches exactly one character and ``*``
 zero or more characters.  To match literal '?' or '*' you need to escape it
 with backslash ('\\?' and '\\*', to get literal backslash use '\\\\').
 
-Integers are non-zero and -1 means the value is not set.  For example
+Integers are non-negative and -1 means the value is not set.  For example
 ``date=-1`` tests if date is not set.
 
 ========  ===========
