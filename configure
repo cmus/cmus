@@ -8,13 +8,26 @@ PACKAGE_BUGREPORT="tihirvon@gmail.com"
 
 check_ncurses()
 {
-	local libs=-lncursesw
+	local libs1=-lncursesw
+	local libs2=-lncurses
 
-	if check_lib "ncurses ($libs)" "$libs"
+	if check_lib "ncurses ($libs1)" "$libs1"
 	then
+		widechars=yes
 		makefile_var NCURSES_CFLAGS ""
-		makefile_var NCURSES_LIBS "$libs"
+		makefile_var NCURSES_LIBS "$libs1"
 		return 0
+	else
+		if check_lib "ncurses ($libs2)" "$libs2"
+		then
+			widechars=no
+			echo "*** WARNING: Your ncurses does not support wide characters!"
+			echo "*** WARNING: Install ncursesw if you need wide character support,"
+			echo "*** WARNING: you can ignore this warning otherwise."
+			makefile_var NCURSES_CFLAGS ""
+			makefile_var NCURSES_LIBS "$libs2"
+			return 0
+		fi
 	fi
 	return 1
 }
@@ -173,6 +186,7 @@ sed -e "s:@VERSION@:${VERSION}:g" < "cmus.spec.in" > cmus.spec
 print_config
 
 cat <<EOF
+wide char support:   ${widechars}
 
 Compiler Settings:
 CC:                  ${CC}
