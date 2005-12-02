@@ -149,7 +149,12 @@ flag_debug()
 
 flag_dev()
 {
-	CFLAGS="-std=gnu99 -O2 -ggdb -Wall -Wshadow -Wdeclaration-after-statement -Wredundant-decls -Wmissing-prototypes -Werror -pipe"
+	# add these flags only if gcc supports them
+	local extra="-Wdeclaration-after-statement"
+
+	# has to be run in subshell
+	( ${CC:-${CROSS}gcc} "$extra" -S -o /dev/null -x c /dev/null &> /dev/null ) || extra=""
+	CFLAGS="-std=gnu99 -O2 -ggdb -Wall -Wshadow -Wredundant-decls -Wmissing-prototypes ${extra} -Werror -pipe"
 	DEBUG=2
 	prefix=$HOME
 }
