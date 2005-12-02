@@ -61,6 +61,7 @@
 #include <langinfo.h>
 #include <iconv.h>
 #include <signal.h>
+#include <stdarg.h>
 
 /* globals. documented in ui_curses.h */
 
