@@ -86,15 +86,31 @@ check_arts()
 
 check_oss()
 {
-	msg_checking "for header /usr/include/sys/soundcard.h"
-	if test -f /usr/include/sys/soundcard.h
-	then
-		msg_result "yes"
-		return 0
-	else
-		msg_result "no"
-		return 1
-	fi
+	case $(uname -s) in
+		*BSD)
+			OSS_CFLAGS=""
+			OSS_LIBS="-lossaudio"
+			if check_lib "OSS ($OSS_LIBS)" "$OSS_LIBS"
+			then
+				makefile_env_vars OSS_CFLAGS OSS_LIBS
+				return 0
+			fi
+			;;
+		*)
+			OSS_CFLAGS=""
+			OSS_LIBS=""
+			msg_checking "for header <sys/soundcard.h>"
+			if test -f /usr/include/sys/soundcard.h
+			then
+				msg_result "yes"
+				makefile_env_vars OSS_CFLAGS OSS_LIBS
+				return 0
+			else
+				msg_result "no"
+			fi
+			;;
+	esac
+	return 1
 }
 
 flag_dir()

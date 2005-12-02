@@ -22,7 +22,11 @@
 #include <xmalloc.h>
 #include <debug.h>
 
+#if defined(__OpenBSD__)
+#include <soundcard.h>
+#else
 #include <sys/soundcard.h>
+#endif
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/stat.h>

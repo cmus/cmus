@@ -27,7 +27,11 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+#if defined(__OpenBSD__)
+#include <soundcard.h>
+#else
 #include <sys/soundcard.h>
+#endif
 
 enum {
 	OSS_MIXER_CHANNEL_VOLUME,

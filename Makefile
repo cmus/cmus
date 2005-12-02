@@ -73,6 +73,7 @@ op-$(CONFIG_OSS)	+= oss.so
 
 $(alsa-objs): CFLAGS	+= $(ALSA_CFLAGS)
 $(arts-objs): CFLAGS	+= $(ARTS_CFLAGS)
+$(oss-objs):  CFLAGS	+= $(OSS_CFLAGS)
 
 alsa.so: $(alsa-objs)
 	$(call cmd,ld_so,$(ALSA_LIBS))
@@ -81,7 +82,7 @@ arts.so: $(arts-objs)
 	$(call cmd,ld_so,$(ARTS_LIBS))
 
 oss.so: $(oss-objs)
-	$(call cmd,ld_so,)
+	$(call cmd,ld_so,$(OSS_LIBS))
 # }}}
 
 # doc {{{
