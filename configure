@@ -113,6 +113,19 @@ check_oss()
 	return 1
 }
 
+check_sun()
+{
+	msg_checking "for header <sys/audioio.h>"
+	if test -f /usr/include/sys/audioio.h
+	then
+		msg_result "yes"
+		return 0
+	else
+		msg_result "no"
+		return 1
+	fi
+}
+
 flag_dir()
 {
 	set_var $1 "$2"
@@ -171,6 +184,7 @@ enable_flag wav     yes  CONFIG_WAV     "WAV support"
 enable_flag alsa    auto CONFIG_ALSA    "ALSA support"
 enable_flag arts    auto CONFIG_ARTS    "ARTS support"
 enable_flag oss     auto CONFIG_OSS     "Open Sound System support"
+enable_flag sun     auto CONFIG_SUN     "Sun Audio support"
 
 enable_use_config_h yes
 

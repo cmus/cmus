@@ -66,14 +66,17 @@ wav.so: $(wav-objs)
 alsa-objs		:= alsa.lo mixer_alsa.lo
 arts-objs		:= arts.lo
 oss-objs		:= oss.lo mixer_oss.lo
+sun-objs		:= sun.lo mixer_sun.lo
 
 op-$(CONFIG_ALSA)	+= alsa.so
 op-$(CONFIG_ARTS)	+= arts.so
 op-$(CONFIG_OSS)	+= oss.so
+op-$(CONFIG_SUN)	+= sun.so
 
 $(alsa-objs): CFLAGS	+= $(ALSA_CFLAGS)
 $(arts-objs): CFLAGS	+= $(ARTS_CFLAGS)
 $(oss-objs):  CFLAGS	+= $(OSS_CFLAGS)
+$(sun-objs):  CFLAGS	+= $(SUN_CFLAGS)
 
 alsa.so: $(alsa-objs)
 	$(call cmd,ld_so,$(ALSA_LIBS))
@@ -83,6 +86,9 @@ arts.so: $(arts-objs)
 
 oss.so: $(oss-objs)
 	$(call cmd,ld_so,$(OSS_LIBS))
+
+sun.so: $(sun-objs)
+	$(call cmd,ld_so,$(SUN_LIBS))
 # }}}
 
 # doc {{{
