@@ -186,7 +186,7 @@ static int oss_write(const char *buffer, int count)
 
 static int oss_pause(void)
 {
-	if (ioctl(oss_fd, SNDCTL_DSP_POST) == -1)
+	if (ioctl(oss_fd, SNDCTL_DSP_POST, NULL) == -1)
 		return -1;
 	return 0;
 }
