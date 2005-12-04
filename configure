@@ -51,7 +51,7 @@ check_vorbis()
 check_alsa()
 {
 	# the alsa.pc file should be always available
-	pkg_check_modules alsa "alsaX"
+	pkg_check_modules alsa "alsa"
 	return $?
 }
 
