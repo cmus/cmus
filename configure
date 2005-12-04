@@ -8,75 +8,50 @@ PACKAGE_BUGREPORT="tihirvon@gmail.com"
 
 check_ncurses()
 {
-	local libs1=-lncursesw
-	local libs2=-lncurses
-
-	if check_lib "ncurses ($libs1)" "$libs1"
+	if check_library ncurses "" -lncursesw
 	then
 		widechars=yes
-		makefile_var NCURSES_CFLAGS ""
-		makefile_var NCURSES_LIBS "$libs1"
 		return 0
-	else
-		if check_lib "ncurses ($libs2)" "$libs2"
-		then
-			widechars=no
-			echo "*** WARNING: Your ncurses does not support wide characters!"
-			echo "*** WARNING: Install ncursesw if you need wide character support,"
-			echo "*** WARNING: you can ignore this warning otherwise."
-			makefile_var NCURSES_CFLAGS ""
-			makefile_var NCURSES_LIBS "$libs2"
-			return 0
-		fi
+	fi
+	if check_library ncurses "" -lncurses
+	then
+		widechars=no
+		echo "*** WARNING: Your ncurses does not support wide characters!"
+		echo "*** WARNING: Install ncursesw if you need wide character support,"
+		echo "*** WARNING: you can ignore this warning otherwise."
+		return 0
 	fi
 	return 1
 }
 
 check_flac()
 {
-	local libs="-lFLAC -lm"
-
-	if check_lib "FLAC ($libs)" "$libs"
-	then
-		makefile_var FLAC_CFLAGS ""
-		makefile_var FLAC_LIBS "$libs"
-		return 0
-	fi
-	return 1
+	check_library FLAC "" "-lFLAC -lm"
+	return $?
 }
 
 check_mad()
 {
-	local libs="-lmad -lm"
-
-	if pkg_check_modules mad "mad"
-	then
-		return 0
-	fi
-	if check_lib "mad ($libs)" "$libs"
-	then
-		makefile_var MAD_CFLAGS ""
-		makefile_var MAD_LIBS "$libs"
-		return 0
-	fi
-	return 1
+	pkg_check_modules mad "mad" "" "-lmad -lm"
+	return $?
 }
 
 check_modplug()
 {
-	pkg_check_modules modplug "libmodplug"
+	pkg_check_modules modplug "libmodplug" "-I/usr/include/libmodplug" "-lmodplug -lstdc++ -lm"
 	return $?
 }
 
 check_vorbis()
 {
-	pkg_check_modules vorbis "vorbisfile"
+	pkg_check_modules vorbis "vorbisfile" "" "-lvorbisfile -lvorbis -lm -logg"
 	return $?
 }
 
 check_alsa()
 {
-	pkg_check_modules alsa "alsa"
+	# the alsa.pc file should be always available
+	pkg_check_modules alsa "alsaX"
 	return $?
 }
 
@@ -89,29 +64,28 @@ check_arts()
 check_oss()
 {
 	case $(uname -s) in
+		Linux|FreeBSD)
+			;;
 		*BSD)
-			OSS_CFLAGS=""
-			OSS_LIBS="-lossaudio"
-			if check_lib "OSS ($OSS_LIBS)" "$OSS_LIBS"
-			then
-				makefile_env_vars OSS_CFLAGS OSS_LIBS
-				return 0
-			fi
+			check_library OSS "" "-lossaudio"
+			return $?
 			;;
 		*)
-			OSS_CFLAGS=""
-			OSS_LIBS=""
-			msg_checking "for header <sys/soundcard.h>"
-			if test -f /usr/include/sys/soundcard.h
-			then
-				msg_result "yes"
-				makefile_env_vars OSS_CFLAGS OSS_LIBS
-				return 0
-			else
-				msg_result "no"
-			fi
+			# unknown
 			;;
 	esac
+
+	OSS_CFLAGS=""
+	OSS_LIBS=""
+	msg_checking "for header <sys/soundcard.h>"
+	if test -f /usr/include/sys/soundcard.h
+	then
+		msg_result "yes"
+		makefile_env_vars OSS_CFLAGS OSS_LIBS
+		return 0
+	else
+		msg_result "no"
+	fi
 	return 1
 }
 

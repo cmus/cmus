@@ -176,10 +176,38 @@ check_pkgconfig()
 	return 0
 }
 
+# check if library is installed and add FOO_CFLAGS and FOO_LIBS to config.mk
+#
+# @name:    user visible name (e.g. 'ncurses')
+# @cflags:  CFLAGS for the lib
+# @libs:    LIBS to check
+#
+# adds @name_CFLAGS and @name_LIBS (both upper case) to config.mk
+check_library()
+{
+	local name cflags libs uc
+
+	argc check_library $# 3 3
+	name="$1"
+	cflags="$2"
+	libs="$3"
+	uc=$(echo $name | to_upper)
+
+	if check_lib "$name ($libs)" "$libs"
+	then
+		makefile_var ${uc}_CFLAGS "$cflags"
+		makefile_var ${uc}_LIBS "$libs"
+		return 0
+	fi
+	return 1
+}
+
 # run pkg-config
 #
 # @name:    name
-# @modules: 
+# @modules: the argument for pkg-config
+# @cflags:  CFLAGS to use if pkg-config failed (optional)
+# @libs:    LIBS to use if pkg-config failed (optional)
 #
 # example:
 #   ---
@@ -194,47 +222,56 @@ check_pkgconfig()
 #   GLIB_CFLAGS and GLIB_LIBS are automatically added to Makefile
 pkg_check_modules()
 {
-	local name modules
+	local name modules cflags libs uc
 
-	argc pkg_check_modules $# 2 2
+	argc pkg_check_modules $# 2 4
 	name="$1"
 	modules="$2"
+
+	# optional
+	cflags="$3"
+	libs="$4"
+
+	uc=$(echo $name | to_upper)
 	
 	check_pkgconfig
-	if test "$PKG_CONFIG" = "no"
+	msg_checking "$modules (pkg-config)"
+	if test "$PKG_CONFIG" != "no" && $PKG_CONFIG --exists "$modules"
 	then
-		msg_error "*** The pkg-config script could not be found. Make sure it is"
-		msg_error "*** in your path, or set the PKG_CONFIG environment variable"
-		msg_error "*** to the full path to pkg-config."
-		msg_error "*** Or see http://www.freedesktop.org/software/pkgconfig to get pkg-config."
-		return 1
-	fi
-
-	msg_checking "$modules"
-	if $PKG_CONFIG --exists "$modules"
-	then
-		local uc
-
+		# pkg-config is installed and the .pc file exists
 		msg_result "yes"
-		uc=$(echo $name | to_upper)
 
 		msg_checking "CFLAGS for $name"
-		set_var ${uc}_CFLAGS "$($PKG_CONFIG --cflags ""$modules"")"
-		msg_result $(get_var ${uc}_CFLAGS)
+		cflags="$($PKG_CONFIG --cflags ""$modules"")"
+		msg_result "$cflags"
 
 		msg_checking "LIBS for $name"
-		set_var ${uc}_LIBS "$($PKG_CONFIG --libs ""$modules"")"
-		msg_result $(get_var ${uc}_LIBS)
+		libs="$($PKG_CONFIG --libs ""$modules"")"
+		msg_result "$libs"
 
-		module_names="$module_names $uc"
+		makefile_var ${uc}_CFLAGS "$cflags"
+		makefile_var ${uc}_LIBS "$libs"
 		return 0
-	else
-		msg_result "no"
+	fi
 
-		$PKG_CONFIG --errors-to-stdout --print-errors "$modules"
-		msg_error "Library requirements (${modules}) not met; consider adjusting the PKG_CONFIG_PATH environment variable if your libraries are in a nonstandard prefix so pkg-config can find them."
+	# no pkg-config or .pc file
+	msg_result "no"
+
+	if test -z "$libs"
+	then
+		if test "$PKG_CONFIG" = "no"
+		then
+			# pkg-config not installed and no libs to check were given
+			msg_error "*** pkg-config required for $name ($modules)"
+		else
+			# pkg-config is installed but the required .pc file wasn't found
+			$PKG_CONFIG --errors-to-stdout --print-errors "$modules" | sed 's:^:*** :'
+		fi
 		return 1
 	fi
+
+	check_library "$name" "$cflags" "$libs"
+	return $?
 }
 
 # run <name>-config
@@ -255,7 +292,7 @@ pkg_check_modules()
 #   CPPUNIT_CFLAGS and CPPUNIT_LIBS are automatically added to Makefile
 app_config()
 {
-	local name program uc
+	local name program uc cflags libs
 
 	argc app_config $# 1 2
 	name="$1"
@@ -266,7 +303,7 @@ app_config()
 		program="$2"
 	fi
 
-	msg_checking "$name"
+	msg_checking "$name (${program})"
 	program=$(path_find "$program")
 	if test $? -ne 0
 	then
@@ -278,14 +315,15 @@ app_config()
 	uc=$(echo $name | to_upper)
 
 	msg_checking "CFLAGS for $name"
-	set_var ${uc}_CFLAGS "$($program --cflags)"
-	msg_result $(get_var ${uc}_CFLAGS)
+	cflags="$($program --cflags)"
+	msg_result "$cflags"
 
 	msg_checking "LIBS for $name"
-	set_var ${uc}_LIBS "$($program --libs)"
-	msg_result $(get_var ${uc}_LIBS)
+	libs="$($program --libs)"
+	msg_result "$libs"
 
-	module_names="$module_names $uc"
+	makefile_var ${uc}_CFLAGS "$cflags"
+	makefile_var ${uc}_LIBS "$libs"
 	return 0
 }
 
@@ -360,6 +398,9 @@ int main(int argc, char *argv[])
 	return 0
 }
 
+# check if linking against @ldadd is possible
+# use check_library instead if possible
+#
 # @name:   user visible name
 # @ldadd:  arg passed to try_link
 check_lib()
@@ -378,7 +419,6 @@ check_lib()
 		return 0
 	else
 		msg_result "no"
-		#msg_error "$output"
 		return 1
 	fi
 }

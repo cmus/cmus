@@ -6,9 +6,6 @@
 
 # locals {{{
 
-# pkg_check_modules, app_config
-module_names=""
-
 # --enable-$NAME flags
 # $NAME must contain only [a-z0-9-] characters
 enable_flags=""
@@ -152,11 +149,6 @@ set_makefile_variables()
 			fi
 			makefile_var $var $v
 		fi
-	done
-
-	for i in $module_names
-	do
-		makefile_env_vars ${i}_CFLAGS ${i}_LIBS
 	done
 }
 
