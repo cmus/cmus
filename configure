@@ -13,7 +13,7 @@ check_ncurses()
 		widechars=yes
 		return 0
 	fi
-	if check_library ncurses "" -lncurses
+	if check_library ncurses "" -lncurses || check_library ncurses "" -lcurses
 	then
 		widechars=no
 		msg_error "Your ncurses does not support wide characters!"
