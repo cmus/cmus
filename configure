@@ -16,9 +16,9 @@ check_ncurses()
 	if check_library ncurses "" -lncurses
 	then
 		widechars=no
-		echo "*** WARNING: Your ncurses does not support wide characters!"
-		echo "*** WARNING: Install ncursesw if you need wide character support,"
-		echo "*** WARNING: you can ignore this warning otherwise."
+		msg_error "Your ncurses does not support wide characters!"
+		msg_error "Install ncursesw if you need wide character support,"
+		msg_error "you can ignore this warning otherwise."
 		return 0
 	fi
 	return 1

@@ -16,7 +16,7 @@ msg_result()
 
 msg_error()
 {
-	echo "$@"
+	echo "*** $@"
 }
 
 # @program: program to check
@@ -236,7 +236,7 @@ pkg_check_modules()
 	
 	check_pkgconfig
 	msg_checking "$modules (pkg-config)"
-	if test "$PKG_CONFIG" != "no" && $PKG_CONFIG --exists "$modules"
+	if test "$PKG_CONFIG" != "no" && $PKG_CONFIG --exists "$modules" >/dev/null 2>&1
 	then
 		# pkg-config is installed and the .pc file exists
 		msg_result "yes"
@@ -262,7 +262,7 @@ pkg_check_modules()
 		if test "$PKG_CONFIG" = "no"
 		then
 			# pkg-config not installed and no libs to check were given
-			msg_error "*** pkg-config required for $name ($modules)"
+			msg_error "pkg-config required for $name"
 		else
 			# pkg-config is installed but the required .pc file wasn't found
 			$PKG_CONFIG --errors-to-stdout --print-errors "$modules" | sed 's:^:*** :'
@@ -307,7 +307,7 @@ app_config()
 	program=$(path_find "$program")
 	if test $? -ne 0
 	then
-		msg_error "no"
+		msg_result "no"
 		return 1
 	fi
 
