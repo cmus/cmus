@@ -21,3 +21,8 @@ Claes Nästen <pekdon@gmail.com>
 
 Frank Terbeck <frank.terbeck@rwth-aachen.de>
   dynamic keybindings patch
+
+alex <pukpuk@gmx.de>
+  Sun output plugin
+  NetBSD and OpenBSD port
+  Various bug fixes

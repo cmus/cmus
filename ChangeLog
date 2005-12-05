@@ -1,3 +1,21 @@
+2005-12-05: 1.6.5
+~~~~~~~~~~~~~~~~~
+
+Alex
+  o Fix access to unaligned memory locations
+  o Fixed possible segfault in utf16_to_utf8
+  o Added Sun Audio output plugin
+  o Fixed FLAC detection and build for OpenBSD
+
+Timo Hirvonen
+  o Fix some window update bugs
+  o Safe UTF-8 functions
+  o Various memory allocation optimizations and code clean ups
+  o cmus-remote: Check correctly if file arguments are required
+  o Add tracknumber and discnumber built in filters
+  o Various NetBSD and OpenBSD build fixes (reported by Alex)
+  o Use libncurses if libncursesw (wide chars) is not available
+
 2005-11-18: 1.6.4
 ~~~~~~~~~~~~~~~~~
 

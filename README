@@ -64,5 +64,5 @@ After a crash send bug report with last lines of /tmp/cmus-debug to
 tihirvon@gmail.com.  /tmp/cmus-debug file exists only if you configured
 cmus with maximum debug level (./configure --debug=2).
 
-Also it would be good to know what distribution/kernel you are using, so
-please include output of 'uname -a' command in the bug report.
+Also it would be good to know what OS/distribution/kernel you are using,
+so please include output of 'uname -a' command in the bug report.
