@@ -256,12 +256,15 @@ static char *utf16be_to_utf8(const char *buf, int buf_size)
 	char *out;
 	int i, idx;
 
+	if (buf_size <= 0)
+		return NULL;
+
 	out = xnew(char, (buf_size / 2) * 4);
 	i = 0;
 	idx = 0;
 	while (buf_size - i >= 2) {
 		uchar u;
-		
+
 		u = buf[i + 1] + (buf[i] << 8);
 		if (!u_is_unicode(u)) {
 			free(out);
