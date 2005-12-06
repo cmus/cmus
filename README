@@ -25,6 +25,10 @@ Building
 
   make
 
+Or on some BSD systems you need to explicitly use GNU make:
+
+  gmake 
+
 Installation
 ------------
 
@@ -35,7 +39,7 @@ Or to install to a temporary directory:
   make DESTDIR=/tmp/cmus install
 
 This is useful when creating binary packages.
-
+Remeber to replace 'make' with 'gmake' if needed.
 
 Documentation
 =============
