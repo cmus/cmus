@@ -606,10 +606,6 @@ static int v2_read(ID3 *id3, int fd, const struct v2_header *header)
 		}
 
 		i += frame_header_size;
-		if (fh.size == 0) {
-			/* broken frame, should be at least 1 bytes */
-			continue;
-		}
 		if (fh.size > buf_size - i) {
 			id3_debug("frame too big\n");
 			break;
