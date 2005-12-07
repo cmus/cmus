@@ -320,46 +320,34 @@ config_var()
 
 update_file()
 {
-	local old new
+	local func f tmp
 
-	new="$1"
-	old="$2"
-	if test -e "$old"
+	func="$1"
+	f="$2"
+	tmp=$(tmp_file output)
+	$func > $tmp
+	if test -e "$f"
 	then
-		cmp "$old" "$new" 2>/dev/null 1>&2 && return 0
+		if cmp "$f" "$tmp" 2>/dev/null 1>&2
+		then
+			return 0
+		fi
+		echo "updating $f"
+	else
+		echo "creating $f"
 	fi
-	mv -f "$new" "$old"
+	mv -f "$tmp" "$f"
 }
 
-redirect_stdout()
+output_config_h()
 {
-	exec 8>&1
-	exec > "$1"
-}
-
-restore_stdout()
-{
-	exec >&8
-	exec 8>&-
-}
-
-generate_config_h()
-{
-	local tmp i
-
-	after run_checks generate_config_h
-
-	set_config_h_variables
-	echo "Generating config.h"
-	tmp=$(tmp_file config.h)
-	redirect_stdout $tmp
+	local i v t
 
 	echo "#ifndef CONFIG_H"
 	echo "#define CONFIG_H"
 	echo
 	for i in $config_vars
 	do
-		local v t
 		v=$(get_var cv_value_${i})
 		t=$(get_var cv_type_${i})
 		case $t in
@@ -383,30 +371,33 @@ generate_config_h()
 	done
 	echo
 	echo "#endif"
-
-	restore_stdout
-	update_file $tmp config.h
-	did_run generate_config_h
 }
 
-generate_config_mk()
+output_config_mk()
 {
-	local i tmp
-
-	after run_checks generate_config_mk
-
-	set_makefile_variables
-	echo "Generating config.mk"
-	tmp=$(tmp_file config.mk)
-	redirect_stdout $tmp
+	local i
 
 	for i in $mk_env_vars
 	do
 		strpad "$i" 17
 		echo "${strpad_ret} := $(get_var $i)"
 	done
+}
 
-	restore_stdout
-	update_file $tmp config.mk
+generate_config_h()
+{
+	after run_checks generate_config_h
+
+	set_config_h_variables
+	update_file output_config_h config.h
+	did_run generate_config_h
+}
+
+generate_config_mk()
+{
+	after run_checks generate_config_mk
+
+	set_makefile_variables
+	update_file output_config_mk config.mk
 	did_run generate_config_mk
 }
