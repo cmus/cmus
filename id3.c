@@ -228,10 +228,7 @@ static char *utf16_to_utf8(const char *buf, int buf_size)
 	char *out;
 	int i, idx;
 
-	if (buf_size <= 0)
-		return NULL;
-
-	out = xnew(char, (buf_size / 2) * 4);
+	out = xnew(char, (buf_size / 2) * 4 + 1);
 	i = 0;
 	idx = 0;
 	while (buf_size - i >= 2) {
@@ -256,10 +253,7 @@ static char *utf16be_to_utf8(const char *buf, int buf_size)
 	char *out;
 	int i, idx;
 
-	if (buf_size <= 0)
-		return NULL;
-
-	out = xnew(char, (buf_size / 2) * 4);
+	out = xnew(char, (buf_size / 2) * 4 + 1);
 	i = 0;
 	idx = 0;
 	while (buf_size - i >= 2) {
@@ -504,12 +498,12 @@ static struct {
 	{ "", -1 }
 };
 
-static int v2_add_frame(ID3 *id3, struct v2_frame_header *fh, const char *buf)
+static void v2_add_frame(ID3 *id3, struct v2_frame_header *fh, const char *buf)
 {
-	int i;
+	int i, encoding = *buf++, len = fh->size - 1;
 
-	if (buf[0] > 3)
-		return 0;
+	if (encoding > 3)
+		return;
 
 	for (i = 0; frame_tab[i].key != -1; i++) {
 		enum id3_key key = frame_tab[i].key;
@@ -519,34 +513,34 @@ static int v2_add_frame(ID3 *id3, struct v2_frame_header *fh, const char *buf)
 		if (strncmp(fh->id, frame_tab[i].name, 4))
 			continue;
 
-		switch (buf[0]) {
+		switch (encoding) {
 		case 0x00: /* ISO-8859-1 */
-			in = xstrndup(buf + 1, fh->size - 1);
+			in = xstrndup(buf, len);
 			rc = utf8_encode(in, default_charset, &out);
 			free(in);
 			if (rc)
-				return 0;
+				return;
 			break;
 		case 0x03: /* UTF-8 */
-			in = xstrndup(buf + 1, fh->size - 1);
+			in = xstrndup(buf, len);
 			if (u_is_valid(in)) {
 				out = in;
 			} else {
 				rc = utf8_encode(in, default_charset, &out);
 				free(in);
 				if (rc)
-					return 0;
+					return;
 			}
 			break;
 		case 0x01: /* UTF-16 */
-			out = utf16_to_utf8(buf + 1, fh->size - 1);
+			out = utf16_to_utf8(buf, len);
 			if (out == NULL)
-				return 0;
+				return;
 			break;
 		case 0x02: /* UTF-16BE */
-			out = utf16be_to_utf8(buf + 1, fh->size - 1);
+			out = utf16be_to_utf8(buf, len);
 			if (out == NULL)
-				return 0;
+				return;
 			break;
 		}
 		if (key == ID3_TRACK || key == ID3_DISC) {
@@ -561,10 +555,10 @@ static int v2_add_frame(ID3 *id3, struct v2_frame_header *fh, const char *buf)
 		}
 		free(id3->v2[key]);
 		id3->v2[key] = out;
+		id3->has_v2 = 1;
 		id3_debug("%s '%s'\n", frame_tab[i].name, out);
-		return 1;
+		break;
 	}
-	return 0;
 }
 
 static int v2_read(ID3 *id3, int fd, const struct v2_header *header)
@@ -612,13 +606,16 @@ static int v2_read(ID3 *id3, int fd, const struct v2_header *header)
 		}
 
 		i += frame_header_size;
+		if (fh.size == 0) {
+			/* broken frame, should be at least 1 bytes */
+			continue;
+		}
 		if (fh.size > buf_size - i) {
 			id3_debug("frame too big\n");
 			break;
 		}
 
-		if (v2_add_frame(id3, &fh, buf + i))
-			id3->has_v2 = 1;
+		v2_add_frame(id3, &fh, buf + i);
 		i += fh.size;
 	}
 
