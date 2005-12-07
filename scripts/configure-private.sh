@@ -8,33 +8,22 @@
 
 # --enable-$NAME flags
 # $NAME must contain only [a-z0-9-] characters
+# For each --enable-$NAME there are
+#   enable_desc_$NAME
+#   enable_var_$NAME
+# variables and check_$NAME function
 enable_flags=""
-
-# put config values to config.h and config.mk
-enable_use_config_h_val=yes
-enable_use_config_mk_val=yes
 
 # option flags
 opt_flags=""
 
-# For each --enable-$NAME there are
-#   enable_value_$NAME
-#   enable_desc_$NAME
-#   enable_var_$NAME
-# variables and check_$NAME function
-
-# for each $config_vars there are
-#   cv_value_$NAME
-#   cv_type_$NAME
-config_vars=""
-
 # config.mk variable names
-mk_env_vars=""
+makefile_variables=""
 
+# checks added by add_check
 checks=""
 
-PACKAGE=""
-VERSION=""
+# cross compilation, prefix for CC, LD etc.
 CROSS=
 
 did_run()
@@ -64,19 +53,6 @@ after()
 	fi
 }
 
-get_dir_val()
-{
-	local val
-
-	val=$(get_var $1)
-	if test -z "$val"
-	then
-		echo "$2"
-	else
-		echo "$val"
-	fi
-}
-
 show_help()
 {
 	local i tmp
@@ -96,13 +72,14 @@ EOT
 	cat <<EOT
 
 Optional Features:
-  --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
-  --enable-FEATURE[=ARG]  include FEATURE (ARG=yes|no|auto) [ARG=yes]
+  --disable-FEATURE       do not include FEATURE
+  --enable-FEATURE        include FEATURE
 EOT
 	for i in $enable_flags
 	do
+		local var=$(get_var enable_var_${i})
 		strpad "--enable-$(echo $i | sed 's/_/-/g')" 22
-		echo "  $strpad_ret  $(get_var enable_desc_${i}) [$(get_var enable_value_${i})]"
+		echo "  $strpad_ret  $(get_var enable_desc_${i}) [$(get_var $var)]"
 	done
 	exit 0
 }
@@ -118,52 +95,10 @@ handle_enable()
 	do
 		test "$i" = "$flag" || continue
 
-		case $val in
-			yes|no|auto)
-				set_var enable_value_${flag} $val
-				return 0
-				;;
-			*)
-				die "invalid argument for --enable-${flag}"
-				;;
-		esac
+		set_var $(get_var enable_var_${flag}) $val
+		return 0
 	done
 	die "invalid option --enable-$flag"
-}
-
-set_makefile_variables()
-{
-	local flag i
-
-	for flag in $enable_flags
-	do
-		local var=$(get_var enable_var_${flag})
-		if test -n "$var" && test "$(get_var enable_config_mk_${flag})" = yes
-		then
-			local v
-			if test "$(get_var enable_value_${flag})" = yes
-			then
-				v=y
-			else
-				v=n
-			fi
-			makefile_var $var $v
-		fi
-	done
-}
-
-set_config_h_variables()
-{
-	local flag name
-
-	for flag in $enable_flags
-	do
-		local var=$(get_var enable_var_${flag})
-		if test -n "$var" && test "$(get_var enable_config_h_${flag})" = yes
-		then
-			config_var "${var}" "$(get_var enable_value_${flag})" bool
-		fi
-	done
 }
 
 # }}}
@@ -173,33 +108,19 @@ parse_command_line()
 	local kv key var val
 	local name
 
-	for name in PACKAGE VERSION
-	do
-		test -z "$(get_var $name)" && die "$name must be defined in 'configure'"
-	done
-
-	add_flag help no show_help "show this help and exit"
+	add_flag help n show_help "show this help and exit"
 
 	# parse flags (--*)
 	while test $# -gt 0
 	do
 		case $1 in
 			--enable-*)
-				kv=${1##--enable-}
-				key=${kv%%=*}
-				if test "$key" = "$kv"
-				then
-					# '--enable-foo'
-					val=yes
-				else
-					# '--enable-foo=bar'
-					val=${kv##*=}
-				fi
-				handle_enable "$(echo $key | sed 's/-/_/g')" "$val"
+				key=${1##--enable-}
+				handle_enable "$(echo $key | sed 's/-/_/g')" y
 				;;
 			--disable-*)
 				key=${1##--disable-}
-				handle_enable "$(echo $key | sed 's/-/_/g')" "no"
+				handle_enable "$(echo $key | sed 's/-/_/g')" n
 				;;
 			--cross=*)
 				CROSS=${1##--cross=}
@@ -221,11 +142,11 @@ parse_command_line()
 						if test "$key" = "$kv"
 						then
 							# '--foo'
-							test "$(get_var flag_hasarg_${name})" = yes && die "--${key} requires an argument (--${key}$(get_var flag_argdesc_${name}))"
+							test "$(get_var flag_hasarg_${name})" = y && die "--${key} requires an argument (--${key}$(get_var flag_argdesc_${name}))"
 							$(get_var flag_func_${name}) ${key}
 						else
 							# '--foo=bar'
-							test "$(get_var flag_hasarg_${name})" = no && die "--${key} must not have an argument"
+							test "$(get_var flag_hasarg_${name})" = n && die "--${key} must not have an argument"
 							$(get_var flag_func_${name}) ${key} "${kv##*=}"
 						fi
 						found=true
@@ -257,8 +178,6 @@ parse_command_line()
 	done
 
 	did_run parse_command_line
-
-	makefile_env_vars PACKAGE VERSION
 }
 
 run_checks()
@@ -274,27 +193,27 @@ run_checks()
 	done
 	for flag in $enable_flags
 	do
-		local val=$(get_var enable_value_${flag})
-		if test "$val" != no
+		local var=$(get_var enable_var_${flag})
+		local val=$(get_var $var)
+		if test "$val" != n
 		then
 			if ! is_function check_${flag}
 			then
-# 				test "$val" = auto && die ""
 				continue
 			fi
 
 			if check_${flag}
 			then
 				# check successful
-				set_var enable_value_${flag} yes
+				set_var $var y
 			else
 				# check failed
-				if test "$val" = yes
+				if test "$val" = y
 				then
 					die "configure failed."
 				else
 					# auto
-					set_var enable_value_${flag} no
+					set_var $var n
 				fi
 			fi
 		fi
@@ -302,30 +221,12 @@ run_checks()
 	did_run run_checks
 }
 
-var_print()
-{
-	strpad "$1:" 20
-	echo "${strpad_ret} $(get_var $1)"
-}
-
-config_var()
-{
-	after parse_command_line config_var
-	before generate_config_h config_var
-
-	config_vars="$config_vars $1"
-	set_var cv_value_$1 "$2"
-	set_var cv_type_$1 "$3"
-}
-
 update_file()
 {
-	local func f tmp
+	local tmp f
 
-	func="$1"
+	tmp="$1"
 	f="$2"
-	tmp=$(tmp_file output)
-	$func > $tmp
 	if test -e "$f"
 	then
 		if cmp "$f" "$tmp" 2>/dev/null 1>&2
@@ -339,65 +240,18 @@ update_file()
 	mv -f "$tmp" "$f"
 }
 
-output_config_h()
+generate_config_mk()
 {
-	local i v t
+	local tmp i
 
-	echo "#ifndef CONFIG_H"
-	echo "#define CONFIG_H"
-	echo
-	for i in $config_vars
-	do
-		v=$(get_var cv_value_${i})
-		t=$(get_var cv_type_${i})
-		case $t in
-			bool)
-				case $v in
-					no)
-						echo "/* #define $i */"
-						;;
-					yes)
-						echo "#define $i 1"
-						;;
-				esac
-				;;
-			int)
-				echo "#define $i $v"
-				;;
-			str)
-				echo "#define $i \"$v\""
-				;;
-		esac
-	done
-	echo
-	echo "#endif"
-}
+	after run_checks generate_config_mk
 
-output_config_mk()
-{
-	local i
-
-	for i in $mk_env_vars
+	tmp=$(tmp_file config.mk)
+	for i in $makefile_variables
 	do
 		strpad "$i" 17
 		echo "${strpad_ret} := $(get_var $i)"
-	done
-}
-
-generate_config_h()
-{
-	after run_checks generate_config_h
-
-	set_config_h_variables
-	update_file output_config_h config.h
-	did_run generate_config_h
-}
-
-generate_config_mk()
-{
-	after run_checks generate_config_mk
-
-	set_makefile_variables
-	update_file output_config_mk config.mk
+	done > $tmp
+	update_file $tmp config.mk
 	did_run generate_config_mk
 }

@@ -36,8 +36,8 @@ add_check()
 # Add --enable-FEATURE=ARG flag
 #
 # @name:          name of the flag (eg. alsa => --enable-alsa)
-# @default_value: 'yes', 'no' or 'auto'
-#                 'auto' can be used only if check_@name function exists
+# @default_value: 'y', 'n' or 'a' (yes, no, auto)
+#                 'a' can be used only if check_@name function exists
 # @config_var:    name of the variable written to Makefile and config.h
 # @description:   help text
 #
@@ -65,50 +65,25 @@ enable_flag()
 	desc="$4"
 
 	case $value in
-		yes|no)
+		y|n)
 			;;
-		auto)
+		a)
+			# 'auto' looks prettier than 'a' in --help
+			value=auto
 			if ! is_function "check_${name}"
 			then
-				die "function \`check_${name}' must be defined if default value for --enable-${name} is 'auto'"
+				die "function \`check_${name}' must be defined if default value for --enable-${name} is 'a'"
 			fi
 			;;
 		*)
-			die "default value for an enable flag must be 'yes', 'no' or 'auto'"
+			die "default value for an enable flag must be 'y', 'n' or 'a'"
 			;;
 	esac
 
 	enable_flags="${enable_flags} $name"
-	set_var enable_value_${name} "$value"
-	set_var enable_var_${name} "$var"
+	set_var $var $value
+	set_var enable_var_${name} $var
 	set_var enable_desc_${name} "$desc"
-
-	set_var enable_config_h_${name} $enable_use_config_h_val
-	set_var enable_config_mk_${name} $enable_use_config_mk_val
-}
-
-enable_use_config_h()
-{
-	case $1 in
-		yes|no)
-			;;
-		*)
-			die "parameter for enable_use_config_h must be 'yes' or 'no'"
-			;;
-	esac
-	enable_use_config_h_val=$1
-}
-
-enable_use_config_mk()
-{
-	case $1 in
-		yes|no)
-			;;
-		*)
-			die "parameter for enable_use_config_mk must be 'yes' or 'no'"
-			;;
-	esac
-	enable_use_config_mk_val=$1
 }
 
 # Add an option flag
@@ -131,10 +106,10 @@ add_flag()
 	desc="$4"
 	argdesc="$5"
 	case $hasarg in
-		yes|no)
+		y|n)
 			;;
 		*)
-			die "argument 2 for add_flag must be 'yes' or 'no'"
+			die "argument 2 for add_flag must be 'y' or 'n'"
 			;;
 	esac
 	is_function "${func}" || die "function \`${func}' not defined"
@@ -146,7 +121,7 @@ add_flag()
 	set_var flag_argdesc_${name} "${argdesc}"
 }
 
-# Add variable to Makefile
+# Set and register variable to be added to config.mk
 #
 # @name   name of the variable
 # @value  value of the variable
@@ -157,69 +132,96 @@ makefile_var()
 	before generate_config_mk makefile_var
 
 	set_var $1 "$2"
-	makefile_env_vars $1
+	makefile_vars $1
 }
 
-# Add environment variables to Makefile
-#
-# @var...  environment variable names
-makefile_env_vars()
+# Register variables to be added to config.mk
+makefile_vars()
 {
-	after parse_command_line makefile_env_vars
-	before generate_config_mk makefile_env_vars
+	before generate_config_mk makefile_vars
 
-	mk_env_vars="$mk_env_vars $@"
+	makefile_variables="$makefile_variables $*"
 }
 
-# Add string variable to config.h
-#
-# @name         name of the variable
-# @value        value of the variable
-# @description  OPTIONAL
+# -----------------------------------------------------------------------------
+# Config header generation
+
+# Example:
+#   config_header_begin config.h
+#   config_str PACKAGE VERSION
+#   config_bool CONFIG_ALSA
+#   config_header_end
+
+config_header_begin()
+{
+	argc config_header_begin $# 1 1
+	after run_checks config_header_begin
+
+	config_header_file="$1"
+	config_header_tmp=$(tmp_file config_header)
+
+	local def=$(echo $config_header_file | to_upper | sed 's/[\.-]/_/g')
+	cat <<EOF > "$config_header_tmp"
+#ifndef $def
+#define $def
+
+EOF
+}
+
 config_str()
 {
-	argc config_str $# 2 2
-	after run_checks config_str
-	before generate_config_h config_str
+	local i
 
-	config_var "$1" "$2" "str"
+	for i in $*
+	do
+		echo "#define $i \"$(get_var $i)\"" >> "$config_header_tmp"
+	done
 }
 
-# Add integer variable to config.h
-#
-# @name         name of the variable
-# @value        value of the variable
-# @description  OPTIONAL
 config_int()
 {
-	argc config_int $# 2 2
-	after run_checks config_int
-	before generate_config_h config_int
+	local i
 
-	config_var "$1" "$2" "int"
+	for i in $*
+	do
+		echo "#define $i $(get_var $i)" >> "$config_header_tmp"
+	done
 }
 
-# Add boolean variable to config.h
-#
-# @name         name of the variable
-# @value        value of the variable
-# @description  OPTIONAL
 config_bool()
 {
-	argc config_bool $# 2 2
-	after run_checks config_bool
-	before generate_config_h config_bool
+	local i v
 
-	config_var "$1" "$2" "bool"
+	for i in $*
+	do
+		v=$(get_var $i)
+		case $v in
+			n)
+				echo "/* #define $i */" >> "$config_header_tmp"
+				;;
+			y)
+				echo "#define $i 1" >> "$config_header_tmp"
+				;;
+			*)
+				die "bool '$i' has invalid value '$v'"
+				;;
+		esac
+	done
 }
 
-# Print configuration
-# Useful at end of configure script.
+config_header_end()
+{
+	argc config_header_end $# 0 0
+	echo "" >> "$config_header_tmp"
+	echo "#endif" >> "$config_header_tmp"
+	update_file "$config_header_tmp" "$config_header_file"
+}
+# -----------------------------------------------------------------------------
+
+# Print values for enable flags
 print_config()
 {
 	local flag
-
-	after generate_config_mk print_config
 
 	echo
 	echo "Configuration:"
@@ -227,6 +229,6 @@ print_config()
 	do
 		strpad "${flag}: " 21
 		echo -n "$strpad_ret"
-		get_var enable_value_${flag}
+		get_var $(get_var enable_var_${flag})
 	done
 }

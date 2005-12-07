@@ -10,12 +10,12 @@ check_ncurses()
 {
 	if check_library ncurses "" -lncursesw
 	then
-		widechars=yes
+		widechars=y
 		return 0
 	fi
 	if check_library ncurses "" -lncurses || check_library ncurses "" -lcurses
 	then
-		widechars=no
+		widechars=n
 		msg_error "Your ncurses does not support wide characters!"
 		msg_error "Install ncursesw if you need wide character support,"
 		msg_error "you can ignore this warning otherwise."
@@ -81,7 +81,7 @@ check_oss()
 	if test -f /usr/include/sys/soundcard.h
 	then
 		msg_result "yes"
-		makefile_env_vars OSS_CFLAGS OSS_LIBS
+		makefile_vars OSS_CFLAGS OSS_LIBS
 		return 0
 	else
 		msg_result "no"
@@ -140,13 +140,13 @@ datadir=""
 libdir=""
 DEBUG=1
 
-add_flag prefix    yes flag_dir   "Installation prefix [$prefix]" "=DIR"
-add_flag bindir    yes flag_dir   "User executables [PREFIX/bin]" "=DIR"
-add_flag datadir   yes flag_dir   "Read-only data [PREFIX/share]" "=DIR"
-add_flag libdir    yes flag_dir   "Libraries [PREFIX/lib]" "=DIR"
+add_flag prefix    y flag_dir   "Installation prefix [$prefix]" "=DIR"
+add_flag bindir    y flag_dir   "User executables [PREFIX/bin]" "=DIR"
+add_flag datadir   y flag_dir   "Read-only data [PREFIX/share]" "=DIR"
+add_flag libdir    y flag_dir   "Libraries [PREFIX/lib]" "=DIR"
 
-add_flag debug     yes flag_debug "Debugging level [$DEBUG]" "=[0-2]"
-add_flag dev       no  flag_dev   "This should be used only by developers"
+add_flag debug     y flag_debug "Debugging level [$DEBUG]" "=[0-2]"
+add_flag dev       n flag_dev   "This should be used only by developers"
 
 add_check check_cc
 add_check check_endianness
@@ -155,21 +155,16 @@ add_check check_pthread
 add_check check_ncurses
 add_check check_iconv
 
-enable_use_config_h no
-
-enable_flag flac    auto CONFIG_FLAC    "FLAC (Free Lossless Audio Codec) support"
-enable_flag mad     auto CONFIG_MAD     "MPEG Audio Decoder (libmad) support"
-enable_flag modplug auto CONFIG_MODPLUG "libmodplug (mod, x3m, ...) support"
-enable_flag vorbis  auto CONFIG_VORBIS  "Ogg/Vorbis support"
-enable_flag wav     yes  CONFIG_WAV     "WAV support"
-enable_flag alsa    auto CONFIG_ALSA    "ALSA support"
-enable_flag arts    auto CONFIG_ARTS    "ARTS support"
-enable_flag oss     auto CONFIG_OSS     "Open Sound System support"
-enable_flag sun     auto CONFIG_SUN     "Sun Audio support"
-
-enable_use_config_h yes
-
-enable_flag irman   no   CONFIG_IRMAN   "Irman support"
+enable_flag flac    a CONFIG_FLAC    "FLAC (Free Lossless Audio Codec) support"
+enable_flag mad     a CONFIG_MAD     "MPEG Audio Decoder (libmad) support"
+enable_flag modplug a CONFIG_MODPLUG "libmodplug (mod, x3m, ...) support"
+enable_flag vorbis  a CONFIG_VORBIS  "Ogg/Vorbis support"
+enable_flag wav     y CONFIG_WAV     "WAV support"
+enable_flag alsa    a CONFIG_ALSA    "ALSA support"
+enable_flag arts    a CONFIG_ARTS    "ARTS support"
+enable_flag oss     a CONFIG_OSS     "Open Sound System support"
+enable_flag sun     a CONFIG_SUN     "Sun Audio support"
+enable_flag irman   n CONFIG_IRMAN   "Irman support"
 
 parse_command_line "$@"
 run_checks
@@ -178,18 +173,21 @@ var_default bindir "${prefix}/bin"
 var_default datadir "${prefix}/share"
 var_default libdir "${prefix}/lib"
 
-config_str PACKAGE $PACKAGE
-config_str VERSION $VERSION
-config_str PACKAGE_BUGREPORT "$PACKAGE_BUGREPORT"
-config_str BINDIR "$bindir"
-config_str DATADIR "$datadir"
-config_str LIBDIR "$libdir"
-makefile_env_vars bindir datadir libdir
-
 CFLAGS="${CFLAGS} -DDEBUG=$DEBUG"
 test "$WORDS_BIGENDIAN" -eq 1 && CFLAGS="${CFLAGS} -DWORDS_BIGENDIAN"
 
-generate_config_h
+DATADIR="$datadir"
+LIBDIR="$libdir"
+
+config_header_begin config.h
+config_str PACKAGE VERSION PACKAGE_BUGREPORT DATADIR LIBDIR
+config_bool CONFIG_IRMAN
+config_header_end
+
+makefile_vars PACKAGE VERSION bindir datadir libdir
+makefile_vars CONFIG_FLAC CONFIG_MAD CONFIG_MODPLUG CONFIG_VORBIS CONFIG_WAV
+makefile_vars CONFIG_ALSA CONFIG_ARTS CONFIG_OSS CONFIG_SUN CONFIG_IRMAN
+
 generate_config_mk
 
 sed -e "s:@VERSION@:${VERSION}:g" < "cmus.spec.in" > cmus.spec

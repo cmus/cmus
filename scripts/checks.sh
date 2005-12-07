@@ -98,7 +98,7 @@ check_cc()
 				LDFLAGS="$LDFLAGS -L/usr/local/lib"
 				;;
 		esac
-		makefile_env_vars CC LD CFLAGS LDFLAGS SOFLAGS
+		makefile_vars CC LD CFLAGS LDFLAGS SOFLAGS
 		if check_cc_flag -MT /dev/null -MD -MP -MF /dev/null
 		then
 			makefile_var CC_GENERATE_DEPS y
@@ -125,7 +125,7 @@ check_cxx()
 				CXXLDFLAGS="$CXXLDFLAGS -L/usr/local/lib"
 				;;
 		esac
-		makefile_env_vars CXX CXXLD CXXFLAGS CXXLDFLAGS
+		makefile_vars CXX CXXLD CXXFLAGS CXXLDFLAGS
 		if check_cxx_flag -MT /dev/null -MD -MP -MF /dev/null
 		then
 			makefile_var CXX_GENERATE_DEPS y
@@ -143,7 +143,7 @@ check_ar()
 	var_default ARFLAGS "-cr"
 	if check_program $AR
 	then
-		makefile_env_vars AR ARFLAGS
+		makefile_vars AR ARFLAGS
 		return 0
 	fi
 	return 1
@@ -154,7 +154,7 @@ check_as()
 	var_default AS ${CROSS}gcc
 	if check_program $AS
 	then
-		makefile_env_vars AS
+		makefile_vars AS
 		return 0
 	fi
 	return 1
@@ -166,7 +166,7 @@ check_pkgconfig()
 	then
 		if check_program pkg-config PKG_CONFIG
 		then
-			makefile_env_vars PKG_CONFIG
+			makefile_vars PKG_CONFIG
 		else
 			# don't check again
 			PKG_CONFIG="no"
