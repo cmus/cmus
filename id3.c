@@ -223,23 +223,31 @@ static const char *genres[NR_GENRES] = {
 #define id3_debug(...) do { } while (0)
 #endif
 
-static char *utf16_to_utf8(const char *buf, int buf_size)
+static int utf16_is_special(const uchar uch)
+{
+	if (UTF16_IS_HSURROGATE(uch) || UTF16_IS_LSURROGATE(uch) || UTF16_IS_BOM(uch))
+		return -1;
+	return 0;
+}
+
+static char *utf16_to_utf8(const unsigned char *buf, int buf_size)
 {
 	char *out;
 	int i, idx;
 
 	out = xnew(char, (buf_size / 2) * 4 + 1);
-	i = 0;
-	idx = 0;
+	i = idx = 0;
 	while (buf_size - i >= 2) {
 		uchar u;
 
 		u = buf[i] + (buf[i + 1] << 8);
-		if (!u_is_unicode(u)) {
+		if (u_is_unicode(u)) {
+			if (utf16_is_special(u) == 0)
+				u_set_char(out, &idx, u);
+		} else {
 			free(out);
 			return NULL;
 		}
-		u_set_char(out, &idx, u);
 		if (u == 0)
 			return out;
 		i += 2;
@@ -248,7 +256,7 @@ static char *utf16_to_utf8(const char *buf, int buf_size)
 	return out;
 }
 
-static char *utf16be_to_utf8(const char *buf, int buf_size)
+static char *utf16be_to_utf8(const unsigned char *buf, int buf_size)
 {
 	char *out;
 	int i, idx;
@@ -260,11 +268,13 @@ static char *utf16be_to_utf8(const char *buf, int buf_size)
 		uchar u;
 
 		u = buf[i + 1] + (buf[i] << 8);
-		if (!u_is_unicode(u)) {
+		if (u_is_unicode(u)) {
+		       if (utf16_is_special(u) == 0)
+				u_set_char(out, &idx, u);
+		} else {
 			free(out);
 			return NULL;
 		}
-		u_set_char(out, &idx, u);
 		if (u == 0)
 			return out;
 		i += 2;

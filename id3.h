@@ -20,6 +20,10 @@ enum id3_key {
 };
 #define NUM_ID3_KEYS (ID3_TRACK + 1)
 
+#define UTF16_IS_LSURROGATE(uch) (0xdc00 <= uch && 0xdfff >= uch)
+#define UTF16_IS_HSURROGATE(uch) (0xd800 <= uch && 0xdbff >= uch)
+#define UTF16_IS_BOM(uch) (uch == 0xfeff)
+
 typedef struct ID3 ID3;
 
 extern int id3_tag_size(const char *buf, int buf_size);
