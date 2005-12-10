@@ -250,7 +250,7 @@ generate_config_mk()
 	for i in $makefile_variables
 	do
 		strpad "$i" 17
-		echo "${strpad_ret} := $(get_var $i)"
+		echo "${strpad_ret} = $(get_var $i)"
 	done > $tmp
 	update_file $tmp config.mk
 	did_run generate_config_mk
