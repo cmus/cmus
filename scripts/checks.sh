@@ -99,11 +99,9 @@ check_cc()
 				;;
 		esac
 		makefile_vars CC LD CFLAGS LDFLAGS SOFLAGS
-		if check_cc_flag -MT /dev/null -MD -MP -MF /dev/null
+		if check_cc_flag -MMD -MP -MF /dev/null
 		then
-			makefile_var CC_GENERATE_DEPS y
-		else
-			makefile_var CC_GENERATE_DEPS n
+			CFLAGS="$CFLAGS -MMD -MP -MF .dep-\$@"
 		fi
 		return 0
 	fi
@@ -126,11 +124,9 @@ check_cxx()
 				;;
 		esac
 		makefile_vars CXX CXXLD CXXFLAGS CXXLDFLAGS
-		if check_cxx_flag -MT /dev/null -MD -MP -MF /dev/null
+		if check_cxx_flag -MMD -MP -MF /dev/null
 		then
-			makefile_var CXX_GENERATE_DEPS y
-		else
-			makefile_var CXX_GENERATE_DEPS n
+			CXXFLAGS="$CXXFLAGS -MMD -MP -MF .dep-\$@"
 		fi
 		return 0
 	fi

@@ -2,6 +2,8 @@
 # Copyright 2005 Timo Hirvonen
 #
 # This file is licensed under the GPLv2.
+#
+# cmd macro copied from kbuild (Linux kernel build system)
 
 # build verbosity (0-2), default is 1
 ifneq ($(origin V),command line)
@@ -80,13 +82,8 @@ distclean: clean
 # CC for programs and shared libraries
 quiet_cmd_cc    = CC     $@
 quiet_cmd_cc_lo = CC     $@
-ifeq ($(CC_GENERATE_DEPS),y)
-      cmd_cc    = $(CC) -c $(CFLAGS) -MD -MP -MF .dep-$@ -o $@ $<
-      cmd_cc_lo = $(CC) -c $(CFLAGS) $(SOFLAGS) -MD -MP -MF .dep-$@ -o $@ $<
-else
       cmd_cc    = $(CC) -c $(CFLAGS) -o $@ $<
       cmd_cc_lo = $(CC) -c $(CFLAGS) $(SOFLAGS) -o $@ $<
-endif
 
 # LD for programs, optional parameter: libraries
 quiet_cmd_ld = LD     $@
@@ -99,13 +96,8 @@ quiet_cmd_ld_so = LD     $@
 # CXX for programs and shared libraries
 quiet_cmd_cxx    = CXX    $@
 quiet_cmd_cxx_lo = CXX    $@
-ifeq ($(CXX_GENERATE_DEPS),y)
-      cmd_cxx    = $(CXX) -c $(CXXFLAGS) -MD -MP -MF .dep-$@ -o $@ $<
-      cmd_cxx_lo = $(CXX) -c $(CXXFLAGS) $(SOFLAGS) -MD -MP -MF .dep-$@ -o $@ $<
-else
       cmd_cxx    = $(CXX) -c $(CXXFLAGS) -o $@ $<
       cmd_cxx_lo = $(CXX) -c $(CXXFLAGS) $(SOFLAGS) -o $@ $<
-endif
 
 # CXXLD for programs, optional parameter: libraries
 quiet_cmd_cxxld = CXXLD  $@
