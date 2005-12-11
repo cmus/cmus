@@ -32,7 +32,7 @@
 #include <browser.h>
 #include <window.h>
 #include <ui_curses.h>
-#include <file_load.h>
+#include <file.h>
 #include <xmalloc.h>
 #include <xstrjoin.h>
 #include <config.h>
@@ -806,54 +806,52 @@ int key_unbind(const char *context, const char *key)
 	return -1;
 }
 
-static char *find_space(char *str)
+static const char *get_word(const char *line, char *buf)
 {
-	while (*str) {
-		if (isspace(*str))
-			return str;
-		str++;
-	}
-	return NULL;
+	int i;
+
+	while (isspace(*line))
+		line++;
+
+	i = -1;
+	do {
+		i++;
+		if (i == 32 || line[i] == 0)
+			return NULL;
+		buf[i] = line[i];
+	} while (!isspace(line[i]));
+	buf[i] = 0;
+	return line + i;
 }
 
-static int parse_words(char *s, char **words, int nr)
+static int handle_line(void *data, const char *line)
 {
-	int i = 0;
+	char context[32];
+	char key[32];
 
-	while (1) {
-		while (isspace(*s))
-			s++;
-		if (*s == 0)
-			break;
-		if (i == nr)
-			return -1;
-		words[i++] = s;
-		if (i == nr && *s == ':')
-			return 0;
-		s = find_space(s);
-		if (s == NULL)
-			break;
-		*s++ = 0;
-	}
-	if (i != nr)
-		return -1;
+	line = get_word(line, context);
+	if (line == NULL)
+		goto error;
+
+	line = get_word(line, key);
+	if (line == NULL)
+		goto error;
+
+	while (isspace(*line))
+		line++;
+	if (*line == 0)
+		goto error;
+
+	key_bind(context, key, line);
 	return 0;
-}
-
-static void handle_line(void *data, const char *line)
-{
-	char *words[3];
-
-	if (parse_words((char *)line, words, 3))
-		return;
-
-	key_bind(words[0], words[1], words[2]);
-	return;
+error:
+	ui_curses_display_error_msg("could not parse keybinding '%s'", line);
+	return 0;
 }
 
 static int load_keys(const char *file)
 {
-	return file_load(file, handle_line, NULL);
+	return file_for_each_line(file, handle_line, NULL);
 }
 
 static int bindings_empty(void)

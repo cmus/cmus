@@ -21,11 +21,21 @@
 #define _FILE_H
 
 #include <unistd.h>
+#include <sys/mman.h>
 
-extern ssize_t read_all(int fd, void *buf, size_t count);
-extern ssize_t write_all(int fd, const void *buf, size_t count);
-extern char **bsplit(const char *buffer, unsigned int size, char ch, unsigned int limit);
-extern char *file_get_contents(const char *filename, int *len);
-extern char **file_get_lines(const char *filename);
+ssize_t read_all(int fd, void *buf, size_t count);
+ssize_t write_all(int fd, const void *buf, size_t count);
+char **bsplit(const char *buffer, unsigned int size, char ch, unsigned int limit);
+
+char *mmap_file(const char *filename, int *size);
+void buffer_for_each_line(const char *buf, int size,
+		int (*cb)(void *data, const char *line),
+		void *data);
+void buffer_for_each_line_reverse(const char *buf, int size,
+		int (*cb)(void *data, const char *line),
+		void *data);
+int file_for_each_line(const char *filename,
+		int (*cb)(void *data, const char *line),
+		void *data);
 
 #endif

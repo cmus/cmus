@@ -22,6 +22,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/mman.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -100,64 +101,102 @@ char **bsplit(const char *buffer, unsigned int size, char ch, unsigned int limit
 	return array;
 }
 
-char *file_get_contents(const char *filename, int *len)
+char *mmap_file(const char *filename, int *size)
 {
-	char *contents;
-	int fd, size, save, rc;
+	struct stat st;
+	char *buf;
+	int fd;
 
-	*len = 0;
 	fd = open(filename, O_RDONLY);
 	if (fd == -1)
 		return NULL;
-	size = lseek(fd, 0, SEEK_END);
-	if (size == -1 || lseek(fd, 0, SEEK_SET) == -1) {
-		save = errno;
+	if (fstat(fd, &st) == -1) {
 		close(fd);
-		errno = save;
 		return NULL;
 	}
-	contents = xnew(char, size + 1);
-	rc = read_all(fd, contents, size);
-	if (rc == -1) {
-		save = errno;
-		free(contents);
-		close(fd);
-		errno = save;
-		return NULL;
-	}
-	*len = rc;
-	contents[rc] = 0;
+	*size = st.st_size;
+
+	buf = mmap(NULL, *size, PROT_READ, MAP_PRIVATE, fd, 0);
 	close(fd);
-	return contents;
+	return buf;
 }
 
-char **file_get_lines(const char *filename)
+void buffer_for_each_line(const char *buf, int size,
+		int (*cb)(void *data, const char *line),
+		void *data)
 {
-	char **lines;
-	char *contents;
-	int len, i;
+	char *line = NULL;
+	int line_size = 0, pos = 0;
 
-	contents = file_get_contents(filename, &len);
-	if (contents == NULL)
-		return NULL;
-	if (contents[0] == 0) {
-		/* empty file */
-		free(contents);
-		lines = xnew0(char *, 1);
-		return lines;
+	while (pos < size) {
+		int end, len;
+
+		end = pos;
+		while (end < size && buf[end] != '\n')
+			end++;
+
+		len = end - pos;
+		if (end > pos && buf[end - 1] == '\r')
+			len--;
+
+		if (len >= line_size) {
+			line_size = len + 1;
+			line = xrenew(char, line, line_size);
+		}
+		memcpy(line, buf + pos, len);
+		line[len] = 0;
+		pos = end + 1;
+
+		if (cb(data, line))
+			break;
 	}
-	if (len > 0 && contents[len - 1] == '\n')
-		contents[--len] = 0;
-	lines = bsplit(contents, len, '\n', 0);
-	free(contents);
+	free(line);
+}
 
-	for (i = 0; lines[i]; i++) {
-		char *ptr = lines[i];
+void buffer_for_each_line_reverse(const char *buf, int size,
+		int (*cb)(void *data, const char *line),
+		void *data)
+{
+	char *line = NULL;
+	int line_size = 0, end = size - 1;
 
-		len = strlen(ptr);
-		if (len && ptr[len - 1] == '\r')
-			ptr[len - 1] = 0;
+	while (end >= 0) {
+		int pos, len;
+
+		if (end > 1 && buf[end] == '\n' && buf[end - 1] == '\r')
+			end--;
+
+		pos = end;
+		while (pos > 0 && buf[pos - 1] != '\n')
+			pos--;
+
+		len = end - pos;
+		if (len >= line_size) {
+			line_size = len + 1;
+			line = xrenew(char, line, line_size);
+		}
+		memcpy(line, buf + pos, len);
+		line[len] = 0;
+		end = pos - 1;
+
+		if (cb(data, line))
+			break;
 	}
+	free(line);
+}
 
-	return lines;
+int file_for_each_line(const char *filename,
+		int (*cb)(void *data, const char *line),
+		void *data)
+{
+	char *buf;
+	int size;
+
+	buf = mmap_file(filename, &size);
+	if (buf == NULL)
+		return -1;
+
+	buffer_for_each_line(buf, size, cb, data);
+	munmap(buf, size);
+	return 0;
 }

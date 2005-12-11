@@ -27,9 +27,6 @@ extern const char *cmus_cache_dir;
 extern const char *home_dir;
 extern const char *user_name;
 
-/* global config */
-extern struct list_head sconf_head;
-
 char **get_words(const char *text);
 int misc_init(void);
 

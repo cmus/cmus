@@ -37,7 +37,10 @@ extern struct track_info *cmus_get_track_info(const char *name);
 
 extern int cmus_is_playlist(const char *filename);
 extern void cmus_update_selected(void);
-extern char **cmus_playlist_get_files(const char *filename);
+
+int cmus_playlist_for_each(const char *buf, int size, int reverse,
+		int (*cb)(void *data, const char *line),
+		void *data);
 
 /* bindable */
 extern void cmus_next(void);

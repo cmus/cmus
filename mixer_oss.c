@@ -19,7 +19,6 @@
 
 #include <mixer.h>
 #include <op.h>
-#include <misc.h>
 #include <utils.h>
 #include <xmalloc.h>
 #include <debug.h>

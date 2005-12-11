@@ -21,7 +21,6 @@
 #include <ui_curses.h>
 #include <search_mode.h>
 #include <window.h>
-#include <misc.h>
 #include <xmalloc.h>
 #include <debug.h>
 

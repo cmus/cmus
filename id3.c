@@ -3,7 +3,6 @@
  */
 
 #include "id3.h"
-#include <misc.h>
 #include <sconf.h>
 #include <xmalloc.h>
 #include <utf8_encode.h>
@@ -657,8 +656,7 @@ ID3 *id3_new(void)
 	ID3 *id3 = xnew0(ID3, 1);
 
 	if (default_charset == NULL) {
-		int res = sconf_get_str_option(&sconf_head, "mad.charset", &default_charset);
-		if (res == -SCONF_ERROR_NOTFOUND || res == -SCONF_ERROR_TYPE)
+		if (!sconf_get_str_option("mad.charset", &default_charset))
 			default_charset = "ISO-8859-1";
 	}
 	return id3;

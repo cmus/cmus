@@ -9,7 +9,7 @@
 #include <uchar.h>
 #include <pl.h>
 #include <misc.h>
-#include <file_load.h>
+#include <file.h>
 #include <ui_curses.h>
 #include <xmalloc.h>
 #include <debug.h>
@@ -262,7 +262,7 @@ static void do_filters_set_filter(const char *keyval, int active)
 		window_changed(filters_win);
 }
 
-static void handle_line(void *data, const char *line)
+static int handle_line(void *data, const char *line)
 {
 	char ch = line[0];
 	int active = 0;
@@ -271,9 +271,10 @@ static void handle_line(void *data, const char *line)
 		active = 1;
 	} else if (ch != ' ') {
 		/* currupt */
-		return;
+		return 0;
 	}
 	do_filters_set_filter(line + 1, active);
+	return 0;
 }
 
 void filters_init(void)
@@ -282,7 +283,7 @@ void filters_init(void)
 
 	/* load filters */
 	snprintf(filename, sizeof(filename), "%s/filters", cmus_config_dir);
-	file_load(filename, handle_line, NULL);
+	file_for_each_line(filename, handle_line, NULL);
 
 	filters_win = window_new(filters_get_prev, filters_get_next);
 	window_set_contents(filters_win, &filters_head);

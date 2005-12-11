@@ -25,7 +25,6 @@
 #include <track_db.h>
 #include <misc.h>
 #include <file.h>
-#include <pls.h>
 #include <utils.h>
 #include <path.h>
 #include <xmalloc.h>
@@ -38,6 +37,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <stdlib.h>
+#include <ctype.h>
 
 #define WORKER_TYPE_PLAYLIST  (1U)
 #define WORKER_TYPE_PLAYQUEUE (2U)
@@ -215,49 +215,34 @@ static void add_dir(unsigned int flags, const char *dirname)
 	free(dentries);
 }
 
-static void handle_line(unsigned int flags, const char *line)
+static int handle_line(void *data, const char *line)
 {
-	if (*line == '#')
-		return;
+	unsigned int flags = *(unsigned int *)data;
+
+	if (worker_cancelling())
+		return 1;
+
 	if (is_url(line)) {
 		add_url(flags, line);
 	} else {
 		add_file(flags, line);
 	}
-}
-
-static void add_files(unsigned int flags, char **files)
-{
-	int i;
-
-	if (flags & JOB_FLAG_ENQUEUE && flags & JOB_FLAG_PREPEND) {
-		for (i = 0; files[i]; i++) {
-		}
-		i--;
-		while (i >= 0) {
-			if (worker_cancelling())
-				break;
-			handle_line(flags, files[i]);
-			i--;
-		}
-	} else {
-		for (i = 0; files[i]; i++) {
-			if (worker_cancelling())
-				break;
-			handle_line(flags, files[i]);
-		}
-	}
+	return 0;
 }
 
 static void add_pl(unsigned int flags, const char *filename)
 {
-	char **files;
+	char *buf;
+	int size, reverse;
 
-	files = cmus_playlist_get_files(filename);
-	if (files == NULL)
+	buf = mmap_file(filename, &size);
+	if (buf == NULL)
 		return;
-	add_files(flags, files);
-	free_str_array(files);
+
+	reverse = flags & JOB_FLAG_ENQUEUE && flags & JOB_FLAG_PREPEND;
+	cmus_playlist_for_each(buf, size, reverse, handle_line, &flags);
+
+	munmap(buf, size);
 }
 
 static void job(void *data)
@@ -556,25 +541,54 @@ int cmus_is_playlist(const char *filename)
 	return 0;
 }
 
-char **cmus_playlist_get_files(const char *filename)
+struct pl_data {
+	int (*cb)(void *data, const char *line);
+	void *data;
+};
+
+static int pl_handle_line(void *data, const char *line)
 {
-	const char *ext;
+	struct pl_data *d = data;
+	int i = 0;
 
-	ext = strrchr(filename, '.');
-	if (ext != NULL) {
-		ext++;
-		if (strcasecmp(ext, "pls") == 0) {
-			char **files;
-			char *contents;
-			int len;
+	while (isspace(line[i]))
+		i++;
+	if (line[i] == 0)
+		return 0;
 
-			contents = file_get_contents(filename, &len);
-			if (contents == NULL)
-				return NULL;
-			files = pls_get_files(contents);
-			free(contents);
-			return files;
-		}
+	if (line[i] == '#')
+		return 0;
+
+	return d->cb(d->data, line);
+}
+
+static int pls_handle_line(void *data, const char *line)
+{
+	struct pl_data *d = data;
+
+	if (strncasecmp(line, "file", 4))
+		return 0;
+	line = strchr(line, '=');
+	if (line == NULL)
+		return 0;
+	return d->cb(d->data, line + 1);
+}
+
+int cmus_playlist_for_each(const char *buf, int size, int reverse,
+		int (*cb)(void *data, const char *line),
+		void *data)
+{
+	struct pl_data d = { cb, data };
+	int (*handler)(void *, const char *);
+
+	handler = pl_handle_line;
+	if (size >= 10 && strncasecmp(buf, "[playlist]", 10) == 0)
+		handler = pls_handle_line;
+
+	if (reverse) {
+		buffer_for_each_line_reverse(buf, size, handler, &d);
+	} else {
+		buffer_for_each_line(buf, size, handler, &d);
 	}
-	return file_get_lines(filename);
+	return 0;
 }

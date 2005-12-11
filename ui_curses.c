@@ -168,7 +168,6 @@ static time_t error_time = 0;
 static char *server_address = NULL;
 static int remote_socket = -1;
 
-static char *config_filename;
 static char *charset = NULL;
 static char print_buffer[512];
 
@@ -1813,9 +1812,9 @@ static void get_colors(void)
 	
 	for (i = 0; i < NR_COLORS; i++) {
 		snprintf(buf, sizeof(buf), "%s_bg", color_names[i]);
-		sconf_get_int_option(&sconf_head, buf, &bg_colors[i]);
+		sconf_get_int_option(buf, &bg_colors[i]);
 		snprintf(buf, sizeof(buf), "%s_fg", color_names[i]);
-		sconf_get_int_option(&sconf_head, buf, &fg_colors[i]);
+		sconf_get_int_option(buf, &fg_colors[i]);
 	}
 }
 
@@ -1826,9 +1825,9 @@ static void set_colors(void)
 	
 	for (i = 0; i < NR_COLORS; i++) {
 		snprintf(buf, sizeof(buf), "%s_bg", color_names[i]);
-		sconf_set_int_option(&sconf_head, buf, bg_colors[i]);
+		sconf_set_int_option(buf, bg_colors[i]);
 		snprintf(buf, sizeof(buf), "%s_fg", color_names[i]);
-		sconf_set_int_option(&sconf_head, buf, fg_colors[i]);
+		sconf_set_int_option(buf, fg_colors[i]);
 	}
 }
 
@@ -1885,9 +1884,9 @@ static int ir_init(void)
 {
 	int i;
 
-	sconf_get_str_option(&sconf_head, "irman_device", &irman_device);
+	sconf_get_str_option("irman_device", &irman_device);
 	for (i = 0; ir_commands[i].function; i++)
-		sconf_get_str_option(&sconf_head, ir_commands[i].option, &ir_commands[i].text);
+		sconf_get_str_option(ir_commands[i].option, &ir_commands[i].text);
 	if (irman_device == NULL) {
 		warn("irman device not set (run `" PACKAGE " --irman-config')\n");
 		return 1;
@@ -2214,29 +2213,29 @@ static void ui_curses_init(void)
 
 	/* init curses */
 
-	if (sconf_get_bool_option(&sconf_head, "continue", &btmp) == 0)
+	if (sconf_get_bool_option("continue", &btmp))
 		player_set_cont(btmp);
-	if (sconf_get_bool_option(&sconf_head, "repeat", &btmp) == 0)
+	if (sconf_get_bool_option("repeat", &btmp))
 		pl_set_repeat(btmp);
-	if (sconf_get_int_option(&sconf_head, "playlist_mode", &btmp) == 0) {
+	if (sconf_get_int_option("playlist_mode", &btmp)) {
 		if (btmp < 0 || btmp > 2)
 			btmp = 0;
 		pl_set_playlist_mode(btmp);
 	}
-	if (sconf_get_int_option(&sconf_head, "play_mode", &btmp) == 0) {
+	if (sconf_get_int_option("play_mode", &btmp)) {
 		if (btmp < 0 || btmp > 2)
 			btmp = 0;
 		pl_set_play_mode(btmp);
 	}
-	sconf_get_bool_option(&sconf_head, "show_remaining_time", &show_remaining_time);
-	sconf_get_str_option(&sconf_head, "status_display_program", &status_display_program);
-	if (sconf_get_str_option(&sconf_head, "sort", &sort) == 0) {
+	sconf_get_bool_option("show_remaining_time", &show_remaining_time);
+	sconf_get_str_option("status_display_program", &status_display_program);
+	if (sconf_get_str_option("sort", &sort)) {
 		ui_curses_set_sort(sort);
 		free(sort);
 	} else {
 		ui_curses_set_sort("artist,album,discnumber,tracknumber,title,filename");
 	}
-	if (sconf_get_int_option(&sconf_head, "buffer_chunks", &btmp) == 0) {
+	if (sconf_get_int_option("buffer_chunks", &btmp)) {
 		if (btmp < 3)
 			btmp = 3;
 		if (btmp > 30)
@@ -2280,15 +2279,15 @@ static void ui_curses_exit(void)
 	if (cur_track_info)
 		track_info_unref(cur_track_info);
 
-	sconf_set_bool_option(&sconf_head, "continue", player_info.cont);
-	sconf_set_bool_option(&sconf_head, "repeat", repeat);
-	sconf_set_int_option(&sconf_head, "playlist_mode", playlist_mode);
-	sconf_set_int_option(&sconf_head, "play_mode", play_mode);
-	sconf_set_bool_option(&sconf_head, "show_remaining_time", show_remaining_time);
-	sconf_set_str_option(&sconf_head, "status_display_program",
+	sconf_set_bool_option("continue", player_info.cont);
+	sconf_set_bool_option("repeat", repeat);
+	sconf_set_int_option("playlist_mode", playlist_mode);
+	sconf_set_int_option("play_mode", play_mode);
+	sconf_set_bool_option("show_remaining_time", show_remaining_time);
+	sconf_set_str_option("status_display_program",
 			status_display_program ? status_display_program : "");
-	sconf_set_str_option(&sconf_head, "sort", sort_string);
-	sconf_set_int_option(&sconf_head, "buffer_chunks", buffer_chunks);
+	sconf_set_str_option("sort", sort_string);
+	sconf_set_int_option("buffer_chunks", buffer_chunks);
 	set_colors();
 
 	free(playlist_autosave_filename);
@@ -2301,18 +2300,6 @@ static void ui_curses_exit(void)
 	search_mode_exit();
 	filters_exit();
 	browser_exit();
-}
-
-static void load_config(void)
-{
-	int rc, line;
-
-	config_filename = xstrjoin(cmus_config_dir, "/config");
-	rc = sconf_load(&sconf_head, config_filename, &line);
-	if (rc == -SCONF_ERROR_ERRNO && errno != ENOENT)
-		die_errno("error loading config file `%s'", config_filename);
-	if (rc == -SCONF_ERROR_SYNTAX)
-		die("syntax error in file `%s' on line %d\n", config_filename, line);
 }
 
 enum {
@@ -2406,7 +2393,7 @@ int main(int argc, char *argv[])
 		snprintf(server_address, 256, "/tmp/cmus-%s", user_name);
 	}
 	debug_init();
-	load_config();
+	sconf_load();
 
 	d_print("charset = '%s'\n", charset);
 
@@ -2426,9 +2413,6 @@ int main(int argc, char *argv[])
 		ui_curses_exit();
 	}
 
-	if (sconf_save(&sconf_head, config_filename))
-		warn("error saving `%s': %s\n", config_filename, strerror(errno));
-	sconf_free(&sconf_head);
-	free(config_filename);
+	sconf_save();
 	return 0;
 }

@@ -13,7 +13,6 @@
 #include <player.h>
 #include <buffer.h>
 #include <sconf.h>
-#include <misc.h>
 #include <xmalloc.h>
 #include <utils.h>
 #include <debug.h>
@@ -249,7 +248,7 @@ void options_init(void)
 	for (i = 0; i < NR_FMTS; i++) {
 		char *var;
 
-		if (sconf_get_str_option(&sconf_head, fmt_names[i], &var))
+		if (!sconf_get_str_option(fmt_names[i], &var))
 			var = xstrdup(fmt_defaults[i]);
 		*fmt_vars[i] = var;
 		option_add(fmt_names[i], get_format, set_format, fmt_vars[i]);
@@ -264,7 +263,7 @@ void options_init(void)
 		option_add(buf, get_color, set_color, (void *)(long)(i + NR_COLORS));
 	}
 
-	sconf_get_bool_option(&sconf_head, "confirm_run", &confirm_run);
+	sconf_get_bool_option("confirm_run", &confirm_run);
 
 	option_add("output_plugin", get_output_plugin, set_output_plugin, NULL);
 	option_add("buffer_seconds", get_buffer_seconds, set_buffer_seconds, NULL);
@@ -280,6 +279,6 @@ void options_exit(void)
 	int i;
 
 	for (i = 0; i < NR_FMTS; i++)
-		sconf_set_str_option(&sconf_head, fmt_names[i], *fmt_vars[i]);
-	sconf_set_bool_option(&sconf_head, "confirm_run", confirm_run);
+		sconf_set_str_option(fmt_names[i], *fmt_vars[i]);
+	sconf_set_bool_option("confirm_run", confirm_run);
 }

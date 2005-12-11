@@ -22,11 +22,11 @@
 #include <mixer.h>
 #include <sf.h>
 #include <sconf.h>
-#include <misc.h>
 #include <prog.h>
 #include <utils.h>
 #include <symbol.h>
 #include <xmalloc.h>
+#include <list.h>
 #include <debug.h>
 #include <config.h>
 
@@ -187,7 +187,7 @@ static void load_plugin_options(void)
 			snprintf(key, sizeof(key), "dsp.%s.%s",
 					o->name,
 					o->pcm_options[j]);
-			sconf_get_str_option(&sconf_head, key, &val);
+			sconf_get_str_option(key, &val);
 			if (val) {
 				d_print("loaded: '%s=%s'\n", key, val);
 				o->pcm_ops->set_option(j, val);
@@ -205,7 +205,7 @@ static void load_plugin_options(void)
 			snprintf(key, sizeof(key), "mixer.%s.%s",
 					o->name,
 					o->mixer_options[j]);
-			sconf_get_str_option(&sconf_head, key, &val);
+			sconf_get_str_option(key, &val);
 			if (val) {
 				d_print("loaded: '%s=%s'\n", key, val);
 				o->mixer_ops->set_option(j, val);
@@ -236,7 +236,7 @@ static void save_plugin_options(void)
 						o->name,
 						o->pcm_options[j]);
 				d_print("saving: '%s=%s'\n", key, val);
-				sconf_set_str_option(&sconf_head, key, val);
+				sconf_set_str_option(key, val);
 				free(val);
 			}
 		}
@@ -254,7 +254,7 @@ static void save_plugin_options(void)
 						o->name,
 						o->mixer_options[j]);
 				d_print("saving: '%s=%s'\n", key, val);
-				sconf_set_str_option(&sconf_head, key, val);
+				sconf_set_str_option(key, val);
 				free(val);
 			}
 		}
@@ -277,7 +277,7 @@ int op_init(void)
 	int rc;
 	char *op_name = NULL;
 
-	sconf_get_str_option(&sconf_head, "output_plugin", &op_name);
+	sconf_get_str_option("output_plugin", &op_name);
 
 	/* select op */
 	rc = -OP_ERROR_NO_PLUGIN;
@@ -308,7 +308,7 @@ int op_exit(void)
 	d_print("saving options\n");
 	save_plugin_options();
 	if (op)
-		sconf_set_str_option(&sconf_head, "output_plugin", op->name);
+		sconf_set_str_option("output_plugin", op->name);
 	exit_plugins();
 	return 0;
 }

@@ -19,7 +19,7 @@
 
 #include <history.h>
 #include <xmalloc.h>
-#include <file_load.h>
+#include <file.h>
 #include <uchar.h>
 #include <list.h>
 #include <debug.h>
@@ -43,7 +43,7 @@ static struct history_entry *history_entry_new(const char *text)
 	return new;
 }
 
-static void history_add_tail(void *data, const char *line)
+static int history_add_tail(void *data, const char *line)
 {
 	struct history *history = data;
 
@@ -54,6 +54,7 @@ static void history_add_tail(void *data, const char *line)
 		list_add_tail(&new->node, &history->head);
 		history->lines++;
 	}
+	return 0;
 }
 
 void history_load(struct history *history, char *filename, int max_lines)
@@ -63,7 +64,7 @@ void history_load(struct history *history, char *filename, int max_lines)
 	history->lines = 0;
 	history->search_pos = NULL;
 	history->filename = filename;
-	file_load(filename, history_add_tail, history);
+	file_for_each_line(filename, history_add_tail, history);
 }
 
 void history_save(struct history *history)

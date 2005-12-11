@@ -25,6 +25,7 @@
 #include <xmalloc.h>
 #include <xstrjoin.h>
 #include <ui_curses.h>
+#include <file.h>
 #include <misc.h>
 #include <debug.h>
 
@@ -146,28 +147,32 @@ static void free_browser_list(void)
 	list_init(&browser_head);
 }
 
+static int add_pl_line(void *data, const char *line)
+{
+	struct browser_entry *e;
+	int name_size = strlen(line) + 1;
+
+	e = xmalloc(sizeof(struct browser_entry) + name_size);
+	memcpy(e->name, line, name_size);
+	e->type = BROWSER_ENTRY_PLLINE;
+	list_add_tail(&e->node, &browser_head);
+	return 0;
+}
+
 static int do_browser_load(const char *name)
 {
 	if (cmus_is_playlist(name)) {
-		char **files;
-		int i;
+		char *buf;
+		int size;
 		
-		files = cmus_playlist_get_files(name);
-		if (files == NULL)
+		buf = mmap_file(name, &size);
+		if (buf == NULL)
 			return -1;
 
 		free_browser_list();
-		for (i = 0; files[i]; i++) {
-			struct browser_entry *e;
-			int name_size = strlen(files[i]) + 1;
+		cmus_playlist_for_each(buf, size, 0, add_pl_line, NULL);
 
-			e = xmalloc(sizeof(struct browser_entry) + name_size);
-			memcpy(e->name, files[i], name_size);
-			e->type = BROWSER_ENTRY_PLLINE;
-			list_add_tail(&e->node, &browser_head);
-			free(files[i]);
-		}
-		free(files);
+		munmap(buf, size);
 	} else {
 		char **names;
 		int count, i, rc;

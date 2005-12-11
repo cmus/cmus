@@ -25,7 +25,7 @@
 #include <file.h>
 #include <utils.h>
 #include <symbol.h>
-#include <pls.h>
+#include <cmus.h>
 #include <list.h>
 #include <prog.h>
 #include <debug.h>
@@ -252,19 +252,19 @@ static int setup_remote(struct input_plugin *ip, const struct http_header *heade
 	return 0;
 }
 
-static void dump_lines(char **lines)
+static int handle_line(void *data, const char *line)
 {
-	int i;
+	char **firstp = data;
 
-	for (i = 0; lines[i]; i++)
-		d_print("%d='%s'\n", i, lines[i]);
+	*firstp = xstrdup(line);
+	/* ignore other lines */
+	return 1;
 }
 
-static int read_pls(struct input_plugin *ip, int sock)
+static int read_playlist(struct input_plugin *ip, int sock)
 {
 	struct http_header *headers;
-	char *body, *reason;
-	char **lines;
+	char *body, *reason, *first;
 	int rc, code;
 
 	rc = http_read_body(sock, &body, http_read_timeout);
@@ -272,72 +272,22 @@ static int read_pls(struct input_plugin *ip, int sock)
 	if (rc)
 		return -IP_ERROR_ERRNO;
 
-	lines = pls_get_files(body);
+	/* get only first URL from the playlist */
+	first = NULL;
+	cmus_playlist_for_each(body, strlen(body), 0, handle_line, &first);
 	free(body);
 
-	if (lines == NULL) {
-		d_print("error parsing playlist\n");
-		return -IP_ERROR_HTTP_RESPONSE;
-	}
-	dump_lines(lines);
-	if (lines[0] == NULL) {
-		free(lines);
+	if (first == NULL) {
 		d_print("empty playlist\n");
 		return -IP_ERROR_HTTP_RESPONSE;
 	}
 
-	sock = do_http_get(lines[0], &headers, &code, &reason);
-	free_str_array(lines);
+	sock = do_http_get(first, &headers, &code, &reason);
+	free(first);
 	if (sock < 0) {
 		ip->http_code = code;
 		ip->http_reason = reason;
-		return sock;
-	}
-
-	rc = setup_remote(ip, headers, sock);
-	http_headers_free(headers);
-	return rc;
-}
-
-static int read_m3u(struct input_plugin *ip, int sock)
-{
-	struct http_header *headers;
-	char *body, *reason;
-	char **lines;
-	int rc, code, i;
-
-	rc = http_read_body(sock, &body, http_read_timeout);
-	close(sock);
-	if (rc)
-		return -IP_ERROR_ERRNO;
-
-	lines = bsplit(body, strlen(body), '\n', 0);
-	free(body);
-
-	for (i = 0; lines[i]; i++) {
-		char *ptr = strchr(lines[i], '\r');
-
-		if (ptr)
-			*ptr = 0;
-	}
-	if (i > 0 && lines[i - 1][0] == 0) {
-		free(lines[i - 1]);
-		lines[i - 1] = NULL;
-	}
-	dump_lines(lines);
-
-	if (lines[0] == NULL) {
-		free(lines);
-		d_print("empty playlist\n");
-		return -IP_ERROR_HTTP_RESPONSE;
-	}
-
-	sock = do_http_get(lines[0], &headers, &code, &reason);
-	free_str_array(lines);
-	if (sock < 0) {
-		ip->http_code = code;
-		ip->http_reason = reason;
-
+		/* URI in the _playlist_ is invalid, not our fault */
 		if (sock == -IP_ERROR_INVALID_URI)
 			sock = -IP_ERROR_HTTP_RESPONSE;
 		return sock;
@@ -366,12 +316,9 @@ static int open_remote(struct input_plugin *ip)
 	val = http_headers_get_value(headers, "Content-Type");
 	if (val) {
 		d_print("Content-Type: %s\n", val);
-		if (strcasecmp(val, "audio/x-scpls") == 0) {
+		if (!strcasecmp(val, "audio/x-scpls") || !strcasecmp(val, "audio/m3u")) {
 			http_headers_free(headers);
-			return read_pls(ip, sock);
-		} else if (strcasecmp(val, "audio/m3u") == 0) {
-			http_headers_free(headers);
-			return read_m3u(ip, sock);
+			return read_playlist(ip, sock);
 		}
 	}
 

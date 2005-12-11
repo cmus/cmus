@@ -36,7 +36,6 @@ const char *cmus_config_dir = NULL;
 const char *cmus_cache_dir = NULL;
 const char *home_dir = NULL;
 const char *user_name = NULL;
-LIST_HEAD(sconf_head);
 
 char **get_words(const char *text)
 {

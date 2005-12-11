@@ -20,7 +20,6 @@
 #include <irman_config.h>
 #include <irman.h>
 #include <sconf.h>
-#include <misc.h>
 
 #include <stdio.h>
 #include <errno.h>
@@ -82,10 +81,10 @@ int irman_config(void)
 			return 1;
 		}
 		irman_code_to_text(text, code);
-		sconf_set_str_option(&sconf_head, button_names[i], text);
+		sconf_set_str_option(button_names[i], text);
 		printf("OK\n");
 	}
 	irman_close(irman);
-	sconf_set_str_option(&sconf_head, "irman_device", device);
+	sconf_set_str_option("irman_device", device);
 	return 0;
 }
