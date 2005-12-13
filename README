@@ -20,6 +20,13 @@ For example if you want to use 'mad' input plugin (mp3) you need to
 install libmad0-dev (Debian) or libmad-devel (RPM) package. After
 installing dependencies you need to run ./configure again, of course.
 
+If yout want to use the Tremor library as alternative for decoding 
+Ogg/Vorbis files you have to pass --with-tremor to the configure script:
+
+  ./configure --enable-vorbis --with-tremor
+
+The Tremor library is suposed to be used on hardware that has no FPU.
+
 Building
 --------
 

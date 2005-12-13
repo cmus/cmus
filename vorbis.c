@@ -17,12 +17,18 @@
  * 02111-1307, USA.
  */
 
+#include <config.h>
 #include <ip.h>
 #include <xmalloc.h>
 #include <read_wrapper.h>
 #include <debug.h>
 
+#ifdef CONFIG_TREMOR
+#include <tremor/ivorbisfile.h>
+#else
 #include <vorbis/vorbisfile.h>
+#endif
+
 #include <errno.h>
 #include <string.h>
 
@@ -34,7 +40,7 @@ struct vorbis_private {
 	int current_section;
 };
 
-/* http://xiph.org/ogg/vorbis/doc/vorbisfile/callbacks.html */
+/* http://www.xiph.org/vorbis/doc/vorbisfile/callbacks.html */
 
 static size_t read_func(void *ptr, size_t size, size_t nmemb, void *datasource)
 {
@@ -57,7 +63,7 @@ static int seek_func(void *datasource, ogg_int64_t offset, int whence)
 {
 	struct input_plugin_data *ip_data = datasource;
 	int rc;
-	
+
 	rc = lseek(ip_data->fd, offset, whence);
 	if (rc == -1)
 		return -1;
@@ -125,7 +131,7 @@ static int vorbis_close(struct input_plugin_data *ip_data)
 {
 	struct vorbis_private *priv;
 	int rc;
-	
+
 	priv = ip_data->private;
 	/* this closes ip_data->fd! */
 	rc = ov_clear(&priv->vf);
@@ -156,9 +162,14 @@ static int vorbis_read(struct input_plugin_data *ip_data, char *buffer, int coun
 {
 	struct vorbis_private *priv;
 	int rc;
-	
+
 	priv = ip_data->private;
+#ifdef CONFIG_TREMOR
+	/* Tremor can only handle signed 16 bit data */
+	rc = ov_read(&priv->vf, buffer, count, &priv->current_section);
+#else
 	rc = ov_read(&priv->vf, buffer, count, 0, 2, 1, &priv->current_section);
+#endif
 	switch (rc) {
 	case OV_HOLE:
 		errno = EAGAIN;
@@ -183,16 +194,21 @@ static int vorbis_read(struct input_plugin_data *ip_data, char *buffer, int coun
 			rc = -IP_ERROR_FILE_FORMAT;
 		}
 		return rc;
-	} 
+	}
 }
 
 static int vorbis_seek(struct input_plugin_data *ip_data, double offset)
 {
 	struct vorbis_private *priv;
 	int rc;
-	
+
 	priv = ip_data->private;
+
+#ifdef CONFIG_TREMOR
+	rc = ov_time_seek(&priv->vf, offset * 1000);
+#else
 	rc = ov_time_seek(&priv->vf, offset);
+#endif
 	switch (rc) {
 	case OV_ENOSEEK:
 		return -IP_ERROR_FUNCTION_NOT_SUPPORTED;
@@ -215,7 +231,7 @@ static int vorbis_read_comments(struct input_plugin_data *ip_data,
 	struct vorbis_private *priv;
 	vorbis_comment *vc;
 	int i, s, d;
-	
+
 	priv = ip_data->private;
 	vc = ov_comment(&priv->vf, -1);
 	if (vc == NULL) {
@@ -247,11 +263,14 @@ static int vorbis_duration(struct input_plugin_data *ip_data)
 {
 	struct vorbis_private *priv;
 	int duration;
-	
+
 	priv = ip_data->private;
 	duration = ov_time_total(&priv->vf, -1);
 	if (duration == OV_EINVAL)
 		return -IP_ERROR_FUNCTION_NOT_SUPPORTED;
+#ifdef CONFIG_TREMOR
+	duration = (duration + 500) / 1000;
+#endif
 	return duration;
 }
 

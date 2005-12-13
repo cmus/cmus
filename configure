@@ -44,8 +44,19 @@ check_modplug()
 
 check_vorbis()
 {
-	pkg_check_modules vorbis "vorbisfile" "" "-lvorbisfile -lvorbis -lm -logg"
-	return $?
+	if test "$CONFIG_TREMOR" = y
+	then
+		pkg_check_modules vorbis "vobisidec" "" "-lvorbisidec -lm"
+		return $?
+	else
+		pkg_check_modules vorbis "vorbisfile" "" "-lvorbisfile -lvorbis -lm -logg"
+		return $?
+	fi
+}
+
+flag_tremor()
+{
+	CONFIG_TREMOR=y
 }
 
 check_alsa()
@@ -139,14 +150,16 @@ bindir=""
 datadir=""
 libdir=""
 DEBUG=1
+CONFIG_TREMOR=n
 
 add_flag prefix    y flag_dir   "Installation prefix [$prefix]" "=DIR"
 add_flag bindir    y flag_dir   "User executables [PREFIX/bin]" "=DIR"
 add_flag datadir   y flag_dir   "Read-only data [PREFIX/share]" "=DIR"
 add_flag libdir    y flag_dir   "Libraries [PREFIX/lib]" "=DIR"
 
-add_flag debug     y flag_debug "Debugging level [$DEBUG]" "=[0-2]"
-add_flag dev       n flag_dev   "This should be used only by developers"
+add_flag debug       y flag_debug  "Debugging level [$DEBUG]" "=[0-2]"
+add_flag dev         n flag_dev    "This should be used only by developers"
+add_flag with-tremor n flag_tremor "Use Tremor as Ogg/Vorbis input plugin"
 
 add_check check_cc
 add_check check_endianness
@@ -181,6 +194,7 @@ LIBDIR="$libdir"
 
 config_header_begin config.h
 config_str PACKAGE VERSION PACKAGE_BUGREPORT DATADIR LIBDIR
+config_bool CONFIG_TREMOR
 config_bool CONFIG_IRMAN
 config_header_end
 
@@ -195,6 +209,7 @@ sed -e "s:@VERSION@:${VERSION}:g" < "cmus.spec.in" > cmus.spec
 print_config
 
 cat <<EOF
+tremor:              ${CONFIG_TREMOR}
 wide char support:   ${widechars}
 
 Compiler Settings:
