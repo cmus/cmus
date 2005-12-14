@@ -3,11 +3,11 @@
  */
 
 #include "id3.h"
+#include <comment.h>
 #include <sconf.h>
 #include <xmalloc.h>
 #include <utf8_encode.h>
 #include <uchar.h>
-#include <utils.h>
 #include <debug.h>
 
 #include <unistd.h>

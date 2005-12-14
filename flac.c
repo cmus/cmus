@@ -255,12 +255,25 @@ static void metadata_cb(const Dec *dec, const FLAC__StreamMetadata *metadata, vo
 			nr = metadata->data.vorbis_comment.num_comments;
 			c = xnew0(struct keyval, nr + 1);
 			for (s = 0, d = 0; s < nr; s++) {
+				char *key, *val;
+
 				/* until you have finished reading this function name
 				 * you have already forgot WTF you're doing */
 				if (!FLAC__metadata_object_vorbiscomment_entry_to_name_value_pair(metadata->data.vorbis_comment.comments[s],
-						&c[d].key, &c[d].val))
+						&key, &val))
 					continue;
-				d_print("comment: '%s=%s'\n", c[d].key, c[d].val);
+
+				if (!is_interesting_key(key)) {
+					free(key);
+					free(val);
+					continue;
+				}
+				if (!strcmp(key, "tracknumber") || !strcmp(key, "discnumber"))
+					fix_track_or_disc(val);
+
+				d_print("comment: '%s=%s'\n", key, val);
+				c[d].key = key;
+				c[d].val = val;
 				d++;
 			}
 			priv->comments = c;

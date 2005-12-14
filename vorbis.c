@@ -242,6 +242,7 @@ static int vorbis_read_comments(struct input_plugin_data *ip_data,
 	c = xnew0(struct keyval, vc->comments + 1);
 	for (s = 0, d = 0; s < vc->comments; s++) {
 		const char *str = vc->user_comments[s];
+		char *key, *val;
 
 		for (i = 0; str[i]; i++) {
 			if (str[i] == '=')
@@ -251,8 +252,17 @@ static int vorbis_read_comments(struct input_plugin_data *ip_data,
 			d_print("invalid comment: '%s' ('=' expected)\n", str);
 			continue;
 		}
-		c[d].key = xstrndup(str, i);
-		c[d].val = xstrdup(str + i + 1);
+		key = xstrndup(str, i);
+		if (!is_interesting_key(key)) {
+			free(key);
+			continue;
+		}
+
+		val = xstrdup(str + i + 1);
+		if (!strcmp(key, "tracknumber") || !strcmp(key, "discnumber"))
+			fix_track_or_disc(val);
+		c[d].key = key;
+		c[d].val = val;
 		d++;
 	}
 	*comments = c;

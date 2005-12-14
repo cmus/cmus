@@ -74,3 +74,26 @@ int comments_get_int(const struct keyval *comments, const char *key)
 		return -1;
 	return ival;
 }
+
+static const char *interesting[] = {
+	"artist", "album", "title", "tracknumber", "discnumber", "genre", "date", NULL
+};
+
+int is_interesting_key(const char *key)
+{
+	int i;
+
+	for (i = 0; interesting[i]; i++) {
+		if (strcmp(key, interesting[i]) == 0)
+			return 1;
+	}
+	return 0;
+}
+
+void fix_track_or_disc(char *str)
+{
+	char *slash = strchr(str, '/');
+
+	if (slash)
+		*slash = 0;
+}
