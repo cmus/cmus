@@ -1965,22 +1965,47 @@ int pl_for_each_selected(int (*cb)(void *data, struct track_info *ti), void *dat
 	return rc;
 }
 
+static int ti_filename_cmp(const void *a, const void *b)
+{
+	const struct track_info *tia = *(const struct track_info **)a;
+	const struct track_info *tib = *(const struct track_info **)b;
+
+	return strcmp(tia->filename, tib->filename);
+}
+
 int pl_for_each(int (*cb)(void *data, struct track_info *ti), void *data)
 {
-	int i, rc = 0;
+	int i, rc = 0, count = 0, size = 1024;
+	struct track_info **tis;
+
+	tis = xnew(struct track_info *, size);
 
 	pl_lock();
+
+	/* collect all track_infos */
 	for (i = 0; i < FH_SIZE; i++) {
 		struct fh_entry *e;
 
 		e = ti_hash[i];
 		while (e) {
-			rc = cb(data, e->ti);
-			if (rc)
-				break;
+			if (count == size) {
+				size *= 2;
+				tis = xrenew(struct track_info *, tis, size);
+			}
+			tis[count++] = e->ti;
 			e = e->next;
 		}
 	}
+
+	/* sort them by filename and call cb for each */
+	qsort(tis, count, sizeof(struct track_info *), ti_filename_cmp);
+	for (i = 0; i < count; i++) {
+		rc = cb(data, tis[i]);
+		if (rc)
+			break;
+	}
 	pl_unlock();
+
+	free(tis);
 	return rc;
 }
