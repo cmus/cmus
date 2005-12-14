@@ -161,7 +161,12 @@ static int add_pl_line(void *data, const char *line)
 
 static int do_browser_load(const char *name)
 {
-	if (cmus_is_playlist(name)) {
+	struct stat st;
+
+	if (stat(name, &st))
+		return -1;
+
+	if (S_ISREG(st.st_mode) && cmus_is_playlist(name)) {
 		char *buf;
 		int size;
 		
@@ -173,7 +178,7 @@ static int do_browser_load(const char *name)
 		cmus_playlist_for_each(buf, size, 0, add_pl_line, NULL);
 
 		munmap(buf, size);
-	} else {
+	} else if (S_ISDIR(st.st_mode)) {
 		char **names;
 		int count, i, rc;
 
@@ -201,6 +206,9 @@ static int do_browser_load(const char *name)
 			free(names[i]);
 		}
 		free(names);
+	} else {
+		errno = ENOTDIR;
+		return -1;
 	}
 	return 0;
 }
