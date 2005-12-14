@@ -90,4 +90,12 @@ static inline int is_url(const char *name)
 	return strncmp(name, "http://", 7) == 0;
 }
 
+static inline void fix_track_or_disc(char *str)
+{
+	char *slash = strchr(str, '/');
+
+	if (slash)
+		*slash = 0;
+}
+
 #endif

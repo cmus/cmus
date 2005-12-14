@@ -7,6 +7,7 @@
 #include <xmalloc.h>
 #include <utf8_encode.h>
 #include <uchar.h>
+#include <utils.h>
 #include <debug.h>
 
 #include <unistd.h>
@@ -552,12 +553,8 @@ static void v2_add_frame(ID3 *id3, struct v2_frame_header *fh, const char *buf)
 				return;
 			break;
 		}
-		if (key == ID3_TRACK || key == ID3_DISC) {
-			char *slash = strchr(out, '/');
-
-			if (slash)
-				*slash = 0;
-		}
+		if (key == ID3_TRACK || key == ID3_DISC)
+			fix_track_or_disc(out);
 		if (key == ID3_GENRE) {
 			id3_debug("genre before: '%s'\n", out);
 			out = parse_genre(out);
