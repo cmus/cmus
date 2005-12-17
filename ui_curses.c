@@ -318,15 +318,15 @@ static void dump_print_buffer(int row, int col)
 
 static void sprint(int row, int col, const char *str, int width, int indent)
 {
-	int s, d, ellipsis_pos;
+	int s, d, ellipsis_pos = 0, cut_double_width = 0;
 
 	width -= 2 + indent;
 	d = indent + 1;
 	memset(print_buffer, ' ', d);
 	s = 0;
-	ellipsis_pos = 0;
 	while (1) {
 		uchar u;
+		int w;
 
 		if (width == 3)
 			ellipsis_pos = d;
@@ -338,10 +338,23 @@ static void sprint(int row, int col, const char *str, int width, int indent)
 			break;
 		}
 
-		width -= u_char_width(u);
+		w = u_char_width(u);
+		if (width == 3)
+			ellipsis_pos = d;
+		if (width == 4 && w == 2) {
+			/* can't cut double-width char */
+			ellipsis_pos = d + 1;
+			cut_double_width = 1;
+		}
+
+		width -= w;
 		if (width < 0) {
 			/* does not fit */
 			d = ellipsis_pos;
+			if (cut_double_width) {
+				/* first half of the double-width char */
+				print_buffer[d - 1] = ' ';
+			}
 			print_buffer[d++] = '.';
 			print_buffer[d++] = '.';
 			print_buffer[d++] = '.';
