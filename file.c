@@ -118,6 +118,8 @@ char *mmap_file(const char *filename, int *size)
 
 	buf = mmap(NULL, *size, PROT_READ, MAP_PRIVATE, fd, 0);
 	close(fd);
+	if (buf == MAP_FAILED)
+		buf = NULL;
 	return buf;
 }
 
