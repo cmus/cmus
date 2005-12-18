@@ -33,7 +33,7 @@ dd {
 pre {
 	background: #f0f0ff;
 	padding: 1em;
-	border: 1pt solid #a0a0f0;
+	border: 1px solid #a0a0f0;
 }
 
 table {
@@ -50,12 +50,12 @@ tbody {
 }
 
 th {
-	border: 1pt solid #a0a0a0;
+	border: 1px solid #a0a0a0;
 	padding: 4px;
 }
 
 td {
-	border: 1pt solid #a0a0f0;
+	border: 1px solid #a0a0f0;
 	padding: 3px;
 }
 
