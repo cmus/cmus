@@ -32,8 +32,6 @@ else
 endif
 
 INSTALL		:= @scripts/install
-RST2HTML	:= rst2html.py
-RST2HTML_FLAGS	:=
 SPARSE		?= sparse
 SPARSE_FLAGS	?= -D__i386__
 
