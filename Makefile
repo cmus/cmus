@@ -113,8 +113,8 @@ install: build
 	$(INSTALL) -m755 $(libdir)/cmus/ip $(ip-y)
 	$(INSTALL) -m755 $(libdir)/cmus/op $(op-y)
 	$(INSTALL) -m644 $(datadir)/cmus keybindings
-	$(INSTALL) -m644 $(datadir)/cmus/doc cmus.html
 	$(INSTALL) -m755 $(datadir)/cmus cmus-status-display
+	$(INSTALL) -m644 $(datadir)/doc/cmus cmus.html
 
 tags:
 	exuberant-ctags *.[ch]

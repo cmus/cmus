@@ -226,15 +226,15 @@ EOF
 %dir %_libdir/cmus/ip
 %dir %_libdir/cmus/op
 %dir %_datadir/cmus
-%dir %_datadir/cmus/doc
 %dir %_datadir/cmus/example
+%dir %_datadir/doc/cmus
 %_bindir/cmus
 %_bindir/cmus-remote
 %_libdir/cmus/ip/wav.so
 %_libdir/cmus/op/oss.so
 %_datadir/cmus/cmus-status-display
-%_datadir/cmus/doc/cmus.html
 %_datadir/cmus/keybindings
+%_datadir/doc/cmus/cmus.html
 %doc AUTHORS ChangeLog COPYING README
 %if %altlinux
 %_menudir/cmus

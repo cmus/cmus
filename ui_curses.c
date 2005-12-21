@@ -1617,7 +1617,7 @@ static void display_last_help(WINDOW *w)
 	mvwaddstr(w, row++, (HELP_W - title_len) / 2, underline);
 	row++;
 	mvwaddstr(w, row++, col, "Run `cmus --help' to display command line options.");
-	mvwaddstr(w, row++, col, "Full documentation: " DATADIR "/cmus/doc/cmus.html");
+	mvwaddstr(w, row++, col, "Full documentation: " DATADIR "/doc/" PACKAGE "/cmus.html");
 	row++;
 	mvwaddstr(w, row++, col, "Copyright 2004-2005 Timo Hirvonen");
 	mvwaddstr(w, row++, col, "Send bug reports, patches etc. to " PACKAGE_BUGREPORT);
@@ -2350,7 +2350,7 @@ static const char *usage =
 "      --version       " VERSION "\n"
 "\n"
 "Use cmus-remote to control cmus from command line.\n"
-"Documentation: " DATADIR "/cmus/doc/cmus.html\n"
+"Documentation: " DATADIR "/doc/" PACKAGE "/cmus.html\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 int main(int argc, char *argv[])
