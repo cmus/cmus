@@ -113,10 +113,6 @@ quiet_cmd_ar = AR     $@
 quiet_cmd_as = AS     $@
       cmd_as = $(AS) -c $(ASFLAGS) -o $@ $<
 
-# .rst (restructured text) -> .html
-quiet_cmd_rst = RST    $@
-      cmd_rst = $(RST2HTML) $(RST2HTML_FLAGS) $< $@
-
 # source code checker
 ifneq ($(C),0)
 quiet_cmd_sparse = SPARSE $<

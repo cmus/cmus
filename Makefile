@@ -98,6 +98,9 @@ RST2HTML_FLAGS	:= --strict --no-toc-backlinks --generator --date --stylesheet-pa
 
 cmus.html: cmus.rst $(CSS)
 	$(call cmd,rst)
+
+quiet_cmd_rst = RST    $@
+      cmd_rst = $(RST2HTML) $(RST2HTML_FLAGS) $< $@
 # }}}
 
 clean		+= *.o *.lo *.so cmus cmus-remote
