@@ -24,7 +24,6 @@
 #include <xmalloc.h>
 #include <file.h>
 #include <utils.h>
-#include <symbol.h>
 #include <cmus.h>
 #include <list.h>
 #include <prog.h>
@@ -355,6 +354,7 @@ void ip_init_plugins(void)
 		struct ip *ip;
 		void *so;
 		char *ext;
+		const char *sym;
 
 		if (d->d_name[0] == '.')
 			continue;
@@ -374,28 +374,27 @@ void ip_init_plugins(void)
 
 		ip = xnew(struct ip, 1);
 
-		if (!get_symbol(so, "ip_extensions", filename, (void **)&ip->extensions, 0)) {
-			free(ip);
-			dlclose(so);
-			continue;
-		}
+		sym = "ip_extensions";
+		if (!(ip->extensions = dlsym(so, sym)))
+			goto sym_err;
 
-		if (!get_symbol(so, "ip_mime_types", filename, (void **)&ip->mime_types, 0)) {
-			free(ip);
-			dlclose(so);
-			continue;
-		}
+		sym = "ip_mime_types";
+		if (!(ip->mime_types = dlsym(so, sym)))
+			goto sym_err;
 
-		if (!get_symbol(so, "ip_ops", filename, (void **)&ip->ops, 0)) {
-			free(ip);
-			dlclose(so);
-			continue;
-		}
+		sym = "ip_ops";
+		if (!(ip->ops = dlsym(so, sym)))
+			goto sym_err;
 
 		ip->name = xstrndup(d->d_name, ext - d->d_name);
 		ip->handle = so;
 
 		list_add_tail(&ip->node, &ip_head);
+		continue;
+sym_err:
+		warn("%s: symbol %s not found\n", filename, sym);
+		free(ip);
+		dlclose(so);
 	}
 	closedir(dir);
 }

@@ -13,7 +13,7 @@ cmus-y := \
 	keys.o load_dir.o mergesort.o misc.o options.o \
 	output.o pcm.o pl.o play_queue.o player.o \
 	read_wrapper.o server.o sconf.o search.o \
-	search_mode.o spawn.o symbol.o tabexp.o tabexp_file.o \
+	search_mode.o spawn.o tabexp.o tabexp_file.o \
 	track_db.o track_info.o uchar.o ui_curses.o window.o \
 	worker.o xstrjoin.o
 

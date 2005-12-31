@@ -497,26 +497,23 @@ int u_strncasecmp(const char *a, const char *b, int len)
 
 char *u_strcasestr(const char *haystack, const char *needle)
 {
-	const unsigned char *text = haystack;
-	const unsigned char *part = needle;
-
 	/* strlen is faster and works here */
-	int text_len = strlen(text);
-	int part_len = u_strlen(part);
+	int haystack_len = strlen(haystack);
+	int needle_len = u_strlen(needle);
 
 	do {
 		uchar u;
 		int idx;
 
-		if (text_len < part_len)
+		if (haystack_len < needle_len)
 			return NULL;
-		if (u_strncasecmp(part, text, part_len) == 0)
-			return (char *)text;
+		if (u_strncasecmp(needle, haystack, needle_len) == 0)
+			return (char *)haystack;
 
 		/* skip one char */
 		idx = 0;
-		u_get_char(text, &idx, &u);
-		text += idx;
-		text_len -= idx;
+		u_get_char(haystack, &idx, &u);
+		haystack += idx;
+		haystack_len -= idx;
 	} while (1);
 }

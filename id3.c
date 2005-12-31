@@ -543,12 +543,12 @@ static void v2_add_frame(ID3 *id3, struct v2_frame_header *fh, const char *buf)
 			}
 			break;
 		case 0x01: /* UTF-16 */
-			out = utf16_to_utf8(buf, len);
+			out = utf16_to_utf8((const unsigned char *)buf, len);
 			if (out == NULL)
 				return;
 			break;
 		case 0x02: /* UTF-16BE */
-			out = utf16be_to_utf8(buf, len);
+			out = utf16be_to_utf8((const unsigned char *)buf, len);
 			if (out == NULL)
 				return;
 			break;

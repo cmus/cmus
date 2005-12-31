@@ -24,7 +24,6 @@
 #include <sconf.h>
 #include <prog.h>
 #include <utils.h>
-#include <symbol.h>
 #include <xmalloc.h>
 #include <list.h>
 #include <debug.h>
@@ -79,6 +78,7 @@ static void load_plugins(void)
 		struct output_plugin *plug;
 		void *so;
 		char *ext;
+		const char *sym;
 
 		if (d->d_name[0] == '.')
 			continue;
@@ -98,29 +98,16 @@ static void load_plugins(void)
 
 		plug = xnew(struct output_plugin, 1);
 
-		if (!get_symbol(so, "op_pcm_ops", filename, (void **)&plug->pcm_ops, 0)) {
-			free(plug);
-			dlclose(so);
-			continue;
-		}
+		sym = "op_pcm_ops";
+		if (!(plug->pcm_ops = dlsym(so, sym)))
+			goto sym_err;
 
-		if (!get_symbol(so, "op_pcm_options", filename, (void **)&plug->pcm_options, 0)) {
-			free(plug);
-			dlclose(so);
-			continue;
-		}
+		sym = "op_pcm_options";
+		if (!(plug->pcm_options = dlsym(so, sym)))
+			goto sym_err;
 
-		if (!get_symbol(so, "op_mixer_ops", filename, (void **)&plug->mixer_ops, 1)) {
-			free(plug);
-			dlclose(so);
-			continue;
-		}
-
-		if (!get_symbol(so, "op_mixer_options", filename, (void **)&plug->mixer_options, 1)) {
-			free(plug);
-			dlclose(so);
-			continue;
-		}
+		plug->mixer_ops = dlsym(so, "op_mixer_ops");
+		plug->mixer_options = dlsym(so, "op_mixer_options");
 
 		if (plug->mixer_ops == NULL || plug->mixer_options == NULL) {
 			plug->mixer_ops = NULL;
@@ -134,6 +121,11 @@ static void load_plugins(void)
 		plug->mixer_open = 0;
 
 		list_add_tail(&plug->node, &op_head);
+		continue;
+sym_err:
+		warn("%s: symbol %s not found\n", filename, sym);
+		free(plug);
+		dlclose(so);
 	}
 	closedir(dir);
 }
