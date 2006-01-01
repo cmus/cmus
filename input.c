@@ -399,26 +399,34 @@ sym_err:
 	closedir(dir);
 }
 
-struct input_plugin *ip_new(const char *filename)
+/* init everything but ip->data.filename and ip->data.remote */
+static void ip_init(struct input_plugin *ip)
 {
-	struct input_plugin *ip = xnew(struct input_plugin, 1);
-
 	ip->ops = NULL;
 	ip->open = 0;
 	ip->eof = 0;
 	ip->http_code = -1;
 	ip->http_reason = NULL;
+	ip->pcm_convert = NULL;
+	ip->pcm_convert_in_place = NULL;
+	ip->pcm_convert_scale = -1;
 
-	ip->data.filename = xstrdup(filename);
 	ip->data.fd = -1;
-
-	ip->data.remote = is_url(filename);
 	ip->data.metadata_changed = 0;
 	ip->data.counter = 0;
 	ip->data.metaint = 0;
 	ip->data.metadata = NULL;
-
+	ip->data.sf = 0;
 	ip->data.private = NULL;
+}
+
+struct input_plugin *ip_new(const char *filename)
+{
+	struct input_plugin *ip = xnew(struct input_plugin, 1);
+
+	ip_init(ip);
+	ip->data.filename = xstrdup(filename);
+	ip->data.remote = is_url(filename);
 	return ip;
 }
 
@@ -439,6 +447,8 @@ int ip_open(struct input_plugin *ip)
 	BUG_ON(ip->ops);
 	BUG_ON(ip->data.filename == NULL);
 	BUG_ON(ip->data.fd != -1);
+	BUG_ON(ip->data.sf);
+	BUG_ON(ip->pcm_convert_scale != -1);
 
 	/* set fd and ops */
 	if (ip->data.remote) {
@@ -537,16 +547,8 @@ int ip_close(struct input_plugin *ip)
 		close(ip->data.fd);
 	free(ip->data.metadata);
 	free(ip->http_reason);
-	ip->data.fd = -1;
-	ip->data.metadata = NULL;
-	ip->http_reason = NULL;
-	ip->ops = NULL;
-	ip->open = 0;
-	ip->eof = 0;
 
-	ip->pcm_convert_scale = -1;
-	ip->pcm_convert = NULL;
-	ip->pcm_convert_in_place = NULL;
+	ip_init(ip);
 	return rc;
 }
 

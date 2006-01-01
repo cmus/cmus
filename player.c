@@ -695,11 +695,7 @@ static void *producer_loop(void *arg)
 		}
 		__producer_buffer_fill_update();
 	}
-	__producer_stop();
-	if (producer_status != PS_UNLOADED) {
-		ip_delete(ip);
-		producer_status = PS_UNLOADED;
-	}
+	__producer_unload();
 	producer_unlock();
 	return NULL;
 }
