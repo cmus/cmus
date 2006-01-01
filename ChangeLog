@@ -1,3 +1,23 @@
+2006-01-01: 1.6.6
+~~~~~~~~~~~~~~~~~
+
+Alex
+  o Fixed UTF-16 to UTF-8 conversion (ID3v2)
+  o Tremor support (libvorbis for FPU-less systems)
+
+Timo Hirvonen
+  o Detect type of playlist files by content
+  o Fix track/disc numbers in 2/10 format in all input plugins.
+    Thanks for reporting this bug to Claes Nästén
+  o Sort tracks by filename before saving them to a playlist file
+  o Browser: don't assume all directory entries are files if the
+    filename extension is .pls .m3u etc.
+  o Fix trimming strings containing double-width characters
+  o Simplify configuration scripts
+  o Install cmus.html to /usr/share/doc/cmus
+  o Use rst2html if rst2html.py not found (reported by Frank Terbeck)
+  o Fix 'v' 'x' (stop & play) bug when playing a stream
+
 2005-12-05: 1.6.5
 ~~~~~~~~~~~~~~~~~
 

@@ -24,5 +24,6 @@ Frank Terbeck <frank.terbeck@rwth-aachen.de>
 
 alex <pukpuk@gmx.de>
   Sun output plugin
+  Tremor support for vorbis plugin
   NetBSD and OpenBSD port
   Various bug fixes
