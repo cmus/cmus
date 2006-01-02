@@ -192,8 +192,10 @@ syntax:
 void sconf_load(void)
 {
 	snprintf(filename, sizeof(filename), "%s/config", cmus_config_dir);
-	if (file_for_each_line(filename, handle_line, NULL))
-		die_errno("error loading config file `%s'", filename);
+	if (file_for_each_line(filename, handle_line, NULL)) {
+		if (errno != ENOENT)
+			die_errno("error loading config file `%s'", filename);
+	}
 }
 
 void sconf_save(void)
