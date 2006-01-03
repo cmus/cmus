@@ -186,7 +186,6 @@ run_checks()
 
 	after parse_command_line run_checks
 
-	trap 'rm -f .tmp-[0-9]*-*' 0 1 2 3 13 15
 	for check in $checks
 	do
 		$check || die -e "\nconfigure failed."
