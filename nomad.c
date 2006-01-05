@@ -405,7 +405,8 @@ static int do_open(struct nomad *nomad, int fast)
 		free_mad(nomad);
 		init_mad(nomad);
 	}
-	d_print("frames: %d, br: %d b/s, sr: %d Hz, ch: %d, layer: %d, joint stereo: %d, dual channel: %d, vbr: %d, duration: %g s, xing: %d\n",
+	d_print("\n  frames: %d, br: %d b/s, sr: %d Hz, ch: %d, layer: %d, joint stereo: %d\n"
+		"  dual channel: %d, vbr: %d, duration: %g s, xing: %d\n",
 			nomad->info.nr_frames, nomad->info.avg_bitrate,
 			nomad->info.sample_rate, nomad->info.channels,
 			nomad->info.layer, nomad->info.joint_stereo,
