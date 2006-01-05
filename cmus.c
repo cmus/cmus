@@ -236,13 +236,14 @@ static void add_pl(unsigned int flags, const char *filename)
 	int size, reverse;
 
 	buf = mmap_file(filename, &size);
-	if (buf == NULL)
+	if (size == -1)
 		return;
 
-	reverse = flags & JOB_FLAG_ENQUEUE && flags & JOB_FLAG_PREPEND;
-	cmus_playlist_for_each(buf, size, reverse, handle_line, &flags);
-
-	munmap(buf, size);
+	if (buf) {
+		reverse = flags & JOB_FLAG_ENQUEUE && flags & JOB_FLAG_PREPEND;
+		cmus_playlist_for_each(buf, size, reverse, handle_line, &flags);
+		munmap(buf, size);
+	}
 }
 
 static void job(void *data)

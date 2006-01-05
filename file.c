@@ -109,18 +109,28 @@ char *mmap_file(const char *filename, int *size)
 
 	fd = open(filename, O_RDONLY);
 	if (fd == -1)
-		return NULL;
-	if (fstat(fd, &st) == -1) {
-		close(fd);
-		return NULL;
-	}
-	*size = st.st_size;
+		goto err;
 
-	buf = mmap(NULL, *size, PROT_READ, MAP_PRIVATE, fd, 0);
+	if (fstat(fd, &st) == -1)
+		goto close_err;
+
+	/* can't mmap empty files */
+	buf = NULL;
+	if (st.st_size) {
+		buf = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+		if (buf == MAP_FAILED)
+			goto close_err;
+	}
+
 	close(fd);
-	if (buf == MAP_FAILED)
-		buf = NULL;
+	*size = st.st_size;
 	return buf;
+
+close_err:
+	close(fd);
+err:
+	*size = -1;
+	return NULL;
 }
 
 void buffer_for_each_line(const char *buf, int size,
@@ -195,10 +205,12 @@ int file_for_each_line(const char *filename,
 	int size;
 
 	buf = mmap_file(filename, &size);
-	if (buf == NULL)
+	if (size == -1)
 		return -1;
 
-	buffer_for_each_line(buf, size, cb, data);
-	munmap(buf, size);
+	if (buf) {
+		buffer_for_each_line(buf, size, cb, data);
+		munmap(buf, size);
+	}
 	return 0;
 }

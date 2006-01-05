@@ -171,13 +171,15 @@ static int do_browser_load(const char *name)
 		int size;
 		
 		buf = mmap_file(name, &size);
-		if (buf == NULL)
+		if (size == -1)
 			return -1;
 
 		free_browser_list();
-		cmus_playlist_for_each(buf, size, 0, add_pl_line, NULL);
 
-		munmap(buf, size);
+		if (buf) {
+			cmus_playlist_for_each(buf, size, 0, add_pl_line, NULL);
+			munmap(buf, size);
+		}
 	} else if (S_ISDIR(st.st_mode)) {
 		char **names;
 		int count, i, rc;
