@@ -162,7 +162,7 @@ static int running = 1;
 /* shown error message and time stamp
  * error is cleared if it is older than 3s and key was pressed
  */
-static char error_msg[512];
+static char error_buf[512];
 static time_t error_time = 0;
 
 static char *server_address = NULL;
@@ -870,7 +870,7 @@ static void update_statusline(void)
 	dump_print_buffer(LINES - 2, 0);
 
 	if (msg) {
-		ui_curses_display_error_msg("%s", msg);
+		error_msg("%s", msg);
 		free(msg);
 	}
 }
@@ -891,9 +891,9 @@ static void update_commandline(void)
 	char ch;
 
 	move(LINES - 1, 0);
-	if (error_msg[0]) {
+	if (error_buf[0]) {
 		bkgdset(cursed_colors[COLOR_ERROR]);
-		addstr(error_msg);
+		addstr(error_buf);
 		clrtoeol();
 		return;
 	}
@@ -1137,27 +1137,27 @@ void ui_curses_display_info_msg(const char *format, ...)
 	va_list ap;
 
 	va_start(ap, format);
-	vsnprintf(error_msg, sizeof(error_msg), format, ap);
+	vsnprintf(error_buf, sizeof(error_buf), format, ap);
 	va_end(ap);
 
 	ui_curses_update_commandline();
 }
 
-void ui_curses_display_error_msg(const char *format, ...)
+void error_msg(const char *format, ...)
 {
 	va_list ap;
 
-	strcpy(error_msg, "Error: ");
+	strcpy(error_buf, "Error: ");
 	va_start(ap, format);
-	vsnprintf(error_msg + 7, sizeof(error_msg) - 7, format, ap);
+	vsnprintf(error_buf + 7, sizeof(error_buf) - 7, format, ap);
 	va_end(ap);
 
 	if (ui_initialized) {
 		error_time = time(NULL);
 		ui_curses_update_commandline();
 	} else {
-		warn("%s\n", error_msg);
-		error_msg[0] = 0;
+		warn("%s\n", error_buf);
+		error_buf[0] = 0;
 	}
 }
 
@@ -1316,7 +1316,7 @@ void ui_curses_filters_view(void)
 
 void ui_curses_command_mode(void)
 {
-	error_msg[0] = 0;
+	error_buf[0] = 0;
 	error_time = 0;
 	ui_curses_input_mode = COMMAND_MODE;
 	ui_curses_update_commandline();
@@ -1324,7 +1324,7 @@ void ui_curses_command_mode(void)
 
 void ui_curses_search_mode(void)
 {
-	error_msg[0] = 0;
+	error_buf[0] = 0;
 	error_time = 0;
 	ui_curses_input_mode = SEARCH_MODE;
 	search_direction = SEARCH_FORWARD;
@@ -1333,7 +1333,7 @@ void ui_curses_search_mode(void)
 
 void ui_curses_search_backward_mode(void)
 {
-	error_msg[0] = 0;
+	error_buf[0] = 0;
 	error_time = 0;
 	ui_curses_input_mode = SEARCH_MODE;
 	search_direction = SEARCH_BACKWARD;
@@ -1409,7 +1409,7 @@ void ui_curses_set_sort(const char *value)
 				break;
 		}
 		if (valid[j] == NULL) {
-			ui_curses_display_error_msg("invalid sort key '%s'", keys[i]);
+			error_msg("invalid sort key '%s'", keys[i]);
 			free_str_array(keys);
 			return;
 		}
@@ -1629,7 +1629,7 @@ void display_help(void)
 	WINDOW *w;
 
 	if (COLS < HELP_WIDTH || LINES < HELP_HEIGHT) {
-		ui_curses_display_error_msg("window is too small to display help");
+		error_msg("window is too small to display help");
 		return;
 	}
 
@@ -1710,9 +1710,9 @@ static void clear_error(void)
 	if (t - error_time < 3)
 		return;
 
-	if (error_msg[0]) {
+	if (error_buf[0]) {
 		error_time = 0;
-		error_msg[0] = 0;
+		error_buf[0] = 0;
 		ui_curses_update_commandline();
 	}
 }
@@ -1768,7 +1768,7 @@ static void spawn_status_program(void)
 	}
 	argv[i++] = NULL;
 	if (spawn(argv, &status) == -1)
-		ui_curses_display_error_msg("couldn't run `%s': %s", status_display_program, strerror(errno));
+		error_msg("couldn't run `%s': %s", status_display_program, strerror(errno));
 	for (i = 0; argv[i]; i++)
 		free(argv[i]);
 }

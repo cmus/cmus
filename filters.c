@@ -114,7 +114,7 @@ void filters_activate(void)
 		f->visited = 1;
 		e = expr_parse(f->filter);
 		if (e == NULL) {
-			ui_curses_display_error_msg("error parsing filter %s: %s", f->name, expr_error());
+			error_msg("error parsing filter %s: %s", f->name, expr_error());
 			if (expr)
 				expr_free(expr);
 			return;
@@ -138,9 +138,9 @@ void filters_activate(void)
 	recursive_filter = NULL;
 	if (expr && expr_check_leaves(&expr, get_filter)) {
 		if (recursive_filter) {
-			ui_curses_display_error_msg("recursion detected in filter %s", recursive_filter);
+			error_msg("recursion detected in filter %s", recursive_filter);
 		} else {
-			ui_curses_display_error_msg("error parsing filter: %s", expr_error());
+			error_msg("error parsing filter: %s", expr_error());
 		}
 		expr_free(expr);
 		return;
@@ -207,14 +207,14 @@ static void do_filters_set_filter(const char *keyval, int active)
 
 	if (eq == NULL) {
 		if (ui_initialized)
-			ui_curses_display_error_msg("invalid argument ('key=value' expected)");
+			error_msg("invalid argument ('key=value' expected)");
 		return;
 	}
 	key = xstrndup(keyval, eq - keyval);
 	val = xstrdup(eq + 1);
 	if (!validate_filter_name(key)) {
 		if (ui_initialized)
-			ui_curses_display_error_msg("invalid filter name (can only contain 'a-zA-Z0-9_-' characters)");
+			error_msg("invalid filter name (can only contain 'a-zA-Z0-9_-' characters)");
 		free(key);
 		free(val);
 		return;
@@ -222,7 +222,7 @@ static void do_filters_set_filter(const char *keyval, int active)
 	expr = expr_parse(val);
 	if (expr == NULL) {
 		if (ui_initialized)
-			ui_curses_display_error_msg("error parsing filter %s: %s", val, expr_error());
+			error_msg("error parsing filter %s: %s", val, expr_error());
 		free(key);
 		free(val);
 		return;
@@ -331,7 +331,7 @@ void filters_set_anonymous(const char *val)
 	if (val) {
 		e = expr_parse(val);
 		if (e == NULL) {
-			ui_curses_display_error_msg("error parsing filter %s: %s", val, expr_error());
+			error_msg("error parsing filter %s: %s", val, expr_error());
 			return;
 		}
 	}
@@ -343,9 +343,9 @@ void filters_set_anonymous(const char *val)
 	recursive_filter = NULL;
 	if (e && expr_check_leaves(&e, get_filter)) {
 		if (recursive_filter) {
-			ui_curses_display_error_msg("recursion detected in filter %s", recursive_filter);
+			error_msg("recursion detected in filter %s", recursive_filter);
 		} else {
-			ui_curses_display_error_msg("error parsing filter: %s", expr_error());
+			error_msg("error parsing filter: %s", expr_error());
 		}
 		expr_free(e);
 		return;

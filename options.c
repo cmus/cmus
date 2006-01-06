@@ -50,7 +50,7 @@ static void set_color(const struct command_mode_option *opt, const char *value)
 	BUG_ON(i >= 2 * NR_COLORS);
 
 	if (str_to_int(value, &color) || color < -1 || color > color_max) {
-		ui_curses_display_error_msg("color value must be -1..%d", color_max);
+		error_msg("color value must be -1..%d", color_max);
 		return;
 	}
 
@@ -76,7 +76,7 @@ static void set_format(const struct command_mode_option *opt, const char *value)
 
 	d_print("%s=%s (old=%s)\n", opt->name, value, *var);
 	if (!format_valid(value)) {
-		ui_curses_display_error_msg("invalid format string");
+		error_msg("invalid format string");
 		return;
 	}
 	free(*var);
@@ -129,7 +129,7 @@ static void set_buffer_seconds(const struct command_mode_option *opt, const char
 	long int seconds;
 
 	if (str_to_int(value, &seconds) == -1 || seconds < 1) {
-		ui_curses_display_error_msg("buffer_seconds must be positive integer");
+		error_msg("buffer_seconds must be positive integer");
 		return;
 	}
 	player_set_buffer_chunks((seconds * SECOND_SIZE + CHUNK_SIZE / 2) / CHUNK_SIZE);
@@ -180,7 +180,7 @@ static void set_confirm_run(const struct command_mode_option *opt, const char *v
 	} else if (strcmp(value, "false") == 0) {
 		confirm_run = 0;
 	} else {
-		ui_curses_display_error_msg("confirm_run must be 'true' or 'false'");
+		error_msg("confirm_run must be 'true' or 'false'");
 		return;
 	}
 }

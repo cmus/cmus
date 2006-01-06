@@ -127,7 +127,7 @@ static void cmd_set(char *arg)
 		}
 	}
 	if (value == NULL) {
-		ui_curses_display_error_msg("'=' expected (:set option=value)");
+		error_msg("'=' expected (:set option=value)");
 		return;
 	}
 	list_for_each(item, &options_head) {
@@ -139,7 +139,7 @@ static void cmd_set(char *arg)
 			return;
 		}
 	}
-	ui_curses_display_error_msg("unknown option '%s'", name);
+	error_msg("unknown option '%s'", name);
 }
 
 static void cmd_seek(char *arg)
@@ -155,7 +155,7 @@ static void cmd_seek(char *arg)
 
 	seek = (int) strtol(arg, &endptr, 10);
 	if (!seek && arg == endptr) {
-		ui_curses_display_error_msg("invalid seek value");
+		error_msg("invalid seek value");
 		return;
 	}
 
@@ -167,7 +167,7 @@ static void cmd_seek(char *arg)
 		} else if (endptr[0] == 'H') {
 			seek *= 3600;
 		} else {
-			ui_curses_display_error_msg("invalid seek modifier");
+			error_msg("invalid seek modifier");
 			return;
 		}
 	}
@@ -191,7 +191,7 @@ static void cmd_add(char *arg)
 	
 	name = expand_filename(arg);
 	if (cmus_add(name) == -1)
-		ui_curses_display_error_msg("adding '%s' to playlist: %s", name, strerror(errno));
+		error_msg("adding '%s' to playlist: %s", name, strerror(errno));
 	free(name);
 }
 
@@ -201,7 +201,7 @@ static void cmd_enqueue(char *arg)
 	
 	name = expand_filename(arg);
 	if (cmus_enqueue(name, 0) == -1)
-		ui_curses_display_error_msg("adding '%s' to playqueue: %s", name, strerror(errno));
+		error_msg("adding '%s' to playqueue: %s", name, strerror(errno));
 	free(name);
 }
 
@@ -213,7 +213,7 @@ static void cmd_cd(char *arg)
 		dir = expand_filename(arg);
 		absolute = path_absolute(dir);
 		if (chdir(dir) == -1) {
-			ui_curses_display_error_msg("could not cd to '%s': %s", dir, strerror(errno));
+			error_msg("could not cd to '%s': %s", dir, strerror(errno));
 		} else {
 			browser_chdir(absolute);
 		}
@@ -221,7 +221,7 @@ static void cmd_cd(char *arg)
 		free(dir);
 	} else {
 		if (chdir(home_dir) == -1) {
-			ui_curses_display_error_msg("could not cd to '%s': %s", home_dir, strerror(errno));
+			error_msg("could not cd to '%s': %s", home_dir, strerror(errno));
 		} else {
 			browser_chdir(home_dir);
 		}
@@ -247,7 +247,7 @@ static void cmd_save(char *arg)
 		playlist_filename = xstrdup(playlist_autosave_filename);
 	}
 	if (cmus_save_playlist(playlist_filename) == -1)
-		ui_curses_display_error_msg("saving playlist '%s': %s", playlist_filename, strerror(errno));
+		error_msg("saving playlist '%s': %s", playlist_filename, strerror(errno));
 }
 
 static void cmd_load(char *arg)
@@ -256,7 +256,7 @@ static void cmd_load(char *arg)
 	
 	name = expand_filename(arg);
 	if (cmus_load_playlist(name) == -1) {
-		ui_curses_display_error_msg("loading playlist '%s': %s", name, strerror(errno));
+		error_msg("loading playlist '%s': %s", name, strerror(errno));
 		free(name);
 	} else {
 		free(playlist_filename);
@@ -287,7 +287,7 @@ static void cmd_bind(char *arg)
 	key_bind(arg, key, func);
 	return;
 err:
-	ui_curses_display_error_msg("expecting 3 arguments (context, key and function)\n");
+	error_msg("expecting 3 arguments (context, key and function)\n");
 }
 
 static void cmd_unbind(char *arg)
@@ -308,7 +308,7 @@ static void cmd_unbind(char *arg)
 	key_unbind(arg, key);
 	return;
 err:
-	ui_curses_display_error_msg("expecting 2 arguments (context and key)\n");
+	error_msg("expecting 2 arguments (context and key)\n");
 }
 
 static void cmd_quit(char *arg)
@@ -363,7 +363,7 @@ static char *parse_quoted(const char **strp)
 	*dst = 0;
 	return ret;
 error:
-	ui_curses_display_error_msg("`\"' expected");
+	error_msg("`\"' expected");
 	return NULL;
 }
 
@@ -453,7 +453,7 @@ static char *parse_one(const char **strp)
 	*strp = str;
 	return ret;
 sq_missing:
-	ui_curses_display_error_msg("`'' expected");
+	error_msg("`'' expected");
 error:
 	free(ret);
 	return NULL;
@@ -496,7 +496,7 @@ skip_spaces:
 	*ac = nr;
 	return av;
 only_once_please:
-	ui_curses_display_error_msg("{} can be used only once");
+	error_msg("{} can be used only once");
 error:
 	while (nr > 0)
 		free(av[--nr]);
@@ -581,16 +581,16 @@ static void cmd_run(char *arg)
 		int status;
 
 		if (spawn(argv, &status)) {
-			ui_curses_display_error_msg("executing %s: %s", argv[0], strerror(errno));
+			error_msg("executing %s: %s", argv[0], strerror(errno));
 		} else {
 			if (WIFEXITED(status)) {
 				int rc = WEXITSTATUS(status);
 
 				if (rc)
-					ui_curses_display_error_msg("%s returned %d", argv[0], rc);
+					error_msg("%s returned %d", argv[0], rc);
 			}
 			if (WIFSIGNALED(status))
-				ui_curses_display_error_msg("%s received signal %d", argv[0], WTERMSIG(status));
+				error_msg("%s received signal %d", argv[0], WTERMSIG(status));
 
 			/* remove non-existed files, update tags for changed files */
 			cmus_update_selected();
@@ -1135,21 +1135,21 @@ void run_command(const char *buf)
 	i = 0;
 	while (1) {
 		if (commands[i].name == NULL) {
-			ui_curses_display_error_msg("unknown command\n");
+			error_msg("unknown command\n");
 			break;
 		}
 		if (strncmp(cmd, commands[i].name, cmd_end - cmd_start) == 0) {
 			if (commands[i + 1].name && strncmp(cmd, commands[i + 1].name, cmd_end - cmd_start) == 0) {
-				ui_curses_display_error_msg("ambiguous command\n");
+				error_msg("ambiguous command\n");
 				break;
 			}
 			d_print("full command name: %s\n", commands[i].name);
 			if (commands[i].min_args > 0 && arg == NULL) {
-				ui_curses_display_error_msg("not enough arguments\n");
+				error_msg("not enough arguments\n");
 				break;
 			}
 			if (commands[i].max_args == 0 && arg) {
-				ui_curses_display_error_msg("too many arguments\n");
+				error_msg("too many arguments\n");
 				break;
 			}
 			commands[i].func(arg);

@@ -663,7 +663,7 @@ static int find_context(const char *name)
 		if (strcmp(name, key_context_names[i]) == 0)
 			return i;
 	}
-	ui_curses_display_error_msg("invalid context '%s'", name);
+	error_msg("invalid context '%s'", name);
 	return -1;
 }
 
@@ -675,7 +675,7 @@ static const struct key *find_key(const char *name)
 		if (strcmp(name, key_table[i].name) == 0)
 			return &key_table[i];
 	}
-	ui_curses_display_error_msg("invalid key '%s'", name);
+	error_msg("invalid key '%s'", name);
 	return NULL;
 }
 
@@ -688,7 +688,7 @@ static const struct key_function *find_function(const char *name, enum key_conte
 		if (strcmp(name, functions[i].name) == 0)
 			return &functions[i];
 	}
-	ui_curses_display_error_msg("function '%s' not in context %s", name, key_context_names[c]);
+	error_msg("function '%s' not in context %s", name, key_context_names[c]);
 	return NULL;
 }
 
@@ -769,7 +769,7 @@ int key_bind(const char *context, const char *key, const char *func)
 	}
 	return 0;
 bound:
-	ui_curses_display_error_msg("key %s already bound in context %s", key, key_context_names[c]);
+	error_msg("key %s already bound in context %s", key, key_context_names[c]);
 	return -1;
 }
 
@@ -802,7 +802,7 @@ int key_unbind(const char *context, const char *key)
 		prev = b;
 		b = b->next;
 	}
-	ui_curses_display_error_msg("key %s not bound in context %s", key, context);
+	error_msg("key %s not bound in context %s", key, context);
 	return -1;
 }
 
@@ -845,7 +845,7 @@ static int handle_line(void *data, const char *line)
 	key_bind(context, key, line);
 	return 0;
 error:
-	ui_curses_display_error_msg("could not parse keybinding '%s'", line);
+	error_msg("could not parse keybinding '%s'", line);
 	return 0;
 }
 

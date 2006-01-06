@@ -98,7 +98,7 @@ extern void ui_curses_update_titleline(void);
 extern void ui_curses_update_color(int idx);
 extern void ui_curses_set_sort(const char *value);
 extern void ui_curses_display_info_msg(const char *format, ...) __FORMAT(1, 2);
-extern void ui_curses_display_error_msg(const char *format, ...) __FORMAT(1, 2);
+void error_msg(const char *format, ...) __FORMAT(1, 2);
 extern int ui_curses_yes_no_query(const char *format, ...) __FORMAT(1, 2);
 extern void ui_curses_search_not_found(void);
 
