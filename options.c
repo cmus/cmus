@@ -82,7 +82,7 @@ static void set_format(const struct command_mode_option *opt, const char *value)
 	free(*var);
 	*var = xstrdup(value);
 
-	switch (ui_curses_view) {
+	switch (cur_view) {
 	case TREE_VIEW:
 	case SHUFFLE_VIEW:
 	case SORTED_VIEW:

@@ -68,25 +68,25 @@ static char *filename;
 
 static void view_lock(void)
 {
-	if (ui_curses_view < 3) {
+	if (cur_view < 3) {
 		pl_lock();
-	} else if (ui_curses_view == PLAY_QUEUE_VIEW) {
+	} else if (cur_view == PLAY_QUEUE_VIEW) {
 		play_queue_lock();
 	}
 }
 
 static void view_unlock(void)
 {
-	if (ui_curses_view < 3) {
+	if (cur_view < 3) {
 		pl_unlock();
-	} else if (ui_curses_view == PLAY_QUEUE_VIEW) {
+	} else if (cur_view == PLAY_QUEUE_VIEW) {
 		play_queue_unlock();
 	}
 }
 
 static struct window *current_win(void)
 {
-	switch (ui_curses_view) {
+	switch (cur_view) {
 	case TREE_VIEW:
 	case SHUFFLE_VIEW:
 	case SORTED_VIEW:
@@ -104,7 +104,7 @@ static struct window *current_win(void)
 /* bindable functions {{{ */
 static void win_activate_next(void)
 {
-	if (ui_curses_view == TREE_VIEW)
+	if (cur_view == TREE_VIEW)
 		pl_toggle_active_window();
 }
 
@@ -217,7 +217,7 @@ static const struct key_function common_functions[] = {
 	{ "pause",			player_pause			},
 	{ "play",			player_play			},
 	{ "prev",			cmus_prev			},
-	{ "quit",			ui_curses_quit			},
+	{ "quit",			quit				},
 	{ "search_next",		search_next_forward		},
 	{ "search_prev",		search_next_backward		},
 	{ "seek_backward",		cmus_seek_bwd			},
@@ -226,14 +226,14 @@ static const struct key_function common_functions[] = {
 	{ "toggle_continue",		player_toggle_cont		},
 	{ "toggle_play_mode",		pl_toggle_play_mode		},
 	{ "toggle_playlist_mode",	pl_toggle_playlist_mode		},
-	{ "toggle_remaining_time",	toggle_remaining_time	},
+	{ "toggle_remaining_time",	toggle_remaining_time		},
 	{ "toggle_repeat",		pl_toggle_repeat		},
-	{ "view_1",			ui_curses_tree_view		},
-	{ "view_2",			ui_curses_shuffle_view		},
-	{ "view_3",			ui_curses_sorted_view		},
-	{ "view_4",			ui_curses_play_queue_view	},
-	{ "view_5",			ui_curses_browser_view		},
-	{ "view_6",			ui_curses_filters_view		},
+	{ "view_1",			enter_tree_view			},
+	{ "view_2",			enter_shuffle_view		},
+	{ "view_3",			enter_sorted_view		},
+	{ "view_4",			enter_play_queue_view		},
+	{ "view_5",			enter_browser_view		},
+	{ "view_6",			enter_filters_view		},
 	{ "vol_down",			cmus_vol_down			},
 	{ "vol_left_down",		cmus_vol_left_down		},
 	{ "vol_left_up",		cmus_vol_left_up		},
@@ -952,17 +952,17 @@ void normal_mode_ch(uchar ch)
 	/* you can't redefine these keys */
 	switch (ch) {
 	case ':':
-		ui_curses_command_mode();
+		enter_command_mode();
 		return;
 	case '/':
-		ui_curses_search_mode();
+		enter_search_mode();
 		return;
 	case '?':
-		ui_curses_search_backward_mode();
+		enter_search_backward_mode();
 		return;
 	}
 
-	c = view_to_context[ui_curses_view];
+	c = view_to_context[cur_view];
 	k = ch_to_key(ch);
 
 	if (k == NULL) {
@@ -980,7 +980,7 @@ void normal_mode_ch(uchar ch)
 
 void normal_mode_key(int key)
 {
-	enum key_context c = view_to_context[ui_curses_view];
+	enum key_context c = view_to_context[cur_view];
 	const struct key *k = keycode_to_key(key);
 
 	if (k == NULL) {

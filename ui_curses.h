@@ -23,7 +23,7 @@
 #include <search.h>
 #include <compiler.h>
 
-enum ui_curses_input_mode {
+enum ui_input_mode {
 	NORMAL_MODE,
 	COMMAND_MODE,
 	SEARCH_MODE
@@ -56,8 +56,8 @@ enum {
 };
 
 extern int ui_initialized;
-extern enum ui_curses_input_mode ui_curses_input_mode;
-extern int ui_curses_view;
+extern enum ui_input_mode input_mode;
+extern int cur_view;
 extern struct searchable *searchable;
 
 /* usually ~/.config/cmus/playlist.pl */
@@ -93,7 +93,6 @@ extern const char * const color_names[NR_COLORS];
 extern int bg_colors[NR_COLORS];
 extern int fg_colors[NR_COLORS];
 
-void display_help(void);
 void ui_curses_update_titleline(void);
 void ui_curses_update_color(int idx);
 void ui_curses_set_sort(const char *value);
@@ -103,16 +102,17 @@ int yes_no_query(const char *format, ...) __FORMAT(1, 2);
 void search_not_found(void);
 
 /* bindable */
+void display_help(void);
 void toggle_remaining_time(void);
-void ui_curses_tree_view(void);
-void ui_curses_shuffle_view(void);
-void ui_curses_sorted_view(void);
-void ui_curses_play_queue_view(void);
-void ui_curses_browser_view(void);
-void ui_curses_filters_view(void);
-void ui_curses_command_mode(void);
-void ui_curses_search_mode(void);
-void ui_curses_search_backward_mode(void);
-void ui_curses_quit(void);
+void enter_tree_view(void);
+void enter_shuffle_view(void);
+void enter_sorted_view(void);
+void enter_play_queue_view(void);
+void enter_browser_view(void);
+void enter_filters_view(void);
+void enter_command_mode(void);
+void enter_search_mode(void);
+void enter_search_backward_mode(void);
+void quit(void);
 
 #endif

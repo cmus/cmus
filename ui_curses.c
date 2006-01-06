@@ -66,8 +66,8 @@
 /* globals. documented in ui_curses.h */
 
 int ui_initialized = 0;
-enum ui_curses_input_mode ui_curses_input_mode = NORMAL_MODE;
-int ui_curses_view = TREE_VIEW;
+enum ui_input_mode input_mode = NORMAL_MODE;
+int cur_view = TREE_VIEW;
 struct searchable *searchable;
 
 char *playlist_autosave_filename;
@@ -769,7 +769,7 @@ static void draw_separator(void)
 
 static void update_view(void)
 {
-	switch (ui_curses_view) {
+	switch (cur_view) {
 	case TREE_VIEW:
 		pl_lock();
 		if (playlist.tree_win->changed)
@@ -898,7 +898,7 @@ static void update_commandline(void)
 		return;
 	}
 	bkgdset(cursed_colors[COLOR_COMMANDLINE]);
-	if (ui_curses_input_mode == NORMAL_MODE) {
+	if (input_mode == NORMAL_MODE) {
 		clrtoeol();
 		return;
 	}
@@ -906,7 +906,7 @@ static void update_commandline(void)
 	/* COMMAND_MODE or SEARCH_MODE */
 	w = u_str_width(cmdline.line);
 	ch = ':';
-	if (ui_curses_input_mode == SEARCH_MODE)
+	if (input_mode == SEARCH_MODE)
 		ch = search_direction == SEARCH_FORWARD ? '/' : '?';
 
 	if (w <= COLS - 2) {
@@ -1100,7 +1100,7 @@ static int cmdline_cursor_column(void)
 static void post_update(void)
 {
 	/* refresh makes cursor visible at least for urxvt */
-	if (ui_curses_input_mode == COMMAND_MODE || ui_curses_input_mode == SEARCH_MODE) {
+	if (input_mode == COMMAND_MODE || input_mode == SEARCH_MODE) {
 		move(LINES - 1, cmdline_cursor_column());
 		refresh();
 		curs_set(1);
@@ -1201,7 +1201,7 @@ void search_not_found(void)
 	const char *what = "Track";
 
 	if (search_restricted) {
-		switch (ui_curses_view) {
+		switch (cur_view) {
 		case TREE_VIEW:
 			what = "Artist/album";
 			break;
@@ -1218,7 +1218,7 @@ void search_not_found(void)
 			break;
 		}
 	} else {
-		switch (ui_curses_view) {
+		switch (cur_view) {
 		case TREE_VIEW:
 		case SHUFFLE_VIEW:
 		case SORTED_VIEW:
@@ -1238,14 +1238,14 @@ void search_not_found(void)
 
 static void set_view(int view)
 {
-	if (view == ui_curses_view)
+	if (view == cur_view)
 		return;
-	ui_curses_view = view;
+	cur_view = view;
 
 	pl_lock();
 	if (view < 3)
 		__pl_set_view(view);
-	switch (ui_curses_view) {
+	switch (cur_view) {
 	case TREE_VIEW:
 		searchable = tree_searchable;
 		update_tree_window();
@@ -1284,63 +1284,63 @@ void toggle_remaining_time(void)
 	ui_curses_update_statusline();
 }
 
-void ui_curses_tree_view(void)
+void enter_tree_view(void)
 {
 	set_view(TREE_VIEW);
 }
 
-void ui_curses_shuffle_view(void)
+void enter_shuffle_view(void)
 {
 	set_view(SHUFFLE_VIEW);
 }
 
-void ui_curses_sorted_view(void)
+void enter_sorted_view(void)
 {
 	set_view(SORTED_VIEW);
 }
 
-void ui_curses_play_queue_view(void)
+void enter_play_queue_view(void)
 {
 	set_view(PLAY_QUEUE_VIEW);
 }
 
-void ui_curses_browser_view(void)
+void enter_browser_view(void)
 {
 	set_view(BROWSER_VIEW);
 }
 
-void ui_curses_filters_view(void)
+void enter_filters_view(void)
 {
 	set_view(FILTERS_VIEW);
 }
 
-void ui_curses_command_mode(void)
+void enter_command_mode(void)
 {
 	error_buf[0] = 0;
 	error_time = 0;
-	ui_curses_input_mode = COMMAND_MODE;
+	input_mode = COMMAND_MODE;
 	ui_curses_update_commandline();
 }
 
-void ui_curses_search_mode(void)
+void enter_search_mode(void)
 {
 	error_buf[0] = 0;
 	error_time = 0;
-	ui_curses_input_mode = SEARCH_MODE;
+	input_mode = SEARCH_MODE;
 	search_direction = SEARCH_FORWARD;
 	ui_curses_update_commandline();
 }
 
-void ui_curses_search_backward_mode(void)
+void enter_search_backward_mode(void)
 {
 	error_buf[0] = 0;
 	error_time = 0;
-	ui_curses_input_mode = SEARCH_MODE;
+	input_mode = SEARCH_MODE;
 	search_direction = SEARCH_BACKWARD;
 	ui_curses_update_commandline();
 }
 
-void ui_curses_quit(void)
+void quit(void)
 {
 	running = 0;
 }
@@ -2066,7 +2066,7 @@ static void ui_curses_start(void)
 
 			needs_status_update = 1;
 		}
-		switch (ui_curses_view) {
+		switch (cur_view) {
 		case TREE_VIEW:
 			needs_view_update += playlist.tree_win->changed || playlist.track_win->changed;
 			break;
@@ -2139,23 +2139,23 @@ static void ui_curses_start(void)
 				}
 				if (rc == 0) {
 					clear_error();
-					if (ui_curses_input_mode == NORMAL_MODE) {
+					if (input_mode == NORMAL_MODE) {
 						normal_mode_ch(ch);
-					} else if (ui_curses_input_mode == COMMAND_MODE) {
+					} else if (input_mode == COMMAND_MODE) {
 						command_mode_ch(ch);
 						ui_curses_update_commandline();
-					} else if (ui_curses_input_mode == SEARCH_MODE) {
+					} else if (input_mode == SEARCH_MODE) {
 						search_mode_ch(ch);
 						ui_curses_update_commandline();
 					}
 				} else if (rc == 1) {
 					clear_error();
-					if (ui_curses_input_mode == NORMAL_MODE) {
+					if (input_mode == NORMAL_MODE) {
 						normal_mode_key(key);
-					} else if (ui_curses_input_mode == COMMAND_MODE) {
+					} else if (input_mode == COMMAND_MODE) {
 						command_mode_key(key);
 						ui_curses_update_commandline();
-					} else if (ui_curses_input_mode == SEARCH_MODE) {
+					} else if (input_mode == SEARCH_MODE) {
 						search_mode_key(key);
 						ui_curses_update_commandline();
 					}

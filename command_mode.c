@@ -313,7 +313,7 @@ err:
 
 static void cmd_quit(char *arg)
 {
-	ui_curses_quit();
+	quit();
 }
 static void cmd_reshuffle(char *arg)
 {
@@ -523,7 +523,7 @@ static void cmd_run(char *arg)
 	char **av, **argv;
 	int ac, argc, i, run, files_idx = -1;
 
-	if (ui_curses_view > SORTED_VIEW) {
+	if (cur_view > SORTED_VIEW) {
 		info_msg("Command execution is supported only if view 1, 2 or 3 is active");
 		return;
 	}
@@ -1173,7 +1173,7 @@ static void backspace(void)
 	if (cmdline.clen > 0) {
 		cmdline_backspace();
 	} else {
-		ui_curses_input_mode = NORMAL_MODE;
+		input_mode = NORMAL_MODE;
 	}
 }
 
@@ -1185,7 +1185,7 @@ void command_mode_ch(uchar ch)
 			history_add_line(&cmd_history, cmdline.line);
 			cmdline_clear();
 		}
-		ui_curses_input_mode = NORMAL_MODE;
+		input_mode = NORMAL_MODE;
 		break;
 	case 0x0A:
 		if (cmdline.blen) {
@@ -1193,7 +1193,7 @@ void command_mode_ch(uchar ch)
 			history_add_line(&cmd_history, cmdline.line);
 			cmdline_clear();
 		}
-		ui_curses_input_mode = NORMAL_MODE;
+		input_mode = NORMAL_MODE;
 		break;
 	case 0x09:
 		tab_expand();

@@ -97,7 +97,7 @@ static void backspace(void)
 	if (cmdline.clen > 0) {
 		cmdline_backspace();
 	} else {
-		ui_curses_input_mode = NORMAL_MODE;
+		input_mode = NORMAL_MODE;
 	}
 }
 
@@ -113,7 +113,7 @@ void search_mode_ch(uchar ch)
 			history_add_line(&search_history, text);
 			cmdline_clear();
 		}
-		ui_curses_input_mode = NORMAL_MODE;
+		input_mode = NORMAL_MODE;
 		break;
 	case 0x0A:
 		parse_line(&text, &restricted);
@@ -137,7 +137,7 @@ void search_mode_ch(uchar ch)
 		cmdline_clear();
 		if (!search_found)
 			search_not_found();
-		ui_curses_input_mode = NORMAL_MODE;
+		input_mode = NORMAL_MODE;
 		break;
 	case 127:
 		backspace();
