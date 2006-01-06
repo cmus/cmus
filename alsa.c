@@ -96,6 +96,13 @@ static unsigned int alsa_period_time = 50e3;
 
 #define SET_BUFFERTIME
 
+#if 0
+#define debug_ret(func, ret) \
+	d_print("%s returned %d %s\n", func, ret, ret < 0 ? snd_strerror(ret) : "")
+#else
+#define debug_ret(func, ret) do { } while (0)
+#endif
+
 static int alsa_error_to_op_error(int err)
 {
 	BUG_ON(err >= 0);
@@ -317,32 +324,26 @@ static int op_alsa_close(void)
 	int rc;
 
 	rc = snd_pcm_drain(alsa_handle);
-/* 	d_print("snd_pcm_drain returned %d %s\n", rc, rc < 0 ? snd_strerror(rc) : ""); */
+	debug_ret("snd_pcm_drain", rc);
+
 	rc = snd_pcm_close(alsa_handle);
-/* 	d_print("snd_pcm_close returned %d %s\n", rc, rc < 0 ? snd_strerror(rc) : ""); */
+	debug_ret("snd_pcm_close", rc);
 	return 0;
 }
 
 static int op_alsa_drop(void)
 {
 	int rc;
-/* 	snd_pcm_state_t old_state; */
 
 	/* infinite timeout */
 	rc = snd_pcm_wait(alsa_handle, -1);
-/* 	d_print("snd_pcm_wait returned %d %s\n", rc, rc < 0 ? snd_strerror(rc) : ""); */
-
-/*
- * 	old_state = snd_pcm_state(alsa_handle);
- * 	d_print("pcm state is %s\n", state_to_str(snd_pcm_state(alsa_handle)));
- */
+	debug_ret("snd_pcm_wait", rc);
 
 	rc = snd_pcm_drop(alsa_handle);
-/* 	d_print("snd_pcm_drop returned %d %s\n", rc, rc < 0 ? snd_strerror(rc) : ""); */
-	rc = snd_pcm_prepare(alsa_handle);
-/* 	d_print("snd_pcm_prepare returned %d %s\n", rc, rc < 0 ? snd_strerror(rc) : ""); */
+	debug_ret("snd_pcm_drop", rc);
 
-/* 	d_print("pcm state is %s\n", state_to_str(snd_pcm_state(alsa_handle))); */
+	rc = snd_pcm_prepare(alsa_handle);
+	debug_ret("snd_pcm_prepare", rc);
 
 	/* drop set state to SETUP
 	 * prepare set state to PREPARED
@@ -355,12 +356,6 @@ static int op_alsa_drop(void)
 static int op_alsa_write(const char *buffer, int count)
 {
 	int rc, len;
-
-/* 	d_print("start\n"); */
-
-	/* is this necessary? doesn't snd_pcm_writei return -EAGAIN if
-	 * hardware not ready? */
-	//rc = snd_pcm_wait(alsa_handle, 5);
 
 	len = count / alsa_frame_size;
 	rc = snd_pcm_writei(alsa_handle, buffer, len);
@@ -388,7 +383,7 @@ static int op_alsa_buffer_space(void)
 
 	rc = snd_pcm_status(alsa_handle, status);
 	if (rc < 0) {
-		d_print("snd_pcm_status returned %d %s\n", rc, snd_strerror(rc));
+		debug_ret("snd_pcm_status", rc);
 		return alsa_error_to_op_error(rc);
 	}
 
@@ -407,7 +402,6 @@ static int op_alsa_pause(void)
 		int rc;
 
 		state = snd_pcm_state(alsa_handle);
-/* 		d_print("pcm state is %s\n", state_to_str(state)); */
 		if (state == SND_PCM_STATE_PREPARED) {
 			// state is PREPARED -> no need to pause
 		} else if (state == SND_PCM_STATE_RUNNING) {
@@ -415,10 +409,10 @@ static int op_alsa_pause(void)
 
 			// infinite timeout
 			rc = snd_pcm_wait(alsa_handle, -1);
-/* 			d_print("snd_pcm_wait returned %d %s\n", rc, rc < 0 ? snd_strerror(rc) : ""); */
+			debug_ret("snd_pcm_wait", rc);
 
 			rc = snd_pcm_pause(alsa_handle, 1);
-/* 			d_print("snd_pcm_pause returned %d %s\n", rc, rc < 0 ? snd_strerror(rc) : ""); */
+			debug_ret("snd_pcm_pause", rc);
 		} else {
 			d_print("error: state is not RUNNING or PREPARED\n");
 		}
@@ -433,7 +427,6 @@ static int op_alsa_unpause(void)
 		int rc;
 
 		state = snd_pcm_state(alsa_handle);
-/* 		d_print("pcm state is %s\n", state_to_str(state)); */
 		if (state == SND_PCM_STATE_PREPARED) {
 			// state is PREPARED -> no need to unpause
 		} else if (state == SND_PCM_STATE_PAUSED) {
@@ -441,10 +434,10 @@ static int op_alsa_unpause(void)
 
 			// infinite timeout
 			rc = snd_pcm_wait(alsa_handle, -1);
-/* 			d_print("snd_pcm_wait returned %d %s\n", rc, rc < 0 ? snd_strerror(rc) : ""); */
+			debug_ret("snd_pcm_wait", rc);
 
 			rc = snd_pcm_pause(alsa_handle, 0);
-/* 			d_print("snd_pcm_pause returned %d %s\n", rc, rc < 0 ? snd_strerror(rc) : ""); */
+			debug_ret("snd_pcm_pause", rc);
 		} else {
 			d_print("error: state is not PAUSED nor PREPARED\n");
 		}
