@@ -818,6 +818,7 @@ static void do_update_statusline(void)
 	char format[80];
 
 	pl_lock();
+	playlist.status_changed = 0;
 	fopt_set_time(&status_fopts[SF_TOTAL], playlist.total_time, 0);
 	fopt_set_str(&status_fopts[SF_REPEAT], playlist.repeat ? "rep" : "");
 	fopt_set_str(&status_fopts[SF_PLAYMODE], play_mode_strs[playlist.play_mode]);
