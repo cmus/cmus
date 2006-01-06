@@ -71,20 +71,16 @@ static void buf_write_ch(char **bufp, int *sizep, int *posp, char ch)
  * server requests a password, the program interpreting the URL should request
  * one from the user.
  */
-int http_parse_uri(const char *uri, char **userp, char **passp, char **hostp, int *portp, char **pathp)
+int http_parse_uri(const char *uri, struct http_uri *u)
 {
 	const char *str, *colon, *at, *slash, *host_start;
-	char *user = NULL;
-	char *pass = NULL;
-	char *host = NULL;
-	int port = 80;
-	char *path = NULL;
 
-	*userp = NULL;
-	*passp = NULL;
-	*hostp = NULL;
-	*portp = -1;
-	*pathp = NULL;
+	/* initialize all fields */
+	u->user = NULL;
+	u->pass = NULL;
+	u->host = NULL;
+	u->path = NULL;
+	u->port = 80;
 
 	if (strncmp(uri, "http://", 7))
 		return -1;
@@ -94,9 +90,9 @@ int http_parse_uri(const char *uri, char **userp, char **passp, char **hostp, in
 	/* [/path] */
 	slash = strchr(str, '/');
 	if (slash) {
-		path = xstrdup(slash);
+		u->path = xstrdup(slash);
 	} else {
-		path = xstrdup("/");
+		u->path = xstrdup("/");
 	}
 
 	/* [user[:pass]@] */
@@ -107,11 +103,11 @@ int http_parse_uri(const char *uri, char **userp, char **passp, char **hostp, in
 		colon = strchr(str, ':');
 		if (colon == NULL || colon > at) {
 			/* user */
-			user = xstrndup(str, at - str);
+			u->user = xstrndup(str, at - str);
 		} else {
 			/* user:pass */
-			user = xstrndup(str, colon - str);
-			pass = xstrndup(colon + 1, at - (colon + 1));
+			u->user = xstrndup(str, colon - str);
+			u->pass = xstrndup(colon + 1, at - (colon + 1));
 		}
 	}
 
@@ -120,8 +116,9 @@ int http_parse_uri(const char *uri, char **userp, char **passp, char **hostp, in
 	if (colon) {
 		/* host:port */
 		const char *start;
+		int port;
 
-		host = xstrndup(host_start, colon - host_start);
+		u->host = xstrndup(host_start, colon - host_start);
 		colon++;
 		start = colon;
 
@@ -131,28 +128,29 @@ int http_parse_uri(const char *uri, char **userp, char **passp, char **hostp, in
 			port += *colon - '0';
 			colon++;
 		}
+		u->port = port;
 
 		if (colon == start || (*colon != 0 && *colon != '/')) {
-			free(user);
-			free(pass);
-			free(host);
-			free(path);
+			http_free_uri(u);
 			return -1;
 		}
 	} else {
 		/* host */
 		if (slash) {
-			host = xstrndup(host_start, slash - host_start);
+			u->host = xstrndup(host_start, slash - host_start);
 		} else {
-			host = xstrdup(host_start);
+			u->host = xstrdup(host_start);
 		}
 	}
-	*userp = user;
-	*passp = pass;
-	*hostp = host;
-	*portp = port;
-	*pathp = path;
 	return 0;
+}
+
+void http_free_uri(struct http_uri *u)
+{
+	free(u->user);
+	free(u->pass);
+	free(u->host);
+	free(u->path);
 }
 
 int http_open(const char *hostname, unsigned int port, int timeout_ms)

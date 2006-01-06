@@ -132,32 +132,30 @@ static const struct input_plugin_ops *get_ops_by_mime_type(const char *mime_type
 
 static int do_http_get(const char *uri, struct http_header **headersp, int *codep, char **reasonp)
 {
-	char *user, *pass, *host, *path, *reason;
-	int port, sock, i, rc, code;
+	struct http_uri u;
 	struct http_header *h;
+	int sock, i, rc, code;
+	char *reason;
 
 	*headersp = NULL;
 	*codep = -1;
 	*reasonp = NULL;
 
-	if (http_parse_uri(uri, &user, &pass, &host, &port, &path))
+	if (http_parse_uri(uri, &u))
 		return -IP_ERROR_INVALID_URI;
 
 /* 	d_print("%s -> '%s':'%s'@'%s':%d'%s'\n", uri, user, pass, host, port, path); */
 
-	sock = http_open(host, port, http_connection_timeout);
+	sock = http_open(u.host, u.port, http_connection_timeout);
 	if (sock == -1) {
-		free(user);
-		free(pass);
-		free(host);
-		free(path);
+		http_free_uri(&u);
 		return -IP_ERROR_ERRNO;
 	}
 
 	h = xnew(struct http_header, 5);
 	i = 0;
 	h[i].key = xstrdup("Host");
-	h[i].val = xstrdup(host);
+	h[i].val = xstrdup(u.host);
 	i++;
 	h[i].key = xstrdup("User-Agent");
 	h[i].val = xstrdup(PACKAGE "/" VERSION);
@@ -165,11 +163,11 @@ static int do_http_get(const char *uri, struct http_header **headersp, int *code
 	h[i].key = xstrdup("Icy-MetaData");
 	h[i].val = xstrdup("1");
 	i++;
-	if (user && pass) {
+	if (u.user && u.pass) {
 		char buf[256];
 		char *encoded;
 
-		snprintf(buf, sizeof(buf), "%s:%s", user, pass);
+		snprintf(buf, sizeof(buf), "%s:%s", u.user, u.pass);
 		encoded = base64_encode(buf);
 		if (encoded == NULL) {
 			d_print("couldn't base64 encode '%s'\n", buf);
@@ -185,12 +183,9 @@ static int do_http_get(const char *uri, struct http_header **headersp, int *code
 	h[i].val = NULL;
 	i++;
 
-	rc = http_get(sock, path, h, &code, &reason, headersp, http_read_timeout);
+	rc = http_get(sock, u.path, h, &code, &reason, headersp, http_read_timeout);
 	http_headers_free(h);
-	free(user);
-	free(pass);
-	free(host);
-	free(path);
+	http_free_uri(&u);
 	switch (rc) {
 	case -1:
 		d_print("error: %s\n", strerror(errno));

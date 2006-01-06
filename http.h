@@ -33,22 +33,32 @@ struct http_header {
 	char *val;
 };
 
-extern int http_parse_uri(const char *uri, char **userp, char **passp, char **hostp, int *portp, char **pathp);
+struct http_uri {
+	char *user;
+	char *pass;
+	char *host;
+	char *path;
+	int port;
+};
 
-extern int http_open(const char *hostname, unsigned int port, int timeout_ms);
+int http_parse_uri(const char *uri, struct http_uri *u);
+
+/* frees contents of @u, not @u itself */
+void http_free_uri(struct http_uri *u);
+
+int http_open(const char *hostname, unsigned int port, int timeout_ms);
 
 /*
  * returns:  0 success
  *          -1 check errno
  *          -2 parse error
  */
-extern int http_get(int fd, const char *path, struct http_header *headers,
-		int *codep, char **errp, struct http_header **ret_headersp,
-		int timeout_ms);
+int http_get(int fd, const char *path, struct http_header *headers, int *codep,
+		char **errp, struct http_header **ret_headersp, int timeout_ms);
 
-extern int http_read_body(int fd, char **bodyp, int timeout_ms);
-extern const char *http_headers_get_value(const struct http_header *headers, const char *key);
-extern void http_headers_free(struct http_header *headers);
-extern char *base64_encode(const char *str);
+int http_read_body(int fd, char **bodyp, int timeout_ms);
+const char *http_headers_get_value(const struct http_header *headers, const char *key);
+void http_headers_free(struct http_header *headers);
+char *base64_encode(const char *str);
 
 #endif
