@@ -1755,30 +1755,6 @@ void pl_toggle_play_mode(void)
 	pl_unlock();
 }
 
-void pl_set_repeat(int value)
-{
-	pl_lock();
-	playlist.repeat = value;
-	status_changed();
-	pl_unlock();
-}
-
-void pl_set_playlist_mode(enum playlist_mode playlist_mode)
-{
-	pl_lock();
-	playlist.playlist_mode = playlist_mode;
-	status_changed();
-	pl_unlock();
-}
-
-void pl_set_play_mode(enum play_mode play_mode)
-{
-	pl_lock();
-	playlist.play_mode = play_mode;
-	status_changed();
-	pl_unlock();
-}
-
 void __pl_set_view(int view)
 {
 	/* playlist.tree_win or playlist.track_win */

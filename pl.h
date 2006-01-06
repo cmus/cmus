@@ -146,26 +146,25 @@ struct track_info *pl_set_selected(void);
 void pl_add_track(struct track_info *track_info);
 
 void pl_set_sort_keys(char **keys);
-void pl_clear(void);
 void pl_set_filter(struct expr *expr);
 void pl_remove(struct track_info *ti);
+
+/* bindable */
 void pl_remove_sel(void);
 void pl_toggle_expand_artist(void);
-
 void pl_toggle_repeat(void);
 void pl_toggle_playlist_mode(void);
 void pl_toggle_play_mode(void);
-void pl_set_repeat(int value);
-void pl_set_playlist_mode(enum playlist_mode playlist_mode);
-void pl_set_play_mode(enum play_mode play_mode);
-
-/* these are unlocked */
-void __pl_set_view(int view);
-
-void pl_toggle_active_window(void);
 void pl_sel_current(void);
 
+/* could be made bindable */
+void pl_clear(void);
 void pl_reshuffle(void);
+
+/* not directly bindable. only makes sense to use when TREE_VIEW is active */
+void pl_toggle_active_window(void);
+
+void __pl_set_view(int view);
 
 /*
  * Run callback @cb for each selected track. Quit if @cb returns non-zero value.

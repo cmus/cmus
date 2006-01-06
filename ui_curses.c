@@ -2245,16 +2245,16 @@ static void init_all(void)
 	if (sconf_get_bool_option("continue", &btmp))
 		player_set_cont(btmp);
 	if (sconf_get_bool_option("repeat", &btmp))
-		pl_set_repeat(btmp);
+		playlist.repeat = btmp;
 	if (sconf_get_int_option("playlist_mode", &btmp)) {
 		if (btmp < 0 || btmp > 2)
 			btmp = 0;
-		pl_set_playlist_mode(btmp);
+		playlist.playlist_mode = btmp;
 	}
 	if (sconf_get_int_option("play_mode", &btmp)) {
 		if (btmp < 0 || btmp > 2)
 			btmp = 0;
-		pl_set_play_mode(btmp);
+		playlist.play_mode = btmp;
 	}
 	sconf_get_bool_option("show_remaining_time", &show_remaining_time);
 	sconf_get_str_option("status_display_program", &status_display_program);
