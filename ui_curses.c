@@ -1921,6 +1921,106 @@ static void ir_exit(void)
 
 /* irman }}} */
 
+static void update(void)
+{
+	int needs_view_update = 0;
+	int needs_title_update = 0;
+	int needs_status_update = 0;
+	int needs_command_update = 0;
+	int needs_spawn = 0;
+
+	if (needs_to_resize) {
+		int w, h;
+		int columns, lines;
+
+		if (get_window_size(&lines, &columns) == 0) {
+			needs_to_resize = 0;
+			resizeterm(lines, columns);
+			w = COLS;
+			h = LINES - 3;
+			if (w < 16)
+				w = 16;
+			if (h < 8)
+				h = 8;
+			resize_playlist(w, h);
+			window_set_nr_rows(filters_win, h - 1);
+			window_set_nr_rows(browser_win, h - 1);
+			window_set_nr_rows(play_queue_win, h - 1);
+			needs_title_update = 1;
+			needs_status_update = 1;
+			needs_command_update = 1;
+		}
+	}
+
+	player_info_lock();
+	pl_lock();
+
+	needs_spawn = player_info.status_changed || player_info.file_changed || player_info.metadata_changed;
+
+	if (player_info.file_changed) {
+		if (cur_track_info)
+			track_info_unref(cur_track_info);
+		if (player_info.filename[0] == 0) {
+			cur_track_info = NULL;
+		} else {
+			cur_track_info = cmus_get_track_info(player_info.filename);
+		}
+		player_info.file_changed = 0;
+		needs_title_update = 1;
+		needs_status_update = 1;
+	}
+	if (player_info.metadata_changed) {
+		player_info.metadata_changed = 0;
+		needs_title_update = 1;
+	}
+	if (playlist.status_changed || player_info.position_changed || player_info.status_changed || player_info.volume_changed) {
+		player_info.position_changed = 0;
+		player_info.status_changed = 0;
+		player_info.volume_changed = 0;
+
+		needs_status_update = 1;
+	}
+	switch (cur_view) {
+	case TREE_VIEW:
+		needs_view_update += playlist.tree_win->changed || playlist.track_win->changed;
+		break;
+	case SHUFFLE_VIEW:
+		needs_view_update += playlist.shuffle_win->changed;
+		break;
+	case SORTED_VIEW:
+		needs_view_update += playlist.sorted_win->changed;
+		break;
+	case PLAY_QUEUE_VIEW:
+		needs_view_update += play_queue_win->changed;
+		break;
+	case BROWSER_VIEW:
+		needs_view_update += browser_win->changed;
+		break;
+	case FILTERS_VIEW:
+		needs_view_update += filters_win->changed;
+		break;
+	}
+	pl_unlock();
+	player_info_unlock();
+
+	if (needs_spawn)
+		spawn_status_program();
+
+	if (needs_view_update || needs_title_update || needs_status_update || needs_command_update) {
+		curs_set(0);
+
+		if (needs_view_update)
+			update_view();
+		if (needs_title_update)
+			do_update_titleline();
+		if (needs_status_update)
+			do_update_statusline();
+		if (needs_command_update)
+			do_update_commandline();
+		post_update();
+	}
+}
+
 static int u_getch(uchar *uch, int *keyp)
 {
 	int key;
@@ -1961,18 +2061,111 @@ static int u_getch(uchar *uch, int *keyp)
 	return 0;
 }
 
-static void ui_curses_start(void)
+static void main_loop(void)
 {
-	struct sigaction act;
-	int rc;
-	int fd_high;
+	int rc, fd_high;
 
 	fd_high = remote_socket;
 #if defined(CONFIG_IRMAN)
 	if (irman_fd > fd_high)
 		fd_high = irman_fd;
 #endif
-	cmus_load_playlist(playlist_autosave_filename);
+
+	while (running) {
+		fd_set set;
+		struct timeval tv;
+
+		update();
+
+		FD_ZERO(&set);
+		FD_SET(0, &set);
+		FD_SET(remote_socket, &set);
+#if defined(CONFIG_IRMAN)
+		FD_SET(irman_fd, &set);
+#endif
+		tv.tv_sec = 0;
+		tv.tv_usec = 50e3;
+		rc = select(fd_high + 1, &set, NULL, NULL, &tv);
+		if (rc <= 0)
+			continue;
+
+		if (FD_ISSET(remote_socket, &set)) {
+			remote_server_serve();
+		}
+		if (FD_ISSET(0, &set)) {
+			int key = 0;
+			uchar ch;
+
+			if (using_utf8) {
+				rc = u_getch(&ch, &key);
+			} else {
+				ch = key = getch();
+				if (key == ERR || key == 0) {
+					rc = -1;
+				} else {
+					if (key > 255) {
+						rc = 1;
+					} else {
+						rc = 0;
+					}
+				}
+			}
+			if (rc == 0) {
+				clear_error();
+				if (input_mode == NORMAL_MODE) {
+					normal_mode_ch(ch);
+				} else if (input_mode == COMMAND_MODE) {
+					command_mode_ch(ch);
+					update_commandline();
+				} else if (input_mode == SEARCH_MODE) {
+					search_mode_ch(ch);
+					update_commandline();
+				}
+			} else if (rc == 1) {
+				clear_error();
+				if (input_mode == NORMAL_MODE) {
+					normal_mode_key(key);
+				} else if (input_mode == COMMAND_MODE) {
+					command_mode_key(key);
+					update_commandline();
+				} else if (input_mode == SEARCH_MODE) {
+					search_mode_key(key);
+					update_commandline();
+				}
+			}
+		}
+#if defined(CONFIG_IRMAN)
+		if (FD_ISSET(irman_fd, &set)) {
+			ir_read();
+		}
+#endif
+	}
+}
+
+static int get_next(char **filename)
+{
+	struct track_info *info;
+
+	// FIXME: move player to cmus.c
+	info = play_queue_remove();
+	if (info == NULL) {
+		info = pl_set_next();
+		if (info == NULL)
+			return -1;
+	}
+
+	*filename = xstrdup(info->filename);
+	track_info_unref(info);
+	return 0;
+}
+
+static const struct player_callbacks player_callbacks = {
+	.get_next = get_next
+};
+
+static void init_curses(void)
+{
+	struct sigaction act;
 
 	signal(SIGINT, finish);
 
@@ -2003,196 +2196,10 @@ static void ui_curses_start(void)
 			update_color(i);
 	}
 	d_print("Number of supported colors: %d\n", COLORS);
-
 	ui_initialized = 1;
-	while (running) {
-		int needs_view_update = 0;
-		int needs_title_update = 0;
-		int needs_status_update = 0;
-		int needs_command_update = 0;
-		int needs_spawn = 0;
-
-		fd_set set;
-		struct timeval tv;
-
-		if (needs_to_resize) {
-			int w, h;
-			int columns, lines;
-
-			if (get_window_size(&lines, &columns) == 0) {
-				needs_to_resize = 0;
-				resizeterm(lines, columns);
-				w = COLS;
-				h = LINES - 3;
-				if (w < 16)
-					w = 16;
-				if (h < 8)
-					h = 8;
-				resize_playlist(w, h);
-				window_set_nr_rows(filters_win, h - 1);
-				window_set_nr_rows(browser_win, h - 1);
-				window_set_nr_rows(play_queue_win, h - 1);
-				needs_title_update = 1;
-				needs_status_update = 1;
-				needs_command_update = 1;
-			}
-		}
-
-		player_info_lock();
-		pl_lock();
-
-		needs_spawn = player_info.status_changed || player_info.file_changed || player_info.metadata_changed;
-
-		if (player_info.file_changed) {
-			if (cur_track_info)
-				track_info_unref(cur_track_info);
-			if (player_info.filename[0] == 0) {
-				cur_track_info = NULL;
-			} else {
-				cur_track_info = cmus_get_track_info(player_info.filename);
-			}
-			player_info.file_changed = 0;
-			needs_title_update = 1;
-			needs_status_update = 1;
-		}
-		if (player_info.metadata_changed) {
-			player_info.metadata_changed = 0;
-			needs_title_update = 1;
-		}
-		if (playlist.status_changed || player_info.position_changed || player_info.status_changed || player_info.volume_changed) {
-			player_info.position_changed = 0;
-			player_info.status_changed = 0;
-			player_info.volume_changed = 0;
-
-			needs_status_update = 1;
-		}
-		switch (cur_view) {
-		case TREE_VIEW:
-			needs_view_update += playlist.tree_win->changed || playlist.track_win->changed;
-			break;
-		case SHUFFLE_VIEW:
-			needs_view_update += playlist.shuffle_win->changed;
-			break;
-		case SORTED_VIEW:
-			needs_view_update += playlist.sorted_win->changed;
-			break;
-		case PLAY_QUEUE_VIEW:
-			needs_view_update += play_queue_win->changed;
-			break;
-		case BROWSER_VIEW:
-			needs_view_update += browser_win->changed;
-			break;
-		case FILTERS_VIEW:
-			needs_view_update += filters_win->changed;
-			break;
-		}
-		pl_unlock();
-		player_info_unlock();
-
-		if (needs_spawn)
-			spawn_status_program();
-
-		if (needs_view_update || needs_title_update || needs_status_update || needs_command_update) {
-			curs_set(0);
-
-			if (needs_view_update)
-				update_view();
-			if (needs_title_update)
-				do_update_titleline();
-			if (needs_status_update)
-				do_update_statusline();
-			if (needs_command_update)
-				do_update_commandline();
-			post_update();
-		}
-
-		FD_ZERO(&set);
-		FD_SET(0, &set);
-		FD_SET(remote_socket, &set);
-#if defined(CONFIG_IRMAN)
-		FD_SET(irman_fd, &set);
-#endif
-		tv.tv_sec = 0;
-		tv.tv_usec = 50e3;
-		rc = select(fd_high + 1, &set, NULL, NULL, &tv);
-		if (rc > 0) {
-			if (FD_ISSET(remote_socket, &set)) {
-				remote_server_serve();
-			}
-			if (FD_ISSET(0, &set)) {
-				int key = 0;
-				uchar ch;
-
-				if (using_utf8) {
-					rc = u_getch(&ch, &key);
-				} else {
-					ch = key = getch();
-					if (key == ERR || key == 0) {
-						rc = -1;
-					} else {
-						if (key > 255) {
-							rc = 1;
-						} else {
-							rc = 0;
-						}
-					}
-				}
-				if (rc == 0) {
-					clear_error();
-					if (input_mode == NORMAL_MODE) {
-						normal_mode_ch(ch);
-					} else if (input_mode == COMMAND_MODE) {
-						command_mode_ch(ch);
-						update_commandline();
-					} else if (input_mode == SEARCH_MODE) {
-						search_mode_ch(ch);
-						update_commandline();
-					}
-				} else if (rc == 1) {
-					clear_error();
-					if (input_mode == NORMAL_MODE) {
-						normal_mode_key(key);
-					} else if (input_mode == COMMAND_MODE) {
-						command_mode_key(key);
-						update_commandline();
-					} else if (input_mode == SEARCH_MODE) {
-						search_mode_key(key);
-						update_commandline();
-					}
-				}
-			}
-#if defined(CONFIG_IRMAN)
-			if (FD_ISSET(irman_fd, &set)) {
-				ir_read();
-			}
-#endif
-		}
-	}
-	endwin();
 }
 
-static int get_next(char **filename)
-{
-	struct track_info *info;
-
-	// FIXME: move player to cmus.c
-	info = play_queue_remove();
-	if (info == NULL) {
-		info = pl_set_next();
-		if (info == NULL)
-			return -1;
-	}
-
-	*filename = xstrdup(info->filename);
-	track_info_unref(info);
-	return 0;
-}
-
-static const struct player_callbacks player_callbacks = {
-	.get_next = get_next
-};
-
-static void ui_curses_init(void)
+static void init_all(void)
 {
 	int rc, btmp;
 	char *term, *sort;
@@ -2223,8 +2230,6 @@ static void ui_curses_init(void)
 		exit(1);
 	}
 #endif
-
-	/* init curses */
 
 	if (sconf_get_bool_option("continue", &btmp))
 		player_set_cont(btmp);
@@ -2267,13 +2272,19 @@ static void ui_curses_init(void)
 	keys_init();
 	playlist_autosave_filename = xstrjoin(cmus_config_dir, "/playlist.pl");
 	player_get_volume(&player_info.vol_left, &player_info.vol_right);
+
+	cmus_load_playlist(playlist_autosave_filename);
+
+	init_curses();
 }
 
-static void ui_curses_exit(void)
+static void exit_all(void)
 {
 	int repeat, total_time, buffer_chunks;
 	enum playlist_mode playlist_mode;
 	enum play_mode play_mode;
+
+	endwin();
 
 #if defined(CONFIG_IRMAN)
 	ir_exit();
@@ -2421,9 +2432,9 @@ int main(int argc, char *argv[])
 			player_dump_plugins();
 			return 0;
 		}
-		ui_curses_init();
-		ui_curses_start();
-		ui_curses_exit();
+		init_all();
+		main_loop();
+		exit_all();
 	}
 
 	sconf_save();
