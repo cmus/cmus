@@ -31,6 +31,31 @@
 #include <pthread.h>
 #include <string.h>
 
+static inline struct artist *to_artist(const struct list_head *item)
+{
+	return container_of(item, struct artist, node);
+}
+
+static inline struct album *to_album(const struct list_head *item)
+{
+	return container_of(item, struct album, node);
+}
+
+static inline struct track *to_track(const struct list_head *item)
+{
+	return container_of(item, struct track, node);
+}
+
+static inline struct track *to_shuffle(const struct list_head *item)
+{
+	return container_of(item, struct track, shuffle_node);
+}
+
+static inline struct track *to_sorted(const struct list_head *item)
+{
+	return container_of(item, struct track, sorted_node);
+}
+
 /* iterator {{{ */
 
 /* tree (search) iterators {{{ */
@@ -50,9 +75,9 @@ static int tree_search_get_prev(struct iter *iter)
 			/* empty, iter points to the head already */
 			return 0;
 		}
-		artist = container_of(head->prev, struct artist, node);
-		album = container_of(artist->album_head.prev, struct album, node);
-		iter->data1 = container_of(album->track_head.prev, struct track, node);
+		artist = to_artist(head->prev);
+		album = to_album(artist->album_head.prev);
+		iter->data1 = to_track(album->track_head.prev);
 		return 1;
 	}
 	/* prev track */
@@ -62,15 +87,15 @@ static int tree_search_get_prev(struct iter *iter)
 			/* prev artist */
 			if (track->album->artist->node.prev == &playlist.artist_head)
 				return 0;
-			artist = container_of(track->album->artist->node.prev, struct artist, node);
-			album = container_of(artist->album_head.prev, struct album, node);
-			track = container_of(album->track_head.prev, struct track, node);
+			artist = to_artist(track->album->artist->node.prev);
+			album = to_album(artist->album_head.prev);
+			track = to_track(album->track_head.prev);
 		} else {
-			album = container_of(track->album->node.prev, struct album, node);
-			track = container_of(album->track_head.prev, struct track, node);
+			album = to_album(track->album->node.prev);
+			track = to_track(album->track_head.prev);
 		}
 	} else {
-		track = container_of(track->node.prev, struct track, node);
+		track = to_track(track->node.prev);
 	}
 	iter->data1 = track;
 	return 1;
@@ -92,9 +117,9 @@ static int tree_search_get_next(struct iter *iter)
 			/* empty, iter points to the head already */
 			return 0;
 		}
-		artist = container_of(head->next, struct artist, node);
-		album = container_of(artist->album_head.next, struct album, node);
-		iter->data1 = container_of(album->track_head.next, struct track, node);
+		artist = to_artist(head->next);
+		album = to_album(artist->album_head.next);
+		iter->data1 = to_track(album->track_head.next);
 		return 1;
 	}
 	/* next track */
@@ -104,15 +129,15 @@ static int tree_search_get_next(struct iter *iter)
 			/* next artist */
 			if (track->album->artist->node.next == &playlist.artist_head)
 				return 0;
-			artist = container_of(track->album->artist->node.next, struct artist, node);
-			album = container_of(artist->album_head.next, struct album, node);
-			track = container_of(album->track_head.next, struct track, node);
+			artist = to_artist(track->album->artist->node.next);
+			album = to_album(artist->album_head.next);
+			track = to_track(album->track_head.next);
 		} else {
-			album = container_of(track->album->node.next, struct album, node);
-			track = container_of(album->track_head.next, struct track, node);
+			album = to_album(track->album->node.next);
+			track = to_track(album->track_head.next);
 		}
 	} else {
-		track = container_of(track->node.next, struct track, node);
+		track = to_track(track->node.next);
 	}
 	iter->data1 = track;
 	return 1;
@@ -134,9 +159,9 @@ static int tree_get_prev(struct iter *iter)
 			/* empty, iter points to the head already */
 			return 0;
 		}
-		artist = container_of(head->prev, struct artist, node);
+		artist = to_artist(head->prev);
 		if (artist->expanded) {
-			album = container_of(artist->album_head.prev, struct album, node);
+			album = to_album(artist->album_head.prev);
 		} else {
 			album = NULL;
 		}
@@ -150,7 +175,7 @@ static int tree_get_prev(struct iter *iter)
 			iter->data2 = NULL;
 			return 1;
 		} else {
-			iter->data2 = container_of(album->node.prev, struct album, node);
+			iter->data2 = to_album(album->node.prev);
 			return 1;
 		}
 	}
@@ -161,12 +186,12 @@ static int tree_get_prev(struct iter *iter)
 		iter->data2 = NULL;
 		return 0;
 	}
-	artist = container_of(artist->node.prev, struct artist, node);
+	artist = to_artist(artist->node.prev);
 	iter->data1 = artist;
 	iter->data2 = NULL;
 	if (artist->expanded) {
 		/* last album */
-		iter->data2 = container_of(artist->album_head.prev, struct album, node);
+		iter->data2 = to_album(artist->album_head.prev);
 	}
 	return 1;
 }
@@ -185,7 +210,7 @@ static int tree_get_next(struct iter *iter)
 			/* empty, iter points to the head already */
 			return 0;
 		}
-		iter->data1 = container_of(head->next, struct artist, node);
+		iter->data1 = to_artist(head->next);
 		iter->data2 = NULL;
 		return 1;
 	}
@@ -193,11 +218,11 @@ static int tree_get_next(struct iter *iter)
 		/* next album */
 		if (album == NULL) {
 			/* first album */
-			iter->data2 = container_of(artist->album_head.next, struct album, node);
+			iter->data2 = to_album(artist->album_head.next);
 			return 1;
 		}
 		if (album->node.next != &artist->album_head) {
-			iter->data2 = container_of(album->node.next, struct album, node);
+			iter->data2 = to_album(album->node.next);
 			return 1;
 		}
 	}
@@ -208,7 +233,7 @@ static int tree_get_next(struct iter *iter)
 		iter->data2 = NULL;
 		return 0;
 	}
-	iter->data1 = container_of(artist->node.next, struct artist, node);
+	iter->data1 = to_artist(artist->node.next);
 	iter->data2 = NULL;
 	return 1;
 }
@@ -332,8 +357,8 @@ static int tree_search_get_current(void *data, struct iter *iter)
 	 * set tmp to the first track of the selected artist */
 	window_get_sel(playlist.tree_win, &tmpiter);
 	artist = iter_to_artist(&tmpiter);
-	album = container_of(artist->album_head.next, struct album, node);
-	track = container_of(album->track_head.next, struct track, node);
+	album = to_album(artist->album_head.next);
+	track = to_track(album->track_head.next);
 	tree_search_track_to_iter(track, iter);
 	return 1;
 }
@@ -468,8 +493,8 @@ static inline void tree_win_get_selected(struct artist **artist, struct album **
 
 static int sorted_view_cmp(const struct list_head *a_head, const struct list_head *b_head)
 {
-	const struct track *a = container_of(a_head, struct track, sorted_node);
-	const struct track *b = container_of(b_head, struct track, sorted_node);
+	const struct track *a = to_sorted(a_head);
+	const struct track *b = to_sorted(b_head);
 	int i, res = 0;
 
 	for (i = 0; playlist.sort_keys[i]; i++) {
@@ -567,9 +592,8 @@ static struct artist *playlist_add_artist(const char *name)
 	list_init(&artist->album_head);
 	artist->expanded = 0;
 	list_for_each(item, &playlist.artist_head) {
-		struct artist *a;
+		struct artist *a = to_artist(item);
 
-		a = list_entry(item, struct artist, node);
 		if (xstrcasecmp(name, a->name) < 0)
 			break;
 	}
@@ -589,9 +613,8 @@ static struct album *artist_add_album(struct artist *artist, const char *name, i
 	list_init(&album->track_head);
 	album->artist = artist;
 	list_for_each(item, &artist->album_head) {
-		struct album *a;
+		struct album *a = to_album(item);
 
-		a = list_entry(item, struct album, node);
 		if (date < a->date)
 			break;
 		if (date > a->date)
@@ -650,9 +673,8 @@ static void album_add_track(struct album *album, struct track *track)
 
 	track->album = album;
 	list_for_each(item, &album->track_head) {
-		struct track *t;
-		
-		t = list_entry(item, struct track, node);
+		struct track *t = to_track(item);
+
 		if (track->disc < t->disc)
 			break;
 		if (track->disc == t->disc) {
@@ -989,19 +1011,16 @@ static void remove_sel_artist(struct artist *artist)
 	ahead = &artist->album_head;
 	aitem = ahead->next;
 	while (aitem != ahead) {
-		struct list_head *anext = aitem->next;
-		struct album *album;
 		struct list_head *titem, *thead;
-
-		album = list_entry(aitem, struct album, node);
+		struct list_head *anext = aitem->next;
+		struct album *album = to_album(aitem);
 
 		thead = &album->track_head;
 		titem = thead->next;
 		while (titem != thead) {
 			struct list_head *tnext = titem->next;
-			struct track *track;
+			struct track *track = to_track(titem);
 
-			track = list_entry(titem, struct track, node);
 			remove_and_free_track(track);
 			titem = tnext;
 		}
@@ -1020,9 +1039,8 @@ static void remove_sel_album(struct album *album)
 	item = head->next;
 	while (item != head) {
 		struct list_head *next = item->next;
-		struct track *track;
+		struct track *track = to_track(item);
 
-		track = list_entry(item, struct track, node);
 		remove_and_free_track(track);
 		item = next;
 	}
@@ -1084,28 +1102,23 @@ static void clear_views(void)
 	head = &playlist.artist_head;
 	item = head->next;
 	while (item != head) {
-		struct list_head *next = item->next;
-		struct artist *artist;
 		struct list_head *aitem, *ahead;
-
-		artist = list_entry(item, struct artist, node);
+		struct list_head *next = item->next;
+		struct artist *artist = to_artist(item);
 
 		ahead = &artist->album_head;
 		aitem = ahead->next;
 		while (aitem != ahead) {
-			struct list_head *anext = aitem->next;
-			struct album *album;
 			struct list_head *titem, *thead;
-
-			album = list_entry(aitem, struct album, node);
+			struct list_head *anext = aitem->next;
+			struct album *album = to_album(aitem);
 
 			thead = &album->track_head;
 			titem = thead->next;
 			while (titem != thead) {
 				struct list_head *tnext = titem->next;
-				struct track *track;
+				struct track *track = to_track(titem);
 
-				track = list_entry(titem, struct track, node);
 				remove_track(track);
 				titem = tnext;
 			}
@@ -1140,9 +1153,9 @@ static void clear_store(void)
 
 static void __set_cur_first_track(void)
 {
-	playlist.cur_artist = list_entry(playlist.artist_head.next, struct artist, node);
-	playlist.cur_album = list_entry(playlist.cur_artist->album_head.next, struct album, node);
-	playlist.cur_track = list_entry(playlist.cur_album->track_head.next, struct track, node);
+	playlist.cur_artist = to_artist(playlist.artist_head.next);
+	playlist.cur_album = to_album(playlist.cur_artist->album_head.next);
+	playlist.cur_track = to_track(playlist.cur_album->track_head.next);
 }
 
 static int play_mode_filter(const struct track *track)
@@ -1171,7 +1184,7 @@ static int set_cur_next_normal(void)
 	/* not last track of the album? */
 	if (playlist.cur_track->node.next != &playlist.cur_album->track_head) {
 		/* next track of the album */
-		playlist.cur_track = list_entry(playlist.cur_track->node.next, struct track, node);
+		playlist.cur_track = to_track(playlist.cur_track->node.next);
 		return 0;
 	}
 
@@ -1179,15 +1192,15 @@ static int set_cur_next_normal(void)
 		if (!playlist.repeat)
 			return -1;
 		/* first track of the album */
-		playlist.cur_track = list_entry(playlist.cur_album->track_head.next, struct track, node);
+		playlist.cur_track = to_track(playlist.cur_album->track_head.next);
 		return 0;
 	}	
 
 	/* not last album of the artist? */
 	if (playlist.cur_album->node.next != &playlist.cur_artist->album_head) {
 		/* first track of the next album of the artist */
-		playlist.cur_album = list_entry(playlist.cur_album->node.next, struct album, node);
-		playlist.cur_track = list_entry(playlist.cur_album->track_head.next, struct track, node);
+		playlist.cur_album = to_album(playlist.cur_album->node.next);
+		playlist.cur_track = to_track(playlist.cur_album->track_head.next);
 		return 0;
 	}
 
@@ -1195,17 +1208,17 @@ static int set_cur_next_normal(void)
 		if (!playlist.repeat)
 			return -1;
 		/* first track of the first album of the artist */
-		playlist.cur_album = list_entry(playlist.cur_artist->album_head.next, struct album, node);
-		playlist.cur_track = list_entry(playlist.cur_album->track_head.next, struct track, node);
+		playlist.cur_album = to_album(playlist.cur_artist->album_head.next);
+		playlist.cur_track = to_track(playlist.cur_album->track_head.next);
 		return 0;
 	}
 
 	/* not last artist of the playlist? */
 	if (playlist.cur_artist->node.next != &playlist.artist_head) {
 		/* first track of the first album of the next artist */
-		playlist.cur_artist = list_entry(playlist.cur_artist->node.next, struct artist, node);
-		playlist.cur_album = list_entry(playlist.cur_artist->album_head.next, struct album, node);
-		playlist.cur_track = list_entry(playlist.cur_album->track_head.next, struct track, node);
+		playlist.cur_artist = to_artist(playlist.cur_artist->node.next);
+		playlist.cur_album = to_album(playlist.cur_artist->album_head.next);
+		playlist.cur_track = to_track(playlist.cur_album->track_head.next);
 		return 0;
 	}
 
@@ -1226,7 +1239,7 @@ static int set_cur_prev_normal(void)
 	/* not first track of the album? */
 	if (playlist.cur_track->node.prev != &playlist.cur_album->track_head) {
 		/* prev track of the album */
-		playlist.cur_track = list_entry(playlist.cur_track->node.prev, struct track, node);
+		playlist.cur_track = to_track(playlist.cur_track->node.prev);
 		return 0;
 	}
 
@@ -1234,15 +1247,15 @@ static int set_cur_prev_normal(void)
 		if (!playlist.repeat)
 			return -1;
 		/* last track of the album */
-		playlist.cur_track = list_entry(playlist.cur_album->track_head.prev, struct track, node);
+		playlist.cur_track = to_track(playlist.cur_album->track_head.prev);
 		return 0;
 	}	
 
 	/* not first album of the artist? */
 	if (playlist.cur_album->node.prev != &playlist.cur_artist->album_head) {
 		/* last track of the prev album of the artist */
-		playlist.cur_album = list_entry(playlist.cur_album->node.prev, struct album, node);
-		playlist.cur_track = list_entry(playlist.cur_album->track_head.prev, struct track, node);
+		playlist.cur_album = to_album(playlist.cur_album->node.prev);
+		playlist.cur_track = to_track(playlist.cur_album->track_head.prev);
 		return 0;
 	}
 
@@ -1250,17 +1263,17 @@ static int set_cur_prev_normal(void)
 		if (!playlist.repeat)
 			return -1;
 		/* last track of the last album of the artist */
-		playlist.cur_album = list_entry(playlist.cur_artist->album_head.prev, struct album, node);
-		playlist.cur_track = list_entry(playlist.cur_album->track_head.prev, struct track, node);
+		playlist.cur_album = to_album(playlist.cur_artist->album_head.prev);
+		playlist.cur_track = to_track(playlist.cur_album->track_head.prev);
 		return 0;
 	}
 
 	/* not first artist of the playlist? */
 	if (playlist.cur_artist->node.prev != &playlist.artist_head) {
 		/* last track of the last album of the prev artist */
-		playlist.cur_artist = list_entry(playlist.cur_artist->node.prev, struct artist, node);
-		playlist.cur_album = list_entry(playlist.cur_artist->album_head.prev, struct album, node);
-		playlist.cur_track = list_entry(playlist.cur_album->track_head.prev, struct track, node);
+		playlist.cur_artist = to_artist(playlist.cur_artist->node.prev);
+		playlist.cur_album = to_album(playlist.cur_artist->album_head.prev);
+		playlist.cur_track = to_track(playlist.cur_album->track_head.prev);
 		return 0;
 	}
 
@@ -1268,9 +1281,9 @@ static int set_cur_prev_normal(void)
 		return -1;
 
 	/* last track */
-	playlist.cur_artist = list_entry(playlist.artist_head.prev, struct artist, node);
-	playlist.cur_album = list_entry(playlist.cur_artist->album_head.prev, struct album, node);
-	playlist.cur_track = list_entry(playlist.cur_album->track_head.prev, struct track, node);
+	playlist.cur_artist = to_artist(playlist.artist_head.prev);
+	playlist.cur_album = to_album(playlist.cur_artist->album_head.prev);
+	playlist.cur_track = to_track(playlist.cur_album->track_head.prev);
 	return 0;
 }
 
@@ -1278,9 +1291,8 @@ static int set_cur_prev_normal(void)
 
 static void __set_cur_shuffle_track(struct list_head *item)
 {
-	struct track *track;
+	struct track *track = to_shuffle(item);
 
-	track = list_entry(item, struct track, shuffle_node);
 	playlist.cur_track = track;
 	playlist.cur_album = track->album;
 	playlist.cur_artist = track->album->artist;
@@ -1299,9 +1311,8 @@ static int set_cur_next_shuffle(void)
 	item = playlist.cur_track->shuffle_node.next;
 again:
 	while (item != &playlist.shuffle_head) {
-		struct track *track;
+		struct track *track = to_shuffle(item);
 
-		track = container_of(item, struct track, shuffle_node);
 		if (play_mode_filter(track)) {
 			__set_cur_shuffle_track(item);
 			return 0;
@@ -1327,9 +1338,8 @@ static int set_cur_prev_shuffle(void)
 	item = playlist.cur_track->shuffle_node.prev;
 again:
 	while (item != &playlist.shuffle_head) {
-		struct track *track;
+		struct track *track = to_shuffle(item);
 
-		track = container_of(item, struct track, shuffle_node);
 		if (play_mode_filter(track)) {
 			__set_cur_shuffle_track(item);
 			return 0;
@@ -1346,9 +1356,8 @@ again:
 
 static void __set_cur_sorted_track(struct list_head *item)
 {
-	struct track *track;
+	struct track *track = to_sorted(item);
 
-	track = list_entry(item, struct track, sorted_node);
 	playlist.cur_track = track;
 	playlist.cur_album = track->album;
 	playlist.cur_artist = track->album->artist;
@@ -1367,9 +1376,8 @@ static int set_cur_next_sorted(void)
 	item = playlist.cur_track->sorted_node.next;
 again:
 	while (item != &playlist.sorted_head) {
-		struct track *track;
+		struct track *track = to_sorted(item);
 
-		track = container_of(item, struct track, sorted_node);
 		if (play_mode_filter(track)) {
 			__set_cur_sorted_track(item);
 			return 0;
@@ -1395,9 +1403,8 @@ static int set_cur_prev_sorted(void)
 	item = playlist.cur_track->sorted_node.prev;
 again:
 	while (item != &playlist.sorted_head) {
-		struct track *track;
+		struct track *track = to_sorted(item);
 
-		track = container_of(item, struct track, sorted_node);
 		if (play_mode_filter(track)) {
 			__set_cur_sorted_track(item);
 			return 0;
@@ -1423,9 +1430,8 @@ void pl_reshuffle(void)
 	list_init(&playlist.shuffle_head);
 	for (i = 0; i < count; i++) {
 		struct list_head *next = item->next;
-		struct track *track;
+		struct track *track = to_shuffle(item);
 
-		track = list_entry(item, struct track, shuffle_node);
 		shuffle_list_add_track(track, i);
 		item = next;
 	}
@@ -1579,8 +1585,8 @@ struct track_info *pl_set_selected(void)
 			/* only artist selected, track window is empty
 			 * => get first album of the selected artist and first track of that album
 			 */
-			album = container_of(artist->album_head.next, struct album, node);
-			track = container_of(album->track_head.next, struct track, node);
+			album = to_album(artist->album_head.next);
+			track = to_track(album->track_head.next);
 		} else {
 			window_get_sel(playlist.track_win, &sel);
 			track = iter_to_track(&sel);
