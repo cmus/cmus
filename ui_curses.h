@@ -99,11 +99,11 @@ void ui_curses_update_color(int idx);
 void ui_curses_set_sort(const char *value);
 void info_msg(const char *format, ...) __FORMAT(1, 2);
 void error_msg(const char *format, ...) __FORMAT(1, 2);
-int ui_curses_yes_no_query(const char *format, ...) __FORMAT(1, 2);
-void ui_curses_search_not_found(void);
+int yes_no_query(const char *format, ...) __FORMAT(1, 2);
+void search_not_found(void);
 
 /* bindable */
-void ui_curses_toggle_remaining_time(void);
+void toggle_remaining_time(void);
 void ui_curses_tree_view(void);
 void ui_curses_shuffle_view(void);
 void ui_curses_sorted_view(void);

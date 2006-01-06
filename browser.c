@@ -487,7 +487,7 @@ void browser_delete(void)
 		char *name;
 
 		name = fullname(browser_dir, e->name);
-		if (ui_curses_yes_no_query("Delete file '%s'? [y/N]", e->name)) {
+		if (yes_no_query("Delete file '%s'? [y/N]", e->name)) {
 			if (unlink(name) == -1) {
 				error_msg("deleting '%s': %s", e->name, strerror(errno));
 			} else {

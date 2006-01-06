@@ -136,7 +136,7 @@ void search_mode_ch(uchar ch)
 		}
 		cmdline_clear();
 		if (!search_found)
-			ui_curses_search_not_found();
+			search_not_found();
 		ui_curses_input_mode = NORMAL_MODE;
 		break;
 	case 127:

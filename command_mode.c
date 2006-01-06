@@ -572,7 +572,7 @@ static void cmd_run(char *arg)
 
 	run = 1;
 	if (confirm_run && (sel_files_nr > 1 || strcmp(argv[0], "rm") == 0)) {
-		if (!ui_curses_yes_no_query("Execute %s for the %d selected files? [y/N]", arg, sel_files_nr)) {
+		if (!yes_no_query("Execute %s for the %d selected files? [y/N]", arg, sel_files_nr)) {
 			info_msg("Aborted");
 			run = 0;
 		}

@@ -197,7 +197,7 @@ static void search_next_forward(void)
 {
 	if (search_str) {
 		if (!search_next(searchable, search_str, search_direction))
-			ui_curses_search_not_found();
+			search_not_found();
 	}
 }
 
@@ -205,7 +205,7 @@ static void search_next_backward(void)
 {
 	if (search_str) {
 		if (!search_next(searchable, search_str, !search_direction))
-			ui_curses_search_not_found();
+			search_not_found();
 	}
 }
 /* }}} */
@@ -226,7 +226,7 @@ static const struct key_function common_functions[] = {
 	{ "toggle_continue",		player_toggle_cont		},
 	{ "toggle_play_mode",		pl_toggle_play_mode		},
 	{ "toggle_playlist_mode",	pl_toggle_playlist_mode		},
-	{ "toggle_remaining_time",	ui_curses_toggle_remaining_time	},
+	{ "toggle_remaining_time",	toggle_remaining_time	},
 	{ "toggle_repeat",		pl_toggle_repeat		},
 	{ "view_1",			ui_curses_tree_view		},
 	{ "view_2",			ui_curses_shuffle_view		},

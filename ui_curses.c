@@ -1161,7 +1161,7 @@ void error_msg(const char *format, ...)
 	}
 }
 
-int ui_curses_yes_no_query(const char *format, ...)
+int yes_no_query(const char *format, ...)
 {
 	char buffer[512];
 	va_list ap;
@@ -1196,7 +1196,7 @@ int ui_curses_yes_no_query(const char *format, ...)
 	return ret;
 }
 
-void ui_curses_search_not_found(void)
+void search_not_found(void)
 {
 	const char *what = "Track";
 
@@ -1278,7 +1278,7 @@ static void set_view(int view)
 	refresh();
 }
 
-void ui_curses_toggle_remaining_time(void)
+void toggle_remaining_time(void)
 {
 	show_remaining_time ^= 1;
 	ui_curses_update_statusline();
