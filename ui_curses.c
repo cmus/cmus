@@ -1132,7 +1132,7 @@ static void ui_curses_update_statusline(void)
 	post_update();
 }
 
-void ui_curses_display_info_msg(const char *format, ...)
+void info_msg(const char *format, ...)
 {
 	va_list ap;
 
@@ -1233,7 +1233,7 @@ void ui_curses_search_not_found(void)
 			break;
 		}
 	}
-	ui_curses_display_info_msg("%s not found: %s", what, search_str ? : "");
+	info_msg("%s not found: %s", what, search_str ? : "");
 }
 
 static void set_view(int view)

@@ -524,7 +524,7 @@ static void cmd_run(char *arg)
 	int ac, argc, i, run, files_idx = -1;
 
 	if (ui_curses_view > SORTED_VIEW) {
-		ui_curses_display_info_msg("Command execution is supported only if view 1, 2 or 3 is active");
+		info_msg("Command execution is supported only if view 1, 2 or 3 is active");
 		return;
 	}
 
@@ -573,7 +573,7 @@ static void cmd_run(char *arg)
 	run = 1;
 	if (confirm_run && (sel_files_nr > 1 || strcmp(argv[0], "rm") == 0)) {
 		if (!ui_curses_yes_no_query("Execute %s for the %d selected files? [y/N]", arg, sel_files_nr)) {
-			ui_curses_display_info_msg("Aborted");
+			info_msg("Aborted");
 			run = 0;
 		}
 	}
