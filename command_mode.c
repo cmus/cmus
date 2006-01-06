@@ -778,7 +778,8 @@ static void expand_bind_args(const char *str)
 		 * need to change tabexp.head to "context key :com"
 		 */
 
-		snprintf(expbuf, sizeof(expbuf), "%s %s :%s", key_context_names[c], key_table[k].name, tabexp.head);
+		snprintf(expbuf, sizeof(expbuf), "%s %s :%s", key_context_names[c],
+				key_table[k].name, tabexp.head);
 		free(tabexp.head);
 		tabexp.head = xstrdup(expbuf);
 		return;
@@ -1139,7 +1140,9 @@ void run_command(const char *buf)
 			break;
 		}
 		if (strncmp(cmd, commands[i].name, cmd_end - cmd_start) == 0) {
-			if (commands[i + 1].name && strncmp(cmd, commands[i + 1].name, cmd_end - cmd_start) == 0) {
+			const char *next = commands[i + 1].name;
+
+			if (next && strncmp(cmd, next, cmd_end - cmd_start) == 0) {
 				error_msg("ambiguous command\n");
 				break;
 			}

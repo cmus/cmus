@@ -248,26 +248,21 @@ static void print(char *str, const char *format, const struct format_option *fop
 			nlen += u - '0';
 			u_get_char(format, &s, &u);
 		}
-		j = 0;
-		while (1) {
-			if (fopts[j].ch == 0) {
-				/* invalid user */
-				break;
+		for (j = 0; fopts[j].ch; j++) {
+			if (fopts[j].ch != u)
+				continue;
+
+			if (fopts[j].empty) {
+				memset(str + d, ' ', nlen);
+				d += nlen;
+			} else if (fopts[j].type == FO_STR) {
+				print_str(str, &d, fopts[j].fo_str, nlen, align_left);
+			} else if (fopts[j].type == FO_INT) {
+				d += print_num(str + d, fopts[j].fo_int, nlen, align_left, pad);
+			} else if (fopts[j].type == FO_TIME) {
+				d += print_time(str + d, fopts[j].fo_time, nlen, align_left, pad);
 			}
-			if (fopts[j].ch == u) {
-				if (fopts[j].empty) {
-					memset(str + d, ' ', nlen);
-					d += nlen;
-				} else if (fopts[j].type == FO_STR) {
-					print_str(str, &d, fopts[j].fo_str, nlen, align_left);
-				} else if (fopts[j].type == FO_INT) {
-					d += print_num(str + d, fopts[j].fo_int, nlen, align_left, pad);
-				} else if (fopts[j].type == FO_TIME) {
-					d += print_time(str + d, fopts[j].fo_time, nlen, align_left, pad);
-				}
-				break;
-			}
-			j++;
+			break;
 		}
 	}
 	str[d] = 0;

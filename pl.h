@@ -135,38 +135,38 @@ extern struct searchable *tree_searchable;
 extern struct searchable *shuffle_searchable;
 extern struct searchable *sorted_searchable;
 
-extern void pl_init(void);
-extern void pl_exit(void);
+void pl_init(void);
+void pl_exit(void);
 
 /* set current track, these return track_info on success */
-extern struct track_info *pl_set_next(void);
-extern struct track_info *pl_set_prev(void);
-extern struct track_info *pl_set_selected(void);
+struct track_info *pl_set_next(void);
+struct track_info *pl_set_prev(void);
+struct track_info *pl_set_selected(void);
 
-extern void pl_add_track(struct track_info *track_info);
+void pl_add_track(struct track_info *track_info);
 
-extern void pl_set_sort_keys(char **keys);
-extern void pl_clear(void);
-extern void pl_set_filter(struct expr *expr);
-extern void pl_remove(struct track_info *ti);
-extern void pl_remove_sel(void);
-extern void pl_toggle_expand_artist(void);
+void pl_set_sort_keys(char **keys);
+void pl_clear(void);
+void pl_set_filter(struct expr *expr);
+void pl_remove(struct track_info *ti);
+void pl_remove_sel(void);
+void pl_toggle_expand_artist(void);
 
-extern void pl_toggle_repeat(void);
-extern void pl_toggle_playlist_mode(void);
-extern void pl_toggle_play_mode(void);
-extern void pl_set_repeat(int value);
-extern void pl_set_playlist_mode(enum playlist_mode playlist_mode);
-extern void pl_set_play_mode(enum play_mode play_mode);
-extern void pl_get_status(int *repeat, enum playlist_mode *playlist_mode, enum play_mode *play_mode, int *total_time);
+void pl_toggle_repeat(void);
+void pl_toggle_playlist_mode(void);
+void pl_toggle_play_mode(void);
+void pl_set_repeat(int value);
+void pl_set_playlist_mode(enum playlist_mode playlist_mode);
+void pl_set_play_mode(enum play_mode play_mode);
+void pl_get_status(int *repeat, enum playlist_mode *playlist_mode, enum play_mode *play_mode, int *total_time);
 
 /* these are unlocked */
-extern void __pl_set_view(int view);
+void __pl_set_view(int view);
 
-extern void pl_toggle_active_window(void);
-extern void pl_sel_current(void);
+void pl_toggle_active_window(void);
+void pl_sel_current(void);
 
-extern void pl_reshuffle(void);
+void pl_reshuffle(void);
 
 /*
  * Run callback @cb for each selected track. Quit if @cb returns non-zero value.
@@ -177,9 +177,9 @@ extern void pl_reshuffle(void);
  *
  * Returns: return value of last @cb call or 0 if @cb not called at all.
  */
-extern int __pl_for_each_selected(int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
-extern int pl_for_each_selected(int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
-extern int pl_for_each(int (*cb)(void *data, struct track_info *ti), void *data);
+int __pl_for_each_selected(int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
+int pl_for_each_selected(int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
+int pl_for_each(int (*cb)(void *data, struct track_info *ti), void *data);
 
 #define pl_lock() cmus_mutex_lock(&playlist.mutex)
 #define pl_unlock() cmus_mutex_unlock(&playlist.mutex)

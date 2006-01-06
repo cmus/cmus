@@ -78,7 +78,9 @@ int track_info_matches(struct track_info *ti, const char *text, unsigned int fla
 	for (i = 0; words[i]; i++) {
 		const char *word = words[i];
 
-		if ((flags & TI_MATCH_ARTIST && artist) || (flags & TI_MATCH_ALBUM && album) || (flags & TI_MATCH_TITLE && title)) {
+		if ((flags & TI_MATCH_ARTIST && artist) ||
+		    (flags & TI_MATCH_ALBUM && album) ||
+		    (flags & TI_MATCH_TITLE && title)) {
 			if (flags & TI_MATCH_ARTIST && artist && u_strcasestr(artist, word))
 				continue;
 			if (flags & TI_MATCH_ALBUM && album && u_strcasestr(album, word))

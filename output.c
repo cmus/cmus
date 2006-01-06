@@ -343,7 +343,7 @@ int op_select(const char *name)
 				/* try to initialize again */
 				int rc;
 
-				d_print("op `%s' is uninitialized, trying to initialize again\n", o->name);
+				d_print("trying to reinitialize %s\n", o->name);
 				rc = o->pcm_ops->init();
 				if (rc == 0) {
 					o->pcm_initialized = 1;

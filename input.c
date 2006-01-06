@@ -453,7 +453,8 @@ int ip_open(struct input_plugin *ip)
 	}
 
 	if (rc) {
-		d_print("opening `%s' failed: %d %s\n", ip->data.filename, rc, rc == -1 ? strerror(errno) : "");
+		d_print("opening `%s' failed: %d %s\n", ip->data.filename, rc,
+				rc == -1 ? strerror(errno) : "");
 		return rc;
 	}
 
@@ -469,7 +470,8 @@ int ip_open(struct input_plugin *ip)
 
 	rc = ip->ops->open(&ip->data);
 	if (rc) {
-		d_print("opening file `%s' failed: %d %s\n", ip->data.filename, rc, rc == -1 ? strerror(errno) : "");
+		d_print("opening file `%s' failed: %d %s\n", ip->data.filename, rc,
+				rc == -1 ? strerror(errno) : "");
 		if (ip->data.fd != -1)
 			close(ip->data.fd);
 		ip->data.fd = -1;

@@ -401,7 +401,8 @@ static int v2_3_0_frame_header_parse(struct v2_frame_header *header, const char 
 	header->flags = (buf[8] << 8) | buf[9];
 	if (header->size == 0)
 		return 0;
-	id3_debug("%c%c%c%c %d\n", header->id[0], header->id[1], header->id[2], header->id[3], header->size);
+	id3_debug("%c%c%c%c %d\n", header->id[0], header->id[1], header->id[2],
+			header->id[3], header->size);
 	return 1;
 }
 

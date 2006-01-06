@@ -200,7 +200,8 @@ void sconf_load(void)
 
 void sconf_save(void)
 {
-	const char *header = "# Do not edit while the program is running or your changes will be lost.\n\n";
+	const char *header =
+		"# Do not edit while the program is running or your changes will be lost.\n\n";
 	struct list_head *item;
 	int fd, rc;
 

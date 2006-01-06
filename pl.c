@@ -1871,7 +1871,8 @@ void pl_sel_current(void)
 	pl_unlock();
 }
 
-static int album_for_each_track(struct album *album, int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
+static int album_for_each_track(struct album *album, int (*cb)(void *data, struct track_info *ti),
+		void *data, int reverse)
 {
 	struct track *track;
 	int rc = 0;
@@ -1892,7 +1893,8 @@ static int album_for_each_track(struct album *album, int (*cb)(void *data, struc
 	return rc;
 }
 
-static int artist_for_each_track(struct artist *artist, int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
+static int artist_for_each_track(struct artist *artist, int (*cb)(void *data, struct track_info *ti),
+		void *data, int reverse)
 {
 	struct album *album;
 	int rc = 0;

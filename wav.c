@@ -154,7 +154,8 @@ static int wav_open(struct input_plugin_data *ip_data)
 			rc = -IP_ERROR_SAMPLE_FORMAT;
 			goto error_exit;
 		}
-		ip_data->sf = sf_channels(channels) | sf_rate(rate) | sf_bits(bits) | sf_signed(bits > 8);
+		ip_data->sf = sf_channels(channels) | sf_rate(rate) | sf_bits(bits) |
+			sf_signed(bits > 8);
 	}
 
 	rc = find_chunk(ip_data->fd, "data", &priv->pcm_size);
@@ -174,7 +175,8 @@ static int wav_open(struct input_plugin_data *ip_data)
 	d_print("pcm size: %d\n", priv->pcm_size);
 	d_print("\n");
 	d_print("sr: %d, ch: %d, bits: %d, signed: %d\n", sf_get_rate(ip_data->sf),
-			sf_get_channels(ip_data->sf), sf_get_bits(ip_data->sf), sf_get_signed(ip_data->sf));
+			sf_get_channels(ip_data->sf), sf_get_bits(ip_data->sf),
+			sf_get_signed(ip_data->sf));
 	return 0;
 error_exit:
 	save = errno;

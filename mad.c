@@ -81,7 +81,8 @@ static int mad_open(struct input_plugin_data *ip_data)
 	nomad_info(nomad, &info);
 
 	/* always 16-bit signed little-endian */
-	ip_data->sf = sf_rate(info.sample_rate) | sf_channels(info.channels) | sf_bits(16) | sf_signed(1);
+	ip_data->sf = sf_rate(info.sample_rate) | sf_channels(info.channels) |
+		sf_bits(16) | sf_signed(1);
 	return 0;
 }
 
@@ -182,4 +183,6 @@ const struct input_plugin_ops ip_ops = {
 };
 
 const char * const ip_extensions[] = { "mp3", "mp2", NULL };
-const char * const ip_mime_types[] = { "audio/mpeg", "audio/x-mp3", "audio/x-mpeg", "audio/x-mpegurl", NULL };
+const char * const ip_mime_types[] = {
+	"audio/mpeg", "audio/x-mp3", "audio/x-mpeg", "audio/x-mpegurl", NULL
+};

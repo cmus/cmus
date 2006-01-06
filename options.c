@@ -120,7 +120,8 @@ static void get_buffer_seconds(const struct command_mode_option *opt, char **val
 {
 	char buf[32];
 
-	snprintf(buf, sizeof(buf), "%d", (player_get_buffer_chunks() * CHUNK_SIZE + SECOND_SIZE / 2) / SECOND_SIZE);
+	snprintf(buf, sizeof(buf), "%d", (player_get_buffer_chunks() * CHUNK_SIZE +
+				SECOND_SIZE / 2) / SECOND_SIZE);
 	*value = xstrdup(buf);
 }
 
@@ -267,7 +268,8 @@ void options_init(void)
 
 	option_add("output_plugin", get_output_plugin, set_output_plugin, NULL);
 	option_add("buffer_seconds", get_buffer_seconds, set_buffer_seconds, NULL);
-	option_add("status_display_program", get_status_display_program, set_status_display_program, NULL);
+	option_add("status_display_program", get_status_display_program,
+			set_status_display_program, NULL);
 	option_add("sort", get_sort, set_sort, NULL);
 	option_add("confirm_run", get_confirm_run, set_confirm_run, NULL);
 

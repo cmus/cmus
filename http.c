@@ -317,7 +317,7 @@ static int http_read_response(int fd, char **bufp, int *sizep, int *posp, int ti
 	}
 }
 
-static int http_parse_response(const char *str, int *codep, char **reasonp, struct http_header **headersp)
+static int http_parse_response(const char *str, int *codep, char **reasonp, struct http_header **hp)
 {
 	/* str is 0 terminated buffer of lines
 	 * every line ends with '\n'
@@ -331,7 +331,7 @@ static int http_parse_response(const char *str, int *codep, char **reasonp, stru
 
 	*codep = -1;
 	*reasonp = NULL;
-	*headersp = NULL;
+	*hp = NULL;
 
 	if (strncmp(str, "HTTP/", 5) == 0) {
 		str += 5;
@@ -403,7 +403,7 @@ static int http_parse_response(const char *str, int *codep, char **reasonp, stru
 	h[i].val = NULL;
 	*codep = code;
 	*reasonp = reason;
-	*headersp = h;
+	*hp = h;
 	return 0;
 }
 

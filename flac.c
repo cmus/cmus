@@ -147,7 +147,8 @@ static int eof_cb(const Dec *dec, void *data)
 	return priv->eof;
 }
 
-static FLAC__StreamDecoderWriteStatus write_cb(const Dec *dec, const FLAC__Frame *frame, const int32_t * const *buf, void *data)
+static FLAC__StreamDecoderWriteStatus write_cb(const Dec *dec, const FLAC__Frame *frame,
+		const int32_t * const *buf, void *data)
 {
 	struct input_plugin_data *ip_data = data;
 	struct flac_private *priv = ip_data->private;
@@ -239,7 +240,8 @@ static void metadata_cb(const Dec *dec, const FLAC__StreamMetadata *metadata, vo
 			const FLAC__StreamMetadata_StreamInfo *si = &metadata->data.stream_info;
 
 			d_print("STREAMINFO\n");
-			ip_data->sf = sf_rate(si->sample_rate) | sf_bits(si->bits_per_sample) | sf_signed(1) | sf_channels(si->channels);
+			ip_data->sf = sf_rate(si->sample_rate) | sf_bits(si->bits_per_sample) |
+				sf_signed(1) | sf_channels(si->channels);
 			if (!ip_data->remote && si->total_samples)
 				priv->duration = si->total_samples / si->sample_rate;
 		}
@@ -259,8 +261,9 @@ static void metadata_cb(const Dec *dec, const FLAC__StreamMetadata *metadata, vo
 
 				/* until you have finished reading this function name
 				 * you have already forgot WTF you're doing */
-				if (!FLAC__metadata_object_vorbiscomment_entry_to_name_value_pair(metadata->data.vorbis_comment.comments[s],
-						&key, &val))
+				if (!FLAC__metadata_object_vorbiscomment_entry_to_name_value_pair(
+							metadata->data.vorbis_comment.comments[s],
+							&key, &val))
 					continue;
 
 				if (!is_interesting_key(key)) {

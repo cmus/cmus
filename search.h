@@ -35,10 +35,10 @@ struct searchable_ops {
 
 struct searchable;
 
-extern struct searchable *searchable_new(void *data, const struct iter *head, const struct searchable_ops *ops);
-extern void searchable_free(struct searchable *s);
+struct searchable *searchable_new(void *data, const struct iter *head, const struct searchable_ops *ops);
+void searchable_free(struct searchable *s);
 
-extern int search(struct searchable *s, const char *text, enum search_direction dir, int beginning);
-extern int search_next(struct searchable *s, const char *text, enum search_direction dir);
+int search(struct searchable *s, const char *text, enum search_direction dir, int beginning);
+int search_next(struct searchable *s, const char *text, enum search_direction dir);
 
 #endif

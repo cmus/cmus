@@ -58,19 +58,20 @@ enum {
 struct nomad;
 
 /* -NOMAD_ERROR_ERRNO -NOMAD_ERROR_FILE_FORMAT */
-extern int nomad_open(struct nomad **nomadp, int fd, int fast);
-extern int nomad_open_callbacks(struct nomad **nomadp, void *datasource, int fast, struct nomad_callbacks *cbs);
+int nomad_open(struct nomad **nomadp, int fd, int fast);
+int nomad_open_callbacks(struct nomad **nomadp, void *datasource, int fast,
+		struct nomad_callbacks *cbs);
 
-extern void nomad_close(struct nomad *nomad);
-extern void nomad_info(struct nomad *nomad, struct nomad_info *info);
-
-/* -NOMAD_ERROR_ERRNO */
-extern int nomad_read(struct nomad *nomad, char *buffer, int count);
+void nomad_close(struct nomad *nomad);
+void nomad_info(struct nomad *nomad, struct nomad_info *info);
 
 /* -NOMAD_ERROR_ERRNO */
-extern int nomad_time_seek(struct nomad *nomad, double pos);
+int nomad_read(struct nomad *nomad, char *buffer, int count);
 
-extern double nomad_time_tell(struct nomad *nomad);
-extern double nomad_time_total(struct nomad *nomad);
+/* -NOMAD_ERROR_ERRNO */
+int nomad_time_seek(struct nomad *nomad, double pos);
+
+double nomad_time_tell(struct nomad *nomad);
+double nomad_time_total(struct nomad *nomad);
 
 #endif

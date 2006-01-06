@@ -621,7 +621,8 @@ static void *consumer_loop(void *arg)
 				size = space;
 			rc = op_write(rpos, size);
 			if (rc < 0) {
-				d_print("op_write returned %d %s\n", rc, rc == -1 ? strerror(errno) : "");
+				d_print("op_write returned %d %s\n", rc,
+						rc == -1 ? strerror(errno) : "");
 				consumer_unlock();
 				break;
 			}
@@ -668,7 +669,8 @@ static void *producer_loop(void *arg)
 			nr_read = ip_read(ip, wpos, size);
 			if (nr_read < 0) {
 				if (nr_read != -1 || errno != EAGAIN) {
-					player_ip_error(nr_read, "reading file %s", ip_get_filename(ip));
+					player_ip_error(nr_read, "reading file %s",
+							ip_get_filename(ip));
 					ip_delete(ip);
 					producer_status = PS_UNLOADED;
 				}

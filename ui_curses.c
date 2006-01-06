@@ -1007,7 +1007,9 @@ static void do_update_titleline(void)
 			fopt_set_str(&track_fopts[TF_TITLE], comments_get_val(cur_comments, "title"));
 			fopt_set_str(&track_fopts[TF_YEAR], comments_get_val(cur_comments, "date"));
 		}
-		fopt_set_time(&track_fopts[TF_DURATION], cur_track_info->duration, cur_track_info->duration == -1);
+		fopt_set_time(&track_fopts[TF_DURATION],
+				cur_track_info->duration,
+				cur_track_info->duration == -1);
 		fopt_set_str(&track_fopts[TF_PATHFILE], cur_track_info->filename);
 		if (is_url(cur_track_info->filename)) {
 			fopt_set_str(&track_fopts[TF_FILE], cur_track_info->filename);
@@ -1031,9 +1033,11 @@ static void do_update_titleline(void)
 			int i;
 
 			if (use_alt_format) {
-				format_print(print_buffer, sizeof(print_buffer) - 1, window_title_alt_format, track_fopts);
+				format_print(print_buffer, sizeof(print_buffer) - 1,
+						window_title_alt_format, track_fopts);
 			} else {
-				format_print(print_buffer, sizeof(print_buffer) - 1, window_title_format, track_fopts);
+				format_print(print_buffer, sizeof(print_buffer) - 1,
+						window_title_format, track_fopts);
 			}
 
 			/* remove whitespace */
@@ -1663,11 +1667,13 @@ void display_help(void)
 #define LAST_HELP_PAGE 5
 		case LAST_HELP_PAGE:
 			display_last_help(w);
-			mvwaddstr(w, HELP_H, (HELP_W - 57) / 2, "Press <space> for first page or <enter> to return to cmus");
+			mvwaddstr(w, HELP_H, (HELP_W - 57) / 2,
+					"Press <space> for first page or <enter> to return to cmus");
 			break;
 		}
 		if (page < LAST_HELP_PAGE)
-			mvwaddstr(w, HELP_H, (HELP_W - 56) / 2, "Press <space> for next page or <enter> to return to cmus");
+			mvwaddstr(w, HELP_H, (HELP_W - 56) / 2,
+					"Press <space> for next page or <enter> to return to cmus");
 		wrefresh(w);
 		while (1) {
 			int ch = getch();
@@ -1741,7 +1747,9 @@ static void spawn_status_program(void)
 	argv[i++] = xstrdup("status");
 	argv[i++] = xstrdup(status_strs[status]);
 	if (cur_track_info) {
-		static const char *keys[] = { "artist", "album", "discnumber", "tracknumber", "title", "date", NULL };
+		static const char *keys[] = {
+			"artist", "album", "discnumber", "tracknumber", "title", "date", NULL
+		};
 		int j;
 
 		if (is_url(cur_track_info->filename)) {
@@ -1955,7 +1963,8 @@ static void update(void)
 	player_info_lock();
 	pl_lock();
 
-	needs_spawn = player_info.status_changed || player_info.file_changed || player_info.metadata_changed;
+	needs_spawn = player_info.status_changed || player_info.file_changed ||
+		player_info.metadata_changed;
 
 	if (player_info.file_changed) {
 		if (cur_track_info)
@@ -1973,7 +1982,8 @@ static void update(void)
 		player_info.metadata_changed = 0;
 		needs_title_update = 1;
 	}
-	if (playlist.status_changed || player_info.position_changed || player_info.status_changed || player_info.volume_changed) {
+	if (playlist.status_changed || player_info.position_changed ||
+			player_info.status_changed || player_info.volume_changed) {
 		player_info.position_changed = 0;
 		player_info.status_changed = 0;
 		player_info.volume_changed = 0;
@@ -2205,7 +2215,9 @@ static void init_all(void)
 	char *term, *sort;
 
 	term = getenv("TERM");
-	if (term && (strncmp(term, "xterm", 5) == 0 || strncmp(term, "rxvt", 4) == 0 || strcmp(term, "screen") == 0))
+	if (term && (strncmp(term, "xterm", 5) == 0 ||
+		     strncmp(term, "rxvt", 4) == 0 ||
+		     strcmp(term, "screen") == 0))
 		update_window_title = 1;
 
 	remote_socket = remote_server_init(server_address);
