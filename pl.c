@@ -1773,17 +1773,6 @@ void pl_set_play_mode(enum play_mode play_mode)
 	pl_unlock();
 }
 
-void pl_get_status(int *repeat, enum playlist_mode *playlist_mode, enum play_mode *play_mode, int *total_time)
-{
-	pl_lock();
-	playlist.status_changed = 0;
-	*repeat = playlist.repeat;
-	*playlist_mode = playlist.playlist_mode;
-	*play_mode = playlist.play_mode;
-	*total_time = playlist.total_time;
-	pl_unlock();
-}
-
 void __pl_set_view(int view)
 {
 	/* playlist.tree_win or playlist.track_win */

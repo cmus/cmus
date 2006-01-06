@@ -158,7 +158,6 @@ void pl_toggle_play_mode(void);
 void pl_set_repeat(int value);
 void pl_set_playlist_mode(enum playlist_mode playlist_mode);
 void pl_set_play_mode(enum play_mode play_mode);
-void pl_get_status(int *repeat, enum playlist_mode *playlist_mode, enum play_mode *play_mode, int *total_time);
 
 /* these are unlocked */
 void __pl_set_view(int view);

@@ -812,15 +812,18 @@ static void do_update_statusline(void)
 	static char *play_mode_strs[] = {
 		"tree", "shuffle", "sorted"
 	};
-	enum playlist_mode playlist_mode;
-	enum play_mode play_mode;
 	int volume, buffer_fill;
-	int total_time, repeat;
 	int duration = -1;
 	char *msg;
 	char format[80];
 
-	pl_get_status(&repeat, &playlist_mode, &play_mode, &total_time);
+	pl_lock();
+	fopt_set_time(&status_fopts[SF_TOTAL], playlist.total_time, 0);
+	fopt_set_str(&status_fopts[SF_REPEAT], playlist.repeat ? "rep" : "");
+	fopt_set_str(&status_fopts[SF_PLAYMODE], play_mode_strs[playlist.play_mode]);
+	fopt_set_str(&status_fopts[SF_PLAYLISTMODE], playlist_mode_strs[playlist.playlist_mode]);
+	pl_unlock();
+
 	if (cur_track_info)
 		duration = cur_track_info->duration;
 
@@ -838,15 +841,11 @@ static void do_update_statusline(void)
 	}
 
 	fopt_set_time(&status_fopts[SF_DURATION], duration, 0);
-	fopt_set_time(&status_fopts[SF_TOTAL], total_time, 0);
 	fopt_set_int(&status_fopts[SF_VOLUME], volume, 0);
 	fopt_set_int(&status_fopts[SF_LVOLUME], player_info.vol_left, 0);
 	fopt_set_int(&status_fopts[SF_RVOLUME], player_info.vol_right, 0);
 	fopt_set_int(&status_fopts[SF_BUFFER], buffer_fill, 0);
-	fopt_set_str(&status_fopts[SF_REPEAT], repeat ? "rep" : "");
 	fopt_set_str(&status_fopts[SF_CONTINUE], player_info.cont ? "cont" : "");
-	fopt_set_str(&status_fopts[SF_PLAYMODE], play_mode_strs[play_mode]);
-	fopt_set_str(&status_fopts[SF_PLAYLISTMODE], playlist_mode_strs[playlist_mode]);
 
 	strcpy(format, " %s %p ");
 	if (duration != -1)
@@ -2292,10 +2291,6 @@ static void init_all(void)
 
 static void exit_all(void)
 {
-	int repeat, total_time, buffer_chunks;
-	enum playlist_mode playlist_mode;
-	enum play_mode play_mode;
-
 	endwin();
 
 #if defined(CONFIG_IRMAN)
@@ -2306,29 +2301,26 @@ static void exit_all(void)
 	cmus_exit();
 	cmus_save_playlist(playlist_autosave_filename);
 
-	pl_get_status(&repeat, &playlist_mode, &play_mode, &total_time);
-	buffer_chunks = player_get_buffer_chunks();
-
-	player_exit();
-	pl_exit();
-
 	if (cur_track_info)
 		track_info_unref(cur_track_info);
 
 	sconf_set_bool_option("continue", player_info.cont);
-	sconf_set_bool_option("repeat", repeat);
-	sconf_set_int_option("playlist_mode", playlist_mode);
-	sconf_set_int_option("play_mode", play_mode);
+	sconf_set_bool_option("repeat", playlist.repeat);
+	sconf_set_int_option("playlist_mode", playlist.playlist_mode);
+	sconf_set_int_option("play_mode", playlist.play_mode);
 	sconf_set_bool_option("show_remaining_time", show_remaining_time);
 	sconf_set_str_option("status_display_program",
 			status_display_program ? status_display_program : "");
 	sconf_set_str_option("sort", sort_string);
-	sconf_set_int_option("buffer_chunks", buffer_chunks);
+	sconf_set_int_option("buffer_chunks", player_get_buffer_chunks());
 	set_colors();
 
 	free(playlist_autosave_filename);
 	free(status_display_program);
 	free(sort_string);
+
+	player_exit();
+	pl_exit();
 
 	keys_exit();
 	options_exit();
