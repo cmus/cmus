@@ -803,7 +803,7 @@ static void update_view(void)
 	}
 }
 
-static void update_statusline(void)
+static void do_update_statusline(void)
 {
 	static char *status_strs[] = { ".", ">", "|" };
 	static char *playlist_mode_strs[] = {
@@ -885,7 +885,7 @@ static void dump_buffer(const char *buffer)
 	}
 }
 
-static void update_commandline(void)
+static void do_update_commandline(void)
 {
 	int w, idx;
 	char ch;
@@ -975,7 +975,7 @@ static const char *get_stream_title(const char *metadata)
 	return NULL;
 }
 
-static void update_titleline(void)
+static void do_update_titleline(void)
 {
 	bkgdset(cursed_colors[COLOR_TITLELINE]);
 	player_info_lock();
@@ -1111,24 +1111,24 @@ static void post_update(void)
 	}
 }
 
-void ui_curses_update_titleline(void)
+void update_titleline(void)
 {
 	curs_set(0);
-	update_titleline();
+	do_update_titleline();
 	post_update();
 }
 
-static void ui_curses_update_commandline(void)
+static void update_commandline(void)
 {
 	curs_set(0);
-	update_commandline();
+	do_update_commandline();
 	post_update();
 }
 
-static void ui_curses_update_statusline(void)
+static void update_statusline(void)
 {
 	curs_set(0);
-	update_statusline();
+	do_update_statusline();
 	post_update();
 }
 
@@ -1140,7 +1140,7 @@ void info_msg(const char *format, ...)
 	vsnprintf(error_buf, sizeof(error_buf), format, ap);
 	va_end(ap);
 
-	ui_curses_update_commandline();
+	update_commandline();
 }
 
 void error_msg(const char *format, ...)
@@ -1154,7 +1154,7 @@ void error_msg(const char *format, ...)
 
 	if (ui_initialized) {
 		error_time = time(NULL);
-		ui_curses_update_commandline();
+		update_commandline();
 	} else {
 		warn("%s\n", error_buf);
 		error_buf[0] = 0;
@@ -1192,7 +1192,7 @@ int yes_no_query(const char *format, ...)
 			ret = 1;
 		break;
 	}
-	ui_curses_update_commandline();
+	update_commandline();
 	return ret;
 }
 
@@ -1281,7 +1281,7 @@ static void set_view(int view)
 void toggle_remaining_time(void)
 {
 	show_remaining_time ^= 1;
-	ui_curses_update_statusline();
+	update_statusline();
 }
 
 void enter_tree_view(void)
@@ -1319,7 +1319,7 @@ void enter_command_mode(void)
 	error_buf[0] = 0;
 	error_time = 0;
 	input_mode = COMMAND_MODE;
-	ui_curses_update_commandline();
+	update_commandline();
 }
 
 void enter_search_mode(void)
@@ -1328,7 +1328,7 @@ void enter_search_mode(void)
 	error_time = 0;
 	input_mode = SEARCH_MODE;
 	search_direction = SEARCH_FORWARD;
-	ui_curses_update_commandline();
+	update_commandline();
 }
 
 void enter_search_backward_mode(void)
@@ -1337,7 +1337,7 @@ void enter_search_backward_mode(void)
 	error_time = 0;
 	input_mode = SEARCH_MODE;
 	search_direction = SEARCH_BACKWARD;
-	ui_curses_update_commandline();
+	update_commandline();
 }
 
 void quit(void)
@@ -1345,7 +1345,7 @@ void quit(void)
 	running = 0;
 }
 
-void ui_curses_update_color(int idx)
+void update_color(int idx)
 {
 	/* first color pair is 1 */
 	int pair = idx + 1;
@@ -1375,13 +1375,13 @@ static void full_update(void)
 	playlist.tree_win->changed = 1;
 	playlist.track_win->changed = 1;
 	update_view();
-	update_titleline();
-	update_statusline();
-	update_commandline();
+	do_update_titleline();
+	do_update_statusline();
+	do_update_commandline();
 	post_update();
 }
 
-void ui_curses_set_sort(const char *value)
+void set_sort_keys(const char *value)
 {
 	static const char *valid[] = {
 		"artist",
@@ -1713,7 +1713,7 @@ static void clear_error(void)
 	if (error_buf[0]) {
 		error_time = 0;
 		error_buf[0] = 0;
-		ui_curses_update_commandline();
+		update_commandline();
 	}
 }
 
@@ -2000,7 +2000,7 @@ static void ui_curses_start(void)
 		start_color();
 		use_default_colors();
 		for (i = 0; i < NR_COLORS; i++)
-			ui_curses_update_color(i);
+			update_color(i);
 	}
 	d_print("Number of supported colors: %d\n", COLORS);
 
@@ -2098,11 +2098,11 @@ static void ui_curses_start(void)
 			if (needs_view_update)
 				update_view();
 			if (needs_title_update)
-				update_titleline();
+				do_update_titleline();
 			if (needs_status_update)
-				update_statusline();
+				do_update_statusline();
 			if (needs_command_update)
-				update_commandline();
+				do_update_commandline();
 			post_update();
 		}
 
@@ -2143,10 +2143,10 @@ static void ui_curses_start(void)
 						normal_mode_ch(ch);
 					} else if (input_mode == COMMAND_MODE) {
 						command_mode_ch(ch);
-						ui_curses_update_commandline();
+						update_commandline();
 					} else if (input_mode == SEARCH_MODE) {
 						search_mode_ch(ch);
-						ui_curses_update_commandline();
+						update_commandline();
 					}
 				} else if (rc == 1) {
 					clear_error();
@@ -2154,10 +2154,10 @@ static void ui_curses_start(void)
 						normal_mode_key(key);
 					} else if (input_mode == COMMAND_MODE) {
 						command_mode_key(key);
-						ui_curses_update_commandline();
+						update_commandline();
 					} else if (input_mode == SEARCH_MODE) {
 						search_mode_key(key);
-						ui_curses_update_commandline();
+						update_commandline();
 					}
 				}
 			}
@@ -2243,10 +2243,10 @@ static void ui_curses_init(void)
 	sconf_get_bool_option("show_remaining_time", &show_remaining_time);
 	sconf_get_str_option("status_display_program", &status_display_program);
 	if (sconf_get_str_option("sort", &sort)) {
-		ui_curses_set_sort(sort);
+		set_sort_keys(sort);
 		free(sort);
 	} else {
-		ui_curses_set_sort("artist,album,discnumber,tracknumber,title,filename");
+		set_sort_keys("artist,album,discnumber,tracknumber,title,filename");
 	}
 	if (sconf_get_int_option("buffer_chunks", &btmp)) {
 		if (btmp < 3)

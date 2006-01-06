@@ -60,7 +60,7 @@ static void set_color(const struct command_mode_option *opt, const char *value)
 		i -= NR_COLORS;
 		fg_colors[i] = color;
 	}
-	ui_curses_update_color(i);
+	update_color(i);
 }
 
 static void get_format(const struct command_mode_option *opt, char **value)
@@ -99,7 +99,7 @@ static void set_format(const struct command_mode_option *opt, const char *value)
 		break;
 	}
 
-	ui_curses_update_titleline();
+	update_titleline();
 }
 
 static void get_output_plugin(const struct command_mode_option *opt, char **value)
@@ -161,7 +161,7 @@ static void get_sort(const struct command_mode_option *opt, char **value)
 
 static void set_sort(const struct command_mode_option *opt, const char *value)
 {
-	ui_curses_set_sort(value);
+	set_sort_keys(value);
 }
 
 static void get_confirm_run(const struct command_mode_option *opt, char **value)

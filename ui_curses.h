@@ -93,9 +93,9 @@ extern const char * const color_names[NR_COLORS];
 extern int bg_colors[NR_COLORS];
 extern int fg_colors[NR_COLORS];
 
-void ui_curses_update_titleline(void);
-void ui_curses_update_color(int idx);
-void ui_curses_set_sort(const char *value);
+void update_titleline(void);
+void update_color(int idx);
+void set_sort_keys(const char *value);
 void info_msg(const char *format, ...) __FORMAT(1, 2);
 void error_msg(const char *format, ...) __FORMAT(1, 2);
 int yes_no_query(const char *format, ...) __FORMAT(1, 2);
