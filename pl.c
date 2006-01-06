@@ -1145,6 +1145,20 @@ static void __set_cur_first_track(void)
 	playlist.cur_track = list_entry(playlist.cur_album->track_head.next, struct track, node);
 }
 
+static int play_mode_filter(const struct track *track)
+{
+	const struct album *album = track->album;
+
+	if (playlist.playlist_mode == PLAYLIST_MODE_ALBUM)
+		return playlist.cur_album == album;
+
+	if (playlist.playlist_mode == PLAYLIST_MODE_ARTIST)
+		return playlist.cur_artist == album->artist;
+
+	/* PLAYLIST_MODE_ALL */
+	return 1;
+}
+
 /* set next/prev track {{{ */
 
 static int set_cur_next_normal(void)
@@ -1288,9 +1302,7 @@ again:
 		struct track *track;
 
 		track = container_of(item, struct track, shuffle_node);
-		if (playlist.playlist_mode == PLAYLIST_MODE_ALL ||
-				(playlist.playlist_mode == PLAYLIST_MODE_ARTIST && playlist.cur_artist == track->album->artist) ||
-				(playlist.playlist_mode == PLAYLIST_MODE_ALBUM && playlist.cur_album == track->album)) {
+		if (play_mode_filter(track)) {
 			__set_cur_shuffle_track(item);
 			return 0;
 		}
@@ -1318,9 +1330,7 @@ again:
 		struct track *track;
 
 		track = container_of(item, struct track, shuffle_node);
-		if (playlist.playlist_mode == PLAYLIST_MODE_ALL ||
-				(playlist.playlist_mode == PLAYLIST_MODE_ARTIST && playlist.cur_artist == track->album->artist) ||
-				(playlist.playlist_mode == PLAYLIST_MODE_ALBUM && playlist.cur_album == track->album)) {
+		if (play_mode_filter(track)) {
 			__set_cur_shuffle_track(item);
 			return 0;
 		}
@@ -1360,9 +1370,7 @@ again:
 		struct track *track;
 
 		track = container_of(item, struct track, sorted_node);
-		if (playlist.playlist_mode == PLAYLIST_MODE_ALL ||
-				(playlist.playlist_mode == PLAYLIST_MODE_ARTIST && playlist.cur_artist == track->album->artist) ||
-				(playlist.playlist_mode == PLAYLIST_MODE_ALBUM && playlist.cur_album == track->album)) {
+		if (play_mode_filter(track)) {
 			__set_cur_sorted_track(item);
 			return 0;
 		}
@@ -1390,9 +1398,7 @@ again:
 		struct track *track;
 
 		track = container_of(item, struct track, sorted_node);
-		if (playlist.playlist_mode == PLAYLIST_MODE_ALL ||
-				(playlist.playlist_mode == PLAYLIST_MODE_ARTIST && playlist.cur_artist == track->album->artist) ||
-				(playlist.playlist_mode == PLAYLIST_MODE_ALBUM && playlist.cur_album == track->album)) {
+		if (play_mode_filter(track)) {
 			__set_cur_sorted_track(item);
 			return 0;
 		}
