@@ -191,6 +191,7 @@ enable_flag arts    a CONFIG_ARTS    "ARTS support"
 enable_flag oss     a CONFIG_OSS     "Open Sound System support"
 enable_flag sun     a CONFIG_SUN     "Sun Audio support"
 enable_flag irman   n CONFIG_IRMAN   "Irman support"
+enable_flag xdg     y CONFIG_XDG     "Use ~/.config/cmus/ instead of ~/.cmus/"
 
 parse_command_line "$@"
 run_checks
@@ -207,8 +208,7 @@ LIBDIR="$libdir"
 
 config_header_begin config.h
 config_str PACKAGE VERSION PACKAGE_BUGREPORT DATADIR LIBDIR
-config_bool CONFIG_TREMOR
-config_bool CONFIG_IRMAN
+config_bool CONFIG_IRMAN CONFIG_TREMOR CONFIG_XDG
 config_header_end
 
 makefile_vars PACKAGE VERSION bindir datadir libdir
