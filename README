@@ -1,7 +1,7 @@
 
                      CMus - C* Music Player
 
-                Copyright 2004-2005 Timo Hirvonen
+                Copyright 2004-2006 Timo Hirvonen
 
 Installation
 ============
@@ -48,10 +48,11 @@ Or to install to a temporary directory:
 This is useful when creating binary packages.
 Remember to replace 'make' with 'gmake' if needed.
 
+
 Documentation
 =============
 
-See $datadir/cmus/doc/cmus.html (e.g. /usr/share/cmus/doc/cmus.html).
+See $datadir/doc/cmus/cmus.html (e.g. /usr/share/doc/cmus/cmus.html).
 
 
 Known Problems
