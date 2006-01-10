@@ -84,7 +84,7 @@ int is_interesting_key(const char *key)
 	int i;
 
 	for (i = 0; interesting[i]; i++) {
-		if (strcmp(key, interesting[i]) == 0)
+		if (strcasecmp(key, interesting[i]) == 0)
 			return 1;
 	}
 	return 0;

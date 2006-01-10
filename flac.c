@@ -271,7 +271,7 @@ static void metadata_cb(const Dec *dec, const FLAC__StreamMetadata *metadata, vo
 					free(val);
 					continue;
 				}
-				if (!strcmp(key, "tracknumber") || !strcmp(key, "discnumber"))
+				if (!strcasecmp(key, "tracknumber") || !strcasecmp(key, "discnumber"))
 					fix_track_or_disc(val);
 
 				d_print("comment: '%s=%s'\n", key, val);

@@ -259,7 +259,7 @@ static int vorbis_read_comments(struct input_plugin_data *ip_data,
 		}
 
 		val = xstrdup(str + i + 1);
-		if (!strcmp(key, "tracknumber") || !strcmp(key, "discnumber"))
+		if (!strcasecmp(key, "tracknumber") || !strcasecmp(key, "discnumber"))
 			fix_track_or_disc(val);
 		c[d].key = key;
 		c[d].val = val;
