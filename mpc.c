@@ -10,7 +10,6 @@
 #include <xmalloc.h>
 #include <read_wrapper.h>
 #include <debug.h>
-#include "queue.h"
 
 #include <mpcdec/mpcdec.h>
 #include <inttypes.h>
@@ -40,37 +39,22 @@ struct ape_header {
 	uint32_t flags;
 };
 
-/*
- * Bit 31  	0: Tag contains no header
- * 		1: Tag contains a header
- * Bit 30 	0: Tag contains a footer
- * 		1: Tag contains no footer
- * Bit 29 	0: This is the footer, not the header
- * 		1: This is the header, not the footer
- * Bit 28...3 	Undefined, must be zero
- * Bit 2...1	0: Item contains text information coded in UTF-8
- * 		1: Item contains binary information °)
- * 		2: Item is a locator of external stored information °°)
- * 		3: reserved
- * Bit 0 	0: Tag or Item is Read/Write
- * 		1: Tag or Item is Read Only
- */
-
 /* ape flags */
 #define AF_IS_UTF8(f)		(((f) & 6) == 0)
-#define AF_IS_HEADER(f)		((f) & (1 << 29))
-#define AF_IS_FOOTER(f)		(!AF_IS_HEADER(f))
-#define AF_TAG_HAS_FOOTER(f)	(((f) & (1 << 30)) == 0)
-#define AF_TAG_HAS_HEADER(f)	((f) & (1 << 31))
+#define AF_IS_FOOTER(f)		(((f) & (1 << 29)) == 0)
 
 struct mpc_private {
 	mpc_decoder decoder;
 	mpc_reader reader;
 	mpc_streaminfo info;
 
-	MPC_SAMPLE_FORMAT sample_buffer[MPC_DECODER_BUFFER_LENGTH];
-	short short_buffer[MPC_DECODER_BUFFER_LENGTH];
-	WRQUEUE q;
+	/* index to buffer */
+	int buffer_pos;
+
+	/* number of samples in buffer */
+	int buffer_avail;
+
+	MPC_SAMPLE_FORMAT buffer[MPC_DECODER_BUFFER_LENGTH];
 };
 
 static inline uint32_t get_le32(const char *buf)
@@ -89,7 +73,7 @@ static mpc_int32_t read_impl(void *data, void *ptr, mpc_int32_t size)
 	rc = read_wrapper(ip_data, ptr, size);
 	if (rc == -1) {
 		d_print("error: %s\n", strerror(errno));
-		return 0;
+		return -1;
 	}
 	if (rc == 0) {
 		errno = 0;
@@ -347,7 +331,9 @@ static int mpc_open(struct input_plugin_data *ip_data)
 		return -IP_ERROR_FILE_FORMAT;
 	}
 
-	wrqInitQueue(&priv->q, 65536);
+	priv->buffer_avail = 0;
+	priv->buffer_pos = 0;
+
 	ip_data->private = priv;
 	ip_data->sf = sf_rate(priv->info.sample_freq) | sf_channels(priv->info.channels) |
 		sf_bits(16) | sf_signed(1);
@@ -359,56 +345,73 @@ static int mpc_close(struct input_plugin_data *ip_data)
 	struct mpc_private *priv;
 
 	priv = ip_data->private;
-	wrqDeinitQueue(&priv->q);
 	free(priv);
 	ip_data->private = NULL;
 	return 0;
 }
 
+static int scale(struct input_plugin_data *ip_data, char *buffer, int count)
+{
+	struct mpc_private *priv = ip_data->private;
+	const int clip_min = -1 << (16 - 1);
+	const int clip_max = (1 << (16 - 1)) - 1;
+	const int float_scale = 1 << (16 - 1);
+	int i, sample_count, bpos;
+
+	sample_count = count / 2;
+	if (sample_count > priv->buffer_avail)
+		sample_count = priv->buffer_avail;
+
+	bpos = priv->buffer_pos;
+	for (i = 0; i < sample_count; i++) {
+		int val;
+
+		val = priv->buffer[bpos + i] * float_scale;
+		if (val < clip_min) {
+			val = clip_min;
+		} else if (val > clip_max) {
+			val = clip_max;
+		}
+
+		buffer[i * 2 + 0] = val & 0xff;
+		buffer[i * 2 + 1] = val >> 8;
+	}
+
+	priv->buffer_pos += sample_count;
+	priv->buffer_avail -= sample_count;
+	if (priv->buffer_avail == 0)
+		priv->buffer_pos = 0;
+
+	return sample_count * 2;
+}
+
 static int mpc_read(struct input_plugin_data *ip_data, char *buffer, int count)
 {
 	struct mpc_private *priv = ip_data->private;
-	unsigned status;
 
-	status = mpc_decoder_decode(&priv->decoder, priv->sample_buffer, NULL, NULL);
-/* 	d_print("decoded %u\n", status); */
+	if (priv->buffer_avail == 0) {
+		unsigned status = mpc_decoder_decode(&priv->decoder, priv->buffer, NULL, NULL);
 
-	if (status == (unsigned)(-1)) {
-		/* right ret val? */
-		return -IP_ERROR_ERRNO;
-	}
-
-	if (status) {
-		int clip_min = -1 << (16 - 1);
-		int clip_max = (1 << (16 - 1)) - 1;
-		int float_scale = 1 << (16 - 1);
-		int n;
-
-		for (n = 0; n < status * 2; n++) {
-			int val;
-
-			val = (int)(priv->sample_buffer[n] * float_scale);
-			if (val < clip_min)
-				val = clip_min;
-			else if (val > clip_max)
-				val = clip_max;
-			priv->short_buffer[n] = val;
+		if (status == (unsigned)(-1)) {
+			/* right ret val? */
+			return -IP_ERROR_ERRNO;
 		}
-
-		wrqEnqueue(&priv->q, (char *)priv->short_buffer,
-				status * priv->info.channels * sizeof(short));
-	} else {
-		/* EOF */
-		/* FIXME: could be cutting stuff off if amount of stuff in queue > count */
+		if (status == 0) {
+			/* EOF */
+			return 0;
+		}
+		priv->buffer_avail = status * 2;
 	}
-	return wrqDequeue(&priv->q, &buffer, count);
+	return scale(ip_data, buffer, count);
 }
 
 static int mpc_seek(struct input_plugin_data *ip_data, double offset)
 {
 	struct mpc_private *priv = ip_data->private;
 
-	wrqFlush(&priv->q);
+	priv->buffer_pos = 0;
+	priv->buffer_avail = 0;
+
 	mpc_decoder_seek_seconds(&priv->decoder, offset);
 	/* FIXME: error checking */
 	return 0;

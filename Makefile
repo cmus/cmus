@@ -32,7 +32,7 @@ cmus-remote: main.o file.o path.o prog.o xmalloc.o
 flac-objs		:= flac.lo
 mad-objs		:= id3.lo mad.lo nomad.lo utf8_encode.lo
 modplug-objs		:= modplug.lo
-mpc-objs		:= mpc.lo queue.lo
+mpc-objs		:= mpc.lo
 vorbis-objs		:= vorbis.lo
 wav-objs		:= wav.lo
 
