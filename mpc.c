@@ -48,6 +48,8 @@ struct mpc_private {
 	mpc_reader reader;
 	mpc_streaminfo info;
 
+	off_t file_size;
+
 	/* index to buffer */
 	int buffer_pos;
 
@@ -100,23 +102,12 @@ static mpc_int32_t tell_impl(void *data)
 	return lseek(ip_data->fd, 0, SEEK_CUR);
 }
 
-// FIXME: get size at init
 static mpc_int32_t get_size_impl(void *data)
 {
 	struct input_plugin_data *ip_data = data;
-	int cur, rc;
+	struct mpc_private *priv = ip_data->private;
 
-	cur = lseek(ip_data->fd, 0, SEEK_CUR);
-
-	/* seek to end of file */
-	lseek(ip_data->fd, 0, SEEK_END);
-
-	/* get position */
-	rc = lseek(ip_data->fd, 0, SEEK_CUR);
-
-	/* seek back to where we were */
-	lseek(ip_data->fd, cur, SEEK_SET);
-	return rc;
+	return priv->file_size;
 }
 
 static mpc_bool_t canseek_impl(void *data)
@@ -309,6 +300,12 @@ static int mpc_open(struct input_plugin_data *ip_data)
 
 	priv = xnew0(struct mpc_private, 1);
 
+	priv->file_size = -1;
+	if (!ip_data->remote) {
+		priv->file_size = lseek(ip_data->fd, 0, SEEK_END);
+		lseek(ip_data->fd, 0, SEEK_SET);
+	}
+
 	/* set up an mpc_reader linked to our function implementations */
 	priv->reader.read = read_impl;
 	priv->reader.seek = seek_impl;
@@ -316,6 +313,9 @@ static int mpc_open(struct input_plugin_data *ip_data)
 	priv->reader.get_size = get_size_impl;
 	priv->reader.canseek = canseek_impl;
 	priv->reader.data = ip_data;
+
+	/* must be before mpc_streaminfo_read() */
+	ip_data->private = priv;
 
 	/* read file's streaminfo data */
 	mpc_streaminfo_init(&priv->info);
@@ -334,7 +334,6 @@ static int mpc_open(struct input_plugin_data *ip_data)
 	priv->buffer_avail = 0;
 	priv->buffer_pos = 0;
 
-	ip_data->private = priv;
 	ip_data->sf = sf_rate(priv->info.sample_freq) | sf_channels(priv->info.channels) |
 		sf_bits(16) | sf_signed(1);
 	return 0;
@@ -342,9 +341,8 @@ static int mpc_open(struct input_plugin_data *ip_data)
 
 static int mpc_close(struct input_plugin_data *ip_data)
 {
-	struct mpc_private *priv;
+	struct mpc_private *priv = ip_data->private;
 
-	priv = ip_data->private;
 	free(priv);
 	ip_data->private = NULL;
 	return 0;
@@ -412,9 +410,9 @@ static int mpc_seek(struct input_plugin_data *ip_data, double offset)
 	priv->buffer_pos = 0;
 	priv->buffer_avail = 0;
 
-	mpc_decoder_seek_seconds(&priv->decoder, offset);
-	/* FIXME: error checking */
-	return 0;
+	if (mpc_decoder_seek_seconds(&priv->decoder, offset))
+		return 0;
+	return -1;
 }
 
 static int mpc_read_comments(struct input_plugin_data *ip_data, struct keyval **comments)
@@ -454,9 +452,8 @@ out:
 
 static int mpc_duration(struct input_plugin_data *ip_data)
 {
-	struct mpc_private *priv;
+	struct mpc_private *priv = ip_data->private;
 
-	priv = ip_data->private;
 	return priv->info.pcm_samples / priv->info.sample_freq;
 }
 
