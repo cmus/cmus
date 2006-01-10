@@ -32,18 +32,21 @@ cmus-remote: main.o file.o path.o prog.o xmalloc.o
 flac-objs		:= flac.lo
 mad-objs		:= id3.lo mad.lo nomad.lo utf8_encode.lo
 modplug-objs		:= modplug.lo
+mpc-objs		:= mpc.lo queue.lo
 vorbis-objs		:= vorbis.lo
 wav-objs		:= wav.lo
 
 ip-$(CONFIG_FLAC)	+= flac.so
 ip-$(CONFIG_MAD)	+= mad.so
 ip-$(CONFIG_MODPLUG)	+= modplug.so
+ip-$(CONFIG_MPC)	+= mpc.so
 ip-$(CONFIG_VORBIS)	+= vorbis.so
 ip-$(CONFIG_WAV)	+= wav.so
 
 $(flac-objs):		CFLAGS += $(FLAC_CFLAGS)
 $(mad-objs):		CFLAGS += $(MAD_CFLAGS)
 $(modplug-objs):	CFLAGS += $(MODPLUG_CFLAGS)
+$(mpc-objs):		CFLAGS += $(MPC_CFLAGS)
 $(vorbis-objs):		CFLAGS += $(VORBIS_CFLAGS)
 
 flac.so: $(flac-objs)
@@ -54,6 +57,9 @@ mad.so: $(mad-objs)
 
 modplug.so: $(modplug-objs)
 	$(call cmd,ld_so,$(MODPLUG_LIBS))
+
+mpc.so: $(mpc-objs)
+	$(call cmd,ld_so,$(MPC_LIBS))
 
 vorbis.so: $(vorbis-objs)
 	$(call cmd,ld_so,$(VORBIS_LIBS))
