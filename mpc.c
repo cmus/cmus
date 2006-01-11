@@ -9,10 +9,10 @@
 #include <file.h>
 #include <xmalloc.h>
 #include <read_wrapper.h>
-#include <debug.h>
 
 #include <mpcdec/mpcdec.h>
 #include <inttypes.h>
+#include <errno.h>
 
 /* http://www.personal.uni-jena.de/~pfk/mpp/sv8/apetag.html */
 
@@ -50,13 +50,21 @@ struct mpc_private {
 
 	off_t file_size;
 
-	/* index to buffer */
-	int buffer_pos;
+	int samples_pos;
+	int samples_avail;
 
-	/* number of samples in buffer */
-	int buffer_avail;
-
-	MPC_SAMPLE_FORMAT buffer[MPC_DECODER_BUFFER_LENGTH];
+	/* mpcdec/mpcdec.h
+	 *
+	 * the api doc says this is pcm samples per mpc frame
+	 * but it's really pcm _frames_ per mpc frame
+	 *     MPC_FRAME_LENGTH = 36 * 32 (1152)
+	 *
+	 * this is wrong, it should be 2 * MPC_FRAME_LENGTH (2304)
+	 *     MPC_DECODER_BUFFER_LENGTH = 4 * MPC_FRAME_LENGTH (4608)
+	 *
+	 * use MPC_DECODER_BUFFER_LENGTH just to be sure it works
+	 */
+	MPC_SAMPLE_FORMAT samples[MPC_DECODER_BUFFER_LENGTH];
 };
 
 static inline uint32_t get_le32(const char *buf)
@@ -73,10 +81,8 @@ static mpc_int32_t read_impl(void *data, void *ptr, mpc_int32_t size)
 	int rc;
 
 	rc = read_wrapper(ip_data, ptr, size);
-	if (rc == -1) {
-		d_print("error: %s\n", strerror(errno));
+	if (rc == -1)
 		return -1;
-	}
 	if (rc == 0) {
 		errno = 0;
 		return 0;
@@ -332,8 +338,8 @@ static int mpc_open(struct input_plugin_data *ip_data)
 		return -IP_ERROR_FILE_FORMAT;
 	}
 
-	priv->buffer_avail = 0;
-	priv->buffer_pos = 0;
+	priv->samples_avail = 0;
+	priv->samples_pos = 0;
 
 	ip_data->sf = sf_rate(priv->info.sample_freq) | sf_channels(priv->info.channels) |
 		sf_bits(16) | sf_signed(1);
@@ -352,20 +358,23 @@ static int mpc_close(struct input_plugin_data *ip_data)
 static int scale(struct input_plugin_data *ip_data, char *buffer, int count)
 {
 	struct mpc_private *priv = ip_data->private;
+	const MPC_SAMPLE_FORMAT *samples;
 	const int clip_min = -1 << (16 - 1);
 	const int clip_max = (1 << (16 - 1)) - 1;
 	const int float_scale = 1 << (16 - 1);
-	int i, sample_count, bpos;
+	int i, sample_count;
 
+	/* number of bytes to 16-bit samples */
 	sample_count = count / 2;
-	if (sample_count > priv->buffer_avail)
-		sample_count = priv->buffer_avail;
+	if (sample_count > priv->samples_avail)
+		sample_count = priv->samples_avail;
 
-	bpos = priv->buffer_pos;
+	/* scale 32-bit samples to 16-bit */
+	samples = priv->samples + priv->samples_pos;
 	for (i = 0; i < sample_count; i++) {
 		int val;
 
-		val = priv->buffer[bpos + i] * float_scale;
+		val = samples[i] * float_scale;
 		if (val < clip_min) {
 			val = clip_min;
 		} else if (val > clip_max) {
@@ -376,11 +385,12 @@ static int scale(struct input_plugin_data *ip_data, char *buffer, int count)
 		buffer[i * 2 + 1] = val >> 8;
 	}
 
-	priv->buffer_pos += sample_count;
-	priv->buffer_avail -= sample_count;
-	if (priv->buffer_avail == 0)
-		priv->buffer_pos = 0;
+	priv->samples_pos += sample_count;
+	priv->samples_avail -= sample_count;
+	if (priv->samples_avail == 0)
+		priv->samples_pos = 0;
 
+	/* number of 16-bit samples to bytes */
 	return sample_count * 2;
 }
 
@@ -388,10 +398,10 @@ static int mpc_read(struct input_plugin_data *ip_data, char *buffer, int count)
 {
 	struct mpc_private *priv = ip_data->private;
 
-	if (priv->buffer_avail == 0) {
-		unsigned status = mpc_decoder_decode(&priv->decoder, priv->buffer, NULL, NULL);
+	if (priv->samples_avail == 0) {
+		uint32_t status = mpc_decoder_decode(&priv->decoder, priv->samples, NULL, NULL);
 
-		if (status == (unsigned)(-1)) {
+		if (status == (uint32_t)(-1)) {
 			/* right ret val? */
 			return -IP_ERROR_ERRNO;
 		}
@@ -399,7 +409,11 @@ static int mpc_read(struct input_plugin_data *ip_data, char *buffer, int count)
 			/* EOF */
 			return 0;
 		}
-		priv->buffer_avail = status * 2;
+
+		/* status seems to be number of _frames_
+		 * the api documentation is wrong
+		 */
+		priv->samples_avail = status * priv->info.channels;
 	}
 	return scale(ip_data, buffer, count);
 }
@@ -408,8 +422,8 @@ static int mpc_seek(struct input_plugin_data *ip_data, double offset)
 {
 	struct mpc_private *priv = ip_data->private;
 
-	priv->buffer_pos = 0;
-	priv->buffer_avail = 0;
+	priv->samples_pos = 0;
+	priv->samples_avail = 0;
 
 	if (mpc_decoder_seek_seconds(&priv->decoder, offset))
 		return 0;
@@ -455,6 +469,9 @@ static int mpc_duration(struct input_plugin_data *ip_data)
 {
 	struct mpc_private *priv = ip_data->private;
 
+	/* priv->info.pcm_samples seems to be number of frames
+	 * priv->info.frames is _not_ pcm frames
+	 */
 	return priv->info.pcm_samples / priv->info.sample_freq;
 }
 
