@@ -159,7 +159,7 @@ static int find_ape_tag_slow(int fd)
 
 static int read_header(int fd, struct ape_header *h)
 {
-	char buf[32];
+	char buf[HEADER_SIZE];
 
 	if (read_all(fd, buf, sizeof(buf)) != sizeof(buf))
 		return 0;
@@ -180,7 +180,7 @@ static int find_ape_tag(int fd, struct ape_header *h)
 {
 	int pos;
 
-	if (lseek(fd, -sizeof(struct ape_header), SEEK_END) == -1)
+	if (lseek(fd, -HEADER_SIZE, SEEK_END) == -1)
 		return 0;
 	if (read_header(fd, h))
 		return 1;
@@ -246,6 +246,7 @@ static int parse_ape_tag(char *buf, const int size, const int count, struct keyv
 		val = xstrndup(buf + pos, val_len);
 		pos += val_len;
 
+		/* normalize key names */
 		if (!strcasecmp(key, "track")) {
 			free(key);
 			key = xstrdup("tracknumber");
@@ -256,6 +257,12 @@ static int parse_ape_tag(char *buf, const int size, const int count, struct keyv
 			 */
 			free(key);
 			key = xstrdup("discnumber");
+		}
+
+		if (!is_interesting_key(key)) {
+			free(key);
+			free(val);
+			continue;
 		}
 
 		if (!strcasecmp(key, "tracknumber") || !strcasecmp(key, "discnumber")) {
@@ -276,12 +283,6 @@ static int parse_ape_tag(char *buf, const int size, const int count, struct keyv
 			 */
 			if (strlen(val) > 4)
 				val[4] = 0;
-		}
-
-		if (!is_interesting_key(key)) {
-			free(key);
-			free(val);
-			continue;
 		}
 
 		c[i].key = key;
