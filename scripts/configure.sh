@@ -45,9 +45,9 @@ trap '__abort' 1 2 3 13 15
 
 # }}}
 
-# Add check function that will be run by run_checks
+# Add check function(s) that run_checks runs
 #
-# @check: function to run
+# @check: function(s) to run
 #
 # NOTE:
 #   The @check function takes no arguments and _must_ return 0 on success and
@@ -59,25 +59,31 @@ add_check()
 	checks="${checks} $*"
 }
 
-# Add --enable-FEATURE=ARG flag
+# Add --enable-FEATURE and --disable-FEATURE flags
 #
 # @name:          name of the flag (eg. alsa => --enable-alsa)
 # @default_value: 'y', 'n' or 'a' (yes, no, auto)
 #                 'a' can be used only if check_@name function exists
-# @config_var:    name of the variable written to Makefile and config.h
-# @description:   help text
+# @config_var:    name of the variable
+# @description:   text shown in --help
+#
+# defines @config_var=y/n
 #
 # NOTE:
 #   You might want to define check_@name function which will be run by
 #   run_checks.  The check_@name function takes no arguments and _must_ return
 #   0 on success and non-zero on failure. See checks.sh for more information.
 #
-# E.g. if @config_var is CONFIG_ALSA then
-#   "CONFIG_ALSA := y" or
-#   "CONFIG_ALSA := n" will be written to Makefile
-# and
-#   "#define CONFIG_ALSA" or
-#   "/* #define CONFIG_ALSA */" will be written to config.h
+# Example:
+#   ---
+#   check_alsa()
+#   {
+#     pkg_check_modules alsa "alsa"
+#     return $?
+#   }
+#
+#   enable_flag alsa a CONFIG_ALSA "ALSA support"
+#   ---
 enable_flag()
 {
 	local name value var desc
@@ -115,10 +121,10 @@ enable_flag()
 # Add an option flag
 #
 # @flag:          'foo' -> --foo[=ARG]
-# @has_arg:       does --@flag take an argument? 'yes' or 'no'
+# @has_arg:       does --@flag take an argument? 'y' or 'n'
 # @function:      function to run if --@flag is given
-# @description:   help text
-# @arg_desc:      argument description shown in --help
+# @description:   text displayed in --help
+# @arg_desc:      argument description shown in --help (if @has_arg is 'y')
 add_flag()
 {
 	local flag hasarg func desc name

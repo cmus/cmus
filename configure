@@ -208,7 +208,7 @@ var_default datadir "${prefix}/share"
 var_default libdir "${prefix}/lib"
 
 CFLAGS="${CFLAGS} -DDEBUG=$DEBUG"
-test "$WORDS_BIGENDIAN" -eq 1 && CFLAGS="${CFLAGS} -DWORDS_BIGENDIAN"
+test "$WORDS_BIGENDIAN" = y && CFLAGS="${CFLAGS} -DWORDS_BIGENDIAN"
 
 DATADIR="$datadir"
 LIBDIR="$libdir"

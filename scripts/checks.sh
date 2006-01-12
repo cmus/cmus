@@ -82,7 +82,7 @@ check_cxx_flag()
 	fi
 }
 
-# c compiler
+# adds CC, LD, CFLAGS, LDFLAGS and SOFLAGS to config.mk
 check_cc()
 {
 	var_default CC ${CROSS}gcc
@@ -108,7 +108,7 @@ check_cc()
 	return 1
 }
 
-# c++ compiler
+# adds CXX, CXXLD, CXXFLAGS and CXXLDFLAGS to config.mk
 check_cxx()
 {
 	var_default CXX ${CROSS}g++
@@ -133,6 +133,7 @@ check_cxx()
 	return 1
 }
 
+# adds AR to config.mk
 check_ar()
 {
 	var_default AR ${CROSS}ar
@@ -145,6 +146,7 @@ check_ar()
 	return 1
 }
 
+# adds AS to config.mk
 check_as()
 {
 	var_default AS ${CROSS}gcc
@@ -204,6 +206,8 @@ check_library()
 # @modules: the argument for pkg-config
 # @cflags:  CFLAGS to use if pkg-config failed (optional)
 # @libs:    LIBS to use if pkg-config failed (optional)
+#
+# if pkg-config fails and @libs are given check_library is called
 #
 # example:
 #   ---
@@ -285,7 +289,7 @@ pkg_check_modules()
 #
 #   add_check check_cppunit
 #   ---
-#   CPPUNIT_CFLAGS and CPPUNIT_LIBS are automatically added to Makefile
+#   CPPUNIT_CFLAGS and CPPUNIT_LIBS are automatically added to config.mk
 app_config()
 {
 	local name program uc cflags libs
@@ -364,6 +368,9 @@ int main(int argc, char *argv[])
 	return $?
 }
 
+# check if the architecture is big-endian
+#
+# defines WORDS_BIGENDIAN=y/n
 check_endianness()
 {
 	local file src obj exe
@@ -386,10 +393,10 @@ int main(int argc, char *argv[])
 	if ./$exe
 	then
 		msg_result "big-endian"
-		WORDS_BIGENDIAN=1
+		WORDS_BIGENDIAN=y
 	else
 		msg_result "little-endian"
-		WORDS_BIGENDIAN=0
+		WORDS_BIGENDIAN=n
 	fi
 	return 0
 }
@@ -421,7 +428,7 @@ check_lib()
 
 # check X11 libs
 #
-# defines X11_LIBS in config.mk
+# adds X11_LIBS to config.mk
 check_x11()
 {
 	local libs
@@ -439,8 +446,7 @@ check_x11()
 
 # check posix threads
 #
-# defines PTHREAD_CFLAGS in config.mk
-# defines PTHREAD_LIBS in config.mk
+# adds PTHREAD_CFLAGS and PTHREAD_LIBS to config.mk
 check_pthread()
 {
 	local libs
@@ -463,7 +469,7 @@ check_pthread()
 
 # check dynamic linking loader
 #
-# defines DL_LIBS in config.mk
+# adds DL_LIBS to config.mk
 check_dl()
 {
 	local libs="-ldl -Wl,--export-dynamic"
@@ -478,6 +484,9 @@ check_dl()
 	return 0
 }
 
+# check for iconv
+#
+# adds ICONV_CFLAGS and ICONV_LIBS to config.mk
 check_iconv()
 {
 	local libs=-liconv
