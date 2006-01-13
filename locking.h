@@ -25,35 +25,6 @@
 #include <pthread.h>
 #include <string.h>
 
-#if defined(_GNU_SOURCE) && DEBUG > 0
-
-/* check if thread tries to lock mutext twice */
-
-#define CMUS_MUTEX_INITIALIZER PTHREAD_ERRORCHECK_MUTEX_INITIALIZER_NP
-
-static inline void cmus_mutex_init(pthread_mutex_t *mutex)
-{
-	pthread_mutexattr_t attr;
-	int rc;
-
-	rc = pthread_mutexattr_init(&attr);
-	if (rc)
-		goto __error;
-	rc = pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK);
-	if (rc)
-		goto __error;
-	rc = pthread_mutex_init(mutex, &attr);
-	if (rc)
-		goto __error;
-	return;
-__error:
-	BUG("error initializing mutex: %s\n", strerror(rc));
-}
-
-#else
-
-/* no checking */
-
 #define CMUS_MUTEX_INITIALIZER PTHREAD_MUTEX_INITIALIZER
 
 static inline void cmus_mutex_init(pthread_mutex_t *mutex)
@@ -64,8 +35,6 @@ static inline void cmus_mutex_init(pthread_mutex_t *mutex)
 	if (rc)
 		BUG("error initializing mutex: %s\n", strerror(rc));
 }
-
-#endif
 
 #define cmus_mutex_lock(mutex) \
 do { \
