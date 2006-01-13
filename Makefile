@@ -109,54 +109,48 @@ quiet_cmd_rst = RST    $@
       cmd_rst = $(RST2HTML) $(RST2HTML_FLAGS) $< $@
 # }}}
 
-clean		+= *.o *.lo *.so cmus cmus-remote
-clobber		+= cmus.html
-distclean	+= config.mk config.h cmus.spec
+clean		+= *.o *.lo *.so cmus cmus-remote *.html
+distclean	+= config.mk config.h tags
 
 build: cmus cmus-remote $(ip-y) $(op-y)
 
-doc: cmus.html
+html: cmus.html
 
 install: build
 	$(INSTALL) -m755 $(bindir) cmus cmus-remote
 	$(INSTALL) -m755 $(libdir)/cmus/ip $(ip-y)
 	$(INSTALL) -m755 $(libdir)/cmus/op $(op-y)
 	$(INSTALL) -m644 $(datadir)/cmus keybindings
-	$(INSTALL) -m644 $(datadir)/doc/cmus cmus.html
+	$(INSTALL) -m644 $(datadir)/doc/cmus cmus.rst
 	$(INSTALL) -m755 $(datadir)/doc/cmus/examples cmus-status-display
+
+install-html: html
+	$(INSTALL) -m644 $(datadir)/doc/cmus cmus.html
 
 tags:
 	exuberant-ctags *.[ch]
 
-release	:= $(PACKAGE)-$(VERSION)
-tmpdir	:= /tmp
-tarball	:= $(DISTDIR)/$(release).tar.bz2
+# generating tarball using GIT {{{
+REV	= HEAD
 
-release: cmus.html
-	@dir=$(tmpdir)/$(release); \
-	if test -e "$$dir"; \
-	then \
-		echo "$$dir exists" >&2; \
-		exit 1; \
-	fi; \
-	if test -e "$(tarball)"; \
-	then \
-		echo -n "\`$(tarball)' already exists. overwrite? [n] "; \
-		read key; \
-		case $$key in y|Y) ;; *) exit 0; ;; esac; \
-	fi; \
-	echo "   DIST   $(tarball)"; \
-	mkdir -p $$dir || exit 1; \
-	export GIT_INDEX_FILE=$$dir/.git-index; \
-	git-read-tree HEAD || exit 1; \
-	git-checkout-index --prefix=$$dir/ -a || exit 1; \
-	rm $$GIT_INDEX_FILE; \
-	cp cmus.html cmus.spec "$$dir" || exit 1; \
-	cd $(tmpdir) || exit 1; \
-	tar -c $(release) | bzip2 -9 > $(tarball) || rm -f $(tarball); \
-	rm -rf $(release)
+# version from an annotated tag
+_ver0	= $(shell git-describe $(REV) 2>/dev/null)
+# version from a plain tag
+_ver1	= $(shell git-describe --tags $(REV) 2>/dev/null)
+# SHA1
+_ver2	= $(shell git-rev-parse --verify $(REV) 2>/dev/null)
 
-.PHONY: all build doc install tags release
+TARNAME	= $(PACKAGE)-$(if $(_ver0),$(_ver0),$(if $(_ver1),$(_ver1),$(_ver2)))
+
+dist:
+	@tarname=$(TARNAME);						\
+	sha1=$(_ver2);							\
+	test "$$sha1" || { echo "No such revision $(REV)"; exit 1; };	\
+	echo "   DIST   $$tarname.tar.bz2";				\
+	git-tar-tree $$sha1 $$tarname | bzip2 -9 > $$tarname.tar.bz2
+# }}}
+
+.PHONY: all build html install install-html dist
 
 # If config.mk changes, rebuild all sources that include debug.h
 #

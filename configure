@@ -224,8 +224,6 @@ makefile_vars CONFIG_ALSA CONFIG_ARTS CONFIG_OSS CONFIG_SUN CONFIG_IRMAN
 
 generate_config_mk
 
-sed -e "s:@VERSION@:${VERSION}:g" < "cmus.spec.in" > cmus.spec
-
 print_config
 
 cat <<EOF

@@ -36,6 +36,10 @@ Or on some BSD systems you need to explicitly use GNU make:
 
   gmake 
 
+To build optional HTML documentation (requires rst2html):
+
+  make html
+
 Installation
 ------------
 
@@ -46,13 +50,12 @@ Or to install to a temporary directory:
   make DESTDIR=/tmp/cmus install
 
 This is useful when creating binary packages.
+
+To install optional HTML documentation:
+
+  make install-html
+
 Remember to replace 'make' with 'gmake' if needed.
-
-
-Documentation
-=============
-
-See $datadir/doc/cmus/cmus.html (e.g. /usr/share/doc/cmus/cmus.html).
 
 
 Known Problems
