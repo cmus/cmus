@@ -1,8 +1,13 @@
 #!/bin/sh
 #
-# Copyright 2005 Timo Hirvonen
+# Copyright 2005-2006 Timo Hirvonen
 #
 # This file is licensed under the GPLv2.
+
+# Set to 'n' if you don't want .dep-*.o files generated
+# NOTE: this is automatically disabled if compiler doesn't support it
+CC_GENERATE_DEPS=y
+CXX_GENERATE_DEPS=y
 
 msg_checking()
 {
@@ -99,7 +104,7 @@ check_cc()
 				;;
 		esac
 		makefile_vars CC LD CFLAGS LDFLAGS SOFLAGS
-		if check_cc_flag -MMD -MP -MF /dev/null
+		if test "$CC_GENERATE_DEPS" = y && check_cc_flag -MMD -MP -MF /dev/null
 		then
 			CFLAGS="$CFLAGS -MMD -MP -MF .dep-\$@"
 		fi
@@ -124,7 +129,7 @@ check_cxx()
 				;;
 		esac
 		makefile_vars CXX CXXLD CXXFLAGS CXXLDFLAGS
-		if check_cxx_flag -MMD -MP -MF /dev/null
+		if test "$CXX_GENERATE_DEPS" = y && check_cxx_flag -MMD -MP -MF /dev/null
 		then
 			CXXFLAGS="$CXXFLAGS -MMD -MP -MF .dep-\$@"
 		fi
