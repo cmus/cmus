@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright 2005 Timo Hirvonen
+# Copyright 2005-2006 Timo Hirvonen
 #
 # This file is licensed under the GPLv2.
 
@@ -18,11 +18,8 @@ do
 	shift
 done
 
-if test $# -lt 2
-then
-	echo "expecting at least 2 arguments"
-	exit 1
-fi
+test $# -lt 2 && exit 0
+
 to="${DESTDIR}${1}"
 shift
 install -d -m755 "${to}"
