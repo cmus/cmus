@@ -18,8 +18,8 @@
 
 struct window *filters_win;
 struct searchable *filters_searchable;
+LIST_HEAD(filters_head);
 
-static LIST_HEAD(filters_head);
 static char filename[512];
 static const char *recursive_filter;
 
@@ -82,19 +82,28 @@ static void free_filter(struct filter_entry *e)
 	free(e);
 }
 
-static const char *get_filter(const char *name)
+static struct filter_entry *find_filter(const char *name)
 {
 	struct filter_entry *e;
 
 	list_for_each_entry(e, &filters_head, node) {
-		if (strcmp(e->name, name) == 0) {
-			if (e->visited) {
-				recursive_filter = e->name;
-				return NULL;
-			}
-			e->visited = 1;
-			return e->filter;
+		if (strcmp(e->name, name) == 0)
+			return e;
+	}
+	return NULL;
+}
+
+static const char *get_filter(const char *name)
+{
+	struct filter_entry *e = find_filter(name);
+
+	if (e) {
+		if (e->visited) {
+			recursive_filter = e->name;
+			return NULL;
 		}
+		e->visited = 1;
+		return e->filter;
 	}
 	return NULL;
 }
@@ -154,6 +163,73 @@ void filters_activate(void)
 	}
 	pl_set_filter(expr);
 	filters_win->changed = 1;
+}
+
+static int for_each_name(const char *str, int (*cb)(const char *name))
+{
+	char buf[64];
+	int s, e, len;
+
+	e = 0;
+	do {
+		s = e;
+		while (str[s] == ' ')
+			s++;
+		e = s;
+		while (str[e] && str[e] != ' ')
+			e++;
+
+		len = e - s;
+		if (len == 0)
+			return 0;
+		if (len >= sizeof(buf)) {
+			error_msg("filter name too long");
+			return -1;
+		}
+
+		memcpy(buf, str + s, len);
+		buf[len] = 0;
+
+		if (cb(buf))
+			return -1;
+	} while (1);
+}
+
+static int ensure_filter_name(const char *name)
+{
+	if (find_filter(name) == NULL) {
+		error_msg("no such filter %s", name);
+		return -1;
+	}
+	return 0;
+}
+
+static int select_filter(const char *name)
+{
+	struct filter_entry *e = find_filter(name);
+
+	BUG_ON(e == NULL);
+	e->selected = 1;
+	return 0;
+}
+
+void filters_activate_names(const char *str)
+{
+	struct filter_entry *f;
+
+	/* first validate all filter names */
+	if (for_each_name(str, ensure_filter_name))
+		return;
+
+	/* mark all filters unselected  */
+	list_for_each_entry(f, &filters_head, node)
+		f->selected = 0;
+
+	/* select the filters */
+	for_each_name(str, select_filter);
+
+	/* activate selected */
+	filters_activate();
 }
 
 void filters_toggle_filter(void)

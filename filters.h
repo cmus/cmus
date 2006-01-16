@@ -27,6 +27,7 @@ static inline struct filter_entry *iter_to_filter_entry(struct iter *iter)
 
 extern struct window *filters_win;
 extern struct searchable *filters_searchable;
+extern struct list_head filters_head;
 
 void filters_init(void);
 void filters_exit(void);
@@ -42,6 +43,8 @@ void filters_set_filter(const char *keyval);
  * @val   filter or NULL to disable filtering
  */
 void filters_set_anonymous(const char *val);
+
+void filters_activate_names(const char *str);
 
 /* bindable */
 void filters_activate(void);

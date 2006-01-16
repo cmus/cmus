@@ -175,6 +175,11 @@ static void cmd_seek(char *arg)
 	player_seek(seek, seek_mode);
 }
 
+static void cmd_factivate(char *arg)
+{
+	filters_activate_names(arg);
+}
+
 static void cmd_filter(char *arg)
 {
 	filters_set_anonymous(arg);
@@ -862,6 +867,42 @@ static void expand_unbind_args(const char *str)
 }
 
 /* fills tabexp struct */
+static void expand_factivate(const char *str)
+{
+	/* "name1 name2 name3", expand only name3 */
+	struct filter_entry *e;
+	int str_len, len, i, pos, alloc;
+	const char *name;
+	char **tails;
+
+	str_len = strlen(str);
+	i = str_len;
+	while (i > 0) {
+		if (str[i - 1] == ' ')
+			break;
+		i--;
+	}
+	len = str_len - i;
+	name = str + i;
+
+	tails = NULL;
+	alloc = 0;
+	pos = 0;
+	list_for_each_entry(e, &filters_head, node) {
+		if (strncmp(name, e->name, len) == 0)
+			tails = str_array_add(tails, &alloc, &pos, xstrdup(e->name + len));
+	}
+	if (pos == 0)
+		return;
+
+	tails[pos] = NULL;
+	tabexp.head = xstrdup(str);
+	tabexp.tails = tails;
+	tabexp.nr_tails = pos;
+	tabexp.index = 0;
+}
+
+/* fills tabexp struct */
 static void expand_options(const char *str)
 {
 	struct command_mode_option *opt;
@@ -936,6 +977,7 @@ static struct command commands[] = {
 	{ "cd",		cmd_cd,		0, 1, expand_directories},
 	{ "clear",	cmd_clear,	0, 0, NULL		},
 	{ "enqueue",	cmd_enqueue,	1, 1, expand_files	},
+	{ "factivate",	cmd_factivate,	0, 1, expand_factivate	},
 	{ "filter",	cmd_filter,	0, 1, NULL		},
 	{ "fset",	cmd_fset,	1, 1, NULL		},
 	{ "load",	cmd_load,	1, 1, expand_files	},
