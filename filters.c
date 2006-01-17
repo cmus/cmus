@@ -7,7 +7,7 @@
 #include <window.h>
 #include <search.h>
 #include <uchar.h>
-#include <pl.h>
+#include <lib.h>
 #include <misc.h>
 #include <file.h>
 #include <ui_curses.h>

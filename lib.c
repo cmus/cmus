@@ -17,7 +17,7 @@
  * 02111-1307, USA.
  */
 
-#include <pl.h>
+#include <lib.h>
 #include <utils.h>
 #include <comment.h>
 #include <list.h>

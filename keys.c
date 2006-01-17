@@ -28,7 +28,7 @@
 #include <filters.h>
 #include <search_mode.h>
 #include <play_queue.h>
-#include <pl.h>
+#include <lib.h>
 #include <browser.h>
 #include <window.h>
 #include <ui_curses.h>

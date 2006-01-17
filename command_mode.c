@@ -26,7 +26,7 @@
 #include <browser.h>
 #include <filters.h>
 #include <player.h>
-#include <pl.h>
+#include <lib.h>
 #include <cmus.h>
 #include <keys.h>
 #include <xmalloc.h>

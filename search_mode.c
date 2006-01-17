@@ -25,7 +25,7 @@
 #include <xmalloc.h>
 #include <xstrjoin.h>
 #include <misc.h>
-#include <pl.h>
+#include <lib.h>
 
 #include <curses.h>
 #include <ctype.h>

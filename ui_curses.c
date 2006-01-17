@@ -28,7 +28,7 @@
 #include <cmus.h>
 #include <player.h>
 #include <utils.h>
-#include <pl.h>
+#include <lib.h>
 #include <xmalloc.h>
 #include <xstrjoin.h>
 #include <window.h>

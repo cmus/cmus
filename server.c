@@ -23,7 +23,7 @@
 #include <xmalloc.h>
 #include <prog.h>
 #include <file.h>
-#include <pl.h>
+#include <lib.h>
 #include <debug.h>
 #include <config.h>
 

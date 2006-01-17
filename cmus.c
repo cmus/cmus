@@ -18,7 +18,7 @@
  */
 
 #include <cmus.h>
-#include <pl.h>
+#include <lib.h>
 #include <player.h>
 #include <play_queue.h>
 #include <worker.h>

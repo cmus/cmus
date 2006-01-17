@@ -20,7 +20,7 @@
 #ifndef _PLAY_QUEUE_H
 #define _PLAY_QUEUE_H
 
-#include <pl.h>
+#include <lib.h>
 #include <uchar.h>
 
 struct play_queue_entry {

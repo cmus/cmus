@@ -10,8 +10,8 @@ cmus-y := \
 	browser.o cmdline.o cmus.o command_mode.o comment.o \
 	db.o debug.o expr.o filters.o \
 	format_print.o glob.o history.o http.o input.o \
-	keys.o load_dir.o mergesort.o misc.o options.o \
-	output.o pcm.o pl.o play_queue.o player.o \
+	keys.o lib.o load_dir.o mergesort.o misc.o options.o \
+	output.o pcm.o play_queue.o player.o \
 	read_wrapper.o server.o sconf.o search.o \
 	search_mode.o spawn.o tabexp.o tabexp_file.o \
 	track_db.o track_info.o uchar.o ui_curses.o window.o \

@@ -8,7 +8,7 @@
 #include <command_mode.h>
 #include <ui_curses.h>
 #include <format_print.h>
-#include <pl.h>
+#include <lib.h>
 #include <play_queue.h>
 #include <player.h>
 #include <buffer.h>
