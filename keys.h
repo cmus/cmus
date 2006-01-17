@@ -28,10 +28,11 @@ enum key_context {
 	CTX_BROWSER,
 	CTX_COMMON,
 	CTX_FILTERS,
-	CTX_PLAY_QUEUE,
-	CTX_PLAYLIST
+	CTX_LIBRARY,
+	CTX_PLAYLIST,
+	CTX_QUEUE
 };
-#define NR_CTXS (CTX_PLAYLIST + 1)
+#define NR_CTXS (CTX_QUEUE + 1)
 
 struct key_function {
 	const char *name;

@@ -84,15 +84,15 @@ static void set_format(const struct command_mode_option *opt, const char *value)
 
 	switch (cur_view) {
 	case TREE_VIEW:
-	case SHUFFLE_VIEW:
 	case SORTED_VIEW:
-		pl_lock();
-		playlist.track_win->changed = 1;
-		playlist.shuffle_win->changed = 1;
-		playlist.sorted_win->changed = 1;
-		pl_unlock();
+		lib_lock();
+		lib.track_win->changed = 1;
+		lib.sorted_win->changed = 1;
+		lib_unlock();
 		break;
-	case PLAY_QUEUE_VIEW:
+	case PLAYLIST_VIEW:
+		break;
+	case QUEUE_VIEW:
 		play_queue_lock();
 		play_queue_win->changed = 1;
 		play_queue_unlock();

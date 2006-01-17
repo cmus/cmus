@@ -116,7 +116,7 @@ static void add_url(unsigned int flags, const char *filename)
 			play_queue_append(ti);
 		}
 	} else {
-		pl_add_track(ti);
+		lib_add_track(ti);
 	}
 	track_info_unref(ti);
 }
@@ -142,7 +142,7 @@ static void add_file(unsigned int flags, const char *filename)
 			play_queue_append(ti);
 		}
 	} else {
-		pl_add_track(ti);
+		lib_add_track(ti);
 	}
 	track_info_unref(ti);
 }
@@ -286,10 +286,10 @@ static void update_playlist_job(void *data)
 		/* stat follows symlinks, lstat does not */
 		if (stat(ti->filename, &s) == -1) {
 			d_print("removing dead file %s\n", ti->filename);
-			pl_remove(ti);
+			lib_remove(ti);
 		} else if (ti->mtime != s.st_mtime) {
 			d_print("mtime changed: %s\n", ti->filename);
-			pl_remove(ti);
+			lib_remove(ti);
 			cmus_add(ti->filename);
 		}
 		track_info_unref(ti);
@@ -333,7 +333,7 @@ void cmus_next(void)
 		track_info_unref(info);
 		return;
 	}
-	info = pl_set_next();
+	info = lib_set_next();
 	if (info) {
 		player_set_file(info->filename);
 		track_info_unref(info);
@@ -344,7 +344,7 @@ void cmus_prev(void)
 {
 	struct track_info *info;
 
-	info = pl_set_prev();
+	info = lib_set_prev();
 	if (info) {
 		player_set_file(info->filename);
 		track_info_unref(info);
@@ -411,7 +411,7 @@ int cmus_add(const char *name)
 void cmus_clear_playlist(void)
 {
 	worker_remove_jobs(WORKER_TYPE_PLAYLIST);
-	pl_clear();
+	lib_clear();
 }
 
 static int save_playlist_cb(void *data, struct track_info *ti)
@@ -436,7 +436,7 @@ int cmus_save_playlist(const char *filename)
 	fd = open(filename, O_CREAT | O_WRONLY | O_TRUNC, 0666);
 	if (fd == -1)
 		return -1;
-	rc = pl_for_each(save_playlist_cb, &fd);
+	rc = lib_for_each(save_playlist_cb, &fd);
 	close(fd);
 	return rc;
 }
@@ -446,7 +446,7 @@ int cmus_load_playlist(const char *name)
 	struct job_data *data;
 
 	worker_remove_jobs(WORKER_TYPE_PLAYLIST);
-	pl_clear();
+	lib_clear();
 
 	data = xnew(struct job_data, 1);
 	data->type = JOB_PL;
@@ -496,7 +496,7 @@ void cmus_update_playlist(void)
 	data->size = 0;
 	data->used = 0;
 	data->ti = NULL;
-	pl_for_each(update_cb, data);
+	lib_for_each(update_cb, data);
 	worker_add_job(WORKER_TYPE_UPDATE, update_playlist_job, data);
 }
 
@@ -508,7 +508,7 @@ void cmus_update_selected(void)
 	data->size = 0;
 	data->used = 0;
 	data->ti = NULL;
-	pl_for_each_selected(update_cb, data, 0);
+	lib_for_each_selected(update_cb, data, 0);
 	worker_add_job(WORKER_TYPE_UPDATE, update_playlist_job, data);
 }
 

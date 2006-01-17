@@ -46,18 +46,19 @@ const char * const key_context_names[NR_CTXS + 1] = {
 	"browser",
 	"common",
 	"filters",
-	"play_queue",
+	"library",
 	"playlist",
+	"queue",
 	NULL
 };
 
 struct binding *key_bindings[NR_CTXS] = { NULL, };
 
 static const enum key_context view_to_context[] = {
+	CTX_LIBRARY,
+	CTX_LIBRARY,
 	CTX_PLAYLIST,
-	CTX_PLAYLIST,
-	CTX_PLAYLIST,
-	CTX_PLAY_QUEUE,
+	CTX_QUEUE,
 	CTX_BROWSER,
 	CTX_FILTERS
 };
@@ -68,19 +69,39 @@ static char *filename;
 
 static void view_lock(void)
 {
-	if (cur_view < 3) {
-		pl_lock();
-	} else if (cur_view == PLAY_QUEUE_VIEW) {
+	switch (cur_view) {
+	case TREE_VIEW:
+	case SORTED_VIEW:
+		lib_lock();
+		break;
+	case PLAYLIST_VIEW:
+		// FIXME
+		break;
+	case QUEUE_VIEW:
 		play_queue_lock();
+		break;
+	case BROWSER_VIEW:
+	case FILTERS_VIEW:
+		break;
 	}
 }
 
 static void view_unlock(void)
 {
-	if (cur_view < 3) {
-		pl_unlock();
-	} else if (cur_view == PLAY_QUEUE_VIEW) {
+	switch (cur_view) {
+	case TREE_VIEW:
+	case SORTED_VIEW:
+		lib_unlock();
+		break;
+	case PLAYLIST_VIEW:
+		// FIXME
+		break;
+	case QUEUE_VIEW:
 		play_queue_unlock();
+		break;
+	case BROWSER_VIEW:
+	case FILTERS_VIEW:
+		break;
 	}
 }
 
@@ -88,10 +109,13 @@ static struct window *current_win(void)
 {
 	switch (cur_view) {
 	case TREE_VIEW:
-	case SHUFFLE_VIEW:
 	case SORTED_VIEW:
-		return playlist.cur_win;
-	case PLAY_QUEUE_VIEW:
+		return lib.cur_win;
+/*
+ * 	case PLAYLIST_VIEW:
+ * 		return playlist_win;
+ */
+	case QUEUE_VIEW:
 		return play_queue_win;
 	case BROWSER_VIEW:
 		return browser_win;
@@ -105,7 +129,7 @@ static struct window *current_win(void)
 static void win_activate_next(void)
 {
 	if (cur_view == TREE_VIEW)
-		pl_toggle_active_window();
+		lib_toggle_active_window();
 }
 
 static void win_bottom(void)
@@ -154,7 +178,7 @@ static void play_selected(void)
 {
 	struct track_info *info;
 
-	info = pl_set_selected();
+	info = lib_set_selected();
 	if (info) {
 		player_play_file(info->filename);
 		track_info_unref(info);
@@ -176,20 +200,20 @@ static int queue_prepend_cb(void *data, struct track_info *ti)
 static void queue_append(void)
 {
 	play_queue_lock();
-	pl_lock();
-	__pl_for_each_selected(queue_append_cb, NULL, 0);
+	lib_lock();
+	__lib_for_each_selected(queue_append_cb, NULL, 0);
 	window_down(current_win(), 1);
-	pl_unlock();
+	lib_unlock();
 	play_queue_unlock();
 }
 
 static void queue_prepend(void)
 {
 	play_queue_lock();
-	pl_lock();
-	__pl_for_each_selected(queue_prepend_cb, NULL, 1);
+	lib_lock();
+	__lib_for_each_selected(queue_prepend_cb, NULL, 1);
 	window_down(current_win(), 1);
-	pl_unlock();
+	lib_unlock();
 	play_queue_unlock();
 }
 
@@ -212,34 +236,57 @@ static void search_next_backward(void)
 
 /* functions {{{ */
 static const struct key_function common_functions[] = {
+	/* remove internal help, add man page */
 	{ "help",			display_help			},
+
 	{ "next",			cmus_next			},
 	{ "pause",			player_pause			},
 	{ "play",			player_play			},
 	{ "prev",			cmus_prev			},
+
+	/* redundant */
 	{ "quit",			quit				},
+
 	{ "search_next",		search_next_forward		},
 	{ "search_prev",		search_next_backward		},
+
+	/* redundant */
 	{ "seek_backward",		cmus_seek_bwd			},
 	{ "seek_forward",		cmus_seek_fwd			},
+
 	{ "stop",			player_stop			},
+
+	/* make these normal options
+	 * :set continue=true/false
+	 * :toggle continue
+	 */
 	{ "toggle_continue",		player_toggle_cont		},
-	{ "toggle_play_mode",		pl_toggle_play_mode		},
-	{ "toggle_playlist_mode",	pl_toggle_playlist_mode		},
+	{ "toggle_play_mode",		lib_toggle_play_mode		},
+	{ "toggle_playlist_mode",	lib_toggle_playlist_mode		},
 	{ "toggle_remaining_time",	toggle_remaining_time		},
-	{ "toggle_repeat",		pl_toggle_repeat		},
+	{ "toggle_repeat",		lib_toggle_repeat		},
+
 	{ "view_1",			enter_tree_view			},
-	{ "view_2",			enter_shuffle_view		},
-	{ "view_3",			enter_sorted_view		},
-	{ "view_4",			enter_play_queue_view		},
+	{ "view_2",			enter_sorted_view		},
+/* 	{ "view_3",			enter_playlist_view		}, */
+	{ "view_4",			enter_queue_view		},
 	{ "view_5",			enter_browser_view		},
 	{ "view_6",			enter_filters_view		},
+
+	/*
+	 * both up 5:     :vol +5
+	 * both up 5:     :vol +5,+5
+	 * left down 10:  :vol -10,
+	 * both to 100:   :vol 100
+	 * right to 90:   :vol ,90
+	 */
 	{ "vol_down",			cmus_vol_down			},
 	{ "vol_left_down",		cmus_vol_left_down		},
 	{ "vol_left_up",		cmus_vol_left_up		},
 	{ "vol_right_down",		cmus_vol_right_down		},
 	{ "vol_right_up",		cmus_vol_right_up		},
 	{ "vol_up",			cmus_vol_up			},
+
 	{ "win_activate_next",		win_activate_next		},
 	{ "win_bottom",			win_bottom			},
 	{ "win_down",			win_down			},
@@ -250,35 +297,52 @@ static const struct key_function common_functions[] = {
 	{ NULL,				NULL				}
 };
 
-static struct key_function playlist_functions[] = {
-	{ "expand_artist",	pl_toggle_expand_artist	},
+static struct key_function library_functions[] = {
+	/* global toggle something for selection? */
+	{ "expand_artist",	lib_toggle_expand_artist	},
+
+	/* global */
 	{ "play_selected",	play_selected		},
 	{ "queue_append",	queue_append		},
 	{ "queue_prepend",	queue_prepend		},
-	{ "remove",		pl_remove_sel		},
-	{ "select_current",	pl_sel_current		},
+	{ "remove",		lib_remove_sel		},
+
+	{ "select_current",	lib_sel_current		},
 	{ "update",		cmus_update_playlist	},
 	{ NULL,			NULL			}
 };
 
-static const struct key_function play_queue_functions[] = {
+static struct key_function playlist_functions[] = {
+	{ NULL,			NULL			}
+};
+
+static const struct key_function queue_functions[] = {
 	{ "remove",		play_queue_delete	},
 	{ NULL,			NULL			}
 };
 
 static const struct key_function browser_functions[] = {
+	/* global */
 	{ "add",		browser_add			},
+
 	{ "cd_parent",		browser_cd_parent		},
+
+	/* global */
 	{ "enter",		browser_enter			},
 	{ "queue_append",	browser_queue_append		},
 	{ "queue_prepend",	browser_queue_prepend		},
+
 	{ "reload",		browser_reload			},
+
+	/* global */
 	{ "remove",		browser_delete			},
+
 	{ "toggle_show_hidden",	browser_toggle_show_hidden	},
 	{ NULL,			NULL				}
 };
 
 static const struct key_function filters_functions[] = {
+	/* global */
 	{ "activate",		filters_activate	},
 	{ "delete_filter",	filters_delete_filter	},
 	{ "toggle_filter",	filters_toggle_filter	},
@@ -290,8 +354,9 @@ const struct key_function *key_functions[NR_CTXS + 1] = {
 	browser_functions,
 	common_functions,
 	filters_functions,
-	play_queue_functions,
+	library_functions,
 	playlist_functions,
+	queue_functions,
 	NULL
 };
 

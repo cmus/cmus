@@ -76,17 +76,17 @@ static void cmd_tcont(void *data, size_t data_size)
 
 static void cmd_trepeat(void *data, size_t data_size)
 {
-	pl_toggle_repeat();
+	lib_toggle_repeat();
 }
 
 static void cmd_tplay_mode(void *data, size_t data_size)
 {
-	pl_toggle_play_mode();
+	lib_toggle_play_mode();
 }
 
 static void cmd_plreshuffle(void *data, size_t data_size)
 {
-	pl_reshuffle();
+	lib_reshuffle();
 }
 
 static void cmd_pladd(void *data, size_t data_size)

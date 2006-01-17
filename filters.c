@@ -161,7 +161,7 @@ void filters_activate(void)
 		if (f->selected)
 			f->active = 1;
 	}
-	pl_set_filter(expr);
+	lib_set_filter(expr);
 	filters_win->changed = 1;
 }
 
@@ -430,7 +430,7 @@ void filters_set_anonymous(const char *val)
 	/* deactive all filters */
 	list_for_each_entry(f, &filters_head, node)
 		f->active = 0;
-	pl_set_filter(e);
+	lib_set_filter(e);
 
 	filters_win->changed = 1;
 }

@@ -322,7 +322,7 @@ static void cmd_quit(char *arg)
 }
 static void cmd_reshuffle(char *arg)
 {
-	pl_reshuffle();
+	lib_reshuffle();
 }
 
 /*
@@ -542,7 +542,7 @@ static void cmd_run(char *arg)
 	sel_files = NULL;
 	sel_files_alloc = 0;
 	sel_files_nr = 0;
-	pl_for_each_selected(add_file, NULL, 0);
+	lib_for_each_selected(add_file, NULL, 0);
 	if (sel_files_nr == 0) {
 		/* no files selected, do nothing */
 		free_str_array(av);

@@ -30,9 +30,10 @@ enum ui_input_mode {
 };
 
 /* other views are defined in pl.h */
-#define PLAY_QUEUE_VIEW 3
-#define BROWSER_VIEW    4
-#define FILTERS_VIEW    5
+#define PLAYLIST_VIEW	2
+#define QUEUE_VIEW	3
+#define BROWSER_VIEW	4
+#define FILTERS_VIEW	5
 
 enum {
 	COLOR_ROW,
@@ -105,9 +106,9 @@ void search_not_found(void);
 void display_help(void);
 void toggle_remaining_time(void);
 void enter_tree_view(void);
-void enter_shuffle_view(void);
 void enter_sorted_view(void);
-void enter_play_queue_view(void);
+void enter_playlist_view(void);
+void enter_queue_view(void);
 void enter_browser_view(void);
 void enter_filters_view(void);
 void enter_command_mode(void);

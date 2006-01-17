@@ -400,13 +400,13 @@ static void print_tree(struct window *win, int row, struct iter *iter)
 	artist = iter_to_artist(iter);
 	album = iter_to_album(iter);
 	if (album) {
-		current = playlist.cur_album == album;
+		current = lib.cur_album == album;
 	} else {
-		current = playlist.cur_artist == artist;
+		current = lib.cur_artist == artist;
 	}
 	window_get_sel(win, &sel);
 	selected = iters_equal(iter, &sel);
-	active = playlist.cur_win == playlist.tree_win;
+	active = lib.cur_win == lib.tree_win;
 	bkgdset(cursed_colors[(active << 2) | (selected << 1) | current]);
 	if (album) {
 		sprint(tree_win_y + row + 1, tree_win_x, album->name ? : noname, tree_win_w, 2);
@@ -517,10 +517,10 @@ static void print_track(struct window *win, int row, struct iter *iter)
 	int current, selected, active;
 
 	track = iter_to_track(iter);
-	current = playlist.cur_track == track;
+	current = lib.cur_track == track;
 	window_get_sel(win, &sel);
 	selected = iters_equal(iter, &sel);
-	active = playlist.cur_win == playlist.track_win;
+	active = lib.cur_win == lib.track_win;
 	bkgdset(cursed_colors[(active << 2) | (selected << 1) | current]);
 	fill_track_fopts(track);
 	if (track_info_has_tag(track->info)) {
@@ -531,26 +531,6 @@ static void print_track(struct window *win, int row, struct iter *iter)
 	dump_print_buffer(track_win_y + row + 1, track_win_x);
 }
 
-static void print_shuffle(struct window *win, int row, struct iter *iter)
-{
-	struct track *track;
-	struct iter sel;
-	int current, selected, active = 1;
-
-	track = iter_to_shuffle_track(iter);
-	current = playlist.cur_track == track;
-	window_get_sel(win, &sel);
-	selected = iters_equal(iter, &sel);
-	bkgdset(cursed_colors[(active << 2) | (selected << 1) | current]);
-	fill_track_fopts(track);
-	if (track_info_has_tag(track->info)) {
-		format_print(print_buffer, COLS, list_win_format, track_fopts);
-	} else {
-		format_print(print_buffer, COLS, list_win_alt_format, track_fopts);
-	}
-	dump_print_buffer(row + 1, 0);
-}
-
 static void print_sorted(struct window *win, int row, struct iter *iter)
 {
 	struct track *track;
@@ -558,7 +538,7 @@ static void print_sorted(struct window *win, int row, struct iter *iter)
 	int current, selected, active = 1;
 
 	track = iter_to_sorted_track(iter);
-	current = playlist.cur_track == track;
+	current = lib.cur_track == track;
 	window_get_sel(win, &sel);
 	selected = iters_equal(iter, &sel);
 	bkgdset(cursed_colors[(active << 2) | (selected << 1) | current]);
@@ -685,7 +665,7 @@ static void update_window(struct window *win, int x, int y, int w, const char *t
 
 static void update_tree_window(void)
 {
-	update_window(playlist.tree_win, tree_win_x, tree_win_y,
+	update_window(lib.tree_win, tree_win_x, tree_win_y,
 			tree_win_w, "Artist / Album", print_tree);
 }
 
@@ -694,24 +674,8 @@ static void update_track_window(void)
 	char title[512];
 
 	format_print(title, track_win_w - 2, "Track%=Press F1 for Help", track_fopts);
-	update_window(playlist.track_win, track_win_x, track_win_y,
+	update_window(lib.track_win, track_win_x, track_win_y,
 			track_win_w, title, print_track);
-}
-
-static void update_shuffle_window(void)
-{
-	char title[512];
-	char *filename;
-
-	filename = playlist_filename ? playlist_filename : playlist_autosave_filename;
-	if (using_utf8) {
-		/* already UTF-8 */
-	} else {
-		utf8_encode(filename);
-		filename = conv_buffer;
-	}
-	snprintf(title, sizeof(title), "Shuffle List - %s", filename);
-	update_window(playlist.shuffle_win, 0, 0, COLS, title, print_shuffle);
 }
 
 static void update_sorted_window(void)
@@ -727,7 +691,7 @@ static void update_sorted_window(void)
 		filename = conv_buffer;
 	}
 	snprintf(title, sizeof(title), "Sorted by '%s' - %s", sort_string, filename);
-	update_window(playlist.sorted_win, 0, 0, COLS, title, print_sorted);
+	update_window(lib.sorted_win, 0, 0, COLS, title, print_sorted);
 }
 
 static void update_play_queue_window(void)
@@ -771,25 +735,22 @@ static void update_view(void)
 {
 	switch (cur_view) {
 	case TREE_VIEW:
-		pl_lock();
-		if (playlist.tree_win->changed)
+		lib_lock();
+		if (lib.tree_win->changed)
 			update_tree_window();
-		if (playlist.track_win->changed)
+		if (lib.track_win->changed)
 			update_track_window();
-		pl_unlock();
+		lib_unlock();
 		draw_separator();
 		break;
-	case SHUFFLE_VIEW:
-		pl_lock();
-		update_shuffle_window();
-		pl_unlock();
-		break;
 	case SORTED_VIEW:
-		pl_lock();
+		lib_lock();
 		update_sorted_window();
-		pl_unlock();
+		lib_unlock();
 		break;
-	case PLAY_QUEUE_VIEW:
+	case PLAYLIST_VIEW:
+		break;
+	case QUEUE_VIEW:
 		play_queue_lock();
 		update_play_queue_window();
 		play_queue_unlock();
@@ -817,13 +778,13 @@ static void do_update_statusline(void)
 	char *msg;
 	char format[80];
 
-	pl_lock();
-	playlist.status_changed = 0;
-	fopt_set_time(&status_fopts[SF_TOTAL], playlist.total_time, 0);
-	fopt_set_str(&status_fopts[SF_REPEAT], playlist.repeat ? "rep" : "");
-	fopt_set_str(&status_fopts[SF_PLAYMODE], play_mode_strs[playlist.play_mode]);
-	fopt_set_str(&status_fopts[SF_PLAYLISTMODE], playlist_mode_strs[playlist.playlist_mode]);
-	pl_unlock();
+	lib_lock();
+	lib.status_changed = 0;
+	fopt_set_time(&status_fopts[SF_TOTAL], lib.total_time, 0);
+	fopt_set_str(&status_fopts[SF_REPEAT], lib.repeat ? "rep" : "");
+	fopt_set_str(&status_fopts[SF_PLAYMODE], play_mode_strs[lib.play_mode]);
+	fopt_set_str(&status_fopts[SF_PLAYLISTMODE], playlist_mode_strs[lib.playlist_mode]);
+	lib_unlock();
 
 	if (cur_track_info)
 		duration = cur_track_info->duration;
@@ -1209,9 +1170,9 @@ void search_not_found(void)
 		case TREE_VIEW:
 			what = "Artist/album";
 			break;
-		case SHUFFLE_VIEW:
 		case SORTED_VIEW:
-		case PLAY_QUEUE_VIEW:
+		case PLAYLIST_VIEW:
+		case QUEUE_VIEW:
 			what = "Title";
 			break;
 		case BROWSER_VIEW:
@@ -1224,9 +1185,9 @@ void search_not_found(void)
 	} else {
 		switch (cur_view) {
 		case TREE_VIEW:
-		case SHUFFLE_VIEW:
 		case SORTED_VIEW:
-		case PLAY_QUEUE_VIEW:
+		case PLAYLIST_VIEW:
+		case QUEUE_VIEW:
 			what = "Track";
 			break;
 		case BROWSER_VIEW:
@@ -1246,9 +1207,9 @@ static void set_view(int view)
 		return;
 	cur_view = view;
 
-	pl_lock();
-	if (view < 3)
-		__pl_set_view(view);
+	lib_lock();
+	if (view < 2)
+		__lib_set_view(view);
 	switch (cur_view) {
 	case TREE_VIEW:
 		searchable = tree_searchable;
@@ -1256,15 +1217,13 @@ static void set_view(int view)
 		update_track_window();
 		draw_separator();
 		break;
-	case SHUFFLE_VIEW:
-		searchable = shuffle_searchable;
-		update_shuffle_window();
-		break;
 	case SORTED_VIEW:
 		searchable = sorted_searchable;
 		update_sorted_window();
 		break;
-	case PLAY_QUEUE_VIEW:
+	case PLAYLIST_VIEW:
+		break;
+	case QUEUE_VIEW:
 		searchable = play_queue_searchable;
 		update_play_queue_window();
 		break;
@@ -1277,7 +1236,7 @@ static void set_view(int view)
 		update_filters_window();
 		break;
 	}
-	pl_unlock();
+	lib_unlock();
 
 	refresh();
 }
@@ -1293,19 +1252,19 @@ void enter_tree_view(void)
 	set_view(TREE_VIEW);
 }
 
-void enter_shuffle_view(void)
-{
-	set_view(SHUFFLE_VIEW);
-}
-
 void enter_sorted_view(void)
 {
 	set_view(SORTED_VIEW);
 }
 
-void enter_play_queue_view(void)
+void enter_playlist_view(void)
 {
-	set_view(PLAY_QUEUE_VIEW);
+	set_view(PLAYLIST_VIEW);
+}
+
+void enter_queue_view(void)
+{
+	set_view(QUEUE_VIEW);
 }
 
 void enter_browser_view(void)
@@ -1376,8 +1335,8 @@ void update_color(int idx)
 static void full_update(void)
 {
 	curs_set(0);
-	playlist.tree_win->changed = 1;
-	playlist.track_win->changed = 1;
+	lib.tree_win->changed = 1;
+	lib.track_win->changed = 1;
 	update_view();
 	do_update_titleline();
 	do_update_statusline();
@@ -1418,13 +1377,13 @@ void set_sort_keys(const char *value)
 			return;
 		}
 	}
-	pl_set_sort_keys(keys);
+	lib_set_sort_keys(keys);
 	free(sort_string);
 	sort_string = xstrdup(value);
 
-	pl_lock();
-	playlist.sorted_win->changed = 1;
-	pl_unlock();
+	lib_lock();
+	lib.sorted_win->changed = 1;
+	lib_unlock();
 }
 
 #define HELP_WIDTH 80
@@ -1818,12 +1777,11 @@ static void resize_playlist(int w, int h)
 	track_win_y = 0;
 
 	h--;
-	pl_lock();
-	window_set_nr_rows(playlist.tree_win, h);
-	window_set_nr_rows(playlist.track_win, h);
-	window_set_nr_rows(playlist.shuffle_win, h);
-	window_set_nr_rows(playlist.sorted_win, h);
-	pl_unlock();
+	lib_lock();
+	window_set_nr_rows(lib.tree_win, h);
+	window_set_nr_rows(lib.track_win, h);
+	window_set_nr_rows(lib.sorted_win, h);
+	lib_unlock();
 }
 
 static void get_colors(void)
@@ -1873,8 +1831,8 @@ static struct {
 	{ cmus_seek_fwd, "btn_seek_fwd", NULL },
 	{ cmus_vol_up, "btn_vol_up", NULL },
 	{ cmus_vol_down, "btn_vol_down", NULL },
-	{ pl_toggle_play_mode, "btn_play_mode", NULL },
-	{ pl_toggle_repeat, "btn_repeat", NULL },
+	{ lib_toggle_play_mode, "btn_play_mode", NULL },
+	{ lib_toggle_repeat, "btn_repeat", NULL },
 	{ player_toggle_cont, "btn_continue", NULL },
 	{ NULL, NULL, NULL }
 };
@@ -1961,7 +1919,7 @@ static void update(void)
 	}
 
 	player_info_lock();
-	pl_lock();
+	lib_lock();
 
 	needs_spawn = player_info.status_changed || player_info.file_changed ||
 		player_info.metadata_changed;
@@ -1982,7 +1940,7 @@ static void update(void)
 		player_info.metadata_changed = 0;
 		needs_title_update = 1;
 	}
-	if (playlist.status_changed || player_info.position_changed ||
+	if (lib.status_changed || player_info.position_changed ||
 			player_info.status_changed || player_info.volume_changed) {
 		player_info.position_changed = 0;
 		player_info.status_changed = 0;
@@ -1992,15 +1950,14 @@ static void update(void)
 	}
 	switch (cur_view) {
 	case TREE_VIEW:
-		needs_view_update += playlist.tree_win->changed || playlist.track_win->changed;
-		break;
-	case SHUFFLE_VIEW:
-		needs_view_update += playlist.shuffle_win->changed;
+		needs_view_update += lib.tree_win->changed || lib.track_win->changed;
 		break;
 	case SORTED_VIEW:
-		needs_view_update += playlist.sorted_win->changed;
+		needs_view_update += lib.sorted_win->changed;
 		break;
-	case PLAY_QUEUE_VIEW:
+	case PLAYLIST_VIEW:
+		break;
+	case QUEUE_VIEW:
 		needs_view_update += play_queue_win->changed;
 		break;
 	case BROWSER_VIEW:
@@ -2010,7 +1967,7 @@ static void update(void)
 		needs_view_update += filters_win->changed;
 		break;
 	}
-	pl_unlock();
+	lib_unlock();
 	player_info_unlock();
 
 	if (needs_spawn)
@@ -2159,7 +2116,7 @@ static int get_next(char **filename)
 	// FIXME: move player to cmus.c
 	info = play_queue_remove();
 	if (info == NULL) {
-		info = pl_set_next();
+		info = lib_set_next();
 		if (info == NULL)
 			return -1;
 	}
@@ -2228,7 +2185,7 @@ static void init_all(void)
 		die("could not initialize player\n");
 	}
 
-	pl_init();
+	lib_init();
 	searchable = tree_searchable;
 
 	cmus_init();
@@ -2236,7 +2193,7 @@ static void init_all(void)
 #if defined(CONFIG_IRMAN)
 	rc = ir_init();
 	if (rc) {
-		pl_exit();
+		lib_exit();
 		player_exit();
 		remote_server_exit();
 		exit(1);
@@ -2246,16 +2203,16 @@ static void init_all(void)
 	if (sconf_get_bool_option("continue", &btmp))
 		player_set_cont(btmp);
 	if (sconf_get_bool_option("repeat", &btmp))
-		playlist.repeat = btmp;
+		lib.repeat = btmp;
 	if (sconf_get_int_option("playlist_mode", &btmp)) {
 		if (btmp < 0 || btmp > 2)
 			btmp = 0;
-		playlist.playlist_mode = btmp;
+		lib.playlist_mode = btmp;
 	}
 	if (sconf_get_int_option("play_mode", &btmp)) {
 		if (btmp < 0 || btmp > 2)
 			btmp = 0;
-		playlist.play_mode = btmp;
+		lib.play_mode = btmp;
 	}
 	sconf_get_bool_option("show_remaining_time", &show_remaining_time);
 	sconf_get_str_option("status_display_program", &status_display_program);
@@ -2306,9 +2263,9 @@ static void exit_all(void)
 		track_info_unref(cur_track_info);
 
 	sconf_set_bool_option("continue", player_info.cont);
-	sconf_set_bool_option("repeat", playlist.repeat);
-	sconf_set_int_option("playlist_mode", playlist.playlist_mode);
-	sconf_set_int_option("play_mode", playlist.play_mode);
+	sconf_set_bool_option("repeat", lib.repeat);
+	sconf_set_int_option("playlist_mode", lib.playlist_mode);
+	sconf_set_int_option("play_mode", lib.play_mode);
 	sconf_set_bool_option("show_remaining_time", show_remaining_time);
 	sconf_set_str_option("status_display_program",
 			status_display_program ? status_display_program : "");
@@ -2321,7 +2278,7 @@ static void exit_all(void)
 	free(sort_string);
 
 	player_exit();
-	pl_exit();
+	lib_exit();
 
 	keys_exit();
 	options_exit();

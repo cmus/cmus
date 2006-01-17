@@ -79,6 +79,7 @@ struct artist {
 	//unsigned int streams : 1;
 };
 
+/* FIXME: separate shuffle, this becomes bool order_sorted */
 enum play_mode {
 	PLAY_MODE_TREE,
 	PLAY_MODE_SHUFFLE,
@@ -91,12 +92,10 @@ enum playlist_mode {
 	PLAYLIST_MODE_ALBUM
 };
 
-/* PLAY_QUEUE_VIEW and BROWSER_VIEW are defined in ui_curses.h */
 #define TREE_VIEW    0
-#define SHUFFLE_VIEW 1
-#define SORTED_VIEW  2
+#define SORTED_VIEW  1
 
-struct playlist {
+struct library {
 	struct list_head artist_head;
 	struct list_head shuffle_head;
 	struct list_head sorted_head;
@@ -112,7 +111,6 @@ struct playlist {
 
 	struct window *tree_win;
 	struct window *track_win;
-	struct window *shuffle_win;
 	struct window *sorted_win;
 
 	/* one of the above windows */
@@ -130,41 +128,40 @@ struct playlist {
 	pthread_mutex_t mutex;
 };
 
-extern struct playlist playlist;
+extern struct library lib;
 extern struct searchable *tree_searchable;
-extern struct searchable *shuffle_searchable;
 extern struct searchable *sorted_searchable;
 
-void pl_init(void);
-void pl_exit(void);
+void lib_init(void);
+void lib_exit(void);
 
 /* set current track, these return track_info on success */
-struct track_info *pl_set_next(void);
-struct track_info *pl_set_prev(void);
-struct track_info *pl_set_selected(void);
+struct track_info *lib_set_next(void);
+struct track_info *lib_set_prev(void);
+struct track_info *lib_set_selected(void);
 
-void pl_add_track(struct track_info *track_info);
+void lib_add_track(struct track_info *track_info);
 
-void pl_set_sort_keys(char **keys);
-void pl_set_filter(struct expr *expr);
-void pl_remove(struct track_info *ti);
+void lib_set_sort_keys(char **keys);
+void lib_set_filter(struct expr *expr);
+void lib_remove(struct track_info *ti);
 
 /* bindable */
-void pl_remove_sel(void);
-void pl_toggle_expand_artist(void);
-void pl_toggle_repeat(void);
-void pl_toggle_playlist_mode(void);
-void pl_toggle_play_mode(void);
-void pl_sel_current(void);
+void lib_remove_sel(void);
+void lib_toggle_expand_artist(void);
+void lib_toggle_repeat(void);
+void lib_toggle_playlist_mode(void);
+void lib_toggle_play_mode(void);
+void lib_sel_current(void);
 
 /* could be made bindable */
-void pl_clear(void);
-void pl_reshuffle(void);
+void lib_clear(void);
+void lib_reshuffle(void);
 
 /* not directly bindable. only makes sense to use when TREE_VIEW is active */
-void pl_toggle_active_window(void);
+void lib_toggle_active_window(void);
 
-void __pl_set_view(int view);
+void __lib_set_view(int view);
 
 /*
  * Run callback @cb for each selected track. Quit if @cb returns non-zero value.
@@ -175,34 +172,28 @@ void __pl_set_view(int view);
  *
  * Returns: return value of last @cb call or 0 if @cb not called at all.
  */
-int __pl_for_each_selected(int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
-int pl_for_each_selected(int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
-int pl_for_each(int (*cb)(void *data, struct track_info *ti), void *data);
+int __lib_for_each_selected(int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
+int lib_for_each_selected(int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
+int lib_for_each(int (*cb)(void *data, struct track_info *ti), void *data);
 
-#define pl_lock() cmus_mutex_lock(&playlist.mutex)
-#define pl_unlock() cmus_mutex_unlock(&playlist.mutex)
-
-static inline struct track *iter_to_shuffle_track(const struct iter *iter)
-{
-	BUG_ON(iter->data0 != &playlist.shuffle_head);
-	return iter->data1;
-}
+#define lib_lock() cmus_mutex_lock(&lib.mutex)
+#define lib_unlock() cmus_mutex_unlock(&lib.mutex)
 
 static inline struct track *iter_to_sorted_track(const struct iter *iter)
 {
-	BUG_ON(iter->data0 != &playlist.sorted_head);
+	BUG_ON(iter->data0 != &lib.sorted_head);
 	return iter->data1;
 }
 
 static inline struct artist *iter_to_artist(const struct iter *iter)
 {
-	BUG_ON(iter->data0 != &playlist.artist_head);
+	BUG_ON(iter->data0 != &lib.artist_head);
 	return iter->data1;
 }
 
 static inline struct album *iter_to_album(const struct iter *iter)
 {
-	BUG_ON(iter->data0 != &playlist.artist_head);
+	BUG_ON(iter->data0 != &lib.artist_head);
 	return iter->data2;
 }
 
