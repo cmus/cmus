@@ -27,6 +27,7 @@
 #include <file.h>
 #include <utils.h>
 #include <path.h>
+#include <ui_curses.h>
 #include <xmalloc.h>
 #include <xstrjoin.h>
 #include <debug.h>
@@ -42,6 +43,9 @@
 #define WORKER_TYPE_PLAYLIST  (1U)
 #define WORKER_TYPE_PLAYQUEUE (2U)
 #define WORKER_TYPE_UPDATE    (3U)
+
+int repeat = 0;
+int shuffle = 0;
 
 static pthread_mutex_t track_db_mutex = CMUS_MUTEX_INITIALIZER;
 static struct track_db *track_db;
@@ -290,7 +294,7 @@ static void update_playlist_job(void *data)
 		} else if (ti->mtime != s.st_mtime) {
 			d_print("mtime changed: %s\n", ti->filename);
 			lib_remove(ti);
-			cmus_add(ti->filename);
+			cmus_add_to_lib(ti->filename);
 		}
 		track_info_unref(ti);
 	}
@@ -396,7 +400,7 @@ void cmus_vol_right_down(void)
 	player_add_volume(0, -volume_step);
 }
 
-int cmus_add(const char *name)
+int cmus_add_to_lib(const char *name)
 {
 	struct job_data *data;
 
@@ -405,6 +409,11 @@ int cmus_add(const char *name)
 		return -1;
 	data->flags = 0;
 	worker_add_job(WORKER_TYPE_PLAYLIST, job, data);
+	return 0;
+}
+
+int cmus_add_to_pl(const char *name)
+{
 	return 0;
 }
 
@@ -592,4 +601,16 @@ int cmus_playlist_for_each(const char *buf, int size, int reverse,
 		buffer_for_each_line(buf, size, handler, &d);
 	}
 	return 0;
+}
+
+void cmus_toggle_repeat(void)
+{
+	repeat = repeat ^ 1;
+	update_statusline();
+}
+
+void cmus_toggle_shuffle(void)
+{
+	shuffle = shuffle ^ 1;
+	update_statusline();
 }

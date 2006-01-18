@@ -22,36 +22,42 @@
 
 #include <track_db.h>
 
-extern int cmus_init(void);
-extern void cmus_exit(void);
-extern void cmus_play_file(const char *filename);
+extern int repeat;
+extern int shuffle;
 
-extern int cmus_enqueue(const char *name, int prepend);
-extern int cmus_add(const char *name);
-extern void cmus_clear_playlist(void);
-extern int cmus_save_playlist(const char *filename);
-extern int cmus_load_playlist(const char *name);
-extern void cmus_update_playlist(void);
+int cmus_init(void);
+void cmus_exit(void);
+void cmus_play_file(const char *filename);
 
-extern struct track_info *cmus_get_track_info(const char *name);
+int cmus_enqueue(const char *name, int prepend);
+int cmus_add_to_lib(const char *name);
+int cmus_add_to_pl(const char *name);
+void cmus_clear_playlist(void);
+int cmus_save_playlist(const char *filename);
+int cmus_load_playlist(const char *name);
+void cmus_update_playlist(void);
 
-extern int cmus_is_playlist(const char *filename);
-extern void cmus_update_selected(void);
+struct track_info *cmus_get_track_info(const char *name);
+
+int cmus_is_playlist(const char *filename);
+void cmus_update_selected(void);
 
 int cmus_playlist_for_each(const char *buf, int size, int reverse,
 		int (*cb)(void *data, const char *line),
 		void *data);
 
 /* bindable */
-extern void cmus_next(void);
-extern void cmus_prev(void);
-extern void cmus_seek_bwd(void);
-extern void cmus_seek_fwd(void);
-extern void cmus_vol_up(void);
-extern void cmus_vol_down(void);
-extern void cmus_vol_left_up(void);
-extern void cmus_vol_left_down(void);
-extern void cmus_vol_right_up(void);
-extern void cmus_vol_right_down(void);
+void cmus_next(void);
+void cmus_prev(void);
+void cmus_seek_bwd(void);
+void cmus_seek_fwd(void);
+void cmus_vol_up(void);
+void cmus_vol_down(void);
+void cmus_vol_left_up(void);
+void cmus_vol_left_down(void);
+void cmus_vol_right_up(void);
+void cmus_vol_right_down(void);
+void cmus_toggle_repeat(void);
+void cmus_toggle_shuffle(void);
 
 #endif

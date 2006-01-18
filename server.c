@@ -76,12 +76,12 @@ static void cmd_tcont(void *data, size_t data_size)
 
 static void cmd_trepeat(void *data, size_t data_size)
 {
-	lib_toggle_repeat();
+	cmus_toggle_repeat();
 }
 
-static void cmd_tplay_mode(void *data, size_t data_size)
+static void cmd_tshuffle(void *data, size_t data_size)
 {
-	lib_toggle_play_mode();
+	cmus_toggle_shuffle();
 }
 
 static void cmd_plreshuffle(void *data, size_t data_size)
@@ -93,7 +93,7 @@ static void cmd_pladd(void *data, size_t data_size)
 {
 	char *ptr = data;
 
-	cmus_add(ptr);
+	cmus_add_to_lib(ptr);
 }
 
 static void cmd_plclear(void *data, size_t data_size)
@@ -130,7 +130,7 @@ static cmd_func_t *commands[CMD_MAX] = {
 	cmd_seek,
 	cmd_tcont,
 	cmd_trepeat,
-	cmd_tplay_mode,
+	cmd_tshuffle,
 	cmd_plreshuffle,
 	cmd_pladd,
 	cmd_plclear,

@@ -430,12 +430,12 @@ void browser_add(void)
 		return;
 	e = iter_to_browser_entry(&sel);
 	if (e->type == BROWSER_ENTRY_PLLINE) {
-		cmus_add(e->name);
+		cmus_add_to_lib(e->name);
 	} else {
 		char *full;
 
 		full = fullname(browser_dir, e->name);
-		cmus_add(full);
+		cmus_add_to_lib(full);
 		free(full);
 	}
 	window_down(browser_win, 1);

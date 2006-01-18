@@ -95,6 +95,7 @@ extern int bg_colors[NR_COLORS];
 extern int fg_colors[NR_COLORS];
 
 void update_titleline(void);
+void update_statusline(void);
 void update_color(int idx);
 void set_sort_keys(const char *value);
 void info_msg(const char *format, ...) __FORMAT(1, 2);

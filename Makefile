@@ -11,10 +11,10 @@ cmus-y := \
 	db.o debug.o expr.o filters.o \
 	format_print.o glob.o history.o http.o input.o \
 	keys.o lib.o load_dir.o mergesort.o misc.o options.o \
-	output.o pcm.o play_queue.o player.o \
+	output.o pcm.o pl.o play_queue.o player.o \
 	read_wrapper.o server.o sconf.o search.o \
 	search_mode.o spawn.o tabexp.o tabexp_file.o \
-	track_db.o track_info.o uchar.o ui_curses.o window.o \
+	track.o track_db.o track_info.o uchar.o ui_curses.o window.o \
 	worker.o xstrjoin.o
 
 cmus-$(CONFIG_IRMAN)	+= irman.o irman_config.o
@@ -150,7 +150,7 @@ dist:
 	git-tar-tree $$sha1 $$tarname | bzip2 -9 > $$tarname.tar.bz2
 # }}}
 
-.PHONY: all build html install install-html dist
+.PHONY: all build html install install-html dist tags
 
 # If config.mk changes, rebuild all sources that include debug.h
 #

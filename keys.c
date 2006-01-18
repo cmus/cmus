@@ -29,6 +29,7 @@
 #include <search_mode.h>
 #include <play_queue.h>
 #include <lib.h>
+#include <pl.h>
 #include <browser.h>
 #include <window.h>
 #include <ui_curses.h>
@@ -111,10 +112,8 @@ static struct window *current_win(void)
 	case TREE_VIEW:
 	case SORTED_VIEW:
 		return lib.cur_win;
-/*
- * 	case PLAYLIST_VIEW:
- * 		return playlist_win;
- */
+	case PLAYLIST_VIEW:
+		return pl_win;
 	case QUEUE_VIEW:
 		return play_queue_win;
 	case BROWSER_VIEW:
@@ -261,14 +260,15 @@ static const struct key_function common_functions[] = {
 	 * :toggle continue
 	 */
 	{ "toggle_continue",		player_toggle_cont		},
-	{ "toggle_play_mode",		lib_toggle_play_mode		},
-	{ "toggle_playlist_mode",	lib_toggle_playlist_mode		},
+	{ "toggle_play_sorted",		lib_toggle_play_sorted		},
+	{ "toggle_playlist_mode",	lib_toggle_playlist_mode	},
 	{ "toggle_remaining_time",	toggle_remaining_time		},
-	{ "toggle_repeat",		lib_toggle_repeat		},
+	{ "toggle_repeat",		cmus_toggle_repeat		},
+	{ "toggle_shuffle",		cmus_toggle_shuffle		},
 
 	{ "view_1",			enter_tree_view			},
 	{ "view_2",			enter_sorted_view		},
-/* 	{ "view_3",			enter_playlist_view		}, */
+	{ "view_3",			enter_playlist_view		},
 	{ "view_4",			enter_queue_view		},
 	{ "view_5",			enter_browser_view		},
 	{ "view_6",			enter_filters_view		},

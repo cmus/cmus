@@ -20,6 +20,8 @@
 #ifndef _ITER_H
 #define _ITER_H
 
+#include "debug.h"
+
 #include <stdlib.h>
 
 struct iter {

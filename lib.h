@@ -1,6 +1,6 @@
-/* 
- * Copyright 2004-2005 Timo Hirvonen
- * 
+/*
+ * Copyright 2004-2006 Timo Hirvonen
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
  * published by the Free Software Foundation; either version 2 of the
@@ -10,7 +10,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
@@ -25,6 +25,7 @@
 #include <window.h>
 #include <search.h>
 #include <track_info.h>
+#include <track.h>
 #include <expr.h>
 #include <locking.h>
 #include <debug.h>
@@ -32,24 +33,21 @@
 #include <pthread.h>
 #include <sys/time.h>
 
-struct track {
-	/* next/prev track in artist/album/track tree */
+struct tree_track {
+	struct shuffle_track shuffle_track;
 	struct list_head node;
-
-	/* next/prev track in shuffle list */
-	struct list_head shuffle_node;
-
-	/* next/prev track in sorted list */
-	struct list_head sorted_node;
-
 	struct album *album;
-	struct track_info *info;
-
-	char *name;
-	int disc;
-	int num;
-	unsigned int url : 1;
 };
+
+static inline struct track_info *tree_track_info(const struct tree_track *track)
+{
+	return ((struct simple_track *)track)->info;
+}
+
+static inline struct tree_track *to_tree_track(const struct list_head *item)
+{
+	return container_of(item, struct tree_track, node);
+}
 
 struct album {
 	/* next/prev album */
@@ -79,13 +77,6 @@ struct artist {
 	//unsigned int streams : 1;
 };
 
-/* FIXME: separate shuffle, this becomes bool order_sorted */
-enum play_mode {
-	PLAY_MODE_TREE,
-	PLAY_MODE_SHUFFLE,
-	PLAY_MODE_SORTED
-};
-
 enum playlist_mode {
 	PLAYLIST_MODE_ALL,
 	PLAYLIST_MODE_ARTIST,
@@ -102,7 +93,7 @@ struct library {
 
 	struct artist *cur_artist;
 	struct album *cur_album;
-	struct track *cur_track;
+	struct tree_track *cur_track;
 
 	/* for sorted window */
 	char **sort_keys;
@@ -116,14 +107,15 @@ struct library {
 	/* one of the above windows */
 	struct window *cur_win;
 
-	enum play_mode play_mode;
 	enum playlist_mode playlist_mode;
 
 	unsigned int nr_tracks;
 	unsigned int total_time;
 
 	unsigned int status_changed : 1;
-	unsigned int repeat : 1;
+
+	/* sorted list instead of tree */
+	unsigned int play_sorted : 1;
 
 	pthread_mutex_t mutex;
 };
@@ -149,9 +141,8 @@ void lib_remove(struct track_info *ti);
 /* bindable */
 void lib_remove_sel(void);
 void lib_toggle_expand_artist(void);
-void lib_toggle_repeat(void);
+void lib_toggle_play_sorted(void);
 void lib_toggle_playlist_mode(void);
-void lib_toggle_play_mode(void);
 void lib_sel_current(void);
 
 /* could be made bindable */
@@ -179,7 +170,7 @@ int lib_for_each(int (*cb)(void *data, struct track_info *ti), void *data);
 #define lib_lock() cmus_mutex_lock(&lib.mutex)
 #define lib_unlock() cmus_mutex_unlock(&lib.mutex)
 
-static inline struct track *iter_to_sorted_track(const struct iter *iter)
+static inline struct tree_track *iter_to_sorted_track(const struct iter *iter)
 {
 	BUG_ON(iter->data0 != &lib.sorted_head);
 	return iter->data1;
@@ -197,7 +188,7 @@ static inline struct album *iter_to_album(const struct iter *iter)
 	return iter->data2;
 }
 
-static inline struct track *iter_to_track(const struct iter *iter)
+static inline struct tree_track *iter_to_tree_track(const struct iter *iter)
 {
 	return iter->data1;
 }

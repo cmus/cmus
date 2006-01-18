@@ -1,5 +1,5 @@
 /* 
- * Copyright 2005 Timo Hirvonen
+ * Copyright 2005-2006 Timo Hirvonen
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -78,7 +78,7 @@ enum {
 	FLAG_CLEAR,
 	FLAG_CONTINUE,
 	FLAG_REPEAT,
-	FLAG_PLAY_MODE,
+	FLAG_SHUFFLE,
 	FLAG_ENQUEUE,
 	FLAG_VOLUME,
 	FLAG_RESHUFFLE,
@@ -98,7 +98,7 @@ static struct option options[NR_FLAGS + 1] = {
 	{ 'c', "clear", 0 },
 	{ 'C', "continue", 0 },
 	{ 'R', "repeat", 0 },
-	{ 'P', "play-mode", 0 },
+	{ 'S', "shuffle", 0 },
 	{ 'e', "enqueue", 0 },
 	{ 'v', "volume", 1 },
 	{ 0, "reshuffle", 0 },
@@ -126,7 +126,7 @@ static const char *usage =
 "  -c, --clear          clear playlist\n"
 "  -C, --continue       toggle continue\n"
 "  -R, --repeat         toggle repeat\n"
-"  -P, --play-mode      toggle play mode\n"
+"  -S, --shuffle        toggle shuffle\n"
 "  -e, --enqueue        enqueue instead of adding to playlist\n"
 "  -v, --volume DELTA   increase/decrease volume\n"
 "      --reshuffle      shuffle playlist again\n"
@@ -235,8 +235,8 @@ int main(int argc, char *argv[])
 		remote_send_cmd(CMD_TCONT, NULL, 0);
 	if (flags[FLAG_REPEAT])
 		remote_send_cmd(CMD_TREPEAT, NULL, 0);
-	if (flags[FLAG_PLAY_MODE])
-		remote_send_cmd(CMD_TPLAYMODE, NULL, 0);
+	if (flags[FLAG_SHUFFLE])
+		remote_send_cmd(CMD_TSHUFFLE, NULL, 0);
 	if (flags[FLAG_RESHUFFLE])
 		remote_send_cmd(CMD_PLRESHUFFLE, NULL, 0);
 	if (flags[FLAG_STOP])

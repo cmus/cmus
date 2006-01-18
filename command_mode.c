@@ -195,7 +195,7 @@ static void cmd_add(char *arg)
 	char *name;
 	
 	name = expand_filename(arg);
-	if (cmus_add(name) == -1)
+	if (cmus_add_to_lib(name) == -1)
 		error_msg("adding '%s' to playlist: %s", name, strerror(errno));
 	free(name);
 }
