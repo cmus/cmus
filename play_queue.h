@@ -1,5 +1,5 @@
 /* 
- * Copyright 2005 Timo Hirvonen
+ * Copyright 2005-2006 Timo Hirvonen
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,43 +20,30 @@
 #ifndef _PLAY_QUEUE_H
 #define _PLAY_QUEUE_H
 
-#include <lib.h>
-#include <uchar.h>
+#include "track_info.h"
+#include "locking.h"
 
-struct play_queue_entry {
-	struct list_head node;
-
-	struct track_info *track_info;
-};
+/* play queue is a list of struct simple_track */
 
 extern pthread_mutex_t play_queue_mutex;
-
-static inline struct play_queue_entry *iter_to_play_queue_entry(struct iter *iter)
-{
-	return iter->data1;
-}
-
 extern struct window *play_queue_win;
 extern struct searchable *play_queue_searchable;
-extern int play_queue_changed;
 
-extern void play_queue_init(void);
-extern void play_queue_exit(void);
+void play_queue_init(void);
+void play_queue_exit(void);
 
 /* unlocked */
-extern void __play_queue_append(struct track_info *track_info);
-extern void __play_queue_prepend(struct track_info *track_info);
+void __play_queue_append(struct track_info *ti);
+void __play_queue_prepend(struct track_info *ti);
 
-extern struct track_info *play_queue_remove(void);
-extern int play_queue_ch(uchar ch);
-extern int play_queue_key(int key);
+struct track_info *play_queue_remove(void);
 
 #define play_queue_lock() cmus_mutex_lock(&play_queue_mutex)
 #define play_queue_unlock() cmus_mutex_unlock(&play_queue_mutex)
 
 /* bindable */
-extern void play_queue_append(struct track_info *track_info);
-extern void play_queue_prepend(struct track_info *track_info);
-extern void play_queue_delete(void);
+void play_queue_append(struct track_info *ti);
+void play_queue_prepend(struct track_info *ti);
+void play_queue_delete(void);
 
 #endif
