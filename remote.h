@@ -21,11 +21,17 @@
 #define _REMOTE_H
 
 enum remote_command {
+	/* contexts */
+	CMD_LIBRARY, CMD_PLAYLIST, CMD_QUEUE,
+
+	/* commands with no context */
 	CMD_PLAY, CMD_PAUSE, CMD_STOP,
 	CMD_NEXT, CMD_PREV, CMD_SEEK,
 	CMD_TCONT, CMD_TREPEAT, CMD_TSHUFFLE,
-	CMD_PLRESHUFFLE, CMD_PLADD, CMD_PLCLEAR,
-	CMD_ENQUEUE, CMD_MIX_VOL,
+	CMD_RESHUFFLE, CMD_MIX_VOL,
+
+	/* commands with context */
+	CMD_ADD, CMD_CLEAR,
 	CMD_MAX
 };
 

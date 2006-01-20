@@ -66,43 +66,51 @@ static void remote_send_cmd(enum remote_command cmd, void *data, size_t data_siz
 	}
 }
 
-enum {
+enum flags {
+	FLAG_SERVER,
 	FLAG_HELP,
 	FLAG_VERSION,
-	FLAG_SERVER,
+
 	FLAG_PLAY,
 	FLAG_PAUSE,
 	FLAG_STOP,
 	FLAG_NEXT,
 	FLAG_PREV,
-	FLAG_CLEAR,
 	FLAG_CONTINUE,
 	FLAG_REPEAT,
 	FLAG_SHUFFLE,
-	FLAG_ENQUEUE,
 	FLAG_VOLUME,
 	FLAG_RESHUFFLE,
 	FLAG_SEEK,
-	NR_FLAGS
+
+	FLAG_LIBRARY,
+	FLAG_PLAYLIST,
+	FLAG_QUEUE,
+	FLAG_CLEAR
+#define NR_FLAGS (FLAG_CLEAR + 1)
 };
 
 static struct option options[NR_FLAGS + 1] = {
+	{ 0, "server", 1 },
 	{ 0, "help", 0 },
 	{ 0, "version", 0 },
-	{ 0, "server", 1 },
+
 	{ 'p', "play", 0 },
 	{ 'u', "pause", 0 },
 	{ 's', "stop", 0 },
 	{ 'n', "next", 0 },
 	{ 'r', "prev", 0 },
-	{ 'c', "clear", 0 },
 	{ 'C', "continue", 0 },
 	{ 'R', "repeat", 0 },
 	{ 'S', "shuffle", 0 },
-	{ 'e', "enqueue", 0 },
 	{ 'v', "volume", 1 },
 	{ 0, "reshuffle", 0 },
 	{ 0, "seek", 1 },
+
+	{ 'l', "library", 0 },
+	{ 'P', "playlist", 0 },
+	{ 'q', "queue", 0 },
+	{ 'c', "clear", 0 },
 	{ 0, NULL, 0 }
 };
 
@@ -111,8 +119,6 @@ static int flags[NR_FLAGS] = { 0, };
 static const char *usage =
 "Usage: %s [OPTION]... [FILE|DIR|PLAYLIST]...\n"
 "Control cmus throught socket.\n"
-"\n"
-"Add FILE/DIR/PLAYLIST to playlist or enqueue if -e flag given.\n"
 "\n"
 "      --server SOCKET  connect using socket SOCKET instead of /tmp/cmus-$USER\n"
 "      --help           display this help and exit\n"
@@ -123,14 +129,19 @@ static const char *usage =
 "  -s, --stop           stop playing\n"
 "  -n, --next           skip forward in playlist\n"
 "  -r, --prev           skip backwards in playlist\n"
-"  -c, --clear          clear playlist\n"
 "  -C, --continue       toggle continue\n"
 "  -R, --repeat         toggle repeat\n"
 "  -S, --shuffle        toggle shuffle\n"
-"  -e, --enqueue        enqueue instead of adding to playlist\n"
 "  -v, --volume DELTA   increase/decrease volume\n"
 "      --reshuffle      shuffle playlist again\n"
 "      --seek SECONDS   seek\n"
+"\n"
+"  -l, --library        modify library instead of playlist\n"
+"  -P, --playlist       modify playlist (default)\n"
+"  -q, --queue          modify play queue instead of playlist\n"
+"  -c, --clear          clear playlist, library (-l) or play queue (-q)\n"
+"\n"
+"Add FILE/DIR/PLAYLIST to playlist, library (-l) or play queue (-q).\n"
 "\n"
 "Documentation: " DATADIR "/cmus/doc/cmus.html\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
@@ -142,6 +153,7 @@ int main(int argc, char *argv[])
 	int volume = 0;
 	int seek = 0;
 	int need_file_args = 1;
+	enum { CMD_CTX_PLAYLIST, CMD_CTX_LIBRARY, CMD_CTX_QUEUE } context = CMD_CTX_PLAYLIST;
 	int i;
 
 	program_name = argv[0];
@@ -155,7 +167,7 @@ int main(int argc, char *argv[])
 			break;
 
 		flags[idx] = 1;
-		switch (idx) {
+		switch ((enum flags)idx) {
 		case FLAG_HELP:
 			printf(usage, program_name);
 			return 0;
@@ -185,9 +197,25 @@ int main(int argc, char *argv[])
 				need_file_args = 0;
 			}
 			break;
-		case FLAG_ENQUEUE:
+		case FLAG_LIBRARY:
+			context = CMD_CTX_LIBRARY;
 			break;
-		default:
+		case FLAG_PLAYLIST:
+			context = CMD_CTX_PLAYLIST;
+			break;
+		case FLAG_QUEUE:
+			context = CMD_CTX_QUEUE;
+			break;
+		case FLAG_PLAY:
+		case FLAG_PAUSE:
+		case FLAG_STOP:
+		case FLAG_NEXT:
+		case FLAG_PREV:
+		case FLAG_CONTINUE:
+		case FLAG_REPEAT:
+		case FLAG_SHUFFLE:
+		case FLAG_RESHUFFLE:
+		case FLAG_CLEAR:
 			need_file_args = 0;
 			break;
 		}
@@ -210,8 +238,15 @@ int main(int argc, char *argv[])
 	}
 
 	remote_connect(server);
+
+	/* set context */
+	if (context == CMD_CTX_LIBRARY)
+		remote_send_cmd(CMD_LIBRARY, NULL, 0);
+	if (context == CMD_CTX_QUEUE)
+		remote_send_cmd(CMD_QUEUE, NULL, 0);
+
 	if (flags[FLAG_CLEAR])
-		remote_send_cmd(CMD_PLCLEAR, NULL, 0);
+		remote_send_cmd(CMD_CLEAR, NULL, 0);
 	for (i = 0; argv[i]; i++) {
 		char *filename;
 
@@ -224,11 +259,7 @@ int main(int argc, char *argv[])
 				continue;
 			}
 		}
-		if (flags[FLAG_ENQUEUE]) {
-			remote_send_cmd(CMD_ENQUEUE, filename, strlen(filename) + 1);
-		} else {
-			remote_send_cmd(CMD_PLADD, filename, strlen(filename) + 1);
-		}
+		remote_send_cmd(CMD_ADD, filename, strlen(filename) + 1);
 		free(filename);
 	}
 	if (flags[FLAG_CONTINUE])
@@ -238,7 +269,7 @@ int main(int argc, char *argv[])
 	if (flags[FLAG_SHUFFLE])
 		remote_send_cmd(CMD_TSHUFFLE, NULL, 0);
 	if (flags[FLAG_RESHUFFLE])
-		remote_send_cmd(CMD_PLRESHUFFLE, NULL, 0);
+		remote_send_cmd(CMD_RESHUFFLE, NULL, 0);
 	if (flags[FLAG_STOP])
 		remote_send_cmd(CMD_STOP, NULL, 0);
 	if (flags[FLAG_NEXT])

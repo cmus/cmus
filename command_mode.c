@@ -1,6 +1,6 @@
-/* 
+/*
  * Copyright 2004-2005 Timo Hirvonen
- * 
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
  * published by the Free Software Foundation; either version 2 of the
@@ -10,7 +10,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
@@ -115,6 +115,171 @@ static char *expand_filename(const char *name)
 	}
 }
 
+/* view {{{ */
+
+void view_clear(int view)
+{
+	switch (view) {
+	case TREE_VIEW:
+	case SORTED_VIEW:
+		worker_remove_jobs(JOB_TYPE_LIB);
+		lib_clear();
+		break;
+	case PLAYLIST_VIEW:
+		worker_remove_jobs(JOB_TYPE_PL);
+		pl_clear();
+		break;
+	case QUEUE_VIEW:
+		worker_remove_jobs(JOB_TYPE_QUEUE);
+		play_queue_clear();
+		break;
+	default:
+		info_msg(":clear only works in views 1-4");
+	}
+}
+
+void view_add(int view, char *arg)
+{
+	char *tmp, *name;
+	enum file_type ft;
+
+	tmp = expand_filename(arg);
+	ft = cmus_detect_ft(tmp, &name);
+	if (ft == FILE_TYPE_INVALID) {
+		error_msg("adding '%s': %s", tmp, strerror(errno));
+		free(tmp);
+		return;
+	}
+	free(tmp);
+
+	switch (view) {
+	case TREE_VIEW:
+	case SORTED_VIEW:
+		cmus_add(lib_add_track, name, ft, JOB_TYPE_LIB);
+		break;
+	case PLAYLIST_VIEW:
+		cmus_add(pl_add_track, name, ft, JOB_TYPE_PL);
+		break;
+	case QUEUE_VIEW:
+		cmus_add(play_queue_append, name, ft, JOB_TYPE_QUEUE);
+		break;
+	default:
+		info_msg(":add only works in views 1-4");
+	}
+	free(name);
+}
+
+void view_load(int view, char *arg)
+{
+	char *tmp, *name;
+	enum file_type ft;
+
+	tmp = expand_filename(arg);
+	ft = cmus_detect_ft(tmp, &name);
+	if (ft == FILE_TYPE_INVALID) {
+		error_msg("loading '%s': %s", tmp, strerror(errno));
+		free(tmp);
+		return;
+	}
+	free(tmp);
+
+	if (ft == FILE_TYPE_FILE)
+		ft = FILE_TYPE_PL;
+	if (ft != FILE_TYPE_PL) {
+		error_msg("loading '%s': not a playlist file", name);
+		free(name);
+		return;
+	}
+
+	switch (view) {
+	case TREE_VIEW:
+	case SORTED_VIEW:
+		worker_remove_jobs(JOB_TYPE_LIB);
+		lib_clear();
+		cmus_add(lib_add_track, name, FILE_TYPE_PL, JOB_TYPE_LIB);
+		free(lib_filename);
+		lib_filename = name;
+		break;
+	case PLAYLIST_VIEW:
+		worker_remove_jobs(JOB_TYPE_PL);
+		pl_clear();
+		cmus_add(pl_add_track, name, FILE_TYPE_PL, JOB_TYPE_PL);
+		free(pl_filename);
+		pl_filename = name;
+		break;
+	default:
+		info_msg(":load only works in views 1-3");
+		free(name);
+	}
+}
+
+static void do_save(for_each_ti_cb for_each_ti, const char *given,
+		char **filenamep, const char *autosave)
+{
+	char *filename = *filenamep;
+
+	if (given == NULL) {
+		/* no argument given, use old filename */
+		if (filename == NULL) {
+			/* filename not yet set, use default filename (autosave) */
+			filename = xstrdup(autosave);
+		}
+	} else {
+		/* argument given, set new filename */
+		free(filename);
+		filename = xstrdup(given);
+	}
+	*filenamep = filename;
+	if (cmus_save(for_each_ti, filename) == -1)
+		error_msg("saving '%s': %s", filename, strerror(errno));
+}
+
+void view_save(int view, char *arg)
+{
+	if (arg) {
+		char *tmp;
+
+		tmp = expand_filename(arg);
+		arg = path_absolute(tmp);
+		free(tmp);
+	}
+
+	switch (view) {
+	case TREE_VIEW:
+	case SORTED_VIEW:
+		do_save(lib_for_each, arg, &lib_filename, lib_autosave_filename);
+		break;
+	case PLAYLIST_VIEW:
+		do_save(pl_for_each, arg, &pl_filename, pl_autosave_filename);
+		break;
+	default:
+		info_msg(":save only works in views 1 & 2 (library) and 3 (playlist)");
+	}
+	free(arg);
+}
+
+/* }}} */
+
+static void cmd_add(char *arg)
+{
+	view_add(cur_view, arg);
+}
+
+static void cmd_clear(char *arg)
+{
+	view_clear(cur_view);
+}
+
+static void cmd_load(char *arg)
+{
+	view_load(cur_view, arg);
+}
+
+static void cmd_save(char *arg)
+{
+	view_save(cur_view, arg);
+}
+
 static void cmd_set(char *arg)
 {
 	struct list_head *item;
@@ -135,7 +300,7 @@ static void cmd_set(char *arg)
 	}
 	list_for_each(item, &options_head) {
 		struct command_mode_option *opt;
-		
+
 		opt = list_entry(item, struct command_mode_option, node);
 		if (strcmp(name, opt->name) == 0) {
 			opt->set(opt, value);
@@ -193,42 +358,11 @@ static void cmd_fset(char *arg)
 	filters_set_filter(arg);
 }
 
-static void cmd_add(char *arg)
-{
-	char *tmp, *name;
-	enum file_type ft;
-
-	tmp = expand_filename(arg);
-	ft = cmus_detect_ft(tmp, &name);
-	if (ft == FILE_TYPE_INVALID) {
-		error_msg("adding '%s': %s", tmp, strerror(errno));
-		free(tmp);
-		return;
-	}
-	free(tmp);
-
-	switch (cur_view) {
-	case TREE_VIEW:
-	case SORTED_VIEW:
-		cmus_add(lib_add_track, name, ft, JOB_TYPE_LIB);
-		break;
-	case PLAYLIST_VIEW:
-		cmus_add(pl_add_track, name, ft, JOB_TYPE_PL);
-		break;
-	case QUEUE_VIEW:
-		cmus_add(play_queue_append, name, ft, JOB_TYPE_QUEUE);
-		break;
-	default:
-		info_msg(":add only works in views 1-4");
-		free(name);
-	}
-}
-
 static void cmd_cd(char *arg)
 {
 	if (arg) {
 		char *dir, *absolute;
-		
+
 		dir = expand_filename(arg);
 		absolute = path_absolute(dir);
 		if (chdir(dir) == -1) {
@@ -244,116 +378,6 @@ static void cmd_cd(char *arg)
 		} else {
 			browser_chdir(home_dir);
 		}
-	}
-}
-
-static void cmd_clear(char *arg)
-{
-	switch (cur_view) {
-	case TREE_VIEW:
-	case SORTED_VIEW:
-		worker_remove_jobs(JOB_TYPE_LIB);
-		lib_clear();
-		break;
-	case PLAYLIST_VIEW:
-		worker_remove_jobs(JOB_TYPE_PL);
-		pl_clear();
-		break;
-	case QUEUE_VIEW:
-		worker_remove_jobs(JOB_TYPE_QUEUE);
-		play_queue_clear();
-		break;
-	default:
-		info_msg(":clear only works in views 1-4");
-	}
-}
-
-static void do_save(for_each_ti_cb for_each_ti, const char *given,
-		char **filenamep, const char *autosave)
-{
-	char *filename = *filenamep;
-
-	if (given == NULL) {
-		/* no argument given, use old filename */
-		if (filename == NULL) {
-			/* filename not yet set, use default filename (autosave) */
-			filename = xstrdup(autosave);
-		}
-	} else {
-		/* argument given, set new filename */
-		free(filename);
-		filename = xstrdup(given);
-	}
-	*filenamep = filename;
-	if (cmus_save(for_each_ti, filename) == -1)
-		error_msg("saving '%s': %s", filename, strerror(errno));
-}
-
-static void cmd_save(char *arg)
-{
-	if (arg) {
-		char *tmp;
-
-		tmp = expand_filename(arg);
-		arg = path_absolute(tmp);
-		free(tmp);
-	}
-
-	switch (cur_view) {
-	case TREE_VIEW:
-	case SORTED_VIEW:
-		do_save(lib_for_each, arg, &lib_filename, lib_autosave_filename);
-		break;
-	case PLAYLIST_VIEW:
-		do_save(pl_for_each, arg, &pl_filename, pl_autosave_filename);
-		break;
-	default:
-		info_msg(":save only works in views 1 & 2 (library) and 3 (playlist)");
-	}
-	free(arg);
-}
-
-static void cmd_load(char *arg)
-{
-	char *tmp, *name;
-	enum file_type ft;
-
-	tmp = expand_filename(arg);
-	ft = cmus_detect_ft(tmp, &name);
-	if (ft == FILE_TYPE_INVALID) {
-		error_msg("loading '%s': %s", tmp, strerror(errno));
-		free(tmp);
-		return;
-	}
-	free(tmp);
-
-	if (ft == FILE_TYPE_FILE)
-		ft = FILE_TYPE_PL;
-	if (ft != FILE_TYPE_PL) {
-		error_msg("loading '%s': not a playlist file", name);
-		free(name);
-		return;
-	}
-
-	switch (cur_view) {
-	case TREE_VIEW:
-	case SORTED_VIEW:
-		worker_remove_jobs(JOB_TYPE_LIB);
-		lib_clear();
-		cmus_add(lib_add_track, name, FILE_TYPE_PL, JOB_TYPE_LIB);
-		free(lib_filename);
-		lib_filename = name;
-		break;
-	case PLAYLIST_VIEW:
-		worker_remove_jobs(JOB_TYPE_PL);
-		pl_clear();
-		cmus_add(pl_add_track, name, FILE_TYPE_PL, JOB_TYPE_PL);
-		free(pl_filename);
-		pl_filename = name;
-		break;
-	default:
-		info_msg(":load only works in views 1-3");
-		free(name);
 	}
 }
 
@@ -411,6 +435,7 @@ static void cmd_quit(char *arg)
 static void cmd_reshuffle(char *arg)
 {
 	lib_reshuffle();
+	pl_reshuffle();
 }
 
 /*
@@ -1377,7 +1402,7 @@ void command_mode_key(int key)
 	case KEY_DOWN:
 		if (history_search_text) {
 			const char *s;
-			
+
 			s = history_search_backward(&cmd_history, history_search_text);
 			if (s) {
 				cmdline_set_text(s);

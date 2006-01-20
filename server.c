@@ -24,6 +24,9 @@
 #include <prog.h>
 #include <file.h>
 #include <lib.h>
+#include <pl.h>
+#include <ui_curses.h>
+#include <command_mode.h>
 #include <debug.h>
 #include <config.h>
 
@@ -33,6 +36,24 @@
 #include <sys/socket.h>
 #include <errno.h>
 #include <stdio.h>
+
+/* add and clear work on a specific view */
+static int server_view = TREE_VIEW;
+
+static void cmd_library(void *data, size_t data_size)
+{
+	server_view = TREE_VIEW;
+}
+
+static void cmd_playlist(void *data, size_t data_size)
+{
+	server_view = PLAYLIST_VIEW;
+}
+
+static void cmd_queue(void *data, size_t data_size)
+{
+	server_view = QUEUE_VIEW;
+}
 
 static void cmd_play(void *data, size_t data_size)
 {
@@ -84,28 +105,22 @@ static void cmd_tshuffle(void *data, size_t data_size)
 	cmus_toggle_shuffle();
 }
 
-static void cmd_plreshuffle(void *data, size_t data_size)
+static void cmd_reshuffle(void *data, size_t data_size)
 {
 	lib_reshuffle();
+	pl_reshuffle();
 }
 
-static void cmd_pladd(void *data, size_t data_size)
+static void cmd_add(void *data, size_t data_size)
 {
 	char *ptr = data;
 
-	cmus_add_to_lib(ptr);
+	view_add(server_view, ptr);
 }
 
-static void cmd_plclear(void *data, size_t data_size)
+static void cmd_clear(void *data, size_t data_size)
 {
-	cmus_clear_playlist();
-}
-
-static void cmd_enqueue(void *data, size_t data_size)
-{
-	char *ptr = data;
-
-	cmus_enqueue(ptr, 0);
+	view_clear(server_view);
 }
 
 static void cmd_mix_vol(void *data, size_t data_size)
@@ -122,6 +137,10 @@ static void cmd_mix_vol(void *data, size_t data_size)
 typedef void cmd_func_t(void *data, size_t data_size);
 
 static cmd_func_t *commands[CMD_MAX] = {
+	cmd_library,
+	cmd_playlist,
+	cmd_queue,
+
 	cmd_play,
 	cmd_pause,
 	cmd_stop,
@@ -131,11 +150,11 @@ static cmd_func_t *commands[CMD_MAX] = {
 	cmd_tcont,
 	cmd_trepeat,
 	cmd_tshuffle,
-	cmd_plreshuffle,
-	cmd_pladd,
-	cmd_plclear,
-	cmd_enqueue,
-	cmd_mix_vol
+	cmd_reshuffle,
+	cmd_mix_vol,
+
+	cmd_add,
+	cmd_clear
 };
 
 static struct sockaddr_un addr;
