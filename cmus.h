@@ -93,8 +93,6 @@ int cmus_playlist_for_each(const char *buf, int size, int reverse,
 void cmus_next(void);
 void cmus_prev(void);
 
-void cmus_seek_bwd(void);
-void cmus_seek_fwd(void);
 void cmus_toggle_play_library(void);
 void cmus_toggle_repeat(void);
 void cmus_toggle_shuffle(void);

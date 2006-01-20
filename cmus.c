@@ -316,16 +316,6 @@ void cmus_play_file(const char *filename)
 	player_play_file(filename);
 }
 
-void cmus_seek_bwd(void)
-{
-	player_seek(-5.0, SEEK_CUR);
-}
-
-void cmus_seek_fwd(void)
-{
-	player_seek(5.0, SEEK_CUR);
-}
-
 enum file_type cmus_detect_ft(const char *name, char **ret)
 {
 	char *absolute;
