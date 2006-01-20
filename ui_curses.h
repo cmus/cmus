@@ -102,7 +102,6 @@ int yes_no_query(const char *format, ...) __FORMAT(1, 2);
 void search_not_found(void);
 
 /* bindable */
-void display_help(void);
 void toggle_remaining_time(void);
 void enter_tree_view(void);
 void enter_sorted_view(void);

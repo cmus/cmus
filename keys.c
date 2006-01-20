@@ -411,10 +411,6 @@ static const struct key_function common_functions[] = {
 	{ "activate",			com_activate			},
 	{ "add_to_library",		com_add_to_lib			},
 	{ "add_to_playlist",		com_add_to_pl			},
-
-	/* remove internal help, add man page */
-	{ "help",			display_help			},
-
 	{ "move_after",			com_move_after			},
 	{ "move_before",		com_move_before			},
 	{ "next",			cmus_next			},
