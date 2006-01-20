@@ -56,6 +56,7 @@ struct player_info player_info = {
 	.cont = 0,
 	.vol_left = 0,
 	.vol_right = 0,
+	.vol_max = 0,
 	.buffer_fill = 0,
 	.buffer_size = 0,
 	.error_msg = NULL,
@@ -64,7 +65,7 @@ struct player_info player_info = {
 	.status_changed = 0,
 	.position_changed = 0,
 	.buffer_fill_changed = 0,
-	.volume_changed = 0,
+	.vol_changed = 0,
 };
 
 static const struct player_callbacks *player_cbs = NULL;
@@ -162,12 +163,14 @@ static inline void metadata_changed(void)
 	player_info_unlock();
 }
 
-static inline void volume_changed(int left, int right)
+static inline void volume_changed(int left, int right, int vol_max)
 {
 	player_info_lock();
 	player_info.vol_left = left;
 	player_info.vol_right = right;
-	player_info.volume_changed = 1;
+	if (vol_max > 0)
+		player_info.vol_max = vol_max;
+	player_info.vol_changed = 1;
 	player_info_unlock();
 }
 
@@ -226,7 +229,7 @@ static void mixer_check(void)
 {
 	static struct timeval old_st = { 0L, 0L };
 	struct timeval st;
-	int l, r, rc;
+	int l, r, max_vol, rc;
 
 	gettimeofday(&st, NULL);
 	if (st.tv_sec == old_st.tv_sec) {
@@ -236,9 +239,9 @@ static void mixer_check(void)
 			return;
 	}
 	old_st = st;
-	rc = op_volume_changed(&l, &r);
+	rc = op_volume_changed(&l, &r, &max_vol);
 	if (rc == 1)
-		volume_changed(l, r);
+		volume_changed(l, r, max_vol);
 }
 
 /*
@@ -1126,17 +1129,13 @@ int player_get_fileinfo(const char *filename, int *duration,
 	return rc;
 }
 
-int player_get_volume(int *left, int *right)
+int player_get_volume(int *left, int *right, int *max_vol)
 {
-	int l, r, rc;
+	int rc;
 
 	consumer_lock();
-	rc = op_get_volume(&l, &r);
+	rc = op_get_volume(left, right, max_vol);
 	consumer_unlock();
-	if (left)
-		*left = l;
-	if (right)
-		*right = r;
 	return rc;
 }
 
@@ -1144,26 +1143,11 @@ int player_set_volume(int left, int right)
 {
 	int rc;
 
-	left = clamp(left, 0, 100);
-	right = clamp(right, 0, 100);
 	consumer_lock();
-	rc = op_set_volume(&left, &right);
+	rc = op_set_volume(left, right);
 	consumer_unlock();
 	if (rc == 0)
-		volume_changed(left, right);
-	return rc;
-}
-
-int player_add_volume(int left, int right)
-{
-	int rc;
-
-	consumer_lock();
-	rc = op_add_volume(&left, &right);
-	consumer_unlock();
-	if (rc)
-		d_print("rc = %d\n", rc);
-	volume_changed(left, right);
+		volume_changed(left, right, -1);
 	return rc;
 }
 

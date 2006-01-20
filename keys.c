@@ -448,21 +448,6 @@ static const struct key_function common_functions[] = {
 	{ "view_4",			enter_queue_view		},
 	{ "view_5",			enter_browser_view		},
 	{ "view_6",			enter_filters_view		},
-
-	/*
-	 * both up 5:     :vol +5
-	 * both up 5:     :vol +5,+5
-	 * left down 10:  :vol -10,
-	 * both to 100:   :vol 100
-	 * right to 90:   :vol ,90
-	 */
-	{ "vol_down",			cmus_vol_down			},
-	{ "vol_left_down",		cmus_vol_left_down		},
-	{ "vol_left_up",		cmus_vol_left_up		},
-	{ "vol_right_down",		cmus_vol_right_down		},
-	{ "vol_right_up",		cmus_vol_right_up		},
-	{ "vol_up",			cmus_vol_up			},
-
 	{ "win_activate_next",		win_activate_next		},
 	{ "win_bottom",			win_bottom			},
 	{ "win_down",			win_down			},

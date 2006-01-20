@@ -1,9 +1,9 @@
 browser    backspace            cd_parent
 browser    i                    toggle_show_hidden
 browser    u                    reload
-common     +                    vol_up
+common     +                    :vol +10%
 common     ,                    :seek -1m
-common     -                    vol_down
+common     -                    :vol -10%
 common     .                    :seek +1m
 common     1                    view_1
 common     2                    view_2
@@ -11,7 +11,7 @@ common     3                    view_3
 common     4                    view_4
 common     5                    view_5
 common     6                    view_6
-common     =                    vol_up
+common     =                    :vol +10%
 common     C                    toggle_continue
 common     D                    remove
 common     E                    queue_prepend
@@ -19,8 +19,8 @@ common     G                    win_bottom
 common     M                    toggle_play_library
 common     N                    search_prev
 common     P                    move_before
-common     [                    vol_left_up
-common     ]                    vol_right_up
+common     [                    :vol +1 +0
+common     ]                    :vol +0 +1
 common     ^B                   win_page_up
 common     ^F                   win_page_down
 common     a                    add_to_library
@@ -56,6 +56,6 @@ common     v                    stop
 common     x                    play
 common     y                    add_to_playlist
 common     z                    prev
-common     {                    vol_left_down
-common     }                    vol_right_down
+common     {                    :vol -1 -0
+common     }                    :vol -0 -1
 library    u                    update

@@ -839,7 +839,7 @@ static void do_update_statusline(void)
 	static char *cont_strs[] = { " ", "C" };
 	static char *repeat_strs[] = { " ", "R" };
 	static char *shuffle_strs[] = { " ", "S" };
-	int play_sorted, volume, buffer_fill;
+	int play_sorted, buffer_fill, vol, vol_left, vol_right;
 	int duration = -1;
 	char *msg;
 	char format[80];
@@ -858,8 +858,10 @@ static void do_update_statusline(void)
 
 	player_info_lock();
 
-	volume = (player_info.vol_left + player_info.vol_right) / 2.0 + 0.5;
-	buffer_fill = (double)player_info.buffer_fill / (double)player_info.buffer_size * 100.0 + 0.5;
+	vol_left = scale_to_percentage(player_info.vol_left, player_info.vol_max);
+	vol_right = scale_to_percentage(player_info.vol_right, player_info.vol_max);
+	vol = (vol_left + vol_right + 1) / 2;
+	buffer_fill = scale_to_percentage(player_info.buffer_fill, player_info.buffer_size);
 
 	fopt_set_str(&status_fopts[SF_STATUS], status_strs[player_info.status]);
 
@@ -870,9 +872,9 @@ static void do_update_statusline(void)
 	}
 
 	fopt_set_time(&status_fopts[SF_DURATION], duration, 0);
-	fopt_set_int(&status_fopts[SF_VOLUME], volume, 0);
-	fopt_set_int(&status_fopts[SF_LVOLUME], player_info.vol_left, 0);
-	fopt_set_int(&status_fopts[SF_RVOLUME], player_info.vol_right, 0);
+	fopt_set_int(&status_fopts[SF_VOLUME], vol, 0);
+	fopt_set_int(&status_fopts[SF_LVOLUME], vol_left, 0);
+	fopt_set_int(&status_fopts[SF_RVOLUME], vol_right, 0);
 	fopt_set_int(&status_fopts[SF_BUFFER], buffer_fill, 0);
 	fopt_set_str(&status_fopts[SF_CONTINUE], cont_strs[player_info.cont]);
 
@@ -1983,10 +1985,10 @@ static void update(void)
 		needs_title_update = 1;
 	}
 	if (lib.status_changed || player_info.position_changed ||
-			player_info.status_changed || player_info.volume_changed) {
+			player_info.status_changed || player_info.vol_changed) {
 		player_info.position_changed = 0;
 		player_info.status_changed = 0;
-		player_info.volume_changed = 0;
+		player_info.vol_changed = 0;
 
 		needs_status_update = 1;
 	}
@@ -2299,7 +2301,7 @@ static void init_all(void)
 	search_mode_init();
 	keys_init();
 
-	player_get_volume(&player_info.vol_left, &player_info.vol_right);
+	player_get_volume(&player_info.vol_left, &player_info.vol_right, &player_info.vol_max);
 
 	lib_autosave_filename = xstrjoin(cmus_config_dir, "/lib.pl");
 	pl_autosave_filename = xstrjoin(cmus_config_dir, "/playlist.pl");

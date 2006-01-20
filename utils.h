@@ -46,6 +46,25 @@ static inline int clamp(int val, int minval, int maxval)
 	return val;
 }
 
+static inline int scale_from_percentage(int val, int max_val)
+{
+	if (val < 0)
+		return (val * max_val - 50) / 100;
+	return (val * max_val + 50) / 100;
+}
+
+static inline int scale_to_percentage(int val, int max_val)
+{
+	int half = max_val / 2;
+
+	if (max_val <= 0)
+		return 100;
+
+	if (val < 0)
+		return (val * 100 - half) / max_val;
+	return (val * 100 + half) / max_val;
+}
+
 static inline int str_to_int(const char *str, long int *val)
 {
 	char *end;

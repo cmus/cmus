@@ -95,12 +95,6 @@ void cmus_prev(void);
 
 void cmus_seek_bwd(void);
 void cmus_seek_fwd(void);
-void cmus_vol_up(void);
-void cmus_vol_down(void);
-void cmus_vol_left_up(void);
-void cmus_vol_left_down(void);
-void cmus_vol_right_up(void);
-void cmus_vol_right_down(void);
 void cmus_toggle_play_library(void);
 void cmus_toggle_repeat(void);
 void cmus_toggle_shuffle(void);

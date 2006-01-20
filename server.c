@@ -27,6 +27,7 @@
 #include <pl.h>
 #include <ui_curses.h>
 #include <command_mode.h>
+#include <utils.h>
 #include <debug.h>
 #include <config.h>
 
@@ -125,12 +126,14 @@ static void cmd_clear(void *data, size_t data_size)
 
 static void cmd_mix_vol(void *data, size_t data_size)
 {
-	int l, r, volume_step;
+	int l, r, max_vol, volume_step;
 
 	if (data_size != sizeof(int))
 		return;
 	volume_step = *(int *)data;
-	player_get_volume(&l, &r);
+
+	player_get_volume(&l, &r, &max_vol);
+	volume_step = scale_from_percentage(volume_step, max_vol);
 	player_set_volume(l + volume_step, r + volume_step);
 }
 

@@ -61,6 +61,7 @@ struct player_info {
 	/* volume */
 	int vol_left;
 	int vol_right;
+	int vol_max;
 
 	int buffer_fill;
 	int buffer_size;
@@ -73,45 +74,42 @@ struct player_info {
 	unsigned int status_changed : 1;
 	unsigned int position_changed : 1;
 	unsigned int buffer_fill_changed : 1;
-	unsigned int volume_changed : 1;
+	unsigned int vol_changed : 1;
 };
 
 extern struct player_info player_info;
 
-extern void player_init_plugins(void);
-extern int player_init(const struct player_callbacks *callbacks);
-extern void player_exit(void);
+void player_init_plugins(void);
+int player_init(const struct player_callbacks *callbacks);
+void player_exit(void);
 
 /* set current file */
-extern void player_set_file(const char *filename);
+void player_set_file(const char *filename);
 
 /* set current file and start playing */
-extern void player_play_file(const char *filename);
+void player_play_file(const char *filename);
 
-extern void player_play(void);
-extern void player_stop(void);
-extern void player_pause(void);
-extern void player_seek(double offset, int whence);
-extern int player_set_op(const char *name);
-extern char *player_get_op(void);
-extern void player_set_buffer_chunks(unsigned int nr_chunks);
-extern int player_get_buffer_chunks(void);
-extern void player_set_buffer_seconds(unsigned int seconds);
-extern void player_toggle_cont(void);
-extern void player_set_cont(int value);
-extern int player_get_fileinfo(const char *filename, int *duration, struct keyval **comments);
+void player_play(void);
+void player_stop(void);
+void player_pause(void);
+void player_seek(double offset, int whence);
+int player_set_op(const char *name);
+char *player_get_op(void);
+void player_set_buffer_chunks(unsigned int nr_chunks);
+int player_get_buffer_chunks(void);
+void player_set_buffer_seconds(unsigned int seconds);
+void player_toggle_cont(void);
+void player_set_cont(int value);
+int player_get_fileinfo(const char *filename, int *duration, struct keyval **comments);
 
-/* volume: 0 - 100 */
+int player_get_volume(int *left, int *right, int *max_vol);
+int player_set_volume(int left, int right);
 
-extern int player_get_volume(int *left, int *right);
-extern int player_set_volume(int left, int right);
-extern int player_add_volume(int left, int right);
-
-extern int player_set_op_option(const char *key, const char *val);
-extern int player_get_op_option(const char *key, char **val);
-extern int player_for_each_op_option(void (*callback)(void *data, const char *key), void *data);
-extern char **player_get_supported_extensions(void);
-extern void player_dump_plugins(void);
+int player_set_op_option(const char *key, const char *val);
+int player_get_op_option(const char *key, char **val);
+int player_for_each_op_option(void (*callback)(void *data, const char *key), void *data);
+char **player_get_supported_extensions(void);
+void player_dump_plugins(void);
 
 #define player_info_lock() cmus_mutex_lock(&player_info.mutex)
 #define player_info_unlock() cmus_mutex_unlock(&player_info.mutex)

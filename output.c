@@ -442,91 +442,40 @@ int op_buffer_space(void)
 	return rc;
 }
 
-/* 0..volume_max => 0..100 */
-static int scale_volume_from_internal(int volume)
+int op_set_volume(int left, int right)
 {
-	volume = (int)((double)volume * 100.0 / (double)volume_max + 0.5);
-	return volume;
-}
-
-/* 0..100 => 0..volume_max
- * or
- * -100..0 => -volume_max..0
- */
-static int scale_volume_to_internal(int volume)
-{
-	if (volume < 0) {
-		volume = (int)((double)volume * (double)volume_max / 100.0 - 0.5);
-	} else {
-		volume = (int)((double)volume * (double)volume_max / 100.0 + 0.5);
-	}
-	return volume;
-}
-
-int op_set_volume(int *left, int *right)
-{
-	int l, r;
-
 	if (!op->mixer_open)
 		return -OP_ERROR_NOT_SUPPORTED;
-	l = scale_volume_to_internal(*left);
-	r = scale_volume_to_internal(*right);
-	*left = scale_volume_from_internal(l);
-	*right = scale_volume_from_internal(r);
-	return op->mixer_ops->set_volume(l, r);
+	return op->mixer_ops->set_volume(left, right);
 }
 
-int op_get_volume(int *left, int *right)
+int op_get_volume(int *left, int *right, int *max_vol)
 {
-	int l, r, rc;
-
 	if (!op->mixer_open)
 		return -OP_ERROR_NOT_SUPPORTED;
-	rc = op->mixer_ops->get_volume(&l, &r);
-	if (rc)
-		return rc;
-	*left = scale_volume_from_internal(l);
-	*right = scale_volume_from_internal(r);
-	return 0;
+	*max_vol = volume_max;
+	return op->mixer_ops->get_volume(left, right);
 }
 
-int op_add_volume(int *left, int *right)
-{
-	int l, r, rc;
-
-	if (!op->mixer_open)
-		return -OP_ERROR_NOT_SUPPORTED;
-	rc = op->mixer_ops->get_volume(&l, &r);
-	if (rc)
-		return rc;
-	*left = clamp(*left + l, 0, volume_max);
-	*right = clamp(*right + r, 0, volume_max);
-	if (*left != l || *right != r)
-		rc = op->mixer_ops->set_volume(*left, *right);
-	*left = scale_volume_from_internal(*left);
-	*right = scale_volume_from_internal(*right);
-	return rc;
-}
-
-int op_volume_changed(int *left, int *right)
+int op_volume_changed(int *left, int *right, int *max_vol)
 {
 	static int oldl = -1;
 	static int oldr = -1;
-	int l, r, rc;
+	int rc;
 
 	if (!op->mixer_open)
 		return 0;
-	rc = op->mixer_ops->get_volume(&l, &r);
+	rc = op->mixer_ops->get_volume(left, right);
 	if (rc)
 		return rc;
-	if (l != oldl || r != oldr) {
-		oldl = l;
-		oldr = r;
-		*left = scale_volume_from_internal(l);
-		*right = scale_volume_from_internal(r);
-		return 1;
-	}
-	return 0;
+
+	if (*left == oldl && *right == oldr)
+		return 0;
+
+	*max_vol = volume_max;
+	oldl = *left;
+	oldr = *right;
+	return 1;
 }
 
 static const struct output_plugin_ops *dsp_option(const char *key, int *optidx)

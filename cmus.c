@@ -47,7 +47,6 @@ int shuffle = 0;
 
 static pthread_mutex_t track_db_mutex = CMUS_MUTEX_INITIALIZER;
 static struct track_db *track_db;
-static int volume_step = 1;
 
 #define track_db_lock() cmus_mutex_lock(&track_db_mutex)
 #define track_db_unlock() cmus_mutex_unlock(&track_db_mutex)
@@ -325,36 +324,6 @@ void cmus_seek_bwd(void)
 void cmus_seek_fwd(void)
 {
 	player_seek(5.0, SEEK_CUR);
-}
-
-void cmus_vol_up(void)
-{
-	player_add_volume(volume_step, volume_step);
-}
-
-void cmus_vol_down(void)
-{
-	player_add_volume(-volume_step, -volume_step);
-}
-
-void cmus_vol_left_up(void)
-{
-	player_add_volume(volume_step, 0);
-}
-
-void cmus_vol_left_down(void)
-{
-	player_add_volume(-volume_step, 0);
-}
-
-void cmus_vol_right_up(void)
-{
-	player_add_volume(0, volume_step);
-}
-
-void cmus_vol_right_down(void)
-{
-	player_add_volume(0, -volume_step);
 }
 
 enum file_type cmus_detect_ft(const char *name, char **ret)

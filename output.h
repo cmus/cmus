@@ -80,33 +80,11 @@ extern int op_buffer_space(void);
  */
 extern int op_reset(void);
 
-/*
- * set volume (0..100)
- *
- * returns actual volume which might not be same as given volume
- * because of rounding
- */
-extern int op_set_volume(int *left, int *right);
+int op_set_volume(int left, int right);
+int op_get_volume(int *left, int *right, int *max_vol);
 
-/*
- * get volume (0..100)
- *
- * errors: OP_ERROR_{}
- */
-extern int op_get_volume(int *left, int *right);
-
-/*
- * adds volume and returns new volume
- *
- * NOTE: adds volume to internal volume which might not be 0..100.
- *       returned volume is always 0..100.
- */
-extern int op_add_volume(int *left, int *right);
-
-/*
- * returns 1 if changed, 0 otherwise
- */
-extern int op_volume_changed(int *left, int *right);
+/* returns 1 if changed, 0 otherwise */
+int op_volume_changed(int *left, int *right, int *max_vol);
 
 /*
  * errors: OP_ERROR_{NO_PLUGIN, NOT_INITIALIZED, NOT_OPTION}

@@ -718,6 +718,94 @@ static void cmd_run(char *arg)
 	free_str_array(argv);
 }
 
+#define VF_RELATIVE	0x01
+#define VF_PERCENTAGE	0x02
+
+static int parse_vol_arg(const char *arg, int *value, unsigned int *flags)
+{
+	unsigned int f = 0;
+	int ch, val = 0, digits = 0, sign = 1;
+
+	if (*arg == '-') {
+		arg++;
+		f |= VF_RELATIVE;
+		sign = -1;
+	} else if (*arg == '+') {
+		arg++;
+		f |= VF_RELATIVE;
+	}
+
+	while (1) {
+		ch = *arg++;
+		if (ch < '0' || ch > '9')
+			break;
+		val *= 10;
+		val += ch - '0';
+		digits++;
+	}
+	if (digits == 0)
+		goto err;
+
+	if (ch == '%') {
+		f |= VF_PERCENTAGE;
+		ch = *arg;
+	}
+	if (ch)
+		goto err;
+
+	*value = sign * val;
+	*flags = f;
+	return 0;
+err:
+	return -1;
+}
+
+static int calc_vol(int val, int old, int max_vol, unsigned int flags)
+{
+	if (flags & VF_RELATIVE) {
+		if (flags & VF_PERCENTAGE)
+			val = scale_from_percentage(val, max_vol);
+		val += old;
+	} else if (flags & VF_PERCENTAGE) {
+		val = scale_from_percentage(val, max_vol);
+	}
+	return clamp(val, 0, max_vol);
+}
+
+/*
+ * :vol value [value]
+ *
+ * where value is [-+]?[0-9]+%?
+ */
+static void cmd_vol(char *arg)
+{
+	char **values = get_words(arg);
+	unsigned int lf, rf;
+	int l, r, ol, or, max_vol;
+
+	if (values[1] && values[2])
+		goto err;
+
+	if (parse_vol_arg(values[0], &l, &lf))
+		goto err;
+
+	r = l;
+	rf = lf;
+	if (values[1] && parse_vol_arg(values[1], &r, &rf))
+		goto err;
+
+	free_str_array(values);
+
+	player_get_volume(&ol, &or, &max_vol);
+	l = calc_vol(l, ol, max_vol, lf);
+	r = calc_vol(r, or, max_vol, rf);
+	player_set_volume(l, r);
+	return;
+err:
+	free_str_array(values);
+	error_msg("expecting 1 or 2 arguments (total or L and R volumes [+-]INTEGER[%%])\n");
+}
+
 /* fills tabexp struct */
 static void expand_files(const char *str)
 {
@@ -1100,6 +1188,7 @@ static struct command commands[] = {
 	{ "set",	cmd_set,	1, 1, expand_options	},
 	{ "shuffle",	cmd_reshuffle,	0, 0, NULL		},
 	{ "unbind",	cmd_unbind,	1, 1, expand_unbind_args},
+	{ "vol",	cmd_vol,	1, 2, NULL		},
 	{ NULL,		NULL,		0, 0, 0			}
 };
 
