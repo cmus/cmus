@@ -21,7 +21,6 @@
 #include <prog.h>
 #include <xmalloc.h>
 #include <xstrjoin.h>
-#include <config.h>
 
 #include <string.h>
 #include <stdlib.h>
@@ -34,7 +33,6 @@
 #include <stdarg.h>
 
 const char *cmus_config_dir = NULL;
-const char *cmus_cache_dir = NULL;
 const char *home_dir = NULL;
 const char *user_name = NULL;
 
@@ -112,10 +110,6 @@ static char *get_non_empty_env(const char *name)
 
 int misc_init(void)
 {
-#ifdef CONFIG_XDG
-	char *xdg_config_home, *xdg_cache_home;
-#endif
-
 	home_dir = get_non_empty_env("HOME");
 	if (home_dir == NULL)
 		die("error: environment variable HOME not set\n");
@@ -127,27 +121,7 @@ int misc_init(void)
 			die("error: neither USER or USERNAME environment variable set\n");
 	}
 
-#ifdef CONFIG_XDG
-	/* ensure that configuration directories exist */
-	xdg_config_home = get_non_empty_env("XDG_CONFIG_HOME");
-	xdg_cache_home = get_non_empty_env("XDG_CACHE_HOME");
-	if (xdg_config_home == NULL)
-		xdg_config_home = xstrjoin(home_dir, "/.config");
-	if (xdg_cache_home == NULL)
-		xdg_cache_home = xstrjoin(home_dir, "/.cache");
-	make_dir(xdg_config_home);
-	make_dir(xdg_cache_home);
-
-	cmus_config_dir = xstrjoin(xdg_config_home, "/cmus");
-	cmus_cache_dir = xstrjoin(xdg_cache_home, "/cmus");
-	free(xdg_config_home);
-	free(xdg_cache_home);
-	make_dir(cmus_config_dir);
-	make_dir(cmus_cache_dir);
-#else
 	cmus_config_dir = xstrjoin(home_dir, "/.cmus");
-	cmus_cache_dir = cmus_config_dir;
 	make_dir(cmus_config_dir);
-#endif
 	return 0;
 }

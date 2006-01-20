@@ -23,7 +23,6 @@
 #include <list.h>
 
 extern const char *cmus_config_dir;
-extern const char *cmus_cache_dir;
 extern const char *home_dir;
 extern const char *user_name;
 

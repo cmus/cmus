@@ -1532,7 +1532,7 @@ void option_add(const char *name, option_get_func get, option_set_func set, void
 
 void commands_init(void)
 {
-	cmd_history_filename = xstrjoin(cmus_cache_dir, "/ui_curses_cmd_history");
+	cmd_history_filename = xstrjoin(cmus_config_dir, "/ui_curses_cmd_history");
 	history_load(&cmd_history, cmd_history_filename, 2000);
 }
 

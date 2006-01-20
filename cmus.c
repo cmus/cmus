@@ -256,7 +256,7 @@ int cmus_init(void)
 {
 	char *db_filename_base;
 
-	db_filename_base = xstrjoin(cmus_cache_dir, "/trackdb");
+	db_filename_base = xstrjoin(cmus_config_dir, "/trackdb");
 	track_db = track_db_new(db_filename_base);
 	free(db_filename_base);
 

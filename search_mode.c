@@ -228,7 +228,7 @@ void search_mode_key(int key)
 
 void search_mode_init(void)
 {
-	search_history_filename = xstrjoin(cmus_cache_dir, "/ui_curses_search_history");
+	search_history_filename = xstrjoin(cmus_config_dir, "/ui_curses_search_history");
 	history_load(&search_history, search_history_filename, 100);
 }
 
