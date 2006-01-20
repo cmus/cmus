@@ -1407,23 +1407,6 @@ void lib_toggle_expand_artist(void)
 	lib_unlock();
 }
 
-void lib_toggle_play_sorted(void)
-{
-	lib_lock();
-	lib.play_sorted = lib.play_sorted ^ 1;
-	status_changed();
-	lib_unlock();
-}
-
-void lib_toggle_playlist_mode(void)
-{
-	lib_lock();
-	lib.playlist_mode++;
-	lib.playlist_mode %= 3;
-	status_changed();
-	lib_unlock();
-}
-
 void __lib_set_view(int view)
 {
 	/* lib.tree_win or lib.track_win */
@@ -1549,7 +1532,7 @@ static int artist_for_each_track(struct artist *artist, int (*cb)(void *data, st
 	return rc;
 }
 
-int __lib_for_each_selected(int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
+int __lib_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
 {
 	struct iter sel;
 	struct tree_track *track;
@@ -1585,12 +1568,13 @@ int __lib_for_each_selected(int (*cb)(void *data, struct track_info *ti), void *
 	return rc;
 }
 
-int lib_for_each_selected(int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
+int lib_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
 {
 	int rc;
 
 	lib_lock();
-	rc = __lib_for_each_selected(cb, data, reverse);
+	rc = __lib_for_each_sel(cb, data, reverse);
+	window_down(lib.cur_win, 1);
 	lib_unlock();
 	return rc;
 }

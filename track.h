@@ -12,10 +12,10 @@ struct simple_track {
 	struct list_head node;
 	struct track_info *info;
 
-	/* these are parsed from info to simplify usage */
+	unsigned int marked : 1;
 
 	/* -1.. */
-	int disc : 16;
+	int disc : 15;
 
 	/* -1.. */
 	int num : 16;
@@ -52,6 +52,9 @@ int xstrcasecmp(const char *a, const char *b);
 /* NOTE: does not ref ti */
 void simple_track_init(struct simple_track *track, struct track_info *ti);
 
+/* refs ti */
+struct simple_track *simple_track_new(struct track_info *ti);
+
 int simple_track_get_prev(struct iter *);
 int simple_track_get_next(struct iter *);
 
@@ -76,5 +79,8 @@ void sorted_list_add_track(struct list_head *head, struct simple_track *track, c
 
 void shuffle_list_add_track(struct list_head *head, struct list_head *node, int nr);
 void reshuffle(struct list_head *head);
+
+int simple_list_for_each_marked(struct list_head *head,
+		int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
 
 #endif

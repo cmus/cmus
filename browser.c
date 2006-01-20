@@ -421,54 +421,19 @@ void browser_enter(void)
 	}
 }
 
-void browser_add(void)
+char *browser_get_sel(void)
 {
 	struct browser_entry *e;
 	struct iter sel;
 
 	if (!window_get_sel(browser_win, &sel))
-		return;
+		return NULL;
+
 	e = iter_to_browser_entry(&sel);
-	if (e->type == BROWSER_ENTRY_PLLINE) {
-		cmus_add_to_lib(e->name);
-	} else {
-		char *full;
+	if (e->type == BROWSER_ENTRY_PLLINE)
+		return xstrdup(e->name);
 
-		full = fullname(browser_dir, e->name);
-		cmus_add_to_lib(full);
-		free(full);
-	}
-	window_down(browser_win, 1);
-}
-
-static void browser_enqueue(int prepend)
-{
-	struct browser_entry *e;
-	struct iter sel;
-
-	if (!window_get_sel(browser_win, &sel))
-		return;
-	e = iter_to_browser_entry(&sel);
-	if (e->type == BROWSER_ENTRY_PLLINE) {
-		cmus_enqueue(e->name, prepend);
-	} else {
-		char *full;
-
-		full = fullname(browser_dir, e->name);
-		cmus_enqueue(full, prepend);
-		free(full);
-	}
-	window_down(browser_win, 1);
-}
-
-void browser_queue_append(void)
-{
-	browser_enqueue(0);
-}
-
-void browser_queue_prepend(void)
-{
-	browser_enqueue(1);
+	return fullname(browser_dir, e->name);
 }
 
 void browser_delete(void)

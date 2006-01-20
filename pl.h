@@ -11,21 +11,10 @@
 #include "iter.h"
 #include "track.h"
 
-struct pl_track {
-	struct shuffle_track shuffle_track;
-
-	unsigned int marked : 1;
-};
-
-static inline struct track_info *pl_track_info(const struct pl_track *track)
-{
-	return ((struct simple_track *)track)->info;
-}
-
 extern pthread_mutex_t pl_mutex;
 extern struct window *pl_win;
 extern struct searchable *pl_searchable;
-extern struct pl_track *pl_cur_track;
+extern struct simple_track *pl_cur_track;
 extern unsigned int pl_nr_tracks;
 extern unsigned int pl_total_time;
 extern unsigned int pl_nr_marked;
@@ -46,17 +35,17 @@ void pl_set_sort_keys(char **keys);
 /* bindable */
 void pl_remove_sel(void);
 void pl_toggle_mark(void);
+void pl_move_after(void);
+void pl_move_before(void);
 void pl_sel_current(void);
 
 void pl_clear(void);
 void pl_reshuffle(void);
 
+int pl_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
+int pl_for_each(int (*cb)(void *data, struct track_info *ti), void *data);
+
 #define pl_lock() cmus_mutex_lock(&pl_mutex)
 #define pl_unlock() cmus_mutex_unlock(&pl_mutex)
-
-static inline struct pl_track *iter_to_pl_track(const struct iter *iter)
-{
-	return iter->data1;
-}
 
 #endif

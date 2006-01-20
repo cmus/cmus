@@ -1,14 +1,10 @@
-browser    D                    remove
-browser    E                    queue_prepend
-browser    a                    add
 browser    backspace            cd_parent
-browser    delete               remove
-browser    e                    queue_append
-browser    enter                enter
 browser    i                    toggle_show_hidden
 browser    u                    reload
 common     +                    vol_up
+common     ,                    :seek -1m
 common     -                    vol_down
+common     .                    :seek +1m
 common     1                    view_1
 common     2                    view_2
 common     3                    view_3
@@ -17,51 +13,49 @@ common     5                    view_5
 common     6                    view_6
 common     =                    vol_up
 common     C                    toggle_continue
-common     F1                   help
+common     D                    remove
+common     E                    queue_prepend
 common     G                    win_bottom
+common     M                    toggle_play_library
 common     N                    search_prev
-common     Q                    quit
+common     P                    move_before
 common     [                    vol_left_up
 common     ]                    vol_right_up
 common     ^B                   win_page_up
 common     ^F                   win_page_down
+common     a                    add_to_library
 common     b                    next
 common     c                    pause
+common     delete               remove
 common     down                 win_down
+common     e                    queue_append
 common     end                  win_bottom
+common     enter                activate
 common     g                    win_top
-common     h                    seek_backward
+common     h                    :seek -5
 common     home                 win_top
+common     i                    select_current
 common     j                    win_down
 common     k                    win_up
-common     l                    seek_forward
-common     left                 seek_backward
+common     l                    :seek +5
+common     left                 :seek -5
 common     m                    toggle_playlist_mode
 common     n                    search_next
-common     p                    toggle_play_mode
+common     o                    toggle_play_sorted
+common     p                    move_after
 common     page_down            win_page_down
 common     page_up              win_page_up
 common     r                    toggle_repeat
-common     right                seek_forward
+common     right                :seek +5
+common     s                    toggle_shuffle
+common     space                toggle
 common     t                    toggle_remaining_time
 common     tab                  win_activate_next
 common     up                   win_up
 common     v                    stop
 common     x                    play
+common     y                    add_to_playlist
 common     z                    prev
 common     {                    vol_left_down
 common     }                    vol_right_down
-filters    D                    delete_filter
-filters    delete               delete_filter
-filters    enter                activate
-filters    space                toggle_filter
-play_queue D                    remove
-play_queue delete               remove
-playlist   D                    remove
-playlist   E                    queue_prepend
-playlist   delete               remove
-playlist   e                    queue_append
-playlist   enter                play_selected
-playlist   i                    select_current
-playlist   space                expand_artist
-playlist   u                    update
+library    u                    update

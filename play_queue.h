@@ -44,6 +44,12 @@ struct track_info *play_queue_remove(void);
 /* bindable */
 void play_queue_append(struct track_info *ti);
 void play_queue_prepend(struct track_info *ti);
-void play_queue_delete(void);
+void play_queue_remove_sel(void);
+void play_queue_toggle_mark(void);
+void play_queue_move_after(void);
+void play_queue_move_before(void);
+void play_queue_clear(void);
+
+int play_queue_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
 
 #endif

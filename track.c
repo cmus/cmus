@@ -10,6 +10,7 @@
 #include "cmus.h"
 #include "comment.h"
 #include "uchar.h"
+#include "xmalloc.h"
 
 #include <string.h>
 
@@ -28,8 +29,18 @@ int xstrcasecmp(const char *a, const char *b)
 void simple_track_init(struct simple_track *track, struct track_info *ti)
 {
 	track->info = ti;
+	track->marked = 0;
 	track->disc = comments_get_int(ti->comments, "discnumber");
 	track->num = comments_get_int(ti->comments, "tracknumber");
+}
+
+struct simple_track *simple_track_new(struct track_info *ti)
+{
+	struct simple_track *t = xnew(struct simple_track, 1);
+
+	track_info_ref(ti);
+	simple_track_init(t, ti);
+	return t;
 }
 
 GENERIC_ITER_PREV(simple_track_get_prev, struct simple_track, node)
@@ -215,15 +226,17 @@ void shuffle_list_add_track(struct list_head *head, struct list_head *node, int 
 			item = item->next;
 			pos--;
 		}
+		/* add after item */
+		list_add(node, item);
 	} else {
 		pos = nr - pos;
 		while (pos) {
 			item = item->prev;
 			pos--;
 		}
+		/* add before item */
+		list_add_tail(node, item);
 	}
-	/* add before item */
-	list_add_tail(node, item);
 }
 
 void reshuffle(struct list_head *head)
@@ -246,4 +259,30 @@ void reshuffle(struct list_head *head)
 			break;
 		item = next;
 	}
+}
+
+int simple_list_for_each_marked(struct list_head *head,
+		int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
+{
+	struct simple_track *t;
+	int rc = 0;
+
+	if (reverse) {
+		list_for_each_entry_reverse(t, head, node) {
+			if (t->marked) {
+				rc = cb(data, t->info);
+				if (rc)
+					break;
+			}
+		}
+	} else {
+		list_for_each_entry(t, head, node) {
+			if (t->marked) {
+				rc = cb(data, t->info);
+				if (rc)
+					break;
+			}
+		}
+	}
+	return rc;
 }

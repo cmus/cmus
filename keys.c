@@ -76,7 +76,7 @@ static void view_lock(void)
 		lib_lock();
 		break;
 	case PLAYLIST_VIEW:
-		// FIXME
+		pl_lock();
 		break;
 	case QUEUE_VIEW:
 		play_queue_lock();
@@ -95,7 +95,7 @@ static void view_unlock(void)
 		lib_unlock();
 		break;
 	case PLAYLIST_VIEW:
-		// FIXME
+		pl_unlock();
 		break;
 	case QUEUE_VIEW:
 		play_queue_unlock();
@@ -125,6 +125,222 @@ static struct window *current_win(void)
 }
 
 /* bindable functions {{{ */
+
+static void com_activate(void)
+{
+	struct track_info *info = NULL;
+
+	switch (cur_view) {
+	case TREE_VIEW:
+	case SORTED_VIEW:
+		info = lib_set_selected();
+		break;
+	case PLAYLIST_VIEW:
+		info = pl_set_selected();
+		break;
+	case QUEUE_VIEW:
+		break;
+	case BROWSER_VIEW:
+		browser_enter();
+		break;
+	case FILTERS_VIEW:
+		filters_activate();
+		break;
+	}
+	if (info) {
+		/* update lib/pl mode */
+		if (cur_view < 2)
+			play_library = 1;
+		if (cur_view == 2)
+			play_library = 0;
+
+		player_play_file(info->filename);
+		track_info_unref(info);
+	}
+}
+
+static for_each_sel_ti_cb view_for_each_sel[4] = {
+	lib_for_each_sel,
+	lib_for_each_sel,
+	pl_for_each_sel,
+	play_queue_for_each_sel
+};
+
+/* wrapper for void lib_add_track(struct track_info *) etc. */
+static int wrapper_cb(void *data, struct track_info *ti)
+{
+	add_ti_cb add = data;
+
+	add(ti);
+	return 0;
+}
+
+static void add_from_browser(add_ti_cb add, int job_type)
+{
+	char *sel = browser_get_sel();
+
+	if (sel) {
+		enum file_type ft;
+		char *ret;
+
+		ft = cmus_detect_ft(sel, &ret);
+		if (ft != FILE_TYPE_INVALID)
+			cmus_add(add, ret, ft, job_type);
+		free(ret);
+		free(sel);
+	}
+}
+
+static void com_add_to_lib(void)
+{
+	if (cur_view == TREE_VIEW || cur_view == SORTED_VIEW)
+		return;
+
+	if (cur_view <= QUEUE_VIEW) {
+		view_for_each_sel[cur_view](wrapper_cb, lib_add_track, 0);
+	} else if (cur_view == BROWSER_VIEW) {
+		add_from_browser(lib_add_track, JOB_TYPE_LIB);
+	}
+}
+
+static void com_add_to_pl(void)
+{
+	/* could allow adding dups? */
+	if (cur_view == PLAYLIST_VIEW)
+		return;
+
+	if (cur_view <= QUEUE_VIEW) {
+		view_for_each_sel[cur_view](wrapper_cb, pl_add_track, 0);
+	} else if (cur_view == BROWSER_VIEW) {
+		add_from_browser(pl_add_track, JOB_TYPE_PL);
+	}
+}
+
+static void com_add_to_queue(void)
+{
+	if (cur_view == QUEUE_VIEW)
+		return;
+
+	if (cur_view <= QUEUE_VIEW) {
+		view_for_each_sel[cur_view](wrapper_cb, play_queue_append, 0);
+	} else if (cur_view == BROWSER_VIEW) {
+		add_from_browser(play_queue_append, JOB_TYPE_QUEUE);
+	}
+}
+
+static void com_prepend_to_queue(void)
+{
+	if (cur_view == QUEUE_VIEW)
+		return;
+
+	if (cur_view <= QUEUE_VIEW) {
+		view_for_each_sel[cur_view](wrapper_cb, play_queue_prepend, 1);
+	} else if (cur_view == BROWSER_VIEW) {
+		add_from_browser(play_queue_prepend, JOB_TYPE_QUEUE);
+	}
+}
+
+static void com_move_after(void)
+{
+	switch (cur_view) {
+	case TREE_VIEW:
+	case SORTED_VIEW:
+		break;
+	case PLAYLIST_VIEW:
+		pl_move_after();
+		break;
+	case QUEUE_VIEW:
+		play_queue_move_after();
+		break;
+	case BROWSER_VIEW:
+		break;
+	case FILTERS_VIEW:
+		break;
+	}
+}
+
+static void com_move_before(void)
+{
+	switch (cur_view) {
+	case TREE_VIEW:
+	case SORTED_VIEW:
+		break;
+	case PLAYLIST_VIEW:
+		pl_move_before();
+		break;
+	case QUEUE_VIEW:
+		play_queue_move_before();
+		break;
+	case BROWSER_VIEW:
+		break;
+	case FILTERS_VIEW:
+		break;
+	}
+}
+
+static void com_sel_current(void)
+{
+	switch (cur_view) {
+	case TREE_VIEW:
+	case SORTED_VIEW:
+		lib_sel_current();
+		break;
+	case PLAYLIST_VIEW:
+		pl_sel_current();
+		break;
+	case QUEUE_VIEW:
+		break;
+	case BROWSER_VIEW:
+		break;
+	case FILTERS_VIEW:
+		break;
+	}
+}
+
+static void com_remove(void)
+{
+	switch (cur_view) {
+	case TREE_VIEW:
+	case SORTED_VIEW:
+		lib_remove_sel();
+		break;
+	case PLAYLIST_VIEW:
+		pl_remove_sel();
+		break;
+	case QUEUE_VIEW:
+		play_queue_remove_sel();
+		break;
+	case BROWSER_VIEW:
+		browser_delete();
+		break;
+	case FILTERS_VIEW:
+		filters_delete_filter();
+		break;
+	}
+}
+
+static void com_toggle(void)
+{
+	switch (cur_view) {
+	case TREE_VIEW:
+		lib_toggle_expand_artist();
+		break;
+	case SORTED_VIEW:
+		break;
+	case PLAYLIST_VIEW:
+		pl_toggle_mark();
+		break;
+	case QUEUE_VIEW:
+		play_queue_toggle_mark();
+		break;
+	case BROWSER_VIEW:
+		break;
+	case FILTERS_VIEW:
+		filters_toggle_filter();
+		break;
+	}
+}
+
 static void win_activate_next(void)
 {
 	if (cur_view == TREE_VIEW)
@@ -173,49 +389,6 @@ static void win_up(void)
 	view_unlock();
 }
 
-static void play_selected(void)
-{
-	struct track_info *info;
-
-	info = lib_set_selected();
-	if (info) {
-		player_play_file(info->filename);
-		track_info_unref(info);
-	}
-}
-
-static int queue_append_cb(void *data, struct track_info *ti)
-{
-	__play_queue_append(ti);
-	return 0;
-}
-
-static int queue_prepend_cb(void *data, struct track_info *ti)
-{
-	__play_queue_prepend(ti);
-	return 0;
-}
-
-static void queue_append(void)
-{
-	play_queue_lock();
-	lib_lock();
-	__lib_for_each_selected(queue_append_cb, NULL, 0);
-	window_down(current_win(), 1);
-	lib_unlock();
-	play_queue_unlock();
-}
-
-static void queue_prepend(void)
-{
-	play_queue_lock();
-	lib_lock();
-	__lib_for_each_selected(queue_prepend_cb, NULL, 1);
-	window_down(current_win(), 1);
-	lib_unlock();
-	play_queue_unlock();
-}
-
 static void search_next_forward(void)
 {
 	if (search_str) {
@@ -235,33 +408,36 @@ static void search_next_backward(void)
 
 /* functions {{{ */
 static const struct key_function common_functions[] = {
+	{ "activate",			com_activate			},
+	{ "add_to_library",		com_add_to_lib			},
+	{ "add_to_playlist",		com_add_to_pl			},
+
 	/* remove internal help, add man page */
 	{ "help",			display_help			},
 
+	{ "move_after",			com_move_after			},
+	{ "move_before",		com_move_before			},
 	{ "next",			cmus_next			},
 	{ "pause",			player_pause			},
 	{ "play",			player_play			},
 	{ "prev",			cmus_prev			},
-
-	/* redundant */
-	{ "quit",			quit				},
-
+	{ "queue_append",		com_add_to_queue		},
+	{ "queue_prepend",		com_prepend_to_queue		},
+	{ "remove",			com_remove			},
 	{ "search_next",		search_next_forward		},
 	{ "search_prev",		search_next_backward		},
-
-	/* redundant */
-	{ "seek_backward",		cmus_seek_bwd			},
-	{ "seek_forward",		cmus_seek_fwd			},
-
+	{ "select_current",		com_sel_current			},
 	{ "stop",			player_stop			},
+	{ "toggle",			com_toggle			},
 
 	/* make these normal options
 	 * :set continue=true/false
 	 * :toggle continue
 	 */
 	{ "toggle_continue",		player_toggle_cont		},
-	{ "toggle_play_sorted",		lib_toggle_play_sorted		},
-	{ "toggle_playlist_mode",	lib_toggle_playlist_mode	},
+	{ "toggle_play_library",	cmus_toggle_play_library	},
+	{ "toggle_play_sorted",		cmus_toggle_lib_play_sorted	},
+	{ "toggle_playlist_mode",	cmus_toggle_lib_playlist_mode	},
 	{ "toggle_remaining_time",	toggle_remaining_time		},
 	{ "toggle_repeat",		cmus_toggle_repeat		},
 	{ "toggle_shuffle",		cmus_toggle_shuffle		},
@@ -298,17 +474,7 @@ static const struct key_function common_functions[] = {
 };
 
 static struct key_function library_functions[] = {
-	/* global toggle something for selection? */
-	{ "expand_artist",	lib_toggle_expand_artist	},
-
-	/* global */
-	{ "play_selected",	play_selected		},
-	{ "queue_append",	queue_append		},
-	{ "queue_prepend",	queue_prepend		},
-	{ "remove",		lib_remove_sel		},
-
-	{ "select_current",	lib_sel_current		},
-	{ "update",		cmus_update_playlist	},
+	{ "update",		cmus_update_lib		},
 	{ NULL,			NULL			}
 };
 
@@ -317,35 +483,17 @@ static struct key_function playlist_functions[] = {
 };
 
 static const struct key_function queue_functions[] = {
-	{ "remove",		play_queue_delete	},
 	{ NULL,			NULL			}
 };
 
 static const struct key_function browser_functions[] = {
-	/* global */
-	{ "add",		browser_add			},
-
 	{ "cd_parent",		browser_cd_parent		},
-
-	/* global */
-	{ "enter",		browser_enter			},
-	{ "queue_append",	browser_queue_append		},
-	{ "queue_prepend",	browser_queue_prepend		},
-
 	{ "reload",		browser_reload			},
-
-	/* global */
-	{ "remove",		browser_delete			},
-
 	{ "toggle_show_hidden",	browser_toggle_show_hidden	},
 	{ NULL,			NULL				}
 };
 
 static const struct key_function filters_functions[] = {
-	/* global */
-	{ "activate",		filters_activate	},
-	{ "delete_filter",	filters_delete_filter	},
-	{ "toggle_filter",	filters_toggle_filter	},
 	{ NULL,			NULL			}
 };
 /* }}} */

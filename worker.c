@@ -30,7 +30,7 @@
 struct worker_job {
 	struct list_head node;
 	/* >0, 0 is 'any' */
-	unsigned int type;
+	int type;
 	void (*cb)(void *data);
 	void *data;
 };
@@ -39,7 +39,7 @@ static LIST_HEAD(worker_job_head);
 static pthread_mutex_t worker_mutex = CMUS_MUTEX_INITIALIZER;
 static pthread_t worker_thread;
 static int running = 1;
-static unsigned int cancel_type = WORKER_TYPE_NONE;
+static int cancel_type = JOB_TYPE_NONE;
 static struct worker_job *cur_job = NULL;
 
 #define worker_lock() cmus_mutex_lock(&worker_mutex)
@@ -99,7 +99,7 @@ void worker_exit(void)
 	BUG_ON(rc);
 }
 
-void worker_add_job(unsigned int type, void (*cb)(void *data), void *data)
+void worker_add_job(int type, void (*cb)(void *data), void *data)
 {
 	struct worker_job *job;
 
@@ -116,11 +116,11 @@ void worker_add_job(unsigned int type, void (*cb)(void *data), void *data)
 	worker_unlock();
 }
 
-void worker_remove_jobs(unsigned int type)
+void worker_remove_jobs(int type)
 {
 	struct list_head *item;
 
-	BUG_ON(type == WORKER_TYPE_NONE);
+	BUG_ON(type == JOB_TYPE_NONE);
 
 	worker_lock();
 	cancel_type = type;
@@ -129,19 +129,19 @@ void worker_remove_jobs(unsigned int type)
 		struct worker_job *job = list_entry(item, struct worker_job, node);
 		struct list_head *next = item->next;
 
-		if (type == WORKER_TYPE_ANY || type == job->type) {
+		if (type == JOB_TYPE_ANY || type == job->type) {
 			list_del(&job->node);
 			free(job);
 		}
 		item = next;
 	}
-	while (cur_job && (type == WORKER_TYPE_ANY || type == cur_job->type)) {
+	while (cur_job && (type == JOB_TYPE_ANY || type == cur_job->type)) {
 		/* wait current job to finish or cancel */
 		worker_unlock();
 		ms_sleep(50);
 		worker_lock();
 	}
-	cancel_type = WORKER_TYPE_NONE;
+	cancel_type = JOB_TYPE_NONE;
 	worker_unlock();
 }
 
@@ -154,6 +154,6 @@ int worker_cancelling(void)
 	int cancelling;
 
 	BUG_ON(cur_job == NULL);
-	cancelling = cancel_type == WORKER_TYPE_ANY || cur_job->type == cancel_type;
+	cancelling = cancel_type == JOB_TYPE_ANY || cur_job->type == cancel_type;
 	return cancelling;
 }

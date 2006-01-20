@@ -61,11 +61,13 @@ extern enum ui_input_mode input_mode;
 extern int cur_view;
 extern struct searchable *searchable;
 
-/* usually ~/.config/cmus/playlist.pl */
-extern char *playlist_autosave_filename;
+/* usually ~/.config/cmus/lib.pl and ~/.config/cmus/playlist.pl */
+extern char *lib_autosave_filename;
+extern char *pl_autosave_filename;
 
-/* current playlist filename given by user */
-extern char *playlist_filename;
+/* current filename given by user */
+extern char *lib_filename;
+extern char *pl_filename;
 
 /* format string for track window (tree view) */
 extern char *track_win_format;
@@ -86,9 +88,6 @@ extern char *window_title_alt_format;
 /* program to run when status changes */
 extern char *status_display_program;
 
-/* list of keywords separated by ',' */
-extern char *sort_string;
-
 /* add color_ prefix and _bg or _fg suffix */
 extern const char * const color_names[NR_COLORS];
 extern int bg_colors[NR_COLORS];
@@ -97,7 +96,6 @@ extern int fg_colors[NR_COLORS];
 void update_titleline(void);
 void update_statusline(void);
 void update_color(int idx);
-void set_sort_keys(const char *value);
 void info_msg(const char *format, ...) __FORMAT(1, 2);
 void error_msg(const char *format, ...) __FORMAT(1, 2);
 int yes_no_query(const char *format, ...) __FORMAT(1, 2);

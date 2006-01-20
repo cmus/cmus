@@ -141,8 +141,6 @@ void lib_remove(struct track_info *ti);
 /* bindable */
 void lib_remove_sel(void);
 void lib_toggle_expand_artist(void);
-void lib_toggle_play_sorted(void);
-void lib_toggle_playlist_mode(void);
 void lib_sel_current(void);
 
 /* could be made bindable */
@@ -163,8 +161,8 @@ void __lib_set_view(int view);
  *
  * Returns: return value of last @cb call or 0 if @cb not called at all.
  */
-int __lib_for_each_selected(int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
-int lib_for_each_selected(int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
+int __lib_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
+int lib_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
 int lib_for_each(int (*cb)(void *data, struct track_info *ti), void *data);
 
 #define lib_lock() cmus_mutex_lock(&lib.mutex)

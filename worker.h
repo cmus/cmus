@@ -1,5 +1,5 @@
 /* 
- * Copyright 2005 Timo Hirvonen
+ * Copyright 2005-2006 Timo Hirvonen
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,23 +20,23 @@
 #ifndef _WORKER_H
 #define _WORKER_H
 
-#define WORKER_TYPE_NONE (0U)
-#define WORKER_TYPE_ANY (~0U)
+#define JOB_TYPE_NONE	0
+#define JOB_TYPE_ANY	-1
 
-extern void worker_init(void);
-extern void worker_exit(void);
+void worker_init(void);
+void worker_exit(void);
 
 /*
- * @type: >0 && <WORKER_TYPE_ANY
+ * @type: JOB_TYPE_* (>0)
  * @cb:   callback
  * @data: data to the @cb
  */
-extern void worker_add_job(unsigned int type, void (*cb)(void *data), void *data);
+void worker_add_job(int type, void (*cb)(void *data), void *data);
 
 /*
- * @type: job type. >0, use WORKER_TYPE_ANY to remove all
+ * @type: job type. >0, use JOB_TYPE_ANY to remove all
  */
-extern void worker_remove_jobs(unsigned int type);
+void worker_remove_jobs(int type);
 
 /*
  * @type: type of this job
@@ -46,6 +46,6 @@ extern void worker_remove_jobs(unsigned int type);
  * long jobs should call this to see whether it should cancel
  * call from job function _only_
  */
-extern int worker_cancelling(void);
+int worker_cancelling(void);
 
 #endif

@@ -1,6 +1,6 @@
-/* 
+/*
  * Copyright 2005-2006 Timo Hirvonen
- * 
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
  * published by the Free Software Foundation; either version 2 of the
@@ -10,7 +10,7 @@
  * WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
  * General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
@@ -29,15 +29,7 @@ struct window *play_queue_win;
 struct searchable *play_queue_searchable;
 
 static LIST_HEAD(queue_head);
-
-static struct simple_track *simple_track_new(struct track_info *ti)
-{
-	struct simple_track *t = xnew(struct simple_track, 1);
-
-	track_info_ref(ti);
-	t->info = ti;
-	return t;
-}
+static unsigned int pq_nr_marked = 0;
 
 static void simple_track_free(struct simple_track *track)
 {
@@ -132,12 +124,28 @@ void play_queue_prepend(struct track_info *ti)
 	play_queue_unlock();
 }
 
+static void pq_remove(struct simple_track *track)
+{
+	struct iter iter;
+
+	queue_track_to_iter(track, &iter);
+	window_row_vanishes(play_queue_win, &iter);
+
+	pq_nr_marked -= track->marked;
+	list_del(&track->node);
+}
+
+static void pq_remove_and_free(struct simple_track *track)
+{
+	pq_remove(track);
+	simple_track_free(track);
+}
+
 struct track_info *play_queue_remove(void)
 {
 	struct list_head *item;
 	struct simple_track *t;
 	struct track_info *info;
-	struct iter iter;
 
 	play_queue_lock();
 	item = queue_head.next;
@@ -147,9 +155,7 @@ struct track_info *play_queue_remove(void)
 	}
 
 	t = to_simple_track(item);
-	queue_track_to_iter(t, &iter);
-	window_row_vanishes(play_queue_win, &iter);
-	list_del(item);
+	pq_remove(t);
 
 	info = t->info;
 	free(t);
@@ -157,16 +163,198 @@ struct track_info *play_queue_remove(void)
 	return info;
 }
 
-void play_queue_delete(void)
+static struct simple_track *pq_get_sel(void)
 {
+	struct iter sel;
+
+	if (window_get_sel(play_queue_win, &sel))
+		return iter_to_simple_track(&sel);
+	return NULL;
+}
+
+void play_queue_remove_sel(void)
+{
+	struct simple_track *t;
+
+	play_queue_lock();
+	if (pq_nr_marked) {
+		/* treat marked tracks as selected */
+		struct list_head *next, *item = queue_head.next;
+
+		while (item != &queue_head) {
+			next = item->next;
+			t = to_simple_track(item);
+			if (t->marked)
+				pq_remove_and_free(t);
+			item = next;
+		}
+	} else {
+		t = pq_get_sel();
+		if (t)
+			pq_remove_and_free(t);
+	}
+	play_queue_unlock();
+}
+
+void play_queue_toggle_mark(void)
+{
+	struct simple_track *t;
+
+	play_queue_lock();
+	t = pq_get_sel();
+	if (t) {
+		pq_nr_marked -= t->marked;
+		t->marked ^= 1;
+		pq_nr_marked += t->marked;
+		play_queue_win->changed = 1;
+		window_down(play_queue_win, 1);
+	}
+	play_queue_unlock();
+}
+
+static void move_item(struct list_head *head, struct list_head *item)
+{
+	struct simple_track *t = to_simple_track(item);
 	struct iter iter;
 
-	if (window_get_sel(play_queue_win, &iter)) {
-		struct simple_track *t = iter_to_simple_track(&iter);
+	queue_track_to_iter(t, &iter);
+	window_row_vanishes(play_queue_win, &iter);
 
-		window_row_vanishes(play_queue_win, &iter);
-		list_del(&t->node);
+	list_del(item);
+	list_add(item, head);
+}
 
-		simple_track_free(t);
+static void move_sel(struct list_head *after)
+{
+	struct simple_track *t;
+	struct list_head *item, *next;
+	struct iter iter;
+	LIST_HEAD(tmp_head);
+
+	if (pq_nr_marked) {
+		/* collect marked */
+		item = queue_head.next;
+		while (item != &queue_head) {
+			t = to_simple_track(item);
+			next = item->next;
+			if (t->marked)
+				move_item(&tmp_head, item);
+			item = next;
+		}
+	} else {
+		/* collect the selected track */
+		t = pq_get_sel();
+		move_item(&tmp_head, &t->node);
 	}
+
+	/* put them back to the list after @after */
+	item = tmp_head.next;
+	while (item != &tmp_head) {
+		next = item->next;
+		list_add(item, after);
+		item = next;
+	}
+
+	/* select top-most of the moved tracks */
+	queue_track_to_iter(to_simple_track(after->next), &iter);
+	window_set_sel(play_queue_win, &iter);
+	window_changed(play_queue_win);
+}
+
+static struct list_head *find_insert_after_point(struct list_head *item)
+{
+	if (pq_nr_marked == 0) {
+		/* move the selected track down one row */
+		return item->next;
+	}
+
+	/* move marked after the selected
+	 *
+	 * if the selected track itself is marked we find the first unmarked
+	 * track (or head) before the selected one
+	 */
+	while (item != &queue_head) {
+		struct simple_track *t = to_simple_track(item);
+
+		if (!t->marked)
+			break;
+		item = item->prev;
+	}
+	return item;
+}
+
+static struct list_head *find_insert_before_point(struct list_head *item)
+{
+	item = item->prev;
+	if (pq_nr_marked == 0) {
+		/* move the selected track up one row */
+		return item->prev;
+	}
+
+	/* move marked before the selected
+	 *
+	 * if the selected track itself is marked we find the first unmarked
+	 * track (or head) before the selected one
+	 */
+	while (item != &queue_head) {
+		struct simple_track *t = to_simple_track(item);
+
+		if (!t->marked)
+			break;
+		item = item->prev;
+	}
+	return item;
+}
+
+void play_queue_move_after(void)
+{
+	struct simple_track *sel;
+
+	play_queue_lock();
+	if ((sel = pq_get_sel()))
+		move_sel(find_insert_after_point(&sel->node));
+	play_queue_unlock();
+}
+
+void play_queue_move_before(void)
+{
+	struct simple_track *sel;
+
+	play_queue_lock();
+	if ((sel = pq_get_sel()))
+		move_sel(find_insert_before_point(&sel->node));
+	play_queue_unlock();
+}
+
+void play_queue_clear(void)
+{
+	struct list_head *item, *next;
+
+	play_queue_lock();
+	item = queue_head.next;
+	while (item != &queue_head) {
+		next = item->next;
+		pq_remove_and_free(to_simple_track(item));
+		item = next;
+	}
+	play_queue_unlock();
+}
+
+int play_queue_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
+{
+	int rc = 0;
+
+	play_queue_lock();
+	if (pq_nr_marked) {
+		/* treat marked tracks as selected */
+		rc = simple_list_for_each_marked(&queue_head, cb, data, reverse);
+	} else {
+		struct simple_track *t = pq_get_sel();
+
+		if (t)
+			rc = cb(data, t->info);
+	}
+	window_down(play_queue_win, 1);
+	play_queue_unlock();
+	return rc;
 }

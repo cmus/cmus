@@ -9,13 +9,27 @@
 #include <ui_curses.h>
 #include <format_print.h>
 #include <lib.h>
+#include <pl.h>
 #include <play_queue.h>
 #include <player.h>
 #include <buffer.h>
 #include <sconf.h>
+#include <misc.h>
 #include <xmalloc.h>
 #include <utils.h>
 #include <debug.h>
+
+const char *valid_sort_keys[] = {
+	"artist",
+	"album",
+	"title",
+	"tracknumber",
+	"discnumber",
+	"date",
+	"genre",
+	"filename",
+	NULL
+};
 
 /*
  * opt->data is color index
@@ -91,6 +105,9 @@ static void set_format(const struct command_mode_option *opt, const char *value)
 		lib_unlock();
 		break;
 	case PLAYLIST_VIEW:
+		pl_lock();
+		pl_win->changed = 1;
+		pl_unlock();
 		break;
 	case QUEUE_VIEW:
 		play_queue_lock();
@@ -155,14 +172,73 @@ static void set_status_display_program(const struct command_mode_option *opt, co
 	status_display_program = xstrdup(value);
 }
 
-static void get_sort(const struct command_mode_option *opt, char **value)
+char **parse_sort_keys(const char *value)
 {
-	*value = xstrdup(sort_string);
+	char **keys;
+	int i, j;
+
+	keys = get_words(value);
+
+	for (i = 0; keys[i]; i++) {
+		for (j = 0; valid_sort_keys[j]; j++) {
+			if (strcmp(keys[i], valid_sort_keys[j]) == 0)
+				break;
+		}
+		if (valid_sort_keys[j] == NULL) {
+			error_msg("invalid sort key '%s'", keys[i]);
+			free_str_array(keys);
+			return NULL;
+		}
+	}
+	return keys;
 }
 
-static void set_sort(const struct command_mode_option *opt, const char *value)
+char *keys_to_str(char **keys)
 {
-	set_sort_keys(value);
+	char buf[256];
+	int i, pos = 0;
+
+	for (i = 0; keys[i]; i++) {
+		const char *key = keys[i];
+		int len = strlen(key);
+
+		if (sizeof(buf) - pos - len - 2 < 0)
+			break;
+
+		memcpy(buf + pos, key, len);
+		pos += len;
+		buf[pos++] = ' ';
+	}
+	if (pos > 0)
+		pos--;
+	buf[pos] = 0;
+	return xstrdup(buf);
+}
+
+static void get_lib_sort(const struct command_mode_option *opt, char **value)
+{
+	*value = keys_to_str(lib.sort_keys);
+}
+
+static void get_pl_sort(const struct command_mode_option *opt, char **value)
+{
+	*value = keys_to_str(pl_sort_keys);
+}
+
+static void set_lib_sort(const struct command_mode_option *opt, const char *value)
+{
+	char **keys = parse_sort_keys(value);
+
+	if (keys)
+		lib_set_sort_keys(keys);
+}
+
+static void set_pl_sort(const struct command_mode_option *opt, const char *value)
+{
+	char **keys = parse_sort_keys(value);
+
+	if (keys)
+		pl_set_sort_keys(keys);
 }
 
 static void get_confirm_run(const struct command_mode_option *opt, char **value)
@@ -270,7 +346,8 @@ void options_init(void)
 	option_add("buffer_seconds", get_buffer_seconds, set_buffer_seconds, NULL);
 	option_add("status_display_program", get_status_display_program,
 			set_status_display_program, NULL);
-	option_add("sort", get_sort, set_sort, NULL);
+	option_add("lib_sort", get_lib_sort, set_lib_sort, NULL);
+	option_add("pl_sort", get_pl_sort, set_pl_sort, NULL);
 	option_add("confirm_run", get_confirm_run, set_confirm_run, NULL);
 
 	player_for_each_op_option(player_option_callback, NULL);

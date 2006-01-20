@@ -71,36 +71,6 @@ ssize_t write_all(int fd, const void *buf, size_t count)
 	return count_save;
 }
 
-char **bsplit(const char *buffer, unsigned int size, char ch, unsigned int limit)
-{
-	char **array;
-	unsigned int i, p, n = 1;
-
-	for (i = 0; i < size && buffer[i]; i++) {
-		if (buffer[i] == ch)
-			n++;
-	}
-	if (limit && n > limit)
-		n = limit;
-	array = xnew(char *, n + 1);
-	i = 0;
-	for (p = 0; p < n - 1; p++) {
-		int start = i;
-
-		while (buffer[i] != ch)
-			i++;
-		array[p] = xnew(char, i - start + 1);
-		memcpy(array[p], &buffer[start], i - start);
-		array[p][i - start] = 0;
-		i++;
-	}
-	array[p] = xnew(char, size - i + 1);
-	memcpy(array[p], buffer + i, size - i);
-	array[p++][size - i] = 0;
-	array[p] = NULL;
-	return array;
-}
-
 char *mmap_file(const char *filename, int *size)
 {
 	struct stat st;

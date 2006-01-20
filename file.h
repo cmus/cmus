@@ -25,7 +25,6 @@
 
 ssize_t read_all(int fd, void *buf, size_t count);
 ssize_t write_all(int fd, const void *buf, size_t count);
-char **bsplit(const char *buffer, unsigned int size, char ch, unsigned int limit);
 
 /* @filename  file to mmap for reading
  * @size      returned size of the file or -1 if failed
