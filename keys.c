@@ -184,8 +184,10 @@ static void add_from_browser(add_ti_cb add, int job_type)
 		char *ret;
 
 		ft = cmus_detect_ft(sel, &ret);
-		if (ft != FILE_TYPE_INVALID)
+		if (ft != FILE_TYPE_INVALID) {
 			cmus_add(add, ret, ft, job_type);
+			window_down(browser_win, 1);
+		}
 		free(ret);
 		free(sel);
 	}
