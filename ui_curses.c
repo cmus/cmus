@@ -1879,7 +1879,7 @@ static void init_all(void)
 		lib_set_sort_keys(keys);
 	free(sort);
 
-	if (!sconf_get_str_option("pl_sort", &sort)) {
+	if (sconf_get_str_option("pl_sort", &sort)) {
 		keys = parse_sort_keys(sort);
 		if (keys)
 			pl_set_sort_keys(keys);
