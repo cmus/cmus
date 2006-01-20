@@ -227,7 +227,7 @@ static int parse_ape_tag(char *buf, const int size, const int count, struct keyv
 		flags = get_le32(buf + pos); pos += 4;
 
 		max_key_len = size - pos - val_len - 1;
-		if (max_key_len < 0 || buf[pos + max_key_len]) {
+		if (max_key_len < 0) {
 			/* corrupt */
 			break;
 		}
