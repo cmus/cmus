@@ -17,8 +17,6 @@ cmus-y := \
 	track.o track_db.o track_info.o uchar.o ui_curses.o window.o \
 	worker.o xstrjoin.o
 
-cmus-$(CONFIG_IRMAN)	+= irman.o irman_config.o
-
 $(cmus-y): CFLAGS += $(PTHREAD_CFLAGS) $(NCURSES_CFLAGS) $(ICONV_CFLAGS)
 
 cmus: $(cmus-y) file.o path.o prog.o xmalloc.o

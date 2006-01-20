@@ -45,11 +45,6 @@
 #include <debug.h>
 #include <config.h>
 
-#if defined(CONFIG_IRMAN)
-#include <irman.h>
-#include <irman_config.h>
-#endif
-
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -1560,83 +1555,6 @@ static void set_colors(void)
 	}
 }
 
-/* irman {{{ */
-#if defined(CONFIG_IRMAN)
-
-static struct irman *irman = NULL;
-static char *irman_device = NULL;
-static int irman_fd = -1;
-
-static struct {
-	void (*function)(void);
-	const char *option;
-	char *text;
-} ir_commands[] = {
-	{ player_play, "btn_play", NULL },
-	{ player_stop, "btn_stop", NULL },
-	{ player_pause, "btn_pause", NULL },
-	{ cmus_prev, "btn_prev", NULL },
-	{ cmus_next, "btn_next", NULL },
-	{ cmus_seek_bwd, "btn_seek_bwd", NULL },
-	{ cmus_seek_fwd, "btn_seek_fwd", NULL },
-	{ cmus_vol_up, "btn_vol_up", NULL },
-	{ cmus_vol_down, "btn_vol_down", NULL },
-	{ lib_toggle_play_mode, "btn_play_mode", NULL },
-	{ lib_toggle_repeat, "btn_repeat", NULL },
-	{ player_toggle_cont, "btn_continue", NULL },
-	{ NULL, NULL, NULL }
-};
-
-static void ir_read(void)
-{
-	unsigned char code[IRMAN_CODE_LEN];
-	char text[IRMAN_TEXT_SIZE];
-	int i, rc;
-
-	rc = irman_get_code(irman, code);
-	if (rc) {
-		d_print("irman_get_code: error: %s\n", strerror(errno));
-		return;
-	}
-	irman_code_to_text(text, code);
-	for (i = 0; ir_commands[i].function; i++) {
-		if (ir_commands[i].text == NULL)
-			continue;
-		if (strcmp(ir_commands[i].text, text) == 0) {
-			ir_commands[i].function();
-			break;
-		}
-	}
-}
-
-static int ir_init(void)
-{
-	int i;
-
-	sconf_get_str_option("irman_device", &irman_device);
-	for (i = 0; ir_commands[i].function; i++)
-		sconf_get_str_option(ir_commands[i].option, &ir_commands[i].text);
-	if (irman_device == NULL) {
-		warn("irman device not set (run `" PACKAGE " --irman-config')\n");
-		return 1;
-	}
-	irman = irman_open(irman_device);
-	if (irman == NULL) {
-		warn_errno("error opening irman device `%s'", irman_device);
-		return 1;
-	}
-	irman_fd = irman_get_fd(irman);
-	return 0;
-}
-
-static void ir_exit(void)
-{
-	irman_close(irman);
-}
-#endif
-
-/* irman }}} */
-
 static void update(void)
 {
 	int needs_view_update = 0;
@@ -1785,11 +1703,6 @@ static void main_loop(void)
 	int rc, fd_high;
 
 	fd_high = remote_socket;
-#if defined(CONFIG_IRMAN)
-	if (irman_fd > fd_high)
-		fd_high = irman_fd;
-#endif
-
 	while (running) {
 		fd_set set;
 		struct timeval tv;
@@ -1799,9 +1712,7 @@ static void main_loop(void)
 		FD_ZERO(&set);
 		FD_SET(0, &set);
 		FD_SET(remote_socket, &set);
-#if defined(CONFIG_IRMAN)
-		FD_SET(irman_fd, &set);
-#endif
+
 		tv.tv_sec = 0;
 		tv.tv_usec = 50e3;
 		rc = select(fd_high + 1, &set, NULL, NULL, &tv);
@@ -1853,11 +1764,6 @@ static void main_loop(void)
 				}
 			}
 		}
-#if defined(CONFIG_IRMAN)
-		if (FD_ISSET(irman_fd, &set)) {
-			ir_read();
-		}
-#endif
 	}
 }
 
@@ -1948,16 +1854,6 @@ static void init_all(void)
 
 	cmus_init();
 
-#if defined(CONFIG_IRMAN)
-	rc = ir_init();
-	if (rc) {
-		lib_exit();
-		player_exit();
-		remote_server_exit();
-		exit(1);
-	}
-#endif
-
 	if (sconf_get_bool_option("continue", &btmp))
 		player_set_cont(btmp);
 	if (sconf_get_bool_option("repeat", &btmp))
@@ -2022,9 +1918,6 @@ static void exit_all(void)
 {
 	endwin();
 
-#if defined(CONFIG_IRMAN)
-	ir_exit();
-#endif
 	remote_server_exit();
 
 	cmus_exit();
@@ -2063,9 +1956,6 @@ static void exit_all(void)
 }
 
 enum {
-#if defined(CONFIG_IRMAN)
-	FLAG_IRMAN_CONFIG,
-#endif
 	FLAG_LISTEN,
 	FLAG_PLUGINS,
 	FLAG_HELP,
@@ -2074,9 +1964,6 @@ enum {
 };
 
 static struct option options[NR_FLAGS + 1] = {
-#if defined(CONFIG_IRMAN)
-	{ 0, "irman-config", 0 },
-#endif
 	{ 0, "listen", 1 },
 	{ 0, "plugins", 0 },
 	{ 0, "help", 0 },
@@ -2088,9 +1975,6 @@ static const char *usage =
 "Usage: %s [OPTION]...\n"
 "Curses based music player.\n"
 "\n"
-#if defined(CONFIG_IRMAN)
-"      --irman-config  configure irman settings\n"
-#endif
 "      --listen ADDR   listen ADDR (unix socket) instead of /tmp/cmus-$USER\n"
 "      --plugins       list available plugins and exit\n"
 "      --help          display this help and exit\n"
@@ -2102,7 +1986,6 @@ static const char *usage =
 
 int main(int argc, char *argv[])
 {
-	int configure_irman = 0;
 	int list_plugins = 0;
 
 	program_name = argv[0];
@@ -2116,11 +1999,6 @@ int main(int argc, char *argv[])
 			break;
 
 		switch (idx) {
-#if defined(CONFIG_IRMAN)
-		case FLAG_IRMAN_CONFIG:
-			configure_irman = 1;
-			break;
-#endif
 		case FLAG_HELP:
 			printf(usage, program_name);
 			return 0;
@@ -2157,21 +2035,14 @@ int main(int argc, char *argv[])
 
 	d_print("charset = '%s'\n", charset);
 
-	if (configure_irman) {
-#if defined(CONFIG_IRMAN)
-		if (irman_config())
-			return 1;
-#endif
-	} else {
-		player_init_plugins();
-		if (list_plugins) {
-			player_dump_plugins();
-			return 0;
-		}
-		init_all();
-		main_loop();
-		exit_all();
+	player_init_plugins();
+	if (list_plugins) {
+		player_dump_plugins();
+		return 0;
 	}
+	init_all();
+	main_loop();
+	exit_all();
 
 	sconf_save();
 	return 0;
