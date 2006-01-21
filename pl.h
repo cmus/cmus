@@ -41,6 +41,9 @@ void pl_sel_current(void);
 
 void pl_clear(void);
 void pl_reshuffle(void);
+void pl_mark(const char *filter);
+void pl_unmark(void);
+void pl_invert_marks(void);
 
 int pl_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
 int pl_for_each(int (*cb)(void *data, struct track_info *ti), void *data);

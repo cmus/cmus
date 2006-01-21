@@ -358,6 +358,21 @@ static void cmd_fset(char *arg)
 	filters_set_filter(arg);
 }
 
+static void cmd_invert(char *arg)
+{
+	pl_invert_marks();
+}
+
+static void cmd_mark(char *arg)
+{
+	pl_mark(arg);
+}
+
+static void cmd_unmark(char *arg)
+{
+	pl_unmark();
+}
+
 static void cmd_cd(char *arg)
 {
 	if (arg) {
@@ -1180,7 +1195,9 @@ static struct command commands[] = {
 	{ "factivate",	cmd_factivate,	0, 1, expand_factivate	},
 	{ "filter",	cmd_filter,	0, 1, NULL		},
 	{ "fset",	cmd_fset,	1, 1, NULL		},
+	{ "invert",	cmd_invert,	0, 0, NULL		},
 	{ "load",	cmd_load,	1, 1, expand_files	},
+	{ "mark",	cmd_mark,	0, 1, NULL		},
 	{ "quit",	cmd_quit,	0, 0, NULL		},
 	{ "run",	cmd_run,	1,-1, NULL		},
 	{ "save",	cmd_save,	0, 1, expand_files	},
@@ -1188,6 +1205,7 @@ static struct command commands[] = {
 	{ "set",	cmd_set,	1, 1, expand_options	},
 	{ "shuffle",	cmd_reshuffle,	0, 0, NULL		},
 	{ "unbind",	cmd_unbind,	1, 1, expand_unbind_args},
+	{ "unmark",	cmd_unmark,	0, 0, NULL		},
 	{ "vol",	cmd_vol,	1, 2, NULL		},
 	{ NULL,		NULL,		0, 0, 0			}
 };

@@ -399,7 +399,7 @@ void filters_set_filter(const char *keyval)
 	do_filters_set_filter(keyval, 0);
 }
 
-void filters_set_anonymous(const char *val)
+struct expr *parse_filter(const char *val)
 {
 	struct expr *e = NULL;
 	struct filter_entry *f;
@@ -408,7 +408,7 @@ void filters_set_anonymous(const char *val)
 		e = expr_parse(val);
 		if (e == NULL) {
 			error_msg("error parsing filter %s: %s", val, expr_error());
-			return;
+			return NULL;
 		}
 	}
 
@@ -424,8 +424,18 @@ void filters_set_anonymous(const char *val)
 			error_msg("error parsing filter: %s", expr_error());
 		}
 		expr_free(e);
-		return;
+		return NULL;
 	}
+	return e;
+}
+
+void filters_set_anonymous(const char *val)
+{
+	struct filter_entry *f;
+	struct expr *e = parse_filter(val);
+
+	if (e == NULL)
+		return;
 
 	/* deactive all filters */
 	list_for_each_entry(f, &filters_head, node)

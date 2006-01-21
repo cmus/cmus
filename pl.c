@@ -8,6 +8,8 @@
 #include "track.h"
 #include "search_mode.h"
 #include "cmus.h"
+#include "filters.h"
+#include "expr.h"
 #include "mergesort.h"
 #include "xmalloc.h"
 
@@ -422,6 +424,57 @@ void pl_reshuffle(void)
 {
 	pl_lock();
 	reshuffle(&pl_shuffle_head);
+	pl_unlock();
+}
+
+void pl_mark(const char *filter)
+{
+	struct expr *e = NULL;
+	struct simple_track *t;
+
+	if (filter) {
+		e = parse_filter(filter);
+		if (e == NULL)
+			return;
+	}
+
+	pl_lock();
+	list_for_each_entry(t, &pl_sorted_head, node) {
+		pl_nr_marked -= t->marked;
+		t->marked = 0;
+		if (e == NULL || expr_eval(e, t->info)) {
+			t->marked = 1;
+			pl_nr_marked++;
+		}
+	}
+	pl_win->changed = 1;
+	pl_unlock();
+}
+
+void pl_unmark(void)
+{
+	struct simple_track *t;
+
+	pl_lock();
+	list_for_each_entry(t, &pl_sorted_head, node) {
+		pl_nr_marked -= t->marked;
+		t->marked = 0;
+	}
+	pl_win->changed = 1;
+	pl_unlock();
+}
+
+void pl_invert_marks(void)
+{
+	struct simple_track *t;
+
+	pl_lock();
+	list_for_each_entry(t, &pl_sorted_head, node) {
+		pl_nr_marked -= t->marked;
+		t->marked ^= 1;
+		pl_nr_marked += t->marked;
+	}
+	pl_win->changed = 1;
 	pl_unlock();
 }
 

@@ -32,6 +32,9 @@ extern struct list_head filters_head;
 void filters_init(void);
 void filters_exit(void);
 
+/* parse filter and expand sub filters */
+struct expr *parse_filter(const char *val);
+
 /* add filter to filter list (replaces old filter with same name)
  *
  * @keyval  "name=value" where value is filter
