@@ -83,9 +83,11 @@ again:
 			return track;
 		item = item->next;
 	}
-	item = head->next;
-	if (repeat)
+	if (repeat) {
+		reshuffle(head);
+		item = head->next;
 		goto again;
+	}
 	return NULL;
 }
 
@@ -106,9 +108,11 @@ again:
 			return track;
 		item = item->prev;
 	}
-	item = head->prev;
-	if (repeat)
+	if (repeat) {
+		reshuffle(head);
+		item = head->prev;
 		goto again;
+	}
 	return NULL;
 }
 
