@@ -29,12 +29,6 @@ enum ui_input_mode {
 	SEARCH_MODE
 };
 
-/* other views are defined in pl.h */
-#define PLAYLIST_VIEW	2
-#define QUEUE_VIEW	3
-#define BROWSER_VIEW	4
-#define FILTERS_VIEW	5
-
 enum {
 	COLOR_ROW,
 	COLOR_ROW_CUR,

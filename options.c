@@ -17,7 +17,11 @@
 #include <misc.h>
 #include <xmalloc.h>
 #include <utils.h>
+#include <cmus.h>
 #include <debug.h>
+
+/* users start counting from 1, not 0 */
+int default_view = TREE_VIEW + 1;
 
 const char *valid_sort_keys[] = {
 	"artist",
@@ -262,6 +266,25 @@ static void set_confirm_run(const struct command_mode_option *opt, const char *v
 	}
 }
 
+static void get_default_view(const struct command_mode_option *opt, char **value)
+{
+	char buf[32];
+
+	snprintf(buf, sizeof(buf), "%d", default_view);
+	*value = xstrdup(buf);
+}
+
+static void set_default_view(const struct command_mode_option *opt, const char *value)
+{
+	long int tmp;
+
+	if (str_to_int(value, &tmp) || tmp < 1 || tmp > NR_VIEWS) {
+		error_msg("default_view must be 1..%d", NR_VIEWS);
+		return;
+	}
+	default_view = tmp;
+}
+
 static void get_op_option(const struct command_mode_option *opt, char **value)
 {
 	int rc;
@@ -349,6 +372,7 @@ void options_init(void)
 	option_add("lib_sort", get_lib_sort, set_lib_sort, NULL);
 	option_add("pl_sort", get_pl_sort, set_pl_sort, NULL);
 	option_add("confirm_run", get_confirm_run, set_confirm_run, NULL);
+	option_add("default_view", get_default_view, set_default_view, NULL);
 
 	player_for_each_op_option(player_option_callback, NULL);
 }

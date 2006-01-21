@@ -83,9 +83,6 @@ enum playlist_mode {
 	PLAYLIST_MODE_ALBUM
 };
 
-#define TREE_VIEW    0
-#define SORTED_VIEW  1
-
 struct library {
 	struct list_head artist_head;
 	struct list_head shuffle_head;

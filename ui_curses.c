@@ -1869,6 +1869,12 @@ static void init_all(void)
 			btmp = 0;
 		lib.playlist_mode = btmp;
 	}
+	if (sconf_get_int_option("default_view", &btmp)) {
+		if (btmp >= 1 && btmp <= NR_VIEWS) {
+			default_view = btmp;
+			cur_view = default_view - 1;
+		}
+	}
 	sconf_get_bool_option("show_remaining_time", &show_remaining_time);
 	sconf_get_str_option("status_display_program", &status_display_program);
 
@@ -1933,6 +1939,7 @@ static void exit_all(void)
 	sconf_set_bool_option("play_library", play_library);
 	sconf_set_bool_option("play_sorted", lib.play_sorted);
 	sconf_set_int_option("playlist_mode", lib.playlist_mode);
+	sconf_set_int_option("default_view", default_view);
 	sconf_set_bool_option("show_remaining_time", show_remaining_time);
 	sconf_set_str_option("status_display_program",
 			status_display_program ? status_display_program : "");

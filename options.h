@@ -5,6 +5,7 @@
 #ifndef OPTIONS_H
 #define OPTIONS_H
 
+extern int default_view;
 extern const char *valid_sort_keys[];
 
 void options_init(void);
