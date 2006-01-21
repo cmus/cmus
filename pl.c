@@ -178,6 +178,8 @@ static void pl_remove_and_free(struct simple_track *track)
 	pl_nr_marked -= track->marked;
 	if (ti->duration != -1)
 		pl_total_time -= ti->duration;
+	if (pl_cur_track == track)
+		pl_cur_track = NULL;
 
 	list_del(&track->node);
 	list_del(&((struct shuffle_track *)track)->node);
