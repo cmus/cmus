@@ -94,10 +94,10 @@ int bg_colors[NR_COLORS] = {
 	COLOR_BLUE,
 
 	-1,
-	COLOR_RED,
+	COLOR_BLUE,
 	-1,
 	COLOR_WHITE,
-	COLOR_RED,
+	COLOR_BLUE,
 	-1,
 	-1,
 	-1,
@@ -114,7 +114,7 @@ int fg_colors[NR_COLORS] = {
 	COLOR_WHITE | BRIGHT,
 	COLOR_YELLOW | BRIGHT,
 
-	COLOR_RED,
+	COLOR_BLUE,
 	COLOR_WHITE | BRIGHT,
 	-1,
 	COLOR_BLACK,
