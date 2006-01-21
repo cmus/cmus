@@ -218,7 +218,7 @@ void filters_activate_names(const char *str)
 	struct filter_entry *f;
 
 	/* first validate all filter names */
-	if (for_each_name(str, ensure_filter_name))
+	if (str && for_each_name(str, ensure_filter_name))
 		return;
 
 	/* mark all filters unselected  */
@@ -226,7 +226,8 @@ void filters_activate_names(const char *str)
 		f->selected = 0;
 
 	/* select the filters */
-	for_each_name(str, select_filter);
+	if (str)
+		for_each_name(str, select_filter);
 
 	/* activate selected */
 	filters_activate();
