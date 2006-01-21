@@ -39,7 +39,7 @@
 #include <stdio.h>
 
 /* add and clear work on a specific view */
-static int server_view = TREE_VIEW;
+static int server_view = PLAYLIST_VIEW;
 
 static void cmd_library(void *data, size_t data_size)
 {
