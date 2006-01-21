@@ -320,11 +320,11 @@ static const char *fmt_names[NR_FMTS] = {
 };
 
 static const char *fmt_defaults[NR_FMTS] = {
-	" %F%= %d ",
+	" %F ",
 	" %f%= %d ",
 	"%f",
 	" %f%= %d ",
-	" %a - %l - %02n. %t%= %y %d ",
+	" %a - %l - %02n. %t%= %y ",
 	" %a - %l - %02n. %t%= %y %d ",
 	"%a - %l - %t (%y)",
 	" %02n. %t%= %y %d "
