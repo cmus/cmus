@@ -225,10 +225,10 @@ static int op_oss_get_option(int key, char **val)
 {
 	switch (key) {
 	case 0:
-		*val = xstrdup(oss_dsp_device);
+		if (oss_dsp_device)
+			*val = xstrdup(oss_dsp_device);
 		break;
 	default:
-		*val = NULL;
 		return -OP_ERROR_NOT_OPTION;
 	}
 	return 0;

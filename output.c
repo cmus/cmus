@@ -590,6 +590,8 @@ int op_get_option(const char *key, char **val)
 	const struct mixer_plugin_ops *mo;
 	int idx;
 
+	*val = NULL;
+
 	oo = dsp_option(key, &idx);
 	if (oo)
 		return oo->get_option(idx, val);

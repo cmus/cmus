@@ -264,14 +264,14 @@ static int sun_mixer_get_option(int key, char **val)
 {
 	switch (key) {
 	case 0:
-		if (sun_mixer_channel != NULL)
+		if (sun_mixer_channel)
 			*val = xstrdup(sun_mixer_channel);
 		break;
 	case 1:
-		*val = xstrdup(sun_mixer_device);
+		if (sun_mixer_device)
+			*val = xstrdup(sun_mixer_device);
 		break;
 	default:
-		*val = NULL;
 		return -OP_ERROR_NOT_OPTION;
 	}
 

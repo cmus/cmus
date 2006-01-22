@@ -173,13 +173,14 @@ static int alsa_mixer_get_option(int key, char **val)
 {
 	switch (key) {
 	case 0:
-		*val = xstrdup(alsa_mixer_element);
+		if (alsa_mixer_element)
+			*val = xstrdup(alsa_mixer_element);
 		break;
 	case 1:
-		*val = xstrdup(alsa_mixer_device);
+		if (alsa_mixer_device)
+			*val = xstrdup(alsa_mixer_device);
 		break;
 	default:
-		*val = NULL;
 		return -OP_ERROR_NOT_OPTION;
 	}
 	return 0;

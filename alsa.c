@@ -482,14 +482,14 @@ static int op_alsa_get_option(int key, char **val)
 		snprintf(*val, 22, "%d", alsa_buffer_time);
 		break;
 	case 1:
-		*val = xstrdup(alsa_dsp_device);
+		if (alsa_dsp_device)
+			*val = xstrdup(alsa_dsp_device);
 		break;
 	case 2:
 		*val = xnew(char, 22);
 		snprintf(*val, 22, "%d", alsa_period_time);
 		break;
 	default:
-		*val = NULL;
 		return -OP_ERROR_NOT_OPTION;
 	}
 	return 0;

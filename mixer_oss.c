@@ -225,10 +225,10 @@ static int oss_mixer_get_option(int key, char **val)
 		}
 		break;
 	case 1:
-		*val = xstrdup(oss_mixer_device);
+		if (oss_mixer_device)
+			*val = xstrdup(oss_mixer_device);
 		break;
 	default:
-		*val = NULL;
 		return -OP_ERROR_NOT_OPTION;
 	}
 	return 0;

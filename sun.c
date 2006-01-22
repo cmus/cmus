@@ -259,10 +259,10 @@ static int op_sun_get_option(int key, char **val)
 {
 	switch (key) {
 	case 0:
-		*val = xstrdup(sun_audio_device);
+		if (sun_audio_device)
+			*val = xstrdup(sun_audio_device);
 		break;
 	default:
-		*val = NULL;
 		return -OP_ERROR_NOT_OPTION;
 	}
 

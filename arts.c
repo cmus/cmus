@@ -112,7 +112,6 @@ static int op_arts_set_option(int key, const char *val)
 
 static int op_arts_get_option(int key, char **val)
 {
-	*val = NULL;
 	return -OP_ERROR_NOT_OPTION;
 }
 
