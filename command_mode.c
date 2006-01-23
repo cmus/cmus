@@ -1818,7 +1818,7 @@ static void reset_tab_expansion(void)
 void run_command(const char *buf)
 {
 	char *cmd, *arg;
-	int cmd_start, cmd_end;
+	int cmd_start, cmd_end, cmd_len;
 	int arg_start, arg_end;
 	int i;
 
@@ -1836,9 +1836,11 @@ void run_command(const char *buf)
 		i++;
 	arg_end = i;
 
-	if (cmd_start == cmd_end)
+	cmd_len = cmd_end - cmd_start;
+	if (cmd_len == 0)
 		return;
-	cmd = xstrndup(buf + cmd_start, cmd_end - cmd_start);
+
+	cmd = xstrndup(buf + cmd_start, cmd_len);
 	if (arg_start == arg_end) {
 		arg = NULL;
 	} else {
@@ -1850,10 +1852,11 @@ void run_command(const char *buf)
 			error_msg("unknown command\n");
 			break;
 		}
-		if (strncmp(cmd, commands[i].name, cmd_end - cmd_start) == 0) {
+		if (strncmp(cmd, commands[i].name, cmd_len) == 0) {
 			const char *next = commands[i + 1].name;
+			int exact = commands[i].name[cmd_len] == 0;
 
-			if (next && strncmp(cmd, next, cmd_end - cmd_start) == 0) {
+			if (!exact && next && strncmp(cmd, next, cmd_end - cmd_start) == 0) {
 				error_msg("ambiguous command\n");
 				break;
 			}
