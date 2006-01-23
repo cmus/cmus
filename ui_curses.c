@@ -752,9 +752,6 @@ static void update_view(void)
 static void do_update_statusline(void)
 {
 	static char *status_strs[] = { ".", ">", "|" };
-	static char *playlist_mode_strs[] = {
-		"all", "artist", "album"
-	};
 	static char *cont_strs[] = { " ", "C" };
 	static char *repeat_strs[] = { " ", "R" };
 	static char *shuffle_strs[] = { " ", "S" };
@@ -768,7 +765,7 @@ static void do_update_statusline(void)
 	fopt_set_time(&status_fopts[SF_TOTAL], play_library ? lib.total_time : pl_total_time, 0);
 	fopt_set_str(&status_fopts[SF_REPEAT], repeat_strs[repeat]);
 	fopt_set_str(&status_fopts[SF_SHUFFLE], shuffle_strs[shuffle]);
-	fopt_set_str(&status_fopts[SF_PLAYLISTMODE], playlist_mode_strs[lib.playlist_mode]);
+	fopt_set_str(&status_fopts[SF_PLAYLISTMODE], aaa_mode_names[lib.aaa_mode]);
 	play_sorted = lib.play_sorted;
 	lib_unlock();
 

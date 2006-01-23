@@ -394,35 +394,35 @@ static void toggle_play_sorted(unsigned int id)
 	update_statusline();
 }
 
-static const char * const aaa_names[] = {
+const char * const aaa_mode_names[] = {
 	"all", "artist", "album", NULL
 };
 
-static void get_playlist_mode(unsigned int id, char *buf)
+static void get_aaa_mode(unsigned int id, char *buf)
 {
-	strcpy(buf, aaa_names[lib.playlist_mode]);
+	strcpy(buf, aaa_mode_names[lib.aaa_mode]);
 }
 
-static void set_playlist_mode(unsigned int id, const char *buf)
+static void set_aaa_mode(unsigned int id, const char *buf)
 {
 	int tmp;
 
-	if (!parse_enum(buf, 0, 2, aaa_names, &tmp))
+	if (!parse_enum(buf, 0, 2, aaa_mode_names, &tmp))
 		return;
 
-	lib.playlist_mode = tmp;
+	lib.aaa_mode = tmp;
 	update_statusline();
 }
 
-static void toggle_playlist_mode(unsigned int id)
+static void toggle_aaa_mode(unsigned int id)
 {
 	lib_lock();
 
 	/* aaa mode makes no sense in playlist */
 	play_library = 1;
 
-	lib.playlist_mode++;
-	lib.playlist_mode %= 3;
+	lib.aaa_mode++;
+	lib.aaa_mode %= 3;
 	lib_unlock();
 	update_statusline();
 }
@@ -598,6 +598,7 @@ static const struct {
 	opt_set_cb set;
 	opt_toggle_cb toggle;
 } simple_options[] = {
+	DT(aaa_mode)
 	DN(buffer_seconds)
 	DT(confirm_run)
 	DT(continue)
@@ -607,7 +608,6 @@ static const struct {
 	DN(pl_sort)
 	DT(play_library)
 	DT(play_sorted)
-	DT(playlist_mode)
 	DT(repeat)
 	DT(show_remaining_time)
 	DT(shuffle)

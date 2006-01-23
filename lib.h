@@ -77,10 +77,10 @@ struct artist {
 	//unsigned int streams : 1;
 };
 
-enum playlist_mode {
-	PLAYLIST_MODE_ALL,
-	PLAYLIST_MODE_ARTIST,
-	PLAYLIST_MODE_ALBUM
+enum aaa_mode {
+	AAA_MODE_ALL,
+	AAA_MODE_ARTIST,
+	AAA_MODE_ALBUM
 };
 
 struct library {
@@ -104,7 +104,7 @@ struct library {
 	/* one of the above windows */
 	struct window *cur_win;
 
-	enum playlist_mode playlist_mode;
+	enum aaa_mode aaa_mode;
 
 	unsigned int nr_tracks;
 	unsigned int total_time;

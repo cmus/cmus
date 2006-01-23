@@ -69,6 +69,8 @@ extern int play_library;
 extern int repeat;
 extern int shuffle;
 
+extern const char * const aaa_mode_names[];
+
 extern int bg_colors[NR_COLORS];
 extern int fg_colors[NR_COLORS];
 

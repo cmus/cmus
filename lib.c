@@ -1003,17 +1003,17 @@ static struct tree_track *artist_last_track(const struct artist *artist)
 	return album_last_track(to_album(artist->album_head.prev));
 }
 
-static int playlist_mode_filter(const struct simple_track *track)
+static int aaa_mode_filter(const struct simple_track *track)
 {
 	const struct album *album = ((struct tree_track *)track)->album;
 
-	if (lib.playlist_mode == PLAYLIST_MODE_ALBUM)
+	if (lib.aaa_mode == AAA_MODE_ALBUM)
 		return lib.cur_album == album;
 
-	if (lib.playlist_mode == PLAYLIST_MODE_ARTIST)
+	if (lib.aaa_mode == AAA_MODE_ARTIST)
 		return lib.cur_artist == album->artist;
 
-	/* PLAYLIST_MODE_ALL */
+	/* AAA_MODE_ALL */
 	return 1;
 }
 
@@ -1030,7 +1030,7 @@ static struct tree_track *normal_get_next(void)
 		return to_tree_track(lib.cur_track->node.next);
 	}
 
-	if (lib.playlist_mode == PLAYLIST_MODE_ALBUM) {
+	if (lib.aaa_mode == AAA_MODE_ALBUM) {
 		if (!repeat)
 			return NULL;
 		/* first track of the current album */
@@ -1043,7 +1043,7 @@ static struct tree_track *normal_get_next(void)
 		return album_first_track(to_album(lib.cur_album->node.next));
 	}
 
-	if (lib.playlist_mode == PLAYLIST_MODE_ARTIST) {
+	if (lib.aaa_mode == AAA_MODE_ARTIST) {
 		if (!repeat)
 			return NULL;
 		/* first track of the first album of the current artist */
@@ -1074,7 +1074,7 @@ static struct tree_track *normal_get_prev(void)
 		return to_tree_track(lib.cur_track->node.prev);
 	}
 
-	if (lib.playlist_mode == PLAYLIST_MODE_ALBUM) {
+	if (lib.aaa_mode == AAA_MODE_ALBUM) {
 		if (!repeat)
 			return NULL;
 		/* last track of the album */
@@ -1087,7 +1087,7 @@ static struct tree_track *normal_get_prev(void)
 		return album_last_track(to_album(lib.cur_album->node.prev));
 	}
 
-	if (lib.playlist_mode == PLAYLIST_MODE_ARTIST) {
+	if (lib.aaa_mode == AAA_MODE_ARTIST) {
 		if (!repeat)
 			return NULL;
 		/* last track of the last album of the artist */
@@ -1132,7 +1132,7 @@ void lib_init(void)
 	lib.cur_track = NULL;
 
 	lib.total_time = 0;
-	lib.playlist_mode = PLAYLIST_MODE_ALL;
+	lib.aaa_mode = AAA_MODE_ALL;
 
 	lib.sort_keys = xnew(char *, 1);
 	lib.sort_keys[0] = NULL;
@@ -1186,10 +1186,10 @@ struct track_info *lib_set_next(void)
 	}
 	if (shuffle) {
 		track = (struct tree_track *)shuffle_list_get_next(&lib.shuffle_head,
-				(struct shuffle_track *)lib.cur_track, playlist_mode_filter);
+				(struct shuffle_track *)lib.cur_track, aaa_mode_filter);
 	} else if (lib.play_sorted) {
 		track = (struct tree_track *)simple_list_get_next(&lib.sorted_head,
-				(struct simple_track *)lib.cur_track, playlist_mode_filter);
+				(struct simple_track *)lib.cur_track, aaa_mode_filter);
 	} else {
 		track = normal_get_next();
 	}
@@ -1219,10 +1219,10 @@ struct track_info *lib_set_prev(void)
 	}
 	if (shuffle) {
 		track = (struct tree_track *)shuffle_list_get_prev(&lib.shuffle_head,
-				(struct shuffle_track *)lib.cur_track, playlist_mode_filter);
+				(struct shuffle_track *)lib.cur_track, aaa_mode_filter);
 	} else if (lib.play_sorted) {
 		track = (struct tree_track *)simple_list_get_prev(&lib.sorted_head,
-				(struct simple_track *)lib.cur_track, playlist_mode_filter);
+				(struct simple_track *)lib.cur_track, aaa_mode_filter);
 	} else {
 		track = normal_get_prev();
 	}
