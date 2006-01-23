@@ -391,22 +391,6 @@ static void win_up(void)
 	window_up(current_win(), 1);
 	view_unlock();
 }
-
-static void search_next_forward(void)
-{
-	if (search_str) {
-		if (!search_next(searchable, search_str, search_direction))
-			search_not_found();
-	}
-}
-
-static void search_next_backward(void)
-{
-	if (search_str) {
-		if (!search_next(searchable, search_str, !search_direction))
-			search_not_found();
-	}
-}
 /* }}} */
 
 /* functions {{{ */
@@ -419,8 +403,6 @@ static const struct key_function common_functions[] = {
 	{ "queue_append",		com_add_to_queue		},
 	{ "queue_prepend",		com_prepend_to_queue		},
 	{ "remove",			com_remove			},
-	{ "search_next",		search_next_forward		},
-	{ "search_prev",		search_next_backward		},
 	{ "select_current",		com_sel_current			},
 	{ "toggle",			com_toggle			},
 	{ "win_activate_next",		win_activate_next		},

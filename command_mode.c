@@ -18,6 +18,7 @@
  */
 
 #include <command_mode.h>
+#include <search_mode.h>
 #include <cmdline.h>
 #include <options.h>
 #include <ui_curses.h>
@@ -855,6 +856,22 @@ static void cmd_p_stop(char *arg)
 	player_stop();
 }
 
+static void cmd_search_next(char *arg)
+{
+	if (search_str) {
+		if (!search_next(searchable, search_str, search_direction))
+			search_not_found();
+	}
+}
+
+static void cmd_search_prev(char *arg)
+{
+	if (search_str) {
+		if (!search_next(searchable, search_str, !search_direction))
+			search_not_found();
+	}
+}
+
 /* tab exp {{{
  *
  * these functions fill tabexp struct, which is resetted beforehand
@@ -1273,6 +1290,8 @@ static struct command commands[] = {
 	{ "quit",		cmd_quit,	0, 0, NULL		},
 	{ "run",		cmd_run,	1,-1, NULL		},
 	{ "save",		cmd_save,	0, 1, expand_files	},
+	{ "search-next",	cmd_search_next,0, 0, NULL		},
+	{ "search-prev",	cmd_search_prev,0, 0, NULL		},
 	{ "seek",		cmd_seek,	1, 1, NULL		},
 	{ "set",		cmd_set,	1, 1, expand_options	},
 	{ "shuffle",		cmd_reshuffle,	0, 0, NULL		},
