@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2005 Timo Hirvonen
+ * Copyright 2004-2006 Timo Hirvonen
  *
  * keys.(c|h) by Frank Terbeck <frank.terbeck@rwth-aachen.de>
  *
@@ -34,11 +34,6 @@ enum key_context {
 };
 #define NR_CTXS (CTX_QUEUE + 1)
 
-struct key_function {
-	const char *name;
-	void (*func)(void);
-};
-
 struct key {
 	const char *name;
 	int key;
@@ -48,14 +43,10 @@ struct key {
 struct binding {
 	struct binding *next;
 	const struct key *key;
-
-	/* only one of these is used */
-	const struct key_function *func;
-	char arg[0];
+	char cmd[0];
 };
 
 extern const char * const key_context_names[NR_CTXS + 1];
-extern const struct key_function *key_functions[NR_CTXS + 1];
 extern const struct key key_table[];
 extern struct binding *key_bindings[NR_CTXS];
 

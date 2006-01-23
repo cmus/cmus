@@ -1376,51 +1376,27 @@ static void expand_bind_args(const char *str)
 	while (*fs == ' ')
 		fs++;
 
-	if (*fs == ':') {
-		/* expand :com [arg...] */
-		expand_command_line(fs + 1);
-		if (tabexp.head == NULL) {
-			/* command expand failed */
-			return;
-		}
+	if (*fs != ':')
+		return;
 
-		/*
-		 * tabexp.head is now "com"
-		 * tabexp.tails is [ mand1 mand2 ... ]
-		 *
-		 * need to change tabexp.head to "context key :com"
-		 */
-
-		snprintf(expbuf, sizeof(expbuf), "%s %s :%s", key_context_names[c],
-				key_table[k].name, tabexp.head);
-		free(tabexp.head);
-		tabexp.head = xstrdup(expbuf);
+	/* expand :com [arg...] */
+	expand_command_line(fs + 1);
+	if (tabexp.head == NULL) {
+		/* command expand failed */
 		return;
 	}
 
-	/* expand function */
-	len = strlen(fs);
-	tails = NULL;
-	alloc = 0;
-	pos = 0;
-	for (i = 0; key_functions[c][i].name; i++) {
-		int cmp = strncmp(fs, key_functions[c][i].name, len);
-		if (cmp > 0)
-			continue;
-		if (cmp < 0)
-			break;
-		tails = str_array_add(tails, &alloc, &pos, xstrdup(key_functions[c][i].name + len));
-	}
-	if (pos == 0)
-		return;
+	/*
+	 * tabexp.head is now "com"
+	 * tabexp.tails is [ mand1 mand2 ... ]
+	 *
+	 * need to change tabexp.head to "context key :com"
+	 */
 
-	snprintf(expbuf, sizeof(expbuf), "%s %s %s", key_context_names[c], key_table[k].name, fs);
-
-	tails[pos] = NULL;
+	snprintf(expbuf, sizeof(expbuf), "%s %s :%s", key_context_names[c],
+			key_table[k].name, tabexp.head);
+	free(tabexp.head);
 	tabexp.head = xstrdup(expbuf);
-	tabexp.tails = tails;
-	tabexp.nr_tails = pos;
-	tabexp.index = 0;
 }
 
 static void expand_unbind_args(const char *str)

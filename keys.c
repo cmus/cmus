@@ -69,42 +69,6 @@ static const enum key_context view_to_context[] = {
 
 static char *filename;
 
-/* functions {{{ */
-static const struct key_function common_functions[] = {
-	{ NULL,				NULL				}
-};
-
-static struct key_function library_functions[] = {
-	{ NULL,			NULL			}
-};
-
-static struct key_function playlist_functions[] = {
-	{ NULL,			NULL			}
-};
-
-static const struct key_function queue_functions[] = {
-	{ NULL,			NULL			}
-};
-
-static const struct key_function browser_functions[] = {
-	{ NULL,			NULL				}
-};
-
-static const struct key_function filters_functions[] = {
-	{ NULL,			NULL			}
-};
-/* }}} */
-
-const struct key_function *key_functions[NR_CTXS + 1] = {
-	browser_functions,
-	common_functions,
-	filters_functions,
-	library_functions,
-	playlist_functions,
-	queue_functions,
-	NULL
-};
-
 /* key_table {{{
  *
  * key: KEY_IS_CHAR, not a key
@@ -461,10 +425,6 @@ const struct key key_table[] = {
 };
 /* }}} */
 
-/*
- * TODO: tables are sorted, do binary search
- */
-
 static int find_context(const char *name)
 {
 	int i;
@@ -489,19 +449,6 @@ static const struct key *find_key(const char *name)
 	return NULL;
 }
 
-static const struct key_function *find_function(const char *name, enum key_context c)
-{
-	const struct key_function *functions = key_functions[c];
-	int i;
-
-	for (i = 0; functions[i].name; i++) {
-		if (strcmp(name, functions[i].name) == 0)
-			return &functions[i];
-	}
-	error_msg("function '%s' not in context %s", name, key_context_names[c]);
-	return NULL;
-}
-
 static struct binding *find_binding(enum key_context c, const struct key *k)
 {
 	struct binding *b = key_bindings[c];
@@ -516,10 +463,9 @@ static struct binding *find_binding(enum key_context c, const struct key *k)
 
 int key_bind(const char *context, const char *key, const char *func)
 {
-	int c;
 	const struct key *k;
-	const struct key_function *f = NULL;
 	struct binding *b, *ptr, *prev;
+	int c, size;
 
 	c = find_context(context);
 	if (c < 0)
@@ -529,28 +475,17 @@ int key_bind(const char *context, const char *key, const char *func)
 	if (k == NULL)
 		return -1;
 
-	if (func[0] != ':') {
-		f = find_function(func, c);
-		if (f == NULL)
-			return -1;
-	}
-
 	/* check if already bound */
 	b = find_binding(c, k);
 	if (b)
 		goto bound;
 
-	if (f == NULL) {
-		/* ":command", skip the ':' */
-		int size = strlen(func + 1) + 1;
+	/* ":command", skip the ':' */
+	size = strlen(func + 1) + 1;
 
-		b = xmalloc(sizeof(struct binding) + size);
-		memcpy(b->arg, func + 1, size);
-	} else {
-		b = xnew(struct binding, 1);
-	}
+	b = xmalloc(sizeof(struct binding) + size);
 	b->key = k;
-	b->func = f;
+	memcpy(b->cmd, func + 1, size);
 
 	/* insert keeping sorted by key */
 	prev = NULL;
@@ -697,10 +632,7 @@ void keys_exit(void)
 		const char *name = key_context_names[i];
 
 		while (b) {
-			if (b->func != NULL)
-				fprintf(f, "%-10s %-20s %s\n", name, b->key->name, b->func->name);
-			else
-				fprintf(f, "%-10s %-20s :%s\n", name, b->key->name, b->arg);
+			fprintf(f, "%-10s %-20s :%s\n", name, b->key->name, b->cmd);
 			b = b->next;
 		}
 	}
@@ -711,10 +643,7 @@ static int handle_key(const struct binding *b, const struct key *k)
 {
 	while (b) {
 		if (b->key == k) {
-			if (b->func != NULL)
-				b->func->func();
-			else
-				run_command(b->arg);
+			run_command(b->cmd);
 			return 1;
 		}
 		b = b->next;
