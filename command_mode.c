@@ -1427,7 +1427,6 @@ void run_command(const char *buf)
 	} else {
 		arg = xstrndup(buf + arg_start, arg_end - arg_start);
 	}
-	d_print("command: '%s' '%s'\n", cmd, arg);
 	i = 0;
 	while (1) {
 		if (commands[i].name == NULL) {
@@ -1441,7 +1440,6 @@ void run_command(const char *buf)
 				error_msg("ambiguous command\n");
 				break;
 			}
-			d_print("full command name: %s\n", commands[i].name);
 			if (commands[i].min_args > 0 && arg == NULL) {
 				error_msg("not enough arguments\n");
 				break;
