@@ -1091,6 +1091,9 @@ static void update_commandline(void)
 
 void update_statusline(void)
 {
+	if (!ui_initialized)
+		return;
+
 	curs_set(0);
 	do_update_statusline();
 	post_update();
@@ -1748,9 +1751,6 @@ static void init_all(void)
 
 	cmus_init();
 
-	/* everything but ui must be initialized now */
-	options_init();
-
 	browser_init();
 	filters_init();
 	cmdline_init();
@@ -1758,6 +1758,9 @@ static void init_all(void)
 	commands_init();
 	search_mode_init();
 	keys_init();
+
+	/* everything but ui must be initialized now */
+	options_init();
 
 	player_get_volume(&player_info.vol_left, &player_info.vol_right, &player_info.vol_max);
 
