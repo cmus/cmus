@@ -108,7 +108,7 @@ static int parse_int(const char *buf, int minval, int maxval, int *val)
 	return 1;
 }
 
-static int parse_enum(const char *buf, int minval, int maxval, const char * const names[], int *val)
+int parse_enum(const char *buf, int minval, int maxval, const char * const names[], int *val)
 {
 	long int tmp;
 	int i;
@@ -326,7 +326,7 @@ static void toggle_confirm_run(unsigned int id)
 	confirm_run ^= 1;
 }
 
-static const char * const view_names[NR_VIEWS + 1] = {
+const char * const view_names[NR_VIEWS + 1] = {
 	"tree", "sorted", "playlist", "queue", "browser", "filters", NULL
 };
 

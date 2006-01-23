@@ -22,16 +22,6 @@
 
 #include <track_db.h>
 
-enum {
-	TREE_VIEW,
-	SORTED_VIEW,
-	PLAYLIST_VIEW,
-	QUEUE_VIEW,
-	BROWSER_VIEW,
-	FILTERS_VIEW,
-	NR_VIEWS
-};
-
 /*
  * these types are only used to determine what jobs we should cancel.
  * for example ":load" cancels jobs for the current view before loading

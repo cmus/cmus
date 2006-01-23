@@ -822,6 +822,14 @@ err:
 	error_msg("expecting 1 or 2 arguments (total or L and R volumes [+-]INTEGER[%%])\n");
 }
 
+static void cmd_view(char *arg)
+{
+	int view;
+
+	if (parse_enum(arg, 1, NR_VIEWS, view_names, &view))
+		set_view(view - 1);
+}
+
 /* fills tabexp struct */
 static void expand_files(const char *str)
 {
@@ -1240,6 +1248,7 @@ static struct command commands[] = {
 	{ "toggle",	cmd_toggle,	1, 1, expand_toptions	},
 	{ "unbind",	cmd_unbind,	1, 1, expand_unbind_args},
 	{ "unmark",	cmd_unmark,	0, 0, NULL		},
+	{ "view",	cmd_view,	1, 1, NULL		},
 	{ "vol",	cmd_vol,	1, 2, NULL		},
 	{ NULL,		NULL,		0, 0, 0			}
 };

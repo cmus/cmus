@@ -1,5 +1,5 @@
 /* 
- * Copyright 2004-2005 Timo Hirvonen
+ * Copyright 2004-2006 Timo Hirvonen
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -52,12 +52,7 @@ void search_not_found(void);
 
 /* bindable */
 void toggle_remaining_time(void);
-void enter_tree_view(void);
-void enter_sorted_view(void);
-void enter_playlist_view(void);
-void enter_queue_view(void);
-void enter_browser_view(void);
-void enter_filters_view(void);
+void set_view(int view);
 void enter_command_mode(void);
 void enter_search_mode(void);
 void enter_search_backward_mode(void);

@@ -36,7 +36,15 @@ struct cmus_opt {
 extern struct list_head option_head;
 extern int nr_options;
 
-/* options {{{ */
+enum {
+	TREE_VIEW,
+	SORTED_VIEW,
+	PLAYLIST_VIEW,
+	QUEUE_VIEW,
+	BROWSER_VIEW,
+	FILTERS_VIEW,
+	NR_VIEWS
+};
 
 enum {
 	COLOR_ROW,
@@ -71,6 +79,7 @@ extern int repeat;
 extern int shuffle;
 
 extern const char * const aaa_mode_names[];
+extern const char * const view_names[NR_VIEWS + 1];
 
 extern int bg_colors[NR_COLORS];
 extern int fg_colors[NR_COLORS];
@@ -91,7 +100,6 @@ extern char *current_alt_format;
 extern char *window_title_format;
 extern char *window_title_alt_format;
 
-/* }}} */
 
 void options_init(void);
 void options_exit(void);
@@ -100,5 +108,6 @@ void option_add(const char *name, unsigned int id, opt_get_cb get,
 		opt_set_cb set, opt_toggle_cb toggle);
 struct cmus_opt *option_find(const char *name);
 void option_set(const char *name, const char *value);
+int parse_enum(const char *buf, int minval, int maxval, const char * const names[], int *val);
 
 #endif

@@ -1203,7 +1203,7 @@ void search_not_found(void)
 	info_msg("%s not found: %s", what, search_str ? : "");
 }
 
-static void set_view(int view)
+void set_view(int view)
 {
 	if (view == cur_view)
 		return;
@@ -1249,36 +1249,6 @@ void toggle_remaining_time(void)
 {
 	show_remaining_time ^= 1;
 	update_statusline();
-}
-
-void enter_tree_view(void)
-{
-	set_view(TREE_VIEW);
-}
-
-void enter_sorted_view(void)
-{
-	set_view(SORTED_VIEW);
-}
-
-void enter_playlist_view(void)
-{
-	set_view(PLAYLIST_VIEW);
-}
-
-void enter_queue_view(void)
-{
-	set_view(QUEUE_VIEW);
-}
-
-void enter_browser_view(void)
-{
-	set_view(BROWSER_VIEW);
-}
-
-void enter_filters_view(void)
-{
-	set_view(FILTERS_VIEW);
 }
 
 void enter_command_mode(void)
