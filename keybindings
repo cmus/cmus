@@ -1,16 +1,16 @@
 browser    backspace            cd_parent
-browser    i                    toggle_show_hidden
+browser    i                    :toggle show_hidden
 browser    u                    reload
 common     +                    :vol +10%
 common     ,                    :seek -1m
 common     -                    :vol -10%
 common     .                    :seek +1m
-common     1                    view_1
-common     2                    view_2
-common     3                    view_3
-common     4                    view_4
-common     5                    view_5
-common     6                    view_6
+common     1                    :view 1
+common     2                    :view 2
+common     3                    :view 3
+common     4                    :view 4
+common     5                    :view 5
+common     6                    :view 6
 common     =                    :vol +10%
 common     C                    :toggle continue
 common     D                    remove
@@ -39,7 +39,7 @@ common     j                    win_down
 common     k                    win_up
 common     l                    :seek +5
 common     left                 :seek -5
-common     m                    :toggle playlist_mode
+common     m                    :toggle aaa_mode
 common     n                    search_next
 common     o                    :toggle play_sorted
 common     p                    move_after
