@@ -22,6 +22,7 @@
 
 /* initialized option variables {{{ */
 
+/* NOTE: this is user visible and thus starts counting from 1, not 0 */
 static int default_view = TREE_VIEW + 1;
 
 char *op_name = NULL;
@@ -798,7 +799,7 @@ void options_init(void)
 		}
 	}
 
-	cur_view = default_view;
+	cur_view = default_view - 1;
 }
 
 void options_exit(void)
