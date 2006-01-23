@@ -64,6 +64,7 @@ enum {
 extern char *op_name;
 extern char *status_display_program;
 extern int confirm_run;
+extern int show_hidden;
 extern int show_remaining_time;
 extern int play_library;
 extern int repeat;

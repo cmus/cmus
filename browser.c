@@ -27,7 +27,7 @@
 #include <ui_curses.h>
 #include <file.h>
 #include <misc.h>
-#include <debug.h>
+#include <options.h>
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -43,7 +43,6 @@ char *browser_dir;
 
 
 static LIST_HEAD(browser_head);
-static int show_hidden = 0;
 static char **supported_extensions;
 
 static inline void browser_entry_to_iter(struct browser_entry *e, struct iter *iter)
@@ -500,10 +499,4 @@ void browser_reload(void)
 
 	free(tmp);
 	free(sel);
-}
-
-void browser_toggle_show_hidden(void)
-{
-	show_hidden ^= 1;
-	browser_reload();
 }

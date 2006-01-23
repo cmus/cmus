@@ -15,6 +15,7 @@
 #include "misc.h"
 #include "lib.h"
 #include "pl.h"
+#include "browser.h"
 
 #include <stdio.h>
 #include <curses.h>
@@ -26,6 +27,7 @@ static int default_view = TREE_VIEW + 1;
 char *op_name = NULL;
 char *status_display_program = NULL;
 int confirm_run = 1;
+int show_hidden = 0;
 int show_remaining_time = 0;
 int play_library = 1;
 int repeat = 0;
@@ -445,6 +447,24 @@ static void toggle_repeat(unsigned int id)
 	update_statusline();
 }
 
+static void get_show_hidden(unsigned int id, char *buf)
+{
+	strcpy(buf, bool_names[show_hidden]);
+}
+
+static void set_show_hidden(unsigned int id, const char *buf)
+{
+	if (!parse_bool(buf, &show_hidden))
+		return;
+	browser_reload();
+}
+
+static void toggle_show_hidden(unsigned int id)
+{
+	show_hidden ^= 1;
+	browser_reload();
+}
+
 static void get_show_remaining_time(unsigned int id, char *buf)
 {
 	strcpy(buf, bool_names[show_remaining_time]);
@@ -609,6 +629,7 @@ static const struct {
 	DT(play_library)
 	DT(play_sorted)
 	DT(repeat)
+	DT(show_hidden)
 	DT(show_remaining_time)
 	DT(shuffle)
 	DN(status_display_program)

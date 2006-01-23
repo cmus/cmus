@@ -460,7 +460,6 @@ static const struct key_function queue_functions[] = {
 static const struct key_function browser_functions[] = {
 	{ "cd_parent",		browser_cd_parent		},
 	{ "reload",		browser_reload			},
-	{ "toggle_show_hidden",	browser_toggle_show_hidden	},
 	{ NULL,			NULL				}
 };
 
