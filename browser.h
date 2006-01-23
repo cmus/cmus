@@ -47,7 +47,7 @@ int browser_chdir(const char *dir);
 char *browser_get_sel(void);
 
 /* bindable */
-void browser_cd_parent(void);
+void browser_up(void);
 void browser_enter(void);
 void browser_delete(void);
 void browser_reload(void);

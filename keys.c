@@ -88,7 +88,6 @@ static const struct key_function queue_functions[] = {
 };
 
 static const struct key_function browser_functions[] = {
-	{ "cd_parent",		browser_cd_parent		},
 	{ "reload",		browser_reload			},
 	{ NULL,			NULL				}
 };

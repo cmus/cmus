@@ -1193,6 +1193,11 @@ static void cmd_win_up(char *arg)
 	view_unlock();
 }
 
+static void cmd_browser_up(char *arg)
+{
+	browser_up();
+}
+
 /* tab exp {{{
  *
  * these functions fill tabexp struct, which is resetted beforehand
@@ -1595,6 +1600,7 @@ struct command {
 static struct command commands[] = {
 	{ "add",		cmd_add,	1, 1, expand_files	},
 	{ "bind",		cmd_bind,	1, 1, expand_bind_args	},
+	{ "browser-up",		cmd_browser_up,	0, 0, NULL		},
 	{ "cd",			cmd_cd,		0, 1, expand_directories},
 	{ "clear",		cmd_clear,	0, 0, NULL		},
 	{ "factivate",		cmd_factivate,	0, 1, expand_factivate	},

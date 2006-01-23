@@ -323,7 +323,7 @@ int browser_chdir(const char *dir)
 	return 0;
 }
 
-void browser_cd_parent(void)
+void browser_up(void)
 {
 	char *new, *ptr, *pos;
 	struct browser_entry *e;
@@ -373,7 +373,7 @@ static void browser_cd(const char *dir)
 	int len;
 
 	if (strcmp(dir, "../") == 0) {
-		browser_cd_parent();
+		browser_up();
 		return;
 	}
 
