@@ -12,11 +12,11 @@ common     4                    view_4
 common     5                    view_5
 common     6                    view_6
 common     =                    :vol +10%
-common     C                    toggle_continue
+common     C                    :toggle continue
 common     D                    remove
 common     E                    queue_prepend
 common     G                    win_bottom
-common     M                    toggle_play_library
+common     M                    :toggle play_library
 common     N                    search_prev
 common     P                    move_before
 common     [                    :vol +1 +0
@@ -39,17 +39,17 @@ common     j                    win_down
 common     k                    win_up
 common     l                    :seek +5
 common     left                 :seek -5
-common     m                    toggle_playlist_mode
+common     m                    :toggle playlist_mode
 common     n                    search_next
-common     o                    toggle_play_sorted
+common     o                    :toggle play_sorted
 common     p                    move_after
 common     page_down            win_page_down
 common     page_up              win_page_up
-common     r                    toggle_repeat
+common     r                    :toggle repeat
 common     right                :seek +5
-common     s                    toggle_shuffle
+common     s                    :toggle shuffle
 common     space                toggle
-common     t                    toggle_remaining_time
+common     t                    :toggle show_remaining_time
 common     tab                  win_activate_next
 common     up                   win_up
 common     v                    stop

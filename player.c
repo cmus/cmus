@@ -1,5 +1,5 @@
 /* 
- * Copyright 2004-2005 Timo Hirvonen
+ * Copyright 2004-2006 Timo Hirvonen
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -53,7 +53,6 @@ struct player_info player_info = {
 	.metadata = { 0, },
 	.status = PLAYER_STATUS_STOPPED,
 	.pos = 0,
-	.cont = 0,
 	.vol_left = 0,
 	.vol_right = 0,
 	.vol_max = 0,
@@ -68,10 +67,10 @@ struct player_info player_info = {
 	.vol_changed = 0,
 };
 
-static const struct player_callbacks *player_cbs = NULL;
-
 /* continue playing after track is finished? */
-static int player_cont = 1;
+int player_cont = 1;
+
+static const struct player_callbacks *player_cbs = NULL;
 
 static struct buffer player_buffer;
 static sample_format_t buffer_sf;
@@ -283,18 +282,6 @@ static void __consumer_position_update(void)
 	}
 }
 
-static void __player_cont_update(void)
-{
-	player_info_lock();
-	if (player_info.cont != player_cont) {
-/* 		d_print("\n"); */
-		player_info.cont = player_cont;
-		// FIXME
-		player_info.status_changed = 1;
-	}
-	player_info_unlock();
-}
-
 /*
  * something big happened (stopped/paused/unpaused...)
  */
@@ -309,7 +296,7 @@ static void __player_status_changed(void)
 	player_info_lock();
 	player_info.status = consumer_status;
 	player_info.pos = pos;
-	player_info.cont = player_cont;
+/* 	player_info.cont = player_cont; */
 	player_info.buffer_fill = buffer_get_filled_chunks(&player_buffer);
 	player_info.buffer_size = buffer_get_nr_chunks(&player_buffer);
 	player_info.status_changed = 1;
@@ -1083,22 +1070,6 @@ int player_get_buffer_chunks(void)
 	return nr_chunks;
 }
 
-void player_toggle_cont(void)
-{
-	player_lock();
-	player_cont = player_cont ^ 1;
-	__player_cont_update();
-	player_unlock();
-}
-
-void player_set_cont(int value)
-{
-	player_lock();
-	player_cont = value;
-	__player_cont_update();
-	player_unlock();
-}
-
 int player_get_fileinfo(const char *filename, int *duration,
 		struct keyval **comments)
 {
@@ -1151,35 +1122,35 @@ int player_set_volume(int left, int right)
 	return rc;
 }
 
-int player_set_op_option(const char *key, const char *val)
+int player_set_op_option(unsigned int id, const char *val)
 {
 	int rc;
 
 	player_lock();
 	__consumer_stop();
 	__producer_stop();
-	rc = op_set_option(key, val);
+	rc = op_set_option(id, val);
 	__player_status_changed();
 	player_unlock();
 	return rc;
 }
 
-int player_get_op_option(const char *key, char **val)
+int player_get_op_option(unsigned int id, char **val)
 {
 	int rc;
 
 	player_lock();
-	rc = op_get_option(key, val);
+	rc = op_get_option(id, val);
 	player_unlock();
 	return rc;
 }
 
-int player_for_each_op_option(void (*callback)(void *data, const char *key), void *data)
+int player_for_each_op_option(void (*callback)(unsigned int id, const char *key))
 {
 	player_lock();
 	__consumer_stop();
 	__producer_stop();
-	op_for_each_option(callback, data);
+	op_for_each_option(callback);
 	__player_status_changed();
 	player_unlock();
 	return 0;

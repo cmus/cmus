@@ -27,6 +27,7 @@
 #include <pl.h>
 #include <ui_curses.h>
 #include <command_mode.h>
+#include <options.h>
 #include <utils.h>
 #include <debug.h>
 #include <config.h>
@@ -93,17 +94,20 @@ static void cmd_seek(void *data, size_t data_size)
 
 static void cmd_tcont(void *data, size_t data_size)
 {
-	player_toggle_cont();
+	player_cont ^= 1;
+	update_statusline();
 }
 
 static void cmd_trepeat(void *data, size_t data_size)
 {
-	cmus_toggle_repeat();
+	repeat ^= 1;
+	update_statusline();
 }
 
 static void cmd_tshuffle(void *data, size_t data_size)
 {
-	cmus_toggle_shuffle();
+	shuffle ^= 1;
+	update_statusline();
 }
 
 static void cmd_reshuffle(void *data, size_t data_size)

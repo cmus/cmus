@@ -7,7 +7,7 @@
 #include "window.h"
 #include "track.h"
 #include "search_mode.h"
-#include "cmus.h"
+#include "options.h"
 #include "filters.h"
 #include "expr.h"
 #include "mergesort.h"

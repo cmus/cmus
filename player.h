@@ -55,8 +55,6 @@ struct player_info {
 	/* status */
 	enum player_status status;
 	int pos;
-	/* continue after track is finished? */
-	int cont;
 
 	/* volume */
 	int vol_left;
@@ -78,6 +76,7 @@ struct player_info {
 };
 
 extern struct player_info player_info;
+extern int player_cont;
 
 void player_init_plugins(void);
 int player_init(const struct player_callbacks *callbacks);
@@ -98,16 +97,14 @@ char *player_get_op(void);
 void player_set_buffer_chunks(unsigned int nr_chunks);
 int player_get_buffer_chunks(void);
 void player_set_buffer_seconds(unsigned int seconds);
-void player_toggle_cont(void);
-void player_set_cont(int value);
 int player_get_fileinfo(const char *filename, int *duration, struct keyval **comments);
 
 int player_get_volume(int *left, int *right, int *max_vol);
 int player_set_volume(int left, int right);
 
-int player_set_op_option(const char *key, const char *val);
-int player_get_op_option(const char *key, char **val);
-int player_for_each_op_option(void (*callback)(void *data, const char *key), void *data);
+int player_set_op_option(unsigned int id, const char *val);
+int player_get_op_option(unsigned int id, char **val);
+int player_for_each_op_option(void (*callback)(unsigned int id, const char *key));
 char **player_get_supported_extensions(void);
 void player_dump_plugins(void);
 

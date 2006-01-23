@@ -29,27 +29,6 @@ enum ui_input_mode {
 	SEARCH_MODE
 };
 
-enum {
-	COLOR_ROW,
-	COLOR_ROW_CUR,
-	COLOR_ROW_SEL,
-	COLOR_ROW_SEL_CUR,
-	COLOR_ROW_ACTIVE,
-	COLOR_ROW_ACTIVE_CUR,
-	COLOR_ROW_ACTIVE_SEL,
-	COLOR_ROW_ACTIVE_SEL_CUR,
-	COLOR_SEPARATOR,
-	COLOR_TITLE,
-	COLOR_COMMANDLINE,
-	COLOR_STATUSLINE,
-	COLOR_TITLELINE,
-	COLOR_BROWSER_DIR,
-	COLOR_BROWSER_FILE,
-	COLOR_ERROR,
-	COLOR_INFO,
-	NR_COLORS
-};
-
 extern int ui_initialized;
 extern enum ui_input_mode input_mode;
 extern int cur_view;
@@ -62,30 +41,6 @@ extern char *pl_autosave_filename;
 /* current filename given by user */
 extern char *lib_filename;
 extern char *pl_filename;
-
-/* format string for track window (tree view) */
-extern char *track_win_format;
-extern char *track_win_alt_format;
-
-/* format string for shuffle, sorted and play queue views */
-extern char *list_win_format;
-extern char *list_win_alt_format;
-
-/* format string for currently playing track */
-extern char *current_format;
-extern char *current_alt_format;
-
-/* format string for window title */
-extern char *window_title_format;
-extern char *window_title_alt_format;
-
-/* program to run when status changes */
-extern char *status_display_program;
-
-/* add color_ prefix and _bg or _fg suffix */
-extern const char * const color_names[NR_COLORS];
-extern int bg_colors[NR_COLORS];
-extern int fg_colors[NR_COLORS];
 
 void update_titleline(void);
 void update_statusline(void);

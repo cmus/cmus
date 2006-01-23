@@ -1,5 +1,5 @@
 /* 
- * Copyright 2004 Timo Hirvonen
+ * Copyright 2004-2006 Timo Hirvonen
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -20,27 +20,10 @@
 #ifndef _COMMAND_MODE_H
 #define _COMMAND_MODE_H
 
-#include <list.h>
 #include <uchar.h>
-
-struct command_mode_option;
-
-typedef void (*option_get_func)(const struct command_mode_option *opt, char **value);
-typedef void (*option_set_func)(const struct command_mode_option *opt, const char *value);
-
-struct command_mode_option {
-	struct list_head node;
-	const char *name;
-	option_get_func get;
-	option_set_func set;
-	void *data;
-};
-
-extern int confirm_run;
 
 void command_mode_ch(uchar ch);
 void command_mode_key(int key);
-void option_add(const char *name, option_get_func get, option_set_func set, void *data);
 void commands_init(void);
 void commands_exit(void);
 void run_command(const char *buf);

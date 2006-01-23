@@ -1,5 +1,5 @@
 /* 
- * Copyright 2004-2005 Timo Hirvonen
+ * Copyright 2004-2006 Timo Hirvonen
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -58,9 +58,9 @@ static sample_format_t current_sf = 0;
 /* volume is between 0 and volume_max */
 static int volume_max;
 
-static void dump_option(void *data, const char *key)
+static void dump_option(unsigned int id, const char *key)
 {
-	d_print("%s\n", key);
+	d_print("0x%08x %s\n", id, key);
 }
 
 static void load_plugins(void)
@@ -290,7 +290,7 @@ int op_init(void)
 			}
 		}
 	}
-	op_for_each_option(dump_option, NULL);
+	op_for_each_option(dump_option);
 	d_print("rc = %d\n", rc);
 	return rc;
 }
@@ -478,101 +478,35 @@ int op_volume_changed(int *left, int *right, int *max_vol)
 	return 1;
 }
 
-static const struct output_plugin_ops *dsp_option(const char *key, int *optidx)
+#define OP_OPT_ID(plugin_idx, is_mixer, option_idx) \
+	(((plugin_idx) << 16) | ((is_mixer) << 15) | (option_idx))
+
+static struct output_plugin *find_plugin(int idx)
 {
 	struct output_plugin *o;
-	char opname[32];
-	int i;
-
-	if (strncasecmp(key, "dsp.", 4))
-		return NULL;
-	key += 4;
-	for (i = 0; key[i] != '.'; i++) {
-		if (key[i] == 0)
-			return NULL;
-	}
-	if (i >= sizeof(opname))
-		return NULL;
-
-	/* op name */
-	strncpy(opname, key, i);
-	opname[i] = 0;
-
-	/* option name */
-	key += i + 1;
 
 	list_for_each_entry(o, &op_head, node) {
-		if (strcasecmp(o->name, opname))
-			continue;
-
-		for (i = 0; o->pcm_options[i]; i++) {
-			if (strcasecmp(key, o->pcm_options[i]) == 0) {
-				d_print("mixer.%s.%s\n", opname, o->pcm_options[i]);
-				*optidx = i;
-				return o->pcm_ops;
-			}
-		}
-		break;
+		if (idx == 0)
+			return o;
+		idx--;
 	}
 	return NULL;
 }
 
-static const struct mixer_plugin_ops *mixer_option(const char *key, int *optidx)
+int op_set_option(unsigned int id, const char *val)
 {
-	struct output_plugin *o;
-	char opname[32];
-	int i;
+	unsigned int pid = id >> 16;
+	unsigned int mix = id & 0x8000;
+	unsigned int oid = id & 0x7fff;
+	const struct output_plugin *o = find_plugin(pid);
 
-	if (strncasecmp(key, "mixer.", 6))
-		return NULL;
-	key += 6;
-	for (i = 0; key[i] != '.'; i++) {
-		if (key[i] == 0)
-			return NULL;
-	}
-	if (i >= sizeof(opname))
-		return NULL;
+	if (o == NULL)
+		return -OP_ERROR_NOT_OPTION;
 
-	/* op name */
-	strncpy(opname, key, i);
-	opname[i] = 0;
+	if (mix) {
+		const struct mixer_plugin_ops *mo = o->mixer_ops;
+		int rc = mo->set_option(oid, val);
 
-	/* option name */
-	key += i + 1;
-
-	list_for_each_entry(o, &op_head, node) {
-		if (strcasecmp(o->name, opname))
-			continue;
-		if (o->mixer_ops == NULL)
-			continue;
-
-		for (i = 0; o->mixer_options[i]; i++) {
-			if (strcasecmp(key, o->mixer_options[i]) == 0) {
-				d_print("mixer.%s.%s\n", opname, o->mixer_options[i]);
-				*optidx = i;
-				return o->mixer_ops;
-			}
-		}
-		break;
-	}
-	return NULL;
-}
-
-int op_set_option(const char *key, const char *val)
-{
-	const struct output_plugin_ops *oo;
-	const struct mixer_plugin_ops *mo;
-	int idx, rc;
-
-	oo = dsp_option(key, &idx);
-	if (oo) {
-		/* dsp is always stopped when setting options, no need to reopen */
-		return oo->set_option(idx, val);
-	}
-
-	mo = mixer_option(key, &idx);
-	if (mo) {
-		rc = mo->set_option(idx, val);
 		if (rc == 0 && op && op->mixer_ops == mo && op->mixer_open) {
 			/* option of the current op was set and the mixer is open
 			 * need to reopen the mixer */
@@ -581,47 +515,47 @@ int op_set_option(const char *key, const char *val)
 		}
 		return rc;
 	}
-	return -OP_ERROR_NOT_OPTION;
+	return o->pcm_ops->set_option(oid, val);
 }
 
-int op_get_option(const char *key, char **val)
+int op_get_option(unsigned int id, char **val)
 {
-	const struct output_plugin_ops *oo;
-	const struct mixer_plugin_ops *mo;
-	int idx;
+	unsigned int pid = id >> 16;
+	unsigned int mix = id & 0x8000;
+	unsigned int oid = id & 0x7fff;
+	const struct output_plugin *o = find_plugin(pid);
 
-	*val = NULL;
+	if (o == NULL)
+		return -OP_ERROR_NOT_OPTION;
 
-	oo = dsp_option(key, &idx);
-	if (oo)
-		return oo->get_option(idx, val);
-
-	mo = mixer_option(key, &idx);
-	if (mo)
-		return mo->get_option(idx, val);
-	return -OP_ERROR_NOT_OPTION;
+	if (mix)
+		return o->mixer_ops->get_option(oid, val);
+	return o->pcm_ops->get_option(oid, val);
 }
 
-int op_for_each_option(void (*callback)(void *data, const char *key), void *data)
+int op_for_each_option(void (*cb)(unsigned int id, const char *key))
 {
 	struct output_plugin *o;
+	unsigned int pid, oid;
 	char key[64];
-	int j;
 
+	pid = -1;
 	list_for_each_entry(o, &op_head, node) {
-		for (j = 0; o->pcm_options[j]; j++) {
+		pid++;
+
+		for (oid = 0; o->pcm_options[oid]; oid++) {
 			snprintf(key, sizeof(key), "dsp.%s.%s",
 					o->name,
-					o->pcm_options[j]);
-			callback(data, key);
+					o->pcm_options[oid]);
+			cb(OP_OPT_ID(pid, 0, oid), key);
 		}
 		if (o->mixer_ops == NULL)
 			continue;
-		for (j = 0; o->mixer_options[j]; j++) {
+		for (oid = 0; o->mixer_options[oid]; oid++) {
 			snprintf(key, sizeof(key), "mixer.%s.%s",
 					o->name,
-					o->mixer_options[j]);
-			callback(data, key);
+					o->mixer_options[oid]);
+			cb(OP_OPT_ID(pid, 1, oid), key);
 		}
 	}
 	return 0;

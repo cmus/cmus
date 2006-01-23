@@ -1,5 +1,5 @@
 /*
- * Copyright 2004-2005 Timo Hirvonen
+ * Copyright 2004-2006 Timo Hirvonen
  *
  * keys.[ch] by Frank Terbeck <frank.terbeck@rwth-aachen.de>
  * heavily modified by Timo Hirvonen
@@ -38,6 +38,7 @@
 #include <xstrjoin.h>
 #include <config.h>
 #include <command_mode.h>
+#include <options.h>
 
 #include <curses.h>
 #include <stdio.h>
@@ -427,19 +428,6 @@ static const struct key_function common_functions[] = {
 	{ "select_current",		com_sel_current			},
 	{ "stop",			player_stop			},
 	{ "toggle",			com_toggle			},
-
-	/* make these normal options
-	 * :set continue=true/false
-	 * :toggle continue
-	 */
-	{ "toggle_continue",		player_toggle_cont		},
-	{ "toggle_play_library",	cmus_toggle_play_library	},
-	{ "toggle_play_sorted",		cmus_toggle_lib_play_sorted	},
-	{ "toggle_playlist_mode",	cmus_toggle_lib_playlist_mode	},
-	{ "toggle_remaining_time",	toggle_remaining_time		},
-	{ "toggle_repeat",		cmus_toggle_repeat		},
-	{ "toggle_shuffle",		cmus_toggle_shuffle		},
-
 	{ "view_1",			enter_tree_view			},
 	{ "view_2",			enter_sorted_view		},
 	{ "view_3",			enter_playlist_view		},

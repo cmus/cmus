@@ -19,6 +19,7 @@
 
 #include <command_mode.h>
 #include <cmdline.h>
+#include <options.h>
 #include <ui_curses.h>
 #include <history.h>
 #include <tabexp.h>
@@ -49,13 +50,9 @@
 #include <sys/wait.h>
 #include <pwd.h>
 
-int confirm_run = 1;
-
 static struct history cmd_history;
 static char *cmd_history_filename;
 static char *history_search_text = NULL;
-static LIST_HEAD(options_head);
-static int nr_options = 0;
 static int arg_expand_cmd = -1;
 
 static char *get_home_dir(const char *username)
@@ -282,7 +279,6 @@ static void cmd_save(char *arg)
 
 static void cmd_set(char *arg)
 {
-	struct list_head *item;
 	char *name, *value = NULL;
 	int i;
 
@@ -298,16 +294,21 @@ static void cmd_set(char *arg)
 		error_msg("'=' expected (:set option=value)");
 		return;
 	}
-	list_for_each(item, &options_head) {
-		struct command_mode_option *opt;
+	option_set(name, value);
+}
 
-		opt = list_entry(item, struct command_mode_option, node);
-		if (strcmp(name, opt->name) == 0) {
-			opt->set(opt, value);
-			return;
-		}
+static void cmd_toggle(char *arg)
+{
+	struct cmus_opt *opt = option_find(arg);
+
+	if (opt == NULL)
+		return;
+
+	if (opt->toggle == NULL) {
+		error_msg("%s is not toggle option", opt->name);
+		return;
 	}
-	error_msg("unknown option '%s'", name);
+	opt->toggle(opt->id);
 }
 
 static void cmd_seek(char *arg)
@@ -1121,7 +1122,7 @@ static void expand_factivate(const char *str)
 /* fills tabexp struct */
 static void expand_options(const char *str)
 {
-	struct command_mode_option *opt;
+	struct cmus_opt *opt;
 	int len;
 	char **tails;
 
@@ -1131,10 +1132,16 @@ static void expand_options(const char *str)
 		/* expand value */
 		char *var = xstrndup(str, len - 1);
 
-		list_for_each_entry(opt, &options_head, node) {
+		list_for_each_entry(opt, &option_head, node) {
 			if (strcmp(var, opt->name) == 0) {
+				char buf[OPTION_MAX_SIZE];
+
 				tails = xnew(char *, 1);
-				opt->get(opt, &tails[0]);
+
+				buf[0] = 0;
+				opt->get(opt->id, buf);
+				tails[0] = xstrdup(buf);
+
 				tails[1] = NULL;
 				tabexp.head = xstrdup(str);
 				tabexp.tails = tails;
@@ -1151,7 +1158,7 @@ static void expand_options(const char *str)
 
 		tails = xnew(char *, nr_options + 1);
 		pos = 0;
-		list_for_each_entry(opt, &options_head, node) {
+		list_for_each_entry(opt, &option_head, node) {
 			if (strncmp(str, opt->name, len) == 0)
 				tails[pos++] = xstrdup(opt->name + len);
 		}
@@ -1172,6 +1179,32 @@ static void expand_options(const char *str)
 		} else {
 			free(tails);
 		}
+	}
+}
+
+static void expand_toptions(const char *str)
+{
+	struct cmus_opt *opt;
+	int len, pos;
+	char **tails;
+
+	tails = xnew(char *, nr_options + 1);
+	len = strlen(str);
+	pos = 0;
+	list_for_each_entry(opt, &option_head, node) {
+		if (opt->toggle == NULL)
+			continue;
+		if (strncmp(str, opt->name, len) == 0)
+			tails[pos++] = xstrdup(opt->name + len);
+	}
+	if (pos > 0) {
+		tails[pos] = NULL;
+		tabexp.head = xstrdup(str);
+		tabexp.tails = tails;
+		tabexp.nr_tails = pos;
+		tabexp.index = 0;
+	} else {
+		free(tails);
 	}
 }
 
@@ -1204,6 +1237,7 @@ static struct command commands[] = {
 	{ "seek",	cmd_seek,	1, 1, NULL		},
 	{ "set",	cmd_set,	1, 1, expand_options	},
 	{ "shuffle",	cmd_reshuffle,	0, 0, NULL		},
+	{ "toggle",	cmd_toggle,	1, 1, expand_toptions	},
 	{ "unbind",	cmd_unbind,	1, 1, expand_unbind_args},
 	{ "unmark",	cmd_unmark,	0, 0, NULL		},
 	{ "vol",	cmd_vol,	1, 2, NULL		},
@@ -1522,30 +1556,6 @@ void command_mode_key(int key)
 		d_print("key = %c (%d)\n", key, key);
 	}
 	reset_history_search();
-}
-
-void option_add(const char *name, option_get_func get, option_set_func set, void *data)
-{
-	struct command_mode_option *opt;
-	struct list_head *item;
-
-	opt = xnew(struct command_mode_option, 1);
-	opt->name = xstrdup(name);
-	opt->get = get;
-	opt->set = set;
-	opt->data = data;
-
-	item = options_head.next;
-	while (item != &options_head) {
-		struct command_mode_option *o = container_of(item, struct command_mode_option, node);
-
-		if (strcmp(name, o->name) < 0)
-			break;
-		item = item->next;
-	}
-	/* add before item */
-	list_add_tail(&opt->node, item);
-	nr_options++;
 }
 
 void commands_init(void)

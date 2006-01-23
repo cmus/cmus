@@ -28,6 +28,7 @@
 #include <mergesort.h>
 #include <debug.h>
 #include "cmus.h"
+#include "options.h"
 
 #include <pthread.h>
 #include <string.h>

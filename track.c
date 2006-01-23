@@ -7,7 +7,7 @@
 #include "track_info.h"
 #include "search_mode.h"
 #include "window.h"
-#include "cmus.h"
+#include "options.h"
 #include "comment.h"
 #include "uchar.h"
 #include "xmalloc.h"

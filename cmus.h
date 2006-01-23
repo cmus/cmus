@@ -63,11 +63,6 @@ typedef int (*for_each_sel_ti_cb)(track_info_cb cb, void *data, int reverse);
 /* lib_add_track, pl_add_track, play_queue_append, play_queue_prepend */
 typedef void (*add_ti_cb)(struct track_info *);
 
-/* play tracks from library instead of playlist? */
-extern int play_library;
-extern int repeat;
-extern int shuffle;
-
 int cmus_init(void);
 void cmus_exit(void);
 void cmus_play_file(const char *filename);
@@ -102,11 +97,5 @@ int cmus_playlist_for_each(const char *buf, int size, int reverse,
 /* bindable */
 void cmus_next(void);
 void cmus_prev(void);
-
-void cmus_toggle_play_library(void);
-void cmus_toggle_repeat(void);
-void cmus_toggle_shuffle(void);
-void cmus_toggle_lib_play_sorted(void);
-void cmus_toggle_lib_playlist_mode(void);
 
 #endif

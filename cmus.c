@@ -28,7 +28,7 @@
 #include <file.h>
 #include <utils.h>
 #include <path.h>
-#include <ui_curses.h>
+#include <options.h>
 #include <xmalloc.h>
 #include <xstrjoin.h>
 #include <debug.h>
@@ -40,10 +40,6 @@
 #include <dirent.h>
 #include <stdlib.h>
 #include <ctype.h>
-
-int play_library = 1;
-int repeat = 0;
-int shuffle = 0;
 
 static pthread_mutex_t track_db_mutex = CMUS_MUTEX_INITIALIZER;
 static struct track_db *track_db;
@@ -514,51 +510,4 @@ int cmus_playlist_for_each(const char *buf, int size, int reverse,
 		buffer_for_each_line(buf, size, handler, &d);
 	}
 	return 0;
-}
-
-void cmus_toggle_play_library(void)
-{
-	play_library = play_library ^ 1;
-	update_statusline();
-}
-
-void cmus_toggle_repeat(void)
-{
-	repeat = repeat ^ 1;
-	update_statusline();
-}
-
-void cmus_toggle_shuffle(void)
-{
-	shuffle = shuffle ^ 1;
-	update_statusline();
-}
-
-void cmus_toggle_lib_play_sorted(void)
-{
-	lib_lock();
-	lib.play_sorted = lib.play_sorted ^ 1;
-
-	/* shuffle would override play_sorted... */
-	if (lib.play_sorted) {
-		/* play_sorted makes no sense in playlist */
-		play_library = 1;
-		shuffle = 0;
-	}
-
-	lib_unlock();
-	update_statusline();
-}
-
-void cmus_toggle_lib_playlist_mode(void)
-{
-	lib_lock();
-
-	/* aaa mode makes no sense in playlist */
-	play_library = 1;
-
-	lib.playlist_mode++;
-	lib.playlist_mode %= 3;
-	lib_unlock();
-	update_statusline();
 }

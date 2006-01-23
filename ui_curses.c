@@ -71,87 +71,11 @@ char *pl_autosave_filename;
 char *lib_filename = NULL;
 char *pl_filename = NULL;
 
-char *track_win_format = NULL;
-char *track_win_alt_format = NULL;
-char *list_win_format = NULL;
-char *list_win_alt_format = NULL;
-char *current_format = NULL;
-char *current_alt_format = NULL;
-char *window_title_format = NULL;
-char *window_title_alt_format = NULL;
-char *status_display_program = NULL;
-
-#define BRIGHT (1 << 3)
-
-int bg_colors[NR_COLORS] = {
-	-1,
-	-1,
-	COLOR_WHITE,
-	COLOR_WHITE,
-	-1,
-	-1,
-	COLOR_BLUE,
-	COLOR_BLUE,
-
-	-1,
-	COLOR_BLUE,
-	-1,
-	COLOR_WHITE,
-	COLOR_BLUE,
-	-1,
-	-1,
-	-1,
-	-1
-};
-
-int fg_colors[NR_COLORS] = {
-	-1,
-	COLOR_YELLOW | BRIGHT,
-	COLOR_BLACK,
-	COLOR_YELLOW | BRIGHT,
-	-1,
-	COLOR_YELLOW | BRIGHT,
-	COLOR_WHITE | BRIGHT,
-	COLOR_YELLOW | BRIGHT,
-
-	COLOR_BLUE,
-	COLOR_WHITE | BRIGHT,
-	-1,
-	COLOR_BLACK,
-	COLOR_WHITE | BRIGHT,
-	COLOR_BLUE | BRIGHT,
-	-1,
-	COLOR_RED | BRIGHT,
-	COLOR_YELLOW | BRIGHT
-};
-
-/* prefixes actually. "_bg" or "_fg" added at end */
-const char * const color_names[NR_COLORS] = {
-	"row",
-	"row_cur",
-	"row_sel",
-	"row_sel_cur",
-	"row_active",
-	"row_active_cur",
-	"row_active_sel",
-	"row_active_sel_cur",
-	"separator",
-	"title",
-	"commandline",
-	"statusline",
-	"titleline",
-	"browser_dir",
-	"browser_file",
-	"error",
-	"info",
-};
-
 /* ------------------------------------------------------------------------- */
 
 /* currently playing file */
 static struct track_info *cur_track_info;
 
-static int show_remaining_time = 0;
 static int update_window_title = 0;
 
 static int running = 1;
@@ -871,7 +795,7 @@ static void do_update_statusline(void)
 	fopt_set_int(&status_fopts[SF_LVOLUME], vol_left, 0);
 	fopt_set_int(&status_fopts[SF_RVOLUME], vol_right, 0);
 	fopt_set_int(&status_fopts[SF_BUFFER], buffer_fill, 0);
-	fopt_set_str(&status_fopts[SF_CONTINUE], cont_strs[player_info.cont]);
+	fopt_set_str(&status_fopts[SF_CONTINUE], cont_strs[player_cont]);
 
 	strcpy(format, " %s %p ");
 	if (duration != -1)
@@ -1529,32 +1453,6 @@ static void resize_playlist(int w, int h)
 	lib_unlock();
 }
 
-static void get_colors(void)
-{
-	char buf[64];
-	int i;
-
-	for (i = 0; i < NR_COLORS; i++) {
-		snprintf(buf, sizeof(buf), "%s_bg", color_names[i]);
-		sconf_get_int_option(buf, &bg_colors[i]);
-		snprintf(buf, sizeof(buf), "%s_fg", color_names[i]);
-		sconf_get_int_option(buf, &fg_colors[i]);
-	}
-}
-
-static void set_colors(void)
-{
-	char buf[64];
-	int i;
-
-	for (i = 0; i < NR_COLORS; i++) {
-		snprintf(buf, sizeof(buf), "%s_bg", color_names[i]);
-		sconf_set_int_option(buf, bg_colors[i]);
-		snprintf(buf, sizeof(buf), "%s_fg", color_names[i]);
-		sconf_set_int_option(buf, fg_colors[i]);
-	}
-}
-
 static void update(void)
 {
 	int needs_view_update = 0;
@@ -1829,9 +1727,8 @@ static void init_curses(void)
 
 static void init_all(void)
 {
-	int rc, btmp;
-	char *term, *sort;
-	char **keys;
+	char *term;
+	int rc;
 
 	term = getenv("TERM");
 	if (term && (strncmp(term, "xterm", 5) == 0 ||
@@ -1854,59 +1751,14 @@ static void init_all(void)
 
 	cmus_init();
 
-	if (sconf_get_bool_option("continue", &btmp))
-		player_set_cont(btmp);
-	if (sconf_get_bool_option("repeat", &btmp))
-		repeat = btmp;
-	if (sconf_get_bool_option("shuffle", &btmp))
-		shuffle = btmp;
-	if (sconf_get_bool_option("play_library", &btmp))
-		play_library = btmp;
-	if (sconf_get_bool_option("play_sorted", &btmp))
-		lib.play_sorted = btmp;
-	if (sconf_get_int_option("playlist_mode", &btmp)) {
-		if (btmp < 0 || btmp > 2)
-			btmp = 0;
-		lib.playlist_mode = btmp;
-	}
-	if (sconf_get_int_option("default_view", &btmp)) {
-		if (btmp >= 1 && btmp <= NR_VIEWS) {
-			default_view = btmp;
-			cur_view = default_view - 1;
-		}
-	}
-	sconf_get_bool_option("show_remaining_time", &show_remaining_time);
-	sconf_get_str_option("status_display_program", &status_display_program);
-
-	if (!sconf_get_str_option("lib_sort", &sort))
-		sort = xstrdup("artist album discnumber tracknumber title filename");
-	keys = parse_sort_keys(sort);
-	if (keys)
-		lib_set_sort_keys(keys);
-	free(sort);
-
-	if (sconf_get_str_option("pl_sort", &sort)) {
-		keys = parse_sort_keys(sort);
-		if (keys)
-			pl_set_sort_keys(keys);
-		free(sort);
-	}
-
-	if (sconf_get_int_option("buffer_chunks", &btmp)) {
-		if (btmp < 3)
-			btmp = 3;
-		if (btmp > 30)
-			btmp = 30;
-		player_set_buffer_chunks(btmp);
-	}
-	get_colors();
+	/* everything but ui must be initialized now */
+	options_init();
 
 	browser_init();
 	filters_init();
 	cmdline_init();
 	/* commands_init must be after player_init */
 	commands_init();
-	options_init();
 	search_mode_init();
 	keys_init();
 
@@ -1933,20 +1785,7 @@ static void exit_all(void)
 	if (cur_track_info)
 		track_info_unref(cur_track_info);
 
-	sconf_set_bool_option("continue", player_info.cont);
-	sconf_set_bool_option("repeat", repeat);
-	sconf_set_bool_option("shuffle", shuffle);
-	sconf_set_bool_option("play_library", play_library);
-	sconf_set_bool_option("play_sorted", lib.play_sorted);
-	sconf_set_int_option("playlist_mode", lib.playlist_mode);
-	sconf_set_int_option("default_view", default_view);
-	sconf_set_bool_option("show_remaining_time", show_remaining_time);
-	sconf_set_str_option("status_display_program",
-			status_display_program ? status_display_program : "");
-	sconf_set_str_option("lib_sort", keys_to_str(lib.sort_keys));
-	sconf_set_str_option("pl_sort", keys_to_str(pl_sort_keys));
-	sconf_set_int_option("buffer_chunks", player_get_buffer_chunks());
-	set_colors();
+	options_exit();
 
 	free(lib_autosave_filename);
 	free(status_display_program);
@@ -1955,7 +1794,6 @@ static void exit_all(void)
 	lib_exit();
 
 	keys_exit();
-	options_exit();
 	commands_exit();
 	search_mode_exit();
 	filters_exit();
