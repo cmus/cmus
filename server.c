@@ -120,7 +120,7 @@ static void cmd_add(void *data, size_t data_size)
 {
 	char *ptr = data;
 
-	view_add(server_view, ptr);
+	view_add(server_view, ptr, 0);
 }
 
 static void cmd_clear(void *data, size_t data_size)

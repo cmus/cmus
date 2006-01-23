@@ -29,7 +29,7 @@ void commands_exit(void);
 void run_command(const char *buf);
 
 void view_clear(int view);
-void view_add(int view, char *arg);
+void view_add(int view, char *arg, int prepend);
 void view_load(int view, char *arg);
 void view_save(int view, char *arg);
 

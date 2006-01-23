@@ -55,6 +55,7 @@ static struct history cmd_history;
 static char *cmd_history_filename;
 static char *history_search_text = NULL;
 static int arg_expand_cmd = -1;
+static int parse_complain = 0;
 
 static char *get_home_dir(const char *username)
 {
@@ -136,7 +137,7 @@ void view_clear(int view)
 	}
 }
 
-void view_add(int view, char *arg)
+void view_add(int view, char *arg, int prepend)
 {
 	char *tmp, *name;
 	enum file_type ft;
@@ -159,7 +160,11 @@ void view_add(int view, char *arg)
 		cmus_add(pl_add_track, name, ft, JOB_TYPE_PL);
 		break;
 	case QUEUE_VIEW:
-		cmus_add(play_queue_append, name, ft, JOB_TYPE_QUEUE);
+		if (prepend) {
+			cmus_add(play_queue_prepend, name, ft, JOB_TYPE_QUEUE);
+		} else {
+			cmus_add(play_queue_append, name, ft, JOB_TYPE_QUEUE);
+		}
 		break;
 	default:
 		info_msg(":add only works in views 1-4");
@@ -258,24 +263,115 @@ void view_save(int view, char *arg)
 
 /* }}} */
 
+/* only returns the last flag which is enough for it's callers */
+static int parse_flags(const char **strp, const char *flags)
+{
+	const char *str = *strp;
+	int flag = 0;
+
+	while (*str) {
+		if (*str != '-')
+			break;
+
+		// "-"
+		if (str[1] == 0)
+			break;
+
+		// "--" or "-- "
+		if (str[1] == '-' && (str[2] == 0 || str[2] == ' ')) {
+			str += 2;
+			break;
+		}
+
+		// not "-?" or "-? "
+		if (str[2] && str[2] != ' ')
+			break;
+
+		flag = str[1];
+		if (!strchr(flags, flag)) {
+			if (parse_complain)
+				error_msg("invalid option -%c", flag);
+			return -1;
+		}
+
+		str += 2;
+
+		while (*str == ' ')
+			str++;
+	}
+	while (*str == ' ')
+		str++;
+	*strp = str;
+	return flag;
+}
+
+static int flag_to_view(int flag)
+{
+	switch (flag) {
+	case 'l':
+		return TREE_VIEW;
+	case 'p':
+		return PLAYLIST_VIEW;
+	case 'q':
+	case 'Q':
+		return QUEUE_VIEW;
+	default:
+		return cur_view;
+	}
+}
+
 static void cmd_add(char *arg)
 {
-	view_add(cur_view, arg);
+	int flag = parse_flags((const char **)&arg, "lpqQ");
+
+	if (flag == -1)
+		return;
+	if (*arg == 0) {
+		error_msg("not enough arguments\n");
+		return;
+	}
+	view_add(flag_to_view(flag), arg, flag == 'Q');
 }
 
 static void cmd_clear(char *arg)
 {
-	view_clear(cur_view);
+	int flag = 0;
+
+	if (arg)
+		flag = parse_flags((const char **)&arg, "lpq");
+	if (flag == -1)
+		return;
+	if (arg && *arg) {
+		error_msg("too many arguments\n");
+		return;
+	}
+	view_clear(flag_to_view(flag));
 }
 
 static void cmd_load(char *arg)
 {
-	view_load(cur_view, arg);
+	int flag = parse_flags((const char **)&arg, "lp");
+
+	if (flag == -1)
+		return;
+	if (*arg == 0) {
+		error_msg("not enough arguments\n");
+		return;
+	}
+	view_load(flag_to_view(flag), arg);
 }
 
 static void cmd_save(char *arg)
 {
-	view_save(cur_view, arg);
+	int flag = parse_flags((const char **)&arg, "lp");
+
+	if (flag == -1)
+		return;
+	if (*arg == 0) {
+		error_msg("not enough arguments\n");
+		return;
+	}
+	view_save(flag_to_view(flag), arg);
 }
 
 static void cmd_set(char *arg)
@@ -1216,10 +1312,39 @@ static void cmd_browser_up(char *arg)
  * these functions fill tabexp struct, which is resetted beforehand
  */
 
-static void expand_files(const char *str)
+/* buffer used for tab expansion */
+static char expbuf[512];
+
+static void expand_add(const char *str)
 {
+	int flag = parse_flags(&str, "lpqQ");
+
+	if (flag == -1)
+		return;
 	tabexp_files = 1;
 	expand_files_and_dirs(str);
+
+	if (tabexp.head && flag) {
+		snprintf(expbuf, sizeof(expbuf), "-%c %s", flag, tabexp.head);
+		free(tabexp.head);
+		tabexp.head = xstrdup(expbuf);
+	}
+}
+
+static void expand_load_save(const char *str)
+{
+	int flag = parse_flags(&str, "lp");
+
+	if (flag == -1)
+		return;
+	tabexp_files = 1;
+	expand_files_and_dirs(str);
+
+	if (tabexp.head && flag) {
+		snprintf(expbuf, sizeof(expbuf), "-%c %s", flag, tabexp.head);
+		free(tabexp.head);
+		tabexp.head = xstrdup(expbuf);
+	}
 }
 
 static void expand_directories(const char *str)
@@ -1227,9 +1352,6 @@ static void expand_directories(const char *str)
 	tabexp_files = 0;
 	expand_files_and_dirs(str);
 }
-
-/* buffer used for tab expansion */
-static char expbuf[512];
 
 static void expand_key_context(const char *str)
 {
@@ -1587,16 +1709,16 @@ struct command {
 
 /* sort by name */
 static struct command commands[] = {
-	{ "add",		cmd_add,	1, 1, expand_files	},
+	{ "add",		cmd_add,	1, 1, expand_add	},
 	{ "bind",		cmd_bind,	1, 1, expand_bind_args	},
 	{ "browser-up",		cmd_browser_up,	0, 0, NULL		},
 	{ "cd",			cmd_cd,		0, 1, expand_directories},
-	{ "clear",		cmd_clear,	0, 0, NULL		},
+	{ "clear",		cmd_clear,	0, 1, NULL		},
 	{ "factivate",		cmd_factivate,	0, 1, expand_factivate	},
 	{ "filter",		cmd_filter,	0, 1, NULL		},
 	{ "fset",		cmd_fset,	1, 1, NULL		},
 	{ "invert",		cmd_invert,	0, 0, NULL		},
-	{ "load",		cmd_load,	1, 1, expand_files	},
+	{ "load",		cmd_load,	1, 1, expand_load_save	},
 	{ "mark",		cmd_mark,	0, 1, NULL		},
 	{ "player-next",	cmd_p_next,	0, 0, NULL		},
 	{ "player-pause",	cmd_p_pause,	0, 0, NULL		},
@@ -1605,7 +1727,7 @@ static struct command commands[] = {
 	{ "player-stop",	cmd_p_stop,	0, 0, NULL		},
 	{ "quit",		cmd_quit,	0, 0, NULL		},
 	{ "run",		cmd_run,	1,-1, NULL		},
-	{ "save",		cmd_save,	0, 1, expand_files	},
+	{ "save",		cmd_save,	0, 1, expand_load_save	},
 	{ "search-next",	cmd_search_next,0, 0, NULL		},
 	{ "search-prev",	cmd_search_prev,0, 0, NULL		},
 	{ "seek",		cmd_seek,	1, 1, NULL		},
@@ -1798,6 +1920,8 @@ void run_command(const char *buf)
 	int arg_start, arg_end;
 	int i;
 
+	parse_complain = 1;
+
 	i = 0;
 	while (buf[i] && buf[i] == ' ')
 		i++;
@@ -1851,6 +1975,8 @@ void run_command(const char *buf)
 	}
 	free(arg);
 	free(cmd);
+
+	parse_complain = 0;
 }
 
 static void reset_history_search(void)
