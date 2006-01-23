@@ -1245,12 +1245,6 @@ void set_view(int view)
 	refresh();
 }
 
-void toggle_remaining_time(void)
-{
-	show_remaining_time ^= 1;
-	update_statusline();
-}
-
 void enter_command_mode(void)
 {
 	error_buf[0] = 0;
