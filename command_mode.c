@@ -830,14 +830,42 @@ static void cmd_view(char *arg)
 		set_view(view - 1);
 }
 
-/* fills tabexp struct */
+static void cmd_p_next(char *arg)
+{
+	cmus_next();
+}
+
+static void cmd_p_pause(char *arg)
+{
+	player_pause();
+}
+
+static void cmd_p_play(char *arg)
+{
+	player_play();
+}
+
+static void cmd_p_prev(char *arg)
+{
+	cmus_prev();
+}
+
+static void cmd_p_stop(char *arg)
+{
+	player_stop();
+}
+
+/* tab exp {{{
+ *
+ * these functions fill tabexp struct, which is resetted beforehand
+ */
+
 static void expand_files(const char *str)
 {
 	tabexp_files = 1;
 	expand_files_and_dirs(str);
 }
 
-/* fills tabexp struct */
 static void expand_directories(const char *str)
 {
 	tabexp_files = 0;
@@ -900,7 +928,6 @@ static int get_context(const char *str, int len)
 
 static void expand_command_line(const char *str);
 
-/* fills tabexp struct */
 static void expand_bind_args(const char *str)
 {
 	/* :bind context key function
@@ -1040,7 +1067,6 @@ static void expand_bind_args(const char *str)
 	tabexp.index = 0;
 }
 
-/* fills tabexp struct */
 static void expand_unbind_args(const char *str)
 {
 	/* :unbind context key */
@@ -1091,7 +1117,6 @@ static void expand_unbind_args(const char *str)
 	tabexp.index = 0;
 }
 
-/* fills tabexp struct */
 static void expand_factivate(const char *str)
 {
 	/* "name1 name2 name3", expand only name3 */
@@ -1127,7 +1152,6 @@ static void expand_factivate(const char *str)
 	tabexp.index = 0;
 }
 
-/* fills tabexp struct */
 static void expand_options(const char *str)
 {
 	struct cmus_opt *opt;
@@ -1216,6 +1240,8 @@ static void expand_toptions(const char *str)
 	}
 }
 
+/* tab exp }}} */
+
 struct command {
 	const char *name;
 	void (*func)(char *arg);
@@ -1229,28 +1255,33 @@ struct command {
 
 /* sort by name */
 static struct command commands[] = {
-	{ "add",	cmd_add,	1, 1, expand_files	},
-	{ "bind",	cmd_bind,	1, 1, expand_bind_args	},
-	{ "cd",		cmd_cd,		0, 1, expand_directories},
-	{ "clear",	cmd_clear,	0, 0, NULL		},
-	{ "factivate",	cmd_factivate,	0, 1, expand_factivate	},
-	{ "filter",	cmd_filter,	0, 1, NULL		},
-	{ "fset",	cmd_fset,	1, 1, NULL		},
-	{ "invert",	cmd_invert,	0, 0, NULL		},
-	{ "load",	cmd_load,	1, 1, expand_files	},
-	{ "mark",	cmd_mark,	0, 1, NULL		},
-	{ "quit",	cmd_quit,	0, 0, NULL		},
-	{ "run",	cmd_run,	1,-1, NULL		},
-	{ "save",	cmd_save,	0, 1, expand_files	},
-	{ "seek",	cmd_seek,	1, 1, NULL		},
-	{ "set",	cmd_set,	1, 1, expand_options	},
-	{ "shuffle",	cmd_reshuffle,	0, 0, NULL		},
-	{ "toggle",	cmd_toggle,	1, 1, expand_toptions	},
-	{ "unbind",	cmd_unbind,	1, 1, expand_unbind_args},
-	{ "unmark",	cmd_unmark,	0, 0, NULL		},
-	{ "view",	cmd_view,	1, 1, NULL		},
-	{ "vol",	cmd_vol,	1, 2, NULL		},
-	{ NULL,		NULL,		0, 0, 0			}
+	{ "add",		cmd_add,	1, 1, expand_files	},
+	{ "bind",		cmd_bind,	1, 1, expand_bind_args	},
+	{ "cd",			cmd_cd,		0, 1, expand_directories},
+	{ "clear",		cmd_clear,	0, 0, NULL		},
+	{ "factivate",		cmd_factivate,	0, 1, expand_factivate	},
+	{ "filter",		cmd_filter,	0, 1, NULL		},
+	{ "fset",		cmd_fset,	1, 1, NULL		},
+	{ "invert",		cmd_invert,	0, 0, NULL		},
+	{ "load",		cmd_load,	1, 1, expand_files	},
+	{ "mark",		cmd_mark,	0, 1, NULL		},
+	{ "player-next",	cmd_p_next,	0, 0, NULL		},
+	{ "player-pause",	cmd_p_pause,	0, 0, NULL		},
+	{ "player-play",	cmd_p_play,	0, 0, NULL		},
+	{ "player-prev",	cmd_p_prev,	0, 0, NULL		},
+	{ "player-stop",	cmd_p_stop,	0, 0, NULL		},
+	{ "quit",		cmd_quit,	0, 0, NULL		},
+	{ "run",		cmd_run,	1,-1, NULL		},
+	{ "save",		cmd_save,	0, 1, expand_files	},
+	{ "seek",		cmd_seek,	1, 1, NULL		},
+	{ "set",		cmd_set,	1, 1, expand_options	},
+	{ "shuffle",		cmd_reshuffle,	0, 0, NULL		},
+	{ "toggle",		cmd_toggle,	1, 1, expand_toptions	},
+	{ "unbind",		cmd_unbind,	1, 1, expand_unbind_args},
+	{ "unmark",		cmd_unmark,	0, 0, NULL		},
+	{ "view",		cmd_view,	1, 1, NULL		},
+	{ "vol",		cmd_vol,	1, 2, NULL		},
+	{ NULL,			NULL,		0, 0, 0			}
 };
 
 /* fills tabexp struct */
