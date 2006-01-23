@@ -872,6 +872,89 @@ static void cmd_search_prev(char *arg)
 	}
 }
 
+static for_each_sel_ti_cb view_for_each_sel[4] = {
+	lib_for_each_sel,
+	lib_for_each_sel,
+	pl_for_each_sel,
+	play_queue_for_each_sel
+};
+
+/* wrapper for void lib_add_track(struct track_info *) etc. */
+static int wrapper_cb(void *data, struct track_info *ti)
+{
+	add_ti_cb add = data;
+
+	add(ti);
+	return 0;
+}
+
+static void add_from_browser(add_ti_cb add, int job_type)
+{
+	char *sel = browser_get_sel();
+
+	if (sel) {
+		enum file_type ft;
+		char *ret;
+
+		ft = cmus_detect_ft(sel, &ret);
+		if (ft != FILE_TYPE_INVALID) {
+			cmus_add(add, ret, ft, job_type);
+			window_down(browser_win, 1);
+		}
+		free(ret);
+		free(sel);
+	}
+}
+
+static void cmd_win_add_l(char *arg)
+{
+	if (cur_view == TREE_VIEW || cur_view == SORTED_VIEW)
+		return;
+
+	if (cur_view <= QUEUE_VIEW) {
+		view_for_each_sel[cur_view](wrapper_cb, lib_add_track, 0);
+	} else if (cur_view == BROWSER_VIEW) {
+		add_from_browser(lib_add_track, JOB_TYPE_LIB);
+	}
+}
+
+static void cmd_win_add_p(char *arg)
+{
+	/* could allow adding dups? */
+	if (cur_view == PLAYLIST_VIEW)
+		return;
+
+	if (cur_view <= QUEUE_VIEW) {
+		view_for_each_sel[cur_view](wrapper_cb, pl_add_track, 0);
+	} else if (cur_view == BROWSER_VIEW) {
+		add_from_browser(pl_add_track, JOB_TYPE_PL);
+	}
+}
+
+static void cmd_win_add_Q(char *arg)
+{
+	if (cur_view == QUEUE_VIEW)
+		return;
+
+	if (cur_view <= QUEUE_VIEW) {
+		view_for_each_sel[cur_view](wrapper_cb, play_queue_prepend, 1);
+	} else if (cur_view == BROWSER_VIEW) {
+		add_from_browser(play_queue_prepend, JOB_TYPE_QUEUE);
+	}
+}
+
+static void cmd_win_add_q(char *arg)
+{
+	if (cur_view == QUEUE_VIEW)
+		return;
+
+	if (cur_view <= QUEUE_VIEW) {
+		view_for_each_sel[cur_view](wrapper_cb, play_queue_append, 0);
+	} else if (cur_view == BROWSER_VIEW) {
+		add_from_browser(play_queue_append, JOB_TYPE_QUEUE);
+	}
+}
+
 /* tab exp {{{
  *
  * these functions fill tabexp struct, which is resetted beforehand
@@ -1300,6 +1383,10 @@ static struct command commands[] = {
 	{ "unmark",		cmd_unmark,	0, 0, NULL		},
 	{ "view",		cmd_view,	1, 1, NULL		},
 	{ "vol",		cmd_vol,	1, 2, NULL		},
+	{ "win-add-l",		cmd_win_add_l,	0, 0, NULL		},
+	{ "win-add-p",		cmd_win_add_p,	0, 0, NULL		},
+	{ "win-add-Q",		cmd_win_add_Q,	0, 0, NULL		},
+	{ "win-add-q",		cmd_win_add_q,	0, 0, NULL		},
 	{ NULL,			NULL,		0, 0, 0			}
 };
 

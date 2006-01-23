@@ -160,89 +160,6 @@ static void com_activate(void)
 	}
 }
 
-static for_each_sel_ti_cb view_for_each_sel[4] = {
-	lib_for_each_sel,
-	lib_for_each_sel,
-	pl_for_each_sel,
-	play_queue_for_each_sel
-};
-
-/* wrapper for void lib_add_track(struct track_info *) etc. */
-static int wrapper_cb(void *data, struct track_info *ti)
-{
-	add_ti_cb add = data;
-
-	add(ti);
-	return 0;
-}
-
-static void add_from_browser(add_ti_cb add, int job_type)
-{
-	char *sel = browser_get_sel();
-
-	if (sel) {
-		enum file_type ft;
-		char *ret;
-
-		ft = cmus_detect_ft(sel, &ret);
-		if (ft != FILE_TYPE_INVALID) {
-			cmus_add(add, ret, ft, job_type);
-			window_down(browser_win, 1);
-		}
-		free(ret);
-		free(sel);
-	}
-}
-
-static void com_add_to_lib(void)
-{
-	if (cur_view == TREE_VIEW || cur_view == SORTED_VIEW)
-		return;
-
-	if (cur_view <= QUEUE_VIEW) {
-		view_for_each_sel[cur_view](wrapper_cb, lib_add_track, 0);
-	} else if (cur_view == BROWSER_VIEW) {
-		add_from_browser(lib_add_track, JOB_TYPE_LIB);
-	}
-}
-
-static void com_add_to_pl(void)
-{
-	/* could allow adding dups? */
-	if (cur_view == PLAYLIST_VIEW)
-		return;
-
-	if (cur_view <= QUEUE_VIEW) {
-		view_for_each_sel[cur_view](wrapper_cb, pl_add_track, 0);
-	} else if (cur_view == BROWSER_VIEW) {
-		add_from_browser(pl_add_track, JOB_TYPE_PL);
-	}
-}
-
-static void com_add_to_queue(void)
-{
-	if (cur_view == QUEUE_VIEW)
-		return;
-
-	if (cur_view <= QUEUE_VIEW) {
-		view_for_each_sel[cur_view](wrapper_cb, play_queue_append, 0);
-	} else if (cur_view == BROWSER_VIEW) {
-		add_from_browser(play_queue_append, JOB_TYPE_QUEUE);
-	}
-}
-
-static void com_prepend_to_queue(void)
-{
-	if (cur_view == QUEUE_VIEW)
-		return;
-
-	if (cur_view <= QUEUE_VIEW) {
-		view_for_each_sel[cur_view](wrapper_cb, play_queue_prepend, 1);
-	} else if (cur_view == BROWSER_VIEW) {
-		add_from_browser(play_queue_prepend, JOB_TYPE_QUEUE);
-	}
-}
-
 static void com_move_after(void)
 {
 	switch (cur_view) {
@@ -396,12 +313,8 @@ static void win_up(void)
 /* functions {{{ */
 static const struct key_function common_functions[] = {
 	{ "activate",			com_activate			},
-	{ "add_to_library",		com_add_to_lib			},
-	{ "add_to_playlist",		com_add_to_pl			},
 	{ "move_after",			com_move_after			},
 	{ "move_before",		com_move_before			},
-	{ "queue_append",		com_add_to_queue		},
-	{ "queue_prepend",		com_prepend_to_queue		},
 	{ "remove",			com_remove			},
 	{ "select_current",		com_sel_current			},
 	{ "toggle",			com_toggle			},
