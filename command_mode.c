@@ -1193,6 +1193,19 @@ static void cmd_win_up(char *arg)
 	view_unlock();
 }
 
+static void cmd_win_update(char *arg)
+{
+	switch (cur_view) {
+	case TREE_VIEW:
+	case SORTED_VIEW:
+		cmus_update_lib();
+		break;
+	case BROWSER_VIEW:
+		browser_reload();
+		break;
+	}
+}
+
 static void cmd_browser_up(char *arg)
 {
 	browser_up();
@@ -1644,6 +1657,7 @@ static struct command commands[] = {
 	{ "win-toggle",		cmd_win_toggle,	0, 0, NULL		},
 	{ "win-top",		cmd_win_top,	0, 0, NULL		},
 	{ "win-up",		cmd_win_up,	0, 0, NULL		},
+	{ "win-update",		cmd_win_update,	0, 0, NULL		},
 	{ NULL,			NULL,		0, 0, 0			}
 };
 

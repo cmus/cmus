@@ -75,7 +75,6 @@ static const struct key_function common_functions[] = {
 };
 
 static struct key_function library_functions[] = {
-	{ "update",		cmus_update_lib		},
 	{ NULL,			NULL			}
 };
 
@@ -88,7 +87,6 @@ static const struct key_function queue_functions[] = {
 };
 
 static const struct key_function browser_functions[] = {
-	{ "reload",		browser_reload			},
 	{ NULL,			NULL				}
 };
 
