@@ -39,7 +39,6 @@
 #include <prog.h>
 #include <uchar.h>
 #include <spawn.h>
-#include <file.h>
 #include <server.h>
 #include <keys.h>
 #include <debug.h>

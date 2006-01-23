@@ -21,27 +21,18 @@
  */
 
 #include <keys.h>
-#include <player.h>
 #include <misc.h>
 #include <prog.h>
-#include <cmus.h>
-#include <filters.h>
-#include <search_mode.h>
-#include <play_queue.h>
-#include <lib.h>
-#include <pl.h>
-#include <browser.h>
-#include <window.h>
-#include <ui_curses.h>
 #include <file.h>
+#include <ui_curses.h>
+#include <command_mode.h>
 #include <xmalloc.h>
 #include <xstrjoin.h>
 #include <config.h>
-#include <command_mode.h>
-#include <options.h>
 
 #include <curses.h>
 #include <stdio.h>
+#include <string.h>
 #include <ctype.h>
 
 const char * const key_context_names[NR_CTXS + 1] = {
