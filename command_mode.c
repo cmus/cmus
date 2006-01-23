@@ -955,6 +955,244 @@ static void cmd_win_add_q(char *arg)
 	}
 }
 
+static void cmd_win_activate(char *arg)
+{
+	struct track_info *info = NULL;
+
+	switch (cur_view) {
+	case TREE_VIEW:
+	case SORTED_VIEW:
+		info = lib_set_selected();
+		break;
+	case PLAYLIST_VIEW:
+		info = pl_set_selected();
+		break;
+	case QUEUE_VIEW:
+		break;
+	case BROWSER_VIEW:
+		browser_enter();
+		break;
+	case FILTERS_VIEW:
+		filters_activate();
+		break;
+	}
+	if (info) {
+		/* update lib/pl mode */
+		if (cur_view < 2)
+			play_library = 1;
+		if (cur_view == 2)
+			play_library = 0;
+
+		player_play_file(info->filename);
+		track_info_unref(info);
+	}
+}
+
+static void cmd_win_mv_after(char *arg)
+{
+	switch (cur_view) {
+	case TREE_VIEW:
+	case SORTED_VIEW:
+		break;
+	case PLAYLIST_VIEW:
+		pl_move_after();
+		break;
+	case QUEUE_VIEW:
+		play_queue_move_after();
+		break;
+	case BROWSER_VIEW:
+		break;
+	case FILTERS_VIEW:
+		break;
+	}
+}
+
+static void cmd_win_mv_before(char *arg)
+{
+	switch (cur_view) {
+	case TREE_VIEW:
+	case SORTED_VIEW:
+		break;
+	case PLAYLIST_VIEW:
+		pl_move_before();
+		break;
+	case QUEUE_VIEW:
+		play_queue_move_before();
+		break;
+	case BROWSER_VIEW:
+		break;
+	case FILTERS_VIEW:
+		break;
+	}
+}
+
+static void cmd_win_remove(char *arg)
+{
+	switch (cur_view) {
+	case TREE_VIEW:
+	case SORTED_VIEW:
+		lib_remove_sel();
+		break;
+	case PLAYLIST_VIEW:
+		pl_remove_sel();
+		break;
+	case QUEUE_VIEW:
+		play_queue_remove_sel();
+		break;
+	case BROWSER_VIEW:
+		browser_delete();
+		break;
+	case FILTERS_VIEW:
+		filters_delete_filter();
+		break;
+	}
+}
+
+static void cmd_win_sel_cur(char *arg)
+{
+	switch (cur_view) {
+	case TREE_VIEW:
+	case SORTED_VIEW:
+		lib_sel_current();
+		break;
+	case PLAYLIST_VIEW:
+		pl_sel_current();
+		break;
+	case QUEUE_VIEW:
+		break;
+	case BROWSER_VIEW:
+		break;
+	case FILTERS_VIEW:
+		break;
+	}
+}
+
+static void cmd_win_toggle(char *arg)
+{
+	switch (cur_view) {
+	case TREE_VIEW:
+		lib_toggle_expand_artist();
+		break;
+	case SORTED_VIEW:
+		break;
+	case PLAYLIST_VIEW:
+		pl_toggle_mark();
+		break;
+	case QUEUE_VIEW:
+		play_queue_toggle_mark();
+		break;
+	case BROWSER_VIEW:
+		break;
+	case FILTERS_VIEW:
+		filters_toggle_filter();
+		break;
+	}
+}
+
+static void view_lock(void)
+{
+	switch (cur_view) {
+	case TREE_VIEW:
+	case SORTED_VIEW:
+		lib_lock();
+		break;
+	case PLAYLIST_VIEW:
+		pl_lock();
+		break;
+	case QUEUE_VIEW:
+		play_queue_lock();
+		break;
+	case BROWSER_VIEW:
+	case FILTERS_VIEW:
+		break;
+	}
+}
+
+static void view_unlock(void)
+{
+	switch (cur_view) {
+	case TREE_VIEW:
+	case SORTED_VIEW:
+		lib_unlock();
+		break;
+	case PLAYLIST_VIEW:
+		pl_unlock();
+		break;
+	case QUEUE_VIEW:
+		play_queue_unlock();
+		break;
+	case BROWSER_VIEW:
+	case FILTERS_VIEW:
+		break;
+	}
+}
+
+static struct window *current_win(void)
+{
+	switch (cur_view) {
+	case TREE_VIEW:
+	case SORTED_VIEW:
+		return lib.cur_win;
+	case PLAYLIST_VIEW:
+		return pl_win;
+	case QUEUE_VIEW:
+		return play_queue_win;
+	case BROWSER_VIEW:
+		return browser_win;
+	case FILTERS_VIEW:
+	default:
+		return filters_win;
+	}
+}
+
+static void cmd_win_bottom(char *arg)
+{
+	view_lock();
+	window_goto_bottom(current_win());
+	view_unlock();
+}
+
+static void cmd_win_down(char *arg)
+{
+	view_lock();
+	window_down(current_win(), 1);
+	view_unlock();
+}
+
+static void cmd_win_next(char *arg)
+{
+	if (cur_view == TREE_VIEW)
+		lib_toggle_active_window();
+}
+
+static void cmd_win_pg_down(char *arg)
+{
+	view_lock();
+	window_page_down(current_win());
+	view_unlock();
+}
+
+static void cmd_win_pg_up(char *arg)
+{
+	view_lock();
+	window_page_up(current_win());
+	view_unlock();
+}
+
+static void cmd_win_top(char *arg)
+{
+	view_lock();
+	window_goto_top(current_win());
+	view_unlock();
+}
+
+static void cmd_win_up(char *arg)
+{
+	view_lock();
+	window_up(current_win(), 1);
+	view_unlock();
+}
+
 /* tab exp {{{
  *
  * these functions fill tabexp struct, which is resetted beforehand
@@ -1387,6 +1625,19 @@ static struct command commands[] = {
 	{ "win-add-p",		cmd_win_add_p,	0, 0, NULL		},
 	{ "win-add-Q",		cmd_win_add_Q,	0, 0, NULL		},
 	{ "win-add-q",		cmd_win_add_q,	0, 0, NULL		},
+	{ "win-activate",	cmd_win_activate,0, 0, NULL		},
+	{ "win-bottom",		cmd_win_bottom,	0, 0, NULL		},
+	{ "win-down",		cmd_win_down,	0, 0, NULL		},
+	{ "win-mv-after",	cmd_win_mv_after,0, 0, NULL		},
+	{ "win-mv-before",	cmd_win_mv_before,0, 0, NULL		},
+	{ "win-next",		cmd_win_next,	0, 0, NULL		},
+	{ "win-page-down",	cmd_win_pg_down,0, 0, NULL		},
+	{ "win-page-up",	cmd_win_pg_up,	0, 0, NULL		},
+	{ "win-remove",		cmd_win_remove,	0, 0, NULL		},
+	{ "win-sel-cur",	cmd_win_sel_cur,0, 0, NULL		},
+	{ "win-toggle",		cmd_win_toggle,	0, 0, NULL		},
+	{ "win-top",		cmd_win_top,	0, 0, NULL		},
+	{ "win-up",		cmd_win_up,	0, 0, NULL		},
 	{ NULL,			NULL,		0, 0, 0			}
 };
 
