@@ -19,7 +19,6 @@ extern unsigned int pl_nr_tracks;
 extern unsigned int pl_total_time;
 extern unsigned int pl_nr_marked;
 extern char **pl_sort_keys;
-/* extern unsigned int pl_status_changed; */
 
 void pl_init(void);
 

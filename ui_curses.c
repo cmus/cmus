@@ -760,7 +760,6 @@ static void do_update_statusline(void)
 	char format[80];
 
 	lib_lock();
-	lib.status_changed = 0;
 	fopt_set_time(&status_fopts[SF_TOTAL], play_library ? lib.total_time : pl_total_time, 0);
 	fopt_set_str(&status_fopts[SF_REPEAT], repeat_strs[repeat]);
 	fopt_set_str(&status_fopts[SF_SHUFFLE], shuffle_strs[shuffle]);
@@ -1470,8 +1469,7 @@ static void update(void)
 		player_info.metadata_changed = 0;
 		needs_title_update = 1;
 	}
-	if (lib.status_changed || player_info.position_changed ||
-			player_info.status_changed || player_info.vol_changed) {
+	if (player_info.position_changed || player_info.status_changed || player_info.vol_changed) {
 		player_info.position_changed = 0;
 		player_info.status_changed = 0;
 		player_info.vol_changed = 0;
@@ -1503,6 +1501,8 @@ static void update(void)
 
 	if (needs_spawn)
 		spawn_status_program();
+
+	needs_status_update += needs_view_update;
 
 	if (needs_view_update || needs_title_update || needs_status_update || needs_command_update) {
 		curs_set(0);

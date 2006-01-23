@@ -277,11 +277,6 @@ struct searchable *sorted_searchable;
 
 /* these are called always library locked */
 
-static inline void status_changed(void)
-{
-	lib.status_changed = 1;
-}
-
 static void all_wins_changed(void)
 {
 	lib.tree_win->changed = 1;
@@ -616,7 +611,6 @@ static void views_add_track(struct track_info *ti)
 	if (ti->duration != -1)
 		lib.total_time += ti->duration;
 	lib.nr_tracks++;
-	status_changed();
 }
 
 /* add track to views 1-3 lazily
@@ -651,8 +645,6 @@ static void views_update(void)
 	window_changed(lib.sorted_win);
 
 	window_goto_top(lib.sorted_win);
-
-	status_changed();
 }
 
 struct fh_entry {
@@ -955,7 +947,6 @@ static void clear_views(void)
 
 		item = next;
 	}
-	status_changed();
 }
 
 static void clear_store(void)
@@ -1457,7 +1448,6 @@ void lib_remove_sel(void)
 	} else if (lib.cur_win == lib.sorted_win) {
 		sorted_win_remove_sel();
 	}
-	status_changed();
 	lib_unlock();
 }
 

@@ -109,8 +109,6 @@ struct library {
 	unsigned int nr_tracks;
 	unsigned int total_time;
 
-	unsigned int status_changed : 1;
-
 	/* sorted list instead of tree */
 	unsigned int play_sorted : 1;
 
