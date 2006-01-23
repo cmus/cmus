@@ -207,6 +207,9 @@ static int do_browser_load(const char *name)
 			free(names[i]);
 		}
 		free(names);
+
+		/* try to update currect working directory */
+		chdir(name);
 	} else {
 		errno = ENOTDIR;
 		return -1;
