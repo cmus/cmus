@@ -912,16 +912,6 @@ int key_bind(const char *context, const char *key, const char *func)
 	b = find_binding(c, k);
 	if (b)
 		goto bound;
-	if (c != CTX_COMMON) {
-		/* always search CTX_COMMON because same key can't be bound
-		 * in CTX_COMMON _and_ any other context at the same time
-		 */
-		b = find_binding(CTX_COMMON, k);
-		if (b) {
-			c = CTX_COMMON;
-			goto bound;
-		}
-	}
 
 	if (f == NULL) {
 		/* ":command", skip the ':' */
