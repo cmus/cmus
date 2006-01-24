@@ -7,17 +7,9 @@
 
 #include <sf.h>
 
+void op_load_plugins(void);
 void op_init_plugins(void);
-
-/*
- * errors: OP_ERROR_{}
- */
-int op_init(void);
-
-/*
- * errors: OP_ERROR_{}
- */
-int op_exit(void);
+void op_exit_plugins(void);
 
 /*
  * select output plugin and open its mixer
@@ -25,6 +17,7 @@ int op_exit(void);
  * errors: OP_ERROR_{ERRNO, NO_PLUGIN}
  */
 int op_select(const char *name);
+int op_select_any(void);
 
 /*
  * open selected plugin

@@ -25,7 +25,7 @@
 /* NOTE: this is user visible and thus starts counting from 1, not 0 */
 static int default_view = TREE_VIEW + 1;
 
-char *op_name = NULL;
+char *output_plugin = NULL;
 char *status_display_program = NULL;
 int confirm_run = 1;
 int show_hidden = 0;
@@ -250,29 +250,21 @@ static void set_pl_sort(unsigned int id, const char *buf)
 
 static void get_output_plugin(unsigned int id, char *buf)
 {
-/* 	if (ui_initialized) { */
-		char *value = player_get_op();
+	char *value = player_get_op();
 
-		if (value)
-			strcpy(buf, value);
-		free(value);
-/*
- * 		return;
- * 	}
- * 	if (op_name)
- * 		strcpy(buf, op_name);
- */
+	if (value)
+		strcpy(buf, value);
+	free(value);
 }
 
 static void set_output_plugin(unsigned int id, const char *buf)
 {
-/* 	if (ui_initialized) { */
+	if (ui_initialized) {
 		player_set_op(buf);
-/*
- * 	} else {
- * 		op_name = xstrdup(buf);
- * 	}
- */
+	} else {
+		/* must set it later manually */
+		output_plugin = xstrdup(buf);
+	}
 }
 
 static void get_status_display_program(unsigned int id, char *buf)
@@ -758,14 +750,13 @@ static void set_op_option(unsigned int id, const char *buf)
 }
 
 /* id is ((plugin_index << 16) | option_index) */
-static void handle_op_option(unsigned int id, const char *name)
+static void add_op_option(unsigned int id, const char *name)
 {
 	option_add(xstrdup(name), id, get_op_option, set_op_option, NULL);
 }
 
-void options_init(void)
+void options_add(void)
 {
-	struct cmus_opt *opt;
 	int i;
 
 	/* add options */
@@ -780,16 +771,19 @@ void options_init(void)
 	for (i = 0; i < NR_COLORS * 2; i++)
 		option_add(color_names[i], i, get_color, set_color, toggle_color);
 
-	player_for_each_op_option(handle_op_option);
+	player_for_each_op_option(add_op_option);
+}
+
+void options_load(void)
+{
+	struct cmus_opt *opt;
+	int i;
 
 	/* initialize those that can't be statically initialized */
 	for (i = 0; str_defaults[i].name; i++)
 		option_set(str_defaults[i].name, str_defaults[i].value);
 
-	/* load options from the config file */
-
-/* 	sconf_load(); */
-
+	sconf_load();
 	list_for_each_entry(opt, &option_head, node) {
 		char *val;
 
@@ -798,7 +792,6 @@ void options_init(void)
 			free(val);
 		}
 	}
-
 	cur_view = default_view - 1;
 }
 
@@ -808,8 +801,10 @@ void options_exit(void)
 	struct cmus_opt *opt;
 
 	list_for_each_entry(opt, &option_head, node) {
+		buf[0] = 0;
 		opt->get(opt->id, buf);
-		sconf_set_str_option(opt->name, buf);
+		if (buf[0])
+			sconf_set_str_option(opt->name, buf);
 	}
-/* 	sconf_save(); */
+	sconf_save();
 }

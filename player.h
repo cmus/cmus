@@ -78,8 +78,10 @@ struct player_info {
 extern struct player_info player_info;
 extern int player_cont;
 
+void player_load_plugins(void);
 void player_init_plugins(void);
-int player_init(const struct player_callbacks *callbacks);
+
+void player_init(const struct player_callbacks *callbacks);
 void player_exit(void);
 
 /* set current file */

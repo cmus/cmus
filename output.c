@@ -21,7 +21,6 @@
 #include <op.h>
 #include <mixer.h>
 #include <sf.h>
-#include <sconf.h>
 #include <prog.h>
 #include <utils.h>
 #include <xmalloc.h>
@@ -58,12 +57,7 @@ static sample_format_t current_sf = 0;
 /* volume is between 0 and volume_max */
 static int volume_max;
 
-static void dump_option(unsigned int id, const char *key)
-{
-	d_print("0x%08x %s\n", id, key);
-}
-
-static void load_plugins(void)
+void op_load_plugins(void)
 {
 	DIR *dir;
 	struct dirent *d;
@@ -130,7 +124,7 @@ sym_err:
 	closedir(dir);
 }
 
-static void init_plugins(void)
+void op_init_plugins(void)
 {
 	struct output_plugin *o;
 	int rc;
@@ -153,7 +147,7 @@ static void init_plugins(void)
 	}
 }
 
-static void exit_plugins(void)
+void op_exit_plugins(void)
 {
 	struct output_plugin *o;
 
@@ -163,146 +157,6 @@ static void exit_plugins(void)
 		if (o->pcm_initialized)
 			o->pcm_ops->exit();
 	}
-}
-
-static void load_plugin_options(void)
-{
-	struct output_plugin *o;
-
-	list_for_each_entry(o, &op_head, node) {
-		char key[64];
-		int j;
-
-		for (j = 0; o->pcm_options[j]; j++) {
-			char *val = NULL;
-
-			snprintf(key, sizeof(key), "dsp.%s.%s",
-					o->name,
-					o->pcm_options[j]);
-			sconf_get_str_option(key, &val);
-			if (val) {
-				d_print("loaded: '%s=%s'\n", key, val);
-				o->pcm_ops->set_option(j, val);
-				free(val);
-			}
-		}
-
-		/* arts has no mixer */
-		if (o->mixer_ops == NULL)
-			continue;
-
-		for (j = 0; o->mixer_options[j]; j++) {
-			char *val = NULL;
-
-			snprintf(key, sizeof(key), "mixer.%s.%s",
-					o->name,
-					o->mixer_options[j]);
-			sconf_get_str_option(key, &val);
-			if (val) {
-				d_print("loaded: '%s=%s'\n", key, val);
-				o->mixer_ops->set_option(j, val);
-				free(val);
-			}
-		}
-	}
-}
-
-static void save_plugin_options(void)
-{
-	struct output_plugin *o;
-
-	list_for_each_entry(o, &op_head, node) {
-		char key[64];
-		int j;
-
-		/* FIXME: */
-		if (!o->pcm_initialized)
-			continue;
-
-		for (j = 0; o->pcm_options[j]; j++) {
-			char *val = NULL;
-
-			o->pcm_ops->get_option(j, &val);
-			if (val) {
-				snprintf(key, sizeof(key), "dsp.%s.%s",
-						o->name,
-						o->pcm_options[j]);
-				d_print("saving: '%s=%s'\n", key, val);
-				sconf_set_str_option(key, val);
-				free(val);
-			}
-		}
-
-		/* FIXME: */
-		if (!o->mixer_initialized)
-			continue;
-
-		for (j = 0; o->mixer_options[j]; j++) {
-			char *val = NULL;
-
-			o->mixer_ops->get_option(j, &val);
-			if (val) {
-				snprintf(key, sizeof(key), "mixer.%s.%s",
-						o->name,
-						o->mixer_options[j]);
-				d_print("saving: '%s=%s'\n", key, val);
-				sconf_set_str_option(key, val);
-				free(val);
-			}
-		}
-	}
-}
-
-void op_init_plugins(void)
-{
-	load_plugins();
-
-	/* _must_ load plugin options before initialization! */
-	load_plugin_options();
-
-	/* options have been set, initialize */
-	init_plugins();
-}
-
-int op_init(void)
-{
-	int rc;
-	char *op_name = NULL;
-
-	sconf_get_str_option("output_plugin", &op_name);
-
-	/* select op */
-	rc = -OP_ERROR_NO_PLUGIN;
-	if (op_name) {
-		rc = op_select(op_name);
-		if (rc)
-			d_print("could not initialize user defined op: %s\n", op_name);
-		free(op_name);
-	}
-	if (rc) {
-		/* default op is the first initialized op */
-		struct output_plugin *o;
-
-		list_for_each_entry(o, &op_head, node) {
-			if (o->pcm_initialized) {
-				rc = op_select(o->name);
-				break;
-			}
-		}
-	}
-	op_for_each_option(dump_option);
-	d_print("rc = %d\n", rc);
-	return rc;
-}
-
-int op_exit(void)
-{
-	d_print("saving options\n");
-	save_plugin_options();
-	if (op)
-		sconf_set_str_option("output_plugin", op->name);
-	exit_plugins();
-	return 0;
 }
 
 static void close_mixer(void)
@@ -360,6 +214,22 @@ int op_select(const char *name)
 		}
 	}
 	return -OP_ERROR_NO_PLUGIN;
+}
+
+int op_select_any(void)
+{
+	struct output_plugin *o;
+	int rc = -OP_ERROR_NO_PLUGIN;
+
+	list_for_each_entry(o, &op_head, node) {
+		if (!o->pcm_initialized)
+			continue;
+
+		rc = op_select(o->name);
+		if (rc == 0)
+			break;
+	}
+	return rc;
 }
 
 int op_open(sample_format_t sf)
@@ -457,13 +327,14 @@ int op_get_volume(int *left, int *right, int *max_vol)
 	return op->mixer_ops->get_volume(left, right);
 }
 
+/* can be called even if op isn't set */
 int op_volume_changed(int *left, int *right, int *max_vol)
 {
 	static int oldl = -1;
 	static int oldr = -1;
 	int rc;
 
-	if (!op->mixer_open)
+	if (op == NULL || !op->mixer_open)
 		return 0;
 	rc = op->mixer_ops->get_volume(left, right);
 	if (rc)

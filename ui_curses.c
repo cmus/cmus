@@ -34,7 +34,6 @@
 #include <xstrjoin.h>
 #include <window.h>
 #include <format_print.h>
-#include <sconf.h>
 #include <misc.h>
 #include <prog.h>
 #include <uchar.h>
@@ -1691,7 +1690,6 @@ static void init_curses(void)
 static void init_all(void)
 {
 	char *term;
-	int rc;
 
 	term = getenv("TERM");
 	if (term && (strncmp(term, "xterm", 5) == 0 ||
@@ -1701,29 +1699,31 @@ static void init_all(void)
 
 	remote_socket = remote_server_init(server_address);
 
-	rc = player_init(&player_callbacks);
-	if (rc) {
-		remote_server_exit();
-		die("could not initialize player\n");
-	}
+	/* does not select output plugin */
+	player_init(&player_callbacks);
+
+	/* plugins have been loaded so we know what plugin options are available */
+	options_add();
 
 	lib_init();
 	searchable = tree_searchable;
-
 	pl_init();
-
 	cmus_init();
-
 	browser_init();
 	filters_init();
 	cmdline_init();
-	/* commands_init must be after player_init */
 	commands_init();
 	search_mode_init();
 	keys_init();
 
 	/* everything but ui must be initialized now */
-	options_init();
+	options_load();
+
+	/* options have been loaded, init plugins (set their options) */
+	player_init_plugins();
+
+	/* finally we can set the output plugin */
+	player_set_op(output_plugin);
 
 	player_get_volume(&player_info.vol_left, &player_info.vol_right, &player_info.vol_max);
 
@@ -1740,22 +1740,18 @@ static void exit_all(void)
 	endwin();
 
 	remote_server_exit();
-
 	cmus_exit();
 	cmus_save(lib_for_each, lib_autosave_filename);
 	cmus_save(pl_for_each, pl_autosave_filename);
+	free(lib_autosave_filename);
+	free(status_display_program);
 
 	if (cur_track_info)
 		track_info_unref(cur_track_info);
 
 	options_exit();
-
-	free(lib_autosave_filename);
-	free(status_display_program);
-
 	player_exit();
 	lib_exit();
-
 	keys_exit();
 	commands_exit();
 	search_mode_exit();
@@ -1839,11 +1835,9 @@ int main(int argc, char *argv[])
 		snprintf(server_address, 256, "/tmp/cmus-%s", user_name);
 	}
 	debug_init();
-	sconf_load();
-
 	d_print("charset = '%s'\n", charset);
 
-	player_init_plugins();
+	player_load_plugins();
 	if (list_plugins) {
 		player_dump_plugins();
 		return 0;
@@ -1851,7 +1845,5 @@ int main(int argc, char *argv[])
 	init_all();
 	main_loop();
 	exit_all();
-
-	sconf_save();
 	return 0;
 }

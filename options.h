@@ -69,7 +69,7 @@ enum {
 
 #define BRIGHT (1 << 3)
 
-extern char *op_name;
+extern char *output_plugin;
 extern char *status_display_program;
 extern int confirm_run;
 extern int show_hidden;
@@ -101,7 +101,13 @@ extern char *window_title_format;
 extern char *window_title_alt_format;
 
 
-void options_init(void);
+/* build option list */
+void options_add(void);
+
+/* load options from the config file */
+void options_load(void);
+
+/* save options */
 void options_exit(void);
 
 void option_add(const char *name, unsigned int id, opt_get_cb get,

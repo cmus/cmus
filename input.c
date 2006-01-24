@@ -334,7 +334,7 @@ static int open_file(struct input_plugin *ip)
 	return 0;
 }
 
-void ip_init_plugins(void)
+void ip_load_plugins(void)
 {
 	DIR *dir;
 	struct dirent *d;

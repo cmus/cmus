@@ -296,7 +296,6 @@ static void __player_status_changed(void)
 	player_info_lock();
 	player_info.status = consumer_status;
 	player_info.pos = pos;
-/* 	player_info.cont = player_cont; */
 	player_info.buffer_fill = buffer_get_filled_chunks(&player_buffer);
 	player_info.buffer_size = buffer_get_nr_chunks(&player_buffer);
 	player_info.status_changed = 1;
@@ -692,13 +691,18 @@ static void *producer_loop(void *arg)
 	return NULL;
 }
 
+void player_load_plugins(void)
+{
+	ip_load_plugins();
+	op_load_plugins();
+}
+
 void player_init_plugins(void)
 {
-	ip_init_plugins();
 	op_init_plugins();
 }
 
-int player_init(const struct player_callbacks *callbacks)
+void player_init(const struct player_callbacks *callbacks)
 {
 	int rc, nr_chunks;
 #if defined(__linux__) || defined(__FreeBSD__)
@@ -713,15 +717,6 @@ int player_init(const struct player_callbacks *callbacks)
 	buffer_init(&player_buffer, nr_chunks);
 
 	player_cbs = callbacks;
-	rc = op_init();
-	if (rc) {
-		int save;
-
-		save = errno;
-		buffer_free(&player_buffer);
-		errno = save;
-		return rc;
-	}
 
 #if defined(__linux__) || defined(__FreeBSD__)
 	rc = pthread_attr_init(&attr);
@@ -755,7 +750,6 @@ int player_init(const struct player_callbacks *callbacks)
 	player_lock();
 	__player_status_changed();
 	player_unlock();
-	return 0;
 }
 
 void player_exit(void)
@@ -772,7 +766,7 @@ void player_exit(void)
 	rc = pthread_join(producer_thread, NULL);
 	BUG_ON(rc);
 
-	op_exit();
+	op_exit_plugins();
 	buffer_free(&player_buffer);
 }
 
@@ -1011,7 +1005,12 @@ int player_set_op(const char *name)
 	if (consumer_status == CS_PLAYING || consumer_status == CS_PAUSED)
 		op_close();
 
-	rc = op_select(name);
+	if (name) {
+		rc = op_select(name);
+	} else {
+		/* first initialized plugin */
+		rc = op_select_any();
+	}
 	if (rc) {
 		consumer_status = CS_STOPPED;
 
