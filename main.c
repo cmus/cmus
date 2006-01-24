@@ -52,18 +52,22 @@ static void remote_connect(const char *server)
 	}
 }
 
-static void remote_send_cmd(enum remote_command cmd, void *data, size_t data_size)
+static void write_line(const char *line)
 {
-	struct remote_command_header cmd_header;
-
-	cmd_header.cmd = cmd;
-	cmd_header.data_size = data_size;
-	if (write_all(sock, &cmd_header, sizeof(struct remote_command_header)) == -1)
+	if (write_all(sock, line, strlen(line)) == -1)
 		die_errno("write");
-	if (data_size > 0) {
-		if (write_all(sock, data, data_size) == -1)
-			die_errno("write");
-	}
+}
+
+static void send_cmd(const char *format, ...)
+{
+	char buf[512];
+	va_list ap;
+
+	va_start(ap, format);
+	vsnprintf(buf, sizeof(buf), format, ap);
+	va_end(ap);
+
+	write_line(buf);
 }
 
 enum flags {
@@ -118,6 +122,7 @@ static int flags[NR_FLAGS] = { 0, };
 
 static const char *usage =
 "Usage: %s [OPTION]... [FILE|DIR|PLAYLIST]...\n"
+"   or: %s -\n"
 "Control cmus throught socket.\n"
 "\n"
 "      --server SOCKET  connect using socket SOCKET instead of /tmp/cmus-$USER\n"
@@ -132,9 +137,9 @@ static const char *usage =
 "  -C, --continue       toggle continue\n"
 "  -R, --repeat         toggle repeat\n"
 "  -S, --shuffle        toggle shuffle\n"
-"  -v, --volume DELTA   increase/decrease volume\n"
+"  -v, --volume VOL     change volume\n"
 "      --reshuffle      shuffle playlist again\n"
-"      --seek SECONDS   seek\n"
+"      --seek SEEK      seek\n"
 "\n"
 "  -l, --library        modify library instead of playlist\n"
 "  -P, --playlist       modify playlist (default)\n"
@@ -150,11 +155,10 @@ int main(int argc, char *argv[])
 {
 	char server_buf[256];
 	char *server = NULL;
-	int volume = 0;
-	int seek = 0;
-	int need_file_args = 1;
-	enum { CMD_CTX_PLAYLIST, CMD_CTX_LIBRARY, CMD_CTX_QUEUE } context = CMD_CTX_PLAYLIST;
-	int i;
+	char *volume = NULL;
+	char *seek = NULL;
+	int i, need_file_args = 1;
+	int context = 'p';
 
 	program_name = argv[0];
 	argv++;
@@ -172,39 +176,27 @@ int main(int argc, char *argv[])
 			printf(usage, program_name);
 			return 0;
 		case FLAG_VERSION:
-			printf(PACKAGE " " VERSION "\nCopyright 2004-2005 Timo Hirvonen\n");
+			printf(PACKAGE " " VERSION "\nCopyright 2004-2006 Timo Hirvonen\n");
 			return 0;
 		case FLAG_SERVER:
 			server = arg;
 			break;
                 case FLAG_VOLUME:
-			{
-				char *end;
-
-				volume = strtol(arg, &end, 10);
-				if (*arg == 0 || *end != 0 || volume == 0)
-					die("argument for --volume must be non-zero integer\n");
-				need_file_args = 0;
-			}
-                       break;
+			volume = arg;
+			need_file_args = 0;
+			break;
 		case FLAG_SEEK:
-			{
-				char *end;
-
-				seek = strtol(arg, &end, 10);
-				if (*arg == 0 || *end != 0 || seek == 0)
-					die("argument for --seek must be non-zero integer\n");
-				need_file_args = 0;
-			}
+			seek = arg;
+			need_file_args = 0;
 			break;
 		case FLAG_LIBRARY:
-			context = CMD_CTX_LIBRARY;
+			context = 'l';
 			break;
 		case FLAG_PLAYLIST:
-			context = CMD_CTX_PLAYLIST;
+			context = 'p';
 			break;
 		case FLAG_QUEUE:
-			context = CMD_CTX_QUEUE;
+			context = 'q';
 			break;
 		case FLAG_PLAY:
 		case FLAG_PAUSE:
@@ -239,14 +231,16 @@ int main(int argc, char *argv[])
 
 	remote_connect(server);
 
-	/* set context */
-	if (context == CMD_CTX_LIBRARY)
-		remote_send_cmd(CMD_LIBRARY, NULL, 0);
-	if (context == CMD_CTX_QUEUE)
-		remote_send_cmd(CMD_QUEUE, NULL, 0);
+	if (argv[0] && strcmp(argv[0], "-") == 0) {
+		char line[512];
+
+		while (fgets(line, sizeof(line), stdin))
+			write_line(line);
+		return 0;
+	}
 
 	if (flags[FLAG_CLEAR])
-		remote_send_cmd(CMD_CLEAR, NULL, 0);
+		send_cmd("clear -%c\n", context);
 	for (i = 0; argv[i]; i++) {
 		char *filename;
 
@@ -259,30 +253,30 @@ int main(int argc, char *argv[])
 				continue;
 			}
 		}
-		remote_send_cmd(CMD_ADD, filename, strlen(filename) + 1);
+		send_cmd("add -%c %s\n", context, filename);
 		free(filename);
 	}
 	if (flags[FLAG_CONTINUE])
-		remote_send_cmd(CMD_TCONT, NULL, 0);
+		send_cmd("toggle continue\n");
 	if (flags[FLAG_REPEAT])
-		remote_send_cmd(CMD_TREPEAT, NULL, 0);
+		send_cmd("toggle repeat\n");
 	if (flags[FLAG_SHUFFLE])
-		remote_send_cmd(CMD_TSHUFFLE, NULL, 0);
+		send_cmd("toggle shuffle\n");
 	if (flags[FLAG_RESHUFFLE])
-		remote_send_cmd(CMD_RESHUFFLE, NULL, 0);
+		send_cmd("shuffle\n");
 	if (flags[FLAG_STOP])
-		remote_send_cmd(CMD_STOP, NULL, 0);
+		send_cmd("player-stop\n");
 	if (flags[FLAG_NEXT])
-		remote_send_cmd(CMD_NEXT, NULL, 0);
+		send_cmd("player-next\n");
 	if (flags[FLAG_PREV])
-		remote_send_cmd(CMD_PREV, NULL, 0);
+		send_cmd("player-prev\n");
 	if (flags[FLAG_PLAY])
-		remote_send_cmd(CMD_PLAY, NULL, 0);
+		send_cmd("player-play\n");
 	if (flags[FLAG_PAUSE])
-		remote_send_cmd(CMD_PAUSE, NULL, 0);
+		send_cmd("player-pause\n");
 	if (volume)
-		remote_send_cmd(CMD_MIX_VOL, &volume, sizeof(int));
+		send_cmd("vol %s\n", volume);
 	if (seek)
-		remote_send_cmd(CMD_SEEK, &seek, sizeof(int));
+		send_cmd("seek %s\n", seek);
 	return 0;
 }

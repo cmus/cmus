@@ -33,6 +33,7 @@ extern int ui_initialized;
 extern enum ui_input_mode input_mode;
 extern int cur_view;
 extern struct searchable *searchable;
+extern int display_errors;
 
 /* usually ~/.config/cmus/lib.pl and ~/.config/cmus/playlist.pl */
 extern char *lib_autosave_filename;

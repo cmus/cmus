@@ -55,7 +55,6 @@ static struct history cmd_history;
 static char *cmd_history_filename;
 static char *history_search_text = NULL;
 static int arg_expand_cmd = -1;
-static int parse_complain = 0;
 
 static char *get_home_dir(const char *username)
 {
@@ -289,8 +288,7 @@ static int parse_flags(const char **strp, const char *flags)
 
 		flag = str[1];
 		if (!strchr(flags, flag)) {
-			if (parse_complain)
-				error_msg("invalid option -%c", flag);
+			error_msg("invalid option -%c", flag);
 			return -1;
 		}
 
@@ -1920,8 +1918,6 @@ void run_command(const char *buf)
 	int arg_start, arg_end;
 	int i;
 
-	parse_complain = 1;
-
 	i = 0;
 	while (buf[i] && buf[i] == ' ')
 		i++;
@@ -1975,8 +1971,6 @@ void run_command(const char *buf)
 	}
 	free(arg);
 	free(cmd);
-
-	parse_complain = 0;
 }
 
 static void reset_history_search(void)
@@ -2014,6 +2008,9 @@ void command_mode_ch(uchar ch)
 		input_mode = NORMAL_MODE;
 		break;
 	case 0x09:
+		/* tab expansion should not complain  */
+		display_errors = 0;
+
 		tab_expand();
 		break;
 	case 127:

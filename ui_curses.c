@@ -64,6 +64,9 @@ enum ui_input_mode input_mode = NORMAL_MODE;
 int cur_view = TREE_VIEW;
 struct searchable *searchable;
 
+/* display parse errors? (command line) */
+int display_errors = 0;
+
 char *lib_autosave_filename;
 char *pl_autosave_filename;
 char *lib_filename = NULL;
@@ -1111,6 +1114,9 @@ void error_msg(const char *format, ...)
 {
 	va_list ap;
 
+	if (!display_errors)
+		return;
+
 	strcpy(error_buf, "Error: ");
 	va_start(ap, format);
 	vsnprintf(error_buf + 7, sizeof(error_buf) - 7, format, ap);
@@ -1580,11 +1586,17 @@ static void main_loop(void)
 			continue;
 
 		if (FD_ISSET(remote_socket, &set)) {
+			/* no error msgs for cmus-remote */
+			display_errors = 0;
+
 			remote_server_serve();
 		}
 		if (FD_ISSET(0, &set)) {
 			int key = 0;
 			uchar ch;
+
+			/* diplay errors for interactive commands */
+			display_errors = 1;
 
 			if (using_utf8) {
 				rc = u_getch(&ch, &key);
