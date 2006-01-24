@@ -657,7 +657,7 @@ static const char *pretty(const char *path)
 	return buf;
 }
 
-static const char * const sorted_names[2] = { "not sorted", "sorted" };
+static const char * const sorted_names[2] = { "not sorted", "sorted by" };
 
 static void update_sorted_window(void)
 {
@@ -671,8 +671,8 @@ static void update_sorted_window(void)
 		utf8_encode(filename);
 		filename = conv_buffer;
 	}
-	snprintf(title, sizeof(title), "Library (%s) - %s",
-			sorted_names[lib.sort_keys[0] != NULL], pretty(filename));
+	snprintf(title, sizeof(title), "Library %s - %s %s", pretty(filename),
+			sorted_names[lib_sort_str[0] != 0], lib_sort_str);
 	update_window(lib.sorted_win, 0, 0, COLS, title, print_sorted);
 }
 
@@ -688,8 +688,8 @@ static void update_pl_window(void)
 		utf8_encode(filename);
 		filename = conv_buffer;
 	}
-	snprintf(title, sizeof(title), "Playlist (%s) - %s",
-			sorted_names[pl_sort_keys[0] != NULL], pretty(filename));
+	snprintf(title, sizeof(title), "Playlist %s - %s %s", pretty(filename),
+			sorted_names[pl_sort_str[0] != 0], pl_sort_str);
 	update_window(pl_win, 0, 0, COLS, title, print_pl);
 }
 

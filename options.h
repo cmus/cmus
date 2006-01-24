@@ -102,6 +102,8 @@ extern char *window_title_alt_format;
 
 extern char *id3_default_charset;
 
+extern char lib_sort_str[128];
+extern char pl_sort_str[128];
 
 /* build option list */
 void options_add(void);

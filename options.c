@@ -25,7 +25,7 @@
 #include <stdio.h>
 #include <curses.h>
 
-/* initialized option variables {{{ */
+/* initialized option variables */
 
 char *output_plugin = NULL;
 char *status_display_program = NULL;
@@ -78,10 +78,7 @@ int fg_colors[NR_COLORS] = {
 	COLOR_YELLOW | BRIGHT
 };
 
-/* }}} */
-
-/* uninitialized option variables {{{ */
-
+/* uninitialized option variables */
 char *track_win_format = NULL;
 char *track_win_alt_format = NULL;
 char *list_win_format = NULL;
@@ -92,7 +89,8 @@ char *window_title_format = NULL;
 char *window_title_alt_format = NULL;
 char *id3_default_charset = NULL;
 
-/* }}} */
+char lib_sort_str[128];
+char pl_sort_str[128];
 
 static void buf_int(char *buf, int val)
 {
@@ -245,8 +243,12 @@ static void set_lib_sort(unsigned int id, const char *buf)
 {
 	char **keys = parse_sort_keys(buf);
 
-	if (keys)
+	if (keys) {
 		lib_set_sort_keys(keys);
+
+		/* cleaned up version of buf */
+		keys_to_str(keys, lib_sort_str);
+	}
 }
 
 static void get_pl_sort(unsigned int id, char *buf)
@@ -258,8 +260,10 @@ static void set_pl_sort(unsigned int id, const char *buf)
 {
 	char **keys = parse_sort_keys(buf);
 
-	if (keys)
+	if (keys) {
 		pl_set_sort_keys(keys);
+		keys_to_str(keys, pl_sort_str);
+	}
 }
 
 static void get_output_plugin(unsigned int id, char *buf)
