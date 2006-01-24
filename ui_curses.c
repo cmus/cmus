@@ -1501,13 +1501,19 @@ static void update(void)
 		needs_view_update += filters_win->changed;
 		break;
 	}
+
+	/* total time changed? */
+	if (play_library) {
+		needs_status_update += lib.sorted_win->changed;
+	} else {
+		needs_status_update += pl_win->changed;
+	}
+
 	lib_unlock();
 	player_info_unlock();
 
 	if (needs_spawn)
 		spawn_status_program();
-
-	needs_status_update += needs_view_update;
 
 	if (needs_view_update || needs_title_update || needs_status_update || needs_command_update) {
 		curs_set(0);
