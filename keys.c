@@ -21,19 +21,11 @@
  */
 
 #include <keys.h>
-#include <misc.h>
-#include <prog.h>
-#include <file.h>
 #include <ui_curses.h>
 #include <command_mode.h>
 #include <xmalloc.h>
-#include <xstrjoin.h>
-#include <config.h>
 
 #include <curses.h>
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
 
 const char * const key_context_names[NR_CTXS + 1] = {
 	"browser",
@@ -57,8 +49,6 @@ static const enum key_context view_to_context[] = {
 };
 
 #define KEY_IS_CHAR -255
-
-static char *filename;
 
 /* key_table {{{
  *
@@ -452,7 +442,7 @@ static struct binding *find_binding(enum key_context c, const struct key *k)
 	return b;
 }
 
-int key_bind(const char *context, const char *key, const char *func)
+int key_bind(const char *context, const char *key, const char *cmd)
 {
 	const struct key *k;
 	struct binding *b, *ptr, *prev;
@@ -471,12 +461,13 @@ int key_bind(const char *context, const char *key, const char *func)
 	if (b)
 		goto bound;
 
-	/* ":command", skip the ':' */
-	size = strlen(func + 1) + 1;
+	if (*cmd == ':')
+		cmd++;
+	size = strlen(cmd) + 1;
 
 	b = xmalloc(sizeof(struct binding) + size);
 	b->key = k;
-	memcpy(b->cmd, func + 1, size);
+	memcpy(b->cmd, cmd, size);
 
 	/* insert keeping sorted by key */
 	prev = NULL;
@@ -530,104 +521,6 @@ int key_unbind(const char *context, const char *key)
 	}
 	error_msg("key %s not bound in context %s", key, context);
 	return -1;
-}
-
-static const char *get_word(const char *line, char *buf)
-{
-	int i;
-
-	while (isspace(*line))
-		line++;
-
-	i = -1;
-	do {
-		i++;
-		if (i == 32 || line[i] == 0)
-			return NULL;
-		buf[i] = line[i];
-	} while (!isspace(line[i]));
-	buf[i] = 0;
-	return line + i;
-}
-
-static int handle_line(void *data, const char *line)
-{
-	char context[32];
-	char key[32];
-
-	line = get_word(line, context);
-	if (line == NULL)
-		goto error;
-
-	line = get_word(line, key);
-	if (line == NULL)
-		goto error;
-
-	while (isspace(*line))
-		line++;
-	if (*line == 0)
-		goto error;
-
-	key_bind(context, key, line);
-	return 0;
-error:
-	error_msg("could not parse keybinding '%s'", line);
-	return 0;
-}
-
-static int load_keys(const char *file)
-{
-	return file_for_each_line(file, handle_line, NULL);
-}
-
-static int bindings_empty(void)
-{
-	int i;
-	for ( i = 0; i < NR_CTXS; i++ )
-		if (key_bindings[i] != NULL)
-			return 0;
- 	return 1;
-}
-
-void keys_init(void)
-{
-	const char *default_bindings = DATADIR "/cmus/keybindings";
-	filename = xstrjoin(cmus_config_dir, "/keybindings");
-	if (load_keys(filename)) {
-		if (errno == ENOENT) {
-			if (load_keys(default_bindings))
-				die_errno("error: loading keybindings %s", default_bindings);
-		} else {
-			die_errno("error: loading keybindings %s", filename);
-		}
-	}
-	if (bindings_empty()) {
-		d_print("  bindings are empty! loading defaults!\n");
-		if (load_keys(default_bindings))
-			warn("error: loading keybindings %s\n", default_bindings);
-	}
-}
-
-void keys_exit(void)
-{
-	FILE *f;
-	int i;
-
-	f = fopen(filename, "w");
-	if (f == NULL) {
-		warn("error: creating %s: %s\n", filename, strerror(errno));
-		return;
-	}
-	for (i = 0; i < NR_CTXS; i++) {
-		struct binding *b = key_bindings[i];
-		const char *name = key_context_names[i];
-
-		while (b) {
-			fprintf(f, "%-10s %-20s :%s\n", name, b->key->name, b->cmd);
-			b = b->next;
-		}
-	}
-	fclose(f);
 }
 
 static int handle_key(const struct binding *b, const struct key *k)

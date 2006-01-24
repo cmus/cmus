@@ -100,6 +100,8 @@ extern char *current_alt_format;
 extern char *window_title_format;
 extern char *window_title_alt_format;
 
+extern char *id3_default_charset;
+
 
 /* build option list */
 void options_add(void);

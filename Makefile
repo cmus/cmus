@@ -12,7 +12,7 @@ cmus-y := \
 	format_print.o glob.o history.o http.o input.o \
 	keys.o lib.o load_dir.o mergesort.o misc.o options.o \
 	output.o pcm.o pl.o play_queue.o player.o \
-	read_wrapper.o server.o sconf.o search.o \
+	read_wrapper.o server.o search.o \
 	search_mode.o spawn.o tabexp.o tabexp_file.o \
 	track.o track_db.o track_info.o uchar.o ui_curses.o window.o \
 	worker.o xstrjoin.o

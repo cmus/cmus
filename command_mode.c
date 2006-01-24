@@ -1921,6 +1921,10 @@ void run_command(const char *buf)
 	i = 0;
 	while (buf[i] && buf[i] == ' ')
 		i++;
+
+	if (buf[i] == '#')
+		return;
+
 	cmd_start = i;
 	while (buf[i] && buf[i] != ' ')
 		i++;

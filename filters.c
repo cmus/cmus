@@ -20,7 +20,6 @@ struct window *filters_win;
 struct searchable *filters_searchable;
 LIST_HEAD(filters_head);
 
-static char filename[512];
 static const char *recursive_filter;
 
 static inline void filter_entry_to_iter(struct filter_entry *e, struct iter *iter)
@@ -341,28 +340,9 @@ static void do_filters_set_filter(const char *keyval, int active)
 		window_changed(filters_win);
 }
 
-static int handle_line(void *data, const char *line)
-{
-	char ch = line[0];
-	int active = 0;
-
-	if (ch == '*') {
-		active = 1;
-	} else if (ch != ' ') {
-		/* currupt */
-		return 0;
-	}
-	do_filters_set_filter(line + 1, active);
-	return 0;
-}
-
 void filters_init(void)
 {
 	struct iter iter;
-
-	/* load filters */
-	snprintf(filename, sizeof(filename), "%s/filters", cmus_config_dir);
-	file_for_each_line(filename, handle_line, NULL);
 
 	filters_win = window_new(filters_get_prev, filters_get_next);
 	window_set_contents(filters_win, &filters_head);
@@ -372,29 +352,12 @@ void filters_init(void)
 	iter.data1 = NULL;
 	iter.data2 = NULL;
 	filters_searchable = searchable_new(NULL, &iter, &filters_search_ops);
-
-	filters_activate();
 }
 
 void filters_exit(void)
 {
-	struct list_head *item;
-	FILE *f;
-
 	searchable_free(filters_searchable);
 	window_free(filters_win);
-
-	f = fopen(filename, "w");
-	item = filters_head.next;
-	while (item != &filters_head) {
-		struct list_head *next = item->next;
-		struct filter_entry *e = container_of(item, struct filter_entry, node);
-
-		fprintf(f, "%c%s=%s\n", e->active ? '*' : ' ', e->name, e->filter);
-		free_filter(e);
-		item = next;
-	}
-	fclose(f);
 }
 
 void filters_set_filter(const char *keyval)

@@ -10,12 +10,17 @@
 #include "buffer.h"
 #include "ui_curses.h"
 #include "format_print.h"
-#include "sconf.h"
 #include "cmus.h"
 #include "misc.h"
 #include "lib.h"
 #include "pl.h"
 #include "browser.h"
+#include "keys.h"
+#include "filters.h"
+#include "command_mode.h"
+#include "file.h"
+#include "prog.h"
+#include "config.h"
 
 #include <stdio.h>
 #include <curses.h>
@@ -88,6 +93,7 @@ char *current_format = NULL;
 char *current_alt_format = NULL;
 char *window_title_format = NULL;
 char *window_title_alt_format = NULL;
+char *id3_default_charset = NULL;
 
 /* }}} */
 
@@ -167,6 +173,17 @@ static void set_buffer_seconds(unsigned int id, const char *buf)
 
 	if (parse_int(buf, 1, 20, &sec))
 		player_set_buffer_chunks((sec * SECOND_SIZE + CHUNK_SIZE / 2) / CHUNK_SIZE);
+}
+
+static void get_id3_default_charset(unsigned int id, char *buf)
+{
+	strcpy(buf, id3_default_charset);
+}
+
+static void set_id3_default_charset(unsigned int id, const char *buf)
+{
+	free(id3_default_charset);
+	id3_default_charset = xstrdup(buf);
 }
 
 static const char *valid_sort_keys[] = {
@@ -616,6 +633,7 @@ static const struct {
 	DT(confirm_run)
 	DT(continue)
 	DT(default_view)
+	DN(id3_default_charset)
 	DN(lib_sort)
 	DN(output_plugin)
 	DN(pl_sort)
@@ -684,6 +702,7 @@ static const struct {
 
 	{ "lib_sort"	,	"artist album discnumber tracknumber title filename" },
 	{ "pl_sort",		"" },
+	{ "id3_default_charset","ISO-8859-1" },
 	{ NULL, NULL }
 };
 
@@ -774,37 +793,86 @@ void options_add(void)
 	player_for_each_op_option(add_op_option);
 }
 
+static int handle_line(void *data, const char *line)
+{
+	run_command(line);
+	return 0;
+}
+
 void options_load(void)
 {
-	struct cmus_opt *opt;
+	char filename[512];
 	int i;
 
 	/* initialize those that can't be statically initialized */
 	for (i = 0; str_defaults[i].name; i++)
 		option_set(str_defaults[i].name, str_defaults[i].value);
 
-	sconf_load();
-	list_for_each_entry(opt, &option_head, node) {
-		char *val;
+	/* load autosave config */
+	snprintf(filename, sizeof(filename), "%s/autosave", cmus_config_dir);
+	if (file_for_each_line(filename, handle_line, NULL) == -1) {
+		const char *def = DATADIR "/cmus/rc";
 
-		if (sconf_get_str_option(opt->name, &val)) {
-			opt->set(opt->id, val);
-			free(val);
-		}
+		if (errno != ENOENT)
+			warn_errno("loading %s", filename);
+
+		/* load defaults */
+		if (file_for_each_line(def, handle_line, NULL) == -1)
+			warn_errno("loading %s", def);
+	}
+
+	/* load optional static config */
+	snprintf(filename, sizeof(filename), "%s/rc", cmus_config_dir);
+	if (file_for_each_line(filename, handle_line, NULL) == -1) {
+		if (errno != ENOENT)
+			warn_errno("loading %s", filename);
 	}
 	cur_view = default_view - 1;
 }
 
 void options_exit(void)
 {
-	char buf[OPTION_MAX_SIZE];
 	struct cmus_opt *opt;
+	struct filter_entry *filt;
+	char filename[512];
+	FILE *f;
+	int i;
 
+	snprintf(filename, sizeof(filename), "%s/autosave", cmus_config_dir);
+	f = fopen(filename, "w");
+	if (f == NULL) {
+		warn_errno("creating %s", filename);
+		return;
+	}
+
+	/* save options */
 	list_for_each_entry(opt, &option_head, node) {
+		char buf[OPTION_MAX_SIZE];
+
 		buf[0] = 0;
 		opt->get(opt->id, buf);
-		if (buf[0])
-			sconf_set_str_option(opt->name, buf);
+		fprintf(f, "set %s=%s\n", opt->name, buf);
 	}
-	sconf_save();
+
+	/* save key bindings */
+	for (i = 0; i < NR_CTXS; i++) {
+		struct binding *b = key_bindings[i];
+
+		while (b) {
+			fprintf(f, "bind %s %s %s\n", key_context_names[i], b->key->name, b->cmd);
+			b = b->next;
+		}
+	}
+
+	/* save filters */
+	list_for_each_entry(filt, &filters_head, node)
+		fprintf(f, "fset %s=%s\n", filt->name, filt->filter);
+	fprintf(f, "factivate");
+	list_for_each_entry(filt, &filters_head, node) {
+		if (filt->active)
+			fprintf(f, " %s", filt->name);
+	}
+	fprintf(f, "\n");
+
+	fclose(f);
 }

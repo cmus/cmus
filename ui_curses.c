@@ -1726,7 +1726,6 @@ static void init_all(void)
 	cmdline_init();
 	commands_init();
 	search_mode_init();
-	keys_init();
 
 	/* everything but ui must be initialized now */
 	options_load();
@@ -1751,20 +1750,15 @@ static void exit_all(void)
 {
 	endwin();
 
+	options_exit();
+
 	remote_server_exit();
 	cmus_exit();
 	cmus_save(lib_for_each, lib_autosave_filename);
 	cmus_save(pl_for_each, pl_autosave_filename);
-	free(lib_autosave_filename);
-	free(status_display_program);
 
-	if (cur_track_info)
-		track_info_unref(cur_track_info);
-
-	options_exit();
 	player_exit();
 	lib_exit();
-	keys_exit();
 	commands_exit();
 	search_mode_exit();
 	filters_exit();
