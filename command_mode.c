@@ -2081,7 +2081,7 @@ void command_mode_key(int key)
 
 void commands_init(void)
 {
-	cmd_history_filename = xstrjoin(cmus_config_dir, "/ui_curses_cmd_history");
+	cmd_history_filename = xstrjoin(cmus_config_dir, "/command-history");
 	history_load(&cmd_history, cmd_history_filename, 2000);
 }
 
