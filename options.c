@@ -27,9 +27,6 @@
 
 /* initialized option variables {{{ */
 
-/* NOTE: this is user visible and thus starts counting from 1, not 0 */
-static int default_view = TREE_VIEW + 1;
-
 char *output_plugin = NULL;
 char *status_display_program = NULL;
 int confirm_run = 1;
@@ -339,23 +336,6 @@ const char * const view_names[NR_VIEWS + 1] = {
 	"tree", "sorted", "playlist", "queue", "browser", "filters", NULL
 };
 
-static void get_default_view(unsigned int id, char *buf)
-{
-	strcpy(buf, view_names[default_view - 1]);
-}
-
-static void set_default_view(unsigned int id, const char *buf)
-{
-	parse_enum(buf, 1, NR_VIEWS, view_names, &default_view);
-}
-
-static void toggle_default_view(unsigned int id)
-{
-	default_view++;
-	if (default_view > NR_VIEWS)
-		default_view = 1;
-}
-
 static void get_play_library(unsigned int id, char *buf)
 {
 	strcpy(buf, bool_names[play_library]);
@@ -632,7 +612,6 @@ static const struct {
 	DN(buffer_seconds)
 	DT(confirm_run)
 	DT(continue)
-	DT(default_view)
 	DN(id3_default_charset)
 	DN(lib_sort)
 	DN(output_plugin)
@@ -827,7 +806,6 @@ void options_load(void)
 		if (errno != ENOENT)
 			warn_errno("loading %s", filename);
 	}
-	cur_view = default_view - 1;
 }
 
 void options_exit(void)
