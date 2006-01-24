@@ -236,6 +236,8 @@ int op_open(sample_format_t sf)
 {
 	int rc;
 
+	if (op == NULL)
+		return -OP_ERROR_NOT_INITIALIZED;
 	current_sf = sf;
 	rc = op->pcm_ops->open(sf);
 	if (rc)
@@ -314,6 +316,8 @@ int op_buffer_space(void)
 
 int op_set_volume(int left, int right)
 {
+	if (op == NULL)
+		return -OP_ERROR_NOT_INITIALIZED;
 	if (!op->mixer_open)
 		return -OP_ERROR_NOT_SUPPORTED;
 	return op->mixer_ops->set_volume(left, right);
@@ -321,20 +325,23 @@ int op_set_volume(int left, int right)
 
 int op_get_volume(int *left, int *right, int *max_vol)
 {
+	if (op == NULL)
+		return -OP_ERROR_NOT_INITIALIZED;
 	if (!op->mixer_open)
 		return -OP_ERROR_NOT_SUPPORTED;
 	*max_vol = volume_max;
 	return op->mixer_ops->get_volume(left, right);
 }
 
-/* can be called even if op isn't set */
 int op_volume_changed(int *left, int *right, int *max_vol)
 {
 	static int oldl = -1;
 	static int oldr = -1;
 	int rc;
 
-	if (op == NULL || !op->mixer_open)
+	if (op == NULL)
+		return -OP_ERROR_NOT_INITIALIZED;
+	if (!op->mixer_open)
 		return 0;
 	rc = op->mixer_ops->get_volume(left, right);
 	if (rc)
