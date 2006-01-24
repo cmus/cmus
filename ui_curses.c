@@ -641,6 +641,22 @@ static void update_track_window(void)
 			track_win_w, title, print_track);
 }
 
+static const char *pretty(const char *path)
+{
+	static int home_len = -1;
+	static char buf[256];
+
+	if (home_len == -1)
+		home_len = strlen(home_dir);
+
+	if (strncmp(path, home_dir, home_len) || path[home_len] != '/')
+		return path;
+
+	buf[0] = '~';
+	strcpy(buf + 1, path + home_len);
+	return buf;
+}
+
 static const char * const sorted_names[2] = { "not sorted", "sorted" };
 
 static void update_sorted_window(void)
@@ -656,7 +672,7 @@ static void update_sorted_window(void)
 		filename = conv_buffer;
 	}
 	snprintf(title, sizeof(title), "Library (%s) - %s",
-			sorted_names[lib.sort_keys[0] != NULL], filename);
+			sorted_names[lib.sort_keys[0] != NULL], pretty(filename));
 	update_window(lib.sorted_win, 0, 0, COLS, title, print_sorted);
 }
 
@@ -673,7 +689,7 @@ static void update_pl_window(void)
 		filename = conv_buffer;
 	}
 	snprintf(title, sizeof(title), "Playlist (%s) - %s",
-			sorted_names[pl_sort_keys[0] != NULL], filename);
+			sorted_names[pl_sort_keys[0] != NULL], pretty(filename));
 	update_window(pl_win, 0, 0, COLS, title, print_pl);
 }
 
