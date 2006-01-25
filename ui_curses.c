@@ -657,7 +657,7 @@ static const char *pretty(const char *path)
 	return buf;
 }
 
-static const char * const sorted_names[2] = { "not sorted", "sorted by" };
+static const char * const sorted_names[2] = { "", "sorted by " };
 
 static void update_sorted_window(void)
 {
@@ -671,8 +671,8 @@ static void update_sorted_window(void)
 		utf8_encode(filename);
 		filename = conv_buffer;
 	}
-	snprintf(title, sizeof(title), "Library %s - %s %s", pretty(filename),
-			sorted_names[lib_sort_str[0] != 0], lib_sort_str);
+	snprintf(title, sizeof(title), "Library %s - %d tracks %s%s", pretty(filename),
+			lib.nr_tracks, sorted_names[lib_sort_str[0] != 0], lib_sort_str);
 	update_window(lib.sorted_win, 0, 0, COLS, title, print_sorted);
 }
 
@@ -680,6 +680,7 @@ static void update_pl_window(void)
 {
 	char title[512];
 	char *filename;
+	int pos;
 
 	filename = pl_filename ? pl_filename : pl_autosave_filename;
 	if (using_utf8) {
@@ -688,14 +689,30 @@ static void update_pl_window(void)
 		utf8_encode(filename);
 		filename = conv_buffer;
 	}
-	snprintf(title, sizeof(title), "Playlist %s - %s %s", pretty(filename),
+
+	snprintf(title, sizeof(title), "Playlist %s - %d tracks", pretty(filename), pl_nr_tracks);
+	if (pl_nr_marked) {
+		pos = strlen(title);
+		snprintf(title + pos, sizeof(title) - pos, " (%d marked)", pl_nr_marked);
+	}
+	pos = strlen(title);
+	snprintf(title + pos, sizeof(title) - pos, " %s%s",
 			sorted_names[pl_sort_str[0] != 0], pl_sort_str);
+
 	update_window(pl_win, 0, 0, COLS, title, print_pl);
 }
 
 static void update_play_queue_window(void)
 {
-	update_window(play_queue_win, 0, 0, COLS, "Play Queue", print_play_queue);
+	char title[128];
+
+	snprintf(title, sizeof(title), "Play Queue - %d tracks", pq_nr_tracks);
+	if (pq_nr_marked) {
+		int pos = strlen(title);
+
+		snprintf(title + pos, sizeof(title) - pos, " (%d marked)", pq_nr_marked);
+	}
+	update_window(play_queue_win, 0, 0, COLS, title, print_play_queue);
 }
 
 static void update_browser_window(void)

@@ -29,7 +29,8 @@ struct window *play_queue_win;
 struct searchable *play_queue_searchable;
 
 static LIST_HEAD(queue_head);
-static unsigned int pq_nr_marked = 0;
+unsigned int pq_nr_tracks = 0;
+unsigned int pq_nr_marked = 0;
 
 static void simple_track_free(struct simple_track *track)
 {
@@ -100,6 +101,7 @@ void __play_queue_append(struct track_info *ti)
 
 	list_add_tail(&t->node, &queue_head);
 	window_changed(play_queue_win);
+	pq_nr_tracks++;
 }
 
 void __play_queue_prepend(struct track_info *ti)
@@ -108,6 +110,7 @@ void __play_queue_prepend(struct track_info *ti)
 
 	list_add(&t->node, &queue_head);
 	window_changed(play_queue_win);
+	pq_nr_tracks++;
 }
 
 void play_queue_append(struct track_info *ti)
@@ -132,6 +135,7 @@ static void pq_remove(struct simple_track *track)
 	window_row_vanishes(play_queue_win, &iter);
 
 	pq_nr_marked -= track->marked;
+	pq_nr_tracks--;
 	list_del(&track->node);
 }
 

@@ -28,6 +28,8 @@
 extern pthread_mutex_t play_queue_mutex;
 extern struct window *play_queue_win;
 extern struct searchable *play_queue_searchable;
+extern unsigned int pq_nr_tracks;
+extern unsigned int pq_nr_marked;
 
 void play_queue_init(void);
 void play_queue_exit(void);
