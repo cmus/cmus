@@ -39,11 +39,11 @@ else
   endif
 endif
 
-# simple wrapped around install(1)
+# simple wrapper around install(1)
 #
 #  - creates directories automatically
 #  - adds $(DESTDIR) to front of files
-INSTALL		:= @scripts/install
+INSTALL		:= @$(topdir)/scripts/install
 
 SPARSE		?= sparse
 SPARSE_FLAGS	?= -D__i386__
@@ -132,5 +132,7 @@ cmd = @$(if $($(quiet)cmd_$(1)),echo '   $(call $(quiet)cmd_$(1),$(2))' &&) $(ca
 ifneq ($(dependencies),)
 -include $(dependencies)
 endif
+
+.SECONDARY:
 
 .PHONY: clean distclean

@@ -245,6 +245,9 @@ generate_config_mk()
 
 	after run_checks generate_config_mk
 
+	topdir=$(pwd)
+	makefile_vars topdir
+
 	tmp=$(tmp_file config.mk)
 	for i in $makefile_variables
 	do
