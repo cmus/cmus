@@ -35,6 +35,7 @@
 #include <errno.h>
 
 static int sock;
+static int raw_args = 0;
 
 static void remote_connect(const char *server)
 {
@@ -46,8 +47,12 @@ static void remote_connect(const char *server)
 	addr.sun_family = AF_UNIX;
 	strncpy(addr.sun_path, server, sizeof(addr.sun_path) - 1);
 	if (connect(sock, (struct sockaddr *)&addr, sizeof(addr))) {
-		if (errno == ENOENT || errno == ECONNREFUSED)
-			die(PACKAGE " is not running\n");
+		if (errno == ENOENT || errno == ECONNREFUSED) {
+			/* "cmus-remote -C" can be used to check if cmus is running */
+			if (!raw_args)
+				warn(PACKAGE " is not running\n");
+			exit(1);
+		}
 		die_errno("connect");
 	}
 }
@@ -80,18 +85,18 @@ enum flags {
 	FLAG_STOP,
 	FLAG_NEXT,
 	FLAG_PREV,
-	FLAG_CONTINUE,
 	FLAG_REPEAT,
 	FLAG_SHUFFLE,
 	FLAG_VOLUME,
-	FLAG_RESHUFFLE,
 	FLAG_SEEK,
 
 	FLAG_LIBRARY,
 	FLAG_PLAYLIST,
 	FLAG_QUEUE,
-	FLAG_CLEAR
-#define NR_FLAGS (FLAG_CLEAR + 1)
+	FLAG_CLEAR,
+
+	FLAG_RAW
+#define NR_FLAGS (FLAG_RAW + 1)
 };
 
 static struct option options[NR_FLAGS + 1] = {
@@ -104,17 +109,17 @@ static struct option options[NR_FLAGS + 1] = {
 	{ 's', "stop", 0 },
 	{ 'n', "next", 0 },
 	{ 'r', "prev", 0 },
-	{ 'C', "continue", 0 },
 	{ 'R', "repeat", 0 },
 	{ 'S', "shuffle", 0 },
 	{ 'v', "volume", 1 },
-	{ 0, "reshuffle", 0 },
-	{ 0, "seek", 1 },
+	{ 'k', "seek", 1 },
 
 	{ 'l', "library", 0 },
 	{ 'P', "playlist", 0 },
 	{ 'q', "queue", 0 },
 	{ 'c', "clear", 0 },
+
+	{ 'C', "raw", 0 },
 	{ 0, NULL, 0 }
 };
 
@@ -122,33 +127,37 @@ static int flags[NR_FLAGS] = { 0, };
 
 static const char *usage =
 "Usage: %s [OPTION]... [FILE|DIR|PLAYLIST]...\n"
-"   or: %s -\n"
-"Control cmus throught socket.\n"
+"   or: %s -C COMMAND...\n"
+"   or: %s\n"
+"Control cmus through socket.\n"
 "\n"
 "      --server SOCKET  connect using socket SOCKET instead of /tmp/cmus-$USER\n"
 "      --help           display this help and exit\n"
 "      --version        " VERSION "\n"
 "\n"
-"  -p, --play           start playing\n"
-"  -u, --pause          toggle pause\n"
-"  -s, --stop           stop playing\n"
-"  -n, --next           skip forward in playlist\n"
-"  -r, --prev           skip backwards in playlist\n"
-"  -C, --continue       toggle continue\n"
+"Cooked mode:\n"
+"  -p, --play           player-play\n"
+"  -u, --pause          player-pause\n"
+"  -s, --stop           player-stop\n"
+"  -n, --next           player-next\n"
+"  -r, --prev           player-prev\n"
 "  -R, --repeat         toggle repeat\n"
 "  -S, --shuffle        toggle shuffle\n"
-"  -v, --volume VOL     change volume\n"
-"      --reshuffle      shuffle playlist again\n"
-"      --seek SEEK      seek\n"
+"  -v, --volume VOL     vol VOL\n"
+"  -k, --seek SEEK      seek SEEK\n"
 "\n"
 "  -l, --library        modify library instead of playlist\n"
 "  -P, --playlist       modify playlist (default)\n"
 "  -q, --queue          modify play queue instead of playlist\n"
 "  -c, --clear          clear playlist, library (-l) or play queue (-q)\n"
 "\n"
-"Add FILE/DIR/PLAYLIST to playlist, library (-l) or play queue (-q).\n"
+"  Add FILE/DIR/PLAYLIST to playlist, library (-l) or play queue (-q).\n"
 "\n"
-"Documentation: " DATADIR "/cmus/doc/cmus.html\n"
+"Raw mode:\n"
+"  -C, --raw            treat arguments (instead of stdin) as raw commands\n"
+"\n"
+"  By default cmus-remote reads raw commands from stdin (one command per line).\n"
+"\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 int main(int argc, char *argv[])
@@ -157,7 +166,7 @@ int main(int argc, char *argv[])
 	char *server = NULL;
 	char *volume = NULL;
 	char *seek = NULL;
-	int i, need_file_args = 1;
+	int i, nr_cmds = 0;
 	int context = 'p';
 
 	program_name = argv[0];
@@ -173,7 +182,7 @@ int main(int argc, char *argv[])
 		flags[idx] = 1;
 		switch ((enum flags)idx) {
 		case FLAG_HELP:
-			printf(usage, program_name);
+			printf(usage, program_name, program_name, program_name);
 			return 0;
 		case FLAG_VERSION:
 			printf(PACKAGE " " VERSION "\nCopyright 2004-2006 Timo Hirvonen\n");
@@ -181,13 +190,13 @@ int main(int argc, char *argv[])
 		case FLAG_SERVER:
 			server = arg;
 			break;
-                case FLAG_VOLUME:
+		case FLAG_VOLUME:
 			volume = arg;
-			need_file_args = 0;
+			nr_cmds++;
 			break;
 		case FLAG_SEEK:
 			seek = arg;
-			need_file_args = 0;
+			nr_cmds++;
 			break;
 		case FLAG_LIBRARY:
 			context = 'l';
@@ -203,18 +212,19 @@ int main(int argc, char *argv[])
 		case FLAG_STOP:
 		case FLAG_NEXT:
 		case FLAG_PREV:
-		case FLAG_CONTINUE:
 		case FLAG_REPEAT:
 		case FLAG_SHUFFLE:
-		case FLAG_RESHUFFLE:
 		case FLAG_CLEAR:
-			need_file_args = 0;
+			nr_cmds++;
+			break;
+		case FLAG_RAW:
+			raw_args = 1;
 			break;
 		}
 	}
 
-	if (need_file_args && argv[0] == NULL)
-		die("too few arguments\n");
+	if (nr_cmds && raw_args)
+		die("don't mix raw and cooked stuff\n");
 
 	if (server == NULL) {
 		const char *user_name;
@@ -223,7 +233,7 @@ int main(int argc, char *argv[])
 		if (user_name == NULL || user_name[0] == 0) {
 			user_name = getenv("USERNAME");
 			if (user_name == NULL || user_name[0] == 0)
-				die("neither USER or USERNAME environment varible is set\n");
+				die("neither USER or USERNAME environment variable is set\n");
 		}
 		snprintf(server_buf, sizeof(server_buf), "/tmp/cmus-%s", user_name);
 		server = server_buf;
@@ -231,7 +241,13 @@ int main(int argc, char *argv[])
 
 	remote_connect(server);
 
-	if (argv[0] && strcmp(argv[0], "-") == 0) {
+	if (raw_args) {
+		while (*argv)
+			send_cmd("%s\n", *argv++);
+		return 0;
+	}
+
+	if (nr_cmds == 0 && argv[0] == NULL) {
 		char line[512];
 
 		while (fgets(line, sizeof(line), stdin))
@@ -256,14 +272,10 @@ int main(int argc, char *argv[])
 		send_cmd("add -%c %s\n", context, filename);
 		free(filename);
 	}
-	if (flags[FLAG_CONTINUE])
-		send_cmd("toggle continue\n");
 	if (flags[FLAG_REPEAT])
 		send_cmd("toggle repeat\n");
 	if (flags[FLAG_SHUFFLE])
 		send_cmd("toggle shuffle\n");
-	if (flags[FLAG_RESHUFFLE])
-		send_cmd("shuffle\n");
 	if (flags[FLAG_STOP])
 		send_cmd("player-stop\n");
 	if (flags[FLAG_NEXT])
