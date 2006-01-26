@@ -1388,6 +1388,8 @@ static void spawn_status_program(void)
 				argv[i++] = xstrdup(stream_title);
 			}
 		} else {
+			char buf[32];
+
 			argv[i++] = xstrdup("file");
 			argv[i++] = xstrdup(cur_track_info->filename);
 			for (j = 0; keys[j]; j++) {
@@ -1400,6 +1402,9 @@ static void spawn_status_program(void)
 					argv[i++] = xstrdup(val);
 				}
 			}
+			snprintf(buf, sizeof(buf), "%d", cur_track_info->duration);
+			argv[i++] = xstrdup("duration");
+			argv[i++] = xstrdup(buf);
 		}
 	}
 	argv[i++] = NULL;

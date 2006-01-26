@@ -34,7 +34,14 @@ done
 
 if test -n "$_file"
 then
-	output "[$_status] $_artist - $_album - $_title ($_date)"
+	h=$(($_duration / 3600))
+	m=$(($_duration % 3600))
+
+	duration=""
+	test $h -gt 0 && dur="$h:"
+	duration="$dur$(printf '%02d:%02d' $(($m / 60)) $(($m % 60)))"
+
+	output "[$_status] $_artist - $_album - $_title ($_date) $duration"
 elif test -n "$_url"
 then
 	output "[$_status] $_url - $_title"
