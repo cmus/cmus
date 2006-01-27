@@ -47,23 +47,29 @@ enum {
 };
 
 enum {
-	COLOR_ROW,
-	COLOR_ROW_CUR,
-	COLOR_ROW_SEL,
-	COLOR_ROW_SEL_CUR,
-	COLOR_ROW_ACTIVE,
-	COLOR_ROW_ACTIVE_CUR,
-	COLOR_ROW_ACTIVE_SEL,
-	COLOR_ROW_ACTIVE_SEL_CUR,
-	COLOR_SEPARATOR,
-	COLOR_TITLE,
-	COLOR_COMMANDLINE,
-	COLOR_STATUSLINE,
-	COLOR_TITLELINE,
-	COLOR_BROWSER_DIR,
-	COLOR_BROWSER_FILE,
+	COLOR_CMDLINE_BG,
+	COLOR_CMDLINE_FG,
 	COLOR_ERROR,
 	COLOR_INFO,
+
+	COLOR_SEPARATOR,
+	COLOR_STATUSLINE_BG,
+	COLOR_STATUSLINE_FG,
+	COLOR_TITLELINE_BG,
+
+	COLOR_TITLELINE_FG,
+	COLOR_WIN_BG,
+	COLOR_WIN_CUR,
+	COLOR_WIN_DIR,
+
+	COLOR_WIN_FG,
+	COLOR_WIN_INACTIVE_SEL_BG,
+	COLOR_WIN_INACTIVE_SEL_FG,
+	COLOR_WIN_SEL_BG,
+
+	COLOR_WIN_SEL_FG,
+	COLOR_WIN_TITLE_BG,
+	COLOR_WIN_TITLE_FG,
 	NR_COLORS
 };
 
@@ -81,8 +87,7 @@ extern int shuffle;
 extern const char * const aaa_mode_names[];
 extern const char * const view_names[NR_VIEWS + 1];
 
-extern int bg_colors[NR_COLORS];
-extern int fg_colors[NR_COLORS];
+extern int colors[NR_COLORS];
 
 /* format string for track window (tree view) */
 extern char *track_win_format;

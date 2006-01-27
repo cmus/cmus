@@ -36,46 +36,30 @@ int play_library = 1;
 int repeat = 0;
 int shuffle = 0;
 
-int bg_colors[NR_COLORS] = {
+int colors[NR_COLORS] = {
 	-1,
-	-1,
-	COLOR_WHITE,
-	COLOR_WHITE,
-	-1,
-	-1,
-	COLOR_BLUE,
-	COLOR_BLUE,
-
-	-1,
-	COLOR_BLUE,
-	-1,
-	COLOR_WHITE,
-	COLOR_BLUE,
-	-1,
-	-1,
-	-1,
-	-1
-};
-
-int fg_colors[NR_COLORS] = {
-	-1,
-	COLOR_YELLOW | BRIGHT,
-	COLOR_BLACK,
-	COLOR_YELLOW | BRIGHT,
-	-1,
-	COLOR_YELLOW | BRIGHT,
-	COLOR_WHITE | BRIGHT,
-	COLOR_YELLOW | BRIGHT,
-
-	COLOR_BLUE,
-	COLOR_WHITE | BRIGHT,
-	-1,
-	COLOR_BLACK,
-	COLOR_WHITE | BRIGHT,
-	COLOR_BLUE | BRIGHT,
 	-1,
 	COLOR_RED | BRIGHT,
-	COLOR_YELLOW | BRIGHT
+	COLOR_YELLOW | BRIGHT,
+
+	COLOR_BLUE,
+	COLOR_WHITE,
+	COLOR_BLACK,
+	COLOR_BLUE,
+
+	COLOR_WHITE | BRIGHT,
+	-1,
+	COLOR_YELLOW | BRIGHT,
+	COLOR_BLUE | BRIGHT,
+
+	-1,
+	COLOR_WHITE,
+	COLOR_BLACK,
+	COLOR_BLUE,
+
+	COLOR_WHITE | BRIGHT,
+	COLOR_BLUE,
+	COLOR_WHITE | BRIGHT
 };
 
 /* uninitialized option variables */
@@ -502,8 +486,7 @@ static void toggle_shuffle(unsigned int id)
 static const char * const color_enum_names[1 + 8 * 2 + 1] = {
 	"default",
 	"black", "red", "green", "yellow", "blue", "magenta", "cyan", "gray",
-	/* lightblack?  consistency is good */
-	"lightblack", "lightred", "lightgreen", "lightyellow", "lightblue", "lightmagenta", "lightcyan", "lightgray",
+	"darkgray", "lightred", "lightgreen", "lightyellow", "lightblue", "lightmagenta", "lightcyan", "white",
 	NULL
 };
 
@@ -511,11 +494,7 @@ static void get_color(unsigned int id, char *buf)
 {
 	int val;
 
-	if (id < NR_COLORS) {
-		val = bg_colors[id];
-	} else {
-		val = fg_colors[id - NR_COLORS];
-	}
+	val = colors[id];
 	if (val < 16) {
 		strcpy(buf, color_enum_names[val + 1]);
 	} else {
@@ -530,33 +509,8 @@ static void set_color(unsigned int id, const char *buf)
 	if (!parse_enum(buf, -1, 255, color_enum_names, &color))
 		return;
 
-	if (id < NR_COLORS) {
-		bg_colors[id] = color;
-	} else {
-		id -= NR_COLORS;
-		fg_colors[id] = color;
-	}
-	update_color(id);
-}
-
-/* toggle -1..7 for bg and -1..15 for fg */
-static void toggle_color(unsigned int id)
-{
-	int color;
-
-	if (id < NR_COLORS) {
-		color = bg_colors[id] + 1;
-		if (color >= 8)
-			color = -1;
-		bg_colors[id] = color;
-	} else {
-		id -= NR_COLORS;
-		color = fg_colors[id] + 1;
-		if (color >= 16)
-			color = -1;
-		fg_colors[id] = color;
-	}
-	update_color(id);
+	colors[id] = color;
+	update_colors();
 }
 
 static char **id_to_fmt(enum format_id id)
@@ -630,42 +584,26 @@ static const struct {
 	{ NULL, NULL, NULL, NULL }
 };
 
-static const char * const color_names[NR_COLORS * 2] = {
-	"color_row_bg",
-	"color_row_cur_bg",
-	"color_row_sel_bg",
-	"color_row_sel_cur_bg",
-	"color_row_active_bg",
-	"color_row_active_cur_bg",
-	"color_row_active_sel_bg",
-	"color_row_active_sel_cur_bg",
-	"color_separator_bg",
-	"color_title_bg",
-	"color_commandline_bg",
+static const char * const color_names[NR_COLORS] = {
+	"color_cmdline_bg",
+	"color_cmdline_fg",
+	"color_error",
+	"color_info",
+	"color_separator",
 	"color_statusline_bg",
-	"color_titleline_bg",
-	"color_browser_dir_bg",
-	"color_browser_file_bg",
-	"color_error_bg",
-	"color_info_bg",
-
-	"color_row_fg",
-	"color_row_cur_fg",
-	"color_row_sel_fg",
-	"color_row_sel_cur_fg",
-	"color_row_active_fg",
-	"color_row_active_cur_fg",
-	"color_row_active_sel_fg",
-	"color_row_active_sel_cur_fg",
-	"color_separator_fg",
-	"color_title_fg",
-	"color_commandline_fg",
 	"color_statusline_fg",
+	"color_titleline_bg",
 	"color_titleline_fg",
-	"color_browser_dir_fg",
-	"color_browser_file_fg",
-	"color_error_fg",
-	"color_info_fg"
+	"color_win_bg",
+	"color_win_cur",
+	"color_win_dir",
+	"color_win_fg",
+	"color_win_inactive_sel_bg",
+	"color_win_inactive_sel_fg",
+	"color_win_sel_bg",
+	"color_win_sel_fg",
+	"color_win_title_bg",
+	"color_win_title_fg"
 };
 
 /* default values for the variables which we must initialize but
@@ -770,8 +708,8 @@ void options_add(void)
 	for (i = 0; i < NR_FMTS; i++)
 		option_add(str_defaults[i].name, i, get_format, set_format, NULL);
 
-	for (i = 0; i < NR_COLORS * 2; i++)
-		option_add(color_names[i], i, get_color, set_color, toggle_color);
+	for (i = 0; i < NR_COLORS; i++)
+		option_add(color_names[i], i, get_color, set_color, NULL);
 
 	player_for_each_op_option(add_op_option);
 }

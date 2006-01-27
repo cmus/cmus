@@ -107,8 +107,76 @@ static int track_win_x = 0;
 static int track_win_y = 0;
 static int track_win_w = 0;
 
-/* colors in curses format */
-static int cursed_colors[NR_COLORS];
+enum {
+	CURSED_WIN,
+	CURSED_WIN_CUR,
+	CURSED_WIN_SEL,
+	CURSED_WIN_SEL_CUR,
+
+	CURSED_WIN_ACTIVE,
+	CURSED_WIN_ACTIVE_CUR,
+	CURSED_WIN_ACTIVE_SEL,
+	CURSED_WIN_ACTIVE_SEL_CUR,
+
+	CURSED_SEPARATOR,
+	CURSED_WIN_TITLE,
+	CURSED_COMMANDLINE,
+	CURSED_STATUSLINE,
+
+	CURSED_TITLELINE,
+	CURSED_DIR,
+	CURSED_ERROR,
+	CURSED_INFO,
+
+	NR_CURSED
+};
+
+static unsigned char cursed_to_bg_idx[NR_CURSED] = {
+	COLOR_WIN_BG,
+	COLOR_WIN_BG,
+	COLOR_WIN_INACTIVE_SEL_BG,
+	COLOR_WIN_INACTIVE_SEL_BG,
+
+	COLOR_WIN_BG,
+	COLOR_WIN_BG,
+	COLOR_WIN_SEL_BG,
+	COLOR_WIN_SEL_BG,
+
+	COLOR_WIN_BG,
+	COLOR_WIN_TITLE_BG,
+	COLOR_CMDLINE_BG,
+	COLOR_STATUSLINE_BG,
+
+	COLOR_TITLELINE_BG,
+	COLOR_WIN_BG,
+	COLOR_CMDLINE_BG,
+	COLOR_CMDLINE_BG
+};
+
+static unsigned char cursed_to_fg_idx[NR_CURSED] = {
+	COLOR_WIN_FG,
+	COLOR_WIN_CUR,
+	COLOR_WIN_INACTIVE_SEL_FG,
+	COLOR_WIN_CUR,
+
+	COLOR_WIN_FG,
+	COLOR_WIN_CUR,
+	COLOR_WIN_SEL_FG,
+	COLOR_WIN_CUR,
+
+	COLOR_SEPARATOR,
+	COLOR_WIN_TITLE_FG,
+	COLOR_CMDLINE_FG,
+	COLOR_STATUSLINE_FG,
+
+	COLOR_TITLELINE_FG,
+	COLOR_WIN_DIR,
+	COLOR_ERROR,
+	COLOR_INFO
+};
+
+/* index is CURSED_*, value is fucking color pair */
+static int pairs[NR_CURSED];
 
 enum {
 	TF_ARTIST,
@@ -329,7 +397,7 @@ static void print_tree(struct window *win, int row, struct iter *iter)
 	window_get_sel(win, &sel);
 	selected = iters_equal(iter, &sel);
 	active = lib.cur_win == lib.tree_win;
-	bkgdset(cursed_colors[(active << 2) | (selected << 1) | current]);
+	bkgdset(pairs[(active << 2) | (selected << 1) | current]);
 	if (album) {
 		sprint(tree_win_y + row + 1, tree_win_x, album->name ? : noname, tree_win_w, 2);
 	} else {
@@ -448,7 +516,7 @@ static void print_track(struct window *win, int row, struct iter *iter)
 	window_get_sel(win, &sel);
 	selected = iters_equal(iter, &sel);
 	active = lib.cur_win == lib.track_win;
-	bkgdset(cursed_colors[(active << 2) | (selected << 1) | current]);
+	bkgdset(pairs[(active << 2) | (selected << 1) | current]);
 
 	fill_track_fopts(track);
 
@@ -470,7 +538,7 @@ static void print_sorted(struct window *win, int row, struct iter *iter)
 	current = lib.cur_track == track;
 	window_get_sel(win, &sel);
 	selected = iters_equal(iter, &sel);
-	bkgdset(cursed_colors[(active << 2) | (selected << 1) | current]);
+	bkgdset(pairs[(active << 2) | (selected << 1) | current]);
 
 	fill_track_fopts(track);
 
@@ -499,7 +567,7 @@ static void print_pl(struct window *win, int row, struct iter *iter)
 		active = 0;
 	}
 
-	bkgdset(cursed_colors[(active << 2) | (selected << 1) | current]);
+	bkgdset(pairs[(active << 2) | (selected << 1) | current]);
 
 	fill_track_fopts_track_info(track->info);
 
@@ -528,7 +596,7 @@ static void print_play_queue(struct window *win, int row, struct iter *iter)
 		active = 0;
 	}
 
-	bkgdset(cursed_colors[(active << 2) | (selected << 1) | current]);
+	bkgdset(pairs[(active << 2) | (selected << 1) | current]);
 
 	fill_track_fopts_track_info(track->info);
 
@@ -553,12 +621,12 @@ static void print_browser(struct window *win, int row, struct iter *iter)
 		int active = 1;
 		int current = 0;
 
-		bkgdset(cursed_colors[(active << 2) | (selected << 1) | current]);
+		bkgdset(pairs[(active << 2) | (selected << 1) | current]);
 	} else {
 		if (e->type == BROWSER_ENTRY_DIR) {
-			bkgdset(cursed_colors[COLOR_BROWSER_DIR]);
+			bkgdset(pairs[CURSED_DIR]);
 		} else {
-			bkgdset(cursed_colors[COLOR_BROWSER_FILE]);
+			bkgdset(pairs[CURSED_WIN]);
 		}
 	}
 
@@ -584,7 +652,7 @@ static void print_filter(struct window *win, int row, struct iter *iter)
 
 	window_get_sel(win, &sel);
 	selected = iters_equal(iter, &sel);
-	bkgdset(cursed_colors[(active << 2) | (selected << 1) | current]);
+	bkgdset(pairs[(active << 2) | (selected << 1) | current]);
 
 	snprintf(buf, sizeof(buf), "%c %-15s  %s", e->selected ? '*' : ' ', e->name, e->filter);
 	sprint(row + 1, 0, buf, COLS, 0);
@@ -599,7 +667,7 @@ static void update_window(struct window *win, int x, int y, int w, const char *t
 
 	win->changed = 0;
 
-	bkgdset(cursed_colors[COLOR_TITLE]);
+	bkgdset(pairs[CURSED_WIN_TITLE]);
 	c = snprintf(print_buffer, w + 1, " %s", title);
 	if (c > w)
 		c = w;
@@ -617,7 +685,7 @@ static void update_window(struct window *win, int x, int y, int w, const char *t
 		}
 	}
 
-	bkgdset(cursed_colors[0]);
+	bkgdset(pairs[0]);
 	memset(print_buffer, ' ', w);
 	print_buffer[w] = 0;
 	while (i < nr_rows) {
@@ -740,9 +808,9 @@ static void draw_separator(void)
 {
 	int row;
 
-	bkgdset(cursed_colors[COLOR_TITLE]);
+	bkgdset(pairs[CURSED_WIN_TITLE]);
 	mvaddch(0, tree_win_w, ' ');
-	bkgdset(cursed_colors[COLOR_SEPARATOR]);
+	bkgdset(pairs[CURSED_SEPARATOR]);
 	for (row = 1; row < LINES - 3; row++)
 		mvaddch(row, tree_win_w, ACS_VLINE);
 }
@@ -859,7 +927,7 @@ static void do_update_statusline(void)
 
 	player_info_unlock();
 
-	bkgdset(cursed_colors[COLOR_STATUSLINE]);
+	bkgdset(pairs[CURSED_STATUSLINE]);
 	dump_print_buffer(LINES - 2, 0);
 
 	if (msg) {
@@ -885,12 +953,12 @@ static void do_update_commandline(void)
 
 	move(LINES - 1, 0);
 	if (error_buf[0]) {
-		bkgdset(cursed_colors[COLOR_ERROR]);
+		bkgdset(pairs[CURSED_ERROR]);
 		addstr(error_buf);
 		clrtoeol();
 		return;
 	}
-	bkgdset(cursed_colors[COLOR_COMMANDLINE]);
+	bkgdset(pairs[CURSED_COMMANDLINE]);
 	if (input_mode == NORMAL_MODE) {
 		clrtoeol();
 		return;
@@ -970,7 +1038,7 @@ static const char *get_stream_title(const char *metadata)
 
 static void do_update_titleline(void)
 {
-	bkgdset(cursed_colors[COLOR_TITLELINE]);
+	bkgdset(pairs[CURSED_TITLELINE]);
 	player_info_lock();
 	if (cur_track_info) {
 		const char *filename;
@@ -1175,7 +1243,7 @@ int yes_no_query(const char *format, ...)
 	va_end(ap);
 
 	move(LINES - 1, 0);
-	bkgdset(cursed_colors[COLOR_INFO]);
+	bkgdset(pairs[CURSED_INFO]);
 
 	/* no need to convert buffer.
 	 * it is always encoded in the right charset (assuming filenames are
@@ -1312,28 +1380,35 @@ void quit(void)
 	running = 0;
 }
 
-void update_color(int idx)
+void update_colors(void)
 {
-	/* first color pair is 1 */
-	int pair = idx + 1;
-	int fg, bg, cursed;
+	int i;
 
-	fg = clamp(fg_colors[idx], -1, 255);
-	bg = clamp(bg_colors[idx], -1, 255);
-	if (fg == -1) {
-		init_pair(pair, fg, bg);
-		cursed = COLOR_PAIR(pair);
-	} else {
+	if (!ui_initialized)
+		return;
+
+	for (i = 0; i < NR_CURSED; i++) {
+		int bg = colors[cursed_to_bg_idx[i]];
+		int fg = colors[cursed_to_fg_idx[i]];
+		int pair = i + 1;
+
 		if (fg >= 8 && fg <= 15) {
 			/* fg colors 8..15 are special (0..7 + bold) */
 			init_pair(pair, fg & 7, bg);
-			cursed = COLOR_PAIR(pair) | (fg & BRIGHT ? A_BOLD : 0);
+			pairs[i] = COLOR_PAIR(pair) | (fg & BRIGHT ? A_BOLD : 0);
 		} else {
 			init_pair(pair, fg, bg);
-			cursed = COLOR_PAIR(pair);
+			pairs[i] = COLOR_PAIR(pair);
 		}
 	}
-	cursed_colors[idx] = cursed;
+	curs_set(0);
+
+	update_view();
+	do_update_titleline();
+	do_update_statusline();
+	do_update_commandline();
+
+	post_update();
 }
 
 static void clear_error(void)
@@ -1732,15 +1807,16 @@ static void init_curses(void)
 
 	noecho();
 	if (has_colors()) {
-		int i;
-
 		start_color();
 		use_default_colors();
-		for (i = 0; i < NR_COLORS; i++)
-			update_color(i);
 	}
 	d_print("Number of supported colors: %d\n", COLORS);
 	ui_initialized = 1;
+
+	/* this was disabled while initializing because it needs to be
+	 * called only once after all colors have been set
+	 */
+	update_colors();
 }
 
 static void init_all(void)
@@ -1771,7 +1847,7 @@ static void init_all(void)
 	commands_init();
 	search_mode_init();
 
-	/* everything but ui must be initialized now */
+	/* almost everything must be initialized now */
 	options_load();
 
 	/* options have been loaded, init plugins (set their options) */
