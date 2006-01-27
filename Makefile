@@ -95,35 +95,17 @@ sun.so: $(sun-objs)
 	$(call cmd,ld_so,$(SUN_LIBS))
 # }}}
 
-# doc {{{
-CSS		:= default.css
-
-RST2HTML_FLAGS	:= --strict --no-toc-backlinks --generator --date --stylesheet-path=$(CSS) --embed-stylesheet
-
-cmus.html: cmus.rst $(CSS)
-	$(call cmd,rst)
-
-quiet_cmd_rst = RST    $@
-      cmd_rst = $(RST2HTML) $(RST2HTML_FLAGS) $< $@
-# }}}
-
 clean		+= *.o *.lo *.so cmus cmus-remote *.html
 distclean	+= config.mk config.h tags
 
 build: cmus cmus-remote $(ip-y) $(op-y)
-
-html: cmus.html
 
 install: build
 	$(INSTALL) -m755 $(bindir) cmus cmus-remote
 	$(INSTALL) -m755 $(libdir)/cmus/ip $(ip-y)
 	$(INSTALL) -m755 $(libdir)/cmus/op $(op-y)
 	$(INSTALL) -m644 $(datadir)/cmus keybindings
-	$(INSTALL) -m644 $(datadir)/doc/cmus cmus.rst
 	$(INSTALL) -m755 $(datadir)/doc/cmus/examples cmus-status-display
-
-install-html: html
-	$(INSTALL) -m644 $(datadir)/doc/cmus cmus.html
 
 tags:
 	exuberant-ctags *.[ch]
