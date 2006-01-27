@@ -1,0 +1,114 @@
+cmus-remote(1)
+==============
+
+NAME
+----
+cmus-remote - control cmus(1)
+
+
+SYNOPSIS
+--------
+cmus-remote [OPTION]... [FILE|DIR|PLAYLIST]...
+
+cmus-remote -C COMMAND...
+
+cmus-remote
+
+
+DESCRIPTION
+-----------
+Add `FILE/DIR/PLAYLIST` to playlist, library (`-l`) or play queue (`-q`).
+
+If no arguments are given cmus-remote reads raw commands from stdin (one
+command per line).  Raw commands are cmus' command mode commands.  These same
+commands are used in configuration files and key bindings.  manlink:cmus[1]
+contains full list of commands.
+
+When `-C` is given all command line arguments are treated as raw commands.
+
+
+OPTIONS
+-------
+`--server SOCKET`::
+	Connect using socket `SOCKET` instead of `/tmp/cmus-$USER`.
+
+`--help`::
+	Display usage information and exit.
+
+`--version`::
+	Display version information and exit.
+
+`-p, --play`::
+	Start playing.
+
+`-u, --pause`::
+	Toggle pause.
+
+`-s, --stop`::
+	Stop playing.
+
+`-n, --next`::
+	Skip forward in playlist.
+
+`-r, --prev`::
+	Skip backward in playlist.
+
+`-R, --repeat`::
+	Toggle repeat.
+
+`-S, --shuffle`::
+	Toggle shuffle.
+
+`-v, --volume VOL`::
+	Change volume. See `vol` command in manlink:cmus[1].
+
+`-k, --seek SEEK`::
+	Seek. See `seek` command in manlink:cmus[1].
+
+`-l, --library`::
+	Modify library instead of playlist.
+
+`-P, --playlist`::
+	Modify playlist (default).
+
+`-q, --queue`::
+	Modify play queue instead of playlist.
+
+`-c, --clear`::
+	Clear playlist, library (`-l`) or play queue (`-q`).
+
+`-C, --raw`::
+	Treat arguments (instead of stdin) as raw commands.
+
+EXAMPLES
+--------
+
+Add playlists/files/directories/URLs to library view (1 & 2)::
++
+----------------
+$ cmus-remote -l music.m3u http://live.urn1350.net:8080/urn_high.ogg
+----------------
+
+Load (clear and add) playlist to playlist view (3)::
++
+----------------
+$ cmus-remote -c music.m3u
+----------------
+
+Three different ways to toggle repeat::
++
+----------------
+$ cmus-remote -R
+$ cmus-remote -C "toggle repeat"
+$ cmus-remote
+toggle repeat
+^D
+----------------
+
+SEE ALSO
+--------
+manlink:cmus[1]
+
+AUTHOR
+------
+Written by Timo Hirvonen <tihirvon@gmail.com>

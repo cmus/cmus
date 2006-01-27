@@ -110,6 +110,22 @@ install: build
 tags:
 	exuberant-ctags *.[ch]
 
+doc: Doc-all
+man: Doc-man
+html: Doc-html
+install-doc: Doc-install
+install-man: Doc-install-man
+install-html: Doc-install-html
+clean: Doc-clean
+
+Doc-%:
+	$(call cmd,submake)
+
+quiet_cmd_submake = Making $(word 2,$(subst -, ,$@)) in $(word 1,$(subst -, ,$@))
+      cmd_submake = make -C $(subst -, ,$@)
+
+MAKEFLAGS += --no-print-directory
+
 # generating tarball using GIT {{{
 REV	= HEAD
 
@@ -130,7 +146,7 @@ dist:
 	git-tar-tree $$sha1 $$tarname | bzip2 -9 > $$tarname.tar.bz2
 # }}}
 
-.PHONY: all build html install install-html dist tags
+.PHONY: all build install dist tags doc man html install-doc install-man install-html
 
 # If config.mk changes, rebuild all sources that include debug.h
 #
