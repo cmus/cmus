@@ -104,7 +104,7 @@ install: build
 	$(INSTALL) -m755 $(bindir) cmus cmus-remote
 	$(INSTALL) -m755 $(libdir)/cmus/ip $(ip-y)
 	$(INSTALL) -m755 $(libdir)/cmus/op $(op-y)
-	$(INSTALL) -m644 $(datadir)/cmus keybindings
+	$(INSTALL) -m644 $(datadir)/cmus rc
 	$(INSTALL) -m755 $(datadir)/doc/cmus/examples cmus-status-display
 
 tags:
