@@ -268,6 +268,9 @@ static int parse_flags(const char **strp, const char *flags)
 	const char *str = *strp;
 	int flag = 0;
 
+	if (str == NULL)
+		return flag;
+
 	while (*str) {
 		if (*str != '-')
 			break;
@@ -299,6 +302,8 @@ static int parse_flags(const char **strp, const char *flags)
 	}
 	while (*str == ' ')
 		str++;
+	if (*str == 0)
+		str = NULL;
 	*strp = str;
 	return flag;
 }
@@ -324,7 +329,7 @@ static void cmd_add(char *arg)
 
 	if (flag == -1)
 		return;
-	if (*arg == 0) {
+	if (arg == NULL) {
 		error_msg("not enough arguments\n");
 		return;
 	}
@@ -333,13 +338,11 @@ static void cmd_add(char *arg)
 
 static void cmd_clear(char *arg)
 {
-	int flag = 0;
+	int flag = parse_flags((const char **)&arg, "lpq");
 
-	if (arg)
-		flag = parse_flags((const char **)&arg, "lpq");
 	if (flag == -1)
 		return;
-	if (arg && *arg) {
+	if (arg) {
 		error_msg("too many arguments\n");
 		return;
 	}
@@ -352,7 +355,7 @@ static void cmd_load(char *arg)
 
 	if (flag == -1)
 		return;
-	if (*arg == 0) {
+	if (arg == NULL) {
 		error_msg("not enough arguments\n");
 		return;
 	}
@@ -365,10 +368,6 @@ static void cmd_save(char *arg)
 
 	if (flag == -1)
 		return;
-	if (*arg == 0) {
-		error_msg("not enough arguments\n");
-		return;
-	}
 	view_save(flag_to_view(flag), arg);
 }
 
@@ -1319,6 +1318,8 @@ static void expand_add(const char *str)
 
 	if (flag == -1)
 		return;
+	if (str == NULL)
+		str = "";
 	tabexp_files = 1;
 	expand_files_and_dirs(str);
 
@@ -1335,6 +1336,8 @@ static void expand_load_save(const char *str)
 
 	if (flag == -1)
 		return;
+	if (str == NULL)
+		str = "";
 	tabexp_files = 1;
 	expand_files_and_dirs(str);
 
