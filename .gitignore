@@ -2,6 +2,8 @@
 .*
 *.[ao]
 *.html
+*.xml
+*.1
 *.lo
 *.so
 tags
