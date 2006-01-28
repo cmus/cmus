@@ -107,7 +107,9 @@ void search_mode_ch(uchar ch)
 	int restricted;
 
 	switch (ch) {
-	case 0x1B:
+	case 0x03: // ^C
+	case 0x07: // ^G
+	case 0x1B: // ESC
 		parse_line(&text, &restricted);
 		if (text[0]) {
 			history_add_line(&search_history, text);

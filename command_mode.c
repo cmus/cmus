@@ -2015,7 +2015,9 @@ static void backspace(void)
 void command_mode_ch(uchar ch)
 {
 	switch (ch) {
-	case 0x1B:
+	case 0x03: // ^C
+	case 0x07: // ^G
+	case 0x1B: // ESC
 		if (cmdline.blen) {
 			history_add_line(&cmd_history, cmdline.line);
 			cmdline_clear();

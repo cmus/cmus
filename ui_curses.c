@@ -1489,9 +1489,11 @@ static void spawn_status_program(void)
 		free(argv[i]);
 }
 
-static void finish(int sig)
+static int ctrl_c_pressed = 0;
+
+static void sig_int(int sig)
 {
-	running = 0;
+	ctrl_c_pressed = 1;
 }
 
 static int needs_to_resize = 1;
@@ -1643,20 +1645,50 @@ static void update(void)
 	}
 }
 
-static int u_getch(uchar *uch, int *keyp)
+static void handle_ch(uchar ch)
+{
+	clear_error();
+	if (input_mode == NORMAL_MODE) {
+		normal_mode_ch(ch);
+	} else if (input_mode == COMMAND_MODE) {
+		command_mode_ch(ch);
+		update_commandline();
+	} else if (input_mode == SEARCH_MODE) {
+		search_mode_ch(ch);
+		update_commandline();
+	}
+}
+
+static void handle_key(int key)
+{
+	clear_error();
+	if (input_mode == NORMAL_MODE) {
+		normal_mode_key(key);
+	} else if (input_mode == COMMAND_MODE) {
+		command_mode_key(key);
+		update_commandline();
+	} else if (input_mode == SEARCH_MODE) {
+		search_mode_key(key);
+		update_commandline();
+	}
+}
+
+static void u_getch(void)
 {
 	int key;
 	int bit = 7;
-	uchar u, ch;
 	int mask = (1 << 7);
+	uchar u, ch;
 
 	key = getch();
 	if (key == ERR || key == 0)
-		return -1;
+		return;
+
 	if (key > 255) {
-		*keyp = key;
-		return 1;
+		handle_key(key);
+		return;
 	}
+
 	ch = (unsigned char)key;
 	while (bit > 0 && ch & mask) {
 		mask >>= 1;
@@ -1673,14 +1705,14 @@ static int u_getch(uchar *uch, int *keyp)
 		while (count) {
 			key = getch();
 			if (key == ERR || key == 0)
-				return -1;
+				return;
+
 			ch = (unsigned char)key;
 			u = (u << 6) | (ch & 63);
 			count--;
 		}
 	}
-	*uch = u;
-	return 0;
+	handle_ch(u);
 }
 
 static void main_loop(void)
@@ -1698,11 +1730,24 @@ static void main_loop(void)
 		FD_SET(0, &set);
 		FD_SET(remote_socket, &set);
 
+		/* Timeout must be so small that screen updates seem instant.
+		 * Only affects changes done in other threads (worker, player).
+		 *
+		 * Too small timeout makes window updates too fast (wastes CPU).
+		 *
+		 * Too large timeout makes status line (position) updates too slow.
+		 * The timeout is accuracy of player position.
+		 */
 		tv.tv_sec = 0;
-		tv.tv_usec = 50e3;
+		tv.tv_usec = 100e3;
 		rc = select(fd_high + 1, &set, NULL, NULL, &tv);
-		if (rc <= 0)
+		if (rc <= 0) {
+			if (ctrl_c_pressed) {
+				handle_ch(0x03);
+				ctrl_c_pressed = 0;
+			}
 			continue;
+		}
 
 		if (FD_ISSET(remote_socket, &set)) {
 			/* no error msgs for cmus-remote */
@@ -1711,47 +1756,20 @@ static void main_loop(void)
 			remote_server_serve();
 		}
 		if (FD_ISSET(0, &set)) {
-			int key = 0;
-			uchar ch;
-
 			/* diplay errors for interactive commands */
 			display_errors = 1;
 
 			if (using_utf8) {
-				rc = u_getch(&ch, &key);
+				u_getch();
 			} else {
-				ch = key = getch();
-				if (key == ERR || key == 0) {
-					rc = -1;
-				} else {
+				int key = getch();
+
+				if (key != ERR && key != 0) {
 					if (key > 255) {
-						rc = 1;
+						handle_key(key);
 					} else {
-						rc = 0;
+						handle_ch(key);
 					}
-				}
-			}
-			if (rc == 0) {
-				clear_error();
-				if (input_mode == NORMAL_MODE) {
-					normal_mode_ch(ch);
-				} else if (input_mode == COMMAND_MODE) {
-					command_mode_ch(ch);
-					update_commandline();
-				} else if (input_mode == SEARCH_MODE) {
-					search_mode_ch(ch);
-					update_commandline();
-				}
-			} else if (rc == 1) {
-				clear_error();
-				if (input_mode == NORMAL_MODE) {
-					normal_mode_key(key);
-				} else if (input_mode == COMMAND_MODE) {
-					command_mode_key(key);
-					update_commandline();
-				} else if (input_mode == SEARCH_MODE) {
-					search_mode_key(key);
-					update_commandline();
 				}
 			}
 		}
@@ -1786,7 +1804,10 @@ static void init_curses(void)
 {
 	struct sigaction act;
 
-	signal(SIGINT, finish);
+	sigemptyset(&act.sa_mask);
+	act.sa_flags = 0;
+	act.sa_handler = sig_int;
+	sigaction(SIGINT, &act, NULL);
 
 	sigemptyset(&act.sa_mask);
 	act.sa_flags = 0;
