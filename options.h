@@ -119,6 +119,8 @@ void options_add(void);
 /* load options from the config file */
 void options_load(void);
 
+int source_file(const char *filename);
+
 /* save options */
 void options_exit(void);
 

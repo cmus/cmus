@@ -542,10 +542,20 @@ static void cmd_quit(char *arg)
 {
 	quit();
 }
+
 static void cmd_reshuffle(char *arg)
 {
 	lib_reshuffle();
 	pl_reshuffle();
+}
+
+static void cmd_source(char *arg)
+{
+	char *filename = expand_filename(arg);
+
+	if (source_file(filename) == -1)
+		error_msg("sourcing %s: %s", filename, strerror(errno));
+	free(filename);
 }
 
 /*
@@ -1312,6 +1322,19 @@ static void cmd_browser_up(char *arg)
 /* buffer used for tab expansion */
 static char expbuf[512];
 
+/* expands directories too, of course */
+static void expand_files(const char *str)
+{
+	tabexp_files = 1;
+	expand_files_and_dirs(str);
+}
+
+static void expand_directories(const char *str)
+{
+	tabexp_files = 0;
+	expand_files_and_dirs(str);
+}
+
 static void expand_add(const char *str)
 {
 	int flag = parse_flags(&str, "lpqQ");
@@ -1320,8 +1343,7 @@ static void expand_add(const char *str)
 		return;
 	if (str == NULL)
 		str = "";
-	tabexp_files = 1;
-	expand_files_and_dirs(str);
+	expand_files(str);
 
 	if (tabexp.head && flag) {
 		snprintf(expbuf, sizeof(expbuf), "-%c %s", flag, tabexp.head);
@@ -1338,20 +1360,13 @@ static void expand_load_save(const char *str)
 		return;
 	if (str == NULL)
 		str = "";
-	tabexp_files = 1;
-	expand_files_and_dirs(str);
+	expand_files(str);
 
 	if (tabexp.head && flag) {
 		snprintf(expbuf, sizeof(expbuf), "-%c %s", flag, tabexp.head);
 		free(tabexp.head);
 		tabexp.head = xstrdup(expbuf);
 	}
-}
-
-static void expand_directories(const char *str)
-{
-	tabexp_files = 0;
-	expand_files_and_dirs(str);
 }
 
 static void expand_key_context(const char *str)
@@ -1734,6 +1749,7 @@ static struct command commands[] = {
 	{ "seek",		cmd_seek,	1, 1, NULL		},
 	{ "set",		cmd_set,	1, 1, expand_options	},
 	{ "shuffle",		cmd_reshuffle,	0, 0, NULL		},
+	{ "source",		cmd_source,	1, 1, expand_files	},
 	{ "toggle",		cmd_toggle,	1, 1, expand_toptions	},
 	{ "unbind",		cmd_unbind,	1, 1, expand_unbind_args},
 	{ "unmark",		cmd_unmark,	0, 0, NULL		},

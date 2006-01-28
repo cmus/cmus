@@ -725,6 +725,11 @@ static int handle_line(void *data, const char *line)
 	return 0;
 }
 
+int source_file(const char *filename)
+{
+	return file_for_each_line(filename, handle_line, NULL);
+}
+
 void options_load(void)
 {
 	char filename[512];
@@ -736,20 +741,20 @@ void options_load(void)
 
 	/* load autosave config */
 	snprintf(filename, sizeof(filename), "%s/autosave", cmus_config_dir);
-	if (file_for_each_line(filename, handle_line, NULL) == -1) {
+	if (source_file(filename) == -1) {
 		const char *def = DATADIR "/cmus/rc";
 
 		if (errno != ENOENT)
 			warn_errno("loading %s", filename);
 
 		/* load defaults */
-		if (file_for_each_line(def, handle_line, NULL) == -1)
+		if (source_file(def) == -1)
 			warn_errno("loading %s", def);
 	}
 
 	/* load optional static config */
 	snprintf(filename, sizeof(filename), "%s/rc", cmus_config_dir);
-	if (file_for_each_line(filename, handle_line, NULL) == -1) {
+	if (source_file(filename) == -1) {
 		if (errno != ENOENT)
 			warn_errno("loading %s", filename);
 	}
