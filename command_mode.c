@@ -1514,11 +1514,11 @@ static void expand_bind_args(const char *str)
 	while (*fs == ' ')
 		fs++;
 
-	if (*fs != ':')
-		return;
+	if (*fs == ':')
+		fs++;
 
-	/* expand :com [arg...] */
-	expand_command_line(fs + 1);
+	/* expand com [arg...] */
+	expand_command_line(fs);
 	if (tabexp.head == NULL) {
 		/* command expand failed */
 		return;
@@ -1528,10 +1528,10 @@ static void expand_bind_args(const char *str)
 	 * tabexp.head is now "com"
 	 * tabexp.tails is [ mand1 mand2 ... ]
 	 *
-	 * need to change tabexp.head to "context key :com"
+	 * need to change tabexp.head to "context key com"
 	 */
 
-	snprintf(expbuf, sizeof(expbuf), "%s %s :%s", key_context_names[c],
+	snprintf(expbuf, sizeof(expbuf), "%s %s %s", key_context_names[c],
 			key_table[k].name, tabexp.head);
 	free(tabexp.head);
 	tabexp.head = xstrdup(expbuf);
