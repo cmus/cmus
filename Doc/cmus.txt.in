@@ -1,0 +1,604 @@
+cmus(1)
+=======
+
+NAME
+----
+cmus - C* Music Player
+
+
+SYNOPSIS
+--------
+cmus [options]
+
+
+DESCRIPTION
+-----------
+
+cmus is a music player based on ncurses. It's small, flexible and fast.  Not
+only is it fast in execution, but it's also fast to use. Most actions can be
+done with only one keystroke. More complex actions can be done using vi-like
+:commands.
+
+cmus supports various output methods by output-plugins. It has got completely
+configurable keybindings and it can be controlled from the outside via
+manlink:cmus-remote[1].
+
+OPTIONS
+-------
+`--listen ADDR`::
+	Listen to ADDR (unix socket) instead of /tmp/cmus-$USER. NOTE: don't
+	abuse this option to run multiple instances as same user.  That would
+	corrupt track metadata cache.
+
+`--plugins`::
+	List available plugins and exit.
+
+`--help`::
+	Display usage information and exit.
+
+`--version`::
+	Display version information and exit.
+
+
+GENERAL USAGE
+-------------
+
+Views
+~~~~~
+
+Library view (1)::
+	Display all tracks in so called library. Tracks are sorted
+	artist/album tree.
+
+Sorted library view (2)::
+	Displays same content as view 1 but as a simple list which is
+	automatically sorted the way you want.
+
+Playlist view (3)::
+	Displays editable playlist which can be sorted automatically.
+
+Play Queue view (4)::
+
+Browser (5)::
+	Directory browser.
+
+Filters view (6)::
+	Lists user defined filters.
+
+Copying Tracks Between Views
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+xxx
+
+Status Line
+-----------
+
+xxx
+
+COMMANDS
+--------
+
+In this section we will describe all vi-like commands, cmus uses, in
+detail. (Default keybindings in brackets).
+
+add [-l] [-p] [-q] [-Q] <file|dir|url|playlist>::
+	Add file/dir/url/playlist to the specified view or the current view.
+
+	-l::
+		add to library
+	-p::
+		add to playlist
+	-q::
+		add play queue
+	-Q::
+		prepend to play queue
+
+	URL is a Shoutcast stream (http://...).
+
+	Supported playlist: plain, .m3u, .pls.
+
+bind <context> <key> :<command>::
+	Adds a key binding.
+		Use tab to expand contexts, keys and commands.  Command is any
+		command listed in this section.
+
+	Valid key contexts::
+		common, library (1-2), playlist (3), queue (4), browser (5), filters(6)
+
+		There's one context for each view.  Common is a special
+		context on which bound keys work in every view.
+
+		You can override specific keys in common context for a view.
+		For example 'i' selects the current track in views (1-3) but
+		in browser (5) it is overridden to toggle showing of hidden
+		files.
+
+browser-up (backspace)::
+	Change to parent directory in browser view (5). This command only
+	makes sense to be bound to the 'browser' key context although it's
+	possible to use this even if browser view is not active.
+
+cd [directory]::
+	Changes the current working directory.  Changes the directory
+	displayed in browser view too.
+
+clear [-l] [-p] [-q]::
+	Remove all tracks from the specified view or the current view.
+
+	-l::
+		clear library
+	-p::
+		clear playlist
+	-q::
+		clear play queue
+
+The following 3 commands 'factivate', 'filter' and 'fset' control
+cmus' playlist filtering features. See the ''FILTERS'' section below
+to understand how filters are set up and used.
+
+factivate <user-defined-filter>...::
+
+	Selects and activates the given user defined filters (displayed in the
+	filters view). This command is mostly useful when bound to a key, to
+	change active filters very quickly.  More than one filter can be
+	activated when they are given in a space seperated list.  If no
+	arguments given then all filters are unactivated.
+
+filter <filter-expression>::
+
+	Use this command when you want to temporarily filter contents of the
+	library views without having separately define (fset) and activate the
+	filter.  The filter is not saved.
+
+fset <name>=<filter-expression>::
+
+	Define (or replace existing) filter and add it to filters view (6).
+
+invert::
+
+	Inverts the selection of tracks in playlist and queue views. See
+	'mark' and 'unmark'.
+
+load [-l] [-p] <playlist>::
+
+	Load a playlist to the specified view or to the current view.
+
+	-l::
+		load to library views
+	-p::
+		load to playlist view
+
+mark <filter-expression>::
+
+	Marks tracks in playlist and queue view by the use of filter
+	expression.
+
+player-next (b)::
+
+	Skip to the next track.
+
+player-pause (c)::
+
+	Toggle pause.
+
+player-play (x)::
+
+	If stopped, start playing the current song; if already playing seek to
+	beginning of the current song.
+
+player-prev (z)::
+
+	Skip to the previous track.
+
+player-stop (v)::
+
+	Stop playback.
+
+quit::
+
+	Exit cmus.
+
+run <command>::
+
+	Run command for the marked tracks OR the selected one if none marked.
+
+	By default file names are appended to the command.  If the command
+	contains '{}' it is replaced with list of filenames.
+
+	NOTE: In view 1 you can run a command for the all files in the
+	selected album or artist.
+
+	NOTE: only implemented for views 1-2.
+
+save [-l] [-p] [file]::
+
+	Save the specified view's or the current view's contents to a playlist
+	file.
+
+	-l::
+		save library views
+	-p::
+		save playlist view
+
+	If no filename given the old filename is used.
+
+search-next (n)::
+
+	If a search pattern has been entered before, searche forward for the
+	next match in the current view.  See 'GENERAL USAGE' above.
+
+search-prev (N)::
+
+	If a search pattern has been entered before, searche backwards for the
+	previous match in the current view.  See 'GENERAL USAGE' above.
+
+seek [+-]<num>[mh]::
+
+	Seek 1 minutes backward::
+		:seek -1m
+
+	Seek 5 seconds forward::
+		:seek +5
+
+	Seek to absolute position 1h::
+		:seek 1h
+
+	Default Bindings::
+----------------------------------------------------
+common     ,                    :seek -1m
+common     .                    :seek +1m
+common     l                    :seek +5
+common     h                    :seek -5
+common     right                :seek +5
+common     left                 :seek -5
+----------------------------------------------------
+
+set <option>=<value>::
+
+	Set value of an option. See 'OPTIONS'.
+
+shuffle::
+
+	Reshuffle the shuffle lists for both library and playlist views.
+
+toggle option::
+
+	Toggle value of a toggle-able option (all booleans and tristate
+	aaa_mode).
+
+unbind <context> <key>::
+
+	Remove a key binding. Use tab to cycle through bound keys.
+
+unmark::
+
+	Unmark all tracks (see 'mark').
+
+view <name or 1-6>::
+
+	Switches active view.
+
+vol [+-]NUM[%] [[+-]NUM[%]]::
+
+	Set, increase or decrease volume.
+	+
+	If you give 'vol' just one argument it changes both channels.  Two
+	values make it possible to change the left and right channel
+	independently.
+	+
+	To increase or decrease volume prefix the value with '-' or '+',
+	otherwise value is treated as absolute volume.
+	+
+	Both absolute and relative values can be given as percentage units
+	(suffixed with '%') or as internal values (hardware may have volume in
+	range 0-31 for example).
+	+
+	Default bindings::
+------------------------------------------------
+	common = :vol +10%
+	common + :vol +10%
+	common - :vol -10%
+	common [ :vol +1 +0
+	common ] :vol +0 +1
+	common { :vol -1 -0
+	common } :vol -0 -1
+------------------------------------------------
+
+win-activate (enter)::
+
+In views 1-3 start playing the selected track.  In view 5 start playing the
+selected track or change to the selected directory.  In view 6 activate the
+selected filters.
+
+win-add-l (a)::
+
+	Add the currently marked or selected track(s) (views 3-4), or the
+	currently selected file or directory (view 5) to the library.
+	+
+	Analogous to :add -l
+
+win-add-p (y)::
+
+	Add the currently marked or selected track(s) (views 1-2, 4), or the
+	currently selected file or directory (view 5) to the playlist.
+	+
+	Analogous to :add -p
+
+win-add-Q (E)::
+
+	Prepend the currently marked or selected track(s) (views 1-3), or the
+	currently selected file or directory (view 5) to the play queue.
+
+	Analogous to :add -Q
+
+win-add-q (e)::
+
+	Add the currently marked or selected track(s) (views 1-3), or the
+	currently selected file or directory (view 5) to the play queue.
+
+	Analogous to :add -q
+
+win-bottom (g, end)::
+
+	Goto bottom of the current window.
+
+win-down (j, down)::
+
+	Goto down one row in the current window.
+
+win-mv-after (p)::
+
+	If no tracks are marked, move the selected track down one row. If any
+	tracks are marked, move the marked tracks after the currently selected
+	track.  This command works in unsorted playlist and play queue view.
+
+win-mv-before (P)::
+
+	If no tracks are marked, move the selected track up one row. If any
+	tracks are marked, move the marked tracks before the currently
+	selected track.  This command works in unsorted playlist and play
+	queue view.
+
+win-next (tab)::
+
+	Activate next window.  Only relevant in view 1.
+
+win-page-down (^F, page_down)::
+
+	Goto down one page in the current window.
+
+win-page-up (^B, page_up)::
+
+	Goto up one page in the current window.
+
+win-remove (D, delete)::
+
+	Remove the selected entry.  For tracks no confirmations are made.
+	For files (view 5) and filters (view 6) user has to confirm the
+	action.
+
+win-sel-cur (i)::
+
+	Select the current track (position in library or playlist, not
+	necessarily same as the currently playing track).  Works only in views
+	1-3, does nothing in other views.
+
+win-toggle (space)::
+
+	Expand albums in library view (1), mark tracks in views (2-4), toggle
+	selection of a filter in view 6.
+
+win-top (g, home)::
+
+	Goto top of the current window.
+
+win-up (k, up)::
+
+	Goto up one row in the current window.
+
+win-update (u)::
+
+	Checks the modification time of the files in the library, and updates
+	metadata for changed files.  Removes non-existent files from the
+	library.
+
+	Reloads contents of directory in the browser view.
+
+	Only works in views 1-2 and 5, does nothing in other views.
+
+
+VARIABLES
+---------
+
+This section describes cmus' variables that can be altered with the 'set' and
+'toggle' commands. Default values are in parenthesis, possible values in
+brackets.
+
+aaa_mode (all) [all, artist, album]::
+	Defines what tracks should be played in the library view.  Not used in
+	the other views. For example if set to 'artist' the library behaves
+	like there were only the files of the current artist.
+
+altformat_current [format string]::
+	Alternative format string for the line displaying currently playing track.
+
+altformat_playlist [format string]::
+	Alternative format string for the list views (2-4).
+
+altformat_title [format string]::
+	Alternative format string for terminal tittle.  NOTE: not all
+	terminals support changing window title.
+
+altformat_trackwin [format string]::
+	Alternative format string for the tree view's (1) track window.
+
+buffer_seconds (10) [1-20]::
+	Size of player buffer in seconds.
+
+confirm_run (true)::
+	Ask for confirmation before executing :run?
+
+continue (true)::
+	Continue playing after current track finishes.
+
+dsp.\*::
+	Output plugin options.  Use tab to cycle through all possible options.
+
+format_current [format string]::
+	Format string for the line displaying currently playing track.
+
+format_playlist [format string]::
+	Format string for the list views (2-4).
+
+format_title [format string]::
+	Format string for terminal tittle.  NOTE: not all terminals support
+	changing window title.
+
+format_trackwin [format string]::
+	Format string for the tree view's (1) track window.
+
+id3_default_charset (ISO-8859-1)::
+	Default character set to use for broken ID3 tags.
+
+lib_sort (artist album discnumber tracknumber title filename) [sort keys]::
+	Sort keys for the sorted library view (2).
+
+mixer.\*::
+	Mixer options.  Use tab to cycle through all possible options.
+
+output_plugin [alsa, arts, oss, sun]::
+	Name of output plugin.
+
+pl_sort () [sort keys]::
+	Sort keys for the playlist view (3).  Empty value disables sorting and
+	enables manually moving tracks.
+
+play_library (true)::
+	Play tracks from the library instead of playlist.
+
+play_sorted (false)::
+	Play tracks from the library in the sorted view (2) order instead of
+	tree view (1) order.  Used only when play_library is true.
+
+repeat (false)::
+	Repeat after all tracks played.
+
+show_hidden (false)::
+	Display hidden files in browser.
+
+show_remaining_time (false)::
+	Display remaining time instead of elapsed time.
+
+shuffle (false)::
+	Play in shuffled order.  Shuffle works in the library views (1-2) and
+	playlist view (3).
+
+status_display_program () [command]::
+	This command, if set, is run every time cmus' status changes.
+
+Format Strings
+~~~~~~~~~~~~~~
+
+xxx
+
+
+FILTERS
+-------
+
+Filters are used mostly for filtering contents of library views (1 & 2).
+Filters do not change the actual library content, i.e. :save command will
+still save all tracks to playlist file whether they are visible or not.
+
+Strings
+~~~~~~~
+filename, artist, album, title, genre
+
+Comparators: `=` and `!=` (not equal)
+
+Integers
+~~~~~~~~
+discnumber, tracknumber, date (year), duration (seconds)
+
+Comparators: `<`, `<=`, `=`, `>=`, `>`, `!=`
+
+Booleans
+~~~~~~~~
+tag (true if track has tags), stream (true if track is stream)
+
+Syntax
+~~~~~~
+Filter expression is list of builtin filters or user defined filters separated
+with `&` (and) or `|` (or).  Parenthesis can be used and `!` negates result of
+the expression following it.
+
+Defining Filters
+~~~~~~~~~~~~~~~~
+Filters can be defined with `fset` command.  User defined filters appear in
+the Filters view (6).
+
+Create a new filter which name is 'ogg' and value 'filename="\*.ogg"'::
+	`:fset ogg=filename="\*.ogg"`
+
+Filter ogg and mp3 files from the 90s. Note the use of user defined filter
+'ogg'::
+	`:fset 90s-ogg-and-mp3=date>=1990&date<2000&(ogg|filename="\*.mp3")`
+
+Filter all rock (anything with 'rock' in genre tag) music from 80s-::
+	`:filter date>=1980&genre="\*rock\*"`
+
+Activate user defined filters 'ogg' and 'missing-tags'::
+	`:factivate ogg missing-tags`
+
+Mark all tracks with duration less than 2 minutes::
+	`:mark duration<120`
+
+
+FILES
+-----
+
+cmus reads it's configuration from 3 different places.
+
+`~/.cmus/autosave`::
+	This is the first file cmus loads.  cmus saves its state on exit to
+	this file so you shouldn't edit it.
+
+`@DATADIR@/cmus/rc`::
+	If the autosave file didn't exist, this file is read instead.
+
+`~/.cmus/rc`::
+	Static config file. This file is read right after the autosave file,
+	and is never modified by cmus.  You can override autosaved settings in
+	this file.  This file is not limited to options, it can contain other
+	commands too.
+
+
+EXAMPLES
+--------
+
+Example status display script (status_display_program) can be found in
+@DATADIR@/doc/cmus/examples.
+
+
+BUGS
+----
+
+After a crash last lines of /tmp/cmus-debug might contain useful information.
+The /tmp/cmus-debug file exists only if you configured cmus with maximum debug
+level (./configure --debug=2).
+
+Feature requests and bugreports should go to the cmus-devel mailing list:
+http://lists.sourceforge.net/lists/listinfo/cmus-devel
+
+
+AUTHOR
+------
+
+cmus is mainly written by Timo Hirvonen <tihirvon@gmail.com>.
+Other contributers are listed in the AUTHORS file.
+
+
+DOCUMENTATION
+-------------
+
+This man page was written by Frank Terbeck <frank.terbeck@rwth-aachen.de> and
+Timo Hirvonen <tihirvon@gmail.com>.

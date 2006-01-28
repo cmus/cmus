@@ -5,9 +5,9 @@ include ../scripts/lib.mk
 
 MAN_XSL	:= /usr/share/asciidoc/docbook-xsl/manpages.xsl
 
-man1	:= cmus-remote.1
-html	:= cmus-remote.html
-xml	:= cmus-remote.xml
+man1	:= cmus.1 cmus-remote.1
+html	:= cmus.html cmus-remote.html
+xml	:= cmus.xml cmus-remote.xml
 
 man: $(man1)
 html: $(html)
@@ -20,6 +20,9 @@ XSLTPROC_FLAGS	+= --nonet $(MAN_XSL)
 
 $(html): ASCIIDOC_FLAGS += -b xhtml11
 $(man1): ASCIIDOC_FLAGS += -b docbook
+
+cmus.txt: cmus.txt.in
+	sed -e 's:@DATADIR@:$(datadir):' < $< > $@
 
 %.html: %.txt
 	$(call cmd,asciidoc)
@@ -38,7 +41,7 @@ install-man: man
 install-html: html
 	$(INSTALL) -m644 $(datadir)/doc/cmus $(html)
 
-clean	+= *.html *.xml *.1
+clean	+= *.html *.xml *.1 cmus.txt
 
 .PHONY: all man html
 
