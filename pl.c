@@ -478,11 +478,10 @@ void pl_invert_marks(void)
 	pl_unlock();
 }
 
-int pl_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
+static int for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
 {
 	int rc = 0;
 
-	pl_lock();
 	if (pl_nr_marked) {
 		/* treat marked tracks as selected */
 		rc = simple_list_for_each_marked(&pl_sorted_head, cb, data, reverse);
@@ -492,7 +491,26 @@ int pl_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, in
 		if (t)
 			rc = cb(data, t->info);
 	}
+	return rc;
+}
+
+int pl_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
+{
+	int rc;
+
+	pl_lock();
+	rc = for_each_sel(cb, data, reverse);
 	window_down(pl_win, 1);
+	pl_unlock();
+	return rc;
+}
+
+int __pl_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
+{
+	int rc;
+
+	pl_lock();
+	rc = for_each_sel(cb, data, reverse);
 	pl_unlock();
 	return rc;
 }

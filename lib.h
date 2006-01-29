@@ -149,6 +149,7 @@ void __lib_set_view(int view);
 
 /*
  * Run callback @cb for each selected track. Quit if @cb returns non-zero value.
+ * Next track, album or artist is selected lastly.
  *
  * @cb:      callback funtion
  * @data:    data argument for @cb
@@ -156,9 +157,11 @@ void __lib_set_view(int view);
  *
  * Returns: return value of last @cb call or 0 if @cb not called at all.
  */
-int __lib_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
 int lib_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
 int lib_for_each(int (*cb)(void *data, struct track_info *ti), void *data);
+
+/* like lib_for_each_sel but does not select next track */
+int __lib_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
 
 #define lib_lock() cmus_mutex_lock(&lib.mutex)
 #define lib_unlock() cmus_mutex_unlock(&lib.mutex)

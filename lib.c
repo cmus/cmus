@@ -1523,7 +1523,7 @@ static int artist_for_each_track(struct artist *artist, int (*cb)(void *data, st
 	return rc;
 }
 
-int __lib_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
+static int for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
 {
 	struct iter sel;
 	struct tree_track *track;
@@ -1564,8 +1564,18 @@ int lib_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, i
 	int rc;
 
 	lib_lock();
-	rc = __lib_for_each_sel(cb, data, reverse);
+	rc = for_each_sel(cb, data, reverse);
 	window_down(lib.cur_win, 1);
+	lib_unlock();
+	return rc;
+}
+
+int __lib_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
+{
+	int rc;
+
+	lib_lock();
+	rc = for_each_sel(cb, data, reverse);
 	lib_unlock();
 	return rc;
 }

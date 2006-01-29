@@ -426,11 +426,7 @@ void cmus_update_selected(void)
 	data->size = 0;
 	data->used = 0;
 	data->ti = NULL;
-
-	lib_lock();
 	__lib_for_each_sel(update_cb, data, 0);
-	lib_unlock();
-
 	worker_add_job(JOB_TYPE_LIB, update_lib_job, data);
 }
 

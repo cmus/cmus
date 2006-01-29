@@ -54,4 +54,6 @@ void play_queue_clear(void);
 
 int play_queue_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
 
+int __play_queue_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
+
 #endif

@@ -344,11 +344,10 @@ void play_queue_clear(void)
 	play_queue_unlock();
 }
 
-int play_queue_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
+static int for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
 {
 	int rc = 0;
 
-	play_queue_lock();
 	if (pq_nr_marked) {
 		/* treat marked tracks as selected */
 		rc = simple_list_for_each_marked(&queue_head, cb, data, reverse);
@@ -358,7 +357,26 @@ int play_queue_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *
 		if (t)
 			rc = cb(data, t->info);
 	}
+	return rc;
+}
+
+int play_queue_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
+{
+	int rc;
+
+	play_queue_lock();
+	rc = for_each_sel(cb, data, reverse);
 	window_down(play_queue_win, 1);
+	play_queue_unlock();
+	return rc;
+}
+
+int __play_queue_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
+{
+	int rc;
+
+	play_queue_lock();
+	rc = for_each_sel(cb, data, reverse);
 	play_queue_unlock();
 	return rc;
 }

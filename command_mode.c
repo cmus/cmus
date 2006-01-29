@@ -803,11 +803,7 @@ static void cmd_run(char *arg)
 	sel_files = NULL;
 	sel_files_alloc = 0;
 	sel_files_nr = 0;
-
-	lib_lock();
 	__lib_for_each_sel(add_file, NULL, 0);
-	lib_unlock();
-
 	if (sel_files_nr == 0) {
 		/* no files selected, do nothing */
 		free_str_array(av);

@@ -47,6 +47,8 @@ void pl_invert_marks(void);
 int pl_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
 int pl_for_each(int (*cb)(void *data, struct track_info *ti), void *data);
 
+int __pl_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
+
 #define pl_lock() cmus_mutex_lock(&pl_mutex)
 #define pl_unlock() cmus_mutex_unlock(&pl_mutex)
 
