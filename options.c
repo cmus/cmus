@@ -50,18 +50,20 @@ int colors[NR_COLORS] = {
 	COLOR_WHITE | BRIGHT,
 	-1,
 	COLOR_YELLOW | BRIGHT,
-	COLOR_BLUE | BRIGHT,
+	COLOR_BLUE,
 
+	COLOR_YELLOW | BRIGHT,
+	COLOR_BLUE | BRIGHT,
 	-1,
 	COLOR_WHITE,
+
 	COLOR_YELLOW | BRIGHT,
 	COLOR_WHITE,
-
 	COLOR_BLACK,
 	COLOR_BLUE,
+
 	COLOR_WHITE | BRIGHT,
 	COLOR_BLUE,
-
 	COLOR_WHITE | BRIGHT
 };
 
@@ -599,6 +601,8 @@ static const char * const color_names[NR_COLORS] = {
 	"color_titleline_fg",
 	"color_win_bg",
 	"color_win_cur",
+	"color_win_cur_sel_bg",
+	"color_win_cur_sel_fg",
 	"color_win_dir",
 	"color_win_fg",
 	"color_win_inactive_cur_sel_bg",

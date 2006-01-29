@@ -140,7 +140,7 @@ static unsigned char cursed_to_bg_idx[NR_CURSED] = {
 	COLOR_WIN_BG,
 	COLOR_WIN_BG,
 	COLOR_WIN_SEL_BG,
-	COLOR_WIN_SEL_BG,
+	COLOR_WIN_CUR_SEL_BG,
 
 	COLOR_WIN_BG,
 	COLOR_WIN_TITLE_BG,
@@ -162,7 +162,7 @@ static unsigned char cursed_to_fg_idx[NR_CURSED] = {
 	COLOR_WIN_FG,
 	COLOR_WIN_CUR,
 	COLOR_WIN_SEL_FG,
-	COLOR_WIN_CUR,
+	COLOR_WIN_CUR_SEL_FG,
 
 	COLOR_SEPARATOR,
 	COLOR_WIN_TITLE_FG,
