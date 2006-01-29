@@ -110,10 +110,10 @@ install: build
 tags:
 	exuberant-ctags *.[ch]
 
-doc: Doc-all
+doc: man html
 man: Doc-man
 html: Doc-html
-install-doc: Doc-install
+install-doc: install-man install-html
 install-man: Doc-install-man
 install-html: Doc-install-html
 clean: Doc-clean

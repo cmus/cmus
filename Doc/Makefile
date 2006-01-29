@@ -1,4 +1,4 @@
-all: man html
+all: html
 
 include ../config.mk
 include ../scripts/lib.mk
@@ -32,8 +32,6 @@ cmus.txt: cmus.txt.in
 
 %.xml: %.txt
 	$(call cmd,asciidoc)
-
-install: install-man install-html
 
 install-man: man
 	$(INSTALL) -m644 $(datadir)/man/man1 $(man1)
