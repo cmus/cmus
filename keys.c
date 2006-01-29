@@ -442,7 +442,7 @@ static struct binding *find_binding(enum key_context c, const struct key *k)
 	return b;
 }
 
-int key_bind(const char *context, const char *key, const char *cmd)
+int key_bind(const char *context, const char *key, const char *cmd, int force)
 {
 	const struct key *k;
 	struct binding *b, *ptr, *prev;
@@ -458,8 +458,11 @@ int key_bind(const char *context, const char *key, const char *cmd)
 
 	/* check if already bound */
 	b = find_binding(c, k);
-	if (b)
-		goto bound;
+	if (b) {
+		if (!force)
+			goto bound;
+		key_unbind(context, key);
+	}
 
 	if (*cmd == ':')
 		cmd++;

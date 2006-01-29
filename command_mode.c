@@ -493,7 +493,14 @@ static void cmd_cd(char *arg)
 
 static void cmd_bind(char *arg)
 {
+	int flag = parse_flags((const char **)&arg, "f");
 	char *key, *func;
+
+	if (flag == -1)
+		return;
+
+	if (arg == NULL)
+		goto err;
 
 	key = strchr(arg, ' ');
 	if (key == NULL)
@@ -511,7 +518,7 @@ static void cmd_bind(char *arg)
 	if (*func == 0)
 		goto err;
 
-	key_bind(arg, key, func);
+	key_bind(arg, key, func, flag == 'f');
 	return;
 err:
 	error_msg("expecting 3 arguments (context, key and function)\n");
@@ -1369,7 +1376,7 @@ static void expand_load_save(const char *str)
 	}
 }
 
-static void expand_key_context(const char *str)
+static void expand_key_context(const char *str, const char *force)
 {
 	int pos, i, len = strlen(str);
 	char **tails;
@@ -1395,7 +1402,8 @@ static void expand_key_context(const char *str)
 		tails[0] = tmp;
 	}
 	tails[pos] = NULL;
-	tabexp.head = xstrdup(str);
+	snprintf(expbuf, sizeof(expbuf), "%s%s", force, str);
+	tabexp.head = xstrdup(expbuf);
 	tabexp.tails = tails;
 	tabexp.nr_tails = pos;
 	tabexp.index = 0;
@@ -1437,11 +1445,19 @@ static void expand_bind_args(const char *str)
 	const char *cs, *ce, *ks, *ke, *fs;
 	char *tmp, **tails;
 	int i, c, k, len, pos, alloc, count;
+	int flag = parse_flags((const char **)&str, "f");
+	const char *force = "";
+
+	if (flag == -1 || str == NULL)
+		return;
+
+	if (flag == 'f')
+		force = "-f ";
 
 	cs = str;
 	ce = strchr(cs, ' ');
 	if (ce == NULL) {
-		expand_key_context(cs);
+		expand_key_context(cs, force);
 		return;
 	}
 
@@ -1480,7 +1496,7 @@ static void expand_bind_args(const char *str)
 			tails[0] = tmp;
 		}
 
-		snprintf(expbuf, sizeof(expbuf), "%s %s", key_context_names[c], ks);
+		snprintf(expbuf, sizeof(expbuf), "%s%s %s", force, key_context_names[c], ks);
 
 		tails[pos] = NULL;
 		tabexp.head = xstrdup(expbuf);
@@ -1531,7 +1547,7 @@ static void expand_bind_args(const char *str)
 	 * need to change tabexp.head to "context key com"
 	 */
 
-	snprintf(expbuf, sizeof(expbuf), "%s %s %s", key_context_names[c],
+	snprintf(expbuf, sizeof(expbuf), "%s%s %s %s", force, key_context_names[c],
 			key_table[k].name, tabexp.head);
 	free(tabexp.head);
 	tabexp.head = xstrdup(expbuf);
@@ -1549,7 +1565,7 @@ static void expand_unbind_args(const char *str)
 	cs = str;
 	ce = strchr(cs, ' ');
 	if (ce == NULL) {
-		expand_key_context(cs);
+		expand_key_context(cs, "");
 		return;
 	}
 

@@ -50,7 +50,7 @@ extern const char * const key_context_names[NR_CTXS + 1];
 extern const struct key key_table[];
 extern struct binding *key_bindings[NR_CTXS];
 
-int key_bind(const char *context, const char *key, const char *func);
+int key_bind(const char *context, const char *key, const char *cmd, int force);
 int key_unbind(const char *context, const char *key);
 
 void normal_mode_ch(uchar ch);

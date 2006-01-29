@@ -97,10 +97,14 @@ add [-l] [-p] [-q] [-Q] <file|dir|url|playlist>::
 
 	Supported playlist: plain, .m3u, .pls.
 
-bind <context> <key> :<command>::
-	Adds a key binding.
-		Use tab to expand contexts, keys and commands.  Command is any
-		command listed in this section.
+bind [-f] <context> <key> <command>::
+	Add a key binding.
+
+	-f::
+		overwrite existing binding
+
+	Use tab to expand contexts, keys and commands.  Command is any
+	command listed in this section.
 
 	Valid key contexts::
 		common, library (1-2), playlist (3), queue (4), browser (5), filters(6)
