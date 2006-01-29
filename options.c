@@ -29,6 +29,7 @@
 
 char *output_plugin = NULL;
 char *status_display_program = NULL;
+int auto_reshuffle = 0;
 int confirm_run = 1;
 int show_hidden = 0;
 int show_remaining_time = 0;
@@ -291,6 +292,21 @@ static void set_status_display_program(unsigned int id, const char *buf)
 /* }}} */
 
 /* callbacks for toggle options {{{ */
+
+static void get_auto_reshuffle(unsigned int id, char *buf)
+{
+	strcpy(buf, bool_names[auto_reshuffle]);
+}
+
+static void set_auto_reshuffle(unsigned int id, const char *buf)
+{
+	parse_bool(buf, &auto_reshuffle);
+}
+
+static void toggle_auto_reshuffle(unsigned int id)
+{
+	auto_reshuffle ^= 1;
+}
 
 static void get_continue(unsigned int id, char *buf)
 {
@@ -572,6 +588,7 @@ static const struct {
 	opt_toggle_cb toggle;
 } simple_options[] = {
 	DT(aaa_mode)
+	DT(auto_reshuffle)
 	DN(buffer_seconds)
 	DT(confirm_run)
 	DT(continue)

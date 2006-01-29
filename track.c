@@ -84,7 +84,8 @@ again:
 		item = item->next;
 	}
 	if (repeat) {
-		reshuffle(head);
+		if (auto_reshuffle)
+			reshuffle(head);
 		item = head->next;
 		goto again;
 	}
@@ -109,7 +110,8 @@ again:
 		item = item->prev;
 	}
 	if (repeat) {
-		reshuffle(head);
+		if (auto_reshuffle)
+			reshuffle(head);
 		item = head->prev;
 		goto again;
 	}

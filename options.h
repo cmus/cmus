@@ -82,6 +82,7 @@ enum {
 
 extern char *output_plugin;
 extern char *status_display_program;
+extern int auto_reshuffle;
 extern int confirm_run;
 extern int show_hidden;
 extern int show_remaining_time;
