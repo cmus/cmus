@@ -246,6 +246,9 @@ common  left   :seek -5
 `set <option>=<value>`::
 Set value of an option. See 'OPTIONS'.
 
+`showbind <context> <key>`::
+Show key binding.
+
 `shuffle`::
 Reshuffle the shuffle lists for both library and playlist views.
 
@@ -375,6 +378,9 @@ This section describes cmus' options that can be altered with the `set` and
 `toggle` commands. Default values are in parenthesis, possible values in
 brackets.
 
+`auto_reshuffle` (false)::
+Reshuffle playlist when end of shuffle list is reached.
+
 `aaa_mode` (all) [all, artist, album]::
 Defines what tracks should be played in the library view.  Not used in the
 other views. For example if set to 'artist' the library behaves like there were
@@ -397,7 +403,7 @@ Alternative format string for the tree view's (1) track window.
 Size of player buffer in seconds.
 
 `confirm_run` (true)::
-Ask for confirmation before executing `:run`?
+Ask for confirmation before executing `:run`
 
 `continue` (true)::
 Continue playing after current track finishes.
