@@ -789,8 +789,8 @@ static void cmd_run(char *arg)
 	char **av, **argv;
 	int ac, argc, i, run, files_idx = -1;
 
-	if (cur_view > SORTED_VIEW) {
-		info_msg("Command execution is supported only in views 1 and 2");
+	if (cur_view > QUEUE_VIEW) {
+		info_msg("Command execution is supported only in views 1-4");
 		return;
 	}
 
@@ -803,7 +803,20 @@ static void cmd_run(char *arg)
 	sel_files = NULL;
 	sel_files_alloc = 0;
 	sel_files_nr = 0;
-	__lib_for_each_sel(add_file, NULL, 0);
+
+	switch (cur_view) {
+	case TREE_VIEW:
+	case SORTED_VIEW:
+		__lib_for_each_sel(add_file, NULL, 0);
+		break;
+	case PLAYLIST_VIEW:
+		__pl_for_each_sel(add_file, NULL, 0);
+		break;
+	case QUEUE_VIEW:
+		__play_queue_for_each_sel(add_file, NULL, 0);
+		break;
+	}
+
 	if (sel_files_nr == 0) {
 		/* no files selected, do nothing */
 		free_str_array(av);
@@ -858,8 +871,13 @@ static void cmd_run(char *arg)
 			if (WIFSIGNALED(status))
 				error_msg("%s received signal %d", argv[0], WTERMSIG(status));
 
-			/* remove non-existed files, update tags for changed files */
-			cmus_update_selected();
+			switch (cur_view) {
+			case TREE_VIEW:
+			case SORTED_VIEW:
+				/* remove non-existed files, update tags for changed files */
+				cmus_update_selected();
+				break;
+			}
 		}
 	}
 
