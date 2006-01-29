@@ -739,6 +739,8 @@ void options_load(void)
 	char filename[512];
 	int i;
 
+	display_errors = 1;
+
 	/* initialize those that can't be statically initialized */
 	for (i = 0; str_defaults[i].name; i++)
 		option_set(str_defaults[i].name, str_defaults[i].value);

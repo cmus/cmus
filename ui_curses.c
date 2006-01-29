@@ -88,6 +88,7 @@ static char error_buf[512];
 static time_t error_time = 0;
 /* info messages are displayed in different color */
 static int msg_is_error;
+static int error_count = 0;
 
 static char *server_address = NULL;
 static int remote_socket = -1;
@@ -1232,6 +1233,7 @@ void error_msg(const char *format, ...)
 	va_end(ap);
 
 	msg_is_error = 1;
+	error_count++;
 
 	if (ui_initialized) {
 		error_time = time(NULL);
@@ -1893,6 +1895,13 @@ static void init_all(void)
 	pl_autosave_filename = xstrjoin(cmus_config_dir, "/playlist.pl");
 	cmus_add(lib_add_track, lib_autosave_filename, FILE_TYPE_PL, JOB_TYPE_LIB);
 	cmus_add(pl_add_track, pl_autosave_filename, FILE_TYPE_PL, JOB_TYPE_PL);
+
+	if (error_count) {
+		char buf[16];
+
+		warn("Press <enter> to continue.");
+		fgets(buf, sizeof(buf), stdin);
+	}
 
 	init_curses();
 }
