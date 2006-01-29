@@ -86,6 +86,8 @@ static int running = 1;
  */
 static char error_buf[512];
 static time_t error_time = 0;
+/* info messages are displayed in different color */
+static int msg_is_error;
 
 static char *server_address = NULL;
 static int remote_socket = -1;
@@ -953,7 +955,11 @@ static void do_update_commandline(void)
 
 	move(LINES - 1, 0);
 	if (error_buf[0]) {
-		bkgdset(pairs[CURSED_ERROR]);
+		if (msg_is_error) {
+			bkgdset(pairs[CURSED_ERROR]);
+		} else {
+			bkgdset(pairs[CURSED_INFO]);
+		}
 		addstr(error_buf);
 		clrtoeol();
 		return;
@@ -1208,6 +1214,8 @@ void info_msg(const char *format, ...)
 	vsnprintf(error_buf, sizeof(error_buf), format, ap);
 	va_end(ap);
 
+	msg_is_error = 0;
+
 	update_commandline();
 }
 
@@ -1222,6 +1230,8 @@ void error_msg(const char *format, ...)
 	va_start(ap, format);
 	vsnprintf(error_buf + 7, sizeof(error_buf) - 7, format, ap);
 	va_end(ap);
+
+	msg_is_error = 1;
 
 	if (ui_initialized) {
 		error_time = time(NULL);
