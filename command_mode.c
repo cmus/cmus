@@ -545,6 +545,27 @@ err:
 	error_msg("expecting 2 arguments (context and key)\n");
 }
 
+static void cmd_showbind(char *arg)
+{
+	char *key;
+
+	key = strchr(arg, ' ');
+	if (key == NULL)
+		goto err;
+	*key++ = 0;
+	while (*key == ' ')
+		key++;
+	if (*key == 0)
+		goto err;
+
+	/* FIXME: remove spaces at end */
+
+	show_binding(arg, key);
+	return;
+err:
+	error_msg("expecting 2 arguments (context and key)\n");
+}
+
 static void cmd_quit(char *arg)
 {
 	quit();
@@ -1764,6 +1785,7 @@ static struct command commands[] = {
 	{ "search-prev",	cmd_search_prev,0, 0, NULL		},
 	{ "seek",		cmd_seek,	1, 1, NULL		},
 	{ "set",		cmd_set,	1, 1, expand_options	},
+	{ "showbind",		cmd_showbind,	1, 1, expand_unbind_args},
 	{ "shuffle",		cmd_reshuffle,	0, 0, NULL		},
 	{ "source",		cmd_source,	1, 1, expand_files	},
 	{ "toggle",		cmd_toggle,	1, 1, expand_toptions	},

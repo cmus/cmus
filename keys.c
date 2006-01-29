@@ -442,6 +442,28 @@ static struct binding *find_binding(enum key_context c, const struct key *k)
 	return b;
 }
 
+void show_binding(const char *context, const char *key)
+{
+	const struct key *k;
+	const struct binding *b;
+	int c;
+
+	c = find_context(context);
+	if (c < 0)
+		return;
+
+	k = find_key(key);
+	if (k == NULL)
+		return;
+
+	b = find_binding(c, k);
+	if (b == NULL) {
+		info_msg("No such binding");
+	} else {
+		info_msg("bind %s %s %s", context, key, b->cmd);
+	}
+}
+
 int key_bind(const char *context, const char *key, const char *cmd, int force)
 {
 	const struct key *k;
