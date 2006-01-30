@@ -124,13 +124,20 @@ strpad()
 # portable which command
 path_find()
 {
-	local prog
-
-	prog=$(type "$1" 2>/dev/null | sed 's:[^/]*::')
-	if test -x "$prog"
+	if test -x "$1"
 	then
-		echo "$prog"
+		echo "$1"
 		return 0
 	fi
+
+	# _NEVER_ trust 'which' or 'type'!
+	for i in $(echo $PATH | sed 's/:/ /g')
+	do
+		if test -x "$i/$1"
+		then
+			echo "$i/$1"
+			return 0
+		fi
+	done
 	return 1
 }
