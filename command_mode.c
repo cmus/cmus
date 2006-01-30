@@ -891,6 +891,66 @@ static void cmd_run(char *arg)
 	free(sel_tis);
 }
 
+static int get_one_ti(void *data, struct track_info *ti)
+{
+	struct track_info **sel_ti = data;
+
+	track_info_ref(ti);
+	*sel_ti = ti;
+	/* stop the for each loop, we need only the first selected track */
+	return 1;
+}
+
+static void cmd_echo(char *arg)
+{
+	struct track_info *sel_ti;
+	char *ptr = arg;
+
+	while (1) {
+		ptr = strchr(ptr, '{');
+		if (ptr == NULL)
+			break;
+		if (ptr[1] == '}')
+			break;
+		ptr++;
+	}
+
+	if (ptr == NULL) {
+		info_msg("%s", arg);
+		return;
+	}
+
+	if (cur_view > QUEUE_VIEW) {
+		info_msg("echo with {} in its arguments is supported only in views 1-4");
+		return;
+	}
+
+	*ptr = 0;
+	ptr += 2;
+
+	/* get only the first selected track */
+	sel_ti = NULL;
+
+	switch (cur_view) {
+	case TREE_VIEW:
+	case SORTED_VIEW:
+		__lib_for_each_sel(get_one_ti, &sel_ti, 0);
+		break;
+	case PLAYLIST_VIEW:
+		__pl_for_each_sel(get_one_ti, &sel_ti, 0);
+		break;
+	case QUEUE_VIEW:
+		__play_queue_for_each_sel(get_one_ti, &sel_ti, 0);
+		break;
+	}
+
+	if (sel_ti == NULL)
+		return;
+
+	info_msg("%s%s%s", arg, sel_ti->filename, ptr);
+	track_info_unref(sel_ti);
+}
+
 #define VF_RELATIVE	0x01
 #define VF_PERCENTAGE	0x02
 
@@ -1792,6 +1852,7 @@ static struct command commands[] = {
 	{ "browser-up",		cmd_browser_up,	0, 0, NULL		},
 	{ "cd",			cmd_cd,		0, 1, expand_directories},
 	{ "clear",		cmd_clear,	0, 1, NULL		},
+	{ "echo",		cmd_echo,	1,-1, NULL		},
 	{ "factivate",		cmd_factivate,	0, 1, expand_factivate	},
 	{ "filter",		cmd_filter,	0, 1, NULL		},
 	{ "fset",		cmd_fset,	1, 1, NULL		},
