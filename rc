@@ -15,12 +15,14 @@ bind common C toggle continue
 bind common D win-remove
 bind common E win-add-Q
 bind common G win-bottom
+bind common I echo {}
 bind common M toggle play_library
 bind common N search-prev
 bind common P win-mv-before
 bind common [ vol +1 +0
 bind common ] vol +0 +1
 bind common ^B win-page-up
+bind common ^C echo Type :quit<enter> to exit cmus.
 bind common ^F win-page-down
 bind common a win-add-l
 bind common b player-next
