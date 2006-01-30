@@ -140,6 +140,15 @@ clear playlist
 `-q`;;
 clear play queue
 
+`echo <arg>...`::
+Display arguments on the command line.
++
+If the arguments contain '{}' it is replaced with file name of the first
+selected track.
++
+NOTE: unlike with `run` the '{}' is replaced with only the first selected
+filename.
+
 `factivate <user-defined-filter>...`::
 Select and activate the given user defined filters (displayed in the filters
 view).  Filter names are separated by spaces.  This command is mostly useful
@@ -196,8 +205,6 @@ By default file names are appended to the command.  If the command contains
 +
 NOTE: In view 1 you can run a command for all files in the selected album or
 artist.
-+
-NOTE: only implemented for views 1-2.
 
 `save [-l] [-p] [file]`::
 Save the specified view's or the current view's contents to a playlist file.
