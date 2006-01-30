@@ -418,15 +418,14 @@ void cmus_update_lib(void)
 	worker_add_job(JOB_TYPE_LIB, update_lib_job, data);
 }
 
-void cmus_update_selected(void)
+void cmus_update_tis(struct track_info **tis, int nr)
 {
 	struct update_data *data;
 
 	data = xnew(struct update_data, 1);
-	data->size = 0;
-	data->used = 0;
-	data->ti = NULL;
-	__lib_for_each_sel(update_cb, data, 0);
+	data->size = nr;
+	data->used = nr;
+	data->ti = tis;
 	worker_add_job(JOB_TYPE_LIB, update_lib_job, data);
 }
 

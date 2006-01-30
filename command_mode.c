@@ -770,17 +770,18 @@ error:
 	return NULL;
 }
 
-static char **sel_files;
-static int sel_files_alloc;
-static int sel_files_nr;
+static struct track_info **sel_tis;
+static int sel_tis_alloc;
+static int sel_tis_nr;
 
-static int add_file(void *data, struct track_info *ti)
+static int add_ti(void *data, struct track_info *ti)
 {
-	if (sel_files_nr == sel_files_alloc) {
-		sel_files_alloc = sel_files_alloc ? sel_files_alloc * 2 : 8;
-		sel_files = xrenew(char *, sel_files, sel_files_alloc);
+	if (sel_tis_nr == sel_tis_alloc) {
+		sel_tis_alloc = sel_tis_alloc ? sel_tis_alloc * 2 : 8;
+		sel_tis = xrenew(struct track_info *, sel_tis, sel_tis_alloc);
 	}
-	sel_files[sel_files_nr++] = xstrdup(ti->filename);
+	track_info_ref(ti);
+	sel_tis[sel_tis_nr++] = ti;
 	return 0;
 }
 
@@ -799,59 +800,58 @@ static void cmd_run(char *arg)
 		return;
 	}
 
-	/* collect selected files */
-	sel_files = NULL;
-	sel_files_alloc = 0;
-	sel_files_nr = 0;
+	/* collect selected files (struct track_info) */
+	sel_tis = NULL;
+	sel_tis_alloc = 0;
+	sel_tis_nr = 0;
 
 	switch (cur_view) {
 	case TREE_VIEW:
 	case SORTED_VIEW:
-		__lib_for_each_sel(add_file, NULL, 0);
+		__lib_for_each_sel(add_ti, NULL, 0);
 		break;
 	case PLAYLIST_VIEW:
-		__pl_for_each_sel(add_file, NULL, 0);
+		__pl_for_each_sel(add_ti, NULL, 0);
 		break;
 	case QUEUE_VIEW:
-		__play_queue_for_each_sel(add_file, NULL, 0);
+		__play_queue_for_each_sel(add_ti, NULL, 0);
 		break;
 	}
 
-	if (sel_files_nr == 0) {
+	if (sel_tis_nr == 0) {
 		/* no files selected, do nothing */
 		free_str_array(av);
 		return;
 	}
-	sel_files[sel_files_nr] = NULL;
+	sel_tis[sel_tis_nr] = NULL;
 
 	/* build argv */
-	argv = xnew(char *, ac + sel_files_nr + 1);
+	argv = xnew(char *, ac + sel_tis_nr + 1);
 	argc = 0;
 	if (files_idx == -1) {
 		/* add selected files after rest of the args */
 		for (i = 0; i < ac; i++)
 			argv[argc++] = av[i];
-		for (i = 0; i < sel_files_nr; i++)
-			argv[argc++] = sel_files[i];
+		for (i = 0; i < sel_tis_nr; i++)
+			argv[argc++] = sel_tis[i]->filename;
 	} else {
 		for (i = 0; i < files_idx; i++)
 			argv[argc++] = av[i];
-		for (i = 0; i < sel_files_nr; i++)
-			argv[argc++] = sel_files[i];
+		for (i = 0; i < sel_tis_nr; i++)
+			argv[argc++] = sel_tis[i]->filename;
 		for (i = files_idx; i < ac; i++)
 			argv[argc++] = av[i];
 	}
 	argv[argc] = NULL;
 
 	free(av);
-	free(sel_files);
 
 	for (i = 0; argv[i]; i++)
 		d_print("ARG: '%s'\n", argv[i]);
 
 	run = 1;
-	if (confirm_run && (sel_files_nr > 1 || strcmp(argv[0], "rm") == 0)) {
-		if (!yes_no_query("Execute %s for the %d selected files? [y/N]", arg, sel_files_nr)) {
+	if (confirm_run && (sel_tis_nr > 1 || strcmp(argv[0], "rm") == 0)) {
+		if (!yes_no_query("Execute %s for the %d selected files? [y/N]", arg, sel_tis_nr)) {
 			info_msg("Aborted");
 			run = 0;
 		}
@@ -874,14 +874,21 @@ static void cmd_run(char *arg)
 			switch (cur_view) {
 			case TREE_VIEW:
 			case SORTED_VIEW:
+				/* this must be done before sel_tis are unreffed */
+				free_str_array(argv);
+
 				/* remove non-existed files, update tags for changed files */
-				cmus_update_selected();
-				break;
+				cmus_update_tis(sel_tis, sel_tis_nr);
+
+				/* we don't own sel_tis anymore! */
+				return;
 			}
 		}
 	}
-
 	free_str_array(argv);
+	for (i = 0; sel_tis[i]; i++)
+		track_info_unref(sel_tis[i]);
+	free(sel_tis);
 }
 
 #define VF_RELATIVE	0x01
