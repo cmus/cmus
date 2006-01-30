@@ -111,18 +111,18 @@ tags:
 	exuberant-ctags *.[ch]
 
 doc: man html
-man: Doc-man
-html: Doc-html
+man: Doc/man
+html: Doc/html
 install-doc: install-man install-html
-install-man: Doc-install-man
-install-html: Doc-install-html
-clean: Doc-clean
+install-man: Doc/install-man
+install-html: Doc/install-html
+clean: Doc/clean
 
-Doc-%:
+Doc/%:
 	$(call cmd,submake)
 
-quiet_cmd_submake = Making $(word 2,$(subst -, ,$@)) in $(word 1,$(subst -, ,$@))
-      cmd_submake = make -C $(subst -, ,$@)
+quiet_cmd_submake = Making $(word 2,$(subst /, ,$@)) in $(word 1,$(subst /, ,$@))
+      cmd_submake = make -C $(subst /, ,$@)
 
 MAKEFLAGS += --no-print-directory
 
