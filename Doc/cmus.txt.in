@@ -416,6 +416,79 @@ Alternative format string for the tree view's (1) track window.
 `buffer_seconds` (10) [1-20]::
 Size of player buffer in seconds.
 
+`color_cmdline_bg` (default) [<<color,color>>]::
+Command line background color.
+
+`color_cmdline_fg` (default) [<<color,color>>]::
+Command line foreground color.
+
+`color_error` (lightred) [<<color,color>>]::
+Color of error messages displayed on the command line.
+
+`color_info` (lightyellow) [<<color,color>>]::
+Color of informational messages displayed on the command line.
+
+`color_separator` (blue) [<<color,color>>]::
+Color of the separator line between windows in view (1).
+
+`color_statusline_bg` (gray) [<<color,color>>]::
+Status line background color.
+
+`color_statusline_fg` (black) [<<color,color>>]::
+Status line foreground color.
+
+`color_titleline_bg` (blue) [<<color,color>>]::
+Background color of the line displaying currently playing track.
+
+`color_titleline_fg` (white) [<<color,color>>]::
+Foreground color of the line displaying currently playing track.
+
+`color_win_bg` (default) [<<color,color>>]::
+Window background color.
+
+`color_win_cur` (lightyellow) [<<color,color>>]::
+Color of currently playing track.
+
+`color_win_cur_sel_bg` (blue) [<<color,color>>]::
+Background color of the selected row which is also the currently playing track
+in active window.
+
+`color_win_cur_sel_fg` (lightyellow) [<<color,color>>]::
+Foreground color of the selected row which is also the currently playing track
+in active window.
+
+`color_win_dir` (lightblue) [<<color,color>>]::
+Color of directories in browser.
+
+`color_win_fg` (default) [<<color,color>>]::
+Window foreground color.
+
+`color_win_inactive_cur_sel_bg` (gray) [<<color,color>>]::
+Background color of the selected row which is also the currently playing track
+in inactive window.
+
+`color_win_inactive_cur_sel_fg` (lightyellow) [<<color,color>>]::
+Foreground color of the selected row which is also the currently playing track
+in inactive window.
+
+`color_win_inactive_sel_bg` (gray) [<<color,color>>]::
+Background color of selected row in inactive window.
+
+`color_win_inactive_sel_fg` (black) [<<color,color>>]::
+Foreground color of selected row in inactive window.
+
+`color_win_sel_bg` (blue) [<<color,color>>]::
+Background color of selected row in active window.
+
+`color_win_sel_fg` (white) [<<color,color>>]::
+Foreground color of selected row in active window.
+
+`color_win_title_bg` (blue) [<<color,color>>]::
+Background color of window titles (topmost line of the screen).
+
+`color_win_title_fg` (white) [<<color,color>>]::
+Foreground color of window titles (topmost line of the screen).
+
 `confirm_run` (true)::
 Ask for confirmation before executing `:run`
 
@@ -480,6 +553,23 @@ view (3).
 `status_display_program` () [command]::
 This command, if set, is run every time cmus' status changes.
 
+[[color]]
+Colors
+~~~~~~
+
+Color is integer in range -1..255.
+
+The following color names are recognized:
+
+Terminal's default color, -1::
+default
+
+Fg & bg, 0..7::
+black, red, green, yellow, blue, magenta, cyan, gray
+
+Fg (sometimes bg), 8..15::
+darkgray, lightred, lightgreen, lightyellow, lightblue, lightmagenta, lightcyan, white
+
 [[format]]
 Format Strings
 ~~~~~~~~~~~~~~
@@ -528,6 +618,9 @@ Examples:
 [[sortkeys]]
 Sort Keys
 ~~~~~~~~~
+
+Sort option (lib_sort, pl_sort) value is space separated list of the following
+sort keys:
 
 artist, album, title, tracknumber, discnumber, date, genre, filename
 
