@@ -148,6 +148,13 @@ selected track.
 +
 NOTE: unlike with `run` the '{}' is replaced with only the first selected
 filename.
++
+Default bindings:
++
+----
+common  I   echo {}
+common  ^C  echo Type :quit<enter> to exit cmus.
+----
 
 `factivate <user-defined-filter>...`::
 Select and activate the given user defined filters (displayed in the filters
