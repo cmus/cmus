@@ -46,6 +46,7 @@ extern char *pl_filename;
 void update_titleline(void);
 void update_statusline(void);
 void update_colors(void);
+void update_full(void);
 void info_msg(const char *format, ...) __FORMAT(1, 2);
 void error_msg(const char *format, ...) __FORMAT(1, 2);
 int yes_no_query(const char *format, ...) __FORMAT(1, 2);

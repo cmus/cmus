@@ -574,6 +574,8 @@ static void set_format(unsigned int id, const char *buf)
 	}
 	free(*fmtp);
 	*fmtp = xstrdup(buf);
+
+	update_full();
 }
 
 /* }}} */

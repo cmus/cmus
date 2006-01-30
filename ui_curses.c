@@ -818,14 +818,14 @@ static void draw_separator(void)
 		mvaddch(row, tree_win_w, ACS_VLINE);
 }
 
-static void update_view(void)
+static void do_update_view(int full)
 {
 	switch (cur_view) {
 	case TREE_VIEW:
 		lib_lock();
-		if (lib.tree_win->changed)
+		if (full || lib.tree_win->changed)
 			update_tree_window();
-		if (lib.track_win->changed)
+		if (full || lib.track_win->changed)
 			update_track_window();
 		lib_unlock();
 		draw_separator();
@@ -1190,6 +1190,21 @@ void update_titleline(void)
 	post_update();
 }
 
+void update_full(void)
+{
+	if (!ui_initialized)
+		return;
+
+	curs_set(0);
+
+	do_update_view(1);
+	do_update_titleline();
+	do_update_statusline();
+	do_update_commandline();
+
+	post_update();
+}
+
 static void update_commandline(void)
 {
 	curs_set(0);
@@ -1415,7 +1430,7 @@ void update_colors(void)
 	}
 	curs_set(0);
 
-	update_view();
+	do_update_view(1);
 	do_update_titleline();
 	do_update_statusline();
 	do_update_commandline();
@@ -1646,7 +1661,7 @@ static void update(void)
 		curs_set(0);
 
 		if (needs_view_update)
-			update_view();
+			do_update_view(0);
 		if (needs_title_update)
 			do_update_titleline();
 		if (needs_status_update)
