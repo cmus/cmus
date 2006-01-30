@@ -856,10 +856,10 @@ static void do_update_view(int full)
 
 static void do_update_statusline(void)
 {
-	static char *status_strs[] = { ".", ">", "|" };
-	static char *cont_strs[] = { " ", "C" };
-	static char *repeat_strs[] = { " ", "R" };
-	static char *shuffle_strs[] = { " ", "S" };
+	static const char *status_strs[] = { ".", ">", "|" };
+	static const char *cont_strs[] = { " ", "C" };
+	static const char *repeat_strs[] = { " ", "R" };
+	static const char *shuffle_strs[] = { " ", "S" };
 	int play_sorted, buffer_fill, vol, vol_left, vol_right;
 	int duration = -1;
 	char *msg;

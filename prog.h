@@ -15,7 +15,7 @@ struct option {
 	int short_opt;
 
 	/* long option or NULL */
-	char *long_opt;
+	const char *long_opt;
 
 	/* does option have an argument */
 	int has_arg;
