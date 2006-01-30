@@ -460,7 +460,6 @@ void browser_delete(void)
 			} else {
 				window_row_vanishes(browser_win, &sel);
 				list_del(&e->node);
-				free(e->name);
 				free(e);
 			}
 		}
