@@ -119,18 +119,6 @@ check_sun()
 	fi
 }
 
-check_rst2html()
-{
-	for RST2HTML in rst2html.py rst2html
-	do
-		check_program $RST2HTML && break
-	done
-	# add these to config.mk even if the checks failed
-	# because rst2html is not needed normally (doc is prebuilt)
-	makefile_vars RST2HTML RST2HTML_FLAGS
-	return 0
-}
-
 flag_dir()
 {
 	set_var $1 "$2"
@@ -194,7 +182,6 @@ add_check check_dl
 add_check check_pthread
 add_check check_ncurses
 add_check check_iconv
-add_check check_rst2html
 
 enable_flag flac    a CONFIG_FLAC    "FLAC (Free Lossless Audio Codec) support"
 enable_flag mad     a CONFIG_MAD     "MPEG Audio Decoder (libmad) support"
