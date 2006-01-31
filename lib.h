@@ -93,7 +93,7 @@ struct library {
 	struct tree_track *cur_track;
 
 	/* for sorted window */
-	char **sort_keys;
+	const char **sort_keys;
 
 	struct expr *filter;
 
@@ -129,7 +129,7 @@ struct track_info *lib_set_selected(void);
 
 void lib_add_track(struct track_info *track_info);
 
-void lib_set_sort_keys(char **keys);
+void lib_set_sort_keys(const char **keys);
 void lib_set_filter(struct expr *expr);
 void lib_remove(struct track_info *ti);
 

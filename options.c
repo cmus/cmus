@@ -171,7 +171,7 @@ static void set_id3_default_charset(unsigned int id, const char *buf)
 	id3_default_charset = xstrdup(buf);
 }
 
-static const char *valid_sort_keys[] = {
+static const char * const valid_sort_keys[] = {
 	"artist",
 	"album",
 	"title",
@@ -183,28 +183,60 @@ static const char *valid_sort_keys[] = {
 	NULL
 };
 
-static char **parse_sort_keys(const char *value)
+static const char **parse_sort_keys(const char *value)
 {
-	char **keys;
-	int i, j;
+	const char **keys;
+	const char *s, *e;
+	int size = 4;
+	int pos = 0;
 
-	keys = get_words(value);
+	size = 4;
+	keys = xnew(const char *, size);
 
-	for (i = 0; keys[i]; i++) {
-		for (j = 0; valid_sort_keys[j]; j++) {
-			if (strcmp(keys[i], valid_sort_keys[j]) == 0)
+	s = value;
+	while (1) {
+		char buf[32];
+		int i, len;
+
+		while (*s == ' ')
+			s++;
+
+		e = s;
+		while (*e && *e != ' ')
+			e++;
+
+		len = e - s;
+		if (len == 0)
+			break;
+		if (len > 31)
+			len = 31;
+
+		memcpy(buf, s, len);
+		buf[len] = 0;
+		s = e;
+
+		for (i = 0; ; i++) {
+			if (valid_sort_keys[i] == NULL) {
+				error_msg("invalid sort key '%s'", buf);
+				free(keys);
+				return NULL;
+			}
+
+			if (strcmp(buf, valid_sort_keys[i]) == 0)
 				break;
 		}
-		if (valid_sort_keys[j] == NULL) {
-			error_msg("invalid sort key '%s'", keys[i]);
-			free_str_array(keys);
-			return NULL;
+
+		if (pos == size - 1) {
+			size *= 2;
+			keys = xrenew(const char *, keys, size);
 		}
+		keys[pos++] = valid_sort_keys[i];
 	}
+	keys[pos] = NULL;
 	return keys;
 }
 
-static void keys_to_str(char **keys, char *buf)
+static void keys_to_str(const char **keys, char *buf)
 {
 	int i, pos = 0;
 
@@ -231,7 +263,7 @@ static void get_lib_sort(unsigned int id, char *buf)
 
 static void set_lib_sort(unsigned int id, const char *buf)
 {
-	char **keys = parse_sort_keys(buf);
+	const char **keys = parse_sort_keys(buf);
 
 	if (keys) {
 		lib_set_sort_keys(keys);
@@ -248,7 +280,7 @@ static void get_pl_sort(unsigned int id, char *buf)
 
 static void set_pl_sort(unsigned int id, const char *buf)
 {
-	char **keys = parse_sort_keys(buf);
+	const char **keys = parse_sort_keys(buf);
 
 	if (keys) {
 		pl_set_sort_keys(keys);

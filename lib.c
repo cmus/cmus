@@ -516,7 +516,7 @@ static void album_add_track(struct album *album, struct tree_track *track)
 	 *       have all track numbers set or all unset (within one album
 	 *       of course).
 	 */
-	static char *album_track_sort_keys[] = {
+	static const char * const album_track_sort_keys[] = {
 		"discnumber", "tracknumber", "filename", NULL
 	};
 	struct list_head *item;
@@ -1125,7 +1125,7 @@ void lib_init(void)
 	lib.total_time = 0;
 	lib.aaa_mode = AAA_MODE_ALL;
 
-	lib.sort_keys = xnew(char *, 1);
+	lib.sort_keys = xnew(const char *, 1);
 	lib.sort_keys[0] = NULL;
 
 	lib.filter = NULL;
@@ -1161,7 +1161,7 @@ void lib_exit(void)
 	window_free(lib.tree_win);
 	window_free(lib.track_win);
 	window_free(lib.sorted_win);
-	free_str_array(lib.sort_keys);
+	free(lib.sort_keys);
 }
 
 struct track_info *lib_set_next(void)
@@ -1271,10 +1271,10 @@ struct track_info *lib_set_selected(void)
 	return info;
 }
 
-void lib_set_sort_keys(char **keys)
+void lib_set_sort_keys(const char **keys)
 {
 	lib_lock();
-	free_str_array(lib.sort_keys);
+	free(lib.sort_keys);
 	lib.sort_keys = keys;
 	sort_sorted_list();
 	window_changed(lib.sorted_win);

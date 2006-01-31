@@ -23,7 +23,7 @@ struct simple_track *pl_cur_track = NULL;
 unsigned int pl_nr_tracks = 0;
 unsigned int pl_total_time = 0;
 unsigned int pl_nr_marked = 0;
-char **pl_sort_keys;
+const char **pl_sort_keys;
 
 static LIST_HEAD(pl_sorted_head);
 static LIST_HEAD(pl_shuffle_head);
@@ -66,7 +66,7 @@ void pl_init(void)
 	iter.data2 = NULL;
 	pl_searchable = searchable_new(pl_win, &iter, &pl_search_ops);
 
-	pl_sort_keys = xnew(char *, 1);
+	pl_sort_keys = xnew(const char *, 1);
 	pl_sort_keys[0] = NULL;
 }
 
@@ -220,10 +220,10 @@ static void sort_sorted_list(void)
 	list_mergesort(&pl_sorted_head, pl_view_cmp);
 }
 
-void pl_set_sort_keys(char **keys)
+void pl_set_sort_keys(const char **keys)
 {
 	pl_lock();
-	free_str_array(pl_sort_keys);
+	free(pl_sort_keys);
 	pl_sort_keys = keys;
 	sort_sorted_list();
 	window_changed(pl_win);

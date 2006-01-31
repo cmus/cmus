@@ -18,7 +18,7 @@ extern struct simple_track *pl_cur_track;
 extern unsigned int pl_nr_tracks;
 extern unsigned int pl_total_time;
 extern unsigned int pl_nr_marked;
-extern char **pl_sort_keys;
+extern const char **pl_sort_keys;
 
 void pl_init(void);
 
@@ -29,7 +29,7 @@ struct track_info *pl_set_selected(void);
 
 void pl_add_track(struct track_info *track_info);
 
-void pl_set_sort_keys(char **keys);
+void pl_set_sort_keys(const char **keys);
 
 /* bindable */
 void pl_remove_sel(void);
