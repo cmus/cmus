@@ -49,6 +49,11 @@ check_program()
 	fi
 }
 
+cc_supports()
+{
+	$CC "$@" -S -o /dev/null -x c /dev/null &> /dev/null
+}
+
 # @flag: option flag(s) to check
 #
 # check if $CC supports @flag
@@ -58,7 +63,7 @@ check_cc_flag()
 
 	test -z "$CC" && die "check_cc_flag: CC not set"
 	msg_checking "for CC flag $@"
-	if $CC "$@" -S -o /dev/null -x c /dev/null &> /dev/null
+	if cc_supports "$@"
 	then
 		msg_result "yes"
 		return 0
