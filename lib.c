@@ -1404,12 +1404,19 @@ void __lib_set_view(int view)
 	/* lib.tree_win or lib.track_win */
 	static struct window *tree_view_active_win = NULL;
 
-	BUG_ON(view < 0);
-	BUG_ON(view > 2);
-
 	if (view == TREE_VIEW) {
 		if (lib.cur_win != lib.tree_win && lib.cur_win != lib.track_win)
 			lib.cur_win = tree_view_active_win;
+
+		if (lib.cur_win == lib.track_win) {
+			struct iter sel;
+			struct artist *artist;
+
+			window_get_sel(lib.tree_win, &sel);
+			artist = iter_to_artist(&sel);
+			if (artist == NULL || !artist->expanded)
+				lib.cur_win = lib.tree_win;
+		}
 	} else {
 		if (lib.cur_win == lib.tree_win || lib.cur_win == lib.track_win)
 			tree_view_active_win = lib.cur_win;
