@@ -526,7 +526,11 @@ err:
 
 static void cmd_unbind(char *arg)
 {
+	int flag = parse_flags((const char **)&arg, "f");
 	char *key;
+
+	if (flag == -1)
+		return;
 
 	key = strchr(arg, ' ');
 	if (key == NULL)
@@ -539,7 +543,7 @@ static void cmd_unbind(char *arg)
 
 	/* FIXME: remove spaces at end */
 
-	key_unbind(arg, key);
+	key_unbind(arg, key, flag == 'f');
 	return;
 err:
 	error_msg("expecting 2 arguments (context and key)\n");

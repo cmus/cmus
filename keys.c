@@ -483,7 +483,7 @@ int key_bind(const char *context, const char *key, const char *cmd, int force)
 	if (b) {
 		if (!force)
 			goto bound;
-		key_unbind(context, key);
+		key_unbind(context, key, 0);
 	}
 
 	if (*cmd == ':')
@@ -515,7 +515,7 @@ bound:
 	return -1;
 }
 
-int key_unbind(const char *context, const char *key)
+int key_unbind(const char *context, const char *key, int force)
 {
 	enum key_context c;
 	const struct key *k;
@@ -544,8 +544,11 @@ int key_unbind(const char *context, const char *key)
 		prev = b;
 		b = b->next;
 	}
-	error_msg("key %s not bound in context %s", key, context);
-	return -1;
+	if (!force) {
+		error_msg("key %s not bound in context %s", key, context);
+		return -1;
+	}
+	return 0;
 }
 
 static int handle_key(const struct binding *b, const struct key *k)

@@ -269,8 +269,11 @@ Reshuffle the shuffle lists for both library and playlist views.
 `toggle <option>`::
 Toggle value of a toggle-able option (all booleans and tristate `aaa_mode`).
 
-`unbind <context> <key>`::
+`unbind [-f] <context> <key>`::
 Remove a key binding. Use tab to cycle through bound keys.
+
+`-f`;;
+	Don't throw an error if the binding is not known
 
 `unmark`::
 Unmark all tracks (see `mark`).

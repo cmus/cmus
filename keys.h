@@ -52,7 +52,7 @@ extern struct binding *key_bindings[NR_CTXS];
 
 void show_binding(const char *context, const char *key);
 int key_bind(const char *context, const char *key, const char *cmd, int force);
-int key_unbind(const char *context, const char *key);
+int key_unbind(const char *context, const char *key, int force);
 
 void normal_mode_ch(uchar ch);
 void normal_mode_key(int key);
