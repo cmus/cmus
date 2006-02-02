@@ -628,6 +628,38 @@ sort keys:
 artist, album, title, tracknumber, discnumber, date, genre, filename
 
 
+PLUGIN OPTIONS
+--------------
+
+`dsp.alsa.device`::
+PCM device for ALSA plugin, usually "default".
+
+`mixer.alsa.channel`::
+Mixer channel for ALSA Plugin, usually "pcm", "master" or "headphone".  To see
+all possible values run "alsamixer" or "amixer".
+
+`mixer.alsa.device`::
+Mixer device for ALSA plugin, usually "default".
+
+`dsp.oss.device`::
+PCM device for OSS plugin, usually /dev/dsp.
+
+`mixer.oss.channel`::
+Mixer channel for OSS Plugin, "pcm" or "master".
+
+`mixer.oss.device`::
+Mixer device for OSS plugin, usually /dev/mixer.
+
+`dsp.sun.device`::
+PCM device for Sun plugin, usually /dev/audio.
+
+`mixer.sun.channel`::
+Mixer channel for Sun Plugin, usually "master".
+
+`mixer.sun.device`::
+Mixer device for Sun plugin, usually /dev/mixer.
+
+
 FILTERS
 -------
 
