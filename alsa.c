@@ -59,6 +59,15 @@
 
 #include <alsa/asoundlib.h>
 
+/* without one of these play-back won't start */
+#define SET_BUFFER_TIME
+#define SET_PERIOD_TIME
+
+#define SET_AVAIL_MIN
+
+/* with this alsa hangs sometimes (ogg, not enough data with first write?) */
+/* #define SET_START_THRESHOLD */
+
 static inline const char *state_to_str(snd_pcm_state_t state)
 {
 	static const char *states[] = {
@@ -86,15 +95,16 @@ static snd_pcm_status_t *status;
 /* bytes (bits * channels / 8) */
 static int alsa_frame_size;
 
-static int alsa_buffer_size;
-static int alsa_period_size;
-
 /* configuration */
 static char *alsa_dsp_device = NULL;
-static unsigned int alsa_buffer_time = 500e3;
-static unsigned int alsa_period_time = 50e3;
 
-#define SET_BUFFERTIME
+#ifdef SET_START_THRESHOLD
+static int alsa_buffer_size;
+#endif
+
+#ifdef SET_AVAIL_MIN
+static int alsa_period_size;
+#endif
 
 #if 0
 #define debug_ret(func, ret) \
@@ -142,10 +152,18 @@ static int op_alsa_exit(void)
 static int alsa_set_hw_params(void)
 {
 	snd_pcm_hw_params_t *hwparams;
-	snd_pcm_uframes_t frames;
 	const char *cmd;
 	unsigned int rate;
 	int rc, fmt, dir;
+#if defined(SET_AVAIL_MIN) || defined(SET_START_THRESHOLD)
+	snd_pcm_uframes_t frames;
+#endif
+#ifdef SET_BUFFER_TIME
+	unsigned int alsa_buffer_time = 500e3;
+#endif
+#ifdef SET_PERIOD_TIME
+	unsigned int alsa_period_time = 50e3;
+#endif
 
 	snd_pcm_hw_params_alloca(&hwparams);
 
@@ -153,6 +171,9 @@ static int alsa_set_hw_params(void)
 	rc = snd_pcm_hw_params_any(alsa_handle, hwparams);
 	if (rc < 0)
 		goto error;
+
+	alsa_can_pause = snd_pcm_hw_params_can_pause(hwparams);
+	d_print("can pause = %d\n", alsa_can_pause);
 
 	cmd = "snd_pcm_hw_params_set_access";
 	rc = snd_pcm_hw_params_set_access(alsa_handle, hwparams,
@@ -183,17 +204,15 @@ static int alsa_set_hw_params(void)
 		goto error;
 	d_print("rate=%d\n", rate);
 
-#if defined(SET_BUFFERTIME)
-	/* fscking alsa */
-	alsa_buffer_time = 500e3;
-	alsa_period_time = 50e3;
-
+#ifdef SET_BUFFER_TIME
 	cmd = "snd_pcm_hw_params_set_buffer_time_near";
 	dir = 0;
 	rc = snd_pcm_hw_params_set_buffer_time_near(alsa_handle, hwparams, &alsa_buffer_time, &dir);
 	if (rc < 0)
 		goto error;
+#endif
 
+#ifdef SET_PERIOD_TIME
 	cmd = "snd_pcm_hw_params_set_period_time_near";
 	dir = 0;
 	rc = snd_pcm_hw_params_set_period_time_near(alsa_handle, hwparams, &alsa_period_time, &dir);
@@ -201,24 +220,25 @@ static int alsa_set_hw_params(void)
 		goto error;
 #endif
 
-	alsa_can_pause = snd_pcm_hw_params_can_pause(hwparams);
-	d_print("can pause = %d\n", alsa_can_pause);
-
+#ifdef SET_AVAIL_MIN
 	rc = snd_pcm_hw_params_get_period_size(hwparams, &frames, &dir);
 	if (rc < 0) {
 		alsa_period_size = -1;
 	} else {
 		alsa_period_size = frames * alsa_frame_size;
 	}
+	d_print("period_size = %d (dir = %d)\n", alsa_period_size, dir);
+#endif
 
+#ifdef SET_START_THRESHOLD
 	rc = snd_pcm_hw_params_get_buffer_size(hwparams, &frames);
 	if (rc < 0) {
 		alsa_buffer_size = -1;
 	} else {
 		alsa_buffer_size = frames * alsa_frame_size;
 	}
-	d_print("period_size = %d (dir = %d), buffer_size = %d\n",
-			alsa_period_size, dir, alsa_buffer_size);
+	d_print("buffer_size = %d\n", alsa_buffer_size);
+#endif
 
 	cmd = "snd_pcm_hw_params";
 	rc = snd_pcm_hw_params(alsa_handle, hwparams);
@@ -233,6 +253,7 @@ error:
 /* randomize sw params */
 static int alsa_set_sw_params(void)
 {
+#if defined(SET_START_THRESHOLD) || defined(SET_AVAIL_MIN)
 	snd_pcm_sw_params_t *swparams;
 	const char *cmd;
 	int rc;
@@ -246,7 +267,7 @@ static int alsa_set_sw_params(void)
 	if (rc < 0)
 		goto error;
 
-#if 0
+#ifdef SET_START_THRESHOLD
 	if (alsa_buffer_size > 0) {
 		/* start the transfer when N frames available */
 		cmd = "snd_pcm_sw_params_set_start_threshold";
@@ -256,23 +277,23 @@ static int alsa_set_sw_params(void)
 			goto error;
 	}
 #endif
-#if 1
+
+#ifdef SET_AVAIL_MIN
 	if (alsa_period_size > 0) {
+		snd_pcm_uframes_t frames = alsa_period_size / alsa_frame_size;
+
 		/* minimum avail frames to consider pcm ready. must be power of 2 */
 		cmd = "snd_pcm_sw_params_set_avail_min";
 		/* underrun when available is <8192 B or 46.5 ms */
-		rc = snd_pcm_sw_params_set_avail_min(alsa_handle, swparams, alsa_period_size / alsa_frame_size);
+		rc = snd_pcm_sw_params_set_avail_min(alsa_handle, swparams, frames);
+		if (rc < 0)
+			goto error;
+
+		cmd = "snd_pcm_sw_params_set_silence_threshold";
+		rc = snd_pcm_sw_params_set_silence_threshold(alsa_handle, swparams, frames);
 		if (rc < 0)
 			goto error;
 	}
-#endif
-#if 0
-
-	/* do not align transfers */
-	cmd = "snd_pcm_sw_params_set_xfer_align";
-	rc = snd_pcm_sw_params_set_xfer_align(alsa_handle, swparams, 1);
-	if (rc < 0)
-		goto error;
 #endif
 
 	/* commit the params structure to ALSA */
@@ -284,6 +305,9 @@ static int alsa_set_sw_params(void)
 error:
 	d_print("%s: error: %s\n", cmd, snd_strerror(rc));
 	return rc;
+#else
+	return 0;
+#endif
 }
 
 static int op_alsa_open(sample_format_t sf)
@@ -294,10 +318,8 @@ static int op_alsa_open(sample_format_t sf)
 	alsa_frame_size = sf_get_frame_size(alsa_sf);
 
 	rc = snd_pcm_open(&alsa_handle, alsa_dsp_device, SND_PCM_STREAM_PLAYBACK, 0);
-	if (rc < 0) {
-		d_print("snd_pcm_open: error: %s\n", snd_strerror(rc));
+	if (rc < 0)
 		goto error;
-	}
 
 	rc = alsa_set_hw_params();
 	if (rc)
@@ -307,11 +329,8 @@ static int op_alsa_open(sample_format_t sf)
 		goto close_error;
 
 	rc = snd_pcm_prepare(alsa_handle);
-	if (rc < 0) {
-		d_print("snd_pcm_prepare: error: %s\n", snd_strerror(rc));
+	if (rc < 0)
 		goto close_error;
-	}
-	d_print("opened\n");
 	return 0;
 close_error:
 	snd_pcm_close(alsa_handle);
@@ -447,26 +466,10 @@ static int op_alsa_unpause(void)
 
 static int op_alsa_set_option(int key, const char *val)
 {
-	long int ival;
-
 	switch (key) {
 	case 0:
-		if (str_to_int(val, &ival) || ival <= 0) {
-			errno = EINVAL;
-			return -OP_ERROR_ERRNO;
-		}
-		alsa_buffer_time = ival;
-		break;
-	case 1:
 		free(alsa_dsp_device);
 		alsa_dsp_device = xstrdup(val);
-		break;
-	case 2:
-		if (str_to_int(val, &ival) || ival <= 0) {
-			errno = EINVAL;
-			return -OP_ERROR_ERRNO;
-		}
-		alsa_period_time = ival;
 		break;
 	default:
 		return -OP_ERROR_NOT_OPTION;
@@ -478,16 +481,8 @@ static int op_alsa_get_option(int key, char **val)
 {
 	switch (key) {
 	case 0:
-		*val = xnew(char, 22);
-		snprintf(*val, 22, "%d", alsa_buffer_time);
-		break;
-	case 1:
 		if (alsa_dsp_device)
 			*val = xstrdup(alsa_dsp_device);
-		break;
-	case 2:
-		*val = xnew(char, 22);
-		snprintf(*val, 22, "%d", alsa_period_time);
 		break;
 	default:
 		return -OP_ERROR_NOT_OPTION;
@@ -510,8 +505,6 @@ const struct output_plugin_ops op_pcm_ops = {
 };
 
 const char * const op_pcm_options[] = {
-	"buffer_time",
 	"device",
-	"period_time",
 	NULL
 };
