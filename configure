@@ -186,7 +186,7 @@ add_check check_iconv
 enable_flag flac    a CONFIG_FLAC    "FLAC (Free Lossless Audio Codec) support"
 enable_flag mad     a CONFIG_MAD     "MPEG Audio Decoder (libmad) support"
 enable_flag modplug a CONFIG_MODPLUG "libmodplug (mod, x3m, ...) support"
-enable_flag mpc     a CONFIG_MPC     "MPC support"
+enable_flag mpc     a CONFIG_MPC     "libmpcdec (Musepack .mpc) support"
 enable_flag vorbis  a CONFIG_VORBIS  "Ogg/Vorbis support"
 enable_flag wav     y CONFIG_WAV     "WAV support"
 enable_flag alsa    a CONFIG_ALSA    "ALSA support"
