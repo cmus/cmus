@@ -72,6 +72,12 @@ check_alsa()
 	return $?
 }
 
+check_ao()
+{
+	pkg_check_modules ao "ao" "" "-lao"
+	return $?
+}
+
 check_arts()
 {
 	app_config arts artsc-config
@@ -190,6 +196,7 @@ enable_flag mpc     a CONFIG_MPC     "libmpcdec (Musepack .mpc) support"
 enable_flag vorbis  a CONFIG_VORBIS  "Ogg/Vorbis support"
 enable_flag wav     y CONFIG_WAV     "WAV support"
 enable_flag alsa    a CONFIG_ALSA    "ALSA support"
+enable_flag ao      a CONFIG_AO      "Libao cross-platform audio library"
 enable_flag arts    a CONFIG_ARTS    "ARTS support"
 enable_flag oss     a CONFIG_OSS     "Open Sound System support"
 enable_flag sun     a CONFIG_SUN     "Sun Audio support"
@@ -214,7 +221,7 @@ config_header_end
 
 makefile_vars PACKAGE VERSION bindir datadir libdir
 makefile_vars CONFIG_FLAC CONFIG_MAD CONFIG_MODPLUG CONFIG_MPC CONFIG_VORBIS CONFIG_WAV
-makefile_vars CONFIG_ALSA CONFIG_ARTS CONFIG_OSS CONFIG_SUN
+makefile_vars CONFIG_ALSA CONFIG_AO CONFIG_ARTS CONFIG_OSS CONFIG_SUN
 
 generate_config_mk
 
