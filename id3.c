@@ -486,6 +486,9 @@ static struct {
 	const char name[8];
 	enum id3_key key;
 } frame_tab[] = {
+	/* 2.4.0 */
+	{ "TDRC", ID3_DATE },
+
 	/* >= 2.3.0 */
 	{ "TPE1", ID3_ARTIST },
 	{ "TALB", ID3_ALBUM },
