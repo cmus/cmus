@@ -20,6 +20,7 @@
 #include "command_mode.h"
 #include "file.h"
 #include "prog.h"
+#include "output.h"
 #include "config.h"
 
 #include <stdio.h>
@@ -746,7 +747,13 @@ static void get_op_option(unsigned int id, char *buf)
 
 static void set_op_option(unsigned int id, const char *buf)
 {
-	player_set_op_option(id, buf);
+	int rc = player_set_op_option(id, buf);
+
+	if (rc) {
+		char *msg = op_get_error_msg(rc, "setting option");
+		error_msg("%s", msg);
+		free(msg);
+	}
 }
 
 /* id is ((plugin_index << 16) | option_index) */
