@@ -184,12 +184,7 @@ static inline void buffer_fill(struct buffer *buf, int count)
 	BUG_ON(c->filled);
 	c->h += count;
 
-	if (CHUNK_SIZE - c->h < 1024) {
-		c->filled = 1;
-		buf->widx++;
-		buf->widx %= buf->nr_chunks;
-	} else if (count == 0 && c->h > 0) {
-		/* count == 0 -> just update the filled bit */
+	if (CHUNK_SIZE - c->h < 1024 || (count == 0 && c->h > 0)) {
 		c->filled = 1;
 		buf->widx++;
 		buf->widx %= buf->nr_chunks;
