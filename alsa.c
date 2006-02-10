@@ -154,7 +154,7 @@ static int alsa_set_hw_params(void)
 	snd_pcm_hw_params_t *hwparams;
 	const char *cmd;
 	unsigned int rate;
-	int rc, fmt, dir;
+	int rc, dir;
 #if defined(SET_AVAIL_MIN) || defined(SET_START_THRESHOLD)
 	snd_pcm_uframes_t frames;
 #endif
@@ -181,15 +181,13 @@ static int alsa_set_hw_params(void)
 	if (rc < 0)
 		goto error;
 
-	fmt = snd_pcm_build_linear_format(sf_get_bits(alsa_sf), sf_get_bits(alsa_sf),
+	alsa_fmt = snd_pcm_build_linear_format(sf_get_bits(alsa_sf), sf_get_bits(alsa_sf),
 			sf_get_signed(alsa_sf) ? 0 : 1,
 			sf_get_bigendian(alsa_sf));
 	cmd = "snd_pcm_hw_params_set_format";
-	rc = snd_pcm_hw_params_set_format(alsa_handle, hwparams, fmt);
+	rc = snd_pcm_hw_params_set_format(alsa_handle, hwparams, alsa_fmt);
 	if (rc < 0)
 		goto error;
-
-	alsa_fmt = fmt;
 
 	cmd = "snd_pcm_hw_params_set_channels";
 	rc = snd_pcm_hw_params_set_channels(alsa_handle, hwparams, sf_get_channels(alsa_sf));
@@ -338,9 +336,27 @@ error:
 	return alsa_error_to_op_error(rc);
 }
 
+static unsigned int period_fill = 0;
+
+static int op_alsa_write(const char *buffer, int count);
+
 static int op_alsa_close(void)
 {
 	int rc;
+
+	if (period_fill) {
+		char buf[8192];
+		int silence_bytes = alsa_period_size - period_fill;
+
+		if (silence_bytes > sizeof(buf)) {
+			d_print("silence buf not big enough %d\n", silence_bytes);
+			silence_bytes = sizeof(buf);
+		}
+		d_print("silencing %d bytes\n", silence_bytes);
+		snd_pcm_format_set_silence(alsa_fmt, buf, silence_bytes / sf_get_sample_size(alsa_sf));
+		op_alsa_write(buf, silence_bytes);
+		period_fill = 0;
+	}
 
 	rc = snd_pcm_drain(alsa_handle);
 	debug_ret("snd_pcm_drain", rc);
@@ -353,6 +369,8 @@ static int op_alsa_close(void)
 static int op_alsa_drop(void)
 {
 	int rc;
+
+	period_fill = 0;
 
 	/* infinite timeout */
 	rc = snd_pcm_wait(alsa_handle, -1);
@@ -375,24 +393,27 @@ static int op_alsa_drop(void)
 static int op_alsa_write(const char *buffer, int count)
 {
 	int rc, len;
+	int prepared = 0;
 
 	len = count / alsa_frame_size;
+again:
 	rc = snd_pcm_writei(alsa_handle, buffer, len);
-	if (rc >= 0) {
-		return rc * alsa_frame_size;
-	} else if (rc == -EPIPE) {
-		d_print("underrun. resetting stream\n");
-		snd_pcm_prepare(alsa_handle);
-		rc = snd_pcm_writei(alsa_handle, buffer, len);
-		if (rc < 0) {
-			d_print("write error: %s\n", snd_strerror(rc));
-			return -1;
+	if (rc < 0) {
+		if (!prepared && rc == -EPIPE) {
+			d_print("underrun. resetting stream\n");
+			snd_pcm_prepare(alsa_handle);
+			prepared++;
+			goto again;
 		}
-		return rc * alsa_frame_size;
-	} else {
+
 		/* this handles EAGAIN too which is not critical error */
 		return alsa_error_to_op_error(rc);
 	}
+
+	rc *= alsa_frame_size;
+	period_fill += rc;
+	period_fill %= alsa_period_size;
+	return rc;
 }
 
 static int op_alsa_buffer_space(void)
