@@ -302,6 +302,19 @@ static int u32_unsync(const unsigned char *buf, uint32_t *up)
 	return 1;
 }
 
+static void get_u32(const unsigned char *buf, uint32_t *up)
+{
+	uint32_t b, u = 0;
+	int i;
+
+	for (i = 0; i < 4; i++) {
+		b = buf[i];
+		u <<= 8;
+		u |= b;
+	}
+	*up = u;
+}
+
 static void get_u24(const unsigned char *buf, uint32_t *up)
 {
 	uint32_t b, u = 0;
@@ -317,12 +330,14 @@ static void get_u24(const unsigned char *buf, uint32_t *up)
 
 static int v2_header_footer_parse(struct v2_header *header, const char *buf)
 {
-	header->ver_major = buf[3];
-	header->ver_minor = buf[4];
-	header->flags = buf[5];
+	const unsigned char *b = (const unsigned char *)buf;
+
+	header->ver_major = b[3];
+	header->ver_minor = b[4];
+	header->flags = b[5];
 	if (header->ver_major == 0xff || header->ver_minor == 0xff)
 		return 0;
-	return u32_unsync((const unsigned char *)(buf + 6), &header->size);
+	return u32_unsync(b + 6, &header->size);
 }
 
 static int v2_header_parse(struct v2_header *header, const char *buf)
@@ -386,6 +401,25 @@ static int v2_2_0_frame_header_parse(struct v2_frame_header *header, const char 
  * ZZ   is flags
  */
 static int v2_3_0_frame_header_parse(struct v2_frame_header *header, const char *buf)
+{
+	int i;
+
+	for (i = 0; i < 4; i++) {
+		if (!is_frame_id_char(buf[i]))
+			return 0;
+		header->id[i] = buf[i];
+	}
+	get_u32((const unsigned char *)(buf + 4), &header->size);
+	header->flags = (buf[8] << 8) | buf[9];
+	if (header->size == 0)
+		return 0;
+	id3_debug("%c%c%c%c %d\n", header->id[0], header->id[1], header->id[2],
+			header->id[3], header->size);
+	return 1;
+}
+
+/* same as 2.3 but header size is sync safe */
+static int v2_4_0_frame_header_parse(struct v2_frame_header *header, const char *buf)
 {
 	int i;
 
@@ -609,8 +643,13 @@ static int v2_read(ID3 *id3, int fd, const struct v2_header *header)
 		if (header->ver_major == 2) {
 			if (!v2_2_0_frame_header_parse(&fh, buf + i))
 				break;
-		} else if (!v2_3_0_frame_header_parse(&fh, buf + i)) {
-			break;
+		} else if (header->ver_major == 3) {
+			if (!v2_3_0_frame_header_parse(&fh, buf + i))
+				break;
+		} else {
+			/* assume v2.4 */
+			if (!v2_4_0_frame_header_parse(&fh, buf + i))
+				break;
 		}
 
 		i += frame_header_size;
