@@ -603,6 +603,34 @@ static void v2_add_frame(ID3 *id3, struct v2_frame_header *fh, const char *buf)
 	}
 }
 
+static void unsync(unsigned char *buf, int *lenp)
+{
+	int len = *lenp;
+	int s, d;
+
+	s = d = 0;
+	while (s < len - 1) {
+		if (buf[s] == 0xff && buf[s + 1] == 0x00) {
+			/* 0xff 0x00 -> 0xff */
+			buf[d++] = 0xff;
+			s += 2;
+
+			if (s < len - 2 && buf[s] == 0x00) {
+				/* 0xff 0x00 0x00 -> 0xff 0x00 */
+				buf[d++] = 0x00;
+				s++;
+			}
+			continue;
+		}
+		buf[d++] = buf[s++];
+	}
+	if (s < len)
+		buf[d++] = buf[s++];
+
+	d_print("unsyncronization removed %d bytes\n", s - d);
+	*lenp = d;
+}
+
 static int v2_read(ID3 *id3, int fd, const struct v2_header *header)
 {
 	char *buf;
@@ -632,6 +660,13 @@ static int v2_read(ID3 *id3, int fd, const struct v2_header *header)
 		/* should check if update flag is set */
 	}
 
+	if (header->flags & V2_HEADER_UNSYNC) {
+		int len = buf_size - frame_start;
+
+		unsync(buf + frame_start, &len);
+		buf_size = len + frame_start;
+	}
+
 	frame_header_size = 10;
 	if (header->ver_major == 2)
 		frame_header_size = 6;
@@ -639,6 +674,7 @@ static int v2_read(ID3 *id3, int fd, const struct v2_header *header)
 	i = frame_start;
 	while (i < buf_size - frame_header_size) {
 		struct v2_frame_header fh;
+		int len;
 
 		if (header->ver_major == 2) {
 			if (!v2_2_0_frame_header_parse(&fh, buf + i))
@@ -658,8 +694,15 @@ static int v2_read(ID3 *id3, int fd, const struct v2_header *header)
 			break;
 		}
 
+		len = fh.size;
+		if (fh.flags & V2_FRAME_UNSYNC) {
+			int tmp = len;
+
+			unsync(buf + i, &tmp);
+			fh.size = tmp;
+		}
 		v2_add_frame(id3, &fh, buf + i);
-		i += fh.size;
+		i += len;
 	}
 
 	free(buf);

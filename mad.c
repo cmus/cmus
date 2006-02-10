@@ -135,6 +135,7 @@ static int mad_read_comments(struct input_plugin_data *ip_data,
 	if (fd == -1) {
 		return -1;
 	}
+	d_print("filename: %s\n", ip_data->filename);
 
 	id3 = id3_new();
 	rc = id3_read_tags(id3, fd, ID3_V1 | ID3_V2);
