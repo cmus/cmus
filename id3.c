@@ -663,7 +663,7 @@ static int v2_read(ID3 *id3, int fd, const struct v2_header *header)
 	if (header->flags & V2_HEADER_UNSYNC) {
 		int len = buf_size - frame_start;
 
-		unsync(buf + frame_start, &len);
+		unsync((unsigned char *)(buf + frame_start), &len);
 		buf_size = len + frame_start;
 	}
 
@@ -698,7 +698,7 @@ static int v2_read(ID3 *id3, int fd, const struct v2_header *header)
 		if (fh.flags & V2_FRAME_UNSYNC) {
 			int tmp = len;
 
-			unsync(buf + i, &tmp);
+			unsync((unsigned char *)(buf + i), &tmp);
 			fh.size = tmp;
 		}
 		v2_add_frame(id3, &fh, buf + i);
