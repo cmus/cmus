@@ -20,10 +20,14 @@
 #include <op.h>
 #include <xmalloc.h>
 #include <utils.h>
+#include <misc.h>
 
 #include <ao/ao.h>
 
 static ao_device *libao_device;
+static char *wav_dir = NULL;
+static int wav_counter = 1;
+static int is_wav = 0;
 
 /* configuration */
 static char *libao_driver = NULL;
@@ -32,6 +36,9 @@ static int libao_buffer_space = 8192;
 
 static int op_ao_init(void)
 {
+	/* ignore config value */
+	wav_counter = 1;
+
 	ao_initialize();
 	return 0;
 }
@@ -52,6 +59,7 @@ static int op_ao_open(sample_format_t sf)
 		driver = ao_default_driver_id();
 	} else {
 		driver = ao_driver_id(libao_driver);
+		is_wav = strcasecmp(libao_driver, "wav") == 0;
 	}
 	if (driver == -1) {
 		errno = ENODEV;
@@ -63,16 +71,33 @@ static int op_ao_open(sample_format_t sf)
 	format.channels = sf_get_channels(sf);
 	format.byte_format = sf_get_bigendian(sf) ? AO_FMT_BIG : AO_FMT_LITTLE;
 
-	libao_device = ao_open_live(driver, &format, NULL);
+	if (is_wav) {
+		char file[512];
+
+		if (wav_dir == NULL)
+			wav_dir = xstrdup(home_dir);
+		snprintf(file, sizeof(file), "%s/%02d.wav", wav_dir, wav_counter);
+		libao_device = ao_open_file(driver, file, 0, &format, NULL);
+	} else {
+		libao_device = ao_open_live(driver, &format, NULL);
+	}
+
 	if (libao_device == NULL) {
 		switch (errno) {
 		case AO_ENODRIVER:
+		case AO_ENOTFILE:
 		case AO_ENOTLIVE:
 		case AO_EOPENDEVICE:
 			errno = ENODEV;
 			return -OP_ERROR_ERRNO;
 		case AO_EBADOPTION:
 			errno = EINVAL;
+			return -OP_ERROR_ERRNO;
+		case AO_EOPENFILE:
+			errno = EACCES;
+			return -OP_ERROR_ERRNO;
+		case AO_EFILEEXISTS:
+			errno = EEXIST;
 			return -OP_ERROR_ERRNO;
 		case AO_EFAIL:
 		default:
@@ -85,6 +110,8 @@ static int op_ao_open(sample_format_t sf)
 static int op_ao_close(void)
 {
 	ao_close(libao_device);
+	if (is_wav)
+		wav_counter++;
 	return 0;
 }
 
@@ -97,6 +124,8 @@ static int op_ao_write(const char *buffer, int count)
 
 static int op_ao_buffer_space(void)
 {
+	if (is_wav)
+		return 128 * 1024;
 	return libao_buffer_space;
 }
 
@@ -118,6 +147,17 @@ static int op_ao_set_option(int key, const char *val)
 		if (val[0])
 			libao_driver = xstrdup(val);
 		break;
+	case 2:
+		if (str_to_int(val, &ival)) {
+			errno = EINVAL;
+			return -OP_ERROR_ERRNO;
+		}
+		wav_counter = ival;
+		break;
+	case 3:
+		free(wav_dir);
+		wav_dir = xstrdup(val);
+		break;
 	default:
 		return -OP_ERROR_NOT_OPTION;
 	}
@@ -134,6 +174,15 @@ static int op_ao_get_option(int key, char **val)
 	case 1:
 		if (libao_driver)
 			*val = xstrdup(libao_driver);
+		break;
+	case 2:
+		*val = xnew(char, 22);
+		snprintf(*val, 22, "%d", wav_counter);
+		break;
+	case 3:
+		if (wav_dir == NULL)
+			wav_dir = xstrdup(home_dir);
+		*val = xstrdup(wav_dir);
 		break;
 	default:
 		return -OP_ERROR_NOT_OPTION;
@@ -155,6 +204,8 @@ const struct output_plugin_ops op_pcm_ops = {
 const char * const op_pcm_options[] = {
 	"buffer_space",
 	"driver",
+	"wav_counter",
+	"wav_dir",
 	NULL
 };
 
