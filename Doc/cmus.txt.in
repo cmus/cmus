@@ -641,6 +641,31 @@ all possible values run "alsamixer" or "amixer".
 `mixer.alsa.device`::
 Mixer device for ALSA plugin, usually "default".
 
+`dsp.ao.buffer_size`::
+Buffer size, default is 8192 but you may want to try bigger values if you
+experience buffer under-runs.
+
+`dsp.ao.driver`::
+Output driver for libao plugin.  Example values: "alsa09", "esd", "irix",
+"oss", "sun", "aixs", "wav".
+
+NOTE: of the file output drivers only "wav" is supported".
+
+`dsp.ao.wav_counter`::
+Counter used for making filename.  Used only if `dsp.ao.driver` is "wav".
+For example if this is 1 and `dsp.ao.wav_dir` is "/home/user" then PCM data is
+outputted to "/home/user/01.wav".  This counter is incremented every time
+playback is stopped.
+
+NOTE: you probably want to set `continue` to `false` (press 'C', otherwise
+playback is not stopped between tracks and all PCM data is outputted to one
+wav file (useful if you want to join files).  Also unsetting shuffle and
+repeat might be good idea.
+
+`dsp.ao.wav_dir`::
+Output directory for libao plugin, default is your home directory.  Used only
+if `dsp.ao.driver` is "wav".
+
 `dsp.oss.device`::
 PCM device for OSS plugin, usually /dev/dsp.
 
