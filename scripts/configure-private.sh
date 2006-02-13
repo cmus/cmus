@@ -188,7 +188,9 @@ run_checks()
 
 	for check in $checks
 	do
-		$check || die -e "\nconfigure failed."
+		$check && continue
+		echo
+		die "configure failed."
 	done
 	for flag in $enable_flags
 	do

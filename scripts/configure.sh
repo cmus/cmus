@@ -21,7 +21,8 @@ __cleanup()
 {
 	if test "$DEBUG_CONFIGURE" = y
 	then
-		echo -e "\nDEBUG_CONFIGURE=y, not removing temporary files"
+		echo
+		echo "DEBUG_CONFIGURE=y, not removing temporary files"
 		ls .tmp-[0-9]*-*
 	else
 		rm -f .tmp-[0-9]*-*
@@ -32,7 +33,9 @@ __abort()
 {
 	# can't use "die" because stderr is often redirected to /dev/null
 	# (stdout could also be redirected but it's not so common)
-	echo -e "\n\nAborting. configure failed."
+	echo
+	echo
+	echo "Aborting. configure failed."
 	# this executes __cleanup automatically
 	exit 1
 }
