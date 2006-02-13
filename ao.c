@@ -202,7 +202,7 @@ const struct output_plugin_ops op_pcm_ops = {
 };
 
 const char * const op_pcm_options[] = {
-	"buffer_space",
+	"buffer_size",
 	"driver",
 	"wav_counter",
 	"wav_dir",
