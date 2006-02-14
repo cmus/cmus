@@ -1431,6 +1431,12 @@ static void cmd_browser_up(char *arg)
 	browser_up();
 }
 
+static void cmd_refresh(char *arg)
+{
+	clearok(curscr, TRUE);
+	refresh();
+}
+
 /* tab exp {{{
  *
  * these functions fill tabexp struct, which is resetted beforehand
@@ -1869,6 +1875,7 @@ static struct command commands[] = {
 	{ "player-prev",	cmd_p_prev,	0, 0, NULL		},
 	{ "player-stop",	cmd_p_stop,	0, 0, NULL		},
 	{ "quit",		cmd_quit,	0, 0, NULL		},
+	{ "refresh",		cmd_refresh,	0, 0, NULL		},
 	{ "run",		cmd_run,	1,-1, NULL		},
 	{ "save",		cmd_save,	0, 1, expand_load_save	},
 	{ "search-next",	cmd_search_next,0, 0, NULL		},

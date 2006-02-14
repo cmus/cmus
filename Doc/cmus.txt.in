@@ -204,6 +204,9 @@ Stop playback.
 `quit`::
 Exit cmus.
 
+`refresh` (^L)::
+redraws the terminal window.
+
 `run <command>`::
 Run command for the marked tracks OR the selected one if none marked.
 +
