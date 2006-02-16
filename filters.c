@@ -398,10 +398,13 @@ struct expr *parse_filter(const char *val)
 void filters_set_anonymous(const char *val)
 {
 	struct filter_entry *f;
-	struct expr *e = parse_filter(val);
+	struct expr *e = NULL;
 
-	if (e == NULL)
-		return;
+	if (val) {
+		e = parse_filter(val);
+		if (e == NULL)
+			return;
+	}
 
 	/* deactive all filters */
 	list_for_each_entry(f, &filters_head, node)
