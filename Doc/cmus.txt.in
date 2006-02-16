@@ -28,7 +28,7 @@ OPTIONS
 `--listen ADDR`::
 Listen to ADDR (UNIX socket) instead of /tmp/cmus-$USER.
 +
-NOTE: don't abuse this option to run multiple instances as same user.  That
+NOTE: Don't use this option to run multiple instances as same user.  That
 would corrupt track metadata cache.
 
 `--plugins`::
@@ -48,33 +48,90 @@ Views
 ~~~~~
 
 Library view (1)::
-Display all tracks in so called library. Tracks are sorted artist/album tree.
+Display all tracks in so-called 'library'. Tracks are sorted artist/album tree.
+Artist sorting is done alphabetically. Albums are sorted by year.
 
 Sorted library view (2)::
-Displays same content as view 1 but as a simple list which is automatically
-sorted the way you want.
+Displays same content as view 1, but as a simple list which is automatically
+sorted by user criteria.
 
 Playlist view (3)::
-Displays editable playlist which can be sorted automatically.
+Displays editable playlist with optional sorting.
 
 Play Queue view (4)::
-Displays queue of tracks which are played next.
+Displays queue of tracks which are played next. These tracks are played before
+anything else (i.e. the playlist or library).
 
 Browser (5)::
-Directory browser.
+Directory browser.  In this view, music can be added to either the library,
+playlist or queue from the user's filesystem.
 
 Filters view (6)::
 Lists user defined filters.
 
+Playlist Editing
+----------------
+
+Selecting Tracks
+~~~~~~~~~~~~~~~~
+
+Editing commands affect the currently marked tracks or if there are no marked
+tracks the the currently selected track (or selected artist/album in view 1).
+
+Mark tracks by selecting them and pressing 'SPACE'.  Marked tracks appear
+with a grey background.  You can only mark tracks in the list views (2-4).
+
 Copying Tracks Between Views
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-xxx
+You can copy marked or selected tracks from views 1-5.
+
+- 'a' copies tracks to the library (1-2)
+- 'y' copies tracks to the playlist (3)
+- 'e' appends tracks to the play queue (4)
+- 'E' prepends tracks to the play queue (4)
+
+Moving Tracks
+~~~~~~~~~~~~~
+
+In views 2-4 you can move tracks withing the list. Note that moving is
+disabled if the view is autosorted (see `lib_sort` and `pl_sort` options).
+
+Pressing 'p' moves marked tracks to the position immediately after the
+selected track.  'P' moves them to the position immediately before the
+selected track.  If there are no marked tracks then the selected track is
+moved down ('p') or up ('P').
+
+NOTE: Changing active filters reloads view 2 so it isn't a good idea to
+manually order tracks in the view.
+
+Removing Tracks
+~~~~~~~~~~~~~~~
+
+Press 'D' or 'delete' to remove marked or selected tracks in the current view
+(1-4).  The tracks will be removed immediately from the view without asking
+for confirmation.  In the browser and filters views the same keys are used to
+remove a file or filter (will ask for confirmation).
+
 
 Status Line
 -----------
 
-xxx
+The status line (second row from the bottom, black text on a grey background)
+consists of the following fields:
+
+----
+(aaa_mode & play_sorted & play_library) | continue repeat shuffle
+----
+
+NOTE: `aaa_mode` and `play_sorted` will be displayed only if `play_library` is
+'true' because these are meaningless when playing the playlist (view 3).
+
+Pressing 'm', 'o', 'M', 'C', 'r' and 's' keys should make it easier to
+understand what all those fields mean.
+
+See CONFIGURATION OPTIONS section for more information about these options.
+
 
 COMMANDS
 --------
@@ -403,8 +460,8 @@ Reshuffle playlist when end of shuffle list is reached.
 
 `aaa_mode` (all) [all, artist, album]::
 Defines what tracks should be played in the library view.  Not used in the
-other views. For example if set to 'artist' the library behaves like there were
-only the files of the current artist.
+other views. For example if set to 'artist' the player behaves like there were
+only the files of the currently playing artist in the library.
 
 `altformat_current` [<<format,format string>>]::
 Alternative format string for the line displaying currently playing track.
@@ -754,8 +811,8 @@ so you shouldn't edit it.
 If the autosave file didn't exist, this file is read instead.
 
 `~/.cmus/rc`::
-Static config file. This file is read right after the autosave file, and is
-never modified by cmus.  You can override auto-saved settings in this file.
+Static config file. This file is read immediately after the autosave file, and
+is never modified by cmus.  You can override auto-saved settings in this file.
 This file is not limited to options, it can contain other commands too.
 
 
@@ -787,5 +844,6 @@ contributers are listed in the AUTHORS file.
 DOCUMENTATION
 -------------
 
-This man page was written by Frank Terbeck <frank.terbeck@rwth-aachen.de> and
-Timo Hirvonen <tihirvon@gmail.com>.
+This man page was written by Frank Terbeck <frank.terbeck@rwth-aachen.de>,
+Timo Hirvonen <tihirvon@gmail.com>, and Clay Barnes <clay.barnes@gmail.com>.
+
