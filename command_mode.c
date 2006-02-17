@@ -28,6 +28,7 @@
 #include <browser.h>
 #include <filters.h>
 #include <player.h>
+#include <editable.h>
 #include <lib.h>
 #include <pl.h>
 #include <play_queue.h>
@@ -121,15 +122,25 @@ void view_clear(int view)
 	case TREE_VIEW:
 	case SORTED_VIEW:
 		worker_remove_jobs(JOB_TYPE_LIB);
-		lib_clear();
+		editable_lock();
+		editable_clear(&lib_editable);
+
+		/* FIXME: make this optional? */
+		lib_clear_store();
+
+		editable_unlock();
 		break;
 	case PLAYLIST_VIEW:
 		worker_remove_jobs(JOB_TYPE_PL);
-		pl_clear();
+		editable_lock();
+		editable_clear(&pl_editable);
+		editable_unlock();
 		break;
 	case QUEUE_VIEW:
 		worker_remove_jobs(JOB_TYPE_QUEUE);
-		play_queue_clear();
+		editable_lock();
+		editable_clear(&pq_editable);
+		editable_unlock();
 		break;
 	default:
 		info_msg(":clear only works in views 1-4");
@@ -197,14 +208,18 @@ void view_load(int view, char *arg)
 	case TREE_VIEW:
 	case SORTED_VIEW:
 		worker_remove_jobs(JOB_TYPE_LIB);
-		lib_clear();
+		editable_lock();
+		editable_clear(&lib_editable);
+		editable_unlock();
 		cmus_add(lib_add_track, name, FILE_TYPE_PL, JOB_TYPE_LIB);
 		free(lib_filename);
 		lib_filename = name;
 		break;
 	case PLAYLIST_VIEW:
 		worker_remove_jobs(JOB_TYPE_PL);
-		pl_clear();
+		editable_lock();
+		editable_clear(&pl_editable);
+		editable_unlock();
 		cmus_add(pl_add_track, name, FILE_TYPE_PL, JOB_TYPE_PL);
 		free(pl_filename);
 		pl_filename = name;
@@ -232,8 +247,10 @@ static void do_save(for_each_ti_cb for_each_ti, const char *given,
 		filename = xstrdup(given);
 	}
 	*filenamep = filename;
+	editable_lock();
 	if (cmus_save(for_each_ti, filename) == -1)
 		error_msg("saving '%s': %s", filename, strerror(errno));
+	editable_unlock();
 }
 
 void view_save(int view, char *arg)
@@ -455,17 +472,59 @@ static void cmd_fset(char *arg)
 
 static void cmd_invert(char *arg)
 {
-	pl_invert_marks();
+	editable_lock();
+	switch (cur_view) {
+	case SORTED_VIEW:
+		editable_invert_marks(&lib_editable);
+		break;
+	case PLAYLIST_VIEW:
+		editable_invert_marks(&pl_editable);
+		break;
+	case QUEUE_VIEW:
+		editable_invert_marks(&pq_editable);
+		break;
+	default:
+		info_msg(":invert only works in views 2-4");
+	}
+	editable_unlock();
 }
 
 static void cmd_mark(char *arg)
 {
-	pl_mark(arg);
+	editable_lock();
+	switch (cur_view) {
+	case SORTED_VIEW:
+		editable_mark(&lib_editable, arg);
+		break;
+	case PLAYLIST_VIEW:
+		editable_mark(&pl_editable, arg);
+		break;
+	case QUEUE_VIEW:
+		editable_mark(&pq_editable, arg);
+		break;
+	default:
+		info_msg(":mark only works in views 2-4");
+	}
+	editable_unlock();
 }
 
 static void cmd_unmark(char *arg)
 {
-	pl_unmark();
+	editable_lock();
+	switch (cur_view) {
+	case SORTED_VIEW:
+		editable_unmark(&lib_editable);
+		break;
+	case PLAYLIST_VIEW:
+		editable_unmark(&pl_editable);
+		break;
+	case QUEUE_VIEW:
+		editable_unmark(&pq_editable);
+		break;
+	default:
+		info_msg(":unmark only works in views 2-4");
+	}
+	editable_unlock();
 }
 
 static void cmd_cd(char *arg)
@@ -577,8 +636,10 @@ static void cmd_quit(char *arg)
 
 static void cmd_reshuffle(char *arg)
 {
+	editable_lock();
 	lib_reshuffle();
 	pl_reshuffle();
+	editable_unlock();
 }
 
 static void cmd_source(char *arg)
@@ -809,18 +870,22 @@ static void cmd_run(char *arg)
 	sel_tis_alloc = 0;
 	sel_tis_nr = 0;
 
+	editable_lock();
 	switch (cur_view) {
 	case TREE_VIEW:
+		__tree_for_each_sel(add_ti, NULL, 0);
+		break;
 	case SORTED_VIEW:
-		__lib_for_each_sel(add_ti, NULL, 0);
+		__editable_for_each_sel(&lib_editable, add_ti, NULL, 0);
 		break;
 	case PLAYLIST_VIEW:
-		__pl_for_each_sel(add_ti, NULL, 0);
+		__editable_for_each_sel(&pl_editable, add_ti, NULL, 0);
 		break;
 	case QUEUE_VIEW:
-		__play_queue_for_each_sel(add_ti, NULL, 0);
+		__editable_for_each_sel(&pq_editable, add_ti, NULL, 0);
 		break;
 	}
+	editable_unlock();
 
 	if (sel_tis_nr == 0) {
 		/* no files selected, do nothing */
@@ -935,18 +1000,22 @@ static void cmd_echo(char *arg)
 	/* get only the first selected track */
 	sel_ti = NULL;
 
+	editable_lock();
 	switch (cur_view) {
 	case TREE_VIEW:
+		__tree_for_each_sel(get_one_ti, &sel_ti, 0);
+		break;
 	case SORTED_VIEW:
-		__lib_for_each_sel(get_one_ti, &sel_ti, 0);
+		__editable_for_each_sel(&lib_editable, get_one_ti, &sel_ti, 0);
 		break;
 	case PLAYLIST_VIEW:
-		__pl_for_each_sel(get_one_ti, &sel_ti, 0);
+		__editable_for_each_sel(&pl_editable, get_one_ti, &sel_ti, 0);
 		break;
 	case QUEUE_VIEW:
-		__play_queue_for_each_sel(get_one_ti, &sel_ti, 0);
+		__editable_for_each_sel(&pq_editable, get_one_ti, &sel_ti, 0);
 		break;
 	}
+	editable_unlock();
 
 	if (sel_ti == NULL)
 		return;
@@ -1092,11 +1161,26 @@ static void cmd_search_prev(char *arg)
 	}
 }
 
+static int sorted_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
+{
+	return editable_for_each_sel(&lib_editable, cb, data, reverse);
+}
+
+static int pl_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
+{
+	return editable_for_each_sel(&pl_editable, cb, data, reverse);
+}
+
+static int pq_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
+{
+	return editable_for_each_sel(&pq_editable, cb, data, reverse);
+}
+
 static for_each_sel_ti_cb view_for_each_sel[4] = {
-	lib_for_each_sel,
-	lib_for_each_sel,
+	tree_for_each_sel,
+	sorted_for_each_sel,
 	pl_for_each_sel,
-	play_queue_for_each_sel
+	pq_for_each_sel
 };
 
 /* wrapper for void lib_add_track(struct track_info *) etc. */
@@ -1132,7 +1216,9 @@ static void cmd_win_add_l(char *arg)
 		return;
 
 	if (cur_view <= QUEUE_VIEW) {
+		editable_lock();
 		view_for_each_sel[cur_view](wrapper_cb, lib_add_track, 0);
+		editable_unlock();
 	} else if (cur_view == BROWSER_VIEW) {
 		add_from_browser(lib_add_track, JOB_TYPE_LIB);
 	}
@@ -1145,7 +1231,9 @@ static void cmd_win_add_p(char *arg)
 		return;
 
 	if (cur_view <= QUEUE_VIEW) {
+		editable_lock();
 		view_for_each_sel[cur_view](wrapper_cb, pl_add_track, 0);
+		editable_unlock();
 	} else if (cur_view == BROWSER_VIEW) {
 		add_from_browser(pl_add_track, JOB_TYPE_PL);
 	}
@@ -1157,7 +1245,9 @@ static void cmd_win_add_Q(char *arg)
 		return;
 
 	if (cur_view <= QUEUE_VIEW) {
+		editable_lock();
 		view_for_each_sel[cur_view](wrapper_cb, play_queue_prepend, 1);
+		editable_unlock();
 	} else if (cur_view == BROWSER_VIEW) {
 		add_from_browser(play_queue_prepend, JOB_TYPE_QUEUE);
 	}
@@ -1169,7 +1259,9 @@ static void cmd_win_add_q(char *arg)
 		return;
 
 	if (cur_view <= QUEUE_VIEW) {
+		editable_lock();
 		view_for_each_sel[cur_view](wrapper_cb, play_queue_append, 0);
+		editable_unlock();
 	} else if (cur_view == BROWSER_VIEW) {
 		add_from_browser(play_queue_append, JOB_TYPE_QUEUE);
 	}
@@ -1179,10 +1271,13 @@ static void cmd_win_activate(char *arg)
 {
 	struct track_info *info = NULL;
 
+	editable_lock();
 	switch (cur_view) {
 	case TREE_VIEW:
+		info = tree_set_selected();
+		break;
 	case SORTED_VIEW:
-		info = lib_set_selected();
+		info = sorted_set_selected();
 		break;
 	case PLAYLIST_VIEW:
 		info = pl_set_selected();
@@ -1196,6 +1291,8 @@ static void cmd_win_activate(char *arg)
 		filters_activate();
 		break;
 	}
+	editable_unlock();
+
 	if (info) {
 		/* update lib/pl mode */
 		if (cur_view < 2)
@@ -1210,54 +1307,65 @@ static void cmd_win_activate(char *arg)
 
 static void cmd_win_mv_after(char *arg)
 {
+	editable_lock();
 	switch (cur_view) {
 	case TREE_VIEW:
+		break;
 	case SORTED_VIEW:
+		editable_move_after(&lib_editable);
 		break;
 	case PLAYLIST_VIEW:
-		pl_move_after();
+		editable_move_after(&pl_editable);
 		break;
 	case QUEUE_VIEW:
-		play_queue_move_after();
+		editable_move_after(&pq_editable);
 		break;
 	case BROWSER_VIEW:
 		break;
 	case FILTERS_VIEW:
 		break;
 	}
+	editable_unlock();
 }
 
 static void cmd_win_mv_before(char *arg)
 {
+	editable_lock();
 	switch (cur_view) {
 	case TREE_VIEW:
+		break;
 	case SORTED_VIEW:
+		editable_move_before(&lib_editable);
 		break;
 	case PLAYLIST_VIEW:
-		pl_move_before();
+		editable_move_before(&pl_editable);
 		break;
 	case QUEUE_VIEW:
-		play_queue_move_before();
+		editable_move_before(&pq_editable);
 		break;
 	case BROWSER_VIEW:
 		break;
 	case FILTERS_VIEW:
 		break;
 	}
+	editable_unlock();
 }
 
 static void cmd_win_remove(char *arg)
 {
+	editable_lock();
 	switch (cur_view) {
 	case TREE_VIEW:
+		tree_remove_sel();
+		break;
 	case SORTED_VIEW:
-		lib_remove_sel();
+		editable_remove_sel(&lib_editable);
 		break;
 	case PLAYLIST_VIEW:
-		pl_remove_sel();
+		editable_remove_sel(&pl_editable);
 		break;
 	case QUEUE_VIEW:
-		play_queue_remove_sel();
+		editable_remove_sel(&pq_editable);
 		break;
 	case BROWSER_VIEW:
 		browser_delete();
@@ -1266,14 +1374,18 @@ static void cmd_win_remove(char *arg)
 		filters_delete_filter();
 		break;
 	}
+	editable_unlock();
 }
 
 static void cmd_win_sel_cur(char *arg)
 {
+	editable_lock();
 	switch (cur_view) {
 	case TREE_VIEW:
+		tree_sel_current();
+		break;
 	case SORTED_VIEW:
-		lib_sel_current();
+		sorted_sel_current();
 		break;
 	case PLAYLIST_VIEW:
 		pl_sel_current();
@@ -1285,21 +1397,24 @@ static void cmd_win_sel_cur(char *arg)
 	case FILTERS_VIEW:
 		break;
 	}
+	editable_unlock();
 }
 
 static void cmd_win_toggle(char *arg)
 {
+	editable_lock();
 	switch (cur_view) {
 	case TREE_VIEW:
-		lib_toggle_expand_artist();
+		tree_toggle_expand_artist();
 		break;
 	case SORTED_VIEW:
+		editable_toggle_mark(&lib_editable);
 		break;
 	case PLAYLIST_VIEW:
-		pl_toggle_mark();
+		editable_toggle_mark(&pl_editable);
 		break;
 	case QUEUE_VIEW:
-		play_queue_toggle_mark();
+		editable_toggle_mark(&pq_editable);
 		break;
 	case BROWSER_VIEW:
 		break;
@@ -1307,56 +1422,20 @@ static void cmd_win_toggle(char *arg)
 		filters_toggle_filter();
 		break;
 	}
-}
-
-static void view_lock(void)
-{
-	switch (cur_view) {
-	case TREE_VIEW:
-	case SORTED_VIEW:
-		lib_lock();
-		break;
-	case PLAYLIST_VIEW:
-		pl_lock();
-		break;
-	case QUEUE_VIEW:
-		play_queue_lock();
-		break;
-	case BROWSER_VIEW:
-	case FILTERS_VIEW:
-		break;
-	}
-}
-
-static void view_unlock(void)
-{
-	switch (cur_view) {
-	case TREE_VIEW:
-	case SORTED_VIEW:
-		lib_unlock();
-		break;
-	case PLAYLIST_VIEW:
-		pl_unlock();
-		break;
-	case QUEUE_VIEW:
-		play_queue_unlock();
-		break;
-	case BROWSER_VIEW:
-	case FILTERS_VIEW:
-		break;
-	}
+	editable_unlock();
 }
 
 static struct window *current_win(void)
 {
 	switch (cur_view) {
 	case TREE_VIEW:
+		return lib_cur_win;
 	case SORTED_VIEW:
-		return lib.cur_win;
+		return lib_editable.win;
 	case PLAYLIST_VIEW:
-		return pl_win;
+		return pl_editable.win;
 	case QUEUE_VIEW:
-		return play_queue_win;
+		return pq_editable.win;
 	case BROWSER_VIEW:
 		return browser_win;
 	case FILTERS_VIEW:
@@ -1367,50 +1446,53 @@ static struct window *current_win(void)
 
 static void cmd_win_bottom(char *arg)
 {
-	view_lock();
+	editable_lock();
 	window_goto_bottom(current_win());
-	view_unlock();
+	editable_unlock();
 }
 
 static void cmd_win_down(char *arg)
 {
-	view_lock();
+	editable_lock();
 	window_down(current_win(), 1);
-	view_unlock();
+	editable_unlock();
 }
 
 static void cmd_win_next(char *arg)
 {
-	if (cur_view == TREE_VIEW)
-		lib_toggle_active_window();
+	if (cur_view == TREE_VIEW) {
+		editable_lock();
+		tree_toggle_active_window();
+		editable_unlock();
+	}
 }
 
 static void cmd_win_pg_down(char *arg)
 {
-	view_lock();
+	editable_lock();
 	window_page_down(current_win());
-	view_unlock();
+	editable_unlock();
 }
 
 static void cmd_win_pg_up(char *arg)
 {
-	view_lock();
+	editable_lock();
 	window_page_up(current_win());
-	view_unlock();
+	editable_unlock();
 }
 
 static void cmd_win_top(char *arg)
 {
-	view_lock();
+	editable_lock();
 	window_goto_top(current_win());
-	view_unlock();
+	editable_unlock();
 }
 
 static void cmd_win_up(char *arg)
 {
-	view_lock();
+	editable_lock();
 	window_up(current_win(), 1);
-	view_unlock();
+	editable_unlock();
 }
 
 static void cmd_win_update(char *arg)

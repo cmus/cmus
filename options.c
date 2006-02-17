@@ -80,9 +80,6 @@ char *window_title_format = NULL;
 char *window_title_alt_format = NULL;
 char *id3_default_charset = NULL;
 
-char lib_sort_str[128];
-char pl_sort_str[128];
-
 static void buf_int(char *buf, int val)
 {
 	snprintf(buf, OPTION_MAX_SIZE, "%d", val);
@@ -237,56 +234,30 @@ static const char **parse_sort_keys(const char *value)
 	return keys;
 }
 
-static void keys_to_str(const char **keys, char *buf)
-{
-	int i, pos = 0;
-
-	for (i = 0; keys[i]; i++) {
-		const char *key = keys[i];
-		int len = strlen(key);
-
-		if (sizeof(buf) - pos - len - 2 < 0)
-			break;
-
-		memcpy(buf + pos, key, len);
-		pos += len;
-		buf[pos++] = ' ';
-	}
-	if (pos > 0)
-		pos--;
-	buf[pos] = 0;
-}
-
 static void get_lib_sort(unsigned int id, char *buf)
 {
-	keys_to_str(lib.sort_keys, buf);
+	strcpy(buf, lib_editable.sort_str);
 }
 
 static void set_lib_sort(unsigned int id, const char *buf)
 {
 	const char **keys = parse_sort_keys(buf);
 
-	if (keys) {
-		lib_set_sort_keys(keys);
-
-		/* cleaned up version of buf */
-		keys_to_str(keys, lib_sort_str);
-	}
+	if (keys)
+		editable_set_sort_keys(&lib_editable, keys);
 }
 
 static void get_pl_sort(unsigned int id, char *buf)
 {
-	keys_to_str(pl_sort_keys, buf);
+	strcpy(buf, pl_editable.sort_str);
 }
 
 static void set_pl_sort(unsigned int id, const char *buf)
 {
 	const char **keys = parse_sort_keys(buf);
 
-	if (keys) {
-		pl_set_sort_keys(keys);
-		keys_to_str(keys, pl_sort_str);
-	}
+	if (keys)
+		editable_set_sort_keys(&pl_editable, keys);
 }
 
 static void get_output_plugin(unsigned int id, char *buf)
@@ -398,7 +369,7 @@ static void toggle_play_library(unsigned int id)
 
 static void get_play_sorted(unsigned int id, char *buf)
 {
-	strcpy(buf, bool_names[lib.play_sorted]);
+	strcpy(buf, bool_names[play_sorted]);
 }
 
 static void set_play_sorted(unsigned int id, const char *buf)
@@ -408,23 +379,23 @@ static void set_play_sorted(unsigned int id, const char *buf)
 	if (!parse_bool(buf, &tmp))
 		return;
 
-	lib.play_sorted = tmp;
+	play_sorted = tmp;
 	update_statusline();
 }
 
 static void toggle_play_sorted(unsigned int id)
 {
-	lib_lock();
-	lib.play_sorted = lib.play_sorted ^ 1;
+	editable_lock();
+	play_sorted = play_sorted ^ 1;
 
 	/* shuffle would override play_sorted... */
-	if (lib.play_sorted) {
+	if (play_sorted) {
 		/* play_sorted makes no sense in playlist */
 		play_library = 1;
 		shuffle = 0;
 	}
 
-	lib_unlock();
+	editable_unlock();
 	update_statusline();
 }
 
@@ -434,7 +405,7 @@ const char * const aaa_mode_names[] = {
 
 static void get_aaa_mode(unsigned int id, char *buf)
 {
-	strcpy(buf, aaa_mode_names[lib.aaa_mode]);
+	strcpy(buf, aaa_mode_names[aaa_mode]);
 }
 
 static void set_aaa_mode(unsigned int id, const char *buf)
@@ -444,20 +415,20 @@ static void set_aaa_mode(unsigned int id, const char *buf)
 	if (!parse_enum(buf, 0, 2, aaa_mode_names, &tmp))
 		return;
 
-	lib.aaa_mode = tmp;
+	aaa_mode = tmp;
 	update_statusline();
 }
 
 static void toggle_aaa_mode(unsigned int id)
 {
-	lib_lock();
+	editable_lock();
 
 	/* aaa mode makes no sense in playlist */
 	play_library = 1;
 
-	lib.aaa_mode++;
-	lib.aaa_mode %= 3;
-	lib_unlock();
+	aaa_mode++;
+	aaa_mode %= 3;
+	editable_unlock();
 	update_statusline();
 }
 

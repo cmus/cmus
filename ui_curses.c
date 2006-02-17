@@ -392,14 +392,17 @@ static void print_tree(struct window *win, int row, struct iter *iter)
 
 	artist = iter_to_artist(iter);
 	album = iter_to_album(iter);
-	if (album) {
-		current = lib.cur_album == album;
-	} else {
-		current = lib.cur_artist == artist;
+	current = 0;
+	if (lib_cur_track) {
+		if (album) {
+			current = CUR_ALBUM == album;
+		} else {
+			current = CUR_ARTIST == artist;
+		}
 	}
 	window_get_sel(win, &sel);
 	selected = iters_equal(iter, &sel);
-	active = lib.cur_win == lib.tree_win;
+	active = lib_cur_win == lib_tree_win;
 	bkgdset(pairs[(active << 2) | (selected << 1) | current]);
 	if (album) {
 		sprint(tree_win_y + row + 1, tree_win_x, album->name ? : noname, tree_win_w, 2);
@@ -515,10 +518,10 @@ static void print_track(struct window *win, int row, struct iter *iter)
 	int current, selected, active;
 
 	track = iter_to_tree_track(iter);
-	current = lib.cur_track == track;
+	current = lib_cur_track == track;
 	window_get_sel(win, &sel);
 	selected = iters_equal(iter, &sel);
-	active = lib.cur_win == lib.track_win;
+	active = lib_cur_win == lib_track_win;
 	bkgdset(pairs[(active << 2) | (selected << 1) | current]);
 
 	fill_track_fopts(track);
@@ -531,65 +534,17 @@ static void print_track(struct window *win, int row, struct iter *iter)
 	dump_print_buffer(track_win_y + row + 1, track_win_x);
 }
 
-static void print_sorted(struct window *win, int row, struct iter *iter)
-{
-	struct tree_track *track;
-	struct iter sel;
-	int current, selected, active = 1;
+/* used by print_editable only */
+static struct simple_track *current_track;
 
-	track = iter_to_sorted_track(iter);
-	current = lib.cur_track == track;
-	window_get_sel(win, &sel);
-	selected = iters_equal(iter, &sel);
-	bkgdset(pairs[(active << 2) | (selected << 1) | current]);
-
-	fill_track_fopts(track);
-
-	if (track_info_has_tag(tree_track_info(track))) {
-		format_print(print_buffer, COLS, list_win_format, track_fopts);
-	} else {
-		format_print(print_buffer, COLS, list_win_alt_format, track_fopts);
-	}
-	dump_print_buffer(row + 1, 0);
-}
-
-static void print_pl(struct window *win, int row, struct iter *iter)
+static void print_editable(struct window *win, int row, struct iter *iter)
 {
 	struct simple_track *track;
 	struct iter sel;
 	int current, selected, active;
 
 	track = iter_to_simple_track(iter);
-	current = pl_cur_track == track;
-	window_get_sel(win, &sel);
-	selected = iters_equal(iter, &sel);
-
-	active = 1;
-	if (!selected && track->marked) {
-		selected = 1;
-		active = 0;
-	}
-
-	bkgdset(pairs[(active << 2) | (selected << 1) | current]);
-
-	fill_track_fopts_track_info(track->info);
-
-	if (track_info_has_tag(track->info)) {
-		format_print(print_buffer, COLS, list_win_format, track_fopts);
-	} else {
-		format_print(print_buffer, COLS, list_win_alt_format, track_fopts);
-	}
-	dump_print_buffer(row + 1, 0);
-}
-
-static void print_play_queue(struct window *win, int row, struct iter *iter)
-{
-	struct simple_track *track;
-	struct iter sel;
-	int current, selected, active;
-
-	track = iter_to_simple_track(iter);
-	current = 0;
+	current = current_track == track;
 	window_get_sel(win, &sel);
 	selected = iters_equal(iter, &sel);
 
@@ -699,7 +654,7 @@ static void update_window(struct window *win, int x, int y, int w, const char *t
 
 static void update_tree_window(void)
 {
-	update_window(lib.tree_win, tree_win_x, tree_win_y,
+	update_window(lib_tree_win, tree_win_x, tree_win_y,
 			tree_win_w, "Artist / Album", print_tree);
 }
 
@@ -708,7 +663,7 @@ static void update_track_window(void)
 	char title[512];
 
 	format_print(title, track_win_w - 2, "Track%=Library", track_fopts);
-	update_window(lib.track_win, track_win_x, track_win_y,
+	update_window(lib_track_win, track_win_x, track_win_y,
 			track_win_w, title, print_track);
 }
 
@@ -730,60 +685,51 @@ static const char *pretty(const char *path)
 
 static const char * const sorted_names[2] = { "", "sorted by " };
 
+static void update_editable_window(struct editable *e, const char *title, const char *filename)
+{
+	char buf[512];
+	int pos;
+
+	if (filename) {
+		if (using_utf8) {
+			/* already UTF-8 */
+		} else {
+			utf8_encode(filename);
+			filename = conv_buffer;
+		}
+		snprintf(buf, sizeof(buf), "%s %s - %d tracks", title,
+				pretty(filename), e->nr_tracks);
+	} else {
+		snprintf(buf, sizeof(buf), "%s - %d tracks", title, e->nr_tracks);
+	}
+
+	if (e->nr_marked) {
+		pos = strlen(buf);
+		snprintf(buf + pos, sizeof(buf) - pos, " (%d marked)", e->nr_marked);
+	}
+	pos = strlen(buf);
+	snprintf(buf + pos, sizeof(buf) - pos, " %s%s",
+			sorted_names[e->sort_str[0] != 0], e->sort_str);
+
+	update_window(e->win, 0, 0, COLS, buf, &print_editable);
+}
+
 static void update_sorted_window(void)
 {
-	char title[512];
-	char *filename;
-
-	filename = lib_filename ? lib_filename : lib_autosave_filename;
-	if (using_utf8) {
-		/* already UTF-8 */
-	} else {
-		utf8_encode(filename);
-		filename = conv_buffer;
-	}
-	snprintf(title, sizeof(title), "Library %s - %d tracks %s%s", pretty(filename),
-			lib.nr_tracks, sorted_names[lib_sort_str[0] != 0], lib_sort_str);
-	update_window(lib.sorted_win, 0, 0, COLS, title, print_sorted);
+	current_track = (struct simple_track *)lib_cur_track;
+	update_editable_window(&lib_editable, "Library", lib_filename ? lib_filename : lib_autosave_filename);
 }
 
 static void update_pl_window(void)
 {
-	char title[512];
-	char *filename;
-	int pos;
-
-	filename = pl_filename ? pl_filename : pl_autosave_filename;
-	if (using_utf8) {
-		/* already UTF-8 */
-	} else {
-		utf8_encode(filename);
-		filename = conv_buffer;
-	}
-
-	snprintf(title, sizeof(title), "Playlist %s - %d tracks", pretty(filename), pl_nr_tracks);
-	if (pl_nr_marked) {
-		pos = strlen(title);
-		snprintf(title + pos, sizeof(title) - pos, " (%d marked)", pl_nr_marked);
-	}
-	pos = strlen(title);
-	snprintf(title + pos, sizeof(title) - pos, " %s%s",
-			sorted_names[pl_sort_str[0] != 0], pl_sort_str);
-
-	update_window(pl_win, 0, 0, COLS, title, print_pl);
+	current_track = pl_cur_track;
+	update_editable_window(&pl_editable, "Playlist", pl_filename ? pl_filename : pl_autosave_filename);
 }
 
 static void update_play_queue_window(void)
 {
-	char title[128];
-
-	snprintf(title, sizeof(title), "Play Queue - %d tracks", pq_nr_tracks);
-	if (pq_nr_marked) {
-		int pos = strlen(title);
-
-		snprintf(title + pos, sizeof(title) - pos, " (%d marked)", pq_nr_marked);
-	}
-	update_window(play_queue_win, 0, 0, COLS, title, print_play_queue);
+	current_track = NULL;
+	update_editable_window(&pq_editable, "Play Queue", NULL);
 }
 
 static void update_browser_window(void)
@@ -822,28 +768,28 @@ static void do_update_view(int full)
 {
 	switch (cur_view) {
 	case TREE_VIEW:
-		lib_lock();
-		if (full || lib.tree_win->changed)
+		editable_lock();
+		if (full || lib_tree_win->changed)
 			update_tree_window();
-		if (full || lib.track_win->changed)
+		if (full || lib_track_win->changed)
 			update_track_window();
-		lib_unlock();
+		editable_unlock();
 		draw_separator();
 		break;
 	case SORTED_VIEW:
-		lib_lock();
+		editable_lock();
 		update_sorted_window();
-		lib_unlock();
+		editable_unlock();
 		break;
 	case PLAYLIST_VIEW:
-		pl_lock();
+		editable_lock();
 		update_pl_window();
-		pl_unlock();
+		editable_unlock();
 		break;
 	case QUEUE_VIEW:
-		play_queue_lock();
+		editable_lock();
 		update_play_queue_window();
-		play_queue_unlock();
+		editable_unlock();
 		break;
 	case BROWSER_VIEW:
 		update_browser_window();
@@ -860,18 +806,19 @@ static void do_update_statusline(void)
 	static const char *cont_strs[] = { " ", "C" };
 	static const char *repeat_strs[] = { " ", "R" };
 	static const char *shuffle_strs[] = { " ", "S" };
-	int play_sorted, buffer_fill, vol, vol_left, vol_right;
+	int buffer_fill, vol, vol_left, vol_right;
 	int duration = -1;
 	char *msg;
 	char format[80];
 
-	lib_lock();
-	fopt_set_time(&status_fopts[SF_TOTAL], play_library ? lib.total_time : pl_total_time, 0);
+	editable_lock();
+	fopt_set_time(&status_fopts[SF_TOTAL], play_library ? lib_editable.total_time :
+			pl_editable.total_time, 0);
+	editable_unlock();
+
 	fopt_set_str(&status_fopts[SF_REPEAT], repeat_strs[repeat]);
 	fopt_set_str(&status_fopts[SF_SHUFFLE], shuffle_strs[shuffle]);
-	fopt_set_str(&status_fopts[SF_PLAYLISTMODE], aaa_mode_names[lib.aaa_mode]);
-	play_sorted = lib.play_sorted;
-	lib_unlock();
+	fopt_set_str(&status_fopts[SF_PLAYLISTMODE], aaa_mode_names[aaa_mode]);
 
 	if (cur_track_info)
 		duration = cur_track_info->duration;
@@ -1340,9 +1287,7 @@ void set_view(int view)
 		return;
 	cur_view = view;
 
-	lib_lock();
-	if (view < 2)
-		__lib_set_view(view);
+	editable_lock();
 	switch (cur_view) {
 	case TREE_VIEW:
 		searchable = tree_searchable;
@@ -1351,15 +1296,15 @@ void set_view(int view)
 		draw_separator();
 		break;
 	case SORTED_VIEW:
-		searchable = sorted_searchable;
+		searchable = lib_editable.searchable;
 		update_sorted_window();
 		break;
 	case PLAYLIST_VIEW:
-		searchable = pl_searchable;
+		searchable = pl_editable.searchable;
 		update_pl_window();
 		break;
 	case QUEUE_VIEW:
-		searchable = play_queue_searchable;
+		searchable = pq_editable.searchable;
 		update_play_queue_window();
 		break;
 	case BROWSER_VIEW:
@@ -1371,7 +1316,7 @@ void set_view(int view)
 		update_filters_window();
 		break;
 	}
-	lib_unlock();
+	editable_unlock();
 
 	refresh();
 }
@@ -1541,7 +1486,7 @@ static int get_window_size(int *lines, int *columns)
 	return 0;
 }
 
-static void resize_playlist(int w, int h)
+static void resize_tree_view(int w, int h)
 {
 	tree_win_w = w / 3;
 	track_win_w = w - tree_win_w - 1;
@@ -1555,11 +1500,8 @@ static void resize_playlist(int w, int h)
 	track_win_y = 0;
 
 	h--;
-	lib_lock();
-	window_set_nr_rows(lib.tree_win, h);
-	window_set_nr_rows(lib.track_win, h);
-	window_set_nr_rows(lib.sorted_win, h);
-	lib_unlock();
+	window_set_nr_rows(lib_tree_win, h);
+	window_set_nr_rows(lib_track_win, h);
 }
 
 static void update(void)
@@ -1583,11 +1525,14 @@ static void update(void)
 				w = 16;
 			if (h < 8)
 				h = 8;
-			resize_playlist(w, h);
+			editable_lock();
+			resize_tree_view(w, h);
+			window_set_nr_rows(lib_editable.win, h - 1);
+			window_set_nr_rows(pl_editable.win, h - 1);
+			window_set_nr_rows(pq_editable.win, h - 1);
 			window_set_nr_rows(filters_win, h - 1);
 			window_set_nr_rows(browser_win, h - 1);
-			window_set_nr_rows(play_queue_win, h - 1);
-			window_set_nr_rows(pl_win, h - 1);
+			editable_unlock();
 			needs_title_update = 1;
 			needs_status_update = 1;
 			needs_command_update = 1;
@@ -1595,7 +1540,7 @@ static void update(void)
 	}
 
 	player_info_lock();
-	lib_lock();
+	editable_lock();
 
 	needs_spawn = player_info.status_changed || player_info.file_changed ||
 		player_info.metadata_changed;
@@ -1625,16 +1570,16 @@ static void update(void)
 	}
 	switch (cur_view) {
 	case TREE_VIEW:
-		needs_view_update += lib.tree_win->changed || lib.track_win->changed;
+		needs_view_update += lib_tree_win->changed || lib_track_win->changed;
 		break;
 	case SORTED_VIEW:
-		needs_view_update += lib.sorted_win->changed;
+		needs_view_update += lib_editable.win->changed;
 		break;
 	case PLAYLIST_VIEW:
-		needs_view_update += pl_win->changed;
+		needs_view_update += pl_editable.win->changed;
 		break;
 	case QUEUE_VIEW:
-		needs_view_update += play_queue_win->changed;
+		needs_view_update += pq_editable.win->changed;
 		break;
 	case BROWSER_VIEW:
 		needs_view_update += browser_win->changed;
@@ -1646,12 +1591,12 @@ static void update(void)
 
 	/* total time changed? */
 	if (play_library) {
-		needs_status_update += lib.sorted_win->changed;
+		needs_status_update += lib_editable.win->changed;
 	} else {
-		needs_status_update += pl_win->changed;
+		needs_status_update += pl_editable.win->changed;
 	}
 
-	lib_unlock();
+	editable_unlock();
 	player_info_unlock();
 
 	if (needs_spawn)
@@ -1807,6 +1752,7 @@ static int get_next(char **filename)
 {
 	struct track_info *info;
 
+	editable_lock();
 	info = play_queue_remove();
 	if (info == NULL) {
 		if (play_library) {
@@ -1814,9 +1760,11 @@ static int get_next(char **filename)
 		} else {
 			info = pl_set_next();
 		}
-		if (info == NULL)
-			return -1;
 	}
+	editable_unlock();
+
+	if (info == NULL)
+		return -1;
 
 	*filename = xstrdup(info->filename);
 	track_info_unref(info);
@@ -1933,7 +1881,6 @@ static void exit_all(void)
 	cmus_save(pl_for_each, pl_autosave_filename);
 
 	player_exit();
-	lib_exit();
 	commands_exit();
 	search_mode_exit();
 	filters_exit();

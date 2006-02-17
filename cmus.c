@@ -69,7 +69,9 @@ static void add_url(add_ti_cb add, const char *filename)
 	struct track_info *ti;
 
 	ti = track_info_url_new(filename);
+	editable_lock();
 	add(ti);
+	editable_unlock();
 	track_info_unref(ti);
 }
 
@@ -87,7 +89,10 @@ static void add_file(add_ti_cb add, const char *filename)
 
 	if (ti == NULL)
 		return;
+
+	editable_lock();
 	add(ti);
+	editable_unlock();
 	track_info_unref(ti);
 }
 
@@ -234,10 +239,15 @@ static void update_lib_job(void *data)
 		/* stat follows symlinks, lstat does not */
 		if (stat(ti->filename, &s) == -1) {
 			d_print("removing dead file %s\n", ti->filename);
+			editable_lock();
 			lib_remove(ti);
+			editable_unlock();
 		} else if (ti->mtime != s.st_mtime) {
 			d_print("mtime changed: %s\n", ti->filename);
+			editable_lock();
 			lib_remove(ti);
+			editable_unlock();
+
 			cmus_add(lib_add_track, ti->filename, FILE_TYPE_FILE, JOB_TYPE_LIB);
 		}
 		track_info_unref(ti);
@@ -265,7 +275,6 @@ int cmus_init(void)
 void cmus_exit(void)
 {
 	worker_remove_jobs(JOB_TYPE_ANY);
-	play_queue_exit();
 	worker_exit();
 	if (track_db_close(track_db))
 		d_print("error: %s\n", strerror(errno));
@@ -414,7 +423,11 @@ void cmus_update_lib(void)
 	data->size = 0;
 	data->used = 0;
 	data->ti = NULL;
+
+	editable_lock();
 	lib_for_each(update_cb, data);
+	editable_unlock();
+
 	worker_add_job(JOB_TYPE_LIB, update_lib_job, data);
 }
 

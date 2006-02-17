@@ -19,7 +19,6 @@
 
 #include <browser.h>
 #include <load_dir.h>
-#include <lib.h>
 #include <cmus.h>
 #include <player.h>
 #include <xmalloc.h>
