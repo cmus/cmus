@@ -36,7 +36,11 @@ Or on some BSD systems you need to explicitly use GNU make:
 
   gmake 
 
-To build optional HTML documentation (requires rst2html):
+To build man pages (requires asciidoc and xsltproc):
+
+  make man
+
+To build HTML versions of the man pages (requires asciidoc):
 
   make html
 
@@ -51,7 +55,11 @@ Or to install to a temporary directory:
 
 This is useful when creating binary packages.
 
-To install optional HTML documentation:
+To install man pages:
+
+  make install-man
+
+To install HTML versions of the man pages:
 
   make install-html
 
