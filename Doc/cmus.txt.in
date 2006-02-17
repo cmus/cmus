@@ -262,7 +262,7 @@ Stop playback.
 Exit cmus.
 
 `refresh` (^L)::
-redraws the terminal window.
+Redraw the terminal window.
 
 `run <command>`::
 Run command for the marked tracks OR the selected one if none marked.
@@ -325,6 +325,9 @@ Show key binding.
 
 `shuffle`::
 Reshuffle the shuffle lists for both library and playlist views.
+
+`source <filename>`::
+Read and execute commands from <filename>.
 
 `toggle <option>`::
 Toggle value of a toggle-able option (all booleans and tristate `aaa_mode`).
