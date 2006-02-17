@@ -995,7 +995,6 @@ int player_set_op(const char *name)
 {
 	int rc;
 
-	d_print("setting op to '%s'\n", name);
 	player_lock();
 
 	/* drop needed because close drains the buffer */
@@ -1006,9 +1005,11 @@ int player_set_op(const char *name)
 		op_close();
 
 	if (name) {
+		d_print("setting op to '%s'\n", name);
 		rc = op_select(name);
 	} else {
 		/* first initialized plugin */
+		d_print("selecting first initialized op\n");
 		rc = op_select_any();
 	}
 	if (rc) {

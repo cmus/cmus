@@ -536,6 +536,7 @@ static void set_color(unsigned int id, const char *buf)
 
 	colors[id] = color;
 	update_colors();
+	update_full();
 }
 
 static char **id_to_fmt(enum format_id id)
@@ -712,8 +713,10 @@ static void get_op_option(unsigned int id, char *buf)
 	char *val = NULL;
 
 	player_get_op_option(id, &val);
-	if (val)
+	if (val) {
 		strcpy(buf, val);
+		free(val);
+	}
 }
 
 static void set_op_option(unsigned int id, const char *buf)

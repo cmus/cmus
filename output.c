@@ -124,27 +124,30 @@ sym_err:
 	closedir(dir);
 }
 
+static void init_plugin(struct output_plugin *o)
+{
+	if (!o->mixer_initialized && o->mixer_ops) {
+		if (o->mixer_ops->init() == 0) {
+			o->mixer_initialized = 1;
+		} else {
+			d_print("could not initialize mixer `%s'\n", o->name);
+		}
+	}
+	if (!o->pcm_initialized) {
+		if (o->pcm_ops->init() == 0) {
+			o->pcm_initialized = 1;
+		} else {
+			d_print("could not initialize pcm `%s'\n", o->name);
+		}
+	}
+}
+
 void op_init_plugins(void)
 {
 	struct output_plugin *o;
-	int rc;
 
-	list_for_each_entry(o, &op_head, node) {
-		if (o->mixer_ops) {
-			rc = o->mixer_ops->init();
-			if (rc == 0) {
-				o->mixer_initialized = 1;
-			} else {
-				d_print("could not initialize mixer `%s'\n", o->name);
-			}
-		}
-		rc = o->pcm_ops->init();
-		if (rc == 0) {
-			o->pcm_initialized = 1;
-		} else {
-			d_print("could not initialize op `%s'\n", o->name);
-		}
-	}
+	list_for_each_entry(o, &op_head, node)
+		init_plugin(o);
 }
 
 void op_exit_plugins(void)
@@ -177,7 +180,7 @@ static void open_mixer(void)
 		return;
 
 	BUG_ON(op->mixer_open);
-	if (op->mixer_ops) {
+	if (op->mixer_ops && op->mixer_initialized) {
 		int rc;
 
 		rc = op->mixer_ops->open(&volume_max);
@@ -193,19 +196,11 @@ int op_select(const char *name)
 
 	list_for_each_entry(o, &op_head, node) {
 		if (strcasecmp(name, o->name) == 0) {
-			if (!o->pcm_initialized) {
-				/* try to initialize again */
-				int rc;
+			/* try to initialize if not initialized yet */
+			init_plugin(o);
 
-				d_print("trying to reinitialize %s\n", o->name);
-				rc = o->pcm_ops->init();
-				if (rc == 0) {
-					o->pcm_initialized = 1;
-				} else {
-					d_print("could not initialize op `%s'\n", o->name);
-					return -OP_ERROR_NOT_INITIALIZED;
-				}
-			}
+			if (!o->pcm_initialized)
+				return -OP_ERROR_NOT_INITIALIZED;
 
 			close_mixer();
 			op = o;

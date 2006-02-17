@@ -662,6 +662,8 @@ static void update_track_window(void)
 {
 	char title[512];
 
+	/* it doesn't matter what format options we use because the format
+	 * string does not contain any format charaters */
 	format_print(title, track_win_w - 2, "Track%=Library", track_fopts);
 	update_window(lib_track_win, track_win_x, track_win_y,
 			track_win_w, title, print_track);
@@ -1373,14 +1375,6 @@ void update_colors(void)
 			pairs[i] = COLOR_PAIR(pair);
 		}
 	}
-	curs_set(0);
-
-	do_update_view(1);
-	do_update_titleline();
-	do_update_statusline();
-	do_update_commandline();
-
-	post_update();
 }
 
 static void clear_error(void)
