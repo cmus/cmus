@@ -43,6 +43,7 @@ struct output_plugin {
 	const struct mixer_plugin_ops *mixer_ops;
 	const char * const *pcm_options;
 	const char * const *mixer_options;
+	int priority;
 
 	unsigned int pcm_initialized : 1;
 	unsigned int mixer_initialized : 1;
@@ -57,6 +58,22 @@ static sample_format_t current_sf = 0;
 /* volume is between 0 and volume_max */
 static int volume_max;
 
+static void add_plugin(struct output_plugin *plugin)
+{
+	struct list_head *item = op_head.next;
+
+	while (item != &op_head) {
+		struct output_plugin *o = container_of(item, struct output_plugin, node);
+
+		if (plugin->priority < o->priority)
+			break;
+		item = item->next;
+	}
+
+	/* add before item */
+	list_add_tail(&plugin->node, item);
+}
+
 void op_load_plugins(void)
 {
 	DIR *dir;
@@ -70,7 +87,7 @@ void op_load_plugins(void)
 	while ((d = readdir(dir)) != NULL) {
 		char filename[256];
 		struct output_plugin *plug;
-		void *so;
+		void *so, *symptr;
 		char *ext;
 		const char *sym;
 
@@ -100,6 +117,12 @@ void op_load_plugins(void)
 		if (!(plug->pcm_options = dlsym(so, sym)))
 			goto sym_err;
 
+		sym = "op_priority";
+		symptr = dlsym(so, sym);
+		if (symptr == NULL)
+			goto sym_err;
+		plug->priority = *(int *)symptr;
+
 		plug->mixer_ops = dlsym(so, "op_mixer_ops");
 		plug->mixer_options = dlsym(so, "op_mixer_options");
 
@@ -114,7 +137,7 @@ void op_load_plugins(void)
 		plug->mixer_initialized = 0;
 		plug->mixer_open = 0;
 
-		list_add_tail(&plug->node, &op_head);
+		add_plugin(plug);
 		continue;
 sym_err:
 		warn("%s: symbol %s not found\n", filename, sym);

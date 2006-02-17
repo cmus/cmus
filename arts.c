@@ -132,4 +132,4 @@ const char * const op_pcm_options[] = {
 	NULL
 };
 
-/* no mixer, op_mixer_ops and op_mixer_options not defined */
+const int op_priority = 2;

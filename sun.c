@@ -286,3 +286,5 @@ const char * const op_pcm_options[] = {
 	"device",
 	NULL
 };
+
+const int op_priority = 0;
