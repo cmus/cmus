@@ -101,6 +101,8 @@ ao.so: $(ao-objs)
 	$(call cmd,ld_so,$(AO_LIBS))
 # }}}
 
+data		= $(wildcard data/*)
+
 clean		+= *.o *.lo *.so cmus cmus-remote *.html
 distclean	+= config.mk config.h tags
 
@@ -110,7 +112,7 @@ install: build
 	$(INSTALL) -m755 $(bindir) cmus cmus-remote
 	$(INSTALL) -m755 $(libdir)/cmus/ip $(ip-y)
 	$(INSTALL) -m755 $(libdir)/cmus/op $(op-y)
-	$(INSTALL) -m644 $(datadir)/cmus rc
+	$(INSTALL) -m644 $(datadir)/cmus $(data)
 	$(INSTALL) -m755 $(datadir)/doc/cmus/examples cmus-status-display
 
 tags:
