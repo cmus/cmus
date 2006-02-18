@@ -1,7 +1,8 @@
 
                      CMus - C* Music Player
 
-                Copyright 2004-2006 Timo Hirvonen
+	 Copyright 2004-2006 Timo Hirvonen <tihirvon@gmail.com>
+
 
 Installation
 ============
@@ -80,12 +81,22 @@ But I've not been able to play any compressed mods. Uncompressed mods
 play without problems.
 
 
+Mailing List
+============
+
+To subscribe to cmus-devel@lists.sourceforge.net visit
+
+  http://lists.sourceforge.net/lists/listinfo/cmus-devel
+
+The list is open (you can post to the list without subscribing).
+
+
 Reporting Bugs
 ==============
 
 After a crash send bug report with last lines of /tmp/cmus-debug to
-tihirvon@gmail.com.  /tmp/cmus-debug file exists only if you configured
-cmus with maximum debug level (./configure --debug=2).
+cmus-devel@lists.sourceforge.net.  /tmp/cmus-debug file exists only if
+you configured cmus with maximum debug level (./configure --debug=2).
 
 Also it would be good to know what OS/distribution/kernel you are using,
 so please include output of 'uname -a' command in the bug report.

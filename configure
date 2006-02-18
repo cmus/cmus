@@ -4,7 +4,7 @@
 
 PACKAGE="cmus"
 VERSION="1.6.8"
-PACKAGE_BUGREPORT="tihirvon@gmail.com"
+PACKAGE_BUGREPORT="cmus-devel@lists.sourceforge.net"
 
 check_ncurses()
 {
