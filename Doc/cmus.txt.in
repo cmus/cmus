@@ -78,8 +78,8 @@ Selecting Tracks
 Editing commands affect the currently marked tracks or if there are no marked
 tracks the the currently selected track (or selected artist/album in view 1).
 
-Mark tracks by selecting them and pressing 'SPACE'.  Marked tracks appear
-with a grey background.  You can only mark tracks in the list views (2-4).
+Mark selected track by pressing 'SPACE'.  Marked tracks appear with a grey
+background.  You can only mark tracks in the list views (2-4).
 
 Copying Tracks Between Views
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -228,8 +228,8 @@ filter is not saved.
 Define (or replace existing) filter and add it to filters view (6).
 
 `invert`::
-Invert the marking of tracks in playlist and queue views. See 'mark' and
-'unmark'.
+Invert the marking of tracks in playlist and queue views. See `mark` and
+`unmark`.
 
 `load [-l] [-p] <playlist>`::
 Load a playlist to the specified view or to the current view.
@@ -818,34 +818,43 @@ Static config file. This file is read immediately after the autosave file, and
 is never modified by cmus.  You can override auto-saved settings in this file.
 This file is not limited to options, it can contain other commands too.
 
+Color Themes
+~~~~~~~~~~~~
 
-EXAMPLES
---------
+There are some color themes in '@DATADIR@/cmus'.  You can switch themes using
+the `:source` command:
 
-Example status display script (status_display_program) can be found in
-@DATADIR@/doc/cmus/examples.
+----
+:source @DATADIR@/cmus/default.theme
+----
+
+Examples
+~~~~~~~~
+
+Example status display script (See `status_display_program` option) can be
+found in '@DATADIR@/doc/cmus/examples'.
 
 
 BUGS
 ----
 
-After a crash last lines of /tmp/cmus-debug might contain useful information.
-The /tmp/cmus-debug file exists only if you configured cmus with maximum debug
-level (./configure --debug=2).
+After a crash last lines of '/tmp/cmus-debug' might contain useful information.
+The '/tmp/cmus-debug' file exists only if you configured cmus with maximum debug
+level (`./configure --debug=2`).
 
 Feature requests and bug reports should go to the cmus-devel mailing list:
-http://lists.sourceforge.net/lists/listinfo/cmus-devel
+http://lists.sourceforge.net/lists/listinfo/cmus-devel[]
 
 
-AUTHOR
-------
+AUTHORS
+-------
 
 cmus is mainly written by Timo Hirvonen <tihirvon@gmail.com>.  Other
-contributers are listed in the AUTHORS file.
+contributers are listed in the 'AUTHORS' file.
 
 
-DOCUMENTATION
--------------
+Documentation
+~~~~~~~~~~~~~
 
 This man page was written by Frank Terbeck <frank.terbeck@rwth-aachen.de>,
 Timo Hirvonen <tihirvon@gmail.com>, and Clay Barnes <clay.barnes@gmail.com>.
