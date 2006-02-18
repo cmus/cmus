@@ -403,9 +403,9 @@ int op_set_option(unsigned int id, const char *val)
 		const struct mixer_plugin_ops *mo = o->mixer_ops;
 		int rc = mo->set_option(oid, val);
 
-		if (rc == 0 && op && op->mixer_ops == mo && op->mixer_open) {
-			/* option of the current op was set and the mixer is open
-			 * need to reopen the mixer */
+		if (rc == 0 && op && op->mixer_ops == mo) {
+			/* option of the current op was set
+			 * try to reopen the mixer */
 			close_mixer();
 			open_mixer();
 		}
