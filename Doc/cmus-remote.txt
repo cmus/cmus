@@ -3,7 +3,7 @@ cmus-remote(1)
 
 NAME
 ----
-cmus-remote - control cmus(1)
+cmus-remote - control cmus
 
 
 SYNOPSIS
