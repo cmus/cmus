@@ -55,7 +55,6 @@ struct player_info player_info = {
 	.pos = 0,
 	.vol_left = 0,
 	.vol_right = 0,
-	.vol_max = 0,
 	.buffer_fill = 0,
 	.buffer_size = 0,
 	.error_msg = NULL,
@@ -162,13 +161,14 @@ static inline void metadata_changed(void)
 	player_info_unlock();
 }
 
-static inline void volume_changed(int left, int right, int vol_max)
+static inline void volume_update(int left, int right)
 {
+	if (player_info.vol_left == left && player_info.vol_right == right)
+		return;
+
 	player_info_lock();
 	player_info.vol_left = left;
 	player_info.vol_right = right;
-	if (vol_max > 0)
-		player_info.vol_max = vol_max;
 	player_info.vol_changed = 1;
 	player_info_unlock();
 }
@@ -228,7 +228,7 @@ static void mixer_check(void)
 {
 	static struct timeval old_st = { 0L, 0L };
 	struct timeval st;
-	int l, r, max_vol, rc;
+	int l, r;
 
 	gettimeofday(&st, NULL);
 	if (st.tv_sec == old_st.tv_sec) {
@@ -238,9 +238,8 @@ static void mixer_check(void)
 			return;
 	}
 	old_st = st;
-	rc = op_volume_changed(&l, &r, &max_vol);
-	if (rc == 1)
-		volume_changed(l, r, max_vol);
+	if (op_get_volume(&l, &r) == 0)
+		volume_update(l, r);
 }
 
 /*
@@ -1100,12 +1099,12 @@ int player_get_fileinfo(const char *filename, int *duration,
 	return rc;
 }
 
-int player_get_volume(int *left, int *right, int *max_vol)
+int player_get_volume(int *left, int *right)
 {
 	int rc;
 
 	consumer_lock();
-	rc = op_get_volume(left, right, max_vol);
+	rc = op_get_volume(left, right);
 	consumer_unlock();
 	return rc;
 }
@@ -1118,7 +1117,7 @@ int player_set_volume(int left, int right)
 	rc = op_set_volume(left, right);
 	consumer_unlock();
 	if (rc == 0)
-		volume_changed(left, right, -1);
+		volume_update(left, right);
 	return rc;
 }
 

@@ -1066,16 +1066,16 @@ err:
 	return -1;
 }
 
-static int calc_vol(int val, int old, int max_vol, unsigned int flags)
+static int calc_vol(int val, int old, unsigned int flags)
 {
 	if (flags & VF_RELATIVE) {
 		if (flags & VF_PERCENTAGE)
-			val = scale_from_percentage(val, max_vol);
+			val = scale_from_percentage(val, volume_max);
 		val += old;
 	} else if (flags & VF_PERCENTAGE) {
-		val = scale_from_percentage(val, max_vol);
+		val = scale_from_percentage(val, volume_max);
 	}
-	return clamp(val, 0, max_vol);
+	return clamp(val, 0, volume_max);
 }
 
 /*
@@ -1087,7 +1087,7 @@ static void cmd_vol(char *arg)
 {
 	char **values = get_words(arg);
 	unsigned int lf, rf;
-	int l, r, ol, or, max_vol;
+	int l, r, ol, or;
 
 	if (values[1] && values[2])
 		goto err;
@@ -1102,9 +1102,9 @@ static void cmd_vol(char *arg)
 
 	free_str_array(values);
 
-	player_get_volume(&ol, &or, &max_vol);
-	l = calc_vol(l, ol, max_vol, lf);
-	r = calc_vol(r, or, max_vol, rf);
+	player_get_volume(&ol, &or);
+	l = calc_vol(l, ol, lf);
+	r = calc_vol(r, or, rf);
 	player_set_volume(l, r);
 	return;
 err:

@@ -59,7 +59,6 @@ struct player_info {
 	/* volume */
 	int vol_left;
 	int vol_right;
-	int vol_max;
 
 	int buffer_fill;
 	int buffer_size;
@@ -77,6 +76,9 @@ struct player_info {
 
 extern struct player_info player_info;
 extern int player_cont;
+
+/* defined in output.c */
+extern int volume_max;
 
 void player_load_plugins(void);
 void player_init_plugins(void);
@@ -101,7 +103,7 @@ int player_get_buffer_chunks(void);
 void player_set_buffer_seconds(unsigned int seconds);
 int player_get_fileinfo(const char *filename, int *duration, struct keyval **comments);
 
-int player_get_volume(int *left, int *right, int *max_vol);
+int player_get_volume(int *left, int *right);
 int player_set_volume(int left, int right);
 
 int player_set_op_option(unsigned int id, const char *val);

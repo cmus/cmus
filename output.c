@@ -56,7 +56,7 @@ static struct output_plugin *op = NULL;
 static sample_format_t current_sf = 0;
 
 /* volume is between 0 and volume_max */
-static int volume_max;
+int volume_max = 0;
 
 static void add_plugin(struct output_plugin *plugin)
 {
@@ -187,10 +187,8 @@ void op_exit_plugins(void)
 
 static void close_mixer(void)
 {
-	if (op == NULL)
-		return;
-
-	if (op->mixer_open) {
+	volume_max = 0;
+	if (op && op->mixer_open) {
 		BUG_ON(op->mixer_ops == NULL);
 		op->mixer_ops->close();
 		op->mixer_open = 0;
@@ -209,6 +207,8 @@ static void open_mixer(void)
 		rc = op->mixer_ops->open(&volume_max);
 		if (rc == 0) {
 			op->mixer_open = 1;
+		} else {
+			volume_max = 0;
 		}
 	}
 }
@@ -341,37 +341,13 @@ int op_set_volume(int left, int right)
 	return op->mixer_ops->set_volume(left, right);
 }
 
-int op_get_volume(int *left, int *right, int *max_vol)
+int op_get_volume(int *left, int *right)
 {
 	if (op == NULL)
 		return -OP_ERROR_NOT_INITIALIZED;
 	if (!op->mixer_open)
 		return -OP_ERROR_NOT_SUPPORTED;
-	*max_vol = volume_max;
 	return op->mixer_ops->get_volume(left, right);
-}
-
-int op_volume_changed(int *left, int *right, int *max_vol)
-{
-	static int oldl = -1;
-	static int oldr = -1;
-	int rc;
-
-	if (op == NULL)
-		return -OP_ERROR_NOT_INITIALIZED;
-	if (!op->mixer_open)
-		return 0;
-	rc = op->mixer_ops->get_volume(left, right);
-	if (rc)
-		return rc;
-
-	if (*left == oldl && *right == oldr)
-		return 0;
-
-	*max_vol = volume_max;
-	oldl = *left;
-	oldr = *right;
-	return 1;
 }
 
 #define OP_OPT_ID(plugin_idx, is_mixer, option_idx) \

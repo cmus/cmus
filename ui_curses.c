@@ -827,9 +827,13 @@ static void do_update_statusline(void)
 
 	player_info_lock();
 
-	vol_left = scale_to_percentage(player_info.vol_left, player_info.vol_max);
-	vol_right = scale_to_percentage(player_info.vol_right, player_info.vol_max);
-	vol = (vol_left + vol_right + 1) / 2;
+	if (volume_max == 0) {
+		vol_left = vol_right = vol = -1;
+	} else {
+		vol_left = scale_to_percentage(player_info.vol_left, volume_max);
+		vol_right = scale_to_percentage(player_info.vol_right, volume_max);
+		vol = (vol_left + vol_right + 1) / 2;
+	}
 	buffer_fill = scale_to_percentage(player_info.buffer_fill, player_info.buffer_size);
 
 	fopt_set_str(&status_fopts[SF_STATUS], status_strs[player_info.status]);
@@ -850,10 +854,13 @@ static void do_update_statusline(void)
 	strcpy(format, " %s %p ");
 	if (duration != -1)
 		strcat(format, "/ %d ");
-	if (player_info.vol_left != player_info.vol_right) {
-		strcat(format, "- %t vol: %l,%r ");
-	} else {
-		strcat(format, "- %t vol: %v ");
+	strcat(format, "- %t ");
+	if (volume_max != 0) {
+		if (player_info.vol_left != player_info.vol_right) {
+			strcat(format, "vol: %l,%r ");
+		} else {
+			strcat(format, "vol: %v ");
+		}
 	}
 	if (cur_track_info && is_url(cur_track_info->filename))
 		strcat(format, "buf: %b ");
@@ -1846,7 +1853,7 @@ static void init_all(void)
 	/* finally we can set the output plugin */
 	player_set_op(output_plugin);
 
-	player_get_volume(&player_info.vol_left, &player_info.vol_right, &player_info.vol_max);
+	player_get_volume(&player_info.vol_left, &player_info.vol_right);
 
 	lib_autosave_filename = xstrjoin(cmus_config_dir, "/lib.pl");
 	pl_autosave_filename = xstrjoin(cmus_config_dir, "/playlist.pl");

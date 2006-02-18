@@ -74,10 +74,7 @@ int op_buffer_space(void);
 int op_reset(void);
 
 int op_set_volume(int left, int right);
-int op_get_volume(int *left, int *right, int *max_vol);
-
-/* returns 1 if changed, 0 otherwise */
-int op_volume_changed(int *left, int *right, int *max_vol);
+int op_get_volume(int *left, int *right);
 
 /*
  * errors: OP_ERROR_{NO_PLUGIN, NOT_INITIALIZED, NOT_OPTION}
