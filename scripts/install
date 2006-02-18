@@ -25,6 +25,6 @@ shift
 install -d -m755 "${to}"
 for i in "$@"
 do
-	echo "INSTALL ${to}/${i}"
+	echo "INSTALL ${to}/$(basename ${i})"
 	install $flags "$i" "${to}"
 done
