@@ -160,9 +160,7 @@ void filters_activate(void)
 		if (f->selected)
 			f->active = 1;
 	}
-	editable_lock();
 	lib_set_filter(expr);
-	editable_unlock();
 	filters_win->changed = 1;
 }
 
@@ -412,9 +410,7 @@ void filters_set_anonymous(const char *val)
 	list_for_each_entry(f, &filters_head, node)
 		f->active = 0;
 
-	editable_lock();
 	lib_set_filter(e);
-	editable_unlock();
 
 	filters_win->changed = 1;
 }

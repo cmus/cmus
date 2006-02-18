@@ -457,12 +457,16 @@ static void cmd_seek(char *arg)
 
 static void cmd_factivate(char *arg)
 {
+	editable_lock();
 	filters_activate_names(arg);
+	editable_unlock();
 }
 
 static void cmd_filter(char *arg)
 {
+	editable_lock();
 	filters_set_anonymous(arg);
+	editable_unlock();
 }
 
 static void cmd_fset(char *arg)
