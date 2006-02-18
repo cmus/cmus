@@ -3,11 +3,10 @@ all: html
 include ../config.mk
 include ../scripts/lib.mk
 
-MAN_XSL	:= /usr/share/asciidoc/docbook-xsl/manpages.xsl
+MAN_XSL	:= $(word 1,$(wildcard /usr/share/asciidoc/docbook-xsl/manpage*.xsl))
 
 man1	:= cmus.1 cmus-remote.1
 html	:= cmus.html cmus-remote.html
-xml	:= cmus.xml cmus-remote.xml
 
 man: $(man1)
 html: $(html)
@@ -29,6 +28,7 @@ cmus.txt: cmus.txt.in
 
 %.1: %.xml
 	$(call cmd,xsltproc)
+	sed 's/\(.\)\.sp$$/\1\n.sp/g' < $@ > $@.tmp && mv $@.tmp $@
 
 %.xml: %.txt
 	$(call cmd,asciidoc)
