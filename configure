@@ -242,4 +242,12 @@ Installation Directories:
 bindir:              ${bindir}
 datadir:             ${datadir}
 libdir:              ${libdir}
+
+Installation:
+make                 build cmus
+make man             generate man pages
+make html            generate html docs (same content in the man pages)
+make install         install cmus
+make install-man     install man pages
+make install-html    install html docs
 EOF
