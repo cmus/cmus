@@ -1664,8 +1664,10 @@ static void expand_bind_args(const char *str)
 	int flag = parse_flags((const char **)&str, "f");
 	const char *force = "";
 
-	if (flag == -1 || str == NULL)
+	if (flag == -1)
 		return;
+	if (str == NULL)
+		str = "";
 
 	if (flag == 'f')
 		force = "-f ";
