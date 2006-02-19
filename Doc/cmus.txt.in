@@ -14,14 +14,9 @@ cmus [options]
 DESCRIPTION
 -----------
 
-cmus is a music player based on ncurses. It's small, flexible and fast.  Not
-only is it fast in execution, but it's also fast to use. Most actions can be
-done with only one keystroke. More complex actions can be done using vi-like
-commands starting with ':'.
-
-cmus supports various output methods by output-plugins. It has got completely
-configurable keybindings and it can be controlled from the outside via
-manlink:cmus-remote[1].
+cmus is a small ncurses based music player.  It supports various output
+methods by output-plugins. It has got completely configurable keybindings and
+it can be controlled from the outside via manlink:cmus-remote[1].
 
 OPTIONS
 -------
@@ -64,10 +59,53 @@ anything else (i.e. the playlist or library).
 
 Browser (5)::
 Directory browser.  In this view, music can be added to either the library,
-playlist or queue from the user's filesystem.
+playlist or queue from the filesystem.
 
 Filters view (6)::
 Lists user defined filters.
+
+Command Line
+------------
+
+Everything in cmus is implemented as commands which can be typed at command
+line or bound to a key.  To enter command mode type ':'.  To execute a command
+press 'ENTER' or to cancel press 'ESC'.  Use up/down arrows to browse command
+history.  Use 'TAB' to complete commands and parameters, you can tab complete
+almost anything.  You don't need to type full command names if the command is
+unambiguous (no other commands starting with the same characters).
+
+Examples::
+----
+# add files, short for ':add ~/music'
+:a ~/music
+
+# change output plugin
+:set output_plugin=oss
+
+# start playing
+# you could just press 'x' which is the default binding for this command
+:player-play
+
+# clear current view (library, playlist or play queue)
+:clear
+----
+
+
+Searching
+---------
+
+Search mode works like the command mode, to enter search mode press '/' and
+then type the search words and press 'ENTER'.  Press 'n' to search next or 'N'
+to search previous match using the same search words.  Type '?' to search
+backwards.
+
+In views 1-4 words are compared to artist, album and title tags. Type
+'//WORDS' or '??WORDS' to search only artists/albums in view 1 or titles in
+views 2-4. If the file doesn't have tags words are compared to filename
+without path.
+
+In view 5 words are compared to filename without path.
+
 
 Playlist Editing
 ----------------
@@ -76,9 +114,9 @@ Selecting Tracks
 ~~~~~~~~~~~~~~~~
 
 Editing commands affect the currently marked tracks or if there are no marked
-tracks the the currently selected track (or selected artist/album in view 1).
+tracks the currently selected track (or selected artist/album in view 1).
 
-Mark selected track by pressing 'SPACE'.  Marked tracks appear with a grey
+Mark selected track by pressing 'SPACE'.  Marked tracks appear with a gray
 background.  You can only mark tracks in the list views (2-4).
 
 Copying Tracks Between Views
@@ -86,16 +124,16 @@ Copying Tracks Between Views
 
 You can copy marked or selected tracks from views 1-5.
 
-- 'a' copies tracks to the library (1-2)
-- 'y' copies tracks to the playlist (3)
-- 'e' appends tracks to the play queue (4)
-- 'E' prepends tracks to the play queue (4)
+* 'a' copies tracks to the library (1-2)
+* 'y' copies tracks to the playlist (3)
+* 'e' appends tracks to the play queue (4)
+* 'E' prepends tracks to the play queue (4)
 
 Moving Tracks
 ~~~~~~~~~~~~~
 
 In views 2-4 you can move tracks withing the list. Note that moving is
-disabled if the view is autosorted (see `lib_sort` and `pl_sort` options).
+disabled if the view is auto-sorted (see `lib_sort` and `pl_sort` options).
 
 Pressing 'p' moves marked tracks to the position immediately after the
 selected track.  'P' moves them to the position immediately before the
@@ -117,11 +155,11 @@ remove a file or filter (will ask for confirmation).
 Status Line
 -----------
 
-The status line (second row from the bottom, black text on a grey background)
-consists of the following fields:
+Right hand side of the status line (second row from the bottom, black text on
+a grey background) consists of the following fields:
 
 ----
-(aaa_mode & play_sorted & play_library) | continue repeat shuffle
+aaa_mode & play_sorted & play_library | continue repeat shuffle
 ----
 
 NOTE: `aaa_mode` and `play_sorted` will be displayed only if `play_library` is
@@ -196,6 +234,10 @@ clear library
 clear playlist
 `-q`;;
 clear play queue
+
+`colorscheme <name>`::
+Change color scheme.  Color schemes are found in '@DATADIR@/cmus' or '~/.cmus'
+and have .theme filename extension.
 
 `echo <arg>...`::
 Display arguments on the command line.
@@ -561,9 +603,6 @@ Ask for confirmation before executing `:run`
 `continue` (true)::
 Continue playing after current track finishes.
 
-`dsp.\*`::
-Output plugin options.  Use tab to cycle through all possible options.
-
 `format_current` [<<format,format string>>]::
 Format string for the line displaying currently playing track.
 
@@ -585,9 +624,6 @@ NOTE:  This is used only if the tag is not valid UTF-8.
 
 `lib_sort` (artist album discnumber tracknumber title filename) [<<sortkeys,sort keys>>]::
 Sort keys for the sorted library view (2).
-
-`mixer.\*`::
-Mixer options.  Use tab to cycle through all possible options.
 
 `output_plugin` [alsa, arts, oss, sun]::
 Name of output plugin.
@@ -818,15 +854,12 @@ Static config file. This file is read immediately after the autosave file, and
 is never modified by cmus.  You can override auto-saved settings in this file.
 This file is not limited to options, it can contain other commands too.
 
-Color Themes
-~~~~~~~~~~~~
+Color Schemes
+~~~~~~~~~~~~~
 
-There are some color themes in '@DATADIR@/cmus'.  You can switch themes using
-the `:source` command:
-
-----
-:source @DATADIR@/cmus/default.theme
-----
+There are some color schemes (*.theme) in '@DATADIR@/cmus'.  You can switch
+them using the `:colorscheme` command.  You can put your own color schemes to
+~/.cmus.
 
 Examples
 ~~~~~~~~
