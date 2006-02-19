@@ -20,9 +20,6 @@ XSLTPROC_FLAGS	+= --nonet $(MAN_XSL)
 $(html): ASCIIDOC_FLAGS += -b xhtml11
 $(man1): ASCIIDOC_FLAGS += -b docbook
 
-cmus.txt: cmus.txt.in
-	sed -e 's:@DATADIR@:$(datadir):' < $< > $@
-
 %.html: %.txt
 	$(call cmd,asciidoc)
 
@@ -39,7 +36,7 @@ install-man:
 install-html:
 	$(INSTALL) -m644 $(datadir)/doc/cmus $(html)
 
-clean	+= *.html *.xml *.1 cmus.txt
+clean	+= *.html *.xml *.1
 
 .PHONY: all man html
 
