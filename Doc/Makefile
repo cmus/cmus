@@ -33,10 +33,10 @@ cmus.txt: cmus.txt.in
 %.xml: %.txt
 	$(call cmd,asciidoc)
 
-install-man: man
+install-man:
 	$(INSTALL) -m644 $(datadir)/man/man1 $(man1)
 
-install-html: html
+install-html:
 	$(INSTALL) -m644 $(datadir)/doc/cmus $(html)
 
 clean	+= *.html *.xml *.1 cmus.txt

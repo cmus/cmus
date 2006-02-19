@@ -130,7 +130,7 @@ Doc/%:
 	$(call cmd,submake)
 
 quiet_cmd_submake = Making $(word 2,$(subst /, ,$@)) in $(word 1,$(subst /, ,$@))
-      cmd_submake = make -C $(subst /, ,$@)
+      cmd_submake = $(MAKE) -C $(subst /, ,$@)
 
 MAKEFLAGS += --no-print-directory
 
@@ -151,7 +151,15 @@ dist:
 	sha1=$(_ver2);							\
 	test "$$sha1" || { echo "No such revision $(REV)"; exit 1; };	\
 	echo "   DIST   $$tarname.tar.bz2";				\
-	git-tar-tree $$sha1 $$tarname | bzip2 -9 > $$tarname.tar.bz2
+	git-tar-tree $$sha1 $$tarname > $$tarname.tar;			\
+	if test "$(REV)" = HEAD; then					\
+		$(MAKE) doc;						\
+		ln -s . $$tarname;					\
+		tar rf $$tarname.tar $$tarname/Doc/{cmus,cmus-remote}.{1,html};	\
+		rm $$tarname;						\
+	fi;								\
+	bzip2 -9 $$tarname.tar
+
 # }}}
 
 .PHONY: all build install dist tags doc man html install-doc install-man install-html

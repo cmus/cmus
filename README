@@ -1,5 +1,5 @@
 
-                     CMus - C* Music Player
+                     cmus - C* Music Player
 
 	 Copyright 2004-2006 Timo Hirvonen <tihirvon@gmail.com>
 
@@ -10,8 +10,8 @@ Installation
 Configuration
 -------------
 
-  ./configure --help
-  ./configure
+  $ ./configure --help
+  $ ./configure
 
 Before running 'make' verify that all features you want have been
 configured (see lines after 'Configuration:'). You need to install
@@ -24,61 +24,35 @@ installing dependencies you need to run ./configure again, of course.
 If you want to use the Tremor library as alternative for decoding
 Ogg/Vorbis files you have to pass --with-tremor to the configure script:
 
-  ./configure --enable-vorbis --with-tremor
+  $ ./configure --enable-vorbis --with-tremor
 
 The Tremor library is supposed to be used on hardware that has no FPU.
 
 Building
 --------
 
-  make
+  $ make
 
 Or on some BSD systems you need to explicitly use GNU make:
 
-  gmake 
-
-To build man pages (requires asciidoc and xsltproc):
-
-  make man
-
-To build HTML versions of the man pages (requires asciidoc):
-
-  make html
+  $ gmake
 
 Installation
 ------------
 
-  make install
-
-Or to install to a temporary directory:
-
-  make DESTDIR=/tmp/cmus install
-
-This is useful when creating binary packages.
-
-To install man pages:
-
-  make install-man
+  $ make install install-man
 
 To install HTML versions of the man pages:
 
-  make install-html
+  $ make install-html
+
+Or to install to a temporary directory:
+
+  $ make DESTDIR=/tmp/cmus install install-man
+
+This is useful when creating binary packages.
 
 Remember to replace 'make' with 'gmake' if needed.
-
-
-Known Problems
-==============
-
-According to the README file included in libmodplug, it should
-understand following compressed mods:
-
-    zip:  mdz,  s3z,  xmz,  itz
-    rar:  mdr,  s3r,  xmr,  itr
-    gzip: mdgz, s3gz, xmgz, itgz
-
-But I've not been able to play any compressed mods. Uncompressed mods
-play without problems.
 
 
 Mailing List
@@ -97,6 +71,3 @@ Reporting Bugs
 After a crash send bug report with last lines of /tmp/cmus-debug to
 cmus-devel@lists.sourceforge.net.  /tmp/cmus-debug file exists only if
 you configured cmus with maximum debug level (./configure --debug=2).
-
-Also it would be good to know what OS/distribution/kernel you are using,
-so please include output of 'uname -a' command in the bug report.
