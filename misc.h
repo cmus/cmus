@@ -27,6 +27,7 @@ extern const char *home_dir;
 extern const char *user_name;
 
 char **get_words(const char *text);
+int strptrcmp(const void *a, const void *b);
 int misc_init(void);
 
 #endif

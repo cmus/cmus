@@ -27,6 +27,7 @@
 #include <cmus.h>
 #include <list.h>
 #include <prog.h>
+#include <misc.h>
 #include <debug.h>
 #include <config.h>
 
@@ -725,14 +726,6 @@ char *ip_get_error_msg(struct input_plugin *ip, int rc, const char *arg)
 		break;
 	}
 	return xstrdup(buffer);
-}
-
-static int strptrcmp(const void *a, const void *b)
-{
-	const char *as = *(char **)a;
-	const char *bs = *(char **)b;
-
-	return strcmp(as, bs);
 }
 
 char **ip_get_supported_extensions(void)

@@ -70,6 +70,14 @@ char **get_words(const char *text)
 	return words;
 }
 
+int strptrcmp(const void *a, const void *b)
+{
+	const char *as = *(char **)a;
+	const char *bs = *(char **)b;
+
+	return strcmp(as, bs);
+}
+
 static int dir_exists(const char *dirname)
 {
 	DIR *dir;

@@ -44,12 +44,14 @@
 #include <utils.h>
 #include <list.h>
 #include <debug.h>
+#include <config.h>
 
 #include <stdlib.h>
 #include <curses.h>
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <dirent.h>
 #include <pwd.h>
 
 static struct history cmd_history;
@@ -653,6 +655,18 @@ static void cmd_source(char *arg)
 	if (source_file(filename) == -1)
 		error_msg("sourcing %s: %s", filename, strerror(errno));
 	free(filename);
+}
+
+static void cmd_colorscheme(char *arg)
+{
+	char filename[512];
+
+	snprintf(filename, sizeof(filename), "%s/%s.theme", cmus_config_dir, arg);
+	if (source_file(filename) == -1) {
+		snprintf(filename, sizeof(filename), DATADIR "/cmus/%s.theme", arg);
+		if (source_file(filename) == -1)
+			error_msg("sourcing %s: %s", filename, strerror(errno));
+	}
 }
 
 /*
@@ -1928,6 +1942,64 @@ static void expand_toptions(const char *str)
 	}
 }
 
+static void load_themes(const char *dir, const char *str, int *allocp)
+{
+	DIR *d;
+	struct dirent *dirent;
+	int len = strlen(str);
+
+	d = opendir(dir);
+	if (d == NULL)
+		return;
+
+	while ((dirent = readdir(d)) != NULL) {
+		const char *dot, *name = dirent->d_name;
+		char filename[512];
+		struct stat s;
+
+		if (strncmp(name, str, len))
+			continue;
+
+		dot = strrchr(name, '.');
+		if (dot == NULL || strcmp(dot, ".theme"))
+			continue;
+
+		if (dot - name < len) {
+			/* str is  "foo.th"
+			 * matches "foo.theme"
+			 * which also ends with ".theme"
+			 */
+			continue;
+		}
+
+		snprintf(filename, sizeof(filename), "%s/%s", dir, name);
+		if (stat(filename, &s) || !S_ISREG(s.st_mode))
+			continue;
+
+		tabexp.tails = str_array_add(tabexp.tails, allocp, &tabexp.nr_tails,
+				xstrndup(name + len, dot - name - len));
+	}
+	closedir(d);
+}
+
+static void expand_colorscheme(const char *str)
+{
+	int alloc = 0;
+
+	tabexp.nr_tails = 0;
+
+	load_themes(cmus_config_dir, str, &alloc);
+	load_themes(DATADIR "/cmus", str, &alloc);
+
+	if (alloc) {
+		qsort(tabexp.tails, tabexp.nr_tails, sizeof(char *), strptrcmp);
+
+		tabexp.tails[tabexp.nr_tails] = NULL;
+		tabexp.head = xstrdup(str);
+		tabexp.index = 0;
+	}
+}
+
 /* tab exp }}} */
 
 struct command {
@@ -1948,6 +2020,7 @@ static struct command commands[] = {
 	{ "browser-up",		cmd_browser_up,	0, 0, NULL		},
 	{ "cd",			cmd_cd,		0, 1, expand_directories},
 	{ "clear",		cmd_clear,	0, 1, NULL		},
+	{ "colorscheme",	cmd_colorscheme,1, 1, expand_colorscheme},
 	{ "echo",		cmd_echo,	1,-1, NULL		},
 	{ "factivate",		cmd_factivate,	0, 1, expand_factivate	},
 	{ "filter",		cmd_filter,	0, 1, NULL		},
