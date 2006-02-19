@@ -236,7 +236,7 @@ clear playlist
 clear play queue
 
 `colorscheme <name>`::
-Change color scheme.  Color schemes are found in '@DATADIR@/cmus' or '~/.cmus'
+Change color scheme.  Color schemes are found in '/usr/share/cmus' or '~/.cmus'
 and have .theme filename extension.
 
 `echo <arg>...`::
@@ -846,7 +846,7 @@ cmus reads its configuration from 3 different places.
 This is the first file cmus loads.  cmus saves its state on exit to this file
 so you shouldn't edit it.
 
-`@DATADIR@/cmus/rc`::
+`/usr/share/cmus/rc`::
 If the autosave file didn't exist, this file is read instead.
 
 `~/.cmus/rc`::
@@ -857,7 +857,7 @@ This file is not limited to options, it can contain other commands too.
 Color Schemes
 ~~~~~~~~~~~~~
 
-There are some color schemes (*.theme) in '@DATADIR@/cmus'.  You can switch
+There are some color schemes (*.theme) in '/usr/share/cmus'.  You can switch
 them using the `:colorscheme` command.  You can put your own color schemes to
 ~/.cmus.
 
@@ -865,7 +865,7 @@ Examples
 ~~~~~~~~
 
 Example status display script (See `status_display_program` option) can be
-found in '@DATADIR@/doc/cmus/examples'.
+found in '/usr/share/doc/cmus/examples'.
 
 
 BUGS
