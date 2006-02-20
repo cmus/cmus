@@ -31,7 +31,7 @@ $(man1): ASCIIDOC_FLAGS += -b docbook
 	$(call cmd,asciidoc)
 
 install-man:
-	$(INSTALL) -m644 $(datadir)/man/man1 $(man1)
+	$(INSTALL) -m644 $(mandir)/man1 $(man1)
 
 install-html:
 	$(INSTALL) -m644 $(datadir)/doc/cmus $(html)
