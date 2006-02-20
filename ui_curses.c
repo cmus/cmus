@@ -75,7 +75,7 @@ char *pl_filename = NULL;
 /* ------------------------------------------------------------------------- */
 
 /* currently playing file */
-static struct track_info *cur_track_info;
+static struct track_info *cur_track_info = NULL;
 
 static int update_window_title = 0;
 
@@ -1004,47 +1004,19 @@ static void do_update_titleline(void)
 	bkgdset(pairs[CURSED_TITLELINE]);
 	player_info_lock();
 	if (cur_track_info) {
-		const char *filename;
 		int use_alt_format = 0;
-		struct keyval *cur_comments = cur_track_info->comments;
 
-		if (cur_comments[0].key == NULL) {
+		fill_track_fopts_track_info(cur_track_info);
+		if (is_url(cur_track_info->filename)) {
 			const char *title = get_stream_title(player_info.metadata);
 
 			if (title == NULL)
 				use_alt_format = 1;
-			fopt_set_str(&track_fopts[TF_ARTIST], NULL);
-			fopt_set_str(&track_fopts[TF_ALBUM], NULL);
-			fopt_set_int(&track_fopts[TF_DISC], -1, 1);
-			fopt_set_int(&track_fopts[TF_TRACK], -1, 1);
 			fopt_set_str(&track_fopts[TF_TITLE], title);
-			fopt_set_str(&track_fopts[TF_YEAR], NULL);
 		} else {
-			int disc_num, track_num;
+			use_alt_format = !track_info_has_tag(cur_track_info);
+		}
 
-			disc_num = comments_get_int(cur_comments, "discnumber");
-			track_num = comments_get_int(cur_comments, "tracknumber");
-			fopt_set_str(&track_fopts[TF_ARTIST], comments_get_val(cur_comments, "artist"));
-			fopt_set_str(&track_fopts[TF_ALBUM], comments_get_val(cur_comments, "album"));
-			fopt_set_int(&track_fopts[TF_DISC], disc_num, disc_num == -1);
-			fopt_set_int(&track_fopts[TF_TRACK], track_num, track_num == -1);
-			fopt_set_str(&track_fopts[TF_TITLE], comments_get_val(cur_comments, "title"));
-			fopt_set_str(&track_fopts[TF_YEAR], comments_get_val(cur_comments, "date"));
-		}
-		fopt_set_time(&track_fopts[TF_DURATION],
-				cur_track_info->duration,
-				cur_track_info->duration == -1);
-		fopt_set_str(&track_fopts[TF_PATHFILE], cur_track_info->filename);
-		if (is_url(cur_track_info->filename)) {
-			fopt_set_str(&track_fopts[TF_FILE], cur_track_info->filename);
-		} else {
-			filename = strrchr(cur_track_info->filename, '/');
-			if (filename) {
-				fopt_set_str(&track_fopts[TF_FILE], filename + 1);
-			} else {
-				fopt_set_str(&track_fopts[TF_FILE], cur_track_info->filename);
-			}
-		}
 		if (use_alt_format) {
 			format_print(print_buffer, COLS, current_alt_format, track_fopts);
 		} else {
