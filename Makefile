@@ -1,4 +1,4 @@
-all: build
+all: main plugins
 
 include config.mk
 include scripts/lib.mk
@@ -106,14 +106,19 @@ data		= $(wildcard data/*)
 clean		+= *.o *.lo *.so cmus cmus-remote *.html
 distclean	+= config.mk config.h tags
 
-build: cmus cmus-remote $(ip-y) $(op-y)
+main: cmus cmus-remote
+plugins: $(ip-y) $(op-y)
 
-install: build
+install-main: main
 	$(INSTALL) -m755 $(bindir) cmus cmus-remote
-	$(INSTALL) -m755 $(libdir)/cmus/ip $(ip-y)
-	$(INSTALL) -m755 $(libdir)/cmus/op $(op-y)
 	$(INSTALL) -m644 $(datadir)/cmus $(data)
 	$(INSTALL) -m755 $(datadir)/doc/cmus/examples cmus-status-display
+
+install-plugins: plugins
+	$(INSTALL) -m755 $(libdir)/cmus/ip $(ip-y)
+	$(INSTALL) -m755 $(libdir)/cmus/op $(op-y)
+
+install: main plugins install-main install-plugins
 
 tags:
 	exuberant-ctags *.[ch]
@@ -162,7 +167,8 @@ dist:
 
 # }}}
 
-.PHONY: all build install dist tags doc man html install-doc install-man install-html
+.PHONY: all main plugins doc man html dist tags
+.PHONY: install install-main install-plugins install-doc install-man install-html
 
 # If config.mk changes, rebuild all sources that include debug.h
 #
