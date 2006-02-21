@@ -2305,8 +2305,17 @@ void command_mode_ch(uchar ch)
 	case 0x01: // ^A
 		cmdline_move_home();
 		break;
+	case 0x02: // ^B
+		cmdline_move_left();
+		break;
+	case 0x04: // ^D
+		cmdline_delete_ch();
+		break;
 	case 0x05: // ^E
 		cmdline_move_end();
+		break;
+	case 0x06: // ^F
+		cmdline_move_right();
 		break;
 	case 0x03: // ^C
 	case 0x07: // ^G

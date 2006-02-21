@@ -101,6 +101,21 @@ static void backspace(void)
 	}
 }
 
+static void delete(void)
+{
+	/* save old value */
+	int restricted = search_restricted;
+	const char *text;
+
+	cmdline_delete_ch();
+	parse_line(&text, &search_restricted);
+	if (text[0])
+		search_found = search(searchable, text, search_direction, 0);
+
+	/* restore old value */
+	search_restricted = restricted;
+}
+
 void search_mode_ch(uchar ch)
 {
 	const char *text;
@@ -110,8 +125,17 @@ void search_mode_ch(uchar ch)
 	case 0x01: // ^A
 		cmdline_move_home();
 		break;
+	case 0x02: // ^B
+		cmdline_move_left();
+		break;
+	case 0x04: // ^D
+		delete();
+		break;
 	case 0x05: // ^E
 		cmdline_move_end();
+		break;
+	case 0x06: // ^F
+		cmdline_move_right();
 		break;
 	case 0x03: // ^C
 	case 0x07: // ^G
@@ -186,16 +210,7 @@ void search_mode_key(int key)
 
 	switch (key) {
 	case KEY_DC:
-		/* save old value */
-		restricted = search_restricted;
-
-		cmdline_delete_ch();
-		parse_line(&text, &search_restricted);
-		if (text[0])
-			search_found = search(searchable, text, search_direction, 0);
-
-		/* restore old value */
-		search_restricted = restricted;
+		delete();
 		break;
 	case KEY_BACKSPACE:
 		backspace();
