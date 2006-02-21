@@ -233,10 +233,6 @@ static int browser_load(const char *name)
 static GENERIC_ITER_PREV(browser_get_prev, struct browser_entry, node)
 static GENERIC_ITER_NEXT(browser_get_next, struct browser_entry, node)
 
-static void dummy(void *data)
-{
-}
-
 static int browser_search_get_current(void *data, struct iter *iter)
 {
 	return window_get_sel(browser_win, iter);
@@ -267,8 +263,6 @@ static int browser_search_matches(void *data, struct iter *iter, const char *tex
 }
 
 static const struct searchable_ops browser_search_ops = {
-	.lock = dummy,
-	.unlock = dummy,
 	.get_prev = browser_get_prev,
 	.get_next = browser_get_next,
 	.get_current = browser_search_get_current,

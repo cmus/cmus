@@ -50,9 +50,6 @@ static inline void editable_track_to_iter(struct editable *e, struct simple_trac
 	iter->data2 = NULL;
 }
 
-void editable_search_lock(void *data);
-void editable_search_unlock(void *data);
-
 #define editable_lock() cmus_mutex_lock(&editable_mutex)
 #define editable_unlock() cmus_mutex_unlock(&editable_mutex)
 

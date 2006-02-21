@@ -1,30 +1,26 @@
 /* 
- * Copyright 2005 Timo Hirvonen
- * 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
- * 02111-1307, USA.
+ * Copyright Timo Hirvonen
  */
 
-#include <search.h>
-#include <xmalloc.h>
+#include "search.h"
+#include "editable.h"
+#include "xmalloc.h"
 
 struct searchable {
 	void *data;
 	struct iter head;
 	struct searchable_ops ops;
 };
+
+static void search_lock(void)
+{
+	editable_lock();
+}
+
+static void search_unlock(void)
+{
+	editable_unlock();
+}
 
 /* returns next matching track (can be current!) or NULL if not found */
 static int do_search(struct searchable *s, struct iter *iter, const char *text, int direction)
@@ -63,7 +59,7 @@ int search(struct searchable *s, const char *text, enum search_direction dir, in
 	struct iter iter;
 	int ret;
 
-	s->ops.lock(s->data);
+	search_lock();
 	if (beginning) {
 		/* first or last item */
 		iter = s->head;
@@ -78,7 +74,7 @@ int search(struct searchable *s, const char *text, enum search_direction dir, in
 	}
 	if (ret)
 		ret = do_search(s, &iter, text, dir);
-	s->ops.unlock(s->data);
+	search_unlock();
 	return ret;
 }
 
@@ -87,9 +83,9 @@ int search_next(struct searchable *s, const char *text, enum search_direction di
 	struct iter iter;
 	int ret;
 
-	s->ops.lock(s->data);
+	search_lock();
 	if (!s->ops.get_current(s->data, &iter)) {
-		s->ops.unlock(s->data);
+		search_unlock();
 		return 0;
 	}
 	if (dir == SEARCH_FORWARD) {
@@ -99,6 +95,6 @@ int search_next(struct searchable *s, const char *text, enum search_direction di
 	}
 	if (ret)
 		ret = do_search(s, &iter, text, dir);
-	s->ops.unlock(s->data);
+	search_unlock();
 	return ret;
 }

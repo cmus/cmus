@@ -279,8 +279,6 @@ static int tree_search_matches(void *data, struct iter *iter, const char *text)
 }
 
 static const struct searchable_ops tree_search_ops = {
-	.lock = editable_search_lock,
-	.unlock = editable_search_unlock,
 	.get_prev = tree_search_get_prev,
 	.get_next = tree_search_get_next,
 	.get_current = tree_search_get_current,

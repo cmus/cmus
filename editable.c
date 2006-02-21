@@ -14,19 +14,7 @@
 
 pthread_mutex_t editable_mutex = CMUS_MUTEX_INITIALIZER;
 
-void editable_search_lock(void *data)
-{
-	editable_lock();
-}
-
-void editable_search_unlock(void *data)
-{
-	editable_unlock();
-}
-
 static const struct searchable_ops simple_search_ops = {
-	.lock = editable_search_lock,
-	.unlock = editable_search_unlock,
 	.get_prev = simple_track_get_prev,
 	.get_next = simple_track_get_next,
 	.get_current = simple_track_search_get_current,

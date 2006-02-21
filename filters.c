@@ -32,10 +32,6 @@ static inline void filter_entry_to_iter(struct filter_entry *e, struct iter *ite
 static GENERIC_ITER_PREV(filters_get_prev, struct filter_entry, node)
 static GENERIC_ITER_NEXT(filters_get_next, struct filter_entry, node)
 
-static void dummy(void *data)
-{
-}
-
 static int filters_search_get_current(void *data, struct iter *iter)
 {
 	return window_get_sel(filters_win, iter);
@@ -66,8 +62,6 @@ static int filters_search_matches(void *data, struct iter *iter, const char *tex
 }
 
 static const struct searchable_ops filters_search_ops = {
-	.lock = dummy,
-	.unlock = dummy,
 	.get_prev = filters_get_prev,
 	.get_next = filters_get_next,
 	.get_current = filters_search_get_current,

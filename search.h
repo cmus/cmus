@@ -25,8 +25,6 @@
 enum search_direction { SEARCH_FORWARD, SEARCH_BACKWARD };
 
 struct searchable_ops {
-	void (*lock)(void *data);
-	void (*unlock)(void *data);
 	int (*get_prev)(struct iter *iter);
 	int (*get_next)(struct iter *iter);
 	int (*get_current)(void *data, struct iter *iter);
