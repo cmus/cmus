@@ -107,6 +107,12 @@ void search_mode_ch(uchar ch)
 	int restricted;
 
 	switch (ch) {
+	case 0x01: // ^A
+		cmdline_move_home();
+		break;
+	case 0x05: // ^E
+		cmdline_move_end();
+		break;
 	case 0x03: // ^C
 	case 0x07: // ^G
 	case 0x1B: // ESC
@@ -140,6 +146,9 @@ void search_mode_ch(uchar ch)
 		if (!search_found)
 			search_not_found();
 		input_mode = NORMAL_MODE;
+		break;
+	case 0x0B:
+		cmdline_clear_end();
 		break;
 	case 127:
 		backspace();

@@ -34,6 +34,7 @@ void cmdline_backspace(void);
 void cmdline_delete_ch(void);
 void cmdline_set_text(const char *text);
 void cmdline_clear(void);
+void cmdline_clear_end(void);
 void cmdline_move_left(void);
 void cmdline_move_right(void);
 void cmdline_move_home(void);

@@ -115,6 +115,14 @@ void cmdline_clear(void)
 	cmdline.line[0] = 0;
 }
 
+void cmdline_clear_end(void)
+{
+	cmdline.line[cmdline.bpos] = 0;
+
+	cmdline.clen = u_strlen(cmdline.line);
+	cmdline.blen = strlen(cmdline.line);
+}
+
 void cmdline_move_left(void)
 {
 	SANITY_CHECK();
