@@ -455,64 +455,45 @@ static int read_all(int fd, char *buf, size_t size)
 	return 0;
 }
 
-/* (.*).+   = .+
- * (RX)     = Remix
- * (CR)     = Cover
- * ([0-9]+) = genres[id]
- *
- */
-static char *parse_genre(char *str)
+static char *parse_genre(const char *str)
 {
-	char *id, *s;
-	int i;
+	int parenthesis = 0;
+	long int idx;
+	char *end;
 
-	if (*str != '(')
-		return str;
-
-	id = str + 1;
-	s = strchr(id, ')');
-	if (s == NULL) {
-		/* ([^)]* */
-		return str;
-	}
-
-	if (s == id) {
-		/* ().* */
-		return str;
-	}
-
-	if (s[1]) {
-		/* (.+)GENRE => GENRE */
-		s = xstrdup(s + 1);
-		free(str);
-		return s;
-	}
-
-	/* (.+) */
-	if (strncmp(id, "RX", s - id) == 0) {
-		free(str);
+	if (strncasecmp(str, "(RX", 3) == 0)
 		return xstrdup("Remix");
-	}
-	if (strncmp(id, "CR", s - id) == 0) {
-		free(str);
+
+	if (strncasecmp(str, "(CR", 3) == 0)
 		return xstrdup("Cover");
+
+	if (*str == '(') {
+		parenthesis = 1;
+		str++;
 	}
 
-	i = 0;
-	while (id < s) {
-		char ch = *id++;
-
-		if (ch < '0')
-			return str;
-		if (ch > '9')
-			return str;
-		i *= 10;
-		i += ch - '0';
+	idx = strtol(str, &end, 10);
+	if (str != end) {
+		/* Number parsed but there may be some crap after the number.
+		 * I don't care, ID3v2 by definition contains crap.
+		 */
+		if (idx >= 0 && idx < NR_GENRES)
+			return xstrdup(genres[idx]);
 	}
-	if (i >= NR_GENRES)
-		return str;
-	free(str);
-	return xstrdup(genres[i]);
+
+	if (parenthesis) {
+		const char *ptr = strchr(str, ')');
+
+		if (ptr && ptr[1]) {
+			/* genre name after random crap in parenthesis,
+			 * return the genre name */
+			return xstrdup(ptr + 1);
+		}
+		str--;
+	}
+
+	/* random crap, just return it and wait for a bug report */
+	return xstrdup(str);
 }
 
 /* http://www.id3.org/id3v2.4.0-structure.txt */
@@ -592,8 +573,12 @@ static void v2_add_frame(ID3 *id3, struct v2_frame_header *fh, const char *buf)
 		if (key == ID3_TRACK || key == ID3_DISC)
 			fix_track_or_disc(out);
 		if (key == ID3_GENRE) {
+			char *tmp;
+
 			id3_debug("genre before: '%s'\n", out);
-			out = parse_genre(out);
+			tmp = parse_genre(out);
+			free(out);
+			out = tmp;
 		}
 		free(id3->v2[key]);
 		id3->v2[key] = out;
