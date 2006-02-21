@@ -24,7 +24,6 @@ struct tabexp {
 	char *head;
 	char **tails;
 	int nr_tails;
-	int index;
 };
 
 extern struct tabexp tabexp;

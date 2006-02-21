@@ -130,7 +130,6 @@ static void tabexp_load_dir(const char *dir, const char *start)
 	tabexp.head = xstrdup(dir);
 	tabexp.tails = ptrs;
 	tabexp.nr_tails = nr_ptrs;
-	tabexp.index = 0;
 }
 
 void expand_files_and_dirs(const char *src)
@@ -158,7 +157,6 @@ void expand_files_and_dirs(const char *src)
 			if (home) {
 				tabexp.head = xstrdup("");
 				tabexp.nr_tails = 1;
-				tabexp.index = 0;
 				tabexp.tails = xnew(char *, 2);
 				tabexp.tails[0] = home;
 				tabexp.tails[1] = NULL;

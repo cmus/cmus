@@ -24,7 +24,14 @@
 
 #include <stdlib.h>
 
-struct tabexp tabexp = { NULL, NULL, 0, -1 };
+struct tabexp tabexp = {
+	.head = NULL,
+	.tails = NULL,
+	.nr_tails = 0,
+};
+
+/* index to tabexp.tails */
+static int tabexp_index = 0;
 
 char *tabexp_expand(const char *src, void (*load_matches)(const char *src))
 {
@@ -32,25 +39,24 @@ char *tabexp_expand(const char *src, void (*load_matches)(const char *src))
 		char *expanded;
 
 		load_matches(src);
+
 		if (tabexp.tails == NULL) {
 			BUG_ON(tabexp.head != NULL);
 			BUG_ON(tabexp.nr_tails != 0);
-			BUG_ON(tabexp.index != -1);
 			return NULL;
 		}
 
 		BUG_ON(tabexp.head == NULL);
 		BUG_ON(tabexp.nr_tails < 1);
-		BUG_ON(tabexp.index != 0);
 
-		expanded = xstrjoin(tabexp.head, tabexp.tails[tabexp.index]);
+		expanded = xstrjoin(tabexp.head, tabexp.tails[0]);
 		if (tabexp.nr_tails == 1)
 			tabexp_reset();
 		return expanded;
 	} else {
-		tabexp.index++;
-		tabexp.index %= tabexp.nr_tails;
-		return xstrjoin(tabexp.head, tabexp.tails[tabexp.index]);
+		tabexp_index++;
+		tabexp_index %= tabexp.nr_tails;
+		return xstrjoin(tabexp.head, tabexp.tails[tabexp_index]);
 	}
 }
 
@@ -65,5 +71,6 @@ void tabexp_reset(void)
 	tabexp.tails = NULL;
 	tabexp.head = NULL;
 	tabexp.nr_tails = 0;
-	tabexp.index = -1;
+
+	tabexp_index = 0;
 }
