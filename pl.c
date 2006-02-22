@@ -16,6 +16,9 @@ static void pl_free_track(struct list_head *item)
 {
 	struct simple_track *track = to_simple_track(item);
 
+	if (track == pl_cur_track)
+		pl_cur_track = NULL;
+
 	list_del(&((struct shuffle_track *)track)->node);
 	track_info_unref(track->info);
 	free(track);
