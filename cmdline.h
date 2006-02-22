@@ -31,6 +31,7 @@ extern struct cmdline cmdline;
 void cmdline_init(void);
 void cmdline_insert_ch(uchar ch);
 void cmdline_backspace(void);
+void cmdline_backspace_to_bol(void);
 void cmdline_delete_ch(void);
 void cmdline_set_text(const char *text);
 void cmdline_clear(void);

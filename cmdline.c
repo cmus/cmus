@@ -71,6 +71,12 @@ void cmdline_backspace(void)
 	cmdline.clen--;
 }
 
+void cmdline_backspace_to_bol(void)
+{
+	while (cmdline.bpos)
+		cmdline_backspace();
+}
+
 void cmdline_delete_ch(void)
 {
 	uchar ch;
