@@ -52,7 +52,7 @@ static inline void browser_entry_to_iter(struct browser_entry *e, struct iter *i
 }
 
 /* filter out names starting with '.' except '..' */
-static int normal_filter(const char *name, const struct stat *s, void *data)
+static int normal_filter(const char *name, const struct stat *s)
 {
 	const char *ext;
 	int i;
@@ -76,7 +76,7 @@ static int normal_filter(const char *name, const struct stat *s, void *data)
 }
 
 /* filter out '.' */
-static int hidden_filter(const char *name, const struct stat *s, void *data)
+static int hidden_filter(const char *name, const struct stat *s)
 {
 	if (name[0] == '.' && name[1] == 0)
 		return 0;
@@ -180,15 +180,15 @@ static int do_browser_load(const char *name)
 		}
 	} else if (S_ISDIR(st.st_mode)) {
 		char **names;
-		int count, i, rc;
+		int count, i;
 
 		if (show_hidden) {
-			rc = load_dir(name, &names, &count, 1, hidden_filter, name_compare, NULL);
+			count = load_dir(name, &names, hidden_filter, name_compare);
 		} else {
-			rc = load_dir(name, &names, &count, 1, normal_filter, name_compare, NULL);
+			count = load_dir(name, &names, normal_filter, name_compare);
 		}
-		if (rc)
-			return rc;
+		if (count == -1)
+			return -1;
 
 		free_browser_list();
 		for (i = 0; i < count; i++) {

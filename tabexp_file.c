@@ -84,9 +84,10 @@ static int strptrcmp(const void *a, const void *b)
 	return strcmp(as, bs);
 }
 
-static int filter(const char *name, const struct stat *s, void *data)
+static const char *starting_with;
+
+static int filter(const char *name, const struct stat *s)
 {
-	const char *starting_with = data;
 	int len = strlen(starting_with);
 
 	if (len == 0) {
@@ -107,8 +108,8 @@ static int filter(const char *name, const struct stat *s, void *data)
  */
 static void tabexp_load_dir(const char *dir, const char *start)
 {
-	char **ptrs;
-	int nr_ptrs, rc;
+	char **names;
+	int count;
 	char *full_dir_name;
 
 	/* tabexp is resetted */
@@ -116,20 +117,17 @@ static void tabexp_load_dir(const char *dir, const char *start)
 	if (full_dir_name == NULL)
 		return;
 
-	rc = load_dir(full_dir_name, &ptrs, &nr_ptrs, 1, filter, strptrcmp, (void *)start);
+	starting_with = start;
+	count = load_dir(full_dir_name, &names, filter, strptrcmp);
 	free(full_dir_name);
-	if (rc) {
-		/* opendir failed, usually permission denied */
-		return;
-	}
-	if (nr_ptrs == 0) {
-		/* no matches */
+	if (count <= 0) {
+		/* opendir failed or no matches */
 		return;
 	}
 
 	tabexp.head = xstrdup(dir);
-	tabexp.tails = ptrs;
-	tabexp.nr_tails = nr_ptrs;
+	tabexp.tails = names;
+	tabexp.nr_tails = count;
 }
 
 void expand_files_and_dirs(const char *src)
