@@ -1886,7 +1886,6 @@ static const char *usage =
 "      --version       " VERSION "\n"
 "\n"
 "Use cmus-remote to control cmus from command line.\n"
-"Documentation: " DATADIR "/doc/" PACKAGE "/cmus.html\n"
 "Report bugs to <" PACKAGE_BUGREPORT ">.\n";
 
 int main(int argc, char *argv[])
