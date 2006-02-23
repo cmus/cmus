@@ -3,7 +3,7 @@
 . scripts/configure.sh || exit 1
 
 PACKAGE="cmus"
-VERSION="1.6.8"
+VERSION="2.0.0"
 PACKAGE_BUGREPORT="cmus-devel@lists.sourceforge.net"
 
 check_ncurses()
