@@ -36,11 +36,10 @@ Display usage information and exit.
 Display version information and exit.
 
 
-GENERAL USAGE
--------------
+VIEWS
+-----
 
-Views
-~~~~~
+There are 6 views in cmus.  Press keys 1-6 to change active view.
 
 Library view (1)::
 Display all tracks in so-called 'library'. Tracks are sorted artist/album tree.
@@ -64,7 +63,7 @@ playlist or queue from the filesystem.
 Filters view (6)::
 Lists user defined filters.
 
-Command Line
+COMMAND LINE
 ------------
 
 Everything in cmus is implemented as commands which can be typed at command
@@ -91,7 +90,7 @@ Examples::
 ----
 
 
-Searching
+SEARCHING
 ---------
 
 Search mode works like the command mode, to enter search mode press '/' and
@@ -107,7 +106,7 @@ without path.
 In view 5 words are compared to filename without path.
 
 
-Playlist Editing
+PLAYLIST EDITING
 ----------------
 
 Selecting Tracks
@@ -653,7 +652,9 @@ Play in shuffled order.  Shuffle works in the library views (1-2) and playlist
 view (3).
 
 `status_display_program` () [command]::
-This command, if set, is run every time cmus' status changes.
+This command, if not empty, is run every time cmus' status changes.  It can be
+used to display currently playing track on desktop background or panel for
+example.  See '/usr/share/doc/cmus/examples/cmus-status-display'.
 
 [[color]]
 Colors
@@ -748,7 +749,7 @@ experience buffer under-runs.
 Output driver for libao plugin.  Example values: "alsa09", "esd", "irix",
 "oss", "sun", "aixs", "wav".
 
-NOTE: of the file output drivers only "wav" is supported".
+NOTE: of the file output drivers only "wav" is supported.
 
 `dsp.ao.wav_counter`::
 Counter used for making filename.  Used only if `dsp.ao.driver` is "wav".
@@ -756,7 +757,7 @@ For example if this is 1 and `dsp.ao.wav_dir` is "/home/user" then PCM data is
 outputted to "/home/user/01.wav".  This counter is incremented every time
 playback is stopped.
 
-NOTE: you probably want to set `continue` to `false` (press 'C', otherwise
+NOTE: you probably want to set `continue` to `false` (press 'C'), otherwise
 playback is not stopped between tracks and all PCM data is outputted to one
 wav file (useful if you want to join files).  Also unsetting shuffle and
 repeat might be good idea.
@@ -811,7 +812,7 @@ Comparators: `<`, `<=`, `=`, `>=`, `>`, `!=`
 
 Booleans
 ~~~~~~~~
-`tag` (true if track has tags), `stream` (true if track is stream)
+`tag` (true if track has tags), `stream` (true if track is a stream)
 
 Defining Filters
 ~~~~~~~~~~~~~~~~
@@ -879,16 +880,16 @@ Feature requests and bug reports should go to the cmus-devel mailing list:
 http://lists.sourceforge.net/lists/listinfo/cmus-devel[]
 
 
+SEE ALSO
+--------
+manlink:cmus-remote[1]
+
+
 AUTHORS
 -------
 
-cmus is mainly written by Timo Hirvonen <tihirvon@gmail.com>.  Other
+cmus was mainly written by Timo Hirvonen <tihirvon@gmail.com>.  Other
 contributers are listed in the 'AUTHORS' file.
-
-
-Documentation
-~~~~~~~~~~~~~
 
 This man page was written by Frank Terbeck <frank.terbeck@rwth-aachen.de>,
 Timo Hirvonen <tihirvon@gmail.com>, and Clay Barnes <clay.barnes@gmail.com>.
-
