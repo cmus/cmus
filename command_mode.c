@@ -1143,7 +1143,11 @@ static void cmd_p_pause(char *arg)
 
 static void cmd_p_play(char *arg)
 {
-	player_play();
+	if (arg) {
+		player_play_file(arg);
+	} else {
+		player_play();
+	}
 }
 
 static void cmd_p_prev(char *arg)
@@ -2017,7 +2021,7 @@ static struct command commands[] = {
 	{ "mark",		cmd_mark,	0, 1, NULL		},
 	{ "player-next",	cmd_p_next,	0, 0, NULL		},
 	{ "player-pause",	cmd_p_pause,	0, 0, NULL		},
-	{ "player-play",	cmd_p_play,	0, 0, NULL		},
+	{ "player-play",	cmd_p_play,	0, 1, expand_files	},
 	{ "player-prev",	cmd_p_prev,	0, 0, NULL		},
 	{ "player-stop",	cmd_p_stop,	0, 0, NULL		},
 	{ "quit",		cmd_quit,	0, 0, NULL		},
