@@ -67,8 +67,6 @@ struct searchable *searchable;
 /* display parse errors? (command line) */
 int display_errors = 0;
 
-char *lib_autosave_filename;
-char *pl_autosave_filename;
 char *lib_filename = NULL;
 char *pl_filename = NULL;
 
@@ -80,6 +78,8 @@ static struct track_info *cur_track_info = NULL;
 static int update_window_title = 0;
 
 static int running = 1;
+static char *lib_autosave_filename;
+static char *pl_autosave_filename;
 
 /* shown error message and time stamp
  * error is cleared if it is older than 3s and key was pressed
@@ -719,13 +719,13 @@ static void update_editable_window(struct editable *e, const char *title, const 
 static void update_sorted_window(void)
 {
 	current_track = (struct simple_track *)lib_cur_track;
-	update_editable_window(&lib_editable, "Library", lib_filename ? lib_filename : lib_autosave_filename);
+	update_editable_window(&lib_editable, "Library", lib_filename);
 }
 
 static void update_pl_window(void)
 {
 	current_track = pl_cur_track;
-	update_editable_window(&pl_editable, "Playlist", pl_filename ? pl_filename : pl_autosave_filename);
+	update_editable_window(&pl_editable, "Playlist", pl_filename);
 }
 
 static void update_play_queue_window(void)
@@ -1829,6 +1829,9 @@ static void init_all(void)
 
 	lib_autosave_filename = xstrjoin(cmus_config_dir, "/lib.pl");
 	pl_autosave_filename = xstrjoin(cmus_config_dir, "/playlist.pl");
+	pl_filename = xstrdup(pl_autosave_filename);
+	lib_filename = xstrdup(lib_autosave_filename);
+
 	cmus_add(lib_add_track, lib_autosave_filename, FILE_TYPE_PL, JOB_TYPE_LIB);
 	cmus_add(pl_add_track, pl_autosave_filename, FILE_TYPE_PL, JOB_TYPE_PL);
 

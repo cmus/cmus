@@ -232,23 +232,16 @@ void view_load(int view, char *arg)
 	}
 }
 
-static void do_save(for_each_ti_cb for_each_ti, const char *given,
-		char **filenamep, const char *autosave)
+static void do_save(for_each_ti_cb for_each_ti, const char *arg, char **filenamep)
 {
 	char *filename = *filenamep;
 
-	if (given == NULL) {
-		/* no argument given, use old filename */
-		if (filename == NULL) {
-			/* filename not yet set, use default filename (autosave) */
-			filename = xstrdup(autosave);
-		}
-	} else {
-		/* argument given, set new filename */
+	if (arg) {
 		free(filename);
-		filename = xstrdup(given);
+		filename = xstrdup(arg);
+		*filenamep = filename;
 	}
-	*filenamep = filename;
+
 	editable_lock();
 	if (cmus_save(for_each_ti, filename) == -1)
 		error_msg("saving '%s': %s", filename, strerror(errno));
@@ -268,10 +261,10 @@ void view_save(int view, char *arg)
 	switch (view) {
 	case TREE_VIEW:
 	case SORTED_VIEW:
-		do_save(lib_for_each, arg, &lib_filename, lib_autosave_filename);
+		do_save(lib_for_each, arg, &lib_filename);
 		break;
 	case PLAYLIST_VIEW:
-		do_save(pl_for_each, arg, &pl_filename, pl_autosave_filename);
+		do_save(pl_for_each, arg, &pl_filename);
 		break;
 	default:
 		info_msg(":save only works in views 1 & 2 (library) and 3 (playlist)");

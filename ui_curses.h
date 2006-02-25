@@ -35,11 +35,6 @@ extern int cur_view;
 extern struct searchable *searchable;
 extern int display_errors;
 
-/* usually ~/.config/cmus/lib.pl and ~/.config/cmus/playlist.pl */
-extern char *lib_autosave_filename;
-extern char *pl_autosave_filename;
-
-/* current filename given by user */
 extern char *lib_filename;
 extern char *pl_filename;
 
