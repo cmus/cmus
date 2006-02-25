@@ -84,7 +84,6 @@ int cmus_playlist_for_each(const char *buf, int size, int reverse,
 		int (*cb)(void *data, const char *line),
 		void *data);
 
-/* bindable */
 void cmus_next(void);
 void cmus_prev(void);
 

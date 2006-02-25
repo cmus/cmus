@@ -49,7 +49,6 @@ void filters_set_anonymous(const char *val);
 
 void filters_activate_names(const char *str);
 
-/* bindable */
 void filters_activate(void);
 void filters_toggle_filter(void);
 void filters_delete_filter(void);

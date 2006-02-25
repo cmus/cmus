@@ -46,8 +46,6 @@ void info_msg(const char *format, ...) __FORMAT(1, 2);
 void error_msg(const char *format, ...) __FORMAT(1, 2);
 int yes_no_query(const char *format, ...) __FORMAT(1, 2);
 void search_not_found(void);
-
-/* bindable */
 void set_view(int view);
 void enter_command_mode(void);
 void enter_search_mode(void);
