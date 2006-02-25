@@ -284,17 +284,17 @@ void cmus_next(void)
 {
 	struct track_info *info;
 
+	editable_lock();
 	info = play_queue_remove();
-	if (info) {
-		player_set_file(info->filename);
-		track_info_unref(info);
-		return;
+	if (info == NULL) {
+		if (play_library) {
+			info = lib_set_next();
+		} else {
+			info = pl_set_next();
+		}
 	}
-	if (play_library) {
-		info = lib_set_next();
-	} else {
-		info = pl_set_next();
-	}
+	editable_unlock();
+
 	if (info) {
 		player_set_file(info->filename);
 		track_info_unref(info);
@@ -305,11 +305,14 @@ void cmus_prev(void)
 {
 	struct track_info *info;
 
+	editable_lock();
 	if (play_library) {
 		info = lib_set_prev();
 	} else {
 		info = pl_set_prev();
 	}
+	editable_unlock();
+
 	if (info) {
 		player_set_file(info->filename);
 		track_info_unref(info);
