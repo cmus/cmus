@@ -59,6 +59,19 @@ static void send_cmd(const char *format, ...)
 	write_line(buf);
 }
 
+static char *file_url_absolute(const char *str)
+{
+	char *absolute;
+
+	if (strncmp(str, "http://", 7) == 0)
+		return xstrdup(str);
+
+	absolute = path_absolute(str);
+	if (absolute == NULL)
+		die_errno("get_current_dir_name");
+	return absolute;
+}
+
 enum flags {
 	FLAG_SERVER,
 	FLAG_HELP,
@@ -69,6 +82,7 @@ enum flags {
 	FLAG_STOP,
 	FLAG_NEXT,
 	FLAG_PREV,
+	FLAG_FILE,
 	FLAG_REPEAT,
 	FLAG_SHUFFLE,
 	FLAG_VOLUME,
@@ -93,6 +107,7 @@ static struct option options[NR_FLAGS + 1] = {
 	{ 's', "stop", 0 },
 	{ 'n', "next", 0 },
 	{ 'r', "prev", 0 },
+	{ 'f', "file", 1 },
 	{ 'R', "repeat", 0 },
 	{ 'S', "shuffle", 0 },
 	{ 'v', "volume", 1 },
@@ -125,6 +140,7 @@ static const char *usage =
 "  -s, --stop           player-stop\n"
 "  -n, --next           player-next\n"
 "  -r, --prev           player-prev\n"
+"  -f, --file           player-play FILE\n"
 "  -R, --repeat         toggle repeat\n"
 "  -S, --shuffle        toggle shuffle\n"
 "  -v, --volume VOL     vol VOL\n"
@@ -148,6 +164,7 @@ int main(int argc, char *argv[])
 {
 	char server_buf[256];
 	char *server = NULL;
+	char *play_file = NULL;
 	char *volume = NULL;
 	char *seek = NULL;
 	int i, nr_cmds = 0;
@@ -180,6 +197,10 @@ int main(int argc, char *argv[])
 			break;
 		case FLAG_SEEK:
 			seek = arg;
+			nr_cmds++;
+			break;
+		case FLAG_FILE:
+			play_file = arg;
 			nr_cmds++;
 			break;
 		case FLAG_LIBRARY:
@@ -242,17 +263,8 @@ int main(int argc, char *argv[])
 	if (flags[FLAG_CLEAR])
 		send_cmd("clear -%c\n", context);
 	for (i = 0; argv[i]; i++) {
-		char *filename;
+		char *filename = file_url_absolute(argv[i]);
 
-		if (strncmp(argv[i], "http://", 7) == 0) {
-			filename = xstrdup(argv[i]);
-		} else {
-			filename = path_absolute(argv[i]);
-			if (filename == NULL) {
-				warn_errno("get_current_dir_name");
-				continue;
-			}
-		}
 		send_cmd("add -%c %s\n", context, filename);
 		free(filename);
 	}
@@ -270,6 +282,8 @@ int main(int argc, char *argv[])
 		send_cmd("player-play\n");
 	if (flags[FLAG_PAUSE])
 		send_cmd("player-pause\n");
+	if (flags[FLAG_FILE])
+		send_cmd("player-play %s\n", file_url_absolute(play_file));
 	if (volume)
 		send_cmd("vol %s\n", volume);
 	if (seek)
