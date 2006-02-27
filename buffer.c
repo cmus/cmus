@@ -1,0 +1,195 @@
+#include "buffer.h"
+#include "xmalloc.h"
+#include "locking.h"
+#include "debug.h"
+
+/*
+ * chunk can be accessed by either consumer OR producer, not both at same time
+ * -> no need to lock
+ */
+struct chunk {
+	char data[CHUNK_SIZE];
+
+	/* index to data, first filled byte */
+	unsigned int l;
+
+	/* index to data, last filled byte + 1
+	 *
+	 * there are h - l bytes available (filled)
+	 */
+	unsigned int h : 31;
+
+	/* if chunk is marked filled it can only be accessed by consumer
+	 * otherwise only producer is allowed to access the chunk
+	 */
+	unsigned int filled : 1;
+};
+
+unsigned int buffer_nr_chunks;
+
+static pthread_mutex_t buffer_mutex = CMUS_MUTEX_INITIALIZER;
+static struct chunk *buffer_chunks = NULL;
+static unsigned int buffer_ridx;
+static unsigned int buffer_widx;
+
+void buffer_init(void)
+{
+	free(buffer_chunks);
+	buffer_chunks = xnew(struct chunk, buffer_nr_chunks);
+	buffer_reset();
+}
+
+/*
+ * @buf:  the buffer
+ * @rpos: returned pointer to available data
+ * @size: number of bytes available at @rpos
+ *
+ * After reading bytes mark them consumed calling buffer_consume().
+ */
+void buffer_get_rpos(char **rpos, int *size)
+{
+	struct chunk *c;
+
+	cmus_mutex_lock(&buffer_mutex);
+	c = &buffer_chunks[buffer_ridx];
+	if (c->filled) {
+		*size = c->h - c->l;
+		*rpos = c->data + c->l;
+	} else {
+		*size = 0;
+		*rpos = NULL;
+	}
+	cmus_mutex_unlock(&buffer_mutex);
+}
+
+/*
+ * @buf:  the buffer
+ * @wpos: pointer to buffer position where data can be written
+ * @size: how many bytes can be written to @wpos
+ *
+ * If @size == 0 buffer is full otherwise @size is guaranteed to be >=1024.
+ * After writing bytes mark them filled calling buffer_fill().
+ */
+void buffer_get_wpos(char **wpos, int *size)
+{
+	struct chunk *c;
+
+	cmus_mutex_lock(&buffer_mutex);
+	c = &buffer_chunks[buffer_widx];
+	if (c->filled) {
+		*size = 0;
+		*wpos = NULL;
+	} else {
+		*size = CHUNK_SIZE - c->h;
+		*wpos = c->data + c->h;
+	}
+	cmus_mutex_unlock(&buffer_mutex);
+}
+
+/*
+ * @buf:   the buffer
+ * @count: number of bytes consumed
+ */
+void buffer_consume(int count)
+{
+	struct chunk *c;
+
+	BUG_ON(count <= 0);
+	cmus_mutex_lock(&buffer_mutex);
+	c = &buffer_chunks[buffer_ridx];
+	BUG_ON(!c->filled);
+	c->l += count;
+	if (c->l == c->h) {
+		c->l = 0;
+		c->h = 0;
+		c->filled = 0;
+		buffer_ridx++;
+		buffer_ridx %= buffer_nr_chunks;
+	}
+	cmus_mutex_unlock(&buffer_mutex);
+}
+
+/*
+ * @buf:   the buffer
+ * @count: how many bytes were written to the buffer
+ *
+ * chunk is marked filled if free bytes < 1024 or count == 0
+ */
+void buffer_fill(int count)
+{
+	struct chunk *c;
+
+	cmus_mutex_lock(&buffer_mutex);
+	c = &buffer_chunks[buffer_widx];
+	BUG_ON(c->filled);
+	c->h += count;
+
+	if (CHUNK_SIZE - c->h < 1024 || (count == 0 && c->h > 0)) {
+		c->filled = 1;
+		buffer_widx++;
+		buffer_widx %= buffer_nr_chunks;
+	}
+
+	cmus_mutex_unlock(&buffer_mutex);
+}
+
+/*
+ * set buffer empty
+ */
+void buffer_reset(void)
+{
+	int i;
+
+	cmus_mutex_lock(&buffer_mutex);
+	buffer_ridx = 0;
+	buffer_widx = 0;
+	for (i = 0; i < buffer_nr_chunks; i++) {
+		buffer_chunks[i].l = 0;
+		buffer_chunks[i].h = 0;
+		buffer_chunks[i].filled = 0;
+	}
+	cmus_mutex_unlock(&buffer_mutex);
+}
+
+int buffer_get_filled_chunks(void)
+{
+	int c;
+
+	cmus_mutex_lock(&buffer_mutex);
+	if (buffer_ridx < buffer_widx) {
+		/*
+		 * |__##########____|
+		 *    r         w
+		 *
+		 * |############____|
+		 *  r           w
+		 */
+		c = buffer_widx - buffer_ridx;
+	} else if (buffer_ridx > buffer_widx) {
+		/*
+		 * |#######______###|
+		 *         w     r
+		 *
+		 * |_____________###|
+		 *  w            r
+		 */
+		c = buffer_nr_chunks - buffer_ridx + buffer_widx;
+	} else {
+		/*
+		 * |################|
+		 *     r
+		 *     w
+		 *
+		 * |________________|
+		 *     r
+		 *     w
+		 */
+		if (buffer_chunks[buffer_ridx].filled) {
+			c = buffer_nr_chunks;
+		} else {
+			c = 0;
+		}
+	}
+	cmus_mutex_unlock(&buffer_mutex);
+	return c;
+}

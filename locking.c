@@ -3,13 +3,6 @@
 
 #include <string.h>
 
-void cmus_mutex_init(pthread_mutex_t *mutex)
-{
-	int rc = pthread_mutex_init(mutex, NULL);
-	if (rc)
-		BUG("error initializing mutex: %s\n", strerror(rc));
-}
-
 void cmus_mutex_lock(pthread_mutex_t *mutex)
 {
 	int rc = pthread_mutex_lock(mutex);

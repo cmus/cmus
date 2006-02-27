@@ -71,7 +71,6 @@ int player_cont = 1;
 
 static const struct player_callbacks *player_cbs = NULL;
 
-static struct buffer player_buffer;
 static sample_format_t buffer_sf;
 
 static pthread_t producer_thread;
@@ -110,7 +109,7 @@ static int consumer_pos = 0;
 
 static void reset_buffer(void)
 {
-	buffer_reset(&player_buffer);
+	buffer_reset();
 	consumer_pos = 0;
 }
 
@@ -178,8 +177,8 @@ static void player_error(const char *msg)
 	player_info_lock();
 	player_info.status = consumer_status;
 	player_info.pos = 0;
-	player_info.buffer_fill = buffer_get_filled_chunks(&player_buffer);
-	player_info.buffer_size = buffer_get_nr_chunks(&player_buffer);
+	player_info.buffer_fill = buffer_get_filled_chunks();
+	player_info.buffer_size = buffer_nr_chunks;
 	player_info.status_changed = 1;
 
 	free(player_info.error_msg);
@@ -250,7 +249,7 @@ static void __producer_buffer_fill_update(void)
 	int fill;
 
 	player_info_lock();
-	fill = buffer_get_filled_chunks(&player_buffer);
+	fill = buffer_get_filled_chunks();
 	if (fill != player_info.buffer_fill) {
 /* 		d_print("\n"); */
 		player_info.buffer_fill = fill;
@@ -295,8 +294,8 @@ static void __player_status_changed(void)
 	player_info_lock();
 	player_info.status = consumer_status;
 	player_info.pos = pos;
-	player_info.buffer_fill = buffer_get_filled_chunks(&player_buffer);
-	player_info.buffer_size = buffer_get_nr_chunks(&player_buffer);
+	player_info.buffer_fill = buffer_get_filled_chunks();
+	player_info.buffer_size = buffer_nr_chunks;
 	player_info.status_changed = 1;
 	player_info_unlock();
 }
@@ -309,7 +308,7 @@ static void __prebuffer(void)
 
 	BUG_ON(producer_status != PS_PLAYING);
 	if (ip_is_remote(ip)) {
-		limit_chunks = buffer_get_nr_chunks(&player_buffer);
+		limit_chunks = buffer_nr_chunks;
 	} else {
 		int limit_ms, limit_size;
 
@@ -323,8 +322,7 @@ static void __prebuffer(void)
 		int nr_read, size, filled;
 		char *wpos;
 
-/* 		buffer_debug(&player_buffer); */
-		filled = buffer_get_filled_chunks(&player_buffer);
+		filled = buffer_get_filled_chunks();
 /* 		d_print("PREBUF: %2d / %2d\n", filled, limit_chunks); */
 
 		/* not fatal */
@@ -333,7 +331,7 @@ static void __prebuffer(void)
 		if (filled >= limit_chunks)
 			break;
 
-		buffer_get_wpos(&player_buffer, &wpos, &size);
+		buffer_get_wpos(&wpos, &size);
 		nr_read = ip_read(ip, wpos, size);
 		if (nr_read < 0) {
 			if (nr_read == -1 && errno == EAGAIN)
@@ -347,7 +345,7 @@ static void __prebuffer(void)
 			metadata_changed();
 
 		/* buffer_fill with 0 count marks current chunk filled */
-		buffer_fill(&player_buffer, nr_read);
+		buffer_fill(nr_read);
 
 		__producer_buffer_fill_update();
 		if (nr_read == 0) {
@@ -573,7 +571,7 @@ static void *consumer_loop(void *arg)
 				ms_sleep(25);
 				break;
 			}
-			buffer_get_rpos(&player_buffer, &rpos, &size);
+			buffer_get_rpos(&rpos, &size);
 			if (size == 0) {
 				producer_lock();
 				if (producer_status != PS_PLAYING) {
@@ -582,7 +580,7 @@ static void *consumer_loop(void *arg)
 					break;
 				}
 				/* must recheck rpos */
-				buffer_get_rpos(&player_buffer, &rpos, &size);
+				buffer_get_rpos(&rpos, &size);
 				if (size == 0) {
 					/* OK. now it's safe to check if we are at EOF */
 					if (ip_eof(ip)) {
@@ -614,7 +612,7 @@ static void *consumer_loop(void *arg)
 				consumer_unlock();
 				break;
 			}
-			buffer_consume(&player_buffer, rc);
+			buffer_consume(rc);
 			consumer_pos += rc;
 			space -= rc;
 		}
@@ -647,7 +645,7 @@ static void *producer_loop(void *arg)
 			continue;
 		}
 		for (i = 0; ; i++) {
-			buffer_get_wpos(&player_buffer, &wpos, &size);
+			buffer_get_wpos(&wpos, &size);
 			if (size == 0) {
 				/* buffer is full */
 				producer_unlock();
@@ -670,7 +668,7 @@ static void *producer_loop(void *arg)
 				metadata_changed();
 
 			/* buffer_fill with 0 count marks current chunk filled */
-			buffer_fill(&player_buffer, nr_read);
+			buffer_fill(nr_read);
 			if (nr_read == 0) {
 				/* consumer handles EOF */
 				producer_unlock();
@@ -703,7 +701,7 @@ void player_init_plugins(void)
 
 void player_init(const struct player_callbacks *callbacks)
 {
-	int rc, nr_chunks;
+	int rc;
 #if defined(__linux__) || defined(__FreeBSD__)
 	pthread_attr_t attr;
 #endif
@@ -712,8 +710,8 @@ void player_init(const struct player_callbacks *callbacks)
 	/*  1 s is 176400 B (0.168 MB)
 	 * 10 s is 1.68 MB
 	 */
-	nr_chunks = 10 * 44100 * 16 / 8 * 2 / CHUNK_SIZE;
-	buffer_init(&player_buffer, nr_chunks);
+	buffer_nr_chunks = 10 * 44100 * 16 / 8 * 2 / CHUNK_SIZE;
+	buffer_init();
 
 	player_cbs = callbacks;
 
@@ -766,7 +764,6 @@ void player_exit(void)
 	BUG_ON(rc);
 
 	op_exit_plugins();
-	buffer_free(&player_buffer);
 }
 
 void player_stop(void)
@@ -1054,19 +1051,17 @@ void player_set_buffer_chunks(unsigned int nr_chunks)
 	player_lock();
 	__producer_stop();
 	__consumer_stop();
-	buffer_resize(&player_buffer, nr_chunks);
+
+	buffer_nr_chunks = nr_chunks;
+	buffer_init();
+
 	__player_status_changed();
 	player_unlock();
 }
 
 int player_get_buffer_chunks(void)
 {
-	int nr_chunks;
-
-	player_lock();
-	nr_chunks = player_buffer.nr_chunks;
-	player_unlock();
-	return nr_chunks;
+	return buffer_nr_chunks;
 }
 
 int player_get_fileinfo(const char *filename, int *duration,

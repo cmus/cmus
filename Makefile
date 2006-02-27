@@ -7,7 +7,7 @@ CFLAGS	+= -I. -g
 
 # programs {{{
 cmus-y := \
-	browser.o cmdline.o cmus.o command_mode.o comment.o \
+	browser.o buffer.o cmdline.o cmus.o command_mode.o comment.o \
 	db.o debug.o editable.o expr.o filters.o \
 	format_print.o glob.o history.o http.o input.o \
 	keys.o lib.o load_dir.o locking.o mergesort.o misc.o options.o \
