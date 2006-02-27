@@ -17,8 +17,6 @@
 #include <stdarg.h>
 #include <limits.h>
 
-/* #define DEBUG_EXPR */
-
 enum token_type {
 	/* speacial chars */
 	TOK_NOT,
@@ -69,46 +67,6 @@ static const char * const expr_names[NR_EXPRS] = {
 
 static char error_buf[64] = { 0, };
 
-#ifdef DEBUG_EXPR
-#define CHECK_EXPR(e)							\
-do {									\
-	BUG_ON(e->type < 0);						\
-	BUG_ON(e->type >= NR_EXPRS);					\
-	switch (e->type) {						\
-	case EXPR_AND:							\
-	case EXPR_OR:							\
-		BUG_ON(e->left == NULL);				\
-		BUG_ON(e->right == NULL);				\
-		BUG_ON(e->key);						\
-		break;							\
-	case EXPR_NOT:							\
-		BUG_ON(e->left == NULL);				\
-		BUG_ON(e->right);					\
-		BUG_ON(e->key);						\
-		break;							\
-	case EXPR_STR:							\
-		BUG_ON(e->left);					\
-		BUG_ON(e->right);					\
-		BUG_ON(e->key == NULL);					\
-		BUG_ON(e->estr.op != SOP_EQ && e->estr.op != SOP_NE);	\
-		break;							\
-	case EXPR_INT:							\
-		BUG_ON(e->left);					\
-		BUG_ON(e->right);					\
-		BUG_ON(e->key == NULL);					\
-		BUG_ON(e->eint.op < 0);					\
-		BUG_ON(e->eint.op >= NR_OPS);				\
-		break;							\
-	case EXPR_BOOL:							\
-		BUG_ON(e->left);					\
-		BUG_ON(e->right);					\
-		BUG_ON(e->key == NULL);					\
-		break;							\
-	}								\
-} while (0)
-#else
-#define CHECK_EXPR(e) do { } while (0)
-#endif
 
 static void set_error(const char *format, ...)
 {
@@ -354,7 +312,6 @@ static void add(struct expr **rootp, struct expr *expr)
 {
 	struct expr *tmp, *root = *rootp;
 
-	BUG_ON(expr == NULL);
 	if (root == NULL) {
 		*rootp = expr;
 		return;
@@ -537,7 +494,6 @@ int expr_eval(struct expr *expr, struct track_info *ti)
 	enum expr_type type = expr->type;
 	const char *key;
 
-	CHECK_EXPR(expr);
 	if (expr->left) {
 		int left = expr_eval(expr->left, ti);
 

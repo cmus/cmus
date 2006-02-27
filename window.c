@@ -165,7 +165,7 @@ void window_changed(struct window *win)
 		if (!win->get_next(&iter)) {
 			/* sel < top, scroll up until top == sel */
 			while (!iters_equal(&win->top, &win->sel))
-				BUG_ON(!win->get_prev(&win->top));
+				win->get_prev(&win->top);
 			goto minimize;
 		}
 		delta++;
@@ -240,9 +240,7 @@ void window_set_sel(struct window *win, struct iter *iter)
 	int sel_nr, top_nr;
 	struct iter tmp;
 
-	BUG_ON(iter_is_null(&win->head));
 	BUG_ON(iter_is_empty(&win->top));
-	BUG_ON(iter_is_empty(&win->sel));
 	BUG_ON(iter_is_empty(iter));
 	BUG_ON(iter->data0 != win->head.data0);
 
@@ -254,7 +252,7 @@ void window_set_sel(struct window *win, struct iter *iter)
 	win->get_next(&tmp);
 	top_nr = 0;
 	while (!iters_equal(&tmp, &win->top)) {
-		BUG_ON(!win->get_next(&tmp));
+		win->get_next(&tmp);
 		top_nr++;
 	}
 
@@ -269,7 +267,7 @@ void window_set_sel(struct window *win, struct iter *iter)
 	if (sel_nr < top_nr)
 		win->top = win->sel;
 	while (sel_nr - top_nr >= win->nr_rows) {
-		BUG_ON(!win->get_next(&win->top));
+		win->get_next(&win->top);
 		top_nr++;
 	}
 	sel_changed(win);

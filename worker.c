@@ -103,9 +103,6 @@ void worker_add_job(int type, void (*cb)(void *data), void *data)
 {
 	struct worker_job *job;
 
-	BUG_ON(type == 0);
-	BUG_ON(cb == NULL);
-
 	job = xnew(struct worker_job, 1);
 	job->type = type;
 	job->cb = cb;
@@ -119,8 +116,6 @@ void worker_add_job(int type, void (*cb)(void *data), void *data)
 void worker_remove_jobs(int type)
 {
 	struct list_head *item;
-
-	BUG_ON(type == JOB_TYPE_NONE);
 
 	worker_lock();
 	cancel_type = type;

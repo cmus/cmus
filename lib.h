@@ -103,19 +103,16 @@ void sorted_sel_current(void);
 
 static inline struct tree_track *iter_to_sorted_track(const struct iter *iter)
 {
-	BUG_ON(iter->data0 != &lib_editable.head);
 	return iter->data1;
 }
 
 static inline struct artist *iter_to_artist(const struct iter *iter)
 {
-	BUG_ON(iter->data0 != &lib_artist_head);
 	return iter->data1;
 }
 
 static inline struct album *iter_to_album(const struct iter *iter)
 {
-	BUG_ON(iter->data0 != &lib_artist_head);
 	return iter->data2;
 }
 

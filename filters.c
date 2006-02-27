@@ -12,7 +12,6 @@
 #include <file.h>
 #include <ui_curses.h>
 #include <xmalloc.h>
-#include <debug.h>
 
 #include <ctype.h>
 
@@ -201,7 +200,6 @@ static int select_filter(const char *name)
 {
 	struct filter_entry *e = find_filter(name);
 
-	BUG_ON(e == NULL);
 	e->selected = 1;
 	return 0;
 }

@@ -6,17 +6,8 @@
 
 #include <uchar.h>
 #include <xmalloc.h>
-#include <debug.h>
 
 struct cmdline cmdline;
-
-#define SANITY_CHECK() \
-	do { \
-		BUG_ON(cmdline.bpos > cmdline.blen); \
-		BUG_ON(cmdline.bpos < 0); \
-		BUG_ON(cmdline.cpos < 0); \
-	} while (0)
-
 
 void cmdline_init(void)
 {
@@ -32,8 +23,6 @@ void cmdline_init(void)
 void cmdline_insert_ch(uchar ch)
 {
 	int size;
-
-	SANITY_CHECK();
 
 	size = u_char_size(ch);
 	if (cmdline.blen + size > cmdline.size) {
@@ -52,8 +41,6 @@ void cmdline_insert_ch(uchar ch)
 void cmdline_backspace(void)
 {
 	int bpos, size;
-
-	SANITY_CHECK();
 
 	if (cmdline.bpos == 0)
 		return;
@@ -81,8 +68,6 @@ void cmdline_delete_ch(void)
 {
 	uchar ch;
 	int size, bpos;
-
-	SANITY_CHECK();
 
 	if (cmdline.bpos == cmdline.blen)
 		return;
@@ -131,8 +116,6 @@ void cmdline_clear_end(void)
 
 void cmdline_move_left(void)
 {
-	SANITY_CHECK();
-
 	if (cmdline.bpos > 0) {
 		cmdline.cpos--;
 		u_prev_char_pos(cmdline.line, &cmdline.bpos);
@@ -141,8 +124,6 @@ void cmdline_move_left(void)
 
 void cmdline_move_right(void)
 {
-	SANITY_CHECK();
-
 	if (cmdline.bpos < cmdline.blen) {
 		uchar ch;
 
@@ -153,16 +134,12 @@ void cmdline_move_right(void)
 
 void cmdline_move_home(void)
 {
-	SANITY_CHECK();
-
 	cmdline.cpos = 0;
 	cmdline.bpos = 0;
 }
 
 void cmdline_move_end(void)
 {
-	SANITY_CHECK();
-
 	cmdline.cpos = cmdline.clen;
 	cmdline.bpos = cmdline.blen;
 }
