@@ -6,6 +6,10 @@
 #include <string.h>
 #include <ctype.h>
 
+static int width;
+static int align_left;
+static int pad;
+
 static int numlen(int num)
 {
 	int digits;
@@ -20,7 +24,7 @@ static int numlen(int num)
 	return digits;
 }
 
-static int stack_print(char *buf, char *stack, int stack_len, int width, int align_left, char pad)
+static int stack_print(char *buf, char *stack, int stack_len)
 {
 	int i = 0;
 
@@ -48,7 +52,7 @@ static int stack_print(char *buf, char *stack, int stack_len, int width, int ali
 	return i;
 }
 
-static int print_num(char *buf, int num, int width, int align_left, char pad)
+static int print_num(char *buf, int num)
 {
 	char stack[20];
 	int i, p;
@@ -66,11 +70,11 @@ static int print_num(char *buf, int num, int width, int align_left, char pad)
 		num /= 10;
 	} while (num);
 
-	return stack_print(buf, stack, p, width, align_left, pad);
+	return stack_print(buf, stack, p);
 }
 
 /* print '{,-}{h:,}mm:ss' */
-static int print_time(char *buf, int t, int width, int align_left, char pad)
+static int print_time(char *buf, int t)
 {
 	int h, m, s;
 	char stack[32];
@@ -102,22 +106,10 @@ static int print_time(char *buf, int t, int width, int align_left, char pad)
 	if (neg)
 		stack[p++] = '-';
 
-	return stack_print(buf, stack, p, width, align_left, pad);
+	return stack_print(buf, stack, p);
 }
 
-/*
- * buf:
- *     where to print
- * idx:
- *     index to @buf
- * str:
- *     what to print
- * width:
- *     field width. 0 if not set
- * aling_left:
- *     1 => aling left. 0 => align right
- */
-static void print_str(char *buf, int *idx, const char *str, int width, int align_left)
+static void print_str(char *buf, int *idx, const char *str)
 {
 	int d = *idx;
 
@@ -195,7 +187,6 @@ static void print(char *str, const char *format, const struct format_option *fop
 
 	while (format[s]) {
 		const struct format_option *fo;
-		int nlen, align_left, pad;
 		uchar u;
 
 		u_get_char(format, &s, &u);
@@ -223,10 +214,10 @@ static void print(char *str, const char *format, const struct format_option *fop
 			pad = '0';
 			u_get_char(format, &s, &u);
 		}
-		nlen = 0;
+		width = 0;
 		while (isdigit(u)) {
-			nlen *= 10;
-			nlen += u - '0';
+			width *= 10;
+			width += u - '0';
 			u_get_char(format, &s, &u);
 		}
 		for (fo = fopts; fo->ch; fo++) {
@@ -234,14 +225,14 @@ static void print(char *str, const char *format, const struct format_option *fop
 				int type = fo->type;
 
 				if (fo->empty) {
-					memset(str + d, ' ', nlen);
-					d += nlen;
+					memset(str + d, ' ', width);
+					d += width;
 				} else if (type == FO_STR) {
-					print_str(str, &d, fo->fo_str, nlen, align_left);
+					print_str(str, &d, fo->fo_str);
 				} else if (type == FO_INT) {
-					d += print_num(str + d, fo->fo_int, nlen, align_left, pad);
+					d += print_num(str + d, fo->fo_int);
 				} else if (type == FO_TIME) {
-					d += print_time(str + d, fo->fo_time, nlen, align_left, pad);
+					d += print_time(str + d, fo->fo_time);
 				}
 				break;
 			}
@@ -256,7 +247,7 @@ static char *r_str = NULL;
 static int l_str_size = -1;
 static int r_str_size = -1;
 
-int format_print(char *str, int width, const char *format, const struct format_option *fopts)
+int format_print(char *str, int str_width, const char *format, const struct format_option *fopts)
 {
 	/* lengths of left and right aligned texts */
 	int llen = 0;
@@ -375,9 +366,9 @@ int format_print(char *str, int width, const char *format, const struct format_o
 	 *       (ASCII) where x is hex digit
 	 */
 
-	if (llen + rlen <= width) {
+	if (llen + rlen <= str_width) {
 		/* both fit */
-		int ws_len = width - llen - rlen;
+		int ws_len = str_width - llen - rlen;
 		int pos = 0;
 
 		/* I would use strcpy if it returned anything useful */
@@ -388,7 +379,7 @@ int format_print(char *str, int width, const char *format, const struct format_o
 		memset(str + pos, ' ', ws_len);
 		strcpy(str + pos + ws_len, r_str);
 	} else {
-		int l_space = width - rlen;
+		int l_space = str_width - rlen;
 		int pos = 0;
 		int idx = 0;
 
