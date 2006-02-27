@@ -40,56 +40,52 @@ void buffer_init(void)
 }
 
 /*
- * @buf:  the buffer
- * @rpos: returned pointer to available data
- * @size: number of bytes available at @rpos
+ * @pos: returned pointer to available data
+ *
+ * Returns number of bytes available at @pos
  *
  * After reading bytes mark them consumed calling buffer_consume().
  */
-void buffer_get_rpos(char **rpos, int *size)
+int buffer_get_rpos(char **pos)
 {
 	struct chunk *c;
+	int size = 0;
 
 	cmus_mutex_lock(&buffer_mutex);
 	c = &buffer_chunks[buffer_ridx];
 	if (c->filled) {
-		*size = c->h - c->l;
-		*rpos = c->data + c->l;
-	} else {
-		*size = 0;
-		*rpos = NULL;
+		size = c->h - c->l;
+		*pos = c->data + c->l;
 	}
 	cmus_mutex_unlock(&buffer_mutex);
+
+	return size;
 }
 
 /*
- * @buf:  the buffer
- * @wpos: pointer to buffer position where data can be written
- * @size: how many bytes can be written to @wpos
+ * @pos: pointer to buffer position where data can be written
  *
- * If @size == 0 buffer is full otherwise @size is guaranteed to be >=1024.
+ * Returns number of bytes can be written to @pos.  If the return value is
+ * non-zero it is guaranteed to be >= 1024.
+ *
  * After writing bytes mark them filled calling buffer_fill().
  */
-void buffer_get_wpos(char **wpos, int *size)
+int buffer_get_wpos(char **pos)
 {
 	struct chunk *c;
+	int size = 0;
 
 	cmus_mutex_lock(&buffer_mutex);
 	c = &buffer_chunks[buffer_widx];
-	if (c->filled) {
-		*size = 0;
-		*wpos = NULL;
-	} else {
-		*size = CHUNK_SIZE - c->h;
-		*wpos = c->data + c->h;
+	if (!c->filled) {
+		size = CHUNK_SIZE - c->h;
+		*pos = c->data + c->h;
 	}
 	cmus_mutex_unlock(&buffer_mutex);
+
+	return size;
 }
 
-/*
- * @buf:   the buffer
- * @count: number of bytes consumed
- */
 void buffer_consume(int count)
 {
 	struct chunk *c;
@@ -109,12 +105,7 @@ void buffer_consume(int count)
 	cmus_mutex_unlock(&buffer_mutex);
 }
 
-/*
- * @buf:   the buffer
- * @count: how many bytes were written to the buffer
- *
- * chunk is marked filled if free bytes < 1024 or count == 0
- */
+/* chunk is marked filled if free bytes < 1024 or count == 0 */
 void buffer_fill(int count)
 {
 	struct chunk *c;
@@ -133,9 +124,6 @@ void buffer_fill(int count)
 	cmus_mutex_unlock(&buffer_mutex);
 }
 
-/*
- * set buffer empty
- */
 void buffer_reset(void)
 {
 	int i;

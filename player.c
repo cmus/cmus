@@ -331,7 +331,7 @@ static void __prebuffer(void)
 		if (filled >= limit_chunks)
 			break;
 
-		buffer_get_wpos(&wpos, &size);
+		size = buffer_get_wpos(&wpos);
 		nr_read = ip_read(ip, wpos, size);
 		if (nr_read < 0) {
 			if (nr_read == -1 && errno == EAGAIN)
@@ -571,7 +571,7 @@ static void *consumer_loop(void *arg)
 				ms_sleep(25);
 				break;
 			}
-			buffer_get_rpos(&rpos, &size);
+			size = buffer_get_rpos(&rpos);
 			if (size == 0) {
 				producer_lock();
 				if (producer_status != PS_PLAYING) {
@@ -580,7 +580,7 @@ static void *consumer_loop(void *arg)
 					break;
 				}
 				/* must recheck rpos */
-				buffer_get_rpos(&rpos, &size);
+				size = buffer_get_rpos(&rpos);
 				if (size == 0) {
 					/* OK. now it's safe to check if we are at EOF */
 					if (ip_eof(ip)) {
@@ -645,7 +645,7 @@ static void *producer_loop(void *arg)
 			continue;
 		}
 		for (i = 0; ; i++) {
-			buffer_get_wpos(&wpos, &size);
+			size = buffer_get_wpos(&wpos);
 			if (size == 0) {
 				/* buffer is full */
 				producer_unlock();
