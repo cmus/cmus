@@ -398,7 +398,7 @@ sym_err:
 /* init everything but ip->data.filename and ip->data.remote */
 static void ip_init(struct input_plugin *ip)
 {
-	memset(ip, 0, sizeof(struct ip));
+	memset(ip, 0, sizeof(*ip));
 	ip->http_code = -1;
 	ip->pcm_convert_scale = -1;
 	ip->data.fd = -1;
