@@ -1,27 +1,7 @@
-/* 
- * Copyright 2004-2005 Timo Hirvonen
- * 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
- * 02111-1307, USA.
- */
-
-#include <format_print.h>
-#include <uchar.h>
-#include <utils.h>
-#include <xmalloc.h>
-#include <debug.h>
+#include "format_print.h"
+#include "uchar.h"
+#include "xmalloc.h"
+#include "debug.h"
 
 #include <string.h>
 #include <ctype.h>
@@ -214,8 +194,9 @@ static void print(char *str, const char *format, const struct format_option *fop
 	int s = 0, d = 0;
 
 	while (format[s]) {
+		const struct format_option *fo;
+		int nlen, align_left, pad;
 		uchar u;
-		int nlen, align_left, pad, j;
 
 		u_get_char(format, &s, &u);
 		if (u != '%') {
@@ -248,21 +229,22 @@ static void print(char *str, const char *format, const struct format_option *fop
 			nlen += u - '0';
 			u_get_char(format, &s, &u);
 		}
-		for (j = 0; fopts[j].ch; j++) {
-			if (fopts[j].ch != u)
-				continue;
+		for (fo = fopts; fo->ch; fo++) {
+			if (fo->ch == u) {
+				int type = fo->type;
 
-			if (fopts[j].empty) {
-				memset(str + d, ' ', nlen);
-				d += nlen;
-			} else if (fopts[j].type == FO_STR) {
-				print_str(str, &d, fopts[j].fo_str, nlen, align_left);
-			} else if (fopts[j].type == FO_INT) {
-				d += print_num(str + d, fopts[j].fo_int, nlen, align_left, pad);
-			} else if (fopts[j].type == FO_TIME) {
-				d += print_time(str + d, fopts[j].fo_time, nlen, align_left, pad);
+				if (fo->empty) {
+					memset(str + d, ' ', nlen);
+					d += nlen;
+				} else if (type == FO_STR) {
+					print_str(str, &d, fo->fo_str, nlen, align_left);
+				} else if (type == FO_INT) {
+					d += print_num(str + d, fo->fo_int, nlen, align_left, pad);
+				} else if (type == FO_TIME) {
+					d += print_time(str + d, fo->fo_time, nlen, align_left, pad);
+				}
+				break;
 			}
-			break;
 		}
 	}
 	str[d] = 0;
@@ -282,12 +264,12 @@ int format_print(char *str, int width, const char *format, const struct format_o
 	int *len = &llen;
 	int lsize, rsize;
 	int eq_pos = -1;
-	int s;
+	int s = 0;
 
-	s = 0;
 	while (format[s]) {
+		const struct format_option *fo;
+		int nlen;
 		uchar u;
-		int nlen, j;
 
 		u_get_char(format, &s, &u);
 		if (u != '%') {
@@ -314,20 +296,20 @@ int format_print(char *str, int width, const char *format, const struct format_o
 			nlen += u - '0';
 			u_get_char(format, &s, &u);
 		}
-		j = 0;
-		while (1) {
-			BUG_ON(fopts[j].ch == 0);
-			if (fopts[j].ch == u) {
+		for (fo = fopts; ; fo++) {
+			BUG_ON(fo->ch == 0);
+			if (fo->ch == u) {
+				int type = fo->type;
 				int l = 0;
 
-				if (fopts[j].empty) {
+				if (fo->empty) {
 					/* nothing */
-				} else if (fopts[j].type == FO_STR) {
-					l = u_str_width(fopts[j].fo_str);
-				} else if (fopts[j].type == FO_INT) {
-					l = numlen(fopts[j].fo_int);
-				} else if (fopts[j].type == FO_TIME) {
-					int t = fopts[j].fo_time;
+				} else if (type == FO_STR) {
+					l = u_str_width(fo->fo_str);
+				} else if (type == FO_INT) {
+					l = numlen(fo->fo_int);
+				} else if (type == FO_TIME) {
+					int t = fo->fo_time;
 
 					if (t < 0) {
 						t *= -1;
@@ -338,8 +320,6 @@ int format_print(char *str, int width, const char *format, const struct format_o
 					} else {
 						l += 5;
 					}
-				} else {
-					BUG("invalid format option\n");
 				}
 				if (nlen) {
 					*len += nlen;
@@ -348,7 +328,6 @@ int format_print(char *str, int width, const char *format, const struct format_o
 				}
 				break;
 			}
-			j++;
 		}
 	}
 
@@ -430,9 +409,8 @@ int format_print(char *str, int width, const char *format, const struct format_o
 /* FIXME: compare with struct format_option[] */
 int format_valid(const char *format)
 {
-	int s;
+	int s = 0;
 
-	s = 0;
 	while (format[s]) {
 		uchar u;
 
