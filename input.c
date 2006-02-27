@@ -395,22 +395,21 @@ sym_err:
 	closedir(dir);
 }
 
-/* init everything but ip->data.filename and ip->data.remote */
-static void ip_init(struct input_plugin *ip)
+static void ip_init(struct input_plugin *ip, char *filename)
 {
 	memset(ip, 0, sizeof(*ip));
 	ip->http_code = -1;
 	ip->pcm_convert_scale = -1;
 	ip->data.fd = -1;
+	ip->data.filename = filename;
+	ip->data.remote = is_url(filename);
 }
 
 struct input_plugin *ip_new(const char *filename)
 {
 	struct input_plugin *ip = xnew(struct input_plugin, 1);
 
-	ip_init(ip);
-	ip->data.filename = xstrdup(filename);
-	ip->data.remote = is_url(filename);
+	ip_init(ip, xstrdup(filename));
 	return ip;
 }
 
@@ -516,7 +515,7 @@ int ip_close(struct input_plugin *ip)
 	free(ip->data.metadata);
 	free(ip->http_reason);
 
-	ip_init(ip);
+	ip_init(ip, ip->data.filename);
 	return rc;
 }
 
