@@ -398,22 +398,10 @@ sym_err:
 /* init everything but ip->data.filename and ip->data.remote */
 static void ip_init(struct input_plugin *ip)
 {
-	ip->ops = NULL;
-	ip->open = 0;
-	ip->eof = 0;
+	memset(ip, 0, sizeof(struct ip));
 	ip->http_code = -1;
-	ip->http_reason = NULL;
-	ip->pcm_convert = NULL;
-	ip->pcm_convert_in_place = NULL;
 	ip->pcm_convert_scale = -1;
-
 	ip->data.fd = -1;
-	ip->data.metadata_changed = 0;
-	ip->data.counter = 0;
-	ip->data.metaint = 0;
-	ip->data.metadata = NULL;
-	ip->data.sf = 0;
-	ip->data.private = NULL;
 }
 
 struct input_plugin *ip_new(const char *filename)
@@ -439,12 +427,6 @@ int ip_open(struct input_plugin *ip)
 	int rc, bits, is_signed, channels;
 
 	BUG_ON(ip->open);
-	BUG_ON(ip->eof);
-	BUG_ON(ip->ops);
-	BUG_ON(ip->data.filename == NULL);
-	BUG_ON(ip->data.fd != -1);
-	BUG_ON(ip->data.sf);
-	BUG_ON(ip->pcm_convert_scale != -1);
 
 	/* set fd and ops */
 	if (ip->data.remote) {
@@ -458,16 +440,6 @@ int ip_open(struct input_plugin *ip)
 				rc == -1 ? strerror(errno) : "");
 		return rc;
 	}
-
-	BUG_ON(ip->data.fd == -1);
-	BUG_ON(ip->ops == NULL);
-
-	BUG_ON(ip->ops->open == NULL);
-	BUG_ON(ip->ops->close == NULL);
-	BUG_ON(ip->ops->read == NULL);
-	BUG_ON(ip->ops->seek == NULL);
-	BUG_ON(ip->ops->read_comments == NULL);
-	BUG_ON(ip->ops->duration == NULL);
 
 	rc = ip->ops->open(&ip->data);
 	if (rc) {
@@ -537,8 +509,6 @@ int ip_close(struct input_plugin *ip)
 {
 	int rc;
 
-	BUG_ON(!ip->open);
-
 	rc = ip->ops->close(&ip->data);
 	BUG_ON(ip->data.private);
 	if (ip->data.fd != -1)
@@ -559,7 +529,6 @@ int ip_read(struct input_plugin *ip, char *buffer, int count)
 	char *buf;
 	int rc;
 
-	BUG_ON(!ip->open);
 	BUG_ON(count <= 0);
 
 	FD_ZERO(&readfds);
@@ -610,8 +579,6 @@ int ip_seek(struct input_plugin *ip, double offset)
 {
 	int rc;
 
-	BUG_ON(!ip->open);
-
 	if (ip->data.remote)
 		return -IP_ERROR_FUNCTION_NOT_SUPPORTED;
 	rc = ip->ops->seek(&ip->data, offset);
@@ -622,22 +589,12 @@ int ip_seek(struct input_plugin *ip, double offset)
 
 int ip_read_comments(struct input_plugin *ip, struct keyval **comments)
 {
-	int rc;
-
-	BUG_ON(!ip->open);
-
-	rc = ip->ops->read_comments(&ip->data, comments);
-	return rc;
+	return ip->ops->read_comments(&ip->data, comments);
 }
 
 int ip_duration(struct input_plugin *ip)
 {
-	int rc;
-
-	BUG_ON(!ip->open);
-
-	rc = ip->ops->duration(&ip->data);
-	return rc;
+	return ip->ops->duration(&ip->data);
 }
 
 sample_format_t ip_get_sf(struct input_plugin *ip)
