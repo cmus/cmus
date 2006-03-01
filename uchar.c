@@ -151,6 +151,9 @@ single_char:
 
 int u_char_width(uchar u)
 {
+	if (unlikely(u < 0x20))
+		goto control;
+
 	if (u < 0x1100U)
 		goto narrow;
 
@@ -207,13 +210,21 @@ int u_char_width(uchar u)
 	if (u >= 0x30000U && u <= 0x3fffdU)
 		goto wide;
 
-	/* invalid bytes in unicode stream are rendered "<ff>" */
+	/* invalid bytes in unicode stream are rendered "<xx>" */
 	if (u & U_INVALID_MASK)
-		return 4;
+		goto invalid;
 narrow:
 	return 1;
 wide:
 	return 2;
+control:
+	/* special case */
+	if (u == 0)
+		return 1;
+
+	/* print control chars as <xx> */
+invalid:
+	return 4;
 }
 
 int u_str_width(const char *str)
@@ -360,20 +371,26 @@ void u_set_char(char *str, int *idx, uchar uch)
 {
 	int i = *idx;
 
+	if (unlikely(uch <= 0x0000001fU))
+		goto invalid;
+
 	if (uch <= 0x0000007fU) {
 		str[i++] = uch;
 		*idx = i;
+		return;
 	} else if (uch <= 0x000007ffU) {
 		str[i + 1] = (uch & 63) | 0x80; uch >>= 6;
 		str[i + 0] = uch | 0x000000c0U;
 		i += 2;
 		*idx = i;
+		return;
 	} else if (uch <= 0x0000ffffU) {
 		str[i + 2] = (uch & 63) | 0x80; uch >>= 6;
 		str[i + 1] = (uch & 63) | 0x80; uch >>= 6;
 		str[i + 0] = uch | 0x000000e0U;
 		i += 3;
 		*idx = i;
+		return;
 	} else if (uch <= 0x0010ffffU) {
 		str[i + 3] = (uch & 63) | 0x80; uch >>= 6;
 		str[i + 2] = (uch & 63) | 0x80; uch >>= 6;
@@ -381,8 +398,15 @@ void u_set_char(char *str, int *idx, uchar uch)
 		str[i + 0] = uch | 0x000000f0U;
 		i += 4;
 		*idx = i;
+		return;
+	}
+invalid:
+	/* control character or invalid unicode */
+	if (uch == 0) {
+		/* handle this special case here to make the common case fast */
+		str[i++] = 0;
+		*idx = i;
 	} else {
-		/* must be an invalid uchar */
 		str[i++] = '<';
 		str[i++] = hex_tab[(uch >> 4) & 0xf];
 		str[i++] = hex_tab[uch & 0xf];
