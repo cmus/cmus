@@ -1,0 +1,24 @@
+# 88 color gray theme for urxvt
+set color_cmdline_bg=80
+set color_cmdline_fg=85
+set color_error=lightgreen
+set color_info=green
+set color_separator=darkgray
+set color_statusline_bg=80
+set color_statusline_fg=85
+set color_titleline_bg=darkgray
+set color_titleline_fg=85
+set color_win_bg=80
+set color_win_cur=lightgreen
+set color_win_cur_sel_bg=82
+set color_win_cur_sel_fg=lightyellow
+set color_win_dir=83
+set color_win_fg=85
+set color_win_inactive_cur_sel_bg=darkgray
+set color_win_inactive_cur_sel_fg=lightgreen
+set color_win_inactive_sel_bg=darkgray
+set color_win_inactive_sel_fg=black
+set color_win_sel_bg=82
+set color_win_sel_fg=black
+set color_win_title_bg=darkgray
+set color_win_title_fg=85
