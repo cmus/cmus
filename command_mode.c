@@ -590,6 +590,9 @@ static void cmd_unbind(char *arg)
 	if (flag == -1)
 		return;
 
+	if (arg == NULL)
+		goto err;
+
 	key = strchr(arg, ' ');
 	if (key == NULL)
 		goto err;
