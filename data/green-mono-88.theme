@@ -58,5 +58,5 @@ set color_win_inactive_sel_fg=black
 
 ##### File Browser View Colors #################################################
 # Directory listing color
-set color_win_dir=green
+set color_win_dir=lightgreen
 
