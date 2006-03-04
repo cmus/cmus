@@ -68,24 +68,6 @@
 /* with this alsa hangs sometimes (ogg, not enough data with first write?) */
 /* #define SET_START_THRESHOLD */
 
-static inline const char *state_to_str(snd_pcm_state_t state)
-{
-	static const char *states[] = {
-		"SND_PCM_STATE_OPEN(0)",
-		"SND_PCM_STATE_SETUP(1)",
-		"SND_PCM_STATE_PREPARED(2)",
-		"SND_PCM_STATE_RUNNING(3)",
-		"SND_PCM_STATE_XRUN(4)",
-		"SND_PCM_STATE_DRAINING(5)",
-		"SND_PCM_STATE_PAUSED(6)",
-		"SND_PCM_STATE_SUSPENDED(7)",
-		"SND_PCM_STATE_DISCONNECTED(8)"
-	};
-
-	BUG_ON(state > 8);
-	return states[state];
-}
-
 static sample_format_t alsa_sf;
 static snd_pcm_t *alsa_handle;
 static snd_pcm_format_t alsa_fmt;
@@ -115,7 +97,6 @@ static int alsa_period_size;
 
 static int alsa_error_to_op_error(int err)
 {
-	BUG_ON(err >= 0);
 	err = -err;
 	if (err < SND_ERROR_BEGIN) {
 		errno = err;
