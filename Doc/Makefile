@@ -3,7 +3,10 @@ all: html
 include ../config.mk
 include ../scripts/lib.mk
 
-MAN_XSL	:= $(word 1,$(wildcard /usr/share/asciidoc/docbook-xsl/manpage*.xsl))
+MAN_XSL	:= /etc/asciidoc/docbook-xsl/manpage.xsl \
+	/usr/share/asciidoc/docbook-xsl/manpage.xsl \
+	/usr/local/share/asciidoc/docbook-xsl/manpage.xsl
+MAN_XSL	:= $(word 1,$(wildcard $(MAN_XSL)))
 
 man1	:= cmus.1 cmus-remote.1
 html	:= cmus.html cmus-remote.html
