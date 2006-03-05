@@ -20,7 +20,6 @@
 #include <browser.h>
 #include <load_dir.h>
 #include <cmus.h>
-#include <player.h>
 #include <xmalloc.h>
 #include <xstrjoin.h>
 #include <ui_curses.h>
@@ -36,13 +35,9 @@
 
 struct window *browser_win;
 struct searchable *browser_searchable;
-
-/* absolute */
 char *browser_dir;
 
-
 static LIST_HEAD(browser_head);
-static char **supported_extensions;
 
 static inline void browser_entry_to_iter(struct browser_entry *e, struct iter *iter)
 {
@@ -54,9 +49,6 @@ static inline void browser_entry_to_iter(struct browser_entry *e, struct iter *i
 /* filter out names starting with '.' except '..' */
 static int normal_filter(const char *name, const struct stat *s)
 {
-	const char *ext;
-	int i;
-
 	if (name[0] == '.') {
 		if (name[1] == '.' && name[2] == 0)
 			return 1;
@@ -64,15 +56,7 @@ static int normal_filter(const char *name, const struct stat *s)
 	}
 	if (S_ISDIR(s->st_mode))
 		return 1;
-	ext = strrchr(name, '.');
-	if (ext == NULL)
-		return 0;
-	ext++;
-	for (i = 0; supported_extensions[i]; i++) {
-		if (strcasecmp(ext, supported_extensions[i]) == 0)
-			return 1;
-	}
-	return cmus_is_playlist(name);
+	return cmus_is_supported(name);
 }
 
 /* filter out '.' */
@@ -275,8 +259,6 @@ void browser_init(void)
 	char cwd[1024];
 	char *dir;
 
-	supported_extensions = player_get_supported_extensions();
-
 	if (getcwd(cwd, sizeof(cwd)) == NULL) {
 		dir = xstrdup("/");
 	} else {
@@ -306,7 +288,6 @@ void browser_exit(void)
 	free_browser_list();
 	window_free(browser_win);
 	free(browser_dir);
-	free_str_array(supported_extensions);
 }
 
 int browser_chdir(const char *dir)

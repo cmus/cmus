@@ -21,6 +21,7 @@
 #include <lib.h>
 #include <pl.h>
 #include <player.h>
+#include <input.h>
 #include <play_queue.h>
 #include <worker.h>
 #include <track_db.h>
@@ -43,6 +44,8 @@
 
 static pthread_mutex_t track_db_mutex = CMUS_MUTEX_INITIALIZER;
 static struct track_db *track_db;
+static char **playable_exts;
+static const char * const playlist_exts[] = { "m3u", "pl", "pls", NULL };
 
 #define track_db_lock() cmus_mutex_lock(&track_db_mutex)
 #define track_db_unlock() cmus_mutex_unlock(&track_db_mutex)
@@ -262,6 +265,8 @@ int cmus_init(void)
 {
 	char *db_filename_base;
 
+	playable_exts = ip_get_supported_extensions();
+
 	db_filename_base = xstrjoin(cmus_config_dir, "/trackdb");
 	track_db = track_db_new(db_filename_base);
 	free(db_filename_base);
@@ -457,22 +462,46 @@ struct track_info *cmus_get_track_info(const char *name)
 	return ti;
 }
 
+static const char *get_ext(const char *filename)
+{
+	const char *ext = strrchr(filename, '.');
+
+	if (ext)
+		ext++;
+	return ext;
+}
+
+static int str_in_array(const char *str, const char * const * array)
+{
+	int i;
+
+	for (i = 0; array[i]; i++) {
+		if (strcasecmp(str, array[i]) == 0)
+			return 1;
+	}
+	return 0;
+}
+
 int cmus_is_playlist(const char *filename)
 {
-	const char *ext;
+	const char *ext = get_ext(filename);
 
-	ext = strrchr(filename, '.');
-	if (ext == NULL)
-		return 0;
-	ext++;
-	/* ugh, this extension is actually used by perl */
-	if (strcasecmp(ext, "pl") == 0)
-		return 1;
-	if (strcasecmp(ext, "m3u") == 0)
-		return 1;
-	if (strcasecmp(ext, "pls") == 0)
-		return 1;
-	return 0;
+	return ext && str_in_array(ext, playlist_exts);
+}
+
+int cmus_is_playable(const char *filename)
+{
+	const char *ext = get_ext(filename);
+
+	return ext && str_in_array(ext, (const char * const *)playable_exts);
+}
+
+int cmus_is_supported(const char *filename)
+{
+	const char *ext = get_ext(filename);
+
+	return ext && (str_in_array(ext, (const char * const *)playable_exts) ||
+			str_in_array(ext, playlist_exts));
 }
 
 struct pl_data {

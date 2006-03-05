@@ -1150,11 +1150,6 @@ int player_for_each_op_option(void (*callback)(unsigned int id, const char *key)
 	return 0;
 }
 
-char **player_get_supported_extensions(void)
-{
-	return ip_get_supported_extensions();
-}
-
 void player_dump_plugins(void)
 {
 	ip_dump_plugins();

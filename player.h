@@ -109,7 +109,6 @@ int player_set_volume(int left, int right);
 int player_set_op_option(unsigned int id, const char *val);
 int player_get_op_option(unsigned int id, char **val);
 int player_for_each_op_option(void (*callback)(unsigned int id, const char *key));
-char **player_get_supported_extensions(void);
 void player_dump_plugins(void);
 
 #define player_info_lock() cmus_mutex_lock(&player_info.mutex)

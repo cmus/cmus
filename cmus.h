@@ -79,6 +79,8 @@ void cmus_update_tis(struct track_info **tis, int nr);
 struct track_info *cmus_get_track_info(const char *name);
 
 int cmus_is_playlist(const char *filename);
+int cmus_is_playable(const char *filename);
+int cmus_is_supported(const char *filename);
 
 int cmus_playlist_for_each(const char *buf, int size, int reverse,
 		int (*cb)(void *data, const char *line),
