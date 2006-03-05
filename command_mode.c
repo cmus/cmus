@@ -1545,17 +1545,54 @@ static void cmd_refresh(char *arg)
 /* buffer used for tab expansion */
 static char expbuf[512];
 
-/* expands directories too, of course */
+static int filter_directories(const char *name, const struct stat *s)
+{
+	return S_ISDIR(s->st_mode);
+}
+
+static int filter_any(const char *name, const struct stat *s)
+{
+	return 1;
+}
+
+static int filter_playable(const char *name, const struct stat *s)
+{
+	return S_ISDIR(s->st_mode) || cmus_is_playable(name);
+}
+
+static int filter_playlist(const char *name, const struct stat *s)
+{
+	return S_ISDIR(s->st_mode) || cmus_is_playlist(name);
+}
+
+static int filter_supported(const char *name, const struct stat *s)
+{
+	return S_ISDIR(s->st_mode) || cmus_is_supported(name);
+}
+
 static void expand_files(const char *str)
 {
-	tabexp_files = 1;
-	expand_files_and_dirs(str);
+	expand_files_and_dirs(str, filter_any);
 }
 
 static void expand_directories(const char *str)
 {
-	tabexp_files = 0;
-	expand_files_and_dirs(str);
+	expand_files_and_dirs(str, filter_directories);
+}
+
+static void expand_playable(const char *str)
+{
+	expand_files_and_dirs(str, filter_playable);
+}
+
+static void expand_playlist(const char *str)
+{
+	expand_files_and_dirs(str, filter_playlist);
+}
+
+static void expand_supported(const char *str)
+{
+	expand_files_and_dirs(str, filter_supported);
 }
 
 static void expand_add(const char *str)
@@ -1566,7 +1603,7 @@ static void expand_add(const char *str)
 		return;
 	if (str == NULL)
 		str = "";
-	expand_files(str);
+	expand_supported(str);
 
 	if (tabexp.head && flag) {
 		snprintf(expbuf, sizeof(expbuf), "-%c %s", flag, tabexp.head);
@@ -1583,7 +1620,7 @@ static void expand_load_save(const char *str)
 		return;
 	if (str == NULL)
 		str = "";
-	expand_files(str);
+	expand_playlist(str);
 
 	if (tabexp.head && flag) {
 		snprintf(expbuf, sizeof(expbuf), "-%c %s", flag, tabexp.head);
@@ -2024,7 +2061,7 @@ static struct command commands[] = {
 	{ "mark",		cmd_mark,	0, 1, NULL		},
 	{ "player-next",	cmd_p_next,	0, 0, NULL		},
 	{ "player-pause",	cmd_p_pause,	0, 0, NULL		},
-	{ "player-play",	cmd_p_play,	0, 1, expand_files	},
+	{ "player-play",	cmd_p_play,	0, 1, expand_playable	},
 	{ "player-prev",	cmd_p_prev,	0, 0, NULL		},
 	{ "player-stop",	cmd_p_stop,	0, 0, NULL		},
 	{ "quit",		cmd_quit,	0, 0, NULL		},

@@ -29,9 +29,6 @@
 #include <pwd.h>
 #include <dirent.h>
 
-/* expand files too? directories are always expanded */
-int tabexp_files;
-
 static char *get_home(const char *user)
 {
 	struct passwd *passwd;
@@ -86,7 +83,7 @@ static int strptrcmp(const void *a, const void *b)
 
 static const char *starting_with;
 
-static int filter(const char *name, const struct stat *s)
+static int name_filter(const char *name)
 {
 	int len = strlen(starting_with);
 
@@ -97,9 +94,14 @@ static int filter(const char *name, const struct stat *s)
 		if (strncmp(name, starting_with, len))
 			return 0;
 	}
-	if (tabexp_files || S_ISDIR(s->st_mode))
-		return 1;
-	return 0;
+	return 1;
+}
+
+static int (*user_filter)(const char *name, const struct stat *s);
+
+static int load_dir_filter(const char *name, const struct stat *s)
+{
+	return name_filter(name) && user_filter(name, s);
 }
 
 /*
@@ -112,13 +114,15 @@ static void tabexp_load_dir(const char *dir, const char *start)
 	int count;
 	char *full_dir_name;
 
+	/* for name_filter() */
+	starting_with = start;
+
 	/* tabexp is resetted */
 	full_dir_name = get_full_dir_name(dir);
 	if (full_dir_name == NULL)
 		return;
 
-	starting_with = start;
-	count = load_dir(full_dir_name, &names, filter, strptrcmp);
+	count = load_dir(full_dir_name, &names, load_dir_filter, strptrcmp);
 	free(full_dir_name);
 	if (count <= 0) {
 		/* opendir failed or no matches */
@@ -130,11 +134,13 @@ static void tabexp_load_dir(const char *dir, const char *start)
 	tabexp.nr_tails = count;
 }
 
-void expand_files_and_dirs(const char *src)
+void expand_files_and_dirs(const char *src,
+		int (*filter)(const char *name, const struct stat *s))
 {
 	char *slash;
 
-	/* tabexp is resetted */
+	/* for load_dir_filter() */
+	user_filter = filter;
 
 	/* split src to dir and file */
 	slash = strrchr(src, '/');

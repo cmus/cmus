@@ -20,8 +20,9 @@
 #ifndef _TABEXP_FILE_H
 #define _TABEXP_FILE_H
 
-extern int tabexp_files;
+#include <sys/stat.h>
 
-void expand_files_and_dirs(const char *src);
+void expand_files_and_dirs(const char *src,
+		int (*filter)(const char *name, const struct stat *s));
 
 #endif
