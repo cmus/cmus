@@ -361,6 +361,9 @@ common  left   :seek -5
 `set <option>=<value>`::
 Set value of an option. See 'OPTIONS'.
 
+`set <option>`::
+Display option value.  Vim compatible `set <option>?` is also supported.
+
 `showbind <context> <key>`::
 Show key binding.
 

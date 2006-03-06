@@ -385,10 +385,9 @@ static void cmd_save(char *arg)
 
 static void cmd_set(char *arg)
 {
-	char *name, *value = NULL;
+	char *value = NULL;
 	int i;
 
-	name = arg;
 	for (i = 0; arg[i]; i++) {
 		if (arg[i] == '=') {
 			arg[i] = 0;
@@ -396,11 +395,23 @@ static void cmd_set(char *arg)
 			break;
 		}
 	}
-	if (value == NULL) {
-		error_msg("'=' expected (:set option=value)");
-		return;
+	if (value) {
+		option_set(arg, value);
+	} else {
+		struct cmus_opt *opt;
+		char buf[OPTION_MAX_SIZE];
+
+		/* support "set <option>?" */
+		i--;
+		if (arg[i] == '?')
+			arg[i] = 0;
+
+		opt = option_find(arg);
+		if (opt) {
+			opt->get(opt->id, buf);
+			info_msg("setting: '%s=%s'", arg, buf);
+		}
 	}
-	option_set(name, value);
 }
 
 static void cmd_toggle(char *arg)
