@@ -327,11 +327,11 @@ If no filename given the old filename is used.
 
 `search-next` (n)::
 If a search pattern has been entered before, search forward for the next match
-in the current view.  See 'GENERAL USAGE' above.
+in the current view.  See 'SEARCHING' above.
 
 `search-prev` (N)::
 If a search pattern has been entered before, search backwards for the previous
-match in the current view.  See 'GENERAL USAGE' above.
+match in the current view.  See 'SEARCHING' above.
 
 `seek [+-]<num>[mh]`::
 Seek to absolute or relative position.  Position can be given in seconds,
