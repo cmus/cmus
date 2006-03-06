@@ -20,6 +20,7 @@
 #include <tabexp_file.h>
 #include <tabexp.h>
 #include <load_dir.h>
+#include <misc.h>
 #include <xmalloc.h>
 #include <xstrjoin.h>
 
@@ -71,14 +72,6 @@ static char *get_full_dir_name(const char *dir)
 		full = xstrdup(dir);
 	}
 	return full;
-}
-
-static int strptrcmp(const void *a, const void *b)
-{
-	const char *as = *(char **)a;
-	const char *bs = *(char **)b;
-
-	return strcmp(as, bs);
 }
 
 static const char *starting_with;
