@@ -1,22 +1,3 @@
-/* 
- * Copyright 2005 Timo Hirvonen
- * 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
- * 02111-1307, USA.
- */
-
 #include <cmus.h>
 #include <lib.h>
 #include <pl.h>
@@ -50,9 +31,9 @@ static const char * const playlist_exts[] = { "m3u", "pl", "pls", NULL };
 #define track_db_lock() cmus_mutex_lock(&track_db_mutex)
 #define track_db_unlock() cmus_mutex_unlock(&track_db_mutex)
 
-/* jobs {{{ */
+/* add (worker job) {{{ */
 
-struct job_data {
+struct add_data {
 	enum file_type type;
 	char *name;
 	add_ti_cb add;
@@ -200,9 +181,9 @@ static void add_pl(add_ti_cb add, const char *filename)
 	}
 }
 
-static void job(void *data)
+static void do_add_job(void *data)
 {
-	struct job_data *jd = data;
+	struct add_data *jd = data;
 
 	switch (jd->type) {
 	case FILE_TYPE_URL:
@@ -220,9 +201,19 @@ static void job(void *data)
 	case FILE_TYPE_INVALID:
 		break;
 	}
+}
+
+static void free_add_job(void *data)
+{
+	struct add_data *jd = data;
+
 	free(jd->name);
 	free(jd);
 }
+
+/* }}} */
+
+/* update (worker job) {{{ */
 
 struct update_data {
 	size_t size;
@@ -230,7 +221,7 @@ struct update_data {
 	struct track_info **ti;
 };
 
-static void update_lib_job(void *data)
+static void do_update_job(void *data)
 {
 	struct update_data *d = data;
 	int i;
@@ -255,6 +246,12 @@ static void update_lib_job(void *data)
 		}
 		track_info_unref(ti);
 	}
+}
+
+static void free_update_job(void *data)
+{
+	struct update_data *d = data;
+
 	free(d->ti);
 	free(d);
 }
@@ -370,12 +367,12 @@ enum file_type cmus_detect_ft(const char *name, char **ret)
 
 void cmus_add(add_ti_cb add, const char *name, enum file_type ft, int jt)
 {
-	struct job_data *data = xnew(struct job_data, 1);
+	struct add_data *data = xnew(struct add_data, 1);
 
 	data->add = add;
 	data->name = xstrdup(name);
 	data->type = ft;
-	worker_add_job(jt, job, data);
+	worker_add_job(jt, do_add_job, free_add_job, data);
 }
 
 static int save_playlist_cb(void *data, struct track_info *ti)
@@ -436,7 +433,7 @@ void cmus_update_lib(void)
 	lib_for_each(update_cb, data);
 	editable_unlock();
 
-	worker_add_job(JOB_TYPE_LIB, update_lib_job, data);
+	worker_add_job(JOB_TYPE_LIB, do_update_job, free_update_job, data);
 }
 
 void cmus_update_tis(struct track_info **tis, int nr)
@@ -447,7 +444,7 @@ void cmus_update_tis(struct track_info **tis, int nr)
 	data->size = nr;
 	data->used = nr;
 	data->ti = tis;
-	worker_add_job(JOB_TYPE_LIB, update_lib_job, data);
+	worker_add_job(JOB_TYPE_LIB, do_update_job, free_update_job, data);
 }
 
 struct track_info *cmus_get_track_info(const char *name)
@@ -456,6 +453,7 @@ struct track_info *cmus_get_track_info(const char *name)
 
 	if (is_url(name))
 		return track_info_url_new(name);
+
 	track_db_lock();
 	ti = track_db_get_track(track_db, name);
 	track_db_unlock();
