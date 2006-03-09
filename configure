@@ -6,6 +6,19 @@ PACKAGE="cmus"
 VERSION="2.0.0"
 PACKAGE_BUGREPORT="cmus-devel@lists.sourceforge.net"
 
+check_cflags()
+{
+	local i
+
+	check_cc_flag -std=gnu99 -pipe -Wall -Wshadow -Wcast-align -Wpointer-arith \
+		-Wwrite-strings -Wundef -Wmissing-prototypes -Wredundant-decls
+
+	for i in -Wdeclaration-after-statement -Wold-style-definition -Wno-pointer-sign
+	do
+		check_cc_flag $i
+	done
+}
+
 check_ncurses()
 {
 	if check_library ncurses "" -lncursesw
@@ -146,21 +159,9 @@ flag_debug()
 
 flag_dev()
 {
-	local w i
+	# can't add to CFLAGS yet
+	EXTRA_CFLAGS="-Werror"
 
-	# this function is called before check_cc
-	var_default CC ${CROSS}gcc
-
-	w="-Wall -Wshadow -Wcast-align -Wpointer-arith -Wwrite-strings"
-	w="${w} -Wundef -Wmissing-prototypes -Wredundant-decls"
-
-	for i in -Wdeclaration-after-statement -Wold-style-definition
-	do
-		cc_supports $i || continue
-		w="${w} ${i}"
-	done
-
-	CFLAGS="-std=gnu99 -O2 -ggdb ${w} -Werror -pipe"
 	DEBUG=2
 	prefix=$HOME
 }
@@ -170,6 +171,7 @@ prefix=/usr/local
 bindir=""
 datadir=""
 libdir=""
+EXTRA_CFLAGS=
 DEBUG=1
 CONFIG_TREMOR=n
 
@@ -184,6 +186,8 @@ add_flag dev         n flag_dev    "This should be used only by developers"
 add_flag with-tremor n flag_tremor "Use Tremor as Ogg/Vorbis input plugin"
 
 add_check check_cc
+add_check check_cflags
+add_check check_cc_depgen
 add_check check_endianness
 add_check check_dl
 add_check check_pthread
@@ -210,7 +214,7 @@ var_default datadir "${prefix}/share"
 var_default libdir "${prefix}/lib"
 var_default mandir "${datadir}/man"
 
-CFLAGS="${CFLAGS} -DDEBUG=$DEBUG"
+CFLAGS="${CFLAGS} ${EXTRA_CFLAGS} -DDEBUG=$DEBUG"
 test "$WORDS_BIGENDIAN" = y && CFLAGS="${CFLAGS} -DWORDS_BIGENDIAN"
 
 DATADIR="$datadir"

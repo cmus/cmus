@@ -4,11 +4,6 @@
 #
 # This file is licensed under the GPLv2.
 
-# Set to 'n' if you don't want .dep-*.o files generated
-# NOTE: this is automatically disabled if compiler doesn't support it
-CC_GENERATE_DEPS=y
-CXX_GENERATE_DEPS=y
-
 msg_checking()
 {
 	echo -n "checking $@... "
@@ -51,20 +46,26 @@ check_program()
 
 cc_supports()
 {
-	$CC "$@" -S -o /dev/null -x c /dev/null &> /dev/null
+	$CC $CFLAGS "$@" -S -o /dev/null -x c /dev/null &> /dev/null
+}
+
+cxx_supports()
+{
+	$CXX $CXXFLAGS "$@" -S -o /dev/null -x c /dev/null &> /dev/null
 }
 
 # @flag: option flag(s) to check
 #
-# check if $CC supports @flag
+# add @flag to CFLAGS if CC accepts it
 check_cc_flag()
 {
 	argc check_cc_flag $# 1
 
 	test -z "$CC" && die "check_cc_flag: CC not set"
-	msg_checking "for CC flag $@"
-	if cc_supports "$@"
+	msg_checking "for CC flag $*"
+	if cc_supports $*
 	then
+		CFLAGS="$CFLAGS $*"
 		msg_result "yes"
 		return 0
 	else
@@ -75,15 +76,16 @@ check_cc_flag()
 
 # @flag: option flag(s) to check
 #
-# check if $CXX supports @flag
+# add @flag to CXXFLAGS if CXX accepts it
 check_cxx_flag()
 {
 	argc check_cxx_flag $# 1
 
 	test -z "$CXX" && die "check_cxx_flag: CXX not set"
-	msg_checking "for CXX flag $@"
-	if $CXX "$@" -S -o /dev/null -x c /dev/null &> /dev/null
+	msg_checking "for CXX flag $*"
+	if cxx_supports $*
 	then
+		CXXFLAGS="$CXXFLAGS $*"
 		msg_result "yes"
 		return 0
 	else
@@ -97,7 +99,7 @@ check_cc()
 {
 	var_default CC ${CROSS}gcc
 	var_default LD $CC
-	var_default CFLAGS "-O2 -Wall -g"
+	var_default CFLAGS "-O2"
 	var_default LDFLAGS ""
 	var_default SOFLAGS "-fPIC"
 	if check_program $CC
@@ -109,10 +111,6 @@ check_cc()
 				;;
 		esac
 		makefile_vars CC LD CFLAGS LDFLAGS SOFLAGS
-		if test "$CC_GENERATE_DEPS" = y && check_cc_flag -MMD -MP -MF /dev/null
-		then
-			CFLAGS="$CFLAGS -MMD -MP -MF .dep-\$@"
-		fi
 		return 0
 	fi
 	return 1
@@ -123,7 +121,7 @@ check_cxx()
 {
 	var_default CXX ${CROSS}g++
 	var_default CXXLD $CXX
-	var_default CXXFLAGS "-O2 -Wall -g"
+	var_default CXXFLAGS "-O2"
 	var_default CXXLDFLAGS ""
 	if check_program $CXX
 	then
@@ -134,13 +132,39 @@ check_cxx()
 				;;
 		esac
 		makefile_vars CXX CXXLD CXXFLAGS CXXLDFLAGS
-		if test "$CXX_GENERATE_DEPS" = y && check_cxx_flag -MMD -MP -MF /dev/null
-		then
-			CXXFLAGS="$CXXFLAGS -MMD -MP -MF .dep-\$@"
-		fi
 		return 0
 	fi
 	return 1
+}
+
+# check if CC can generate dependencies (.dep-*.o files)
+# always succeeds
+check_cc_depgen()
+{
+	msg_checking "if CC can generate dependency information"
+	if cc_supports -MMD -MP -MF /dev/null
+	then
+		CFLAGS="$CFLAGS -MMD -MP -MF .dep-\$@"
+		msg_result yes
+	else
+		msg_result no
+	fi
+	return 0
+}
+
+# check if CXX can generate dependencies (.dep-*.o files)
+# always succeeds
+check_cxx_depgen()
+{
+	msg_checking "if CXX can generate dependency information"
+	if cxx_supports -MMD -MP -MF /dev/null
+	then
+		CXXFLAGS="$CXXFLAGS -MMD -MP -MF .dep-\$@"
+		msg_result yes
+	else
+		msg_result no
+	fi
+	return 0
 }
 
 # adds AR to config.mk
