@@ -253,6 +253,5 @@ mandir:              ${mandir}
 Installation:
 make                 build cmus
 make install         install cmus
-make install-man     install man pages
 make install-html    install html docs (same content in the man pages)
 EOF

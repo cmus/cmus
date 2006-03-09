@@ -118,7 +118,7 @@ install-plugins: plugins
 	$(INSTALL) -m755 $(libdir)/cmus/ip $(ip-y)
 	$(INSTALL) -m755 $(libdir)/cmus/op $(op-y)
 
-install: main plugins install-main install-plugins
+install: main plugins install-main install-plugins install-man
 
 tags:
 	exuberant-ctags *.[ch]
