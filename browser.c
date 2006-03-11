@@ -32,6 +32,7 @@
 #include <unistd.h>
 #include <dirent.h>
 #include <string.h>
+#include <errno.h>
 
 struct window *browser_win;
 struct searchable *browser_searchable;

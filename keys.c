@@ -615,8 +615,7 @@ void normal_mode_ch(uchar ch)
 		return;
 
 	/* common ch */
-	if (!handle_key(key_bindings[CTX_COMMON], k))
-		d_print("key %s not bound in context %s or common\n", k->name, key_context_names[c]);
+	handle_key(key_bindings[CTX_COMMON], k);
 }
 
 void normal_mode_key(int key)
@@ -633,6 +632,5 @@ void normal_mode_key(int key)
 		return;
 
 	/* common key */
-	if (!handle_key(key_bindings[CTX_COMMON], k))
-		d_print("key %s not bound in context %s or common\n", k->name, key_context_names[c]);
+	handle_key(key_bindings[CTX_COMMON], k);
 }

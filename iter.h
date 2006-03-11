@@ -20,8 +20,6 @@
 #ifndef _ITER_H
 #define _ITER_H
 
-#include "debug.h"
-
 #include <stdlib.h>
 
 struct iter {
@@ -78,7 +76,6 @@ int FUNC(struct iter *iter)						\
 	struct list_head *head = iter->data0;				\
 	TYPE *e = iter->data1;						\
 									\
-	BUG_ON(iter->data2);						\
 	if (head == NULL)						\
 		return 0;						\
 	if (e == NULL) {						\
@@ -104,7 +101,6 @@ int FUNC(struct iter *iter)						\
 	struct list_head *head = iter->data0;				\
 	TYPE *e = iter->data1;						\
 									\
-	BUG_ON(iter->data2);						\
 	if (head == NULL)						\
 		return 0;						\
 	if (e == NULL) {						\

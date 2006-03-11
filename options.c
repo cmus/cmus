@@ -25,6 +25,7 @@
 
 #include <stdio.h>
 #include <curses.h>
+#include <errno.h>
 
 /* initialized option variables */
 

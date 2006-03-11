@@ -39,10 +39,9 @@ struct track_info *pl_set_next(void)
 	struct simple_track *track;
 	struct track_info *ti = NULL;
 
-	if (list_empty(&pl_editable.head)) {
-		BUG_ON(pl_cur_track != NULL);
+	if (list_empty(&pl_editable.head))
 		return NULL;
-	}
+
 	if (shuffle) {
 		track = (struct simple_track *)shuffle_list_get_next(&pl_shuffle_head,
 				(struct shuffle_track *)pl_cur_track, dummy_filter);
@@ -64,10 +63,9 @@ struct track_info *pl_set_prev(void)
 	struct simple_track *track;
 	struct track_info *ti = NULL;
 
-	if (list_empty(&pl_editable.head)) {
-		BUG_ON(pl_cur_track != NULL);
+	if (list_empty(&pl_editable.head))
 		return NULL;
-	}
+
 	if (shuffle) {
 		track = (struct simple_track *)shuffle_list_get_prev(&pl_shuffle_head,
 				(struct shuffle_track *)pl_cur_track, dummy_filter);
@@ -89,10 +87,8 @@ struct track_info *pl_set_selected(void)
 	struct track_info *ti;
 	struct iter sel;
 
-	if (list_empty(&pl_editable.head)) {
-		BUG_ON(pl_cur_track != NULL);
+	if (list_empty(&pl_editable.head))
 		return NULL;
-	}
 
 	window_get_sel(pl_editable.win, &sel);
 	pl_cur_track = iter_to_simple_track(&sel);

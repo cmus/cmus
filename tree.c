@@ -7,6 +7,7 @@
 #include "xmalloc.h"
 #include "comment.h"
 #include "utils.h"
+#include "debug.h"
 
 struct searchable *tree_searchable;
 struct window *lib_tree_win;
