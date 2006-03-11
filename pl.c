@@ -34,10 +34,22 @@ static int dummy_filter(const struct simple_track *track)
 	return 1;
 }
 
+static struct track_info *set_track(struct simple_track *track)
+{
+	struct track_info *ti = NULL;
+
+	if (track) {
+		pl_cur_track = track;
+		ti = track->info;
+		track_info_ref(ti);
+		pl_editable.win->changed = 1;
+	}
+	return ti;
+}
+
 struct track_info *pl_set_next(void)
 {
 	struct simple_track *track;
-	struct track_info *ti = NULL;
 
 	if (list_empty(&pl_editable.head))
 		return NULL;
@@ -48,20 +60,12 @@ struct track_info *pl_set_next(void)
 	} else {
 		track = simple_list_get_next(&pl_editable.head, pl_cur_track, dummy_filter);
 	}
-	if (track) {
-		pl_cur_track = track;
-		ti = track->info;
-
-		track_info_ref(ti);
-		pl_editable.win->changed = 1;
-	}
-	return ti;
+	return set_track(track);
 }
 
 struct track_info *pl_set_prev(void)
 {
 	struct simple_track *track;
-	struct track_info *ti = NULL;
 
 	if (list_empty(&pl_editable.head))
 		return NULL;
@@ -72,30 +76,18 @@ struct track_info *pl_set_prev(void)
 	} else {
 		track = simple_list_get_prev(&pl_editable.head, pl_cur_track, dummy_filter);
 	}
-	if (track) {
-		pl_cur_track = track;
-		ti = track->info;
-
-		track_info_ref(ti);
-		pl_editable.win->changed = 1;
-	}
-	return ti;
+	return set_track(track);
 }
 
 struct track_info *pl_set_selected(void)
 {
-	struct track_info *ti;
 	struct iter sel;
 
 	if (list_empty(&pl_editable.head))
 		return NULL;
 
 	window_get_sel(pl_editable.win, &sel);
-	pl_cur_track = iter_to_simple_track(&sel);
-	ti = pl_cur_track->info;
-	track_info_ref(ti);
-	pl_editable.win->changed = 1;
-	return ti;
+	return set_track(iter_to_simple_track(&sel));
 }
 
 void pl_sel_current(void)

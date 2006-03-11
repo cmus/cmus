@@ -297,10 +297,22 @@ void lib_init(void)
 	srand(time(NULL));
 }
 
+static struct track_info *lib_set_track(struct tree_track *track)
+{
+	struct track_info *ti = NULL;
+
+	if (track) {
+		lib_cur_track = track;
+		ti = tree_track_info(track);
+		track_info_ref(ti);
+		all_wins_changed();
+	}
+	return ti;
+}
+
 struct track_info *lib_set_next(void)
 {
 	struct tree_track *track;
-	struct track_info *ti = NULL;
 
 	if (list_empty(&lib_artist_head)) {
 		BUG_ON(lib_cur_track != NULL);
@@ -315,20 +327,12 @@ struct track_info *lib_set_next(void)
 	} else {
 		track = normal_get_next();
 	}
-	if (track) {
-		lib_cur_track = track;
-		ti = tree_track_info(track);
-
-		track_info_ref(ti);
-		all_wins_changed();
-	}
-	return ti;
+	return lib_set_track(track);
 }
 
 struct track_info *lib_set_prev(void)
 {
 	struct tree_track *track;
-	struct track_info *ti = NULL;
 
 	if (list_empty(&lib_artist_head)) {
 		BUG_ON(lib_cur_track != NULL);
@@ -343,30 +347,18 @@ struct track_info *lib_set_prev(void)
 	} else {
 		track = normal_get_prev();
 	}
-	if (track) {
-		lib_cur_track = track;
-		ti = tree_track_info(track);
-
-		track_info_ref(ti);
-		all_wins_changed();
-	}
-	return ti;
+	return lib_set_track(track);
 }
 
 struct track_info *sorted_set_selected(void)
 {
-	struct track_info *info;
 	struct iter sel;
 
 	if (list_empty(&lib_editable.head))
 		return NULL;
 
 	window_get_sel(lib_editable.win, &sel);
-	lib_cur_track = iter_to_sorted_track(&sel);
-	info = tree_track_info(lib_cur_track);
-	track_info_ref(info);
-	all_wins_changed();
-	return info;
+	return lib_set_track(iter_to_sorted_track(&sel));
 }
 
 void lib_set_filter(struct expr *expr)
