@@ -256,6 +256,9 @@ void editable_move_after(struct editable *e)
 {
 	struct simple_track *sel;
 
+	if (e->nr_tracks <= 1)
+		return;
+
 	if (e->sort_keys[0] == NULL && (sel = get_selected(e)))
 		move_sel(e, find_insert_after_point(e, &sel->node));
 }
@@ -263,6 +266,9 @@ void editable_move_after(struct editable *e)
 void editable_move_before(struct editable *e)
 {
 	struct simple_track *sel;
+
+	if (e->nr_tracks <= 1)
+		return;
 
 	if (e->sort_keys[0] == NULL && (sel = get_selected(e)))
 		move_sel(e, find_insert_before_point(e, &sel->node));
