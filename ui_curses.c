@@ -57,6 +57,10 @@
 #include <signal.h>
 #include <stdarg.h>
 
+/* defined in <term.h> but without const */
+char *tgetstr(const char *id, char **area);
+char *tgoto(const char *cap, int col, int row);
+
 /* globals. documented in ui_curses.h */
 
 int ui_initialized = 0;
@@ -74,8 +78,6 @@ char *pl_filename = NULL;
 
 /* currently playing file */
 static struct track_info *cur_track_info = NULL;
-
-static int update_window_title = 0;
 
 static int running = 1;
 static char *lib_autosave_filename;
@@ -101,6 +103,9 @@ static char conv_buffer[512];
 
 #define print_buffer_size (sizeof(print_buffer) - 1)
 static int using_utf8;
+
+static const char *t_ts;
+static const char *t_fs;
 
 static int tree_win_x = 0;
 static int tree_win_y = 0;
@@ -999,12 +1004,21 @@ static const char *get_stream_title(const char *metadata)
 	return NULL;
 }
 
+static void set_title(const char *title)
+{
+	if (t_ts) {
+		printf("%s%s%s", tgoto(t_ts, 0, 0), title, t_fs);
+		fflush(stdout);
+	}
+}
+
 static void do_update_titleline(void)
 {
 	bkgdset(pairs[CURSED_TITLELINE]);
 	player_info_lock();
 	if (cur_track_info) {
-		int use_alt_format = 0;
+		int i, use_alt_format = 0;
+		char *wtitle;
 
 		fill_track_fopts_track_info(cur_track_info);
 		if (is_url(cur_track_info->filename)) {
@@ -1024,42 +1038,34 @@ static void do_update_titleline(void)
 		}
 		dump_print_buffer(LINES - 3, 0);
 
-		if (update_window_title) {
-			char *wtitle;
-			int i;
-
-			if (use_alt_format) {
-				format_print(print_buffer, sizeof(print_buffer) - 1,
-						window_title_alt_format, track_fopts);
-			} else {
-				format_print(print_buffer, sizeof(print_buffer) - 1,
-						window_title_format, track_fopts);
-			}
-
-			/* remove whitespace */
-			i = sizeof(print_buffer) - 2;
-			while (i > 0 && print_buffer[i] == ' ')
-				i--;
-			print_buffer[i + 1] = 0;
-
-			if (using_utf8) {
-				wtitle = print_buffer;
-			} else {
-				utf8_decode(print_buffer);
-				wtitle = conv_buffer;
-			}
-
-			printf("\033]0;%s\007", wtitle);
-			fflush(stdout);
+		/* set window title */
+		if (use_alt_format) {
+			format_print(print_buffer, sizeof(print_buffer) - 1,
+					window_title_alt_format, track_fopts);
+		} else {
+			format_print(print_buffer, sizeof(print_buffer) - 1,
+					window_title_format, track_fopts);
 		}
+
+		/* remove whitespace */
+		i = strlen(print_buffer) - 1;
+		while (i > 0 && print_buffer[i] == ' ')
+			i--;
+		print_buffer[i + 1] = 0;
+
+		if (using_utf8) {
+			wtitle = print_buffer;
+		} else {
+			utf8_decode(print_buffer);
+			wtitle = conv_buffer;
+		}
+
+		set_title(wtitle);
 	} else {
 		move(LINES - 3, 0);
 		clrtoeol();
 
-		if (update_window_title) {
-			printf("\033]0;CMus " VERSION "\007");
-			fflush(stdout);
-		}
+		set_title("cmus " VERSION);
 	}
 	player_info_unlock();
 }
@@ -1751,6 +1757,7 @@ static const struct player_callbacks player_callbacks = {
 static void init_curses(void)
 {
 	struct sigaction act;
+	char *ptr, *term;
 
 	sigemptyset(&act.sa_mask);
 	act.sa_flags = 0;
@@ -1786,18 +1793,24 @@ static void init_curses(void)
 	 * called only once after all colors have been set
 	 */
 	update_colors();
+
+	ptr = print_buffer;
+	t_ts = tgetstr("ts", &ptr);
+	t_fs = tgetstr("fs", &ptr);
+	d_print("ts: %d fs: %d\n", !!t_ts, !!t_fs);
+
+	if (!t_fs)
+		t_ts = NULL;
+
+	term = getenv("TERM");
+	if (!t_ts && term && !strcmp(term, "screen")) {
+		t_ts = "\033k";
+		t_fs = "\033\\";
+	}
 }
 
 static void init_all(void)
 {
-	char *term;
-
-	term = getenv("TERM");
-	if (term && (strncmp(term, "xterm", 5) == 0 ||
-		     strncmp(term, "rxvt", 4) == 0 ||
-		     strcmp(term, "screen") == 0))
-		update_window_title = 1;
-
 	remote_socket = remote_server_init(server_address);
 
 	/* does not select output plugin */
