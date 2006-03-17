@@ -423,7 +423,9 @@ void ip_delete(struct input_plugin *ip)
 
 int ip_open(struct input_plugin *ip)
 {
-	int rc, bits, is_signed, channels;
+	unsigned int bits, is_signed, channels;
+	int rc;
+	sample_format_t sf;
 
 	BUG_ON(ip->open);
 
@@ -453,48 +455,25 @@ int ip_open(struct input_plugin *ip)
 		return rc;
 	}
 
+	sf = ip->data.sf;
+
+	bits = sf_get_bits(sf);
+	is_signed = sf_get_signed(sf);
+	channels = sf_get_channels(sf);
+
 	ip->pcm_convert_scale = 1;
 	ip->pcm_convert = NULL;
 	ip->pcm_convert_in_place = NULL;
-	bits = sf_get_bits(ip->data.sf);
-	is_signed = sf_get_signed(ip->data.sf);
-	channels = sf_get_channels(ip->data.sf);
-	if (bits == 8) {
-		if (channels == 1) {
-			ip->pcm_convert_scale = 4;
-			if (is_signed) {
-				ip->pcm_convert = convert_s8_1ch_to_s16_2ch;
-			} else {
-				ip->pcm_convert = convert_u8_1ch_to_s16_2ch;
-			}
-		} else if (channels == 2) {
-			ip->pcm_convert_scale = 2;
-			if (is_signed) {
-				ip->pcm_convert = convert_s8_2ch_to_s16_2ch;
-			} else {
-				ip->pcm_convert = convert_u8_2ch_to_s16_2ch;
-			}
-		}
-	} else if (bits == 16) {
-		if (channels == 1) {
-			ip->pcm_convert_scale = 2;
-			ip->pcm_convert = convert_16_1ch_to_16_2ch;
-		}
-		if (channels <= 2) {
-			int bigendian = sf_get_bigendian(ip->data.sf);
 
-			if (is_signed) {
-				if (bigendian)
-					ip->pcm_convert_in_place = convert_s16_be_to_s16_le;
-			} else {
-				if (bigendian) {
-					ip->pcm_convert_in_place = convert_u16_be_to_s16_le;
-				} else {
-					ip->pcm_convert_in_place = convert_u16_le_to_s16_le;
-				}
-			}
-		}
+	if (bits <= 16 && channels <= 2) {
+		unsigned int mask = ((bits >> 2) & 4) | (is_signed << 1);
+
+		ip->pcm_convert = pcm_conv[mask | (channels - 1)];
+		ip->pcm_convert_in_place = pcm_conv_in_place[mask | sf_get_bigendian(sf)];
+
+		ip->pcm_convert_scale = (3 - channels) * (3 - bits / 8);
 	}
+
 	d_print("pcm convert: scale=%d convert=%d convert_in_place=%d\n",
 			ip->pcm_convert_scale,
 			ip->pcm_convert != NULL,

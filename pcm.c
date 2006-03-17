@@ -1,25 +1,7 @@
-/* 
- * Copyright 2005 Timo Hirvonen
- * 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
- * 02111-1307, USA.
- */
-
-#include <pcm.h>
+#include "pcm.h"
 
 #include <inttypes.h>
+#include <stdlib.h>
 
 /*
  * Functions to convert PCM to 16-bit signed little-endian stereo
@@ -45,7 +27,7 @@
  * converted to stereo so it's worthwhile to split the conversion to 2 phases.
  */
 
-void convert_u8_1ch_to_s16_2ch(char *dst, const char *src, int count)
+static void convert_u8_1ch_to_s16_2ch(char *dst, const char *src, int count)
 {
 	int16_t *d = (int16_t *)dst;
 	const uint8_t *s = (const uint8_t *)src;
@@ -59,7 +41,7 @@ void convert_u8_1ch_to_s16_2ch(char *dst, const char *src, int count)
 	}
 }
 
-void convert_s8_1ch_to_s16_2ch(char *dst, const char *src, int count)
+static void convert_s8_1ch_to_s16_2ch(char *dst, const char *src, int count)
 {
 	int16_t *d = (int16_t *)dst;
 	const int8_t *s = (const int8_t *)src;
@@ -72,7 +54,7 @@ void convert_s8_1ch_to_s16_2ch(char *dst, const char *src, int count)
 	}
 }
 
-void convert_u8_2ch_to_s16_2ch(char *dst, const char *src, int count)
+static void convert_u8_2ch_to_s16_2ch(char *dst, const char *src, int count)
 {
 	int16_t *d = (int16_t *)dst;
 	const int8_t *s = (const int8_t *)src;
@@ -85,7 +67,7 @@ void convert_u8_2ch_to_s16_2ch(char *dst, const char *src, int count)
 	}
 }
 
-void convert_s8_2ch_to_s16_2ch(char *dst, const char *src, int count)
+static void convert_s8_2ch_to_s16_2ch(char *dst, const char *src, int count)
 {
 	int16_t *d = (int16_t *)dst;
 	const int8_t *s = (const int8_t *)src;
@@ -97,7 +79,7 @@ void convert_s8_2ch_to_s16_2ch(char *dst, const char *src, int count)
 	}
 }
 
-void convert_u16_le_to_s16_le(char *buf, int count)
+static void convert_u16_le_to_s16_le(char *buf, int count)
 {
 	int16_t *b = (int16_t *)buf;
 	int i;
@@ -109,7 +91,7 @@ void convert_u16_le_to_s16_le(char *buf, int count)
 	}
 }
 
-void convert_u16_be_to_s16_le(char *buf, int count)
+static void convert_u16_be_to_s16_le(char *buf, int count)
 {
 	int16_t *b = (int16_t *)buf;
 	int i;
@@ -124,7 +106,7 @@ void convert_u16_be_to_s16_le(char *buf, int count)
 	}
 }
 
-void convert_s16_be_to_s16_le(char *buf, int count)
+static void convert_s16_be_to_s16_le(char *buf, int count)
 {
 	int16_t *b = (int16_t *)buf;
 	int i;
@@ -135,7 +117,7 @@ void convert_s16_be_to_s16_le(char *buf, int count)
 	}
 }
 
-void convert_16_1ch_to_16_2ch(char *dst, const char *src, int count)
+static void convert_16_1ch_to_16_2ch(char *dst, const char *src, int count)
 {
 	int16_t *d = (int16_t *)dst;
 	const int16_t *s = (const int16_t *)src;
@@ -146,3 +128,29 @@ void convert_16_1ch_to_16_2ch(char *dst, const char *src, int count)
 		d[j++] = s[i];
 	}
 }
+
+/* index is ((bits >> 2) & 1) | (is_signed << 1) | (channels - 1) */
+pcm_conv_func pcm_conv[8] = {
+	convert_u8_1ch_to_s16_2ch,
+	convert_u8_2ch_to_s16_2ch,
+	convert_s8_1ch_to_s16_2ch,
+	convert_s8_2ch_to_s16_2ch,
+
+	convert_16_1ch_to_16_2ch,
+	NULL,
+	convert_16_1ch_to_16_2ch,
+	NULL
+};
+
+/* index is ((bits >> 2) & 1) | (is_signed << 1) | bigendian */
+pcm_conv_in_place_func pcm_conv_in_place[8] = {
+	NULL,
+	NULL,
+	NULL,
+	NULL,
+
+	convert_u16_le_to_s16_le,
+	convert_u16_be_to_s16_le,
+	NULL,
+	convert_s16_be_to_s16_le
+};
