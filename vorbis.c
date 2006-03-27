@@ -17,11 +17,11 @@
  * 02111-1307, USA.
  */
 
-#include <config.h>
-#include <ip.h>
-#include <xmalloc.h>
-#include <read_wrapper.h>
-#include <debug.h>
+#include "ip.h"
+#include "xmalloc.h"
+#include "read_wrapper.h"
+#include "debug.h"
+#include "config/tremor.h"
 
 #ifdef CONFIG_TREMOR
 #include <tremor/ivorbisfile.h>
@@ -31,7 +31,6 @@
 
 #include <errno.h>
 #include <string.h>
-
 #include <sys/types.h>
 #include <unistd.h>
 
