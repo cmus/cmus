@@ -50,7 +50,7 @@ struct output_plugin {
 	unsigned int mixer_open : 1;
 };
 
-static const char * const plugin_dir = LIBDIR "/" PACKAGE "/op";
+static const char * const plugin_dir = LIBDIR "/cmus/op";
 static LIST_HEAD(op_head);
 static struct output_plugin *op = NULL;
 static sample_format_t current_sf = 0;

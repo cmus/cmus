@@ -1923,7 +1923,7 @@ int main(int argc, char *argv[])
 			printf(usage, program_name);
 			return 0;
 		case FLAG_VERSION:
-			printf(PACKAGE " " VERSION "\nCopyright 2004-2005 Timo Hirvonen\n");
+			printf("cmus " VERSION "\nCopyright 2004-2005 Timo Hirvonen\n");
 			return 0;
 		case FLAG_PLUGINS:
 			list_plugins = 1;

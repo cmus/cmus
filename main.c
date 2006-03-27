@@ -34,7 +34,7 @@ static void remote_connect(const char *server)
 		if (errno == ENOENT || errno == ECONNREFUSED) {
 			/* "cmus-remote -C" can be used to check if cmus is running */
 			if (!raw_args)
-				warn(PACKAGE " is not running\n");
+				warn("cmus is not running\n");
 			exit(1);
 		}
 		die_errno("connect");
@@ -186,7 +186,7 @@ int main(int argc, char *argv[])
 			printf(usage, program_name, program_name, program_name);
 			return 0;
 		case FLAG_VERSION:
-			printf(PACKAGE " " VERSION "\nCopyright 2004-2006 Timo Hirvonen\n");
+			printf("cmus " VERSION "\nCopyright 2004-2006 Timo Hirvonen\n");
 			return 0;
 		case FLAG_SERVER:
 			server = arg;

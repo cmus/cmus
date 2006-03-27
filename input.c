@@ -73,7 +73,7 @@ struct ip {
 	const struct input_plugin_ops *ops;
 };
 
-static const char * const plugin_dir = LIBDIR "/" PACKAGE "/ip";
+static const char * const plugin_dir = LIBDIR "/cmus/ip";
 static LIST_HEAD(ip_head);
 
 /* timeouts (ms) */
@@ -159,7 +159,7 @@ static int do_http_get(const char *uri, struct http_header **headersp, int *code
 	h[i].val = xstrdup(u.host);
 	i++;
 	h[i].key = xstrdup("User-Agent");
-	h[i].val = xstrdup(PACKAGE "/" VERSION);
+	h[i].val = xstrdup("cmus/" VERSION);
 	i++;
 	h[i].key = xstrdup("Icy-MetaData");
 	h[i].val = xstrdup("1");

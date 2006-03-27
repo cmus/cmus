@@ -21,7 +21,6 @@
 #include <prog.h>
 #include <command_mode.h>
 #include <debug.h>
-#include <config.h>
 
 #include <unistd.h>
 #include <sys/un.h>
@@ -124,7 +123,7 @@ int remote_server_init(const char *address)
 		} else {
 			/* server already running */
 			close(sock);
-			die(PACKAGE " is already listening on socket %s\n", address);
+			die("cmus is already listening on socket %s\n", address);
 		}
 	}
 	/* start listening */

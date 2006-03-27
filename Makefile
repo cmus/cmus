@@ -149,7 +149,7 @@ _ver1	= $(shell git-describe --tags $(REV) 2>/dev/null)
 # SHA1
 _ver2	= $(shell git-rev-parse --verify $(REV) 2>/dev/null)
 
-TARNAME	= $(PACKAGE)-$(if $(_ver0),$(_ver0),$(if $(_ver1),$(_ver1),$(_ver2)))
+TARNAME	= cmus-$(if $(_ver0),$(_ver0),$(if $(_ver1),$(_ver1),$(_ver2)))
 
 dist: $(if $(filter HEAD,$(REV)),doc,)
 	@tarname=$(TARNAME);						\
