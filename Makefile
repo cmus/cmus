@@ -104,7 +104,7 @@ ao.so: $(ao-objs)
 data		= $(wildcard data/*)
 
 clean		+= *.o *.lo *.so cmus cmus-remote *.html
-distclean	+= config.mk config.h tags
+distclean	+= config.mk config/*.h tags
 
 main: cmus cmus-remote
 plugins: $(ip-y) $(op-y)

@@ -8,7 +8,7 @@ tags
 
 # top-level ignores
 /*.spec
-/config.h
+/config
 /config.mk
 /cmus
 /cmus-remote
