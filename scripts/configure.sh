@@ -181,6 +181,50 @@ makefile_vars()
 # -----------------------------------------------------------------------------
 # Config header generation
 
+# Simple interface
+#
+# Guesses variable types:
+#   y or n        -> bool
+#   [0-9]+        -> int
+#   anything else -> str
+#
+# Example:
+#   CONFIG_FOO=y  # bool
+#   VERSION=2.0.1 # string
+#   DEBUG=1       # int
+#   config_header config.h CONFIG_FOO VERSION DEBUG
+config_header()
+{
+	local v
+
+	argc config_header $# 2
+	after run_checks config_header
+
+	config_header_begin "$1"
+	shift
+	while test $# -gt 0
+	do
+		v=$(get_var $1)
+		case $v in
+			[yn])
+				config_bool $1
+				;;
+			*)
+				if test "$v" && test "$v" = "$(echo $v | sed 's/[^0-9]//g')"
+				then
+					config_int $1
+				else
+					config_str $1
+				fi
+				;;
+		esac
+		shift
+	done
+	config_header_end
+}
+
+# Low-level interface
+#
 # Example:
 #   config_header_begin config.h
 #   config_str PACKAGE VERSION
@@ -254,6 +298,7 @@ config_header_end()
 	mkdir -p $(dirname "$config_header_file")
 	update_file "$config_header_tmp" "$config_header_file"
 }
+
 # -----------------------------------------------------------------------------
 
 # Print values for enable flags
