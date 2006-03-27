@@ -5,7 +5,8 @@
 #ifndef DEBUG_H
 #define DEBUG_H
 
-#include <compiler.h>
+#include "compiler.h"
+#include "config/debug.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,21 +14,13 @@
 #include <sys/time.h>
 #include <inttypes.h>
 
-#if !defined(DEBUG)
-#error DEBUG not defined
-#endif
-
-#if DEBUG < 0
-#error DEBUG must be >= 0
-#endif
-
 void debug_init(void);
 void __debug_bug(const char *function, const char *fmt, ...) __FORMAT(2, 3) __NORETURN;
 void __debug_print(const char *function, const char *fmt, ...) __FORMAT(2, 3);
 
 /* ------------------------------------------------------------------------ */
 
-#if DEBUG == 0
+#if DEBUG <= 0
 
 #define BUG(...) do { } while (0)
 
@@ -39,7 +32,7 @@ void __debug_print(const char *function, const char *fmt, ...) __FORMAT(2, 3);
 
 /* ------------------------------------------------------------------------ */
 
-#if DEBUG == 0 || DEBUG == 1
+#if DEBUG <= 1
 
 #define d_print(...) do { } while (0)
 

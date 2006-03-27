@@ -212,7 +212,7 @@ var_default datadir "${prefix}/share"
 var_default libdir "${prefix}/lib"
 var_default mandir "${datadir}/man"
 
-CFLAGS="${CFLAGS} ${EXTRA_CFLAGS} -DDEBUG=$DEBUG"
+CFLAGS="${CFLAGS} ${EXTRA_CFLAGS}"
 test "$WORDS_BIGENDIAN" = y && CFLAGS="${CFLAGS} -DWORDS_BIGENDIAN"
 
 DATADIR="$datadir"
@@ -221,6 +221,10 @@ LIBDIR="$libdir"
 config_header_begin config.h
 config_str VERSION DATADIR LIBDIR
 config_bool CONFIG_TREMOR
+config_header_end
+
+config_header_begin config/debug.h
+config_int DEBUG
 config_header_end
 
 makefile_vars VERSION bindir datadir libdir mandir

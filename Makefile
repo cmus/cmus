@@ -168,9 +168,3 @@ dist: $(if $(filter HEAD,$(REV)),doc,)
 
 .PHONY: all main plugins doc man html dist tags
 .PHONY: install install-main install-plugins install-doc install-man install-html
-
-# If config.mk changes, rebuild all sources that include debug.h
-#
-# debug.h depends on DEBUG variable which is defined in config.mk
-# if config.mk is newer than debug.h then touch debug.h
-_dummy	:= $(shell test config.mk -nt debug.h && touch debug.h)
