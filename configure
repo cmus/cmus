@@ -3,7 +3,6 @@
 . scripts/configure.sh || exit 1
 
 VERSION="2.0.0"
-PACKAGE_BUGREPORT="cmus-devel@lists.sourceforge.net"
 
 check_cflags()
 {
@@ -220,7 +219,7 @@ DATADIR="$datadir"
 LIBDIR="$libdir"
 
 config_header_begin config.h
-config_str VERSION PACKAGE_BUGREPORT DATADIR LIBDIR
+config_str VERSION DATADIR LIBDIR
 config_bool CONFIG_TREMOR
 config_header_end
 

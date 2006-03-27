@@ -158,7 +158,7 @@ static const char *usage =
 "\n"
 "  By default cmus-remote reads raw commands from stdin (one command per line).\n"
 "\n"
-"Report bugs to <" PACKAGE_BUGREPORT ">.\n";
+"Report bugs to <cmus-devel@lists.sourceforge.net>.\n";
 
 int main(int argc, char *argv[])
 {
