@@ -41,7 +41,7 @@
 #include <server.h>
 #include <keys.h>
 #include <debug.h>
-#include <config.h>
+#include "config/version.h"
 
 #include <unistd.h>
 #include <stdlib.h>

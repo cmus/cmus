@@ -26,7 +26,7 @@
 #include <xmalloc.h>
 #include <list.h>
 #include <debug.h>
-#include <config.h>
+#include "config/libdir.h"
 
 #include <string.h>
 #include <stdlib.h>

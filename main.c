@@ -2,11 +2,11 @@
  * Copyright 2005-2006 Timo Hirvonen
  */
 
-#include <config.h>
 #include <prog.h>
 #include <file.h>
 #include <path.h>
 #include <xmalloc.h>
+#include "config/version.h"
 
 #include <unistd.h>
 #include <fcntl.h>

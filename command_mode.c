@@ -44,7 +44,7 @@
 #include <utils.h>
 #include <list.h>
 #include <debug.h>
-#include <config.h>
+#include "config/datadir.h"
 
 #include <stdlib.h>
 #include <curses.h>

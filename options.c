@@ -21,7 +21,7 @@
 #include "file.h"
 #include "prog.h"
 #include "output.h"
-#include "config.h"
+#include "config/datadir.h"
 
 #include <stdio.h>
 #include <curses.h>

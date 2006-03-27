@@ -218,17 +218,11 @@ test "$WORDS_BIGENDIAN" = y && CFLAGS="${CFLAGS} -DWORDS_BIGENDIAN"
 DATADIR="$datadir"
 LIBDIR="$libdir"
 
-config_header_begin config.h
-config_str VERSION DATADIR LIBDIR
-config_header_end
-
-config_header_begin config/debug.h
-config_int DEBUG
-config_header_end
-
-config_header_begin config/tremor.h
-config_bool CONFIG_TREMOR
-config_header_end
+config_header config/version.h VERSION
+config_header config/datadir.h DATADIR
+config_header config/libdir.h LIBDIR
+config_header config/debug.h DEBUG
+config_header config/tremor.h CONFIG_TREMOR
 
 makefile_vars VERSION bindir datadir libdir mandir
 makefile_vars CONFIG_FLAC CONFIG_MAD CONFIG_MODPLUG CONFIG_MPC CONFIG_VORBIS CONFIG_WAV
