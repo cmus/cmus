@@ -6,6 +6,9 @@
 
 # initialization {{{
 
+export LC_ALL=C
+export LANG=C
+
 if test "$CDPATH"
 then
 	echo "Exporting CDPATH is dangerous and unnecessary!"
