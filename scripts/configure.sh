@@ -239,7 +239,7 @@ config_header_begin()
 	config_header_file="$1"
 	config_header_tmp=$(tmp_file config_header)
 
-	local def=$(echo $config_header_file | to_upper | sed 's/[\.-/]/_/g')
+	local def=$(echo $config_header_file | to_upper | sed 's/[-\.\/]/_/g')
 	cat <<EOF > "$config_header_tmp"
 #ifndef $def
 #define $def
