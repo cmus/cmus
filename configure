@@ -15,6 +15,7 @@ check_cflags()
 	do
 		check_cc_flag $i
 	done
+	return 0
 }
 
 check_ncurses()
