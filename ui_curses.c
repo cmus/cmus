@@ -1719,7 +1719,11 @@ static void main_loop(void)
 					if (key > 255) {
 						handle_key(key);
 					} else {
-						handle_ch(key);
+						uchar ch = key;
+
+						if (ch > 0x7f)
+							ch |= U_INVALID_MASK;
+						handle_ch(ch);
 					}
 				}
 			}
