@@ -912,6 +912,7 @@ static void dump_buffer(const char *buffer)
 
 static void do_update_commandline(void)
 {
+	char *str;
 	int w, idx;
 	char ch;
 
@@ -932,15 +933,34 @@ static void do_update_commandline(void)
 		return;
 	}
 
+	str = cmdline.line;
+	if (!using_utf8) {
+		/* cmdline.line actually pretends to be UTF-8 but all non-ASCII
+		 * characters are invalid UTF-8 so it really is in locale's
+		 * encoding.
+		 *
+		 * This code should be safe because cmdline.bpos ==
+		 * cmdline.cpos as every non-ASCII character is counted as one
+		 * invalid UTF-8 byte.
+		 *
+		 * NOTE: This has nothing to do with widths of printed
+		 * characters.  I.e. even if there were control characters
+		 * (displayed as <xx>) there would be no problem because bpos
+		 * still equals to cpos, I think.
+		 */
+		utf8_encode(cmdline.line);
+		str = conv_buffer;
+	}
+
 	/* COMMAND_MODE or SEARCH_MODE */
-	w = u_str_width(cmdline.line);
+	w = u_str_width(str);
 	ch = ':';
 	if (input_mode == SEARCH_MODE)
 		ch = search_direction == SEARCH_FORWARD ? '/' : '?';
 
 	if (w <= COLS - 2) {
 		addch(ch);
-		idx = u_copy_chars(print_buffer, cmdline.line, &w);
+		idx = u_copy_chars(print_buffer, str, &w);
 		print_buffer[idx] = 0;
 		dump_buffer(print_buffer);
 		clrtoeol();
@@ -949,7 +969,7 @@ static void do_update_commandline(void)
 		int skip, width, cw;
 
 		/* cursor pos (width, not chars. doesn't count the ':') */
-		cw = u_str_nwidth(cmdline.line, cmdline.cpos);
+		cw = u_str_nwidth(str, cmdline.cpos);
 
 		skip = cw + 2 - COLS;
 		if (skip > 0) {
@@ -957,14 +977,21 @@ static void do_update_commandline(void)
 			skip--;
 
 			/* skip rest (if any) */
-			idx = u_skip_chars(cmdline.line, &skip);
+			idx = u_skip_chars(str, &skip);
 
 			width = COLS;
-			idx = u_copy_chars(print_buffer, cmdline.line + idx, &width);
+			idx = u_copy_chars(print_buffer, str + idx, &width);
 			while (width < COLS) {
 				/* cursor is at end of the buffer
-				 * print a space (or 2 if the last skipped character
-				 * was double-width)
+				 * print 1, 2 or 3 spaces
+				 *
+				 * To clarify:
+				 *
+				 * If the last _skipped_ character was double-width we may need
+				 * to print 2 spaces.
+				 *
+				 * If the last _skipped_ character was invalid UTF-8 we may need
+				 * to print 3 spaces.
 				 */
 				print_buffer[idx++] = ' ';
 				width++;
@@ -975,7 +1002,7 @@ static void do_update_commandline(void)
 			/* print ':' + COLS - 1 chars */
 			addch(ch);
 			width = COLS - 1;
-			idx = u_copy_chars(print_buffer, cmdline.line, &width);
+			idx = u_copy_chars(print_buffer, str, &width);
 			print_buffer[idx] = 0;
 			dump_buffer(print_buffer);
 		}
@@ -1072,10 +1099,18 @@ static void do_update_titleline(void)
 
 static int cmdline_cursor_column(void)
 {
+	char *str;
 	int cw, skip, s;
 
+	str = cmdline.line;
+	if (!using_utf8) {
+		/* see do_update_commandline */
+		utf8_encode(cmdline.line);
+		str = conv_buffer;
+	}
+
 	/* width of the text in the buffer before cursor */
-	cw = u_str_nwidth(cmdline.line, cmdline.cpos);
+	cw = u_str_nwidth(str, cmdline.cpos);
 
 	if (1 + cw < COLS) {
 		/* whole line is visible */
@@ -1095,7 +1130,7 @@ static int cmdline_cursor_column(void)
 
 	/* skip rest */
 	s = skip;
-	u_skip_chars(cmdline.line, &s);
+	u_skip_chars(str, &s);
 	if (s > skip) {
 		/* the last skipped char was double-width or <xx> */
 		return COLS - 1 - (s - skip);
