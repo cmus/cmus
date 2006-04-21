@@ -374,7 +374,16 @@ static int flac_open(struct input_plugin_data *ip_data)
 			return -IP_ERROR_ERRNO;
 		}
 	}
-	BUG_ON(ip_data->sf == 0);
+
+	if (ip_data->sf == 0) {
+		F(finish)(priv->dec);
+		F(delete)(priv->dec);
+		free(priv->buf);
+		free(priv);
+		ip_data->private = NULL;
+		return -IP_ERROR_FILE_FORMAT;
+	}
+
 	d_print("sr: %d, ch: %d, bits: %d\n", sf_get_rate(ip_data->sf),
 			sf_get_channels(ip_data->sf), sf_get_bits(ip_data->sf));
 	return 0;
