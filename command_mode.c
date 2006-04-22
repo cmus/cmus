@@ -446,7 +446,7 @@ static void cmd_seek(char *arg)
 	}
 
 	/* Expand M, H to seconds */
-	if (endptr && endptr[0] != '\0') {
+	if (endptr[0] && toupper(endptr[0]) != 'S') {
 		endptr[0] = toupper (endptr[0]);
 		if (endptr[0] == 'M') {
 			seek *= 60;
