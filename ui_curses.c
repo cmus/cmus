@@ -1985,10 +1985,8 @@ int main(int argc, char *argv[])
 		using_utf8 = 0;
 	}
 	misc_init();
-	if (server_address == NULL) {
-		server_address = xnew(char, 256);
-		snprintf(server_address, 256, "/tmp/cmus-%s", user_name);
-	}
+	if (server_address == NULL)
+		server_address = xstrjoin(home_dir, "/.cmus/socket");
 	debug_init();
 	d_print("charset = '%s'\n", charset);
 

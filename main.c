@@ -232,15 +232,11 @@ int main(int argc, char *argv[])
 		die("don't mix raw and cooked stuff\n");
 
 	if (server == NULL) {
-		const char *user_name;
+		const char *home = getenv("HOME");
 
-		user_name = getenv("USER");
-		if (user_name == NULL || user_name[0] == 0) {
-			user_name = getenv("USERNAME");
-			if (user_name == NULL || user_name[0] == 0)
-				die("neither USER or USERNAME environment variable is set\n");
-		}
-		snprintf(server_buf, sizeof(server_buf), "/tmp/cmus-%s", user_name);
+		if (!home)
+			die("error: environment variable HOME not set\n");
+		snprintf(server_buf, sizeof(server_buf), "%s/.cmus/socket", home);
 		server = server_buf;
 	}
 
