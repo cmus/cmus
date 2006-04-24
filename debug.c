@@ -15,11 +15,16 @@ static FILE *debug_stream = NULL;
 void debug_init(void)
 {
 #if DEBUG > 1
-	const char *debug_filename = "/tmp/cmus-debug";
+	char filename[512];
+	const char *tmp = getenv("TMPDIR");
 
-	debug_stream = fopen(debug_filename, "w");
+	if (!tmp || !tmp[0])
+		tmp = "/tmp";
+
+	snprintf(filename, sizeof(filename), "%s/cmus-debug", tmp);
+	debug_stream = fopen(filename, "w");
 	if (debug_stream == NULL)
-		die_errno("error opening `%s' for writing", debug_filename);
+		die_errno("error opening `%s' for writing", filename);
 #endif
 }
 
