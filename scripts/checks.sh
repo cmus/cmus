@@ -46,12 +46,14 @@ check_program()
 
 cc_supports()
 {
-	$CC $CFLAGS "$@" -S -o /dev/null -x c /dev/null &> /dev/null
+	$CC $CFLAGS "$@" -S -o /dev/null -x c /dev/null 2> /dev/null
+	return $?
 }
 
 cxx_supports()
 {
-	$CXX $CXXFLAGS "$@" -S -o /dev/null -x c /dev/null &> /dev/null
+	$CXX $CXXFLAGS "$@" -S -o /dev/null -x c /dev/null 2> /dev/null
+	return $?
 }
 
 # @flag: option flag(s) to check
