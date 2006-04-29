@@ -39,9 +39,12 @@ install-man:
 install-html:
 	$(INSTALL) -m644 $(datadir)/doc/cmus $(html)
 
-clean	+= *.html *.xml *.1
+clean	+= *.xml
 
-.PHONY: all man html
+realclean: clean
+	rm -f *.html *.1
+
+.PHONY: all man html realclean
 
 quiet_cmd_xsltproc = XSLTPROC $@
       cmd_xsltproc = xsltproc -o $@ $(XSLTPROC_FLAGS) $<

@@ -103,7 +103,7 @@ ao.so: $(ao-objs)
 
 data		= $(wildcard data/*)
 
-clean		+= *.o *.lo *.so cmus cmus-remote *.html
+clean		+= *.o *.lo *.so cmus cmus-remote
 distclean	+= config.mk config/*.h tags
 
 main: cmus cmus-remote
@@ -129,7 +129,7 @@ html: Doc/html
 install-doc: install-man install-html
 install-man: Doc/install-man
 install-html: Doc/install-html
-clean: Doc/clean
+realclean: clean Doc/realclean
 
 Doc/%:
 	$(call cmd,submake)
