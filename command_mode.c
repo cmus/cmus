@@ -428,37 +428,72 @@ static void cmd_toggle(char *arg)
 	opt->toggle(opt->id);
 }
 
+static int get_number(char *str, char **end)
+{
+	int val = 0;
+
+	while (*str >= '0' && *str <= '9') {
+		val *= 10;
+		val += *str++ - '0';
+	}
+	*end = str;
+	return val;
+}
+
 static void cmd_seek(char *arg)
 {
-	int seek, seek_mode;
-	char *endptr;
+	int seek_mode = SEEK_SET;
+	int seek = 0, sign = 1, count;
 
-	/* Absolute or relative search */
-	seek_mode = SEEK_SET;
-	if (arg[0] == '+' || arg[0] == '-') {
+	switch (*arg) {
+	case '-':
+		sign = -1;
+	case '+':
 		seek_mode = SEEK_CUR;
+		arg++;
+		break;
 	}
 
-	seek = (int) strtol(arg, &endptr, 10);
-	if (!seek && arg == endptr) {
-		error_msg("invalid seek value");
-		return;
-	}
+	count = 0;
+	goto inside;
 
-	/* Expand M, H to seconds */
-	if (endptr[0] && toupper(endptr[0]) != 'S') {
-		endptr[0] = toupper (endptr[0]);
-		if (endptr[0] == 'M') {
+	do {
+		int num;
+		char *end;
+
+		if (*arg != ':')
+			break;
+		arg++;
+inside:
+		num = get_number(arg, &end);
+		if (arg == end)
+			break;
+		arg = end;
+		seek = seek * 60 + num;
+	} while (++count < 3);
+
+	seek *= sign;
+	if (!count)
+		goto err;
+
+	if (count == 1) {
+		switch (tolower(*arg)) {
+		case 'h':
 			seek *= 60;
-		} else if (endptr[0] == 'H') {
-			seek *= 3600;
-		} else {
-			error_msg("invalid seek modifier");
-			return;
+		case 'm':
+			seek *= 60;
+		case 's':
+			arg++;
+			break;
 		}
 	}
 
-	player_seek(seek, seek_mode);
+	if (!*arg) {
+		player_seek(seek, seek_mode);
+		return;
+	}
+err:
+	error_msg("expecting one argument: [+-]INTEGER[mh] or [+-]H:MM:SS");
 }
 
 static void cmd_factivate(char *arg)
