@@ -210,13 +210,14 @@ check_pkgconfig()
 	return 0
 }
 
-# check if library is installed and add FOO_CFLAGS and FOO_LIBS to config.mk
+# check for library FOO and add FOO_CFLAGS and FOO_LIBS to config.mk
 #
-# @name:    user visible name (e.g. 'ncurses')
+# @name:    variable prefix (e.g. 'NCURSES')
 # @cflags:  CFLAGS for the lib
 # @libs:    LIBS to check
 #
-# adds @name_CFLAGS and @name_LIBS (both upper case) to config.mk
+# adds @name_CFLAGS and @name_LIBS to config.mk
+# CFLAGS are not checked, they are assumed to be correct
 check_library()
 {
 	local name cflags libs uc
@@ -225,9 +226,10 @@ check_library()
 	name="$1"
 	cflags="$2"
 	libs="$3"
+	# backwards compatibility
 	uc=$(echo $name | to_upper)
 
-	if check_lib "$name ($libs)" "$libs"
+	if check_lib "${uc}_LIBS ($libs)" "$libs"
 	then
 		makefile_var ${uc}_CFLAGS "$cflags"
 		makefile_var ${uc}_LIBS "$libs"
@@ -464,20 +466,16 @@ check_lib()
 
 # check X11 libs
 #
-# adds X11_LIBS to config.mk
+# adds X11_LIBS (and empty X11_CFLAGS) to config.mk
 check_x11()
 {
 	local libs
 
 	for libs in "-lX11" "-L/usr/X11R6/lib -lX11"
 	do
-		if check_lib "X11 ($libs)" "$libs"
-		then
-			makefile_var X11_LIBS "$libs"
-			return 0
-		fi
+		check_library X11 "" "$libs" && return 0
 	done
-	return $?
+	return 1
 }
 
 # check posix threads
@@ -490,12 +488,7 @@ check_pthread()
 	for libs in "$PTHREAD_LIBS" -lpthread -lc_r -lkse
 	do
 		test -z "$libs" && continue
-		if check_lib "POSIX Threads ($libs)" "$libs"
-		then
-			makefile_var PTHREAD_CFLAGS "-D_REENTRANT"
-			makefile_var PTHREAD_LIBS "$libs"
-			return 0
-		fi
+		check_library PTHREAD "-D_REENTRANT" "$libs" && return 0
 	done
 	echo "using -pthread gcc option"
 	makefile_var PTHREAD_CFLAGS "-pthread -D_THREAD_SAFE"
@@ -508,16 +501,13 @@ check_pthread()
 # adds DL_LIBS to config.mk
 check_dl()
 {
-	local libs="-ldl -Wl,--export-dynamic"
+	local libs
 
-	msg_checking "for dynamic linking loader"
-	if ! try_link "$libs" 2>/dev/null
-	then
-		libs="-Wl,--export-dynamic"
-	fi
-	msg_result "$libs"
-	makefile_var DL_LIBS "$libs"
-	return 0
+	for libs in "-ldl -Wl,--export-dynamic" "-Wl,--export-dynamic"
+	do
+		check_library DL "" "$libs" && return 0
+	done
+	return 1
 }
 
 # check for iconv
@@ -525,16 +515,11 @@ check_dl()
 # adds ICONV_CFLAGS and ICONV_LIBS to config.mk
 check_iconv()
 {
-	local libs=-liconv
-
-	if check_lib "iconv ($libs)" "$libs"
+	if ! check_library ICONV "" "-liconv"
 	then
+		echo "assuming libc contains iconv"
 		makefile_var ICONV_CFLAGS ""
-		makefile_var ICONV_LIBS "$libs"
-		return 0
+		makefile_var ICONV_LIBS ""
 	fi
-	echo "assuming libc contains iconv"
-	makefile_var ICONV_CFLAGS ""
-	makefile_var ICONV_LIBS ""
 	return 0
 }
