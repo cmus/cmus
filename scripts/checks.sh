@@ -6,7 +6,7 @@
 
 msg_checking()
 {
-	echo -n "checking $@... "
+	printf "checking $@... "
 }
 
 msg_result()

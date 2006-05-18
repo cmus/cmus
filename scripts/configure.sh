@@ -307,14 +307,14 @@ config_header_end()
 # Print values for enable flags
 print_config()
 {
-	local flag
+	local flag var
 
 	echo
 	echo "Configuration:"
 	for flag in $enable_flags
 	do
+		var=$(get_var enable_var_${flag})
 		strpad "${flag}: " 21
-		echo -n "$strpad_ret"
-		get_var $(get_var enable_var_${flag})
+		echo "${strpad_ret}$(get_var $var)"
 	done
 }
