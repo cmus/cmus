@@ -275,19 +275,16 @@ pkg_config()
 	libs="$4"
 
 	check_pkgconfig
-	msg_checking "for ${name}_LIBS (pkg-config $modules)"
+	msg_checking "for ${name}_LIBS (pkg-config)"
 	if test "$PKG_CONFIG" != "no" && $PKG_CONFIG --exists "$modules" >/dev/null 2>&1
 	then
 		# pkg-config is installed and the .pc file exists
-		msg_result "yes"
-
-		msg_checking "for ${name}_CFLAGS"
-		cflags="$($PKG_CONFIG --cflags ""$modules"")"
-		msg_result "$cflags"
-
-		msg_checking "for ${name}_LIBS"
 		libs="$($PKG_CONFIG --libs ""$modules"")"
 		msg_result "$libs"
+
+		msg_checking "for ${name}_CFLAGS (pkg-config)"
+		cflags="$($PKG_CONFIG --cflags ""$modules"")"
+		msg_result "$cflags"
 
 		makefile_var ${name}_CFLAGS "$cflags"
 		makefile_var ${name}_LIBS "$libs"
