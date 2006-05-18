@@ -271,17 +271,17 @@ pkg_check_modules()
 	uc=$(echo $name | to_upper)
 	
 	check_pkgconfig
-	msg_checking "$modules (pkg-config)"
+	msg_checking "for $modules (pkg-config)"
 	if test "$PKG_CONFIG" != "no" && $PKG_CONFIG --exists "$modules" >/dev/null 2>&1
 	then
 		# pkg-config is installed and the .pc file exists
 		msg_result "yes"
 
-		msg_checking "CFLAGS for $name"
+		msg_checking "for ${uc}_CFLAGS"
 		cflags="$($PKG_CONFIG --cflags ""$modules"")"
 		msg_result "$cflags"
 
-		msg_checking "LIBS for $name"
+		msg_checking "for ${uc}_LIBS"
 		libs="$($PKG_CONFIG --libs ""$modules"")"
 		msg_result "$libs"
 
@@ -339,7 +339,7 @@ app_config()
 		program="$2"
 	fi
 
-	msg_checking "$name (${program})"
+	msg_checking "for $name (${program})"
 	program=$(path_find "$program")
 	if test $? -ne 0
 	then
@@ -350,11 +350,11 @@ app_config()
 	msg_result "yes"
 	uc=$(echo $name | to_upper)
 
-	msg_checking "CFLAGS for $name"
+	msg_checking "for ${uc}_CFLAGS"
 	cflags="$($program --cflags)"
 	msg_result "$cflags"
 
-	msg_checking "LIBS for $name"
+	msg_checking "for ${uc}_LIBS"
 	libs="$($program --libs)"
 	msg_result "$libs"
 
@@ -450,7 +450,7 @@ check_lib()
 	argc check_lib $# 2 2
 	name="$1"
 	ldadd="$2"
-	msg_checking "$name"
+	msg_checking "for $name"
 	output=$(try_link "$ldadd" 2>&1)
 	if test $? -eq 0
 	then
@@ -510,7 +510,7 @@ check_dl()
 {
 	local libs="-ldl -Wl,--export-dynamic"
 
-	msg_checking "dynamic linking loader"
+	msg_checking "for dynamic linking loader"
 	if ! try_link "$libs" 2>/dev/null
 	then
 		libs="-Wl,--export-dynamic"
