@@ -64,7 +64,7 @@ check_cc_flag()
 	argc check_cc_flag $# 1
 
 	test -z "$CC" && die "check_cc_flag: CC not set"
-	msg_checking "for CC flag $*"
+	msg_checking "for CFLAGS $*"
 	if cc_supports $*
 	then
 		CFLAGS="$CFLAGS $*"
@@ -84,7 +84,7 @@ check_cxx_flag()
 	argc check_cxx_flag $# 1
 
 	test -z "$CXX" && die "check_cxx_flag: CXX not set"
-	msg_checking "for CXX flag $*"
+	msg_checking "for CXXFLAGS $*"
 	if cxx_supports $*
 	then
 		CXXFLAGS="$CXXFLAGS $*"
