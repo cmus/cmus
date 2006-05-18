@@ -212,7 +212,7 @@ check_pkgconfig()
 
 # check for library FOO and add FOO_CFLAGS and FOO_LIBS to config.mk
 #
-# @name:    variable prefix (e.g. 'NCURSES')
+# @name:    variable prefix (e.g. CURSES -> CURSES_CFLAGS, CURSES_LIBS)
 # @cflags:  CFLAGS for the lib
 # @libs:    LIBS to check
 #
@@ -243,7 +243,7 @@ check_library()
 
 # run pkg-config
 #
-# @name:    name
+# @name:    variable prefix (e.g. GLIB -> GLIB_CFLAGS, GLIB_LIBS)
 # @modules: the argument for pkg-config
 # @cflags:  CFLAGS to use if pkg-config failed (optional)
 # @libs:    LIBS to use if pkg-config failed (optional)
@@ -254,7 +254,7 @@ check_library()
 #   ---
 #   check_glib()
 #   {
-#     pkg_check_modules glib "glib-2.0 >= 2.2"
+#     pkg_check_modules GLIB "glib-2.0 >= 2.2"
 #     return $?
 #   }
 #
@@ -263,35 +263,34 @@ check_library()
 #   GLIB_CFLAGS and GLIB_LIBS are automatically added to Makefile
 pkg_check_modules()
 {
-	local name modules cflags libs uc
+	local name modules cflags libs
 
 	argc pkg_check_modules $# 2 4
-	name="$1"
+	# make uppercase for backwards compatibility
+	name=$(echo $1 | to_upper)
 	modules="$2"
 
 	# optional
 	cflags="$3"
 	libs="$4"
 
-	uc=$(echo $name | to_upper)
-	
 	check_pkgconfig
-	msg_checking "for $modules (pkg-config)"
+	msg_checking "for ${name}_LIBS (pkg-config $modules)"
 	if test "$PKG_CONFIG" != "no" && $PKG_CONFIG --exists "$modules" >/dev/null 2>&1
 	then
 		# pkg-config is installed and the .pc file exists
 		msg_result "yes"
 
-		msg_checking "for ${uc}_CFLAGS"
+		msg_checking "for ${name}_CFLAGS"
 		cflags="$($PKG_CONFIG --cflags ""$modules"")"
 		msg_result "$cflags"
 
-		msg_checking "for ${uc}_LIBS"
+		msg_checking "for ${name}_LIBS"
 		libs="$($PKG_CONFIG --libs ""$modules"")"
 		msg_result "$libs"
 
-		makefile_var ${uc}_CFLAGS "$cflags"
-		makefile_var ${uc}_LIBS "$libs"
+		makefile_var ${name}_CFLAGS "$cflags"
+		makefile_var ${name}_LIBS "$libs"
 		return 0
 	fi
 
@@ -333,38 +332,29 @@ pkg_check_modules()
 #   CPPUNIT_CFLAGS and CPPUNIT_LIBS are automatically added to config.mk
 app_config()
 {
-	local name program uc cflags libs
+	local name program cflags libs
 
 	argc app_config $# 1 2
-	name="$1"
+	name=$(echo $1 | to_upper)
 	if test $# -eq 1
 	then
-		program="${name}-config"
+		program="${1}-config"
 	else
 		program="$2"
 	fi
 
-	msg_checking "for $name (${program})"
-	program=$(path_find "$program")
-	if test $? -ne 0
-	then
-		msg_result "no"
-		return 1
-	fi
+	check_program $program || return 1
 
-	msg_result "yes"
-	uc=$(echo $name | to_upper)
-
-	msg_checking "for ${uc}_CFLAGS"
+	msg_checking "for ${name}_CFLAGS"
 	cflags="$($program --cflags)"
 	msg_result "$cflags"
 
-	msg_checking "for ${uc}_LIBS"
+	msg_checking "for ${name}_LIBS"
 	libs="$($program --libs)"
 	msg_result "$libs"
 
-	makefile_var ${uc}_CFLAGS "$cflags"
-	makefile_var ${uc}_LIBS "$libs"
+	makefile_var ${name}_CFLAGS "$cflags"
+	makefile_var ${name}_LIBS "$libs"
 	return 0
 }
 
