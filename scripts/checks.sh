@@ -220,22 +220,25 @@ check_pkgconfig()
 # CFLAGS are not checked, they are assumed to be correct
 check_library()
 {
-	local name cflags libs uc
+	local name cflags libs
 
 	argc check_library $# 3 3
-	name="$1"
+	# make uppercase for backwards compatibility
+	name=$(echo "$1" | to_upper)
 	cflags="$2"
 	libs="$3"
-	# backwards compatibility
-	uc=$(echo $name | to_upper)
 
-	if check_lib "${uc}_LIBS ($libs)" "$libs"
+	msg_checking "for ${name}_LIBS ($libs)"
+	if try_link "$libs" >/dev/null 2>&1
 	then
-		makefile_var ${uc}_CFLAGS "$cflags"
-		makefile_var ${uc}_LIBS "$libs"
+		msg_result yes
+		makefile_var ${name}_CFLAGS "$cflags"
+		makefile_var ${name}_LIBS "$libs"
 		return 0
+	else
+		msg_result no
+		return 1
 	fi
-	return 1
 }
 
 # run pkg-config
