@@ -254,18 +254,18 @@ check_library()
 #   ---
 #   check_glib()
 #   {
-#     pkg_check_modules GLIB "glib-2.0 >= 2.2"
+#     pkg_config GLIB "glib-2.0 >= 2.2"
 #     return $?
 #   }
 #
 #   add_check check_glib
 #   ---
 #   GLIB_CFLAGS and GLIB_LIBS are automatically added to Makefile
-pkg_check_modules()
+pkg_config()
 {
 	local name modules cflags libs
 
-	argc pkg_check_modules $# 2 4
+	argc pkg_config $# 2 4
 	# make uppercase for backwards compatibility
 	name=$(echo $1 | to_upper)
 	modules="$2"
@@ -312,6 +312,12 @@ pkg_check_modules()
 
 	check_library "$name" "$cflags" "$libs"
 	return $?
+}
+
+# old name
+pkg_check_modules()
+{
+	pkg_config "$@"
 }
 
 # run <name>-config
