@@ -143,11 +143,11 @@ MAKEFLAGS += --no-print-directory
 REV	= HEAD
 
 # version from an annotated tag
-_ver0	= $(shell git-describe $(REV) 2>/dev/null)
+_ver0	= $(shell git describe $(REV) 2>/dev/null)
 # version from a plain tag
-_ver1	= $(shell git-describe --tags $(REV) 2>/dev/null)
+_ver1	= $(shell git describe --tags $(REV) 2>/dev/null)
 # SHA1
-_ver2	= $(shell git-rev-parse --verify $(REV) 2>/dev/null)
+_ver2	= $(shell git rev-parse --verify $(REV) 2>/dev/null)
 
 TARNAME	= cmus-$(if $(_ver0),$(_ver0),$(if $(_ver1),$(_ver1),$(_ver2)))
 
@@ -156,7 +156,7 @@ dist: $(if $(filter HEAD,$(REV)),doc,)
 	sha1=$(_ver2);							\
 	test "$$sha1" || { echo "No such revision $(REV)"; exit 1; };	\
 	echo "   DIST   $$tarname.tar.bz2";				\
-	git-tar-tree $$sha1 $$tarname > $$tarname.tar;			\
+	git tar-tree $$sha1 $$tarname > $$tarname.tar;			\
 	if test "$(REV)" = HEAD; then					\
 		ln -s . $$tarname;					\
 		tar rf $$tarname.tar $$tarname/Doc/{cmus,cmus-remote}.{1,html};	\
