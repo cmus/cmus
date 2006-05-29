@@ -246,7 +246,7 @@ check_library()
 #     return $?
 #   }
 #
-#   add_check check_glib
+#   run_checks check_cc check_glib
 #   ---
 #   GLIB_CFLAGS and GLIB_LIBS are automatically added to Makefile
 pkg_config()
@@ -313,7 +313,7 @@ pkg_check_modules()
 #     return $?
 #   }
 #
-#   add_check check_cppunit
+#   run_checks check_cc check_glib
 #   ---
 #   CPPUNIT_CFLAGS and CPPUNIT_LIBS are automatically added to config.mk
 app_config()

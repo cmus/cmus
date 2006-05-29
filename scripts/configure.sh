@@ -51,20 +51,6 @@ trap '__abort' 1 2 3 13 15
 
 # }}}
 
-# Add check function(s) that run_checks runs
-#
-# @check: function(s) to run
-#
-# NOTE:
-#   The @check function takes no arguments and _must_ return 0 on success and
-#   non-zero on failure. See checks.sh for more information.
-add_check()
-{
-	before run_checks add_check
-
-	checks="${checks} $*"
-}
-
 # Add --enable-FEATURE and --disable-FEATURE flags
 #
 # @name:          name of the flag (eg. alsa => --enable-alsa)
@@ -293,4 +279,10 @@ print_config()
 		strpad "${__flag}: " 21
 		echo "${strpad_ret}$(get_var $__var)"
 	done
+}
+
+# deprecated. pass the check_* functions directly to run_checks
+add_check()
+{
+	checks="${checks} $*"
 }

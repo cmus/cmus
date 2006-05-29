@@ -20,7 +20,7 @@ opt_flags=""
 # config.mk variable names
 makefile_variables=""
 
-# checks added by add_check
+# checks added by add_check, DEPRECATED
 checks=""
 
 # cross compilation, prefix for CC, LD etc.
@@ -169,11 +169,16 @@ parse_command_line()
 	did_run parse_command_line
 }
 
+# args: function(s) to run
+#
+# NOTE:
+#   The functions take no arguments and _must_ return 0 on success and
+#   non-zero on failure. See checks.sh for more information.
 run_checks()
 {
 	after parse_command_line run_checks
 
-	for __i in $checks
+	for __i in $checks $*
 	do
 		$__i && continue
 		echo
