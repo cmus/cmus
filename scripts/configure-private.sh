@@ -234,26 +234,20 @@ run_checks()
 	do
 		__var=$(get_var enable_var_${__i})
 		__val=$(get_var $__var)
-		if test "$__val" != n
-		then
-			if ! is_function check_${__i}
-			then
-				continue
-			fi
+		test "$__val" = n && continue
 
-			if check_${__i}
+		if check_${__i}
+		then
+			# check successful
+			set_var $__var y
+		else
+			# check failed
+			if test "$__val" = y
 			then
-				# check successful
-				set_var $__var y
+				die "configure failed."
 			else
-				# check failed
-				if test "$__val" = y
-				then
-					die "configure failed."
-				else
-					# auto
-					set_var $__var n
-				fi
+				# auto
+				set_var $__var n
 			fi
 		fi
 	done

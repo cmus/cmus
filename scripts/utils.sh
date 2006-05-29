@@ -4,14 +4,6 @@
 #
 # This file is licensed under the GPLv2.
 
-# FIXME: not sure if every /bin/sh supports this
-is_function()
-{
-	__line=$(type "$1" 2>/dev/null | head -n 1)
-	test "${__line##* }" = "function"
-	true
-}
-
 # argc function_name $# min [max]
 argc()
 {

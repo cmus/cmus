@@ -43,10 +43,6 @@ enable_flag()
 		a)
 			# 'auto' looks prettier than 'a' in --help
 			set_var $3 auto
-			if ! is_function "check_${1}"
-			then
-				die "function \`check_${1}' must be defined if default value for --enable-${1} is 'a'"
-			fi
 			;;
 		*)
 			die "default value for an enable flag must be 'y', 'n' or 'a'"
@@ -77,7 +73,6 @@ add_flag()
 			die "argument 2 for add_flag must be 'y' or 'n'"
 			;;
 	esac
-	is_function "$3" || die "function \`$3' not defined"
 	__name="$(echo $1 | sed 's/-/_/g')"
 	opt_flags="$opt_flags $__name"
 	set_var flag_hasarg_${__name} "$2"
