@@ -7,17 +7,14 @@
 # FIXME: not sure if every /bin/sh supports this
 is_function()
 {
-	local line
-
-	line=$(type "$1" 2>/dev/null | head -n 1)
-	test "${line##* }" = "function"
+	__line=$(type "$1" 2>/dev/null | head -n 1)
+	test "${__line##* }" = "function"
+	true
 }
 
 # argc function_name $# min [max]
 argc()
 {
-	local max
-
 	if test $# -lt 3 || test $# -gt 4
 	then
 		die "argc: expecting 3-4 arguments (got $*)"
@@ -54,8 +51,6 @@ die()
 # get filename for temporary file
 tmp_file()
 {
-	local filename
-
 	if test -z "$__tmp_file_counter"
 	then
 		__tmp_file_counter=0
@@ -63,11 +58,11 @@ tmp_file()
 
 	while true
 	do
-		filename=.tmp-${__tmp_file_counter}-${1}
+		__tmp_filename=.tmp-${__tmp_file_counter}-${1}
 		__tmp_file_counter=$(($__tmp_file_counter + 1))
-		test -e "$filename" || break
+		test -e "$__tmp_filename" || break
 	done
-	echo "$filename"
+	echo "$__tmp_filename"
 }
 
 # get variable value
@@ -109,15 +104,13 @@ to_upper()
 # returned string is $strpad_ret
 strpad()
 {
-	local len
-
 	strpad_ret="$1"
-	len="$2"
-	len=$(($len - ${#strpad_ret}))
-	while test $len -gt 0
+	__sp_len="$2"
+	__sp_len=$(($__sp_len - ${#strpad_ret}))
+	while test $__sp_len -gt 0
 	do
 		strpad_ret="${strpad_ret} "
-		len=$(($len - 1))
+		__sp_len=$(($__sp_len - 1))
 	done
 }
 

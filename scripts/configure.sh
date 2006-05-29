@@ -92,25 +92,19 @@ add_check()
 #   ---
 enable_flag()
 {
-	local name value var desc
-
 	argc enable_flag $# 4 4
 	before parse_command_line enable_flag
 
-	name="$1"
-	value="$2"
-	var="$3"
-	desc="$4"
-
-	case $value in
+	case $2 in
 		y|n)
+			set_var $3 $2
 			;;
 		a)
 			# 'auto' looks prettier than 'a' in --help
-			value=auto
-			if ! is_function "check_${name}"
+			set_var $3 auto
+			if ! is_function "check_${1}"
 			then
-				die "function \`check_${name}' must be defined if default value for --enable-${name} is 'a'"
+				die "function \`check_${1}' must be defined if default value for --enable-${1} is 'a'"
 			fi
 			;;
 		*)
@@ -118,10 +112,9 @@ enable_flag()
 			;;
 	esac
 
-	enable_flags="${enable_flags} $name"
-	set_var $var $value
-	set_var enable_var_${name} $var
-	set_var enable_desc_${name} "$desc"
+	enable_flags="${enable_flags} $1"
+	set_var enable_var_${1} $3
+	set_var enable_desc_${1} "$4"
 }
 
 # Add an option flag
@@ -133,30 +126,23 @@ enable_flag()
 # @arg_desc:      argument description shown in --help (if @has_arg is 'y')
 add_flag()
 {
-	local flag hasarg func desc name
-
 	argc add_flag $# 4 5
 	before parse_command_line add_flag
 
-	flag="$1"
-	hasarg="$2"
-	func="$3"
-	desc="$4"
-	argdesc="$5"
-	case $hasarg in
+	case $2 in
 		y|n)
 			;;
 		*)
 			die "argument 2 for add_flag must be 'y' or 'n'"
 			;;
 	esac
-	is_function "${func}" || die "function \`${func}' not defined"
-	name="$(echo $flag | sed 's/-/_/g')"
-	opt_flags="$opt_flags $name"
-	set_var flag_hasarg_${name} "${hasarg}"
-	set_var flag_func_${name} "${func}"
-	set_var flag_desc_${name} "${desc}"
-	set_var flag_argdesc_${name} "${argdesc}"
+	is_function "$3" || die "function \`$3' not defined"
+	__name="$(echo $1 | sed 's/-/_/g')"
+	opt_flags="$opt_flags $__name"
+	set_var flag_hasarg_${__name} "$2"
+	set_var flag_func_${__name} "$3"
+	set_var flag_desc_${__name} "$4"
+	set_var flag_argdesc_${__name} "$5"
 }
 
 # Set and register variable to be added to config.mk
@@ -198,8 +184,6 @@ makefile_vars()
 #   config_header config.h CONFIG_FOO VERSION DEBUG
 config_header()
 {
-	local v
-
 	argc config_header $# 2
 	after run_checks config_header
 
@@ -207,19 +191,19 @@ config_header()
 	shift
 	while test $# -gt 0
 	do
-		v=$(get_var $1)
-		case $v in
-			[yn])
-				config_bool $1
-				;;
-			*)
-				if test "$v" && test "$v" = "$(echo $v | sed 's/[^0-9]//g')"
-				then
-					config_int $1
-				else
-					config_str $1
-				fi
-				;;
+		__var=$(get_var $1)
+		case "$__var" in
+		[yn])
+			config_bool $1
+			;;
+		*)
+			if test "$__var" && test "$__var" = "$(echo $__var | sed 's/[^0-9]//g')"
+			then
+				config_int $1
+			else
+				config_str $1
+			fi
+			;;
 		esac
 		shift
 	done
@@ -242,59 +226,53 @@ config_header_begin()
 	config_header_file="$1"
 	config_header_tmp=$(tmp_file config_header)
 
-	local def=$(echo $config_header_file | to_upper | sed 's/[-\.\/]/_/g')
+	__def=$(echo $config_header_file | to_upper | sed 's/[-\.\/]/_/g')
 	cat <<EOF > "$config_header_tmp"
-#ifndef $def
-#define $def
+#ifndef $__def
+#define $__def
 
 EOF
 }
 
 config_str()
 {
-	local i
-
-	for i in $*
+	while test $# -gt 0
 	do
-		echo "#define $i \"$(get_var $i)\"" >> "$config_header_tmp"
+		echo "#define $1 \"$(get_var $1)\"" >> "$config_header_tmp"
+		shift
 	done
 }
 
 config_int()
 {
-	local i
-
-	for i in $*
+	while test $# -gt 0
 	do
-		echo "#define $i $(get_var $i)" >> "$config_header_tmp"
+		echo "#define $1 $(get_var $1)" >> "$config_header_tmp"
+		shift
 	done
 }
 
 config_bool()
 {
-	local i v
-
-	for i in $*
+	while test $# -gt 0
 	do
-		v=$(get_var $i)
-		case $v in
+		case "$(get_var $1)" in
 			n)
-				echo "/* #define $i */" >> "$config_header_tmp"
+				echo "/* #define $1 */" >> "$config_header_tmp"
 				;;
 			y)
-				echo "#define $i 1" >> "$config_header_tmp"
+				echo "#define $1 1" >> "$config_header_tmp"
 				;;
 			*)
-				die "bool '$i' has invalid value '$v'"
+				die "bool '$1' has invalid value '$(get_var $1)'"
 				;;
 		esac
+		shift
 	done
 }
 
 config_header_end()
 {
-	local dir
-
 	argc config_header_end $# 0 0
 	echo "" >> "$config_header_tmp"
 	echo "#endif" >> "$config_header_tmp"
@@ -307,14 +285,12 @@ config_header_end()
 # Print values for enable flags
 print_config()
 {
-	local flag var
-
 	echo
 	echo "Configuration:"
-	for flag in $enable_flags
+	for __flag in $enable_flags
 	do
-		var=$(get_var enable_var_${flag})
-		strpad "${flag}: " 21
-		echo "${strpad_ret}$(get_var $var)"
+		__var=$(get_var enable_var_${__flag})
+		strpad "${__flag}: " 21
+		echo "${strpad_ret}$(get_var $__var)"
 	done
 }

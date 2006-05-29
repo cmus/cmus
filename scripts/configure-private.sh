@@ -55,19 +55,17 @@ after()
 
 show_help()
 {
-	local i tmp
-
 	cat <<EOT
 Usage: ./configure [options] [VARIABLE=VALUE]...
 
   --cross=MACHINE         cross-compile []
 EOT
-	for i in $opt_flags
+	for __i in $opt_flags
 	do
-		tmp=$(get_var flag_argdesc_${i})
-		strpad "--$(echo $i | sed 's/_/-/g')${tmp}" 22
-		tmp=$(get_var flag_desc_${i})
-		echo "  $strpad_ret  ${tmp}"
+		__tmp=$(get_var flag_argdesc_${__i})
+		strpad "--$(echo $__i | sed 's/_/-/g')${__tmp}" 22
+		__tmp=$(get_var flag_desc_${__i})
+		echo "  $strpad_ret  ${__tmp}"
 	done
 	cat <<EOT
 
@@ -75,39 +73,57 @@ Optional Features:
   --disable-FEATURE       do not include FEATURE
   --enable-FEATURE        include FEATURE
 EOT
-	for i in $enable_flags
+	for __i in $enable_flags
 	do
-		local var=$(get_var enable_var_${i})
-		strpad "--enable-$(echo $i | sed 's/_/-/g')" 22
-		echo "  $strpad_ret  $(get_var enable_desc_${i}) [$(get_var $var)]"
+		__tmp=$(get_var enable_var_${__i})
+		strpad "--enable-$(echo $__i | sed 's/_/-/g')" 22
+		echo "  $strpad_ret  $(get_var enable_desc_${__i}) [$(get_var $__tmp)]"
 	done
 	exit 0
 }
 
 handle_enable()
 {
-	local flag val i
-
-	flag="$1"
-	val="$2"
-
-	for i in $enable_flags
+	for __ef in $enable_flags
 	do
-		test "$i" = "$flag" || continue
+		test "$__ef" = "$1" || continue
 
-		set_var $(get_var enable_var_${flag}) $val
+		set_var $(get_var enable_var_${1}) $2
 		return 0
 	done
-	die "invalid option --enable-$flag"
+	die "invalid option --enable-$1"
+}
+
+# @arg: key=val
+handle_opt()
+{
+	__k=${1%%=*}
+	__n="$(echo $__k | sed 's/-/_/g')"
+	for __i in $opt_flags
+	do
+		test "$__i" != "$__n" && continue
+
+		if test "$__k" = "$1"
+		then
+			# '--foo'
+			test "$(get_var flag_hasarg_${__n})" = y && \
+			die "--${__k} requires an argument (--${__k}$(get_var flag_argdesc_${__n}))"
+			$(get_var flag_func_${__n}) ${__k}
+		else
+			# '--foo=bar'
+			test "$(get_var flag_hasarg_${__n})" = n && \
+			die "--${__k} must not have an argument"
+			$(get_var flag_func_${__n}) ${__k} "${1##*=}"
+		fi
+		return 0
+	done
+	die "unrecognized option \`$1'"
 }
 
 # }}}
 
 parse_command_line()
 {
-	local kv key var val
-	local name
-
 	add_flag help n show_help "show this help and exit"
 
 	# parse flags (--*)
@@ -115,12 +131,10 @@ parse_command_line()
 	do
 		case $1 in
 			--enable-*)
-				key=${1##--enable-}
-				handle_enable "$(echo $key | sed 's/-/_/g')" y
+				handle_enable "$(echo ${1##--enable-} | sed 's/-/_/g')" y
 				;;
 			--disable-*)
-				key=${1##--disable-}
-				handle_enable "$(echo $key | sed 's/-/_/g')" n
+				handle_enable "$(echo ${1##--disable-} | sed 's/-/_/g')" n
 				;;
 			--cross=*)
 				CROSS=${1##--cross=}
@@ -130,30 +144,7 @@ parse_command_line()
 				break
 				;;
 			--*)
-				local name found f
-				kv=${1##--}
-				key=${kv%%=*}
-				name="$(echo $key | sed 's/-/_/g')"
-				found=false
-				for f in $opt_flags
-				do
-					if test "$f" = "$name"
-					then
-						if test "$key" = "$kv"
-						then
-							# '--foo'
-							test "$(get_var flag_hasarg_${name})" = y && die "--${key} requires an argument (--${key}$(get_var flag_argdesc_${name}))"
-							$(get_var flag_func_${name}) ${key}
-						else
-							# '--foo=bar'
-							test "$(get_var flag_hasarg_${name})" = n && die "--${key} must not have an argument"
-							$(get_var flag_func_${name}) ${key} "${kv##*=}"
-						fi
-						found=true
-						break
-					fi
-				done
-				$found || die "unrecognized option \`$1'"
+				handle_opt "${1##--}"
 				;;
 			*)
 				break
@@ -166,9 +157,7 @@ parse_command_line()
 	do
 		case $1 in
 			*=*)
-				key=${1%%=*}
-				val=${1#*=}
-				set_var $key "$val"
+				set_var ${1%%=*} "${1#*=}"
 				;;
 			*)
 				die "unrecognized argument \`$1'"
@@ -182,39 +171,37 @@ parse_command_line()
 
 run_checks()
 {
-	local check flag
-
 	after parse_command_line run_checks
 
-	for check in $checks
+	for __i in $checks
 	do
-		$check && continue
+		$__i && continue
 		echo
 		die "configure failed."
 	done
-	for flag in $enable_flags
+	for __i in $enable_flags
 	do
-		local var=$(get_var enable_var_${flag})
-		local val=$(get_var $var)
-		if test "$val" != n
+		__var=$(get_var enable_var_${__i})
+		__val=$(get_var $__var)
+		if test "$__val" != n
 		then
-			if ! is_function check_${flag}
+			if ! is_function check_${__i}
 			then
 				continue
 			fi
 
-			if check_${flag}
+			if check_${__i}
 			then
 				# check successful
-				set_var $var y
+				set_var $__var y
 			else
 				# check failed
-				if test "$val" = y
+				if test "$__val" = y
 				then
 					die "configure failed."
 				else
 					# auto
-					set_var $var n
+					set_var $__var n
 				fi
 			fi
 		fi
@@ -222,40 +209,38 @@ run_checks()
 	did_run run_checks
 }
 
+# @tmpfile: temporary file
+# @file:    file to update
+#
+# replace @file with @tmpfile if their contents differ
 update_file()
 {
-	local tmp f
-
-	tmp="$1"
-	f="$2"
-	if test -e "$f"
+	if test -e "$2"
 	then
-		if cmp "$f" "$tmp" 2>/dev/null 1>&2
+		if cmp "$2" "$1" 2>/dev/null 1>&2
 		then
 			return 0
 		fi
-		echo "updating $f"
+		echo "updating $2"
 	else
-		echo "creating $f"
+		echo "creating $2"
 	fi
-	mv -f "$tmp" "$f"
+	mv -f "$1" "$2"
 }
 
 generate_config_mk()
 {
-	local tmp i
-
 	after run_checks generate_config_mk
 
 	topdir=$(pwd)
 	makefile_vars topdir
 
-	tmp=$(tmp_file config.mk)
-	for i in $makefile_variables
+	__tmp=$(tmp_file config.mk)
+	for __i in $makefile_variables
 	do
-		strpad "$i" 17
-		echo "${strpad_ret} = $(get_var $i)"
-	done > $tmp
-	update_file $tmp config.mk
+		strpad "$__i" 17
+		echo "${strpad_ret} = $(get_var $__i)"
+	done > $__tmp
+	update_file $__tmp config.mk
 	did_run generate_config_mk
 }

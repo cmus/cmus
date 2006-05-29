@@ -25,18 +25,13 @@ msg_error()
 # returns 0 on success and 1 on failure
 check_program()
 {
-	local program varname filename
-
 	argc check_program $# 1 2
-	program="$1"
-	varname="$2"
-
-	msg_checking "for program ${program}"
-	filename=$(path_find "${program}")
+	msg_checking "for program $1"
+	__cp_file=$(path_find "$1")
 	if test $? -eq 0
 	then
-		msg_result $filename
-		test $# -eq 2 && set_var $varname $filename
+		msg_result $__cp_file
+		test $# -eq 2 && set_var $2 "$__cp_file"
 		return 0
 	else
 		msg_result "no"
@@ -220,20 +215,13 @@ check_pkgconfig()
 # CFLAGS are not checked, they are assumed to be correct
 check_library()
 {
-	local name cflags libs
-
 	argc check_library $# 3 3
-	# make uppercase for backwards compatibility
-	name=$(echo "$1" | to_upper)
-	cflags="$2"
-	libs="$3"
-
-	msg_checking "for ${name}_LIBS ($libs)"
-	if try_link "$libs" >/dev/null 2>&1
+	msg_checking "for ${1}_LIBS ($3)"
+	if try_link "$3" >/dev/null 2>&1
 	then
 		msg_result yes
-		makefile_var ${name}_CFLAGS "$cflags"
-		makefile_var ${name}_LIBS "$libs"
+		makefile_var ${1}_CFLAGS "$2"
+		makefile_var ${1}_LIBS "$3"
 		return 0
 	else
 		msg_result no
@@ -263,51 +251,46 @@ check_library()
 #   GLIB_CFLAGS and GLIB_LIBS are automatically added to Makefile
 pkg_config()
 {
-	local name modules cflags libs
-
 	argc pkg_config $# 2 4
-	# make uppercase for backwards compatibility
-	name=$(echo $1 | to_upper)
-	modules="$2"
 
 	# optional
-	cflags="$3"
-	libs="$4"
+	__pc_cflags="$3"
+	__pc_libs="$4"
 
 	check_pkgconfig
-	msg_checking "for ${name}_LIBS (pkg-config)"
-	if test "$PKG_CONFIG" != "no" && $PKG_CONFIG --exists "$modules" >/dev/null 2>&1
+	msg_checking "for ${1}_LIBS (pkg-config)"
+	if test "$PKG_CONFIG" != "no" && $PKG_CONFIG --exists "$2" >/dev/null 2>&1
 	then
 		# pkg-config is installed and the .pc file exists
-		libs="$($PKG_CONFIG --libs ""$modules"")"
-		msg_result "$libs"
+		__pc_libs="$($PKG_CONFIG --libs ""$2"")"
+		msg_result "$__pc_libs"
 
-		msg_checking "for ${name}_CFLAGS (pkg-config)"
-		cflags="$($PKG_CONFIG --cflags ""$modules"")"
-		msg_result "$cflags"
+		msg_checking "for ${1}_CFLAGS (pkg-config)"
+		__pc_cflags="$($PKG_CONFIG --cflags ""$2"")"
+		msg_result "$__pc_cflags"
 
-		makefile_var ${name}_CFLAGS "$cflags"
-		makefile_var ${name}_LIBS "$libs"
+		makefile_var ${1}_CFLAGS "$__pc_cflags"
+		makefile_var ${1}_LIBS "$__pc_libs"
 		return 0
 	fi
 
 	# no pkg-config or .pc file
 	msg_result "no"
 
-	if test -z "$libs"
+	if test -z "$__pc_libs"
 	then
 		if test "$PKG_CONFIG" = "no"
 		then
 			# pkg-config not installed and no libs to check were given
-			msg_error "pkg-config required for $name"
+			msg_error "pkg-config required for $1"
 		else
 			# pkg-config is installed but the required .pc file wasn't found
-			$PKG_CONFIG --errors-to-stdout --print-errors "$modules" | sed 's:^:*** :'
+			$PKG_CONFIG --errors-to-stdout --print-errors "$2" | sed 's:^:*** :'
 		fi
 		return 1
 	fi
 
-	check_library "$name" "$cflags" "$libs"
+	check_library "$1" "$__pc_cflags" "$__pc_libs"
 	return $?
 }
 
@@ -320,13 +303,13 @@ pkg_check_modules()
 # run <name>-config
 #
 # @name:    name
-# @program: the -config program, default is ${name}-config
+# @program: the -config program
 #
 # example:
 #   ---
 #   check_cppunit()
 #   {
-#     app_config cppunit
+#     app_config CPPUNIT cppunit-config
 #     return $?
 #   }
 #
@@ -335,44 +318,30 @@ pkg_check_modules()
 #   CPPUNIT_CFLAGS and CPPUNIT_LIBS are automatically added to config.mk
 app_config()
 {
-	local name program cflags libs
+	argc app_config $# 2 2
+	check_program $2 || return 1
 
-	argc app_config $# 1 2
-	name=$(echo $1 | to_upper)
-	if test $# -eq 1
-	then
-		program="${1}-config"
-	else
-		program="$2"
-	fi
+	msg_checking "for ${1}_CFLAGS"
+	__ac_cflags="$($2 --cflags)"
+	msg_result "$__ac_cflags"
 
-	check_program $program || return 1
+	msg_checking "for ${1}_LIBS"
+	__ac_libs="$($2 --libs)"
+	msg_result "$__ac_libs"
 
-	msg_checking "for ${name}_CFLAGS"
-	cflags="$($program --cflags)"
-	msg_result "$cflags"
-
-	msg_checking "for ${name}_LIBS"
-	libs="$($program --libs)"
-	msg_result "$libs"
-
-	makefile_var ${name}_CFLAGS "$cflags"
-	makefile_var ${name}_LIBS "$libs"
+	makefile_var ${1}_CFLAGS "$__ac_cflags"
+	makefile_var ${1}_LIBS "$__ac_libs"
 	return 0
 }
 
+# @contents:  file contents to compile
 try_compile()
 {
-	local file src obj exe
-
 	argc try_compile $# 1 1
-	file="$1"
-	src=$(tmp_file prog.c)
-	obj=$(tmp_file prog.o)
-	exe=$(tmp_file prog)
-	echo "$file" > $src || exit 1
-	$CC -c $src -o $obj 2>/dev/null || exit 1
-	$LD -o $exe $obj 2>/dev/null
+	__src=$(tmp_file prog.c)
+	__obj=$(tmp_file prog.o)
+	echo "$1" > $__src || exit 1
+	$CC -c $__src -o $__obj 2>/dev/null
 	return $?
 }
 
@@ -381,24 +350,21 @@ try_compile()
 # @ldadd:  something like "-L/usr/X11R6/lib -lX11"
 try_link()
 {
-	local ldadd
-	local file src obj exe
-
 	argc try_link $# 1 1
-	ldadd="$1"
-	file="
+
+	__src=$(tmp_file prog.c)
+	__obj=$(tmp_file prog.o)
+	__exe=$(tmp_file prog)
+
+	echo "
 int main(int argc, char *argv[])
 {
 	return 0;
 }
-"
-	src=$(tmp_file prog.c)
-	obj=$(tmp_file prog.o)
-	exe=$(tmp_file prog)
+" > $__src || exit 1
 
-	echo "$file" > $src || exit 1
-	$CC -c $src -o $obj || return 1
-	$LD $LDFLAGS $ldadd -o $exe $obj
+	$CC -c $__src -o $__obj || return 1
+	$LD $LDFLAGS $1 -o $__exe $__obj
 	return $?
 }
 
@@ -407,24 +373,23 @@ int main(int argc, char *argv[])
 # defines WORDS_BIGENDIAN=y/n
 check_endianness()
 {
-	local file src obj exe
+	msg_checking "byte order"
+	__src=$(tmp_file byteorder.c)
+	__obj=$(tmp_file byteorder.o)
+	__exe=$(tmp_file byteorder)
 
-	file="
+	echo "
 int main(int argc, char *argv[])
 {
 	unsigned int i = 1;
 
 	return *(char *)&i;
 }
-"
-	msg_checking "byte order"
-	src=$(tmp_file prog.c)
-	obj=$(tmp_file prog.o)
-	exe=$(tmp_file prog)
-	echo "$file" > $src || exit 1
-	$CC -c $src -o $obj 2>/dev/null || exit 1
-	$LD -o $exe $obj 2>/dev/null || return 1
-	if ./$exe
+" > $__src || exit 1
+
+	$CC -c $__src -o $__obj 2>/dev/null || exit 1
+	$LD -o $__exe $__obj 2>/dev/null || return 1
+	if ./$__exe
 	then
 		msg_result "big-endian"
 		WORDS_BIGENDIAN=y
@@ -442,14 +407,9 @@ int main(int argc, char *argv[])
 # @ldadd:  arg passed to try_link
 check_lib()
 {
-	local name ldadd
-	local output
-
 	argc check_lib $# 2 2
-	name="$1"
-	ldadd="$2"
-	msg_checking "for $name"
-	output=$(try_link "$ldadd" 2>&1)
+	msg_checking "for $1"
+	try_link "$2" > /dev/null 2>&1
 	if test $? -eq 0
 	then
 		msg_result "yes"
@@ -465,11 +425,9 @@ check_lib()
 # adds X11_LIBS (and empty X11_CFLAGS) to config.mk
 check_x11()
 {
-	local libs
-
-	for libs in "-lX11" "-L/usr/X11R6/lib -lX11"
+	for __libs in "-lX11" "-L/usr/X11R6/lib -lX11"
 	do
-		check_library X11 "" "$libs" && return 0
+		check_library X11 "" "$__libs" && return 0
 	done
 	return 1
 }
@@ -479,12 +437,10 @@ check_x11()
 # adds PTHREAD_CFLAGS and PTHREAD_LIBS to config.mk
 check_pthread()
 {
-	local libs
-
-	for libs in "$PTHREAD_LIBS" -lpthread -lc_r -lkse
+	for __libs in "$PTHREAD_LIBS" -lpthread -lc_r -lkse
 	do
-		test -z "$libs" && continue
-		check_library PTHREAD "-D_REENTRANT" "$libs" && return 0
+		test -z "$__libs" && continue
+		check_library PTHREAD "-D_REENTRANT" "$__libs" && return 0
 	done
 	echo "using -pthread gcc option"
 	makefile_var PTHREAD_CFLAGS "-pthread -D_THREAD_SAFE"
@@ -497,11 +453,9 @@ check_pthread()
 # adds DL_LIBS to config.mk
 check_dl()
 {
-	local libs
-
-	for libs in "-ldl -Wl,--export-dynamic" "-Wl,--export-dynamic"
+	for __libs in "-ldl -Wl,--export-dynamic" "-Wl,--export-dynamic"
 	do
-		check_library DL "" "$libs" && return 0
+		check_library DL "" "$__libs" && return 0
 	done
 	return 1
 }
