@@ -6,8 +6,6 @@ VERSION="2.0.2"
 
 check_cflags()
 {
-	local i
-
 	check_cc_flag -std=gnu99 -pipe -Wall -Wshadow -Wcast-align -Wpointer-arith \
 		-Wwrite-strings -Wundef -Wmissing-prototypes -Wredundant-decls
 
@@ -20,12 +18,12 @@ check_cflags()
 
 check_ncurses()
 {
-	if check_library ncurses "" -lncursesw
+	if check_library NCURSES "" -lncursesw
 	then
 		widechars=y
 		return 0
 	fi
-	if check_library ncurses "" -lncurses || check_library ncurses "" -lcurses
+	if check_library NCURSES "" -lncurses || check_library NCURSES "" -lcurses
 	then
 		widechars=n
 		msg_error "Your ncurses does not support wide characters!"
@@ -50,13 +48,13 @@ check_flac()
 
 check_mad()
 {
-	pkg_check_modules mad "mad" "" "-lmad -lm"
+	pkg_config MAD "mad" "" "-lmad -lm"
 	return $?
 }
 
 check_modplug()
 {
-	pkg_check_modules modplug "libmodplug" "-I/usr/include/libmodplug" "-lmodplug -lstdc++ -lm"
+	pkg_config MODPLUG "libmodplug" "-I/usr/include/libmodplug" "-lmodplug -lstdc++ -lm"
 	return $?
 }
 
@@ -64,12 +62,18 @@ check_vorbis()
 {
 	if test "$CONFIG_TREMOR" = y
 	then
-		pkg_check_modules vorbis "vobisidec" "" "-lvorbisidec -lm"
+		pkg_config VORBIS "vobisidec" "" "-lvorbisidec -lm"
 		return $?
 	else
-		pkg_check_modules vorbis "vorbisfile" "" "-lvorbisfile -lvorbis -lm -logg"
+		pkg_config VORBIS "vorbisfile" "" "-lvorbisfile -lvorbis -lm -logg"
 		return $?
 	fi
+}
+
+check_wav()
+{
+	# no dependencies
+	true
 }
 
 flag_tremor()
@@ -80,19 +84,19 @@ flag_tremor()
 check_alsa()
 {
 	# the alsa.pc file should be always available
-	pkg_check_modules alsa "alsa"
+	pkg_config ALSA "alsa"
 	return $?
 }
 
 check_ao()
 {
-	pkg_check_modules ao "ao" "" "-lao"
+	pkg_config AO "ao" "" "-lao"
 	return $?
 }
 
 check_arts()
 {
-	app_config arts artsc-config
+	app_config ARTS artsc-config
 	return $?
 }
 
@@ -184,15 +188,6 @@ add_flag debug       y flag_debug  "Debugging level [$DEBUG]" "=[0-2]"
 add_flag dev         n flag_dev    "This should be used only by developers"
 add_flag with-tremor n flag_tremor "Use Tremor as Ogg/Vorbis input plugin"
 
-add_check check_cc
-add_check check_cflags
-add_check check_cc_depgen
-add_check check_endianness
-add_check check_dl
-add_check check_pthread
-add_check check_ncurses
-add_check check_iconv
-
 enable_flag flac    a CONFIG_FLAC    "FLAC (Free Lossless Audio Codec) support"
 enable_flag mad     a CONFIG_MAD     "MPEG Audio Decoder (libmad) support"
 enable_flag modplug a CONFIG_MODPLUG "libmodplug (mod, x3m, ...) support"
@@ -206,7 +201,9 @@ enable_flag oss     a CONFIG_OSS     "Open Sound System support"
 enable_flag sun     a CONFIG_SUN     "Sun Audio support"
 
 parse_command_line "$@"
-run_checks
+
+run_checks check_cc check_cflags check_cc_depgen check_endianness \
+	check_dl check_pthread check_ncurses check_iconv
 
 var_default bindir "${prefix}/bin"
 var_default datadir "${prefix}/share"
