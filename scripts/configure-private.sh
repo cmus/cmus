@@ -4,6 +4,52 @@
 #
 # This file is licensed under the GPLv2.
 
+. scripts/utils.sh || exit 1
+. scripts/checks.sh || exit 1
+
+# initialization {{{
+
+export LC_ALL=C
+export LANG=C
+
+if test "$CDPATH"
+then
+	echo "Exporting CDPATH is dangerous and unnecessary!"
+	echo
+fi
+unset CDPATH
+
+__cleanup()
+{
+	if test "$DEBUG_CONFIGURE" = y
+	then
+		echo
+		echo "DEBUG_CONFIGURE=y, not removing temporary files"
+		ls .tmp-[0-9]*-*
+	else
+		rm -f .tmp-[0-9]*-*
+	fi
+}
+
+__abort()
+{
+	# can't use "die" because stderr is often redirected to /dev/null
+	# (stdout could also be redirected but it's not so common)
+	echo
+	echo
+	echo "Aborting. configure failed."
+	# this executes __cleanup automatically
+	exit 1
+}
+
+# clean temporary files on exit
+trap '__cleanup' 0
+
+# clean temporary files and die with error message if interrupted
+trap '__abort' 1 2 3 13 15
+
+# }}}
+
 # locals {{{
 
 # --enable-$NAME flags
