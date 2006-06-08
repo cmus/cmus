@@ -286,7 +286,7 @@ Mark tracks in playlist and queue view by using a filter expression.
 `player-next` (b)::
 Skip to the next track.
 
-`player-pause` (c)`::
+`player-pause` (c)::
 Toggle pause.
 
 `player-play` (x)::
