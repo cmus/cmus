@@ -141,7 +141,7 @@ check_cc_depgen()
 	msg_checking "if CC can generate dependency information"
 	if cc_supports -MMD -MP -MF /dev/null
 	then
-		CFLAGS="$CFLAGS -MMD -MP -MF .dep-\$@"
+		CFLAGS="$CFLAGS -MMD -MP -MF .dep-\$(subst /,-,\$@)"
 		msg_result yes
 	else
 		msg_result no
@@ -156,7 +156,7 @@ check_cxx_depgen()
 	msg_checking "if CXX can generate dependency information"
 	if cxx_supports -MMD -MP -MF /dev/null
 	then
-		CXXFLAGS="$CXXFLAGS -MMD -MP -MF .dep-\$@"
+		CXXFLAGS="$CXXFLAGS -MMD -MP -MF .dep-\$(subst /,-,\$@)"
 		msg_result yes
 	else
 		msg_result no
