@@ -1,4 +1,4 @@
-all: main plugins
+all: main plugins man
 
 include config.mk
 include scripts/lib.mk
@@ -101,43 +101,46 @@ ao.so: $(ao-objs)
 	$(call cmd,ld_so,$(AO_LIBS))
 # }}}
 
+# man {{{
+man1	:= Doc/cmus.1 Doc/cmus-remote.1
+
+$(man1): Doc/ttman
+
+%.1: %.txt
+	$(call cmd,ttman)
+
+Doc/ttman: Doc/ttman.o
+	$(call cmd,ld,)
+
+quiet_cmd_ttman = MAN    $@
+      cmd_ttman = Doc/ttman $< $@
+# }}}
+
 data		= $(wildcard data/*)
 
-clean		+= *.o *.lo *.so cmus cmus-remote
+clean		+= *.o *.lo *.so cmus cmus-remote Doc/*.o Doc/ttman Doc/*.1
 distclean	+= config.mk config/*.h tags
 
 main: cmus cmus-remote
 plugins: $(ip-y) $(op-y)
+man: $(man1)
 
 install-main: main
 	$(INSTALL) -m755 $(bindir) cmus cmus-remote
-	$(INSTALL) -m644 $(datadir)/cmus $(data)
-	$(INSTALL) -m755 $(datadir)/doc/cmus/examples cmus-status-display
 
 install-plugins: plugins
 	$(INSTALL) -m755 $(libdir)/cmus/ip $(ip-y)
 	$(INSTALL) -m755 $(libdir)/cmus/op $(op-y)
 
-install: main plugins install-main install-plugins install-man
+install-data: man
+	$(INSTALL) -m644 $(datadir)/cmus $(data)
+	$(INSTALL) -m755 $(datadir)/doc/cmus/examples cmus-status-display
+	$(INSTALL) -m644 $(mandir)/man1 $(man1)
+
+install: all install-main install-plugins install-data
 
 tags:
 	exuberant-ctags *.[ch]
-
-doc: man html
-man: Doc/man
-html: Doc/html
-install-doc: install-man install-html
-install-man: Doc/install-man
-install-html: Doc/install-html
-realclean: clean Doc/realclean
-
-Doc/%:
-	$(call cmd,submake)
-
-quiet_cmd_submake = Making $(word 2,$(subst /, ,$@)) in $(word 1,$(subst /, ,$@))
-      cmd_submake = $(MAKE) -C $(subst /, ,$@)
-
-MAKEFLAGS += --no-print-directory
 
 # generating tarball using GIT {{{
 REV	= HEAD
@@ -166,5 +169,5 @@ dist: $(if $(filter HEAD,$(REV)),doc,)
 
 # }}}
 
-.PHONY: all main plugins doc man html dist tags
-.PHONY: install install-main install-plugins install-doc install-man install-html
+.PHONY: all main plugins man dist tags
+.PHONY: install install-main install-plugins install-man

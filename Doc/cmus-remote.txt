@@ -1,114 +1,111 @@
-cmus-remote(1)
-==============
+@title CMUS-REMOTE 1 05/11/2006 cmus
 
-NAME
-----
+@h1 NAME
+
 cmus-remote - control cmus
 
 
-SYNOPSIS
---------
-cmus-remote [OPTION]... [FILE|DIR|PLAYLIST]...
+@h1 SYNOPSIS
 
-cmus-remote -C COMMAND...
-
+cmus-remote [*OPTION*]... [`FILE`|`DIR`|`PLAYLIST`]...@br
+cmus-remote *-C* `COMMAND`...@br
 cmus-remote
 
 
-DESCRIPTION
------------
-Add `FILE/DIR/PLAYLIST` to playlist, library (`-l`) or play queue (`-q`).
+@h1 DESCRIPTION
+
+Add `FILE/DIR/PLAYLIST` to playlist, library (*-l*) or play queue (*-q*).
 
 If no arguments are given cmus-remote reads raw commands from stdin (one
 command per line).  Raw commands are cmus' command mode commands.  These same
-commands are used in configuration files and key bindings.  manlink:cmus[1]
-contains full list of commands.
+commands are used in configuration files and key bindings.  *cmus*(1) contains
+full list of commands.
 
-When `-C` is given all command line arguments are treated as raw commands.
+When *-C* is given all command line arguments are treated as raw commands.
 
 
-OPTIONS
--------
-`--server SOCKET`::
-	Connect using socket `SOCKET` instead of `/tmp/cmus-$USER`.
+@h1 OPTIONS
 
-`--help`::
+--server SOCKET
+	Connect using socket *SOCKET* instead of `/tmp/cmus-$USER`.
+
+--help
 	Display usage information and exit.
 
-`--version`::
+--version
 	Display version information and exit.
 
-`-p, --play`::
+-p, --play
 	Start playing.
 
-`-u, --pause`::
+-u, --pause
 	Toggle pause.
 
-`-s, --stop`::
+-s, --stop
 	Stop playing.
 
-`-n, --next`::
+-n, --next
 	Skip forward in playlist.
 
-`-r, --prev`::
+-r, --prev
 	Skip backward in playlist.
 
-`-R, --repeat`::
+-R, --repeat
 	Toggle repeat.
 
-`-S, --shuffle`::
+-S, --shuffle
 	Toggle shuffle.
 
-`-v, --volume VOL`::
-	Change volume. See `vol` command in manlink:cmus[1].
+-v, --volume VOL
+	Change volume. See *vol* command in *cmus*(1).
 
-`-k, --seek SEEK`::
-	Seek. See `seek` command in manlink:cmus[1].
+-k, --seek SEEK
+	Seek. See *seek* command in *cmus*(1).
 
-`-l, --library`::
+-l, --library
 	Modify library instead of playlist.
 
-`-P, --playlist`::
+-P, --playlist
 	Modify playlist (default).
 
-`-q, --queue`::
+-q, --queue
 	Modify play queue instead of playlist.
 
-`-c, --clear`::
-	Clear playlist, library (`-l`) or play queue (`-q`).
+-c, --clear
+	Clear playlist, library (*-l*) or play queue (*-q*).
 
-`-C, --raw`::
+-C, --raw
 	Treat arguments (instead of stdin) as raw commands.
 
-EXAMPLES
---------
+@h1 EXAMPLES
 
-Add playlists/files/directories/URLs to library view (1 & 2)::
-+
-----------------
-$ cmus-remote -l music.m3u http://live.urn1350.net:8080/urn_high.ogg
-----------------
+Add playlists/files/directories/URLs to library view (1 & 2):
 
-Load (clear and add) playlist to playlist view (3)::
-+
-----------------
-$ cmus-remote -c music.m3u
-----------------
+	@pre
+	$ cmus-remote -l music.m3u \\
+	http://live.urn1350.net:8080/urn_high.ogg
+	@endpre
 
-Three different ways to toggle repeat::
-+
-----------------
-$ cmus-remote -R
-$ cmus-remote -C "toggle repeat"
-$ cmus-remote
-toggle repeat
-^D
-----------------
+Load (clear and add) playlist to playlist view (3):
 
-SEE ALSO
---------
-manlink:cmus[1]
+	@pre
+	$ cmus-remote -c music.m3u
+	@endpre
 
-AUTHOR
-------
-Written by Timo Hirvonen <tihirvon@gmail.com>
+Three different ways to toggle repeat:
+
+	@pre
+	$ cmus-remote -R
+	$ cmus-remote -C "toggle repeat"
+	$ cmus-remote
+	toggle repeat
+	^D
+	@endpre
+
+@h1 SEE ALSO
+
+*cmus*(1)
+
+@h1 AUTHOR
+
+Written by Timo Hirvonen <tihirvon\@gmail.com>
