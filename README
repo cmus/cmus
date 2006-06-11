@@ -42,15 +42,11 @@ Or on some BSD systems you need to explicitly use GNU make:
 Installation
 ------------
 
-  $ make install install-man
-
-To install HTML versions of the man pages:
-
-  $ make install-html
+  $ make install
 
 Or to install to a temporary directory:
 
-  $ make DESTDIR=/tmp/cmus install install-man
+  $ make install DESTDIR=/tmp/cmus
 
 This is useful when creating binary packages.
 

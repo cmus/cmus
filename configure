@@ -246,9 +246,4 @@ bindir:              ${bindir}
 datadir:             ${datadir}
 libdir:              ${libdir}
 mandir:              ${mandir}
-
-Installation:
-make                 build cmus
-make install         install cmus
-make install-html    install html docs (same content in the man pages)
 EOF
