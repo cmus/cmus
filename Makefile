@@ -154,18 +154,12 @@ _ver2	= $(shell git rev-parse --verify $(REV) 2>/dev/null)
 
 TARNAME	= cmus-$(if $(_ver0),$(_ver0),$(if $(_ver1),$(_ver1),$(_ver2)))
 
-dist: $(if $(filter HEAD,$(REV)),doc,)
+dist:
 	@tarname=$(TARNAME);						\
 	sha1=$(_ver2);							\
 	test "$$sha1" || { echo "No such revision $(REV)"; exit 1; };	\
 	echo "   DIST   $$tarname.tar.bz2";				\
-	git tar-tree $$sha1 $$tarname > $$tarname.tar;			\
-	if test "$(REV)" = HEAD; then					\
-		ln -s . $$tarname;					\
-		tar rf $$tarname.tar $$tarname/Doc/{cmus,cmus-remote}.{1,html};	\
-		rm $$tarname;						\
-	fi;								\
-	bzip2 -9 $$tarname.tar
+	git tar-tree $$sha1 $$tarname | bzip2 -c -9 > $$tarname.tar.bz2
 
 # }}}
 
