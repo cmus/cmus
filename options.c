@@ -788,7 +788,7 @@ void options_load(void)
 
 		/* load defaults */
 		if (source_file(def) == -1)
-			warn_errno("loading %s", def);
+			die_errno("loading %s", def);
 	}
 
 	/* load optional static config */
