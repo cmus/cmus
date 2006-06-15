@@ -91,6 +91,40 @@ check_cxx_flag()
 	fi
 }
 
+# extra flags for linking shared libraries and dynamically loadable modules
+check_shared_flags()
+{
+	# most of this is from Autoconf
+	case $(uname -s) in
+	rhapsody* | darwin1.[012])
+		LDSOFLAGS="-dynamic"
+		LDDLFLAGS="-bundle -undefined suppress"
+		;;
+	darwin*)
+		# Darwin 1.3
+		LDSOFLAGS="-dynamic"
+		case ${MACOSX_DEPLOYMENT_TARGET} in
+		10.[012])
+			LDDLFLAGS="-bundle -flat_namespace -undefined suppress"
+			;;
+		10.*)
+			LDDLFLAGS="-bundle -undefined dynamic_lookup"
+			;;
+		*)
+			LDDLFLAGS="-bundle -flat_namespace -undefined suppress"
+			;;
+		esac
+		;;
+	*)
+		LDSOFLAGS="-shared"
+		LDDLFLAGS="-shared"
+		;;
+	esac
+	echo "LDSOFLAGS = $LDSOFLAGS"
+	echo "LDDLFLAGS = $LDDLFLAGS"
+	makefile_vars LDSOFLAGS LDDLFLAGS
+}
+
 # adds CC, LD, CFLAGS, LDFLAGS and SOFLAGS to config.mk
 check_cc()
 {
@@ -108,6 +142,7 @@ check_cc()
 				;;
 		esac
 		makefile_vars CC LD CFLAGS LDFLAGS SOFLAGS
+		check_shared_flags
 		return 0
 	fi
 	return 1
@@ -453,11 +488,14 @@ check_pthread()
 # adds DL_LIBS to config.mk
 check_dl()
 {
-	for __libs in "-ldl -Wl,--export-dynamic" "-Wl,--export-dynamic"
+	for __libs in "-ldl -Wl,--export-dynamic" "-Wl,--export-dynamic" "-ldl"
 	do
 		check_library DL "" "$__libs" && return 0
 	done
-	return 1
+	echo "assuming -ldl is not needed"
+	makefile_var DL_LIBS ""
+	makefile_var DL_CFLAGS ""
+	return 0
 }
 
 # check for iconv

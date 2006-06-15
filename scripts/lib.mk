@@ -106,7 +106,11 @@ quiet_cmd_ld = LD     $@
 
 # LD for shared libraries, optional parameter: libraries
 quiet_cmd_ld_so = LD     $@
-      cmd_ld_so = $(LD) -shared $(LDFLAGS) -o $@ $^ $(1)
+      cmd_ld_so = $(LD) $(LDSOFLAGS) $(LDFLAGS) -o $@ $^ $(1)
+
+# LD for dynamically loadable modules, optional parameter: libraries
+quiet_cmd_ld_dl = LD     $@
+      cmd_ld_dl = $(LD) $(LDDLFLAGS) $(LDFLAGS) -o $@ $^ $(1)
 
 # CXX for programs and shared libraries
 quiet_cmd_cxx    = CXX    $@

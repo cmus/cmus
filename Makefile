@@ -48,22 +48,22 @@ $(mpc-objs):		CFLAGS += $(MPC_CFLAGS)
 $(vorbis-objs):		CFLAGS += $(VORBIS_CFLAGS)
 
 flac.so: $(flac-objs)
-	$(call cmd,ld_so,$(FLAC_LIBS))
+	$(call cmd,ld_dl,$(FLAC_LIBS))
 
 mad.so: $(mad-objs)
-	$(call cmd,ld_so,$(MAD_LIBS))
+	$(call cmd,ld_dl,$(MAD_LIBS))
 
 modplug.so: $(modplug-objs)
-	$(call cmd,ld_so,$(MODPLUG_LIBS))
+	$(call cmd,ld_dl,$(MODPLUG_LIBS))
 
 mpc.so: $(mpc-objs)
-	$(call cmd,ld_so,$(MPC_LIBS))
+	$(call cmd,ld_dl,$(MPC_LIBS))
 
 vorbis.so: $(vorbis-objs)
-	$(call cmd,ld_so,$(VORBIS_LIBS))
+	$(call cmd,ld_dl,$(VORBIS_LIBS))
 
 wav.so: $(wav-objs)
-	$(call cmd,ld_so,)
+	$(call cmd,ld_dl,)
 # }}}
 
 # output plugins {{{
@@ -86,19 +86,19 @@ $(sun-objs):  CFLAGS	+= $(SUN_CFLAGS)
 $(ao-objs):   CFLAGS	+= $(AO_CFLAGS)
 
 alsa.so: $(alsa-objs)
-	$(call cmd,ld_so,$(ALSA_LIBS))
+	$(call cmd,ld_dl,$(ALSA_LIBS))
 
 arts.so: $(arts-objs)
-	$(call cmd,ld_so,$(ARTS_LIBS))
+	$(call cmd,ld_dl,$(ARTS_LIBS))
 
 oss.so: $(oss-objs)
-	$(call cmd,ld_so,$(OSS_LIBS))
+	$(call cmd,ld_dl,$(OSS_LIBS))
 
 sun.so: $(sun-objs)
-	$(call cmd,ld_so,$(SUN_LIBS))
+	$(call cmd,ld_dl,$(SUN_LIBS))
 
 ao.so: $(ao-objs)
-	$(call cmd,ld_so,$(AO_LIBS))
+	$(call cmd,ld_dl,$(AO_LIBS))
 # }}}
 
 # man {{{
