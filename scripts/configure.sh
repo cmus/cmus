@@ -4,81 +4,71 @@
 #
 # This file is licensed under the GPLv2.
 
-. scripts/configure-private.sh || exit 1
+. scripts/utils.sh || exit 1
+. scripts/checks.sh || exit 1
 
-# Add --enable-FEATURE and --disable-FEATURE flags
-#
-# @name:          name of the flag (eg. alsa => --enable-alsa)
-# @default_value: 'y', 'n' or 'a' (yes, no, auto)
-#                 'a' can be used only if check_@name function exists
-# @config_var:    name of the variable
-# @description:   text shown in --help
-#
-# defines @config_var=y/n
-#
-# NOTE:
-#   You might want to define check_@name function which will be run by
-#   run_checks.  The check_@name function takes no arguments and _must_ return
-#   0 on success and non-zero on failure. See checks.sh for more information.
-#
-# Example:
-#   ---
-#   check_alsa()
-#   {
-#     pkg_check_modules alsa "alsa"
-#     return $?
-#   }
-#
-#   enable_flag alsa a CONFIG_ALSA "ALSA support"
-#   ---
-enable_flag()
+# Usage: parse_command_line "$@"
+# USAGE string must be defined in configure (used for --help)
+parse_command_line()
 {
-	argc enable_flag $# 4 4
-	before parse_command_line enable_flag
-
-	case $2 in
-		y|n)
-			set_var $3 $2
+	while test $# -gt 0
+	do
+		case $1 in
+		--help)
+			show_usage
 			;;
-		a)
-			# 'auto' looks prettier than 'a' in --help
-			set_var $3 auto
+		-f)
+			shift
+			test $# -eq 0 && die "-f requires an argument"
+			. "$1"
+			;;
+		-*)
+			die "unrecognized option \`$1'"
+			;;
+		*=*)
+			set_var ${1%%=*} "${1#*=}"
 			;;
 		*)
-			die "default value for an enable flag must be 'y', 'n' or 'a'"
+			die "unrecognized argument \`$1'"
 			;;
-	esac
-
-	enable_flags="${enable_flags} $1"
-	set_var enable_var_${1} $3
-	set_var enable_desc_${1} "$4"
+		esac
+		shift
+	done
 }
 
-# Add an option flag
+# check function [variable]
 #
-# @flag:          'foo' -> --foo[=ARG]
-# @has_arg:       does --@flag take an argument? 'y' or 'n'
-# @function:      function to run if --@flag is given
-# @description:   text displayed in --help
-# @arg_desc:      argument description shown in --help (if @has_arg is 'y')
-add_flag()
+# Example:
+# check check_cc
+# check check_vorbis CONFIG_VORBIS
+check()
 {
-	argc add_flag $# 4 5
-	before parse_command_line add_flag
+	argc check $# 1 2
+	if test $# -eq 1
+	then
+		$1 || die "configure failed."
+		return
+	fi
 
-	case $2 in
-		y|n)
-			;;
-		*)
-			die "argument 2 for add_flag must be 'y' or 'n'"
-			;;
+	# optional feature
+	case $(get_var $2) in
+	n)
+		;;
+	y)
+		$1 || die "configure failed."
+		;;
+	a|'')
+		if $1
+		then
+			set_var $2 y
+		else
+			set_var $2 n
+		fi
+		;;
+	*)
+		die "invalid value for $2. 'y', 'n', 'a' or '' expected"
+		;;
 	esac
-	__name="$(echo $1 | sed 's/-/_/g')"
-	opt_flags="$opt_flags $__name"
-	set_var flag_hasarg_${__name} "$2"
-	set_var flag_func_${__name} "$3"
-	set_var flag_desc_${__name} "$4"
-	set_var flag_argdesc_${__name} "$5"
 }
 
 # Set and register variable to be added to config.mk
@@ -88,9 +78,6 @@ add_flag()
 makefile_var()
 {
 	argc makefile_var $# 2 2
-	after parse_command_line makefile_var
-	before generate_config_mk makefile_var
-
 	set_var $1 "$2"
 	makefile_vars $1
 }
@@ -98,9 +85,22 @@ makefile_var()
 # Register variables to be added to config.mk
 makefile_vars()
 {
-	before generate_config_mk makefile_vars
-
 	makefile_variables="$makefile_variables $*"
+}
+
+# generate config.mk
+generate_config_mk()
+{
+	topdir=$(pwd)
+	makefile_vars topdir
+
+	__tmp=$(tmp_file config.mk)
+	for __i in $makefile_variables
+	do
+		strpad "$__i" 17
+		echo "${strpad_ret} = $(get_var $__i)"
+	done > $__tmp
+	update_file $__tmp config.mk
 }
 
 # -----------------------------------------------------------------------------
@@ -121,8 +121,6 @@ makefile_vars()
 config_header()
 {
 	argc config_header $# 2
-	after run_checks config_header
-
 	config_header_begin "$1"
 	shift
 	while test $# -gt 0
@@ -157,8 +155,6 @@ config_header()
 config_header_begin()
 {
 	argc config_header_begin $# 1 1
-	after run_checks config_header_begin
-
 	config_header_file="$1"
 	config_header_tmp=$(tmp_file config_header)
 
@@ -214,25 +210,4 @@ config_header_end()
 	echo "#endif" >> "$config_header_tmp"
 	mkdir -p $(dirname "$config_header_file")
 	update_file "$config_header_tmp" "$config_header_file"
-}
-
-# -----------------------------------------------------------------------------
-
-# Print values for enable flags
-print_config()
-{
-	echo
-	echo "Configuration:"
-	for __flag in $enable_flags
-	do
-		__var=$(get_var enable_var_${__flag})
-		strpad "${__flag}: " 21
-		echo "${strpad_ret}$(get_var $__var)"
-	done
-}
-
-# deprecated. pass the check_* functions directly to run_checks
-add_check()
-{
-	checks="${checks} $*"
 }

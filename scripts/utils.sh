@@ -4,6 +4,55 @@
 #
 # This file is licensed under the GPLv2.
 
+# initialization {{{
+
+export LC_ALL=C
+export LANG=C
+
+if test "$CDPATH"
+then
+	echo "Exporting CDPATH is dangerous and unnecessary!"
+	echo
+fi
+unset CDPATH
+
+__cleanup()
+{
+	if test "$DEBUG_CONFIGURE" = y
+	then
+		echo
+		echo "DEBUG_CONFIGURE=y, not removing temporary files"
+		ls .tmp-[0-9]*-*
+	else
+		rm -f .tmp-[0-9]*-*
+	fi
+}
+
+__abort()
+{
+	# can't use "die" because stderr is often redirected to /dev/null
+	# (stdout could also be redirected but it's not so common)
+	echo
+	echo
+	echo "Aborting. configure failed."
+	# this executes __cleanup automatically
+	exit 1
+}
+
+# clean temporary files on exit
+trap '__cleanup' 0
+
+# clean temporary files and die with error message if interrupted
+trap '__abort' 1 2 3 13 15
+
+# }}}
+
+# config.mk variable names
+makefile_variables=""
+
+# cross compilation, prefix for CC, LD etc.
+CROSS=
+
 # argc function_name $# min [max]
 argc()
 {
@@ -125,4 +174,34 @@ path_find()
 		fi
 	done
 	return 1
+}
+
+show_usage()
+{
+	cat <<EOF
+Usage ./configure [-f FILE] [OPTION=VALUE]...
+
+  -f FILE         Read OPTION=VALUE list from FILE (sh script)
+$USAGE
+EOF
+	exit 0
+}
+
+# @tmpfile: temporary file
+# @file:    file to update
+#
+# replace @file with @tmpfile if their contents differ
+update_file()
+{
+	if test -e "$2"
+	then
+		if cmp "$2" "$1" 2>/dev/null 1>&2
+		then
+			return 0
+		fi
+		echo "updating $2"
+	else
+		echo "creating $2"
+	fi
+	mv -f "$1" "$2"
 }
