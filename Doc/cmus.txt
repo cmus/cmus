@@ -873,9 +873,9 @@ found in `/usr/share/doc/cmus/examples`.
 
 @h1 BUGS
 
-After a crash last lines of `/tmp/cmus-debug` might contain useful
-information.  The `/tmp/cmus-debug` file exists only if you configured cmus
-with maximum debug level (*./configure --debug=2*).
+After a crash last lines of `/tmp/cmus-debug` (or $TMPDIR/cmus-debug) might
+contain useful information.  The file exists only if you configured cmus with
+maximum debug level (*./configure DEBUG=2*).
 
 Feature requests and bug reports should go to the cmus-devel mailing list:
 	http://lists.sourceforge.net/lists/listinfo/cmus-devel

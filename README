@@ -12,21 +12,32 @@ Installation
 Configuration
 -------------
 
+List available optional features
+
   $ ./configure --help
+
+Auto-detect everything
+
   $ ./configure
 
-Before running 'make' verify that all features you want have been
-configured (see lines after 'Configuration:'). You need to install
-development versions of the dependencies.
+To disable some feature, arts for example, and install to $HOME run
 
-For example if you want to use 'mad' input plugin (mp3) you need to
-install libmad0-dev (Debian) or libmad-devel (RPM) package. After
-installing dependencies you need to run ./configure again, of course.
+  $ ./configure prefix=$HOME CONFIG_ARTS=n
+
+After running configure you can see from the generated config.mk file
+what features have been configured in (see the CONFIG_* options).
+
+NOTE: For some distributions you need to install development versions
+of the dependencies.  For example if you want to use 'mad' input plugin
+(mp3) you need to install libmad0-dev (Debian) or libmad-devel (RPM)
+package. After installing dependencies you need to run ./configure
+again, of course.
 
 If you want to use the Tremor library as alternative for decoding
-Ogg/Vorbis files you have to pass --with-tremor to the configure script:
+Ogg/Vorbis files you have to pass CONFIG_TREMOR=y to the configure
+script:
 
-  $ ./configure --enable-vorbis --with-tremor
+  $ ./configure CONFIG_VORBIS=y CONFIG_TREMOR=y
 
 The Tremor library is supposed to be used on hardware that has no FPU.
 
@@ -66,6 +77,7 @@ The list is open (you can post to the list without subscribing).
 Reporting Bugs
 ==============
 
-After a crash send bug report with last lines of /tmp/cmus-debug to
-cmus-devel@lists.sourceforge.net.  /tmp/cmus-debug file exists only if
-you configured cmus with maximum debug level (./configure --debug=2).
+After a crash send bug report with last lines of /tmp/cmus-debug (or
+$TMPDIR/cmus-debug) to cmus-devel@lists.sourceforge.net.  The file
+exists only if you configured cmus with maximum debug level
+(./configure DEBUG=2).

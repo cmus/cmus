@@ -109,17 +109,6 @@ More: http://www.kernel.org/pub/software/scm/git/docs/everyday.html
 Misc
 ----
 
-Configure cmus with extra compiler warnings enabled:
-
-	./configure --dev
-
-This also sets --prefix=$HOME and --debug=2. Of course you can override
-them when needed.
-
-Fix all warnings and test the code.
-
-Watch /tmp/cmus-debug
-
 If you have sparse installed:
 
 	make C=2
