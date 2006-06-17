@@ -150,16 +150,15 @@ _ver0	= $(shell git describe $(REV) 2>/dev/null)
 # version from a plain tag
 _ver1	= $(shell git describe --tags $(REV) 2>/dev/null)
 # SHA1
-_ver2	= $(shell git rev-parse --verify $(REV) 2>/dev/null)
+_ver2	= $(shell git rev-parse --verify --short $(REV) 2>/dev/null)
 
-TARNAME	= cmus-$(if $(_ver0),$(_ver0),$(if $(_ver1),$(_ver1),$(_ver2)))
+TARNAME	= cmus-$(or $(_ver0),$(_ver1),g$(_ver2))
 
 dist:
 	@tarname=$(TARNAME);						\
-	sha1=$(_ver2);							\
-	test "$$sha1" || { echo "No such revision $(REV)"; exit 1; };	\
+	test "$(_ver2)" || { echo "No such revision $(REV)"; exit 1; };	\
 	echo "   DIST   $$tarname.tar.bz2";				\
-	git tar-tree $$sha1 $$tarname | bzip2 -c -9 > $$tarname.tar.bz2
+	git tar-tree $(REV) $$tarname | bzip2 -c -9 > $$tarname.tar.bz2
 
 # }}}
 
