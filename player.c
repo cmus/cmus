@@ -609,6 +609,12 @@ static void *consumer_loop(void *arg)
 			if (rc < 0) {
 				d_print("op_write returned %d %s\n", rc,
 						rc == -1 ? strerror(errno) : "");
+
+				/* try to reopen */
+				op_close();
+				consumer_status = CS_STOPPED;
+				__consumer_play();
+
 				consumer_unlock();
 				break;
 			}

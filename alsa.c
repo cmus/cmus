@@ -382,9 +382,11 @@ again:
 	if (rc < 0) {
 		if (!prepared && rc == -EPIPE) {
 			d_print("underrun. resetting stream\n");
-			snd_pcm_prepare(alsa_handle);
-			prepared++;
-			goto again;
+			rc = snd_pcm_prepare(alsa_handle);
+			if (!rc) {
+				prepared++;
+				goto again;
+			}
 		}
 
 		/* this handles EAGAIN too which is not critical error */
