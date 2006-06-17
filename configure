@@ -199,7 +199,6 @@ check check_arts    CONFIG_ARTS
 check check_oss     CONFIG_OSS
 check check_sun     CONFIG_SUN
 
-CFLAGS="${CFLAGS} ${EXTRA_CFLAGS}"
 test "$WORDS_BIGENDIAN" = y && CFLAGS="${CFLAGS} -DWORDS_BIGENDIAN"
 
 DATADIR="$datadir"
