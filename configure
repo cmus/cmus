@@ -134,7 +134,7 @@ check_sun()
 prefix=/usr/local
 DEBUG=1
 CONFIG_TREMOR=n
-# unset CONFIG_* variables: if check succeeds 'y', else 'n'
+# unset CONFIG_* variables: if check succeeds 'y', otherwise 'n'
 
 USAGE="
 Options:
@@ -143,7 +143,7 @@ Options:
   datadir         Read-only data [\$prefix/share]
   libdir          Libraries [\$prefix/lib]
   mandir          Man pages [\$datadir/man]
-  debug           Debugging level (0-2) [$DEBUG]
+  DEBUG           Debugging level (0-2) [$DEBUG]
 
 Optional Features: y/n
   CONFIG_FLAC     FLAC (Free Lossless Audio Codec) support [auto]
