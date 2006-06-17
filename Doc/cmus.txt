@@ -329,11 +329,12 @@ search-prev (N)
 	If a search pattern has been entered before, search backwards for the
 	previous match in the current view.  See *SEARCHING* above.
 
-seek [+-]<num>[mh]
+seek [+-](<num>[mh] | [HH:]MM:SS)
 	Seek to absolute or relative position.  Position can be given in
-	seconds, minutes (m) or hours (h).
+	seconds, minutes (m), hours (h) or HH:MM:SS format where HH: is
+	optional.
 
-	Seek 1 minutes backward
+	Seek 1 minute backward
 		:seek -1m
 
 	Seek 5 seconds forward
@@ -341,6 +342,9 @@ seek [+-]<num>[mh]
 
 	Seek to absolute position 1h
 		:seek 1h
+
+	Seek 90 seconds forward
+		:seek +1:30
 
 	Default bindings:
 
