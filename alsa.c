@@ -374,19 +374,22 @@ static int op_alsa_drop(void)
 static int op_alsa_write(const char *buffer, int count)
 {
 	int rc, len;
-	int prepared = 0;
+	int recovered = 0;
 
 	len = count / alsa_frame_size;
 again:
 	rc = snd_pcm_writei(alsa_handle, buffer, len);
 	if (rc < 0) {
-		if (!prepared && rc == -EPIPE) {
-			d_print("underrun. resetting stream\n");
-			rc = snd_pcm_prepare(alsa_handle);
-			if (!rc) {
-				prepared++;
+		// rc _should_ be either -EBADFD, -EPIPE or -ESTRPIPE
+		if (!recovered && (rc == -EINTR || rc == -EPIPE || rc == -ESTRPIPE)) {
+			d_print("snd_pcm_writei failed: %s, trying to recover\n",
+					snd_strerror(rc));
+			recovered++;
+			// this handles -EINTR, -EPIPE and -ESTRPIPE
+			// for other errors it just returns the error code
+			rc = snd_pcm_recover(alsa_handle, rc, 1);
+			if (!rc)
 				goto again;
-			}
 		}
 
 		/* this handles EAGAIN too which is not critical error */
