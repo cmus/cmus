@@ -151,6 +151,7 @@ static void init_plugin(struct output_plugin *o)
 {
 	if (!o->mixer_initialized && o->mixer_ops) {
 		if (o->mixer_ops->init() == 0) {
+			d_print("initialized mixer for %s\n", o->name);
 			o->mixer_initialized = 1;
 		} else {
 			d_print("could not initialize mixer `%s'\n", o->name);
@@ -158,19 +159,12 @@ static void init_plugin(struct output_plugin *o)
 	}
 	if (!o->pcm_initialized) {
 		if (o->pcm_ops->init() == 0) {
+			d_print("initialized pcm for %s\n", o->name);
 			o->pcm_initialized = 1;
 		} else {
 			d_print("could not initialize pcm `%s'\n", o->name);
 		}
 	}
-}
-
-void op_init_plugins(void)
-{
-	struct output_plugin *o;
-
-	list_for_each_entry(o, &op_head, node)
-		init_plugin(o);
 }
 
 void op_exit_plugins(void)
@@ -213,23 +207,27 @@ static void open_mixer(void)
 	}
 }
 
+static int select_plugin(struct output_plugin *o)
+{
+	/* try to initialize if not initialized yet */
+	init_plugin(o);
+
+	if (!o->pcm_initialized)
+		return -OP_ERROR_NOT_INITIALIZED;
+
+	close_mixer();
+	op = o;
+	open_mixer();
+	return 0;
+}
+
 int op_select(const char *name)
 {
 	struct output_plugin *o;
 
 	list_for_each_entry(o, &op_head, node) {
-		if (strcasecmp(name, o->name) == 0) {
-			/* try to initialize if not initialized yet */
-			init_plugin(o);
-
-			if (!o->pcm_initialized)
-				return -OP_ERROR_NOT_INITIALIZED;
-
-			close_mixer();
-			op = o;
-			open_mixer();
-			return 0;
-		}
+		if (strcasecmp(name, o->name) == 0)
+			return select_plugin(o);
 	}
 	return -OP_ERROR_NO_PLUGIN;
 }
@@ -240,10 +238,7 @@ int op_select_any(void)
 	int rc = -OP_ERROR_NO_PLUGIN;
 
 	list_for_each_entry(o, &op_head, node) {
-		if (!o->pcm_initialized)
-			continue;
-
-		rc = op_select(o->name);
+		rc = select_plugin(o);
 		if (rc == 0)
 			break;
 	}

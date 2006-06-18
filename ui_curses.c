@@ -1871,9 +1871,6 @@ static void init_all(void)
 	/* almost everything must be initialized now */
 	options_load();
 
-	/* options have been loaded, init plugins (set their options) */
-	player_init_plugins();
-
 	/* finally we can set the output plugin */
 	player_set_op(output_plugin);
 

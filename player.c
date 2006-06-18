@@ -700,11 +700,6 @@ void player_load_plugins(void)
 	op_load_plugins();
 }
 
-void player_init_plugins(void)
-{
-	op_init_plugins();
-}
-
 void player_init(const struct player_callbacks *callbacks)
 {
 	int rc;

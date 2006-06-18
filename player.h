@@ -81,7 +81,6 @@ extern int player_cont;
 extern int volume_max;
 
 void player_load_plugins(void);
-void player_init_plugins(void);
 
 void player_init(const struct player_callbacks *callbacks);
 void player_exit(void);

@@ -8,7 +8,6 @@
 #include <sf.h>
 
 void op_load_plugins(void);
-void op_init_plugins(void);
 void op_exit_plugins(void);
 
 /*
