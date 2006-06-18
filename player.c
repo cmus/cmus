@@ -990,7 +990,7 @@ void player_seek(double offset, int whence)
  */
 int player_set_op(const char *name)
 {
-	int rc;
+	int rc, l, r;
 
 	player_lock();
 
@@ -1031,7 +1031,10 @@ int player_set_op(const char *name)
 		if (consumer_status == CS_PAUSED)
 			op_pause();
 	}
-	__player_status_changed();
+
+	if (!op_get_volume(&l, &r))
+		volume_update(l, r);
+
 	player_unlock();
 	d_print("rc = %d\n", rc);
 	return rc;
