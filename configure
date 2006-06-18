@@ -73,7 +73,7 @@ check_vorbis()
 check_alsa()
 {
 	# the alsa.pc file should be always available
-	pkg_config ALSA "alsa"
+	pkg_config ALSA "alsa >= 1.0.11"
 	return $?
 }
 
