@@ -92,9 +92,11 @@ check_cxx_flag()
 }
 
 # extra flags for linking shared libraries and dynamically loadable modules
+# called by check_cc
 check_shared_flags()
 {
 	# most of this is from Autoconf
+	# the OS X specific parts are likely wrong
 	case $(uname -s) in
 	rhapsody* | darwin1.[012])
 		LDSOFLAGS="-dynamic"
@@ -120,8 +122,6 @@ check_shared_flags()
 		LDDLFLAGS="-shared"
 		;;
 	esac
-	echo "LDSOFLAGS = $LDSOFLAGS"
-	echo "LDDLFLAGS = $LDDLFLAGS"
 	makefile_vars LDSOFLAGS LDDLFLAGS
 }
 
@@ -164,6 +164,7 @@ check_cxx()
 				;;
 		esac
 		makefile_vars CXX CXXLD CXXFLAGS CXXLDFLAGS
+		check_shared_flags
 		return 0
 	fi
 	return 1
