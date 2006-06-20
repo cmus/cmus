@@ -91,19 +91,39 @@ check_cxx_flag()
 	fi
 }
 
-# extra flags for linking shared libraries and dynamically loadable modules
-# called by check_cc
-check_shared_flags()
+# adds CC, LD, CFLAGS, LDFLAGS and SOFLAGS to config.mk
+check_cc()
 {
-	# most of this is from Autoconf
-	# the OS X specific parts are likely wrong
+	var_default CC ${CROSS}gcc
+	var_default LD $CC
+	var_default CFLAGS "-O2"
+	var_default LDFLAGS ""
+	var_default SOFLAGS "-fPIC"
+	# libs (.so)
+	var_default LDSOFLAGS "-shared"
+	# plugins (.so)
+	var_default LDDLFLAGS "-shared"
+
+	check_program $CC || return 1
+
 	case $(uname -s) in
-	rhapsody* | Darwin1.[012])
-		LDSOFLAGS="-dynamic"
-		LDDLFLAGS="-bundle -undefined suppress"
+	*BSD)
+		CFLAGS="$CFLAGS -I/usr/local/include"
+		LDFLAGS="$LDFLAGS -L/usr/local/lib"
 		;;
-	Darwin*)
-		# Darwin 1.3
+	Darwin)
+		# fink
+		if test -d /sw/lib
+		then
+			CFLAGS="$CFLAGS -I/sw/include"
+			LDFLAGS="$LDFLAGS -L/sw/lib"
+		fi
+		# darwinports
+		if test -d /opt/local/lib
+		then
+			CFLAGS="$CFLAGS -I/opt/local/include"
+			LDFLAGS="$LDFLAGS -L/opt/local/lib"
+		fi
 		LDSOFLAGS="-dynamic"
 		case ${MACOSX_DEPLOYMENT_TARGET} in
 		10.[012])
@@ -117,35 +137,12 @@ check_shared_flags()
 			;;
 		esac
 		;;
-	*)
-		LDSOFLAGS="-shared"
-		LDDLFLAGS="-shared"
+	SunOS)
+		CFLAGS="$CFLAGS -D__EXTENSIONS__"
 		;;
 	esac
-	makefile_vars LDSOFLAGS LDDLFLAGS
-}
-
-# adds CC, LD, CFLAGS, LDFLAGS and SOFLAGS to config.mk
-check_cc()
-{
-	var_default CC ${CROSS}gcc
-	var_default LD $CC
-	var_default CFLAGS "-O2"
-	var_default LDFLAGS ""
-	var_default SOFLAGS "-fPIC"
-	if check_program $CC
-	then
-		case $(uname -s) in
-			*BSD)
-				CFLAGS="$CFLAGS -I/usr/local/include"
-				LDFLAGS="$LDFLAGS -L/usr/local/lib"
-				;;
-		esac
-		makefile_vars CC LD CFLAGS LDFLAGS SOFLAGS
-		check_shared_flags
-		return 0
-	fi
-	return 1
+	makefile_vars CC LD CFLAGS LDFLAGS SOFLAGS LDSOFLAGS LDDLFLAGS
+	return 0
 }
 
 # adds CXX, CXXLD, CXXFLAGS and CXXLDFLAGS to config.mk
@@ -155,19 +152,18 @@ check_cxx()
 	var_default CXXLD $CXX
 	var_default CXXFLAGS "-O2"
 	var_default CXXLDFLAGS ""
-	if check_program $CXX
-	then
-		case $(uname -s) in
-			*BSD)
-				CXXFLAGS="$CXXFLAGS -I/usr/local/include"
-				CXXLDFLAGS="$CXXLDFLAGS -L/usr/local/lib"
-				;;
-		esac
-		makefile_vars CXX CXXLD CXXFLAGS CXXLDFLAGS
-		check_shared_flags
-		return 0
-	fi
-	return 1
+
+	check_program $CXX || return 1
+
+	case $(uname -s) in
+	*BSD)
+		CXXFLAGS="$CXXFLAGS -I/usr/local/include"
+		CXXLDFLAGS="$CXXLDFLAGS -L/usr/local/lib"
+		;;
+	esac
+	makefile_vars CXX CXXLD CXXFLAGS CXXLDFLAGS
+	check_shared_flags
+	return 0
 }
 
 # check if CC can generate dependencies (.dep-*.o files)
@@ -436,6 +432,21 @@ int main(int argc, char *argv[])
 	return 0
 }
 
+# check if @header can be included
+#
+# @header
+# @cflags   -I/some/path (optional)
+check_header()
+{
+	argc check_header $# 1
+	__src=$(tmp_file header.c)
+	__obj=$(tmp_file header.o)
+	echo "#include <$1>" > $__src || exit 1
+	shift
+	$CC -c $CFLAGS "$@" $__src -o $__obj 2>/dev/null
+	return $?
+}
+
 # check if linking against @ldadd is possible
 # use check_library instead if possible
 #
@@ -489,13 +500,21 @@ check_pthread()
 # adds DL_LIBS to config.mk
 check_dl()
 {
-	for __libs in "-ldl -Wl,--export-dynamic" "-Wl,--export-dynamic" "-ldl"
+	case $(uname -s) in
+	Darwin)
+		DL_CFLAGS="-Ddlsym=dlsym_auto_underscore"
+		;;
+	*)
+		DL_CFLAGS=
+		;;
+	esac
+	for DL_LIBS in "-ldl -Wl,--export-dynamic" "-Wl,--export-dynamic" "-ldl"
 	do
-		check_library DL "" "$__libs" && return 0
+		check_library DL "$DL_CFLAGS" "$DL_LIBS" && return 0
 	done
 	echo "assuming -ldl is not needed"
-	makefile_var DL_LIBS ""
-	makefile_var DL_CFLAGS ""
+	DL_LIBS=
+	makefile_vars DL_LIBS DL_CFLAGS
 	return 0
 }
 
