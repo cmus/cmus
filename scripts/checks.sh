@@ -98,11 +98,11 @@ check_shared_flags()
 	# most of this is from Autoconf
 	# the OS X specific parts are likely wrong
 	case $(uname -s) in
-	rhapsody* | darwin1.[012])
+	rhapsody* | Darwin1.[012])
 		LDSOFLAGS="-dynamic"
 		LDDLFLAGS="-bundle -undefined suppress"
 		;;
-	darwin*)
+	Darwin*)
 		# Darwin 1.3
 		LDSOFLAGS="-dynamic"
 		case ${MACOSX_DEPLOYMENT_TARGET} in
