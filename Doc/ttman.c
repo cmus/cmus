@@ -30,6 +30,7 @@ struct token {
 		// keywords (@...)
 		TOK_H1,
 		TOK_H2,
+		TOK_LI,
 		TOK_BR,
 		TOK_PRE,
 		TOK_ENDPRE,	// must be after TOK_PRE
@@ -59,6 +60,7 @@ static const struct keyword {
 } keywords[] = {
 	CONST_STR("h1"),
 	CONST_STR("h2"),
+	CONST_STR("li"),
 	CONST_STR("br"),
 	CONST_STR("pre"),
 	CONST_STR("endpre"),
@@ -380,13 +382,35 @@ static struct token *check_line(struct token *tok, int *ip)
 		// check arguments
 		tok = tok->next;
 		while (tok != &head) {
-			int type = tok->type;
-
-			if (type == TOK_NL)
+			switch (tok->type) {
+			case TOK_TEXT:
+			case TOK_INDENT:
 				break;
-			if (type != TOK_TEXT && type != TOK_INDENT)
+			case TOK_NL:
+				return start;
+			default:
 				syntax(tok->line, "@%s can contain only text\n",
-						keyword_name(type));
+						keyword_name(tok->type));
+			}
+			tok = tok->next;
+		}
+		break;
+	case TOK_LI:
+		// check arguments
+		tok = tok->next;
+		while (tok != &head) {
+			switch (tok->type) {
+			case TOK_TEXT:
+			case TOK_BOLD:
+			case TOK_ITALIC:
+			case TOK_INDENT:
+				break;
+			case TOK_NL:
+				return start;
+			default:
+				syntax(tok->line, "@%s not allowed inside @li\n",
+						keyword_name(tok->type));
+			}
 			tok = tok->next;
 		}
 		break;
@@ -502,10 +526,41 @@ static void normalize(void)
 			tok = skip_after(tok->next, tok->type + 1);
 			prev_indent = -1;
 			break;
-		default:
+		case TOK_H1:
+		case TOK_H2:
+		case TOK_LI:
+		case TOK_TITLE:
+			// remove white space after H1, H2, L1 and TITLE
+			tok = tok->next;
+			while (tok != &head) {
+				int type = tok->type;
+				struct token *next;
+
+				if (type == TOK_TEXT) {
+					while (tok->len && *tok->text == ' ') {
+						tok->text++;
+						tok->len--;
+					}
+					if (tok->len)
+						break;
+				}
+				if (type != TOK_INDENT)
+					break;
+
+				// empty TOK_TEXT or TOK_INDENT
+				next = tok->next;
+				free_token(tok);
+				tok = next;
+			}
 			// not normal text. can't be joined
 			prev_indent = -2;
 			tok = get_next_line(tok);
+			break;
+		case TOK_NL:
+		case TOK_INDENT:
+		case TOK_ENDPRE:
+		case TOK_ENDRAW:
+			BUG();
 			break;
 		}
 	}
@@ -727,10 +782,13 @@ static struct token *dump_one(struct token *tok)
 		tok = output_para(tok);
 		break;
 	case TOK_H1:
-		tok = title(tok, ".SH");
+		tok = title(tok, ".SH ");
 		break;
 	case TOK_H2:
-		tok = title(tok, ".SS");
+		tok = title(tok, ".SS ");
+		break;
+	case TOK_LI:
+		tok = title(tok, ".TP\n");
 		break;
 	case TOK_PRE:
 		tok = output_pre(tok->next);
@@ -739,7 +797,7 @@ static struct token *dump_one(struct token *tok)
 		tok = output_raw(tok->next);
 		break;
 	case TOK_TITLE:
-		tok = title(tok, ".TH");
+		tok = title(tok, ".TH ");
 		// must be after .TH
 		// no hyphenation, adjust left
 		output(".nh\n.ad l\n");
