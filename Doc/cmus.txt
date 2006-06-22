@@ -118,14 +118,17 @@ background.  You can only mark tracks in the list views (2-4).
 
 You can copy marked or selected tracks from views 1-5.
 
-*a*
-	copy tracks to the library (1-2)
-*y*
-	copy tracks to the playlist (3)
-*e*
-	append tracks to the play queue (4)
-*E*
-	prepend tracks to the play queue (4)
+@li *a*
+copy tracks to the library (1-2)
+
+@li *y*
+copy tracks to the playlist (3)
+
+@li *e*
+append tracks to the play queue (4)
+
+@li *E*
+prepend tracks to the play queue (4)
 
 @h2 Moving Tracks
 
@@ -178,14 +181,17 @@ and default key bindings in parenthesis.
 add [-l] [-p] [-q] [-Q] <file|dir|url|playlist>
 	Add file/dir/url/playlist to the specified view or the current view.
 
-	-l
-		add to library
-	-p
-		add to playlist
-	-q
-		add play queue
-	-Q
-		prepend to play queue
+	@li -l
+	add to library
+
+	@li -p
+	add to playlist
+
+	@li -q
+	add play queue
+
+	@li -Q
+	prepend to play queue
 
 	URL is a Shoutcast stream (http://...).
 
@@ -194,8 +200,8 @@ add [-l] [-p] [-q] [-Q] <file|dir|url|playlist>
 bind [-f] <context> <key> <command>
 	Add a key binding.
 
-	-f
-		overwrite existing binding
+	@li -f
+	overwrite existing binding
 
 	Use tab to expand contexts, keys and commands.  Command is any command
 	listed in this section.
@@ -223,12 +229,14 @@ cd [directory]
 clear [-l] [-p] [-q]
 	Remove all tracks from the specified view or the current view.
 
-	-l
-		clear library
-	-p
-		clear playlist
-	-q
-		clear play queue
+	@li -l
+	clear library
+
+	@li -p
+	clear playlist
+
+	@li -q
+	clear play queue
 
 colorscheme <name>
 	Change color scheme.  Color schemes are found in `/usr/share/cmus/` or
@@ -271,10 +279,11 @@ invert
 load [-l] [-p] <playlist>
 	Load a playlist to the specified view or to the current view.
 
-	-l
-		load to library views
-	-p
-		load to playlist view
+	@li -l
+	load to library views
+
+	@li -p
+	load to playlist view
 
 mark <filter-expression>
 	Mark tracks in playlist and queue view by using a filter expression.
@@ -314,10 +323,11 @@ save [-l] [-p] [file]
 	Save the specified view's or the current view's contents to a playlist
 	file.
 
-	-l
-		save library views
-	-p
-		save playlist view
+	@li -l
+	save library views
+
+	@li -p
+	save playlist view
 
 	If no filename given the old filename is used.
 
