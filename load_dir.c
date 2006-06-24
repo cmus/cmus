@@ -41,6 +41,10 @@ int load_dir(const char *dirname, char ***names,
 		struct stat s;
 		int nlen = strlen(name);
 
+		/* ignore .. if we are in the root dir */
+		if (strcmp(dirname,"/") == 0 && strcmp(name,"..") == 0)
+			continue;
+
 		/* just ignore too long paths */
 		if (len + nlen + 2 >= sizeof(full_path))
 			continue;
