@@ -497,3 +497,20 @@ check_iconv()
 	fi
 	return 0
 }
+
+# checks if -lsocket is needed
+# connect() etc. are in -lsocket on SunOS
+check_socket()
+{
+	msg_checking "if -lsocket is needed"
+	case $(uname -s) in
+	SunOS)
+		makefile_var SOCKET_LIBS "-lsocket"
+		msg_result yes
+		;;
+	*)
+		makefile_var SOCKET_LIBS ""
+		msg_result no
+		;;
+	esac
+}
