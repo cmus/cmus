@@ -205,3 +205,35 @@ update_file()
 	fi
 	mv -f "$1" "$2"
 }
+
+# optionally used after try_compile
+__try_link()
+{
+	__exe=$(tmp_file prog)
+	__cmd="$LD $LDFLAGS $@ -o $__exe $__obj"
+	$LD $LDFLAGS "$@" -o $__exe $__obj 2>/dev/null
+	return $?
+}
+
+# optionally used after try_compile
+__compile_failed()
+{
+	warn
+	warn "Failed to compile simple program:"
+	warn "---"
+	cat $__src >&2
+	warn "---"
+	warn "Command: $__cmd"
+	warn "Make sure your CC and CFLAGS are sane."
+	exit 1
+}
+
+# optionally used after __try_link or try_link
+__link_failed()
+{
+	warn
+	warn "Failed to link simple program."
+	warn "Command: $__cmd"
+	warn "Make sure your LD (CC?) and LDFLAGS are sane."
+	exit 1
+}

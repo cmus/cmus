@@ -91,6 +91,9 @@ makefile_vars()
 # generate config.mk
 generate_config_mk()
 {
+	CFLAGS="$CFLAGS $EXTRA_CFLAGS"
+	CXXFLAGS="$CXXFLAGS $EXTRA_CXXFLAGS"
+
 	topdir=$(pwd)
 	makefile_vars topdir
 

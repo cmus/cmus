@@ -53,7 +53,8 @@ cxx_supports()
 
 # @flag: option flag(s) to check
 #
-# add @flag to CFLAGS if CC accepts it
+# add @flag to EXTRA_CFLAGS if CC accepts it
+# EXTRA_CFLAGS are added to CFLAGS in the end of configuration
 check_cc_flag()
 {
 	argc check_cc_flag $# 1
@@ -62,7 +63,7 @@ check_cc_flag()
 	msg_checking "for CFLAGS $*"
 	if cc_supports $*
 	then
-		CFLAGS="$CFLAGS $*"
+		EXTRA_CFLAGS="$EXTRA_CFLAGS $*"
 		msg_result "yes"
 		return 0
 	else
@@ -73,7 +74,8 @@ check_cc_flag()
 
 # @flag: option flag(s) to check
 #
-# add @flag to CXXFLAGS if CXX accepts it
+# add @flag to EXTRA_CXXFLAGS if CXX accepts it
+# EXTRA_CXXFLAGS are added to CXXFLAGS in the end of configuration
 check_cxx_flag()
 {
 	argc check_cxx_flag $# 1
@@ -82,7 +84,7 @@ check_cxx_flag()
 	msg_checking "for CXXFLAGS $*"
 	if cxx_supports $*
 	then
-		CXXFLAGS="$CXXFLAGS $*"
+		EXTRA_CXXFLAGS="$EXTRA_CXXFLAGS $*"
 		msg_result "yes"
 		return 0
 	else
@@ -96,7 +98,7 @@ check_cc()
 {
 	var_default CC ${CROSS}gcc
 	var_default LD $CC
-	var_default CFLAGS "-O2"
+	var_default CFLAGS "-g -O2 -Wall"
 	var_default LDFLAGS ""
 	var_default SOFLAGS "-fPIC"
 	# libs (.so)
@@ -150,7 +152,7 @@ check_cxx()
 {
 	var_default CXX ${CROSS}g++
 	var_default CXXLD $CXX
-	var_default CXXFLAGS "-O2"
+	var_default CXXFLAGS "-g -O2 -Wall"
 	var_default CXXLDFLAGS ""
 
 	check_program $CXX || return 1
@@ -173,7 +175,7 @@ check_cc_depgen()
 	msg_checking "if CC can generate dependency information"
 	if cc_supports -MMD -MP -MF /dev/null
 	then
-		CFLAGS="$CFLAGS -MMD -MP -MF .dep-\$(subst /,-,\$@)"
+		EXTRA_CFLAGS="$EXTRA_CFLAGS -MMD -MP -MF .dep-\$(subst /,-,\$@)"
 		msg_result yes
 	else
 		msg_result no
@@ -188,7 +190,7 @@ check_cxx_depgen()
 	msg_checking "if CXX can generate dependency information"
 	if cxx_supports -MMD -MP -MF /dev/null
 	then
-		CXXFLAGS="$CXXFLAGS -MMD -MP -MF .dep-\$(subst /,-,\$@)"
+		EXTRA_CXXFLAGS="$EXTRA_CXXFLAGS -MMD -MP -MF .dep-\$(subst /,-,\$@)"
 		msg_result yes
 	else
 		msg_result no
@@ -249,7 +251,7 @@ check_library()
 {
 	argc check_library $# 3 3
 	msg_checking "for ${1}_LIBS ($3)"
-	if try_link "$3" >/dev/null 2>&1
+	if try_link $3
 	then
 		msg_result yes
 		makefile_var ${1}_CFLAGS "$2"
@@ -367,36 +369,26 @@ app_config()
 }
 
 # @contents:  file contents to compile
+# @cflags:    extra cflags (optional)
 try_compile()
 {
-	argc try_compile $# 1 1
+	argc try_compile $# 1
 	__src=$(tmp_file prog.c)
 	__obj=$(tmp_file prog.o)
 	echo "$1" > $__src || exit 1
-	$CC -c $__src -o $__obj 2>/dev/null
+	shift
+	__cmd="$CC -c $CFLAGS $@ $__src -o $__obj"
+	$CC -c $CFLAGS "$@" $__src -o $__obj 2>/dev/null
 	return $?
 }
 
 # tries to link against a lib
 # 
-# @ldadd:  something like "-L/usr/X11R6/lib -lX11"
+# @ldadd:  something like -L/usr/X11R6/lib -lX11
 try_link()
 {
-	argc try_link $# 1 1
-
-	__src=$(tmp_file prog.c)
-	__obj=$(tmp_file prog.o)
-	__exe=$(tmp_file prog)
-
-	echo "
-int main(int argc, char *argv[])
-{
-	return 0;
-}
-" > $__src || exit 1
-
-	$CC -c $__src -o $__obj || return 1
-	$LD $LDFLAGS $1 -o $__exe $__obj
+	try_compile "int main(int argc, char *argv[]) { return 0; }" || __compile_failed
+	__try_link "$@"
 	return $?
 }
 
@@ -406,21 +398,13 @@ int main(int argc, char *argv[])
 check_endianness()
 {
 	msg_checking "byte order"
-	__src=$(tmp_file byteorder.c)
-	__obj=$(tmp_file byteorder.o)
-	__exe=$(tmp_file byteorder)
-
-	echo "
+	try_compile "
 int main(int argc, char *argv[])
 {
 	unsigned int i = 1;
-
 	return *(char *)&i;
-}
-" > $__src || exit 1
-
-	$CC -c $__src -o $__obj 2>/dev/null || exit 1
-	$LD -o $__exe $__obj 2>/dev/null || return 1
+}" || __compile_failed
+	__try_link || __link_failed
 	if ./$__exe
 	then
 		msg_result "big-endian"
@@ -439,32 +423,14 @@ int main(int argc, char *argv[])
 check_header()
 {
 	argc check_header $# 1
-	__src=$(tmp_file header.c)
-	__obj=$(tmp_file header.o)
-	echo "#include <$1>" > $__src || exit 1
-	shift
-	$CC -c $CFLAGS "$@" $__src -o $__obj 2>/dev/null
-	return $?
-}
-
-# check if linking against @ldadd is possible
-# use check_library instead if possible
-#
-# @name:   user visible name
-# @ldadd:  arg passed to try_link
-check_lib()
-{
-	argc check_lib $# 2 2
-	msg_checking "for $1"
-	try_link "$2" > /dev/null 2>&1
-	if test $? -eq 0
+	msg_checking "for header <$1>"
+	if try_compile "#include <$1>" "$@"
 	then
-		msg_result "yes"
+		msg_result yes
 		return 0
-	else
-		msg_result "no"
-		return 1
 	fi
+	msg_result no
+	return 1
 }
 
 # check X11 libs
