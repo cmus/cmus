@@ -28,6 +28,7 @@
 #include <sys/socket.h>
 #include <errno.h>
 #include <stdio.h>
+#include <string.h>
 
 static struct sockaddr_un addr;
 static int remote_socket = -1;
