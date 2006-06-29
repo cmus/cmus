@@ -88,14 +88,40 @@ makefile_vars()
 	makefile_variables="$makefile_variables $*"
 }
 
+__choose_shell()
+{
+	case $SHELL in
+	*bash|*ksh|*posh|*dash|*ash)
+		# should work
+		;;
+	*)
+		case $(uname -s) in
+		SunOS)
+			# never trust SunOS
+			for SHELL in bash ksh dash ash posh
+			do
+				SHELL=$(path_find $SHELL) && return
+			done
+			warn "Could not find working SHELL"
+			die "Try ./configure SHELL=/path/to/shell"
+			;;
+		*)
+			# /bin/sh works on sane systems
+			SHELL=/bin/sh
+			;;
+		esac
+		;;
+	esac
+}
+
 # generate config.mk
 generate_config_mk()
 {
 	CFLAGS="$CFLAGS $EXTRA_CFLAGS"
 	CXXFLAGS="$CXXFLAGS $EXTRA_CXXFLAGS"
-
+	__choose_shell
 	topdir=$(pwd)
-	makefile_vars topdir
+	makefile_vars SHELL topdir
 
 	__tmp=$(tmp_file config.mk)
 	for __i in $makefile_variables
