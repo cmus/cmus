@@ -22,6 +22,11 @@
 #include <utils.h>
 #include <misc.h>
 
+/*
+ * <ao/ao.h> uses FILE but doesn't include stdio.h.
+ * Also we use snprintf().
+ */
+#include <stdio.h>
 #include <ao/ao.h>
 
 static ao_device *libao_device;
