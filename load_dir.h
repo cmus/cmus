@@ -9,10 +9,6 @@
 #include <stdlib.h>
 #include <dirent.h>
 
-int load_dir(const char *dirname, char ***names,
-		int (*filter)(const char *name, const struct stat *s),
-		int (*compare)(const void *a, const void *b));
-
 struct directory {
 	DIR *d;
 	int len;
