@@ -14,6 +14,7 @@
 #include <xmalloc.h>
 #include <xstrjoin.h>
 #include <debug.h>
+#include "load_dir.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -80,72 +81,74 @@ static void add_file(add_ti_cb add, const char *filename)
 	track_info_unref(ti);
 }
 
-static char *fullname(const char *path, const char *name)
+static int dir_entry_cmp(const void *ap, const void *bp)
 {
-	int l1, l2;
-	char *full;
+	struct dir_entry *a = *(struct dir_entry **)ap;
+	struct dir_entry *b = *(struct dir_entry **)bp;
 
-	l1 = strlen(path);
-	l2 = strlen(name);
-	if (path[l1 - 1] == '/')
-		l1--;
-	full = xnew(char, l1 + 1 + l2 + 1);
-	memcpy(full, path, l1);
-	full[l1] = '/';
-	memcpy(full + l1 + 1, name, l2 + 1);
-	return full;
+	return strcmp(a->name, b->name);
 }
 
-static int dir_filter(const struct dirent *d)
+static int dir_entry_cmp_reverse(const void *ap, const void *bp)
 {
-	if (d->d_name[0] == '.')
-		return 0;
-	return 1;
-}
+	struct dir_entry *a = *(struct dir_entry **)ap;
+	struct dir_entry *b = *(struct dir_entry **)bp;
 
-static void add_dir(add_ti_cb add, const char *dirname);
-
-static void handle_dentry(add_ti_cb add, const char *dirname, const char *name)
-{
-	struct stat s;
-	char *full;
-
-	full = fullname(dirname, name);
-	/* stat follows symlinks, lstat does not */
-	if (stat(full, &s) == 0) {
-		if (S_ISDIR(s.st_mode)) {
-			add_dir(add, full);
-		} else {
-			add_file(add, full);
-		}
-	}
-	free(full);
+	return strcmp(b->name, a->name);
 }
 
 static void add_dir(add_ti_cb add, const char *dirname)
 {
-	struct dirent **dentries;
-	int num, i;
+	struct directory dir;
+	struct dir_entry **ents;
+	const char *name;
+	struct stat st;
+	PTR_ARRAY(array);
+	int i;
 
-	num = scandir(dirname, &dentries, dir_filter, alphasort);
-	if (num == -1) {
-		d_print("error: scandir: %s\n", strerror(errno));
+	if (dir_open(&dir, dirname)) {
+		d_print("error: opening %s: %s\n", dirname, strerror(errno));
 		return;
 	}
-	if (add == play_queue_prepend) {
-		for (i = num - 1; i >= 0; i--) {
-			if (!worker_cancelling())
-				handle_dentry(add, dirname, dentries[i]->d_name);
-			free(dentries[i]);
-		}
-	} else {
-		for (i = 0; i < num; i++) {
-			if (!worker_cancelling())
-				handle_dentry(add, dirname, dentries[i]->d_name);
-			free(dentries[i]);
-		}
+	while ((name = dir_read(&dir, &st))) {
+		struct dir_entry *ent;
+		int size;
+
+		if (name[0] == '.')
+			continue;
+
+		size = strlen(name) + 1;
+		ent = xmalloc(sizeof(struct dir_entry) + size);
+		ent->mode = st.st_mode;
+		memcpy(ent->name, name, size);
+		ptr_array_add(&array, ent);
 	}
-	free(dentries);
+	dir_close(&dir);
+
+	if (add == play_queue_prepend) {
+		ptr_array_sort(&array, dir_entry_cmp_reverse);
+	} else {
+		ptr_array_sort(&array, dir_entry_cmp);
+	}
+	ents = array.ptrs;
+	for (i = 0; i < array.count; i++) {
+		if (!worker_cancelling()) {
+			/* abuse dir.path because
+			 *  - it already contains dirname + '/'
+			 *  - it is guaranteed to be large enough
+			 */
+			int len = strlen(ents[i]->name);
+
+			memcpy(dir.path + dir.len, ents[i]->name, len + 1);
+			if (S_ISDIR(ents[i]->mode)) {
+				add_dir(add, dir.path);
+			} else {
+				add_file(add, dir.path);
+			}
+		}
+		free(ents[i]);
+	}
+	free(ents);
 }
 
 static int handle_line(void *data, const char *line)
