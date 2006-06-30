@@ -74,66 +74,70 @@ static char *get_full_dir_name(const char *dir)
 	return full;
 }
 
-static const char *starting_with;
-
-static int name_filter(const char *name)
-{
-	int len = strlen(starting_with);
-
-	if (len == 0) {
-		if (name[0] == '.')
-			return 0;
-	} else {
-		if (strncmp(name, starting_with, len))
-			return 0;
-	}
-	return 1;
-}
-
-static int (*user_filter)(const char *name, const struct stat *s);
-
-static int load_dir_filter(const char *name, const struct stat *s)
-{
-	return name_filter(name) && user_filter(name, s);
-}
-
 /*
  * load all directory entries from directory 'dir' starting with 'start' and
  * filtered with 'filter'
  */
-static void tabexp_load_dir(const char *dir, const char *start)
+static void tabexp_load_dir(const char *dirname, const char *start,
+		int (*filter)(const char *, const struct stat *))
 {
-	char **names;
-	int count;
+	int start_len = strlen(start);
+	struct directory dir;
+	struct stat st;
+	PTR_ARRAY(array);
+	const char *name;
 	char *full_dir_name;
 
-	/* for name_filter() */
-	starting_with = start;
-
-	/* tabexp is resetted */
-	full_dir_name = get_full_dir_name(dir);
-	if (full_dir_name == NULL)
+	/* tabexp is reseted */
+	full_dir_name = get_full_dir_name(dirname);
+	if (!full_dir_name)
 		return;
 
-	count = load_dir(full_dir_name, &names, load_dir_filter, strptrcmp);
-	free(full_dir_name);
-	if (count <= 0) {
-		/* opendir failed or no matches */
-		return;
+	if (dir_open(&dir, full_dir_name))
+		goto out;
+
+	while ((name = dir_read(&dir, &st))) {
+		char *str;
+
+		if (!start_len) {
+			if (name[0] == '.')
+				continue;
+		} else {
+			if (strncmp(name, start, start_len))
+				continue;
+		}
+
+		if (!filter(name, &st))
+			continue;
+
+		if (S_ISDIR(st.st_mode)) {
+			int len = strlen(name);
+
+			str = xnew(char, len + 2);
+			memcpy(str, name, len);
+			str[len++] = '/';
+			str[len] = 0;
+		} else {
+			str = xstrdup(name);
+		}
+		ptr_array_add(&array, str);
 	}
+	if (array.count) {
+		ptr_array_sort(&array, strptrcmp);
+		ptr_array_add(&array, NULL);
 
-	tabexp.head = xstrdup(dir);
-	tabexp.tails = names;
-	tabexp.nr_tails = count;
+		tabexp.head = xstrdup(dirname);
+		tabexp.tails = array.ptrs;
+		tabexp.nr_tails = array.count - 1;
+	}
+out:
+	free(full_dir_name);
 }
 
 void expand_files_and_dirs(const char *src,
 		int (*filter)(const char *name, const struct stat *s))
 {
 	char *slash;
-
-	/* for load_dir_filter() */
-	user_filter = filter;
 
 	/* split src to dir and file */
 	slash = strrchr(src, '/');
@@ -145,7 +149,7 @@ void expand_files_and_dirs(const char *src,
 		dir = xstrndup(src, slash - src + 1);
 		file = slash + 1;
 		/* get all dentries starting with file from dir */
-		tabexp_load_dir(dir, file);
+		tabexp_load_dir(dir, file, filter);
 		free(dir);
 	} else {
 		if (src[0] == '~') {
@@ -159,7 +163,7 @@ void expand_files_and_dirs(const char *src,
 				tabexp.tails[1] = NULL;
 			}
 		} else {
-			tabexp_load_dir("", src);
+			tabexp_load_dir("", src, filter);
 		}
 	}
 }
