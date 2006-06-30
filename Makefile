@@ -20,10 +20,10 @@ cmus-y := \
 $(cmus-y): CFLAGS += $(PTHREAD_CFLAGS) $(NCURSES_CFLAGS) $(ICONV_CFLAGS) $(DL_CFLAGS)
 
 cmus: $(cmus-y) file.o path.o prog.o xmalloc.o
-	$(call cmd,ld,$(PTHREAD_LIBS) $(NCURSES_LIBS) $(ICONV_LIBS) $(SOCKET_LIBS) $(DL_LIBS) -lm)
+	$(call cmd,ld,$(PTHREAD_LIBS) $(NCURSES_LIBS) $(ICONV_LIBS) $(DL_LIBS) -lm $(COMPAT_LIBS))
 
 cmus-remote: main.o file.o path.o prog.o xmalloc.o
-	$(call cmd,ld,$(SOCKET_LIBS))
+	$(call cmd,ld,$(COMPAT_LIBS))
 # }}}
 
 # input plugins {{{

@@ -184,7 +184,6 @@ check check_dl
 check check_pthread
 check check_ncurses
 check check_iconv
-check check_socket
 
 check check_flac    CONFIG_FLAC
 check check_mad     CONFIG_MAD
