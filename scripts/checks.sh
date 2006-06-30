@@ -108,6 +108,7 @@ check_cc()
 
 	check_program $CC || return 1
 
+	COMPAT_LIBS=
 	case $(uname -s) in
 	*BSD)
 		CFLAGS="$CFLAGS -I/usr/local/include"
@@ -141,9 +142,27 @@ check_cc()
 		;;
 	SunOS)
 		CFLAGS="$CFLAGS -D__EXTENSIONS__"
+
+		# this is ugly but can be removed after Solaris is either
+		# dead or fixed
+
+		# connect() etc.
+		try_link -lsocket && COMPAT_LIBS="$COMPAT_LIBS -lsocket"
+
+		# gethostbyname()
+		try_link -lnsl && COMPAT_LIBS="$COMPAT_LIBS -lnsl"
+
+		# nanosleep()
+		if try_link -lrt
+		then
+			COMPAT_LIBS="$COMPAT_LIBS -lrt"
+		elif try_link -lposix4
+		then
+			COMPAT_LIBS="$COMPAT_LIBS -lposix4"
+		fi
 		;;
 	esac
-	makefile_vars CC LD CFLAGS LDFLAGS SOFLAGS LDSOFLAGS LDDLFLAGS
+	makefile_vars CC LD CFLAGS LDFLAGS SOFLAGS LDSOFLAGS LDDLFLAGS COMPAT_LIBS
 	return 0
 }
 
@@ -496,21 +515,4 @@ check_iconv()
 		makefile_var ICONV_LIBS ""
 	fi
 	return 0
-}
-
-# checks if -lsocket is needed
-# connect() etc. are in -lsocket on SunOS
-check_socket()
-{
-	msg_checking "if -lsocket is needed"
-	case $(uname -s) in
-	SunOS)
-		makefile_var SOCKET_LIBS "-lsocket"
-		msg_result yes
-		;;
-	*)
-		makefile_var SOCKET_LIBS ""
-		msg_result no
-		;;
-	esac
 }
