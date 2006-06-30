@@ -68,34 +68,21 @@ static int hidden_filter(const char *name, const struct stat *s)
 	return 1;
 }
 
-static int name_compare(const void *ap, const void *bp)
+/* only works for BROWSER_ENTRY_DIR and BROWSER_ENTRY_FILE */
+static int entry_cmp(const struct browser_entry *a, const struct browser_entry *b)
 {
-	const char *a = *(const char **)ap;
-	const char *b = *(const char **)bp;
-	int alen, blen;
-
-	alen = strlen(a);
-	blen = strlen(b);
-
-	/* ".." is special case, always on top */
-	if (strcmp(a, "../") == 0)
-		return -1;
-	if (strcmp(b, "../") == 0)
-		return 1;
-
-	if (alen && a[alen - 1] == '/') {
-		if (blen && b[blen - 1] == '/') {
-			return strcmp(a, b);
-		} else {
+	if (a->type == BROWSER_ENTRY_DIR) {
+		if (b->type == BROWSER_ENTRY_FILE)
 			return -1;
-		}
-	} else {
-		if (blen && b[blen - 1] == '/') {
+		if (!strcmp(a->name, ".."))
+			return -1;
+		if (!strcmp(b->name, ".."))
 			return 1;
-		} else {
-			return strcmp(a, b);
-		}
+		return strcmp(a->name, b->name);
 	}
+	if (b->type == BROWSER_ENTRY_DIR)
+		return 1;
+	return strcmp(a->name, b->name);
 }
 
 static char *fullname(const char *path, const char *name)
@@ -164,33 +151,53 @@ static int do_browser_load(const char *name)
 			munmap(buf, size);
 		}
 	} else if (S_ISDIR(st.st_mode)) {
-		char **names;
-		int count, i;
+		int (*filter)(const char *, const struct stat *) = normal_filter;
+		struct directory dir;
+		const char *str;
+		int root = !strcmp(name, "/");
 
-		if (show_hidden) {
-			count = load_dir(name, &names, hidden_filter, name_compare);
-		} else {
-			count = load_dir(name, &names, normal_filter, name_compare);
-		}
-		if (count == -1)
+		if (show_hidden)
+			filter = hidden_filter;
+
+		if (dir_open(&dir, name))
 			return -1;
 
 		free_browser_list();
-		for (i = 0; i < count; i++) {
+		while ((str = dir_read(&dir, &st))) {
 			struct browser_entry *e;
-			int name_size = strlen(names[i]) + 1;
+			struct list_head *item;
+			int len;
 
-			e = xmalloc(sizeof(struct browser_entry) + name_size);
-			memcpy(e->name, names[i], name_size);
-			if (strchr(names[i], '/')) {
+			if (!filter(str, &st))
+				continue;
+
+			/* ignore .. if we are in the root dir */
+			if (root && !strcmp(str, ".."))
+				continue;
+
+			len = strlen(str);
+			e = xmalloc(sizeof(struct browser_entry) + len + 2);
+			e->type = BROWSER_ENTRY_FILE;
+			memcpy(e->name, str, len);
+			if (S_ISDIR(st.st_mode)) {
 				e->type = BROWSER_ENTRY_DIR;
-			} else {
-				e->type = BROWSER_ENTRY_FILE;
+				e->name[len++] = '/';
 			}
-			list_add_tail(&e->node, &browser_head);
-			free(names[i]);
+			e->name[len] = 0;
+
+			item = browser_head.prev;
+			while (item != &browser_head) {
+				struct browser_entry *other;
+
+				other = container_of(item, struct browser_entry, node);
+				if (entry_cmp(e, other) >= 0)
+					break;
+				item = item->prev;
+			}
+			/* add after item */
+			list_add(&e->node, item);
 		}
-		free(names);
+		dir_close(&dir);
 
 		/* try to update currect working directory */
 		chdir(name);
