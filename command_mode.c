@@ -44,6 +44,7 @@
 #include <utils.h>
 #include <list.h>
 #include <debug.h>
+#include "load_dir.h"
 #include "config/datadir.h"
 
 #include <stdlib.h>
@@ -2025,44 +2026,34 @@ static void expand_toptions(const char *str)
 	}
 }
 
-static void load_themes(const char *dir, const char *str, int *allocp)
+static void load_themes(const char *dirname, const char *str, int *allocp)
 {
-	DIR *d;
-	struct dirent *dirent;
+	struct directory dir;
+	struct stat st;
+	const char *name, *dot;
 	int len = strlen(str);
 
-	d = opendir(dir);
-	if (d == NULL)
+	if (dir_open(&dir, dirname))
 		return;
 
-	while ((dirent = readdir(d)) != NULL) {
-		const char *dot, *name = dirent->d_name;
-		char filename[512];
-		struct stat s;
-
+	while ((name = dir_read(&dir, &st))) {
+		if (!S_ISREG(st.st_mode))
+			continue;
 		if (strncmp(name, str, len))
 			continue;
-
 		dot = strrchr(name, '.');
 		if (dot == NULL || strcmp(dot, ".theme"))
 			continue;
-
-		if (dot - name < len) {
+		if (dot - name < len)
 			/* str is  "foo.th"
 			 * matches "foo.theme"
 			 * which also ends with ".theme"
 			 */
 			continue;
-		}
-
-		snprintf(filename, sizeof(filename), "%s/%s", dir, name);
-		if (stat(filename, &s) || !S_ISREG(s.st_mode))
-			continue;
-
 		tabexp.tails = str_array_add(tabexp.tails, allocp, &tabexp.nr_tails,
 				xstrndup(name + len, dot - name - len));
 	}
-	closedir(d);
+	dir_close(&dir);
 }
 
 static void expand_colorscheme(const char *str)
