@@ -37,6 +37,12 @@ struct dir_entry {
 
 void ptr_array_add(struct ptr_array *array, void *ptr);
 
+static inline void ptr_array_plug(struct ptr_array *array)
+{
+	ptr_array_add(array, NULL);
+	array->count--;
+}
+
 static inline void ptr_array_sort(struct ptr_array *array,
 		int (*cmp)(const void *a, const void *b))
 {

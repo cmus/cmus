@@ -124,11 +124,11 @@ static void tabexp_load_dir(const char *dirname, const char *start,
 	}
 	if (array.count) {
 		ptr_array_sort(&array, strptrcmp);
-		ptr_array_add(&array, NULL);
+		ptr_array_plug(&array);
 
 		tabexp.head = xstrdup(dirname);
 		tabexp.tails = array.ptrs;
-		tabexp.nr_tails = array.count - 1;
+		tabexp.nr_tails = array.count;
 	}
 out:
 	free(full_dir_name);
