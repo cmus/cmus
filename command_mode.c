@@ -1747,8 +1747,7 @@ static void expand_bind_args(const char *str)
 	 */
 	/* start and end pointers for context, key and function */
 	const char *cs, *ce, *ks, *ke, *fs;
-	char *tmp, **tails;
-	int i, c, k, len, pos, alloc, count;
+	int i, c, k, count;
 	int flag = parse_flags((const char **)&str, "f");
 	const char *force = "";
 
@@ -1780,34 +1779,34 @@ static void expand_bind_args(const char *str)
 	ke = strchr(ks, ' ');
 	if (ke == NULL) {
 		/* expand key */
-		len = strlen(ks);
-		tails = NULL;
-		alloc = 0;
-		pos = 0;
+		int len = strlen(ks);
+		PTR_ARRAY(array);
+
 		for (i = 0; key_table[i].name; i++) {
 			int cmp = strncmp(ks, key_table[i].name, len);
 			if (cmp > 0)
 				continue;
 			if (cmp < 0)
 				break;
-			tails = str_array_add(tails, &alloc, &pos, xstrdup(key_table[i].name + len));
+			ptr_array_add(&array, xstrdup(key_table[i].name + len));
 		}
 
-		if (pos == 0) {
+		if (!array.count)
 			return;
-		}
-		if (pos == 1) {
-			tmp = xstrjoin(tails[0], " ");
-			free(tails[0]);
-			tails[0] = tmp;
+
+		if (array.count == 1) {
+			char **ptrs = array.ptrs;
+			char *tmp = xstrjoin(ptrs[0], " ");
+			free(ptrs[0]);
+			ptrs[0] = tmp;
 		}
 
 		snprintf(expbuf, sizeof(expbuf), "%s%s %s", force, key_context_names[c], ks);
 
-		tails[pos] = NULL;
+		ptr_array_plug(&array);
 		tabexp.head = xstrdup(expbuf);
-		tabexp.tails = tails;
-		tabexp.nr_tails = pos;
+		tabexp.tails = array.ptrs;
+		tabexp.nr_tails = array.count;
 		return;
 	}
 
@@ -1863,9 +1862,9 @@ static void expand_unbind_args(const char *str)
 	/* :unbind context key */
 	/* start and end pointers for context and key */
 	const char *cs, *ce, *ks;
-	char **tails;
-	int c, len, pos, alloc;
 	const struct binding *b;
+	PTR_ARRAY(array);
+	int c, len;
 
 	cs = str;
 	ce = strchr(cs, ' ');
@@ -1887,33 +1886,30 @@ static void expand_unbind_args(const char *str)
 
 	/* expand key */
 	len = strlen(ks);
-	tails = NULL;
-	alloc = 0;
-	pos = 0;
 	b = key_bindings[c];
 	while (b) {
-		if (strncmp(ks, b->key->name, len) == 0)
-			tails = str_array_add(tails, &alloc, &pos, xstrdup(b->key->name + len));
+		if (!strncmp(ks, b->key->name, len))
+			ptr_array_add(&array, xstrdup(b->key->name + len));
 		b = b->next;
 	}
-	if (pos == 0)
+	if (!array.count)
 		return;
 
 	snprintf(expbuf, sizeof(expbuf), "%s %s", key_context_names[c], ks);
 
-	tails[pos] = NULL;
+	ptr_array_plug(&array);
 	tabexp.head = xstrdup(expbuf);
-	tabexp.tails = tails;
-	tabexp.nr_tails = pos;
+	tabexp.tails = array.ptrs;
+	tabexp.nr_tails = array.count;
 }
 
 static void expand_factivate(const char *str)
 {
 	/* "name1 name2 name3", expand only name3 */
 	struct filter_entry *e;
-	int str_len, len, i, pos, alloc;
 	const char *name;
-	char **tails;
+	PTR_ARRAY(array);
+	int str_len, len, i;
 
 	str_len = strlen(str);
 	i = str_len;
@@ -1925,20 +1921,17 @@ static void expand_factivate(const char *str)
 	len = str_len - i;
 	name = str + i;
 
-	tails = NULL;
-	alloc = 0;
-	pos = 0;
 	list_for_each_entry(e, &filters_head, node) {
-		if (strncmp(name, e->name, len) == 0)
-			tails = str_array_add(tails, &alloc, &pos, xstrdup(e->name + len));
+		if (!strncmp(name, e->name, len))
+			ptr_array_add(&array, xstrdup(e->name + len));
 	}
-	if (pos == 0)
+	if (!array.count)
 		return;
 
-	tails[pos] = NULL;
+	ptr_array_plug(&array);
 	tabexp.head = xstrdup(str);
-	tabexp.tails = tails;
-	tabexp.nr_tails = pos;
+	tabexp.tails = array.ptrs;
+	tabexp.nr_tails = array.count;
 }
 
 static void expand_options(const char *str)
@@ -2026,7 +2019,7 @@ static void expand_toptions(const char *str)
 	}
 }
 
-static void load_themes(const char *dirname, const char *str, int *allocp)
+static void load_themes(const char *dirname, const char *str, struct ptr_array *array)
 {
 	struct directory dir;
 	struct stat st;
@@ -2050,26 +2043,25 @@ static void load_themes(const char *dirname, const char *str, int *allocp)
 			 * which also ends with ".theme"
 			 */
 			continue;
-		tabexp.tails = str_array_add(tabexp.tails, allocp, &tabexp.nr_tails,
-				xstrndup(name + len, dot - name - len));
+		ptr_array_add(array, xstrndup(name + len, dot - name - len));
 	}
 	dir_close(&dir);
 }
 
 static void expand_colorscheme(const char *str)
 {
-	int alloc = 0;
+	PTR_ARRAY(array);
 
-	tabexp.nr_tails = 0;
+	load_themes(cmus_config_dir, str, &array);
+	load_themes(DATADIR "/cmus", str, &array);
 
-	load_themes(cmus_config_dir, str, &alloc);
-	load_themes(DATADIR "/cmus", str, &alloc);
+	if (array.count) {
+		ptr_array_sort(&array, strptrcmp);
 
-	if (alloc) {
-		qsort(tabexp.tails, tabexp.nr_tails, sizeof(char *), strptrcmp);
-
-		tabexp.tails[tabexp.nr_tails] = NULL;
+		ptr_array_plug(&array);
 		tabexp.head = xstrdup(str);
+		tabexp.tails = array.ptrs;
+		tabexp.nr_tails = array.count;
 	}
 }
 

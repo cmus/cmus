@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-extern void malloc_fail(void) __NORETURN;
+void malloc_fail(void) __NORETURN;
 
 #define xnew(type, n)		(type *)xmalloc(sizeof(type) * (n))
 #define xnew0(type, n)		(type *)xmalloc0(sizeof(type) * (n))
@@ -66,8 +66,7 @@ static inline char * __MALLOC xstrdup(const char *str)
 	return s;
 }
 
-extern char * __MALLOC xstrndup(const char *str, size_t n);
-extern char **str_array_add(char **a, int *allocp, int *posp, char *str);
+char * __MALLOC xstrndup(const char *str, size_t n);
 
 static inline char * __MALLOC xxstrdup(const char *str)
 {
