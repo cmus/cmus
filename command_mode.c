@@ -1950,13 +1950,13 @@ static void expand_options(const char *str)
 			if (strcmp(var, opt->name) == 0) {
 				char buf[OPTION_MAX_SIZE];
 
-				tails = xnew(char *, 1);
+				tails = xnew(char *, 2);
 
 				buf[0] = 0;
 				opt->get(opt->id, buf);
 				tails[0] = xstrdup(buf);
-
 				tails[1] = NULL;
+
 				tabexp.head = xstrdup(str);
 				tabexp.tails = tails;
 				tabexp.nr_tails = 1;
