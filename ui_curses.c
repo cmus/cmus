@@ -57,6 +57,11 @@
 #include <signal.h>
 #include <stdarg.h>
 
+#if defined(__sun__)
+/* TIOCGWINSZ */
+#include <termios.h>
+#endif
+
 /* defined in <term.h> but without const */
 char *tgetstr(const char *id, char **area);
 char *tgoto(const char *cap, int col, int row);
