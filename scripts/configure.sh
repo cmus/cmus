@@ -120,8 +120,10 @@ generate_config_mk()
 	CFLAGS="$CFLAGS $EXTRA_CFLAGS"
 	CXXFLAGS="$CXXFLAGS $EXTRA_CXXFLAGS"
 	__choose_shell
+	GINSTALL=$(path_find ginstall)
+	test "$GINSTALL" || GINSTALL=install
 	topdir=$(pwd)
-	makefile_vars SHELL topdir
+	makefile_vars SHELL GINSTALL topdir
 
 	__tmp=$(tmp_file config.mk)
 	for __i in $makefile_variables

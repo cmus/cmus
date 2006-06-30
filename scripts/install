@@ -22,11 +22,11 @@ test $# -lt 2 && exit 0
 
 to="${DESTDIR}${1}"
 shift
-install -d -m755 "${to}"
+$GINSTALL -d -m755 "${to}"
 for i in "$@"
 do
 	dest="${to}/$(basename ${i})"
 	test "$INSTALL_LOG" && echo "$dest" >> "$INSTALL_LOG"
 	echo "INSTALL ${dest}"
-	install $flags "$i" "${to}"
+	$GINSTALL $flags "$i" "${to}"
 done
