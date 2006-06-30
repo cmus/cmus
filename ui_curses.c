@@ -48,7 +48,6 @@
 #include <stdio.h>
 #include <errno.h>
 #include <sys/ioctl.h>
-#include <curses.h>
 #include <ctype.h>
 #include <dirent.h>
 #include <locale.h>
@@ -60,6 +59,9 @@
 #if defined(__sun__)
 /* TIOCGWINSZ */
 #include <termios.h>
+#include <ncurses.h>
+#else
+#include <curses.h>
 #endif
 
 /* defined in <term.h> but without const */

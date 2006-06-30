@@ -25,7 +25,11 @@
 #include <command_mode.h>
 #include <xmalloc.h>
 
+#if defined(__sun__)
+#include <ncurses.h>
+#else
 #include <curses.h>
+#endif
 
 const char * const key_context_names[NR_CTXS + 1] = {
 	"browser",

@@ -27,8 +27,13 @@
 #include <misc.h>
 #include <lib.h>
 
-#include <curses.h>
 #include <ctype.h>
+
+#if defined(__sun__)
+#include <ncurses.h>
+#else
+#include <curses.h>
+#endif
 
 /* this is set in ui_curses.c */
 enum search_direction search_direction = SEARCH_FORWARD;

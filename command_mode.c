@@ -47,12 +47,17 @@
 #include "config/datadir.h"
 
 #include <stdlib.h>
-#include <curses.h>
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <dirent.h>
 #include <pwd.h>
+
+#if defined(__sun__)
+#include <ncurses.h>
+#else
+#include <curses.h>
+#endif
 
 static struct history cmd_history;
 static char *cmd_history_filename;

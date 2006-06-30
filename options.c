@@ -24,8 +24,13 @@
 #include "config/datadir.h"
 
 #include <stdio.h>
-#include <curses.h>
 #include <errno.h>
+
+#if defined(__sun__)
+#include <ncurses.h>
+#else
+#include <curses.h>
+#endif
 
 /* initialized option variables */
 
