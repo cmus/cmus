@@ -141,7 +141,8 @@ check_cc()
 		esac
 		;;
 	SunOS)
-		CFLAGS="$CFLAGS -D__EXTENSIONS__"
+		CFLAGS="$CFLAGS -D__EXTENSIONS__ -I/usr/local/include"
+		LDFLAGS="$LDFLAGS -R/usr/local/lib -L/usr/local/lib"
 
 		# this is ugly but can be removed after Solaris is either
 		# dead or fixed
