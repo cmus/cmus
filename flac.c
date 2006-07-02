@@ -152,7 +152,8 @@ static FLAC__StreamDecoderWriteStatus write_cb(const Dec *dec, const FLAC__Frame
 {
 	struct input_plugin_data *ip_data = data;
 	struct flac_private *priv = ip_data->private;
-	int samples, bytes, size, channels, bits;
+	int frames, bytes, size, channels, bits;
+	int ch, i, j = 0;
 
 	if (ip_data->sf == 0) {
 		return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
@@ -163,10 +164,10 @@ static FLAC__StreamDecoderWriteStatus write_cb(const Dec *dec, const FLAC__Frame
 		return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
 	}
 
-	samples = frame->header.blocksize;
+	frames = frame->header.blocksize;
 	channels = sf_get_channels(ip_data->sf);
 	bits = sf_get_bits(ip_data->sf);
-	bytes = samples * frame->header.bits_per_sample / 8 * channels;
+	bytes = frames * frame->header.bits_per_sample / 8 * channels;
 	size = priv->buf_size;
 
 	if (size - priv->buf_wpos < bytes) {
@@ -179,30 +180,27 @@ static FLAC__StreamDecoderWriteStatus write_cb(const Dec *dec, const FLAC__Frame
 
 	if (bits == 8) {
 		char *b = priv->buf + priv->buf_wpos;
-		int ch, i, j = 0;
 
-		for (i = 0; i < samples; i++) {
+		for (i = 0; i < frames; i++) {
 			for (ch = 0; ch < channels; ch++)
 				b[j++] = buf[ch][i];
 		}
 	} else if (bits == 16) {
 		int16_t *b = (int16_t *)(priv->buf + priv->buf_wpos);
-		int ch, i, j = 0;
 
-		for (i = 0; i < samples; i++) {
+		for (i = 0; i < frames; i++) {
 			for (ch = 0; ch < channels; ch++)
 				b[j++] = buf[ch][i];
 		}
 	} else if (bits == 24) {
 		char *b = (char *)(priv->buf + priv->buf_wpos);
-		int ch, i, j = 0;
 
 		/* NOT TESTED! */
-		for (i = 0; i < samples; i++) {
+		for (i = 0; i < frames; i++) {
 			for (ch = 0; ch < channels; ch++) {
 				int32_t sample = buf[ch][i];
 
-				/* FIXME: doesn't work with bin-endian machines? */
+				/* FIXME: doesn't work with big-endian machines? */
 				b[j++] = sample & 0xff; sample >>= 8;
 				b[j++] = sample & 0xff; sample >>= 8;
 				b[j++] = sample & 0xff;
@@ -210,10 +208,9 @@ static FLAC__StreamDecoderWriteStatus write_cb(const Dec *dec, const FLAC__Frame
 		}
 	} else { /* 32 */
 		int32_t *b = (int32_t *)(priv->buf + priv->buf_wpos);
-		int ch, i, j = 0;
 
 		/* NOT TESTED! */
-		for (i = 0; i < samples; i++) {
+		for (i = 0; i < frames; i++) {
 			for (ch = 0; ch < channels; ch++)
 				b[j++] = buf[ch][i];
 		}
@@ -239,9 +236,10 @@ static void metadata_cb(const Dec *dec, const FLAC__StreamMetadata *metadata, vo
 		{
 			const FLAC__StreamMetadata_StreamInfo *si = &metadata->data.stream_info;
 
-			d_print("STREAMINFO\n");
-			ip_data->sf = sf_rate(si->sample_rate) | sf_bits(si->bits_per_sample) |
-				sf_signed(1) | sf_channels(si->channels);
+			ip_data->sf = sf_rate(si->sample_rate) |
+				sf_bits(si->bits_per_sample) |
+				sf_signed(1) |
+				sf_channels(si->channels);
 			if (!ip_data->remote && si->total_samples)
 				priv->duration = si->total_samples / si->sample_rate;
 		}
@@ -290,10 +288,31 @@ static void metadata_cb(const Dec *dec, const FLAC__StreamMetadata *metadata, vo
 
 static void error_cb(const Dec *dec, FLAC__StreamDecoderErrorStatus status, void *data)
 {
-/* 	struct input_plugin_data *ip_data = data; */
-/* 	struct flac_private *priv = ip_data->private; */
+	static const char *strings[3] = {
+		"lost sync",
+		"bad header",
+		"frame crc mismatch"
+	};
+	const char *str = "unknown error";
 
-	d_print("\n");
+	if (status >= 0 && status < 3)
+		str = strings[status];
+	d_print("%d %s\n", status, str);
+}
+
+static void free_priv(struct input_plugin_data *ip_data)
+{
+	struct flac_private *priv = ip_data->private;
+	int save = errno;
+
+	F(finish)(priv->dec);
+	F(delete)(priv->dec);
+	if (priv->comments)
+		comments_free(priv->comments);
+	free(priv->buf);
+	free(priv);
+	ip_data->private = NULL;
+	errno = save;
 }
 
 static int flac_open(struct input_plugin_data *ip_data)
@@ -305,16 +324,8 @@ static int flac_open(struct input_plugin_data *ip_data)
 	if (dec == NULL)
 		return -IP_ERROR_INTERNAL;
 
-	priv = xnew(struct flac_private, 1);
+	priv = xnew0(struct flac_private, 1);
 	priv->dec = dec;
-	priv->buf = NULL;
-	priv->buf_size = 0;
-	priv->buf_wpos = 0;
-	priv->buf_rpos = 0;
-	priv->eof = 0;
-	priv->ignore_next_write = 0;
-	priv->pos = 0;
-	priv->comments = NULL;
 	priv->duration = -1;
 	if (ip_data->remote) {
 		priv->len = UINT64_MAX;
@@ -360,46 +371,26 @@ static int flac_open(struct input_plugin_data *ip_data)
 	ip_data->sf = 0;
 	while (priv->buf_wpos == 0 && !priv->eof) {
 		if (!F(process_single)(priv->dec)) {
-			int save = errno;
-
-			d_print("process_single failed\n");
-			F(finish)(priv->dec);
-			F(delete)(priv->dec);
-			if (priv->comments)
-				free(priv->comments);
-			free(priv->buf);
-			free(priv);
-			ip_data->private = NULL;
-			errno = save;
+			free_priv(ip_data);
 			return -IP_ERROR_ERRNO;
 		}
 	}
 
-	if (ip_data->sf == 0) {
-		F(finish)(priv->dec);
-		F(delete)(priv->dec);
-		free(priv->buf);
-		free(priv);
-		ip_data->private = NULL;
+	if (!ip_data->sf) {
+		free_priv(ip_data);
 		return -IP_ERROR_FILE_FORMAT;
 	}
 
-	d_print("sr: %d, ch: %d, bits: %d\n", sf_get_rate(ip_data->sf),
-			sf_get_channels(ip_data->sf), sf_get_bits(ip_data->sf));
+	d_print("sr: %d, ch: %d, bits: %d\n",
+			sf_get_rate(ip_data->sf),
+			sf_get_channels(ip_data->sf),
+			sf_get_bits(ip_data->sf));
 	return 0;
 }
 
 static int flac_close(struct input_plugin_data *ip_data)
 {
-	struct flac_private *priv = ip_data->private;
-
-	F(finish)(priv->dec);
-	F(delete)(priv->dec);
-	if (priv->comments)
-		comments_free(priv->comments);
-	free(priv->buf);
-	free(priv);
-	ip_data->private = NULL;
+	free_priv(ip_data);
 	return 0;
 }
 
