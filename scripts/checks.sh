@@ -486,17 +486,9 @@ check_pthread()
 # adds DL_LIBS to config.mk
 check_dl()
 {
-	case $(uname -s) in
-	Darwin)
-		DL_CFLAGS="-Ddlsym=dlsym_auto_underscore"
-		;;
-	*)
-		DL_CFLAGS=
-		;;
-	esac
 	for DL_LIBS in "-ldl -Wl,--export-dynamic" "-Wl,--export-dynamic" "-ldl"
 	do
-		check_library DL "$DL_CFLAGS" "$DL_LIBS" && return 0
+		check_library DL "" "$DL_LIBS" && return 0
 	done
 	echo "assuming -ldl is not needed"
 	DL_LIBS=
