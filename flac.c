@@ -152,7 +152,7 @@ static FLAC__StreamDecoderWriteStatus write_cb(const Dec *dec, const FLAC__Frame
 {
 	struct input_plugin_data *ip_data = data;
 	struct flac_private *priv = ip_data->private;
-	int frames, bytes, size, channels, bits;
+	int frames, bytes, size, channels, bits, depth;
 	int ch, i, j = 0;
 
 	if (ip_data->sf == 0) {
@@ -167,7 +167,7 @@ static FLAC__StreamDecoderWriteStatus write_cb(const Dec *dec, const FLAC__Frame
 	frames = frame->header.blocksize;
 	channels = sf_get_channels(ip_data->sf);
 	bits = sf_get_bits(ip_data->sf);
-	bytes = frames * frame->header.bits_per_sample / 8 * channels;
+	bytes = frames * bits / 8 * channels;
 	size = priv->buf_size;
 
 	if (size - priv->buf_wpos < bytes) {
@@ -178,42 +178,51 @@ static FLAC__StreamDecoderWriteStatus write_cb(const Dec *dec, const FLAC__Frame
 		priv->buf_size = size;
 	}
 
-	if (bits == 8) {
+	depth = frame->header.bits_per_sample;
+	if (depth == 8) {
 		char *b = priv->buf + priv->buf_wpos;
 
 		for (i = 0; i < frames; i++) {
 			for (ch = 0; ch < channels; ch++)
 				b[j++] = buf[ch][i];
 		}
-	} else if (bits == 16) {
+	} else if (depth == 16) {
 		int16_t *b = (int16_t *)(priv->buf + priv->buf_wpos);
 
 		for (i = 0; i < frames; i++) {
 			for (ch = 0; ch < channels; ch++)
 				b[j++] = buf[ch][i];
 		}
-	} else if (bits == 24) {
-		char *b = (char *)(priv->buf + priv->buf_wpos);
-
-		/* NOT TESTED! */
-		for (i = 0; i < frames; i++) {
-			for (ch = 0; ch < channels; ch++) {
-				int32_t sample = buf[ch][i];
-
-				/* FIXME: doesn't work with big-endian machines? */
-				b[j++] = sample & 0xff; sample >>= 8;
-				b[j++] = sample & 0xff; sample >>= 8;
-				b[j++] = sample & 0xff;
-			}
-		}
-	} else { /* 32 */
+	} else if (depth == 32) {
 		int32_t *b = (int32_t *)(priv->buf + priv->buf_wpos);
 
-		/* NOT TESTED! */
 		for (i = 0; i < frames; i++) {
 			for (ch = 0; ch < channels; ch++)
 				b[j++] = buf[ch][i];
 		}
+	} else if (depth == 12) { /* -> 16 */
+		int16_t *b = (int16_t *)(priv->buf + priv->buf_wpos);
+
+		for (i = 0; i < frames; i++) {
+			for (ch = 0; ch < channels; ch++)
+				b[j++] = buf[ch][i] << 4;
+		}
+	} else if (depth == 20) { /* -> 32 */
+		int32_t *b = (int32_t *)(priv->buf + priv->buf_wpos);
+
+		for (i = 0; i < frames; i++) {
+			for (ch = 0; ch < channels; ch++)
+				b[j++] = buf[ch][i] << 12;
+		}
+	} else if (depth == 24) { /* -> 32 */
+		int32_t *b = (int32_t *)(priv->buf + priv->buf_wpos);
+
+		for (i = 0; i < frames; i++) {
+			for (ch = 0; ch < channels; ch++)
+				b[j++] = buf[ch][i] << 8;
+		}
+	} else {
+		d_print("bits per sample changed to %d\n", depth);
 	}
 
 	priv->buf_wpos += bytes;
@@ -235,9 +244,25 @@ static void metadata_cb(const Dec *dec, const FLAC__StreamMetadata *metadata, vo
 	case FLAC__METADATA_TYPE_STREAMINFO:
 		{
 			const FLAC__StreamMetadata_StreamInfo *si = &metadata->data.stream_info;
+			int bits = 0;
+
+			switch (si->bits_per_sample) {
+			case 8:
+			case 16:
+			case 32:
+				bits = si->bits_per_sample;
+				break;
+			case 12:
+				bits = 16;
+				break;
+			case 20:
+			case 24:
+				bits = 32;
+				break;
+			}
 
 			ip_data->sf = sf_rate(si->sample_rate) |
-				sf_bits(si->bits_per_sample) |
+				sf_bits(bits) |
 				sf_signed(1) |
 				sf_channels(si->channels);
 			if (!ip_data->remote && si->total_samples)
@@ -379,6 +404,10 @@ static int flac_open(struct input_plugin_data *ip_data)
 	if (!ip_data->sf) {
 		free_priv(ip_data);
 		return -IP_ERROR_FILE_FORMAT;
+	}
+	if (!sf_get_bits(ip_data->sf)) {
+		free_priv(ip_data);
+		return -IP_ERROR_SAMPLE_FORMAT;
 	}
 
 	d_print("sr: %d, ch: %d, bits: %d\n",
