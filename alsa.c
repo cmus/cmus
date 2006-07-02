@@ -325,7 +325,8 @@ static int op_alsa_close(void)
 {
 	int rc;
 
-	if (period_fill) {
+	/* it is impossible to calculate period_fill if period_size is -1 */
+	if (alsa_period_size > 0 && period_fill) {
 		char buf[8192];
 		int silence_bytes = alsa_period_size - period_fill;
 
