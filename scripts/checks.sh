@@ -4,6 +4,24 @@
 #
 # This file is licensed under the GPLv2.
 
+# C compiler
+# ----------
+# CC          default gcc
+# LD          default $CC
+# LDFLAGS     common linker flags for CC
+#
+# C++ Compiler
+# ------------
+# CXX         default g++
+# CXXLD       default $CXX
+# CXXLDFLAGS  common linker flags for CXX
+#
+# Common for C and C++
+# --------------------
+# SOFLAGS     flags for compiling position independent code (-fPIC)
+# LDSOFLAGS   flags for linking shared libraries
+# LDDLFLAGS   flags for linking dynamically loadable modules
+
 msg_checking()
 {
 	printf "checking $@... "
@@ -93,39 +111,36 @@ check_cxx_flag()
 	fi
 }
 
-# adds CC, LD, CFLAGS, LDFLAGS and SOFLAGS to config.mk
-check_cc()
+cc_cxx_common()
 {
-	var_default CC ${CROSS}gcc
-	var_default LD $CC
-	var_default CFLAGS "-g -O2 -Wall"
-	var_default LDFLAGS ""
+	test "$cc_cxx_common_done" && return 0
+	cc_cxx_common_done=yes
+
 	var_default SOFLAGS "-fPIC"
-	# libs (.so)
 	var_default LDSOFLAGS "-shared"
-	# plugins (.so)
 	var_default LDDLFLAGS "-shared"
 
-	check_program $CC || return 1
-
+	common_cf=
+	common_lf=
 	COMPAT_LIBS=
+
 	case $(uname -s) in
 	*BSD)
-		CFLAGS="$CFLAGS -I/usr/local/include"
-		LDFLAGS="$LDFLAGS -L/usr/local/lib"
+		common_cf="$common_cf -I/usr/local/include"
+		common_lf="$common_lf -L/usr/local/lib"
 		;;
 	Darwin)
 		# fink
 		if test -d /sw/lib
 		then
-			CFLAGS="$CFLAGS -I/sw/include"
-			LDFLAGS="$LDFLAGS -L/sw/lib"
+			common_cf="$common_cf -I/sw/include"
+			common_lf="$common_lf -L/sw/lib"
 		fi
 		# darwinports
 		if test -d /opt/local/lib
 		then
-			CFLAGS="$CFLAGS -I/opt/local/include"
-			LDFLAGS="$LDFLAGS -L/opt/local/lib"
+			common_cf="$common_cf -I/opt/local/include"
+			common_lf="$common_lf -L/opt/local/lib"
 		fi
 		LDSOFLAGS="-dynamic"
 		case ${MACOSX_DEPLOYMENT_TARGET} in
@@ -141,8 +156,8 @@ check_cc()
 		esac
 		;;
 	SunOS)
-		CFLAGS="$CFLAGS -D__EXTENSIONS__ -I/usr/local/include"
-		LDFLAGS="$LDFLAGS -R/usr/local/lib -L/usr/local/lib"
+		common_cf="$common_cf -D__EXTENSIONS__ -I/usr/local/include"
+		common_lf="$common_lf -R/usr/local/lib -L/usr/local/lib"
 
 		# this is ugly but can be removed after Solaris is either
 		# dead or fixed
@@ -163,28 +178,40 @@ check_cc()
 		fi
 		;;
 	esac
-	makefile_vars CC LD CFLAGS LDFLAGS SOFLAGS LDSOFLAGS LDDLFLAGS COMPAT_LIBS
+	makefile_vars SOFLAGS LDSOFLAGS LDDLFLAGS COMPAT_LIBS
+}
+
+# CC, LD, CFLAGS, LDFLAGS, SOFLAGS, LDSOFLAGS, LDDLFLAGS
+check_cc()
+{
+	var_default CC ${CROSS}gcc
+	var_default LD $CC
+	var_default CFLAGS "-g -O2 -Wall"
+	var_default LDFLAGS ""
+	check_program $CC || return 1
+
+	cc_cxx_common
+	CFLAGS="$CFLAGS $common_cf"
+	LDFLAGS="$LDFLAGS $common_lf"
+
+	makefile_vars CC LD CFLAGS LDFLAGS
 	return 0
 }
 
-# adds CXX, CXXLD, CXXFLAGS and CXXLDFLAGS to config.mk
+# CXX, CXXLD, CXXFLAGS, CXXLDFLAGS, SOFLAGS, LDSOFLAGS, LDDLFLAGS
 check_cxx()
 {
 	var_default CXX ${CROSS}g++
 	var_default CXXLD $CXX
 	var_default CXXFLAGS "-g -O2 -Wall"
 	var_default CXXLDFLAGS ""
-
 	check_program $CXX || return 1
 
-	case $(uname -s) in
-	*BSD)
-		CXXFLAGS="$CXXFLAGS -I/usr/local/include"
-		CXXLDFLAGS="$CXXLDFLAGS -L/usr/local/lib"
-		;;
-	esac
+	cc_cxx_common
+	CXXFLAGS="$CXXFLAGS $common_cf"
+	CXXLDFLAGS="$CXXLDFLAGS $common_lf"
+
 	makefile_vars CXX CXXLD CXXFLAGS CXXLDFLAGS
-	check_shared_flags
 	return 0
 }
 

@@ -94,10 +94,12 @@ uninstall:
 %.lo: %.cpp
 	$(call cmd,cxx_lo)
 
-# CC for programs and shared libraries
+# CC for program object files (.o)
 quiet_cmd_cc    = CC     $@
-quiet_cmd_cc_lo = CC     $@
       cmd_cc    = $(CC) -c $(CFLAGS) -o $@ $<
+
+# CC for shared library and dynamically loadable module objects (.lo)
+quiet_cmd_cc_lo = CC     $@
       cmd_cc_lo = $(CC) -c $(CFLAGS) $(SOFLAGS) -o $@ $<
 
 # LD for programs, optional parameter: libraries
@@ -112,10 +114,12 @@ quiet_cmd_ld_so = LD     $@
 quiet_cmd_ld_dl = LD     $@
       cmd_ld_dl = $(LD) $(LDDLFLAGS) $(LDFLAGS) -o $@ $^ $(1)
 
-# CXX for programs and shared libraries
+# CXX for program object files (.o)
 quiet_cmd_cxx    = CXX    $@
-quiet_cmd_cxx_lo = CXX    $@
       cmd_cxx    = $(CXX) -c $(CXXFLAGS) -o $@ $<
+
+# CXX for shared library and dynamically loadable module objects (.lo)
+quiet_cmd_cxx_lo = CXX    $@
       cmd_cxx_lo = $(CXX) -c $(CXXFLAGS) $(SOFLAGS) -o $@ $<
 
 # CXXLD for programs, optional parameter: libraries
@@ -124,7 +128,11 @@ quiet_cmd_cxxld = CXXLD  $@
 
 # CXXLD for shared libraries, optional parameter: libraries
 quiet_cmd_cxxld_so = CXXLD  $@
-      cmd_cxxld_so = $(CXXLD) -shared $(LDFLAGS) -o $@ $^ $(1)
+      cmd_cxxld_so = $(CXXLD) $(LDSOFLAGS) $(CXXLDFLAGS) -o $@ $^ $(1)
+
+# CXXLD for dynamically loadable modules, optional parameter: libraries
+quiet_cmd_cxxld_dl = CXXLD  $@
+      cmd_cxxld_dl = $(CXXLD) $(LDDLFLAGS) $(CXXLDFLAGS) -o $@ $^ $(1)
 
 # create archive
 quiet_cmd_ar = AR     $@
