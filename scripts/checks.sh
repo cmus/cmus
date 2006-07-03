@@ -285,7 +285,7 @@ check_library()
 
 # run pkg-config
 #
-# @name:    variable prefix (e.g. GLIB -> GLIB_CFLAGS, GLIB_LIBS)
+# @prefix:  variable prefix (e.g. GLIB -> GLIB_CFLAGS, GLIB_LIBS)
 # @modules: the argument for pkg-config
 # @cflags:  CFLAGS to use if pkg-config failed (optional)
 # @libs:    LIBS to use if pkg-config failed (optional)
@@ -296,11 +296,12 @@ check_library()
 #   ---
 #   check_glib()
 #   {
-#     pkg_config GLIB "glib-2.0 >= 2.2"
-#     return $?
+#           pkg_config GLIB "glib-2.0 >= 2.2"
+#           return $?
 #   }
 #
-#   run_checks check_cc check_glib
+#   check check_cc
+#   check check_glib
 #   ---
 #   GLIB_CFLAGS and GLIB_LIBS are automatically added to Makefile
 pkg_config()
@@ -354,22 +355,23 @@ pkg_check_modules()
 	pkg_config "$@"
 }
 
-# run <name>-config
+# run *-config
 #
-# @name:    name
+# @prefix:  variable prefix (e.g. ARTS -> ARTS_CFLAGS, ARTS_LIBS)
 # @program: the -config program
 #
 # example:
 #   ---
-#   check_cppunit()
+#   check_arts()
 #   {
-#     app_config CPPUNIT cppunit-config
-#     return $?
+#           app_config ARTS artsc-config
+#           return $?
 #   }
 #
-#   run_checks check_cc check_glib
+#   check check_cc
+#   check check_arts
 #   ---
-#   CPPUNIT_CFLAGS and CPPUNIT_LIBS are automatically added to config.mk
+#   ARTS_CFLAGS and ARTS_LIBS are automatically added to config.mk
 app_config()
 {
 	argc app_config $# 2 2

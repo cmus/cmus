@@ -237,3 +237,29 @@ __link_failed()
 	warn "Make sure your LD (CC?) and LDFLAGS are sane."
 	exit 1
 }
+
+__choose_shell()
+{
+	case $SHELL in
+	*bash|*ksh|*posh|*dash|*ash)
+		# should work
+		;;
+	*)
+		case $(uname -s) in
+		SunOS)
+			# never trust SunOS
+			for SHELL in bash ksh dash ash posh
+			do
+				SHELL=$(path_find $SHELL) && return
+			done
+			warn "Could not find working SHELL"
+			die "Try ./configure SHELL=/path/to/shell"
+			;;
+		*)
+			# /bin/sh works on sane systems
+			SHELL=/bin/sh
+			;;
+		esac
+		;;
+	esac
+}
