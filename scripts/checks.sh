@@ -195,6 +195,7 @@ check_cc()
 	LDFLAGS="$LDFLAGS $common_lf"
 
 	makefile_vars CC LD CFLAGS LDFLAGS
+	__check_lang=c
 	return 0
 }
 
@@ -212,6 +213,7 @@ check_cxx()
 	CXXLDFLAGS="$CXXLDFLAGS $common_lf"
 
 	makefile_vars CXX CXXLD CXXFLAGS CXXLDFLAGS
+	__check_lang=cxx
 	return 0
 }
 
@@ -422,12 +424,24 @@ app_config()
 try_compile()
 {
 	argc try_compile $# 1
-	__src=$(tmp_file prog.c)
-	__obj=$(tmp_file prog.o)
-	echo "$1" > $__src || exit 1
-	shift
-	__cmd="$CC -c $CFLAGS $@ $__src -o $__obj"
-	$CC -c $CFLAGS "$@" $__src -o $__obj 2>/dev/null
+	case $__check_lang in
+	c)
+		__src=$(tmp_file prog.c)
+		__obj=$(tmp_file prog.o)
+		echo "$1" > $__src || exit 1
+		shift
+		__cmd="$CC -c $CFLAGS $@ $__src -o $__obj"
+		$CC -c $CFLAGS "$@" $__src -o $__obj 2>/dev/null
+		;;
+	cxx)
+		__src=$(tmp_file prog.cc)
+		__obj=$(tmp_file prog.o)
+		echo "$1" > $__src || exit 1
+		shift
+		__cmd="$CXX -c $CXXFLAGS $@ $__src -o $__obj"
+		$CXX -c $CXXFLAGS "$@" $__src -o $__obj 2>/dev/null
+		;;
+	esac
 	return $?
 }
 

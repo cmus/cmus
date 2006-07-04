@@ -210,8 +210,16 @@ update_file()
 __try_link()
 {
 	__exe=$(tmp_file prog)
-	__cmd="$LD $LDFLAGS $@ -o $__exe $__obj"
-	$LD $LDFLAGS "$@" -o $__exe $__obj 2>/dev/null
+	case $__check_lang in
+	c)
+		__cmd="$LD $LDFLAGS $@ -o $__exe $__obj"
+		$LD $LDFLAGS "$@" -o $__exe $__obj 2>/dev/null
+		;;
+	cxx)
+		__cmd="$CXXLD $CXXLDFLAGS $@ -o $__exe $__obj"
+		$CXXLD $CXXLDFLAGS "$@" -o $__exe $__obj 2>/dev/null
+		;;
+	esac
 	return $?
 }
 
@@ -224,7 +232,14 @@ __compile_failed()
 	cat $__src >&2
 	warn "---"
 	warn "Command: $__cmd"
-	warn "Make sure your CC and CFLAGS are sane."
+	case $__check_lang in
+	c)
+		warn "Make sure your CC and CFLAGS are sane."
+		;;
+	cxx)
+		warn "Make sure your CXX and CXXFLAGS are sane."
+		;;
+	esac
 	exit 1
 }
 
@@ -234,7 +249,14 @@ __link_failed()
 	warn
 	warn "Failed to link simple program."
 	warn "Command: $__cmd"
-	warn "Make sure your LD (CC?) and LDFLAGS are sane."
+	case $__check_lang in
+	c)
+		warn "Make sure your LD (usually same as CC) and LDFLAGS are sane."
+		;;
+	cxx)
+		warn "Make sure your CXXLD (usually same as CXX) and CXXLDFLAGS are sane."
+		;;
+	esac
 	exit 1
 }
 
