@@ -144,11 +144,17 @@ to_upper()
 # portable which command
 path_find()
 {
-	if test -x "$1"
-	then
-		echo "$1"
-		return 0
-	fi
+	case $1 in
+	*/*)
+		if test -x "$1"
+		then
+			echo "$1"
+			return 0
+		fi
+		return 1
+		;;
+	esac
+
 	_ifs="$IFS"
 	IFS=:
 	for __pf_i in $PATH
