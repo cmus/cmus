@@ -1,6 +1,6 @@
 #!/bin/sh
 
-test -e "$INSTALL_LOG" || exit 0
+test -f "$INSTALL_LOG" || exit 0
 
 sort "$INSTALL_LOG" | uniq | \
 while read file

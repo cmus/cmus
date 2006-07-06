@@ -103,7 +103,7 @@ tmp_file()
 	do
 		__tmp_filename=.tmp-${__tmp_file_counter}-${1}
 		__tmp_file_counter=`expr $__tmp_file_counter + 1`
-		test -e "$__tmp_filename" || break
+		test -f "$__tmp_filename" || break
 	done
 	echo "$__tmp_filename"
 }
@@ -181,7 +181,7 @@ EOF
 # replace @file with @tmpfile if their contents differ
 update_file()
 {
-	if test -e "$2"
+	if test -f "$2"
 	then
 		if cmp "$2" "$1" 2>/dev/null 1>&2
 		then
