@@ -6,8 +6,10 @@
 
 # initialization {{{
 
-export LC_ALL=C
-export LANG=C
+LC_ALL=C
+LANG=C
+
+export LC_ALL LANG
 
 if test "$CDPATH"
 then
