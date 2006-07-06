@@ -544,11 +544,10 @@ check_dl()
 # adds ICONV_CFLAGS and ICONV_LIBS to config.mk
 check_iconv()
 {
-	if ! check_library ICONV "" "-liconv"
-	then
-		echo "assuming libc contains iconv"
-		makefile_var ICONV_CFLAGS ""
-		makefile_var ICONV_LIBS ""
-	fi
+	check_library ICONV "" "-liconv" && return 0
+
+	echo "assuming libc contains iconv"
+	makefile_var ICONV_CFLAGS ""
+	makefile_var ICONV_LIBS ""
 	return 0
 }
