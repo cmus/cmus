@@ -163,16 +163,18 @@ path_find()
 		echo "$1"
 		return 0
 	fi
-
-	# _NEVER_ trust 'which' or 'type'!
-	for __pf_i in $(echo $PATH | sed 's/:/ /g')
+	_ifs="$IFS"
+	IFS=:
+	for __pf_i in $PATH
 	do
 		if test -x "$__pf_i/$1"
 		then
+			IFS="$_ifs"
 			echo "$__pf_i/$1"
 			return 0
 		fi
 	done
+	IFS="$_ifs"
 	return 1
 }
 
