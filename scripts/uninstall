@@ -7,6 +7,6 @@ while read file
 do
 	echo "RM $file"
 	rm -f "$file"
-	rmdir -p "$(dirname $file)" 2>/dev/null
+	rmdir -p "`dirname $file`" 2>/dev/null
 done
 rm -f "$INSTALL_LOG"

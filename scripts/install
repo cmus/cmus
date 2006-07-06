@@ -25,7 +25,7 @@ shift
 $GINSTALL -d -m755 "${to}"
 for i in "$@"
 do
-	dest="${to}/$(basename ${i})"
+	dest="${to}/`basename ${i}`"
 	test "$INSTALL_LOG" && echo "$dest" >> "$INSTALL_LOG"
 	echo "INSTALL ${dest}"
 	$GINSTALL $flags "$i" "${to}"

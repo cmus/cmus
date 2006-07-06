@@ -129,7 +129,7 @@ set_var()
 # @value: value of the variable
 var_default()
 {
-	test -z "$(get_var $1)" && set_var $1 "$2"
+	test "`get_var $1`" || set_var $1 "$2"
 }
 
 # usage: echo $foo | to_upper
@@ -211,7 +211,7 @@ update_file()
 # optionally used after try_compile
 __try_link()
 {
-	__exe=$(tmp_file prog)
+	__exe=`tmp_file prog`
 	case $__check_lang in
 	c)
 		__cmd="$LD $LDFLAGS $@ -o $__exe $__obj"
@@ -269,12 +269,12 @@ __choose_shell()
 		# should work
 		;;
 	*)
-		case $(uname -s) in
+		case `uname -s` in
 		SunOS)
 			# never trust SunOS
 			for SHELL in bash ksh dash ash posh
 			do
-				SHELL=$(path_find $SHELL) && return
+				SHELL=`path_find $SHELL` && return
 			done
 			warn "Could not find working SHELL"
 			die "Try ./configure SHELL=/path/to/shell"

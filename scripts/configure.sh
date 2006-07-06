@@ -51,7 +51,7 @@ check()
 	fi
 
 	# optional feature
-	case $(get_var $2) in
+	case `get_var $2` in
 	n)
 		;;
 	y)
@@ -94,16 +94,17 @@ generate_config_mk()
 	CFLAGS="$CFLAGS $EXTRA_CFLAGS"
 	CXXFLAGS="$CXXFLAGS $EXTRA_CXXFLAGS"
 	__choose_shell
-	GINSTALL=$(path_find ginstall)
+	GINSTALL=`path_find ginstall`
 	test "$GINSTALL" || GINSTALL=install
-	topdir=$(pwd)
+	# $PWD is useless!
+	topdir=`pwd`
 	makefile_vars SHELL GINSTALL topdir
 
-	__tmp=$(tmp_file config.mk)
+	__tmp=`tmp_file config.mk`
 	for __i in $makefile_variables
 	do
 		strpad "$__i" 17
-		echo "${strpad_ret} = $(get_var $__i)"
+		echo "${strpad_ret} = `get_var $__i`"
 	done > $__tmp
 	update_file $__tmp config.mk
 }
@@ -130,13 +131,13 @@ config_header()
 	shift
 	while test $# -gt 0
 	do
-		__var=$(get_var $1)
+		__var=`get_var $1`
 		case "$__var" in
 		[yn])
 			config_bool $1
 			;;
 		*)
-			if test "$__var" && test "$__var" = "$(echo $__var | sed 's/[^0-9]//g')"
+			if test "$__var" && test "$__var" = "`echo $__var | sed 's/[^0-9]//g'`"
 			then
 				config_int $1
 			else
@@ -161,9 +162,9 @@ config_header_begin()
 {
 	argc config_header_begin $# 1 1
 	config_header_file="$1"
-	config_header_tmp=$(tmp_file config_header)
+	config_header_tmp=`tmp_file config_header`
 
-	__def=$(echo $config_header_file | to_upper | sed 's/[-\.\/]/_/g')
+	__def=`echo $config_header_file | to_upper | sed 's/[-\.\/]/_/g'`
 	cat <<EOF > "$config_header_tmp"
 #ifndef $__def
 #define $__def
@@ -175,7 +176,7 @@ config_str()
 {
 	while test $# -gt 0
 	do
-		echo "#define $1 \"$(get_var $1)\"" >> "$config_header_tmp"
+		echo "#define $1 \"`get_var $1`\"" >> "$config_header_tmp"
 		shift
 	done
 }
@@ -184,7 +185,7 @@ config_int()
 {
 	while test $# -gt 0
 	do
-		echo "#define $1 $(get_var $1)" >> "$config_header_tmp"
+		echo "#define $1 `get_var $1`" >> "$config_header_tmp"
 		shift
 	done
 }
@@ -193,7 +194,7 @@ config_bool()
 {
 	while test $# -gt 0
 	do
-		case "$(get_var $1)" in
+		case "`get_var $1`" in
 			n)
 				echo "/* #define $1 */" >> "$config_header_tmp"
 				;;
@@ -201,7 +202,7 @@ config_bool()
 				echo "#define $1 1" >> "$config_header_tmp"
 				;;
 			*)
-				die "bool '$1' has invalid value '$(get_var $1)'"
+				die "bool '$1' has invalid value '`get_var $1`'"
 				;;
 		esac
 		shift
@@ -213,6 +214,6 @@ config_header_end()
 	argc config_header_end $# 0 0
 	echo "" >> "$config_header_tmp"
 	echo "#endif" >> "$config_header_tmp"
-	mkdir -p $(dirname "$config_header_file")
+	mkdir -p `dirname "$config_header_file"`
 	update_file "$config_header_tmp" "$config_header_file"
 }

@@ -45,7 +45,7 @@ check_program()
 {
 	argc check_program $# 1 2
 	msg_checking "for program $1"
-	__cp_file=$(path_find "$1")
+	__cp_file=`path_find "$1"`
 	if test $? -eq 0
 	then
 		msg_result $__cp_file
@@ -124,7 +124,7 @@ cc_cxx_common()
 	common_lf=
 	COMPAT_LIBS=
 
-	case $(uname -s) in
+	case `uname -s` in
 	*BSD)
 		common_cf="$common_cf -I/usr/local/include"
 		common_lf="$common_lf -L/usr/local/lib"
@@ -346,11 +346,11 @@ pkg_config()
 	if test "$PKG_CONFIG" != "no" && $PKG_CONFIG --exists "$2" >/dev/null 2>&1
 	then
 		# pkg-config is installed and the .pc file exists
-		__pc_libs="$($PKG_CONFIG --libs ""$2"")"
+		__pc_libs="`$PKG_CONFIG --libs ""$2""`"
 		msg_result "$__pc_libs"
 
 		msg_checking "for ${1}_CFLAGS (pkg-config)"
-		__pc_cflags="$($PKG_CONFIG --cflags ""$2"")"
+		__pc_cflags="`$PKG_CONFIG --cflags ""$2""`"
 		msg_result "$__pc_cflags"
 
 		makefile_var ${1}_CFLAGS "$__pc_cflags"
@@ -407,11 +407,11 @@ app_config()
 	check_program $2 || return 1
 
 	msg_checking "for ${1}_CFLAGS"
-	__ac_cflags="$($2 --cflags)"
+	__ac_cflags="`$2 --cflags`"
 	msg_result "$__ac_cflags"
 
 	msg_checking "for ${1}_LIBS"
-	__ac_libs="$($2 --libs)"
+	__ac_libs="`$2 --libs`"
 	msg_result "$__ac_libs"
 
 	makefile_var ${1}_CFLAGS "$__ac_cflags"
@@ -426,16 +426,16 @@ try_compile()
 	argc try_compile $# 1
 	case $__check_lang in
 	c)
-		__src=$(tmp_file prog.c)
-		__obj=$(tmp_file prog.o)
+		__src=`tmp_file prog.c`
+		__obj=`tmp_file prog.o`
 		echo "$1" > $__src || exit 1
 		shift
 		__cmd="$CC -c $CFLAGS $@ $__src -o $__obj"
 		$CC -c $CFLAGS "$@" $__src -o $__obj 2>/dev/null
 		;;
 	cxx)
-		__src=$(tmp_file prog.cc)
-		__obj=$(tmp_file prog.o)
+		__src=`tmp_file prog.cc`
+		__obj=`tmp_file prog.o`
 		echo "$1" > $__src || exit 1
 		shift
 		__cmd="$CXX -c $CXXFLAGS $@ $__src -o $__obj"
