@@ -100,7 +100,7 @@ tmp_file()
 	while true
 	do
 		__tmp_filename=.tmp-${__tmp_file_counter}-${1}
-		__tmp_file_counter=$(($__tmp_file_counter + 1))
+		__tmp_file_counter=`expr $__tmp_file_counter + 1`
 		test -e "$__tmp_filename" || break
 	done
 	echo "$__tmp_filename"
@@ -147,11 +147,11 @@ strpad()
 {
 	strpad_ret="$1"
 	__sp_len="$2"
-	__sp_len=$(($__sp_len - ${#strpad_ret}))
+	__sp_len=`expr $__sp_len - ${#strpad_ret}`
 	while test $__sp_len -gt 0
 	do
 		strpad_ret="${strpad_ret} "
-		__sp_len=$(($__sp_len - 1))
+		__sp_len=`expr $__sp_len - 1`
 	done
 }
 
