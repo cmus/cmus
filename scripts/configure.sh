@@ -26,7 +26,9 @@ parse_command_line()
 			die "unrecognized option \`$1'"
 			;;
 		*=*)
-			set_var ${1%%=*} "${1#*=}"
+			_var=`echo "$1" | sed "s/=.*//"`
+			_val=`echo "$1" | sed "s/${_var}=//"`
+			set_var "$_var" "$_val"
 			;;
 		*)
 			die "unrecognized argument \`$1'"
@@ -103,8 +105,7 @@ generate_config_mk()
 	__tmp=`tmp_file config.mk`
 	for __i in $makefile_variables
 	do
-		strpad "$__i" 17
-		echo "${strpad_ret} = `get_var $__i`"
+		echo "$__i = `get_var $__i`"
 	done > $__tmp
 	update_file $__tmp config.mk
 }

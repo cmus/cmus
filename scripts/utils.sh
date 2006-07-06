@@ -139,22 +139,6 @@ to_upper()
 	tr abcdefghijklmnopqrstuvwxyz ABCDEFGHIJKLMNOPQRSTUVWXYZ
 }
 
-# @str: string to pad with spaces
-# @len: minimum length of the string
-#
-# returned string is $strpad_ret
-strpad()
-{
-	strpad_ret="$1"
-	__sp_len="$2"
-	__sp_len=`expr $__sp_len - ${#strpad_ret}`
-	while test $__sp_len -gt 0
-	do
-		strpad_ret="${strpad_ret} "
-		__sp_len=`expr $__sp_len - 1`
-	done
-}
-
 # portable which command
 path_find()
 {
