@@ -43,7 +43,7 @@ endif
 #
 #  - creates directories automatically
 #  - adds $(DESTDIR) to front of files
-INSTALL		:= @$(SHELL) $(topdir)/scripts/install
+INSTALL		:= @$(topdir)/scripts/install
 INSTALL_LOG	:= $(topdir)/.install.log
 
 SPARSE		?= sparse
@@ -67,7 +67,7 @@ distclean: clean
 	rm -f $(distclean)
 
 uninstall:
-	@$(SHELL) $(topdir)/scripts/uninstall
+	@$(topdir)/scripts/uninstall
 
 %.o: %.S
 	$(call cmd,as)

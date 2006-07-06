@@ -95,7 +95,6 @@ generate_config_mk()
 {
 	CFLAGS="$CFLAGS $EXTRA_CFLAGS"
 	CXXFLAGS="$CXXFLAGS $EXTRA_CXXFLAGS"
-	__choose_shell
 	if test -z "$GINSTALL"
 	then
 		GINSTALL=`path_find ginstall`
@@ -103,7 +102,7 @@ generate_config_mk()
 	fi
 	# $PWD is useless!
 	topdir=`pwd`
-	makefile_vars SHELL GINSTALL topdir
+	makefile_vars GINSTALL topdir
 
 	__tmp=`tmp_file config.mk`
 	for __i in $makefile_variables
