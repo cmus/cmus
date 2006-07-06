@@ -91,7 +91,7 @@ check_arts()
 
 check_oss()
 {
-	case $(uname -s) in
+	case `uname -s` in
 		Linux|FreeBSD)
 			;;
 		*BSD)
