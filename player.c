@@ -371,6 +371,7 @@ static void __producer_play(void)
 				player_ip_error(rc, "opening file `%s'", filename);
 				ip_delete(ip);
 			} else {
+				ip_setup(ip);
 				producer_status = PS_PLAYING;
 			}
 			free(filename);
@@ -389,6 +390,7 @@ static void __producer_play(void)
 			ip_delete(ip);
 			producer_status = PS_UNLOADED;
 		} else {
+			ip_setup(ip);
 			producer_status = PS_PLAYING;
 		}
 	} else if (producer_status == PS_PAUSED) {

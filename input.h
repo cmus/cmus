@@ -28,6 +28,8 @@ void ip_delete(struct input_plugin *ip);
  */
 int ip_open(struct input_plugin *ip);
 
+void ip_setup(struct input_plugin *ip);
+
 /*
  * errors: none?
  */

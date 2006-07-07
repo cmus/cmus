@@ -424,9 +424,7 @@ void ip_delete(struct input_plugin *ip)
 
 int ip_open(struct input_plugin *ip)
 {
-	unsigned int bits, is_signed, channels;
 	int rc;
-	sample_format_t sf;
 
 	BUG_ON(ip->open);
 
@@ -455,8 +453,14 @@ int ip_open(struct input_plugin *ip)
 		ip->data.metadata = NULL;
 		return rc;
 	}
+	ip->open = 1;
+	return 0;
+}
 
-	sf = ip->data.sf;
+void ip_setup(struct input_plugin *ip)
+{
+	unsigned int bits, is_signed, channels;
+	sample_format_t sf = ip->data.sf;
 
 	bits = sf_get_bits(sf);
 	is_signed = sf_get_signed(sf);
@@ -479,9 +483,6 @@ int ip_open(struct input_plugin *ip)
 			ip->pcm_convert_scale,
 			ip->pcm_convert != NULL,
 			ip->pcm_convert_in_place != NULL);
-
-	ip->open = 1;
-	return 0;
 }
 
 int ip_close(struct input_plugin *ip)
