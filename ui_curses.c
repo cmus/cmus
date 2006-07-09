@@ -1848,10 +1848,28 @@ static void init_curses(void)
 	if (!t_fs)
 		t_ts = NULL;
 
-	term = getenv("TERM");
-	if (!t_ts && term && !strcmp(term, "screen")) {
-		t_ts = "\033k";
-		t_fs = "\033\\";
+	if (!t_ts && (term = getenv("TERM"))) {
+		/*
+		 * Eterm:            Eterm
+		 * aterm:            rxvt
+		 * mlterm:           xterm
+		 * terminal (xfce):  xterm
+		 * urxvt:            rxvt-unicode
+		 * xterm:            xterm, xterm-{,16,88,256}color
+		 */
+		if (!strcmp(term, "screen")) {
+			t_ts = "\033k";
+			t_fs = "\033\\";
+		} else if (!strncmp(term, "xterm", 5) ||
+			   !strncmp(term, "rxvt", 4) ||
+			   !strcmp(term, "Eterm")) {
+			/* \033]1;  change icon
+			 * \033]2;  change title
+			 * \033]0;  change both
+			 */
+			t_ts = "\033]0;";
+			t_fs = "\007";
+		}
 	}
 }
 
