@@ -129,7 +129,7 @@ static void convert_16_1ch_to_16_2ch(char *dst, const char *src, int count)
 	}
 }
 
-/* index is ((bits >> 2) & 1) | (is_signed << 1) | (channels - 1) */
+/* index is ((bits >> 2) & 4) | (is_signed << 1) | (channels - 1) */
 pcm_conv_func pcm_conv[8] = {
 	convert_u8_1ch_to_s16_2ch,
 	convert_u8_2ch_to_s16_2ch,
@@ -142,7 +142,7 @@ pcm_conv_func pcm_conv[8] = {
 	NULL
 };
 
-/* index is ((bits >> 2) & 1) | (is_signed << 1) | bigendian */
+/* index is ((bits >> 2) & 4) | (is_signed << 1) | bigendian */
 pcm_conv_in_place_func pcm_conv_in_place[8] = {
 	NULL,
 	NULL,
