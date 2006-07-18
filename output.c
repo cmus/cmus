@@ -279,11 +279,6 @@ int op_set_sf(sample_format_t sf)
 	return 0;
 }
 
-int op_second_size(void)
-{
-	return sf_get_rate(current_sf) * sf_get_frame_size(current_sf);
-}
-
 int op_drop(void)
 {
 	if (op->pcm_ops->drop == NULL)

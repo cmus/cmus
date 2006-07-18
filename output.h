@@ -33,8 +33,6 @@ int op_open(sample_format_t sf);
  */
 int op_set_sf(sample_format_t sf);
 
-int op_second_size(void);
-
 /*
  * drop pcm data
  *
