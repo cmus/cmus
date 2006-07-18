@@ -496,7 +496,6 @@ static int change_sf(sample_format_t sf)
 		/* reopen */
 		int rc;
 
-		op_drop();
 		op_close();
 		rc = op_open(buffer_sf);
 		if (rc) {
