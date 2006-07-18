@@ -95,7 +95,7 @@ void player_play(void);
 void player_stop(void);
 void player_pause(void);
 void player_seek(double offset, int whence);
-int player_set_op(const char *name);
+void player_set_op(const char *name);
 char *player_get_op(void);
 void player_set_buffer_chunks(unsigned int nr_chunks);
 int player_get_buffer_chunks(void);
