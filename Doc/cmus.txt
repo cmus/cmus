@@ -217,7 +217,7 @@ bind [-f] <context> <key> <command>
 	example *i* selects the current track in views 1-3 but in browser it
 	is overridden to toggle showing of hidden files.
 
-browser-up (backspace)
+browser-up (*backspace*)
 	Change to parent directory in browser view (5). This command only
 	makes sense to be bound to the *browser* key context although it's
 	possible to use this even if browser view is not active.
@@ -288,26 +288,26 @@ load [-l] [-p] <playlist>
 mark <filter-expression>
 	Mark tracks in playlist and queue view by using a filter expression.
 
-player-next (b)
+player-next (*b*)
 	Skip to the next track.
 
-player-pause (c)
+player-pause (*c*)
 	Toggle pause.
 
-player-play (x)
+player-play (*x*)
 	If stopped, start playing the current song; if already playing seek to
 	beginning of the current song.
 
-player-prev (z)
+player-prev (*z*)
 	Skip to the previous track.
 
-player-stop (v)
+player-stop (*v*)
 	Stop playback.
 
 quit
 	Exit cmus.
 
-refresh (^L)
+refresh (*^L*)
 	Redraw the terminal window.
 
 run <command>
@@ -331,11 +331,11 @@ save [-l] [-p] [file]
 
 	If no filename given the old filename is used.
 
-search-next (n)
+search-next (*n*)
 	If a search pattern has been entered before, search forward for the
 	next match in the current view.  See *SEARCHING* above.
 
-search-prev (N)
+search-prev (*N*)
 	If a search pattern has been entered before, search backwards for the
 	previous match in the current view.  See *SEARCHING* above.
 
@@ -425,81 +425,81 @@ vol [+-]NUM[%] [[+-]NUM[%]]
 		common  }  :vol -0 -1
 		@endpre
 
-win-activate (enter)
+win-activate (*enter*)
 	In views 1-3 start playing the selected track.  In view 5 start
 	playing the selected track or change to the selected directory.  In
 	view 6 activate the selected filters.
 
-win-add-l (a)
+win-add-l (*a*)
 	Add the currently marked or selected track(s) (views 3-4), or the
 	currently selected file or directory (view 5) to the library.
 
 	Analogous to *:add -l*
 
-win-add-p (y)
+win-add-p (*y*)
 	Add the currently marked or selected track(s) (views 1-2, 4), or the
 	currently selected file or directory (view 5) to the playlist.
 
 	Analogous to *:add -p*
 
-win-add-Q (E)
+win-add-Q (*E*)
 	Prepend the currently marked or selected track(s) (views 1-3), or the
 	currently selected file or directory (view 5) to the play queue.
 
 	Analogous to *:add -Q*
 
-win-add-q (e)
+win-add-q (*e*)
 	Add the currently marked or selected track(s) (views 1-3), or the
 	currently selected file or directory (view 5) to the play queue.
 
 	Analogous to *:add -q*
 
-win-bottom (g, end)
+win-bottom (*g*, *end*)
 	Goto bottom of the current window.
 
-win-down (j, down)
+win-down (*j*, *down*)
 	Goto down one row in the current window.
 
-win-mv-after (p)
+win-mv-after (*p*)
 	If no tracks are marked, move the selected track down one row. If any
 	tracks are marked, move the marked tracks after the currently selected
 	track.  This command works in unsorted playlist and play queue view.
 
-win-mv-before (P)
+win-mv-before (*P*)
 	If no tracks are marked, move the selected track up one row. If any
 	tracks are marked, move the marked tracks before the currently
 	selected track.  This command works in unsorted playlist and play
 	queue view.
 
-win-next (tab)
+win-next (*tab*)
 	Activate next window.  Only relevant in view 1.
 
-win-page-down (^F, page_down)
+win-page-down (*^F*, *page_down*)
 	Goto down one page in the current window.
 
-win-page-up (^B, page_up)
+win-page-up (*^B*, *page_up*)
 	Goto up one page in the current window.
 
-win-remove (D, delete)
+win-remove (*D*, *delete*)
 	Remove the selected entry.  For tracks no confirmations are made.  For
 	files (view 5) and filters (view 6) user has to confirm the action.
 
-win-sel-cur (i)
+win-sel-cur (*i*)
 	Select the current track (position in library or playlist, not
 	necessarily same as the currently playing track).  Works only in views
 	1-3, does nothing in other views.
 
-win-toggle (space)
+win-toggle (*space*)
 	Expand albums in library view (1), mark tracks in views (2-4), toggle
 	selection of a filter in view 6.
 
-win-top (g, home)
+win-top (*g*, *home*)
 	Goto top of the current window.
 
-win-up (k, up)
+win-up (*k*, *up*)
 	Goto up one row in the current window.
 
-win-update (u)
+win-update (*u*)
 	Checks the modification time of the files in the library, and updates
 	metadata for changed files.  Removes non-existent files from the
 	library.
