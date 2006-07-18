@@ -26,14 +26,6 @@ int op_select_any(void);
 int op_open(sample_format_t sf);
 
 /*
- * returns:
- *     0 if sample format didn't change
- *     1 if sample format did change
- *     OP_ERROR_{} on error
- */
-int op_set_sf(sample_format_t sf);
-
-/*
  * drop pcm data
  *
  * errors: OP_ERROR_{ERRNO}

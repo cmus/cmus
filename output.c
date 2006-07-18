@@ -53,7 +53,6 @@ struct output_plugin {
 static const char * const plugin_dir = LIBDIR "/cmus/op";
 static LIST_HEAD(op_head);
 static struct output_plugin *op = NULL;
-static sample_format_t current_sf = 0;
 
 /* volume is between 0 and volume_max */
 int volume_max = 0;
@@ -247,36 +246,9 @@ int op_select_any(void)
 
 int op_open(sample_format_t sf)
 {
-	int rc;
-
 	if (op == NULL)
 		return -OP_ERROR_NOT_INITIALIZED;
-	current_sf = sf;
-	rc = op->pcm_ops->open(sf);
-	if (rc)
-		current_sf = 0;
-	return rc;
-}
-
-int op_set_sf(sample_format_t sf)
-{
-	int rc = 0;
-
-	if (current_sf != sf) {
-		rc = op_close();
-		if (rc) {
-			d_print("op_close returned %d\n", rc);
-			return rc;
-		}
-		rc = op_open(sf);
-		if (rc) {
-			return rc;
-		} else {
-			current_sf = sf;
-			return 1;
-		}
-	}
-	return 0;
+	return op->pcm_ops->open(sf);
 }
 
 int op_drop(void)
@@ -288,7 +260,6 @@ int op_drop(void)
 
 int op_close(void)
 {
-	current_sf = 0;
 	return op->pcm_ops->close();
 }
 

@@ -487,6 +487,32 @@ static void __consumer_pause(void)
 
 /* setting consumer status }}} */
 
+static int change_sf(sample_format_t sf)
+{
+	int old_sf = buffer_sf;
+
+	set_buffer_sf(sf);
+	if (sf != old_sf) {
+		/* reopen */
+		int rc;
+
+		op_drop();
+		op_close();
+		rc = op_open(buffer_sf);
+		if (rc) {
+			player_op_error(rc, "opening audio device");
+			consumer_status = CS_STOPPED;
+			__producer_stop();
+			return rc;
+		}
+	} else if (consumer_status == CS_PAUSED) {
+		op_drop();
+		op_unpause();
+	}
+	consumer_status = CS_PLAYING;
+	return 0;
+}
+
 static void __consumer_handle_eof(void)
 {
 	char *filename;
@@ -499,8 +525,6 @@ static void __consumer_handle_eof(void)
 	}
 
 	if (get_next(&filename) == 0) {
-		int rc;
-
 		__producer_unload();
 		ip = ip_new(filename);
 		producer_status = PS_STOPPED;
@@ -512,17 +536,9 @@ static void __consumer_handle_eof(void)
 				file_changed();
 			} else {
 				/* PS_PLAYING */
-				set_buffer_sf(ip_get_sf(ip));
-				rc = op_set_sf(buffer_sf);
-				if (rc < 0) {
-					__producer_stop();
-					consumer_status = CS_STOPPED;
-					player_op_error(rc, "setting sample format");
-					file_changed();
-				} else {
-					file_changed();
+				file_changed();
+				if (!change_sf(ip_get_sf(ip)))
 					__prebuffer();
-				}
 			}
 		} else {
 			__consumer_drain_and_stop();
@@ -819,8 +835,6 @@ void player_pause(void)
 
 void player_set_file(const char *filename)
 {
-	int rc;
-
 	player_lock();
 	__producer_set_file(filename);
 	if (producer_status == PS_UNLOADED) {
@@ -835,30 +849,7 @@ void player_set_file(const char *filename)
 			__consumer_stop();
 			goto out;
 		}
-
-		/* must do op_drop() here because op_set_sf()
-		 * might call op_close() which calls drain()
-		 */
-		op_drop();
-
-		set_buffer_sf(ip_get_sf(ip));
-		rc = op_set_sf(buffer_sf);
-		if (rc == 0) {
-			/* device wasn't reopened */
-			if (consumer_status == CS_PAUSED) {
-				/* status was paused => need to unpause */
-				rc = op_unpause();
-				d_print("op_unpause: %d\n", rc);
-			}
-			consumer_status = CS_PLAYING;
-		} else if (rc == 1) {
-			/* device was reopened */
-			consumer_status = CS_PLAYING;
-		} else {
-			__producer_stop();
-			player_op_error(rc, "setting sample format");
-			consumer_status = CS_STOPPED;
-		}
+		change_sf(ip_get_sf(ip));
 	}
 out:
 	__player_status_changed();
@@ -869,8 +860,6 @@ out:
 
 void player_play_file(const char *filename)
 {
-	int rc;
-
 	player_lock();
 	__producer_set_file(filename);
 	if (producer_status == PS_UNLOADED) {
@@ -893,30 +882,7 @@ void player_play_file(const char *filename)
 		if (consumer_status == CS_STOPPED)
 			__producer_stop();
 	} else {
-		/* PS_PLAYING, CS_PLAYING,CS_PAUSED */
-		/* must do op_drop() here because op_set_sf()
-		 * might call op_close() which calls drain()
-		 */
-		op_drop();
-
-		set_buffer_sf(ip_get_sf(ip));
-		rc = op_set_sf(buffer_sf);
-		if (rc == 0) {
-			/* device wasn't reopened */
-			if (consumer_status == CS_PAUSED) {
-				/* status was paused => need to unpause */
-				rc = op_unpause();
-				d_print("op_unpause: %d\n", rc);
-			}
-			consumer_status = CS_PLAYING;
-		} else if (rc == 1) {
-			/* device was reopened */
-			consumer_status = CS_PLAYING;
-		} else {
-			__producer_stop();
-			player_op_error(rc, "setting sample format");
-			consumer_status = CS_STOPPED;
-		}
+		change_sf(ip_get_sf(ip));
 	}
 out:
 	__player_status_changed();
