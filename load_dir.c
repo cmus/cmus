@@ -36,7 +36,7 @@ void dir_close(struct directory *dir)
 	closedir(dir->d);
 }
 
-const char *dir_read(struct directory *dir, struct stat *st)
+const char *dir_read(struct directory *dir)
 {
 	DIR *d = dir->d;
 	int len = dir->len;
@@ -54,8 +54,16 @@ const char *dir_read(struct directory *dir, struct stat *st)
 			continue;
 
 		memcpy(full + len, name, nlen + 1);
-		if (stat(full, st))
+		if (lstat(full, &dir->st))
 			continue;
+
+		dir->is_link = 0;
+		if (S_ISLNK(dir->st.st_mode)) {
+			/* argh. must stat the target */
+			if (stat(full, &dir->st))
+				continue;
+			dir->is_link = 1;
+		}
 
 		return full + len;
 	}

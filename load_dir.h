@@ -12,12 +12,16 @@
 struct directory {
 	DIR *d;
 	int len;
+	/* we need stat information for symlink targets */
+	int is_link;
+	/* stat() information. ie. for the symlink target */
+	struct stat st;
 	char path[1024];
 };
 
 int dir_open(struct directory *dir, const char *name);
 void dir_close(struct directory *dir);
-const char *dir_read(struct directory *dir, struct stat *st);
+const char *dir_read(struct directory *dir);
 
 
 struct ptr_array {
