@@ -2022,15 +2022,14 @@ static void expand_toptions(const char *str)
 static void load_themes(const char *dirname, const char *str, struct ptr_array *array)
 {
 	struct directory dir;
-	struct stat st;
 	const char *name, *dot;
 	int len = strlen(str);
 
 	if (dir_open(&dir, dirname))
 		return;
 
-	while ((name = dir_read(&dir, &st))) {
-		if (!S_ISREG(st.st_mode))
+	while ((name = dir_read(&dir))) {
+		if (!S_ISREG(dir.st.st_mode))
 			continue;
 		if (strncmp(name, str, len))
 			continue;

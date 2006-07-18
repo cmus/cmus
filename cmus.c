@@ -97,12 +97,23 @@ static int dir_entry_cmp_reverse(const void *ap, const void *bp)
 	return strcmp(b->name, a->name);
 }
 
-static void add_dir(add_ti_cb add, const char *dirname)
+static int points_within(const char *target, const char *root)
+{
+	int tlen = strlen(target);
+	int rlen = strlen(root);
+
+	if (rlen > tlen)
+		return 0;
+	if (strncmp(target, root, rlen))
+		return 0;
+	return target[rlen] == '/' || !target[rlen];
+}
+
+static void do_add_dir(add_ti_cb add, const char *dirname, const char *root)
 {
 	struct directory dir;
 	struct dir_entry **ents;
 	const char *name;
-	struct stat st;
 	PTR_ARRAY(array);
 	int i;
 
@@ -110,16 +121,35 @@ static void add_dir(add_ti_cb add, const char *dirname)
 		d_print("error: opening %s: %s\n", dirname, strerror(errno));
 		return;
 	}
-	while ((name = dir_read(&dir, &st))) {
+	while ((name = dir_read(&dir))) {
 		struct dir_entry *ent;
 		int size;
 
 		if (name[0] == '.')
 			continue;
 
+		if (dir.is_link) {
+			char buf[1024];
+			char *target;
+			int rc = readlink(dir.path, buf, sizeof(buf));
+
+			if (rc < 0 || rc == sizeof(buf))
+				continue;
+			buf[rc] = 0;
+			target = path_absolute_cwd(buf, dirname);
+			if (points_within(target, root)) {
+				/* symlink points withing the root */
+				d_print("%s -> %s points within %s. ignoring\n",
+						dir.path, target, root);
+				free(target);
+				continue;
+			}
+			free(target);
+		}
+
 		size = strlen(name) + 1;
 		ent = xmalloc(sizeof(struct dir_entry) + size);
-		ent->mode = st.st_mode;
+		ent->mode = dir.st.st_mode;
 		memcpy(ent->name, name, size);
 		ptr_array_add(&array, ent);
 	}
@@ -141,7 +171,7 @@ static void add_dir(add_ti_cb add, const char *dirname)
 
 			memcpy(dir.path + dir.len, ents[i]->name, len + 1);
 			if (S_ISDIR(ents[i]->mode)) {
-				add_dir(add, dir.path);
+				do_add_dir(add, dir.path, root);
 			} else {
 				add_file(add, dir.path);
 			}
@@ -149,6 +179,11 @@ static void add_dir(add_ti_cb add, const char *dirname)
 		free(ents[i]);
 	}
 	free(ents);
+}
+
+static void add_dir(add_ti_cb add, const char *dirname)
+{
+	do_add_dir(add, dirname, dirname);
 }
 
 static int handle_line(void *data, const char *line)

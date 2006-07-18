@@ -163,12 +163,12 @@ static int do_browser_load(const char *name)
 			return -1;
 
 		free_browser_list();
-		while ((str = dir_read(&dir, &st))) {
+		while ((str = dir_read(&dir))) {
 			struct browser_entry *e;
 			struct list_head *item;
 			int len;
 
-			if (!filter(str, &st))
+			if (!filter(str, &dir.st))
 				continue;
 
 			/* ignore .. if we are in the root dir */
@@ -179,7 +179,7 @@ static int do_browser_load(const char *name)
 			e = xmalloc(sizeof(struct browser_entry) + len + 2);
 			e->type = BROWSER_ENTRY_FILE;
 			memcpy(e->name, str, len);
-			if (S_ISDIR(st.st_mode)) {
+			if (S_ISDIR(dir.st.st_mode)) {
 				e->type = BROWSER_ENTRY_DIR;
 				e->name[len++] = '/';
 			}

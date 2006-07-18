@@ -83,7 +83,6 @@ static void tabexp_load_dir(const char *dirname, const char *start,
 {
 	int start_len = strlen(start);
 	struct directory dir;
-	struct stat st;
 	PTR_ARRAY(array);
 	const char *name;
 	char *full_dir_name;
@@ -96,7 +95,7 @@ static void tabexp_load_dir(const char *dirname, const char *start,
 	if (dir_open(&dir, full_dir_name))
 		goto out;
 
-	while ((name = dir_read(&dir, &st))) {
+	while ((name = dir_read(&dir))) {
 		char *str;
 
 		if (!start_len) {
@@ -107,10 +106,10 @@ static void tabexp_load_dir(const char *dirname, const char *start,
 				continue;
 		}
 
-		if (!filter(name, &st))
+		if (!filter(name, &dir.st))
 			continue;
 
-		if (S_ISDIR(st.st_mode)) {
+		if (S_ISDIR(dir.st.st_mode)) {
 			int len = strlen(name);
 
 			str = xnew(char, len + 2);
