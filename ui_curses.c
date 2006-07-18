@@ -1017,7 +1017,7 @@ static void do_update_commandline(void)
 }
 
 /* lock player_info! */
-static const char *get_stream_title(const char *metadata)
+static const char *get_stream_title(void)
 {
 	static char stream_title[255 * 16 + 1];
 	char *ptr, *title;
@@ -1056,7 +1056,7 @@ static void do_update_titleline(void)
 
 		fill_track_fopts_track_info(cur_track_info);
 		if (is_url(cur_track_info->filename)) {
-			const char *title = get_stream_title(player_info.metadata);
+			const char *title = get_stream_title();
 
 			if (title == NULL)
 				use_alt_format = 1;
@@ -1434,7 +1434,7 @@ static void spawn_status_program(void)
 	player_info_lock();
 	status = player_info.status;
 	if (status == 1)
-		stream_title = get_stream_title(player_info.metadata);
+		stream_title = get_stream_title();
 	player_info_unlock();
 
 	i = 0;
