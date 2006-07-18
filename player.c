@@ -925,7 +925,7 @@ out:
 	player_unlock();
 }
 
-void player_seek(double offset, int whence)
+void player_seek(double offset, int relative)
 {
 	player_lock();
 	if (consumer_status == CS_PLAYING || consumer_status == CS_PAUSED) {
@@ -940,8 +940,7 @@ void player_seek(double offset, int whence)
 			player_unlock();
 			return;
 		}
-		if (whence == SEEK_CUR) {
-			/* relative to current position */
+		if (relative) {
 			new_pos = pos + offset;
 			if (new_pos < 0.0)
 				new_pos = 0.0;
@@ -959,7 +958,6 @@ void player_seek(double offset, int whence)
 				}
 			}
 		} else {
-			/* absolute position */
 			new_pos = offset;
 			if (new_pos < 0.0) {
 				d_print("seek offset negative\n");

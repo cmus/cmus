@@ -448,14 +448,14 @@ static int get_number(char *str, char **end)
 
 static void cmd_seek(char *arg)
 {
-	int seek_mode = SEEK_SET;
+	int relative = 0;
 	int seek = 0, sign = 1, count;
 
 	switch (*arg) {
 	case '-':
 		sign = -1;
 	case '+':
-		seek_mode = SEEK_CUR;
+		relative = 1;
 		arg++;
 		break;
 	}
@@ -495,7 +495,7 @@ inside:
 	}
 
 	if (!*arg) {
-		player_seek(seek, seek_mode);
+		player_seek(seek, relative);
 		return;
 	}
 err:
