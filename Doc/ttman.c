@@ -617,7 +617,6 @@ static struct token *output_pre(struct token *tok)
 			tok = get_indent(tok, &i);
 			if (i != indent && tok->type != TOK_NL)
 				syntax(tok->line, "indent changed in @pre\n");
-			bol = 0;
 		}
 
 		switch (tok->type) {
@@ -629,7 +628,8 @@ static struct token *output_pre(struct token *tok)
 		case TOK_NL:
 			output("\n");
 			bol = 1;
-			break;
+			tok = tok->next;
+			continue;
 		case TOK_ITALIC:
 			output("`");
 			break;
@@ -650,6 +650,7 @@ static struct token *output_pre(struct token *tok)
 			BUG();
 			break;
 		}
+		bol = 0;
 		tok = tok->next;
 	}
 	return tok;
