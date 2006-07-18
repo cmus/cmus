@@ -225,19 +225,23 @@ static void __FORMAT(2, 3) player_op_error(int rc, const char *format, ...)
 /* FIXME: don't poll */
 static void mixer_check(void)
 {
-	static struct timeval old_st = { 0L, 0L };
-	struct timeval st;
+	static struct timeval old_t = { 0L, 0L };
+	struct timeval t;
+	long usec, sec;
 	int l, r;
 
-	gettimeofday(&st, NULL);
-	if (st.tv_sec == old_st.tv_sec) {
-		unsigned long usecs = st.tv_sec - old_st.tv_sec;
-
-		if (usecs < 300e6)
-			return;
+	gettimeofday(&t, NULL);
+	usec = t.tv_usec - old_t.tv_usec;
+	sec = t.tv_sec - old_t.tv_sec;
+	if (sec) {
+		/* multiplying sec with 1e6 can overflow */
+		usec += 1e6L;
 	}
-	old_st = st;
-	if (op_get_volume(&l, &r) == 0)
+	if (usec < 300e3)
+		return;
+
+	old_t = t;
+	if (!op_get_volume(&l, &r))
 		volume_update(l, r);
 }
 
