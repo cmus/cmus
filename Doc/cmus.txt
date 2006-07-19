@@ -169,6 +169,72 @@ understand what all those fields mean.
 See CONFIGURATION OPTIONS section for more information about these options.
 
 
+@h1 KEYBINDINGS
+
+Here's list of default keybindings.  See *unbind* and *bind* commands in the
+COMMANDS section.
+
+@h2 Common Context
+@pre
+^C             echo Type :quit<enter> to exit cmus.
+I              echo {}
+b              player-next
+c              player-pause
+x              player-play
+z              player-prev
+v              player-stop
+^L             refresh
+n              search-next
+N              search-prev
+.              seek +1m
+l, right       seek +5
+,              seek -1m
+h, left        seek -5
+m              toggle aaa_mode
+C              toggle continue
+M              toggle play_library
+o              toggle play_sorted
+r              toggle repeat
+t              toggle show_remaining_time
+s              toggle shuffle
+1              view 1
+2              view 2
+3              view 3
+4              view 4
+5              view 5
+6              view 6
+]              vol +0 +1
+[              vol +1 +0
++, =           vol +10%
+}              vol -0 -1
+{              vol -1 -0
+-              vol -10%
+enter          win-activate
+E              win-add-Q
+a              win-add-l
+y              win-add-p
+e              win-add-q
+G, end         win-bottom
+down, j        win-down
+p              win-mv-after
+P              win-mv-before
+tab            win-next
+^F, page_down  win-page-down
+^B, page_up    win-page-up
+D, delete      win-remove
+i              win-sel-cur
+space          win-toggle
+g, home        win-top
+k, up          win-up
+u              win-update
+@endpre
+
+@h2 Browser Context
+@pre
+backspace      browser-up
+i              toggle show_hidden
+@endpre
+
 @h1 COMMANDS
 
 This section describes cmus' commands.  You can bind a key to any of these
