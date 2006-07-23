@@ -131,7 +131,7 @@ int misc_init(void)
 
 	cmus_config_dir = get_non_empty_env("CMUS_HOME");
 	if (cmus_config_dir == NULL)
-		xstrjoin(home_dir, "/.cmus");
+		cmus_config_dir = xstrjoin(home_dir, "/.cmus");
 	make_dir(cmus_config_dir);
 	return 0;
 }
