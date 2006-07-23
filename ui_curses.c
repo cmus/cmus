@@ -2008,7 +2008,7 @@ int main(int argc, char *argv[])
 	}
 	misc_init();
 	if (server_address == NULL)
-		server_address = xstrjoin(home_dir, "/.cmus/socket");
+		server_address = xstrjoin(cmus_config_dir, "/socket");
 	debug_init();
 	d_print("charset = '%s'\n", charset);
 
