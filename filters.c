@@ -165,16 +165,22 @@ void filters_activate(void)
 	filters_win->changed = 1;
 }
 
-static int for_each_name(const char *str, int (*cb)(const char *name))
+static int for_each_name(const char *str, int (*cb)(const char *name, int sel_stat))
 {
 	char buf[64];
 	int s, e, len;
 
 	e = 0;
 	do {
+		int sel_stat = FS_YES;
+
 		s = e;
 		while (str[s] == ' ')
 			s++;
+		if (str[s] == '!') {
+			sel_stat = FS_NO;
+			s++;
+		}
 		e = s;
 		while (str[e] && str[e] != ' ')
 			e++;
@@ -190,12 +196,12 @@ static int for_each_name(const char *str, int (*cb)(const char *name))
 		memcpy(buf, str + s, len);
 		buf[len] = 0;
 
-		if (cb(buf))
+		if (cb(buf, sel_stat))
 			return -1;
 	} while (1);
 }
 
-static int ensure_filter_name(const char *name)
+static int ensure_filter_name(const char *name, int sel_stat)
 {
 	if (find_filter(name) == NULL) {
 		error_msg("no such filter %s", name);
@@ -204,11 +210,11 @@ static int ensure_filter_name(const char *name)
 	return 0;
 }
 
-static int select_filter(const char *name)
+static int select_filter(const char *name, int sel_stat)
 {
 	struct filter_entry *e = find_filter(name);
 
-	e->sel_stat = FS_YES;
+	e->sel_stat = sel_stat;
 	return 0;
 }
 
