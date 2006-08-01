@@ -496,7 +496,7 @@ static int change_sf(sample_format_t sf, int drop)
 	int old_sf = buffer_sf;
 
 	set_buffer_sf(sf);
-	if (sf != old_sf) {
+	if (buffer_sf != old_sf) {
 		/* reopen */
 		int rc;
 
