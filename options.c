@@ -843,8 +843,14 @@ void options_exit(void)
 		fprintf(f, "fset %s=%s\n", filt->name, filt->filter);
 	fprintf(f, "factivate");
 	list_for_each_entry(filt, &filters_head, node) {
-		if (filt->active)
+		switch (filt->act_stat) {
+		case FS_YES:
 			fprintf(f, " %s", filt->name);
+			break;
+		case FS_NO:
+			fprintf(f, " !%s", filt->name);
+			break;
+		}
 	}
 	fprintf(f, "\n");
 

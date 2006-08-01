@@ -618,13 +618,15 @@ static void print_filter(struct window *win, int row, struct iter *iter)
 	/* row selected? */
 	int selected;
 	/* is the filter currently active? */
-	int current = e->active;
+	// FIXME: display negated filter in other color?
+	int current = !!e->act_stat;
+	const char stat_chars[3] = " *!";
 
 	window_get_sel(win, &sel);
 	selected = iters_equal(iter, &sel);
 	bkgdset(pairs[(active << 2) | (selected << 1) | current]);
 
-	snprintf(buf, sizeof(buf), "%c %-15s  %s", e->selected ? '*' : ' ', e->name, e->filter);
+	snprintf(buf, sizeof(buf), "%c %-15s  %s", stat_chars[e->sel_stat], e->name, e->filter);
 	sprint(row + 1, 0, buf, COLS, 0);
 }
 

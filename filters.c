@@ -109,7 +109,7 @@ void filters_activate(void)
 	 * mark any other filters unvisited */
 	list_for_each_entry(f, &filters_head, node) {
 		f->visited = 0;
-		if (!f->selected)
+		if (f->sel_stat == FS_IGNORE)
 			continue;
 
 		f->visited = 1;
@@ -121,6 +121,16 @@ void filters_activate(void)
 			return;
 		}
 
+		if (f->sel_stat == FS_NO) {
+			/* add ! */
+			struct expr *not = xnew(struct expr, 1);
+
+			not->type = EXPR_NOT;
+			not->key = NULL;
+			not->left = e;
+			not->right = NULL;
+			e = not;
+		}
 		if (expr == NULL) {
 			expr = e;
 		} else {
@@ -149,9 +159,7 @@ void filters_activate(void)
 
 	/* update active flag */
 	list_for_each_entry(f, &filters_head, node) {
-		f->active = 0;
-		if (f->selected)
-			f->active = 1;
+		f->act_stat = f->sel_stat;
 	}
 	lib_set_filter(expr);
 	filters_win->changed = 1;
@@ -200,7 +208,7 @@ static int select_filter(const char *name)
 {
 	struct filter_entry *e = find_filter(name);
 
-	e->selected = 1;
+	e->sel_stat = FS_YES;
 	return 0;
 }
 
@@ -214,7 +222,7 @@ void filters_activate_names(const char *str)
 
 	/* mark all filters unselected  */
 	list_for_each_entry(f, &filters_head, node)
-		f->selected = 0;
+		f->sel_stat = FS_IGNORE;
 
 	/* select the filters */
 	if (str)
@@ -232,7 +240,7 @@ void filters_toggle_filter(void)
 		struct filter_entry *e;
 
 		e = iter_to_filter_entry(&iter);
-		e->selected ^= 1;
+		e->sel_stat = (e->sel_stat + 1) % 3;
 		filters_win->changed = 1;
 	}
 }
@@ -267,7 +275,7 @@ static int validate_filter_name(const char *name)
 	return i != 0;
 }
 
-static void do_filters_set_filter(const char *keyval, int active)
+static void do_filters_set_filter(const char *keyval)
 {
 	const char *eq = strchr(keyval, '=');
 	char *key, *val;
@@ -302,8 +310,8 @@ static void do_filters_set_filter(const char *keyval, int active)
 	new = xnew(struct filter_entry, 1);
 	new->name = key;
 	new->filter = val;
-	new->active = active;
-	new->selected = active;
+	new->act_stat = FS_IGNORE;
+	new->sel_stat = FS_IGNORE;
 
 	/* add or replace filter */
 	list_for_each(item, &filters_head) {
@@ -354,7 +362,7 @@ void filters_exit(void)
 
 void filters_set_filter(const char *keyval)
 {
-	do_filters_set_filter(keyval, 0);
+	do_filters_set_filter(keyval);
 }
 
 struct expr *parse_filter(const char *val)
@@ -400,7 +408,7 @@ void filters_set_anonymous(const char *val)
 
 	/* deactive all filters */
 	list_for_each_entry(f, &filters_head, node)
-		f->active = 0;
+		f->act_stat = FS_IGNORE;
 
 	lib_set_filter(e);
 

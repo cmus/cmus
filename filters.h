@@ -10,14 +10,31 @@
 #include <search.h>
 #include <uchar.h>
 
+/* factivate foo !bar
+ *
+ * foo: FS_YES
+ * bar: FS_NO
+ * baz: FS_IGNORE
+ */
+enum {
+	/* [ ] filter not selected */
+	FS_IGNORE,
+	/* [*] filter selected */
+	FS_YES,
+	/* [!] filter selected and inverted */
+	FS_NO,
+};
+
 struct filter_entry {
 	struct list_head node;
 
 	char *name;
 	char *filter;
-	unsigned selected : 1;
-	unsigned active : 1;
 	unsigned visited : 1;
+
+	/* selected and activated status (FS_* enum) */
+	unsigned sel_stat : 2;
+	unsigned act_stat : 2;
 };
 
 static inline struct filter_entry *iter_to_filter_entry(struct iter *iter)
