@@ -491,7 +491,7 @@ static void __consumer_pause(void)
 
 /* setting consumer status }}} */
 
-static int change_sf(sample_format_t sf)
+static int change_sf(sample_format_t sf, int drop)
 {
 	int old_sf = buffer_sf;
 
@@ -500,6 +500,8 @@ static int change_sf(sample_format_t sf)
 		/* reopen */
 		int rc;
 
+		if (drop)
+			op_drop();
 		op_close();
 		rc = op_open(buffer_sf);
 		if (rc) {
@@ -540,7 +542,7 @@ static void __consumer_handle_eof(void)
 			} else {
 				/* PS_PLAYING */
 				file_changed();
-				if (!change_sf(ip_get_sf(ip)))
+				if (!change_sf(ip_get_sf(ip), 0))
 					__prebuffer();
 			}
 		} else {
@@ -852,7 +854,7 @@ void player_set_file(const char *filename)
 			__consumer_stop();
 			goto out;
 		}
-		change_sf(ip_get_sf(ip));
+		change_sf(ip_get_sf(ip), 1);
 	}
 out:
 	__player_status_changed();
@@ -885,7 +887,7 @@ void player_play_file(const char *filename)
 		if (consumer_status == CS_STOPPED)
 			__producer_stop();
 	} else {
-		change_sf(ip_get_sf(ip));
+		change_sf(ip_get_sf(ip), 1);
 	}
 out:
 	__player_status_changed();
