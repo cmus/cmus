@@ -321,24 +321,22 @@ static void dump_print_buffer(int row, int col)
 	}
 }
 
-static void sprint(int row, int col, const char *str, int width, int indent)
+/* print @str into @buf
+ *
+ * if @str is shorter than @width pad with spaces
+ * if @str is wider than @width truncate and add "..."
+ */
+static int format_str(char *buf, const char *str, int width)
 {
-	int s, d, ellipsis_pos = 0, cut_double_width = 0;
+	int s = 0, d = 0, ellipsis_pos = 0, cut_double_width = 0;
 
-	width -= 2 + indent;
-	d = indent + 1;
-	memset(print_buffer, ' ', d);
-	s = 0;
 	while (1) {
 		uchar u;
 		int w;
 
-		if (width == 3)
-			ellipsis_pos = d;
-
 		u_get_char(str, &s, &u);
 		if (u == 0) {
-			memset(print_buffer + d, ' ', width);
+			memset(buf + d, ' ', width);
 			d += width;
 			break;
 		}
@@ -358,17 +356,26 @@ static void sprint(int row, int col, const char *str, int width, int indent)
 			d = ellipsis_pos;
 			if (cut_double_width) {
 				/* first half of the double-width char */
-				print_buffer[d - 1] = ' ';
+				buf[d - 1] = ' ';
 			}
-			print_buffer[d++] = '.';
-			print_buffer[d++] = '.';
-			print_buffer[d++] = '.';
+			buf[d++] = '.';
+			buf[d++] = '.';
+			buf[d++] = '.';
 			break;
 		}
-		u_set_char(print_buffer, &d, u);
+		u_set_char(buf, &d, u);
 	}
-	print_buffer[d++] = ' ';
-	print_buffer[d++] = 0;
+	return d;
+}
+
+static void sprint(int row, int col, const char *str, int width)
+{
+	int pos = 0;
+
+	print_buffer[pos++] = ' ';
+	pos += format_str(print_buffer + pos, str, width - 2);
+	print_buffer[pos++] = ' ';
+	print_buffer[pos] = 0;
 	dump_print_buffer(row, col);
 }
 
@@ -396,11 +403,11 @@ static void sprint_ascii(int row, int col, const char *str, int len)
 
 static void print_tree(struct window *win, int row, struct iter *iter)
 {
-	const char *noname = "<no name>";
+	const char *str;
 	struct artist *artist;
 	struct album *album;
 	struct iter sel;
-	int current, selected, active;
+	int current, selected, active, pos;
 
 	artist = iter_to_artist(iter);
 	album = iter_to_album(iter);
@@ -416,11 +423,21 @@ static void print_tree(struct window *win, int row, struct iter *iter)
 	selected = iters_equal(iter, &sel);
 	active = lib_cur_win == lib_tree_win;
 	bkgdset(pairs[(active << 2) | (selected << 1) | current]);
+
+	pos = 0;
+	print_buffer[pos++] = ' ';
+	str = artist->name;
 	if (album) {
-		sprint(tree_win_y + row + 1, tree_win_x, album->name ? : noname, tree_win_w, 2);
-	} else {
-		sprint(tree_win_y + row + 1, tree_win_x, artist->name ? : noname, tree_win_w, 0);
+		print_buffer[pos++] = ' ';
+		print_buffer[pos++] = ' ';
+		str = album->name;
 	}
+	if (!str)
+		str = "<no name>";
+	pos += format_str(print_buffer + pos, str, tree_win_w - pos - 1);
+	print_buffer[pos++] = ' ';
+	print_buffer[pos++] = 0;
+	dump_print_buffer(tree_win_y + row + 1, tree_win_x);
 }
 
 static inline void fopt_set_str(struct format_option *fopt, const char *str)
@@ -602,7 +619,7 @@ static void print_browser(struct window *win, int row, struct iter *iter)
 
 	/* file name encoding == terminal encoding. no need to convert */
 	if (using_utf8) {
-		sprint(row + 1, 0, e->name, COLS, 0);
+		sprint(row + 1, 0, e->name, COLS);
 	} else {
 		sprint_ascii(row + 1, 0, e->name, COLS);
 	}
@@ -618,16 +635,26 @@ static void print_filter(struct window *win, int row, struct iter *iter)
 	/* row selected? */
 	int selected;
 	/* is the filter currently active? */
-	// FIXME: display negated filter in other color?
 	int current = !!e->act_stat;
 	const char stat_chars[3] = " *!";
+	int ch1, ch2, ch3, pos;
 
 	window_get_sel(win, &sel);
 	selected = iters_equal(iter, &sel);
 	bkgdset(pairs[(active << 2) | (selected << 1) | current]);
 
-	snprintf(buf, sizeof(buf), "%c %-15s  %s", stat_chars[e->sel_stat], e->name, e->filter);
-	sprint(row + 1, 0, buf, COLS, 0);
+	ch1 = ' ';
+	ch3 = ' ';
+	if (e->sel_stat != e->act_stat) {
+		ch1 = '[';
+		ch3 = ']';
+	}
+	ch2 = stat_chars[e->sel_stat];
+	snprintf(buf, sizeof(buf), "%c%c%c%-15s  %s", ch1, ch2, ch3, e->name, e->filter);
+	pos = format_str(print_buffer, buf, COLS - 1);
+	print_buffer[pos++] = ' ';
+	print_buffer[pos] = 0;
+	dump_print_buffer(row + 1, 0);
 }
 
 static void update_window(struct window *win, int x, int y, int w, const char *title,
