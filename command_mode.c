@@ -979,8 +979,6 @@ static void cmd_run(char *arg)
 	}
 	argv[argc] = NULL;
 
-	free(av);
-
 	for (i = 0; argv[i]; i++)
 		d_print("ARG: '%s'\n", argv[i]);
 
@@ -1010,7 +1008,8 @@ static void cmd_run(char *arg)
 			case TREE_VIEW:
 			case SORTED_VIEW:
 				/* this must be done before sel_tis are unreffed */
-				free_str_array(argv);
+				free_str_array(av);
+				free(argv);
 
 				/* remove non-existed files, update tags for changed files */
 				cmus_update_tis(sel_tis, sel_tis_nr);
@@ -1020,7 +1019,8 @@ static void cmd_run(char *arg)
 			}
 		}
 	}
-	free_str_array(argv);
+	free_str_array(av);
+	free(argv);
 	for (i = 0; sel_tis[i]; i++)
 		track_info_unref(sel_tis[i]);
 	free(sel_tis);
