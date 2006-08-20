@@ -285,6 +285,42 @@ static void set_output_plugin(unsigned int id, const char *buf)
 	}
 }
 
+static void get_softvol_state(unsigned int id, char *buf)
+{
+	sprintf(buf, "%d %d", soft_vol_l, soft_vol_r);
+}
+
+static void set_softvol_state(unsigned int id, const char *buf)
+{
+	char buffer[OPTION_MAX_SIZE];
+	char *ptr;
+	long int l, r;
+
+	strcpy(buffer, buf);
+	ptr = strchr(buffer, ' ');
+	if (!ptr)
+		goto err;
+	while (*ptr == ' ')
+		*ptr++ = 0;
+
+	if (str_to_int(buffer, &l) == -1 || l < 0 || l > 100)
+		goto err;
+	if (str_to_int(ptr, &r) == -1 || r < 0 || r > 100)
+		goto err;
+
+	if (soft_vol) {
+		/* avoid race condition */
+		player_set_volume(l, r);
+	} else {
+		/* can't use player_set_volume(), no race condition */
+		soft_vol_l = l;
+		soft_vol_r = r;
+	}
+	return;
+err:
+	error_msg("two integers in range 0..100 expected");
+}
+
 static void get_status_display_program(unsigned int id, char *buf)
 {
 	if (status_display_program)
@@ -510,6 +546,25 @@ static void toggle_shuffle(unsigned int id)
 	update_statusline();
 }
 
+static void get_softvol(unsigned int id, char *buf)
+{
+	strcpy(buf, bool_names[soft_vol]);
+}
+
+static void set_softvol(unsigned int id, const char *buf)
+{
+	int soft;
+
+	if (!parse_bool(buf, &soft))
+		return;
+	player_set_soft_vol(soft);
+}
+
+static void toggle_softvol(unsigned int id)
+{
+	player_set_soft_vol(soft_vol ^ 1);
+}
+
 /* }}} */
 
 /* special callbacks (id set) {{{ */
@@ -615,6 +670,8 @@ static const struct {
 	DT(show_hidden)
 	DT(show_remaining_time)
 	DT(shuffle)
+	DT(softvol)
+	DN(softvol_state)
 	DN(status_display_program)
 	{ NULL, NULL, NULL, NULL }
 };

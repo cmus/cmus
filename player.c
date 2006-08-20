@@ -85,6 +85,9 @@ static int consumer_running = 1;
 static enum consumer_status consumer_status = CS_STOPPED;
 static int consumer_pos = 0;
 
+/* usually same as consumer_pos, sometimes less than consumer_pos */
+static int soft_vol_pos;
+
 /* locking {{{ */
 
 #define producer_lock() cmus_mutex_lock(&producer_mutex)
@@ -111,6 +114,7 @@ static void reset_buffer(void)
 {
 	buffer_reset();
 	consumer_pos = 0;
+	soft_vol_pos = 0;
 }
 
 static void set_buffer_sf(sample_format_t sf)
@@ -121,6 +125,77 @@ static void set_buffer_sf(sample_format_t sf)
 	if (sf_get_channels(buffer_sf) <= 2 && sf_get_bits(buffer_sf) <= 16) {
 		buffer_sf &= SF_RATE_MASK;
 		buffer_sf |= sf_channels(2) | sf_bits(16) | sf_signed(1);
+	}
+}
+
+#define SOFT_VOL_SCALE 65536
+
+/* coefficients for volumes 0..99, for 100 65536 is used
+ * data copied from alsa-lib src/pcm/pcm_softvol.c
+ */
+static const unsigned short soft_vol_db[100] = {
+	0x0000, 0x0110, 0x011c, 0x012f, 0x013d, 0x0152, 0x0161, 0x0179,
+	0x018a, 0x01a5, 0x01c1, 0x01d5, 0x01f5, 0x020b, 0x022e, 0x0247,
+	0x026e, 0x028a, 0x02b6, 0x02d5, 0x0306, 0x033a, 0x035f, 0x0399,
+	0x03c2, 0x0403, 0x0431, 0x0479, 0x04ac, 0x04fd, 0x0553, 0x058f,
+	0x05ef, 0x0633, 0x069e, 0x06ea, 0x0761, 0x07b5, 0x083a, 0x0898,
+	0x092c, 0x09cb, 0x0a3a, 0x0aeb, 0x0b67, 0x0c2c, 0x0cb6, 0x0d92,
+	0x0e2d, 0x0f21, 0x1027, 0x10de, 0x1202, 0x12cf, 0x1414, 0x14f8,
+	0x1662, 0x1761, 0x18f5, 0x1a11, 0x1bd3, 0x1db4, 0x1f06, 0x211d,
+	0x2297, 0x24ec, 0x2690, 0x292a, 0x2aff, 0x2de5, 0x30fe, 0x332b,
+	0x369f, 0x390d, 0x3ce6, 0x3f9b, 0x43e6, 0x46eb, 0x4bb3, 0x4f11,
+	0x5466, 0x5a18, 0x5e19, 0x6472, 0x68ea, 0x6ffd, 0x74f8, 0x7cdc,
+	0x826a, 0x8b35, 0x9499, 0x9b35, 0xa5ad, 0xad0b, 0xb8b7, 0xc0ee,
+	0xcdf1, 0xd71a, 0xe59c, 0xefd3
+};
+
+static inline void scale_sample(signed short *buf, int i, int vol)
+{
+	int sample = buf[i];
+
+	if (sample < 0) {
+		buf[i] = (sample * vol - SOFT_VOL_SCALE / 2) / SOFT_VOL_SCALE;
+	} else {
+		buf[i] = (sample * vol + SOFT_VOL_SCALE / 2) / SOFT_VOL_SCALE;
+	}
+}
+
+static void soft_vol_scale(char *buffer, int *countp)
+{
+	signed short *buf;
+	int count = *countp;
+	int ch, bits, l, r, i;
+
+	if (consumer_pos != soft_vol_pos) {
+		int offs = soft_vol_pos - consumer_pos;
+
+		BUG_ON(offs < 0);
+		if (offs >= count)
+			return;
+		buffer += offs;
+		count -= offs;
+	}
+	soft_vol_pos += count;
+	buf = (signed short *)buffer;
+
+	if (soft_vol_l == 100 && soft_vol_r == 100)
+		return;
+
+	ch = sf_get_channels(buffer_sf);
+	bits = sf_get_bits(buffer_sf);
+	if (ch != 2 || bits != 16)
+		return;
+
+	l = SOFT_VOL_SCALE;
+	r = SOFT_VOL_SCALE;
+	if (soft_vol_l != 100)
+		l = soft_vol_db[soft_vol_l];
+	if (soft_vol_r != 100)
+		r = soft_vol_db[soft_vol_r];
+
+	for (i = 0; i < count / 4; i++) {
+		scale_sample(buf, i * 2, l);
+		scale_sample(buf, i * 2 + 1, r);
 	}
 }
 
@@ -628,6 +703,8 @@ static void *consumer_loop(void *arg)
 			}
 			if (size > space)
 				size = space;
+			if (soft_vol)
+				soft_vol_scale(rpos, &size);
 			rc = op_write(rpos, size);
 			if (rc < 0) {
 				d_print("op_write returned %d %s\n", rc,
@@ -948,6 +1025,7 @@ void player_seek(double offset, int relative)
 			op_drop();
 			reset_buffer();
 			consumer_pos = new_pos * buffer_second_size();
+			soft_vol_pos = consumer_pos;
 			__consumer_position_update();
 		} else {
 			d_print("error: ip_seek returned %d\n", rc);
@@ -1083,10 +1161,24 @@ int player_set_volume(int left, int right)
 
 	consumer_lock();
 	rc = op_set_volume(left, right);
-	consumer_unlock();
-	if (rc == 0)
+	if (!rc)
 		volume_update(left, right);
+	consumer_unlock();
 	return rc;
+}
+
+void player_set_soft_vol(int soft)
+{
+	int l, r;
+
+	consumer_lock();
+	/* don't mess with soft_vol_pos if soft_vol is already true */
+	if (!soft_vol)
+		soft_vol_pos = consumer_pos;
+	op_set_soft_vol(soft);
+	if (!op_get_volume(&l, &r))
+		volume_update(l, r);
+	consumer_unlock();
 }
 
 int player_set_op_option(unsigned int id, const char *val)

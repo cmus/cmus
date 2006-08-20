@@ -54,6 +54,10 @@ static const char * const plugin_dir = LIBDIR "/cmus/op";
 static LIST_HEAD(op_head);
 static struct output_plugin *op = NULL;
 
+int soft_vol;
+int soft_vol_l = 100;
+int soft_vol_r = 100;
+
 /* volume is between 0 and volume_max */
 int volume_max = 0;
 
@@ -190,6 +194,11 @@ static void close_mixer(void)
 
 static void open_mixer(void)
 {
+	if (soft_vol) {
+		volume_max = 100;
+		return;
+	}
+
 	if (op == NULL)
 		return;
 
@@ -295,6 +304,11 @@ int op_buffer_space(void)
 
 int op_set_volume(int left, int right)
 {
+	if (soft_vol) {
+		soft_vol_l = left;
+		soft_vol_r = right;
+		return 0;
+	}
 	if (op == NULL)
 		return -OP_ERROR_NOT_INITIALIZED;
 	if (!op->mixer_open)
@@ -304,11 +318,23 @@ int op_set_volume(int left, int right)
 
 int op_get_volume(int *left, int *right)
 {
+	if (soft_vol) {
+		*left = soft_vol_l;
+		*right = soft_vol_r;
+		return 0;
+	}
 	if (op == NULL)
 		return -OP_ERROR_NOT_INITIALIZED;
 	if (!op->mixer_open)
 		return -OP_ERROR_NOT_SUPPORTED;
 	return op->mixer_ops->get_volume(left, right);
+}
+
+void op_set_soft_vol(int soft)
+{
+	close_mixer();
+	soft_vol = soft;
+	open_mixer();
 }
 
 #define OP_OPT_ID(plugin_idx, is_mixer, option_idx) \

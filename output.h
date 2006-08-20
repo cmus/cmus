@@ -7,6 +7,10 @@
 
 #include <sf.h>
 
+extern int soft_vol;
+extern int soft_vol_l;
+extern int soft_vol_r;
+
 void op_load_plugins(void);
 void op_exit_plugins(void);
 
@@ -64,6 +68,8 @@ int op_reset(void);
 
 int op_set_volume(int left, int right);
 int op_get_volume(int *left, int *right);
+
+void op_set_soft_vol(int soft);
 
 /*
  * errors: OP_ERROR_{NO_PLUGIN, NOT_INITIALIZED, NOT_OPTION}

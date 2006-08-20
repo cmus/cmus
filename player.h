@@ -104,6 +104,7 @@ int player_get_fileinfo(const char *filename, int *duration, struct keyval **com
 
 int player_get_volume(int *left, int *right);
 int player_set_volume(int left, int right);
+void player_set_soft_vol(int soft);
 
 int player_set_op_option(unsigned int id, const char *val);
 int player_get_op_option(unsigned int id, char **val);
