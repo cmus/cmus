@@ -330,6 +330,9 @@ factivate <user-defined-filter>...
 	mostly useful when bound to a key, to change active filters very
 	quickly.  If no arguments given then all filters are unactivated.
 
+	If you prefix a filter name with "!" then the filter value is negated
+	before activation.
+
 filter <filter-expression>
 	Use this command when you want to temporarily filter contents of the
 	library views without having separately define (fset) and activate the
@@ -908,7 +911,7 @@ Comparators: *<*, *<=*, *=*, *>=*, *>*, *!=*
 @h2 Defining Filters
 
 Filters can be defined with *fset* command.  User defined filters appear in
-the Filters view (6).
+the filters view (6).
 
 Create a new filter which name is *ogg* and value *filename="\*.ogg"*
 	:fset ogg=filename="\*.ogg"
@@ -917,17 +920,34 @@ Filter ogg and mp3 files from the 90s. Note the use of user defined filter
 *ogg*
 	:fset 90s-ogg-mp3=date>=1990&date<2000&(ogg|filename="\*.mp3")
 
-Filter all rock (anything with *rock* in genre tag) music from 80s-
-	:filter date>=1980&genre="\*rock\*"
+@h2 Activating Filters
+
+*factivate* changes visible contents of the library (views 1-2).
 
 Activate user defined filters *ogg* and *missing-tags*
 	:factivate ogg missing-tags
 
-	Alternatively you can select the filters by pressing *space* in view 6
-	and then activate the selected filters by pressing *enter*.
+Like above but negate value of *ogg* filter.
+	:factivate !ogg missing-tags
 
-Mark all tracks with duration less than 2 minutes
+Alternatively you can select the filters by pressing *space* in view 6 and
+then activate the selected filters by pressing *enter*.
+
+@h2 Throw-away Filters
+
+*filter* command is useful when you want to use a filter only once and not
+save it.  It changes visible contents of the library (views 1-2) and
+unactivates all filters in the filters view.
+
+Filter all rock (anything with *rock* in genre tag) music from 80s-
+	:filter date>=1980&genre="\*rock\*"
+
+@h2 Selecting Tracks Matching a Filter
+
+Mark (select) all tracks with duration less than 2 minutes
 	:mark duration<120
+
+This command works in views 2-4.
 
 
 @h1 FILES
