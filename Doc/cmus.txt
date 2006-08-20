@@ -735,6 +735,18 @@ shuffle (false)
 	Play in shuffled order.  Shuffle works in the library views (1-2) and
 	playlist view (3).
 
+softvol (false)
+	Use software volume control.
+
+	NOTE: You should probably set this to false when using *ao* as
+	*output_plugin* to output to wav files.
+
+softvol_state (100 100)
+	Used to save left and right channel values for software volume
+	control.  Two integers in range 0..100 separated by a space.  This
+	option is not usually changed directly since *vol* command does same
+	thing if *softvol* is true.
+
 status_display_program () [command]
 	This command, if not empty, is run every time cmus' status changes.
 	It can be used to display currently playing track on desktop
