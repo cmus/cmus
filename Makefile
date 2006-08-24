@@ -5,8 +5,6 @@ all: main plugins man
 include config.mk
 include scripts/lib.mk
 
-CFLAGS	+= -I. -g
-
 input.o main.o ui_curses.o: .version
 input.o main.o ui_curses.o: CFLAGS += -DVERSION=\"$(VERSION)\"
 
