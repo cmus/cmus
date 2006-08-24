@@ -2,11 +2,11 @@
  * Copyright 2005 Timo Hirvonen
  */
 
-#include <glob.h>
-#include <uchar.h>
-#include <list.h>
-#include <xmalloc.h>
-#include <debug.h>
+#include "glob.h"
+#include "uchar.h"
+#include "list.h"
+#include "xmalloc.h"
+#include "debug.h"
 
 #include <string.h>
 

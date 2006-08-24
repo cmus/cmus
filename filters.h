@@ -5,10 +5,10 @@
 #ifndef FILTERS_H
 #define FILTERS_H
 
-#include <list.h>
-#include <window.h>
-#include <search.h>
-#include <uchar.h>
+#include "list.h"
+#include "window.h"
+#include "search.h"
+#include "uchar.h"
 
 /* factivate foo !bar
  *

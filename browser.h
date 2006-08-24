@@ -20,10 +20,10 @@
 #ifndef _BROWSER_H
 #define _BROWSER_H
 
-#include <list.h>
-#include <window.h>
-#include <search.h>
-#include <uchar.h>
+#include "list.h"
+#include "window.h"
+#include "search.h"
+#include "uchar.h"
 
 struct browser_entry {
 	struct list_head node;

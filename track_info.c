@@ -17,12 +17,12 @@
  * 02111-1307, USA.
  */
 
-#include <track_info.h>
-#include <comment.h>
-#include <uchar.h>
-#include <misc.h>
-#include <xmalloc.h>
-#include <debug.h>
+#include "track_info.h"
+#include "comment.h"
+#include "uchar.h"
+#include "misc.h"
+#include "xmalloc.h"
+#include "debug.h"
 
 #include <string.h>
 

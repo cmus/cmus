@@ -4,11 +4,11 @@
  * Cleaned up by Timo Hirvonen <tihirvon@gmail.com>
  */
 
-#include <ip.h>
-#include <comment.h>
-#include <file.h>
-#include <xmalloc.h>
-#include <read_wrapper.h>
+#include "ip.h"
+#include "comment.h"
+#include "file.h"
+#include "xmalloc.h"
+#include "read_wrapper.h"
 
 #include <mpcdec/mpcdec.h>
 #include <inttypes.h>

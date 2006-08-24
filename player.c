@@ -17,15 +17,15 @@
  * 02111-1307, USA.
  */
 
-#include <player.h>
-#include <buffer.h>
-#include <input.h>
-#include <output.h>
-#include <sf.h>
-#include <utils.h>
-#include <xmalloc.h>
-#include <debug.h>
-#include <compiler.h>
+#include "player.h"
+#include "buffer.h"
+#include "input.h"
+#include "output.h"
+#include "sf.h"
+#include "utils.h"
+#include "xmalloc.h"
+#include "debug.h"
+#include "compiler.h"
 
 #include <stdlib.h>
 #include <pthread.h>

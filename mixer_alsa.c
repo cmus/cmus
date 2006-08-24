@@ -17,10 +17,10 @@
  * 02111-1307, USA.
  */
 
-#include <mixer.h>
-#include <op.h>
-#include <xmalloc.h>
-#include <debug.h>
+#include "mixer.h"
+#include "op.h"
+#include "xmalloc.h"
+#include "debug.h"
 
 #define ALSA_PCM_NEW_HW_PARAMS_API
 #define ALSA_PCM_NEW_SW_PARAMS_API

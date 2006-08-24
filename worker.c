@@ -1,9 +1,9 @@
-#include <worker.h>
-#include <locking.h>
-#include <list.h>
-#include <utils.h>
-#include <xmalloc.h>
-#include <debug.h>
+#include "worker.h"
+#include "locking.h"
+#include "list.h"
+#include "utils.h"
+#include "xmalloc.h"
+#include "debug.h"
 
 #include <stdlib.h>
 #include <pthread.h>

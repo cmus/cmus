@@ -2,15 +2,15 @@
  * Copyright 2005 Timo Hirvonen
  */
 
-#include <expr.h>
-#include <glob.h>
-#include <uchar.h>
-#include <track_info.h>
-#include <comment.h>
-#include <xmalloc.h>
-#include <utils.h>
-#include <debug.h>
-#include <list.h>
+#include "expr.h"
+#include "glob.h"
+#include "uchar.h"
+#include "track_info.h"
+#include "comment.h"
+#include "xmalloc.h"
+#include "utils.h"
+#include "debug.h"
+#include "list.h"
 
 #include <stdlib.h>
 #include <ctype.h>

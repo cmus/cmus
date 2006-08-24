@@ -17,7 +17,7 @@
  * 02111-1307, USA.
  */
 
-#include <xmalloc.h>
+#include "xmalloc.h"
 
 #include <stdlib.h>
 #include <stdio.h>

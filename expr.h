@@ -5,8 +5,8 @@
 #ifndef EXPR_H
 #define EXPR_H
 
-#include <track_info.h>
-#include <list.h>
+#include "track_info.h"
+#include "list.h"
 
 enum { OP_LT, OP_LE, OP_EQ, OP_GE, OP_GT, OP_NE };
 #define NR_OPS (OP_NE + 1)

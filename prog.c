@@ -2,7 +2,7 @@
  * Copyright 2005 Timo Hirvonen
  */
 
-#include <prog.h>
+#include "prog.h"
 
 #include <stdlib.h>
 #include <stdio.h>

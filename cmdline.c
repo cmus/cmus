@@ -2,10 +2,9 @@
  * Copyright 2005 Timo Hirvonen
  */
 
-#include <cmdline.h>
-
-#include <uchar.h>
-#include <xmalloc.h>
+#include "cmdline.h"
+#include "uchar.h"
+#include "xmalloc.h"
 
 struct cmdline cmdline;
 

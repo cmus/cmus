@@ -17,11 +17,11 @@
  * 02111-1307, USA.
  */
 
-#include <mixer.h>
-#include <op.h>
-#include <utils.h>
-#include <xmalloc.h>
-#include <debug.h>
+#include "mixer.h"
+#include "op.h"
+#include "utils.h"
+#include "xmalloc.h"
+#include "debug.h"
 
 #include <unistd.h>
 #include <fcntl.h>

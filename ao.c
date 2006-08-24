@@ -17,10 +17,10 @@
  * 02111-1307, USA.
  */
 
-#include <op.h>
-#include <xmalloc.h>
-#include <utils.h>
-#include <misc.h>
+#include "op.h"
+#include "xmalloc.h"
+#include "utils.h"
+#include "misc.h"
 
 /*
  * <ao/ao.h> uses FILE but doesn't include stdio.h.

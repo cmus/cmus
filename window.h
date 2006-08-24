@@ -20,7 +20,7 @@
 #ifndef _WINDOW_H
 #define _WINDOW_H
 
-#include <iter.h>
+#include "iter.h"
 
 /*
  * window contains list of rows

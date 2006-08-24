@@ -20,8 +20,8 @@
 #ifndef _SEARCH_MODE_H
 #define _SEARCH_MODE_H
 
-#include <search.h>
-#include <uchar.h>
+#include "search.h"
+#include "uchar.h"
 
 extern char *search_str;
 extern enum search_direction search_direction;

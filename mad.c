@@ -17,12 +17,12 @@
  * 02111-1307, USA.
  */
 
-#include <ip.h>
-#include <nomad.h>
+#include "ip.h"
+#include "nomad.h"
 #include "id3.h"
-#include <xmalloc.h>
-#include <read_wrapper.h>
-#include <debug.h>
+#include "xmalloc.h"
+#include "read_wrapper.h"
+#include "debug.h"
 
 #include <errno.h>
 #include <sys/types.h>

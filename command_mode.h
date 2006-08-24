@@ -20,7 +20,7 @@
 #ifndef _COMMAND_MODE_H
 #define _COMMAND_MODE_H
 
-#include <uchar.h>
+#include "uchar.h"
 
 void command_mode_ch(uchar ch);
 void command_mode_key(int key);

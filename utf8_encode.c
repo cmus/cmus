@@ -17,8 +17,8 @@
  * 02111-1307, USA.
  */
 
-#include <utf8_encode.h>
-#include <xmalloc.h>
+#include "utf8_encode.h"
+#include "xmalloc.h"
 
 #include <iconv.h>
 #include <string.h>

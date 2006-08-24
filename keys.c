@@ -20,10 +20,10 @@
  * 02111-1307, USA.
  */
 
-#include <keys.h>
-#include <ui_curses.h>
-#include <command_mode.h>
-#include <xmalloc.h>
+#include "keys.h"
+#include "ui_curses.h"
+#include "command_mode.h"
+#include "xmalloc.h"
 
 #if defined(__sun__)
 #include <ncurses.h>

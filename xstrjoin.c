@@ -17,9 +17,9 @@
  * 02111-1307, USA.
  */
 
-#include <xstrjoin.h>
-#include <xmalloc.h>
-#include <string.h>
+#include "xstrjoin.h"
+#include "xmalloc.h"
+#include "string.h"
 
 char *xstrjoin(const char *a, const char *b)
 {

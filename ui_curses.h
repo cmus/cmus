@@ -20,8 +20,8 @@
 #ifndef _UI_CURSES_H
 #define _UI_CURSES_H
 
-#include <search.h>
-#include <compiler.h>
+#include "search.h"
+#include "compiler.h"
 
 enum ui_input_mode {
 	NORMAL_MODE,

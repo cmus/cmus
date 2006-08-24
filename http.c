@@ -17,10 +17,10 @@
  * 02111-1307, USA.
  */
 
-#include <http.h>
-#include <file.h>
-#include <debug.h>
-#include <xmalloc.h>
+#include "http.h"
+#include "file.h"
+#include "debug.h"
+#include "xmalloc.h"
 
 #include <unistd.h>
 #include <fcntl.h>

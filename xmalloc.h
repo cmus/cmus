@@ -20,7 +20,7 @@
 #ifndef _XMALLOC_H
 #define _XMALLOC_H
 
-#include <compiler.h>
+#include "compiler.h"
 
 #include <stdlib.h>
 #include <string.h>

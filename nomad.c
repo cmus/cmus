@@ -22,10 +22,10 @@
  * 
  */
 
-#include <nomad.h>
+#include "nomad.h"
 #include "id3.h"
-#include <xmalloc.h>
-#include <debug.h>
+#include "xmalloc.h"
+#include "debug.h"
 
 #include <mad.h>
 #include <unistd.h>

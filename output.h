@@ -5,7 +5,7 @@
 #ifndef _OUTPUT_H
 #define _OUTPUT_H
 
-#include <sf.h>
+#include "sf.h"
 
 extern int soft_vol;
 extern int soft_vol_l;

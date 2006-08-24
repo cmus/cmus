@@ -22,7 +22,7 @@
 #ifndef KEYS_H
 #define KEYS_H
 
-#include <uchar.h>
+#include "uchar.h"
 
 enum key_context {
 	CTX_BROWSER,

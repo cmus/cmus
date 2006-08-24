@@ -2,16 +2,16 @@
  * Copyright 2005 Timo Hirvonen
  */
 
-#include <filters.h>
-#include <expr.h>
-#include <window.h>
-#include <search.h>
-#include <uchar.h>
-#include <lib.h>
-#include <misc.h>
-#include <file.h>
-#include <ui_curses.h>
-#include <xmalloc.h>
+#include "filters.h"
+#include "expr.h"
+#include "window.h"
+#include "search.h"
+#include "uchar.h"
+#include "lib.h"
+#include "misc.h"
+#include "file.h"
+#include "ui_curses.h"
+#include "xmalloc.h"
 
 #include <ctype.h>
 

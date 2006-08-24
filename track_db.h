@@ -20,7 +20,7 @@
 #ifndef _TRACK_DB_H
 #define _TRACK_DB_H
 
-#include <track_info.h>
+#include "track_info.h"
 
 struct track_db;
 

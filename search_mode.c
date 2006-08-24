@@ -17,15 +17,15 @@
  * 02111-1307, USA.
  */
 
-#include <search_mode.h>
-#include <cmdline.h>
-#include <history.h>
-#include <ui_curses.h>
-#include <search.h>
-#include <xmalloc.h>
-#include <xstrjoin.h>
-#include <misc.h>
-#include <lib.h>
+#include "search_mode.h"
+#include "cmdline.h"
+#include "history.h"
+#include "ui_curses.h"
+#include "search.h"
+#include "xmalloc.h"
+#include "xstrjoin.h"
+#include "misc.h"
+#include "lib.h"
 
 #include <ctype.h>
 

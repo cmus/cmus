@@ -17,10 +17,10 @@
  * 02111-1307, USA.
  */
 
-#include <ip.h>
-#include <file.h>
-#include <xmalloc.h>
-#include <debug.h>
+#include "ip.h"
+#include "file.h"
+#include "xmalloc.h"
+#include "debug.h"
 
 #include <string.h>
 #include <errno.h>

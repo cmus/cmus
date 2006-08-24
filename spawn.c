@@ -17,8 +17,8 @@
  * 02111-1307, USA.
  */
 
-#include <spawn.h>
-#include <file.h>
+#include "spawn.h"
+#include "file.h"
 
 #include <sys/types.h>
 #include <sys/wait.h>

@@ -17,18 +17,18 @@
  * 02111-1307, USA.
  */
 
-#include <input.h>
-#include <ip.h>
-#include <pcm.h>
-#include <http.h>
-#include <xmalloc.h>
-#include <file.h>
-#include <utils.h>
-#include <cmus.h>
-#include <list.h>
-#include <prog.h>
-#include <misc.h>
-#include <debug.h>
+#include "input.h"
+#include "ip.h"
+#include "pcm.h"
+#include "http.h"
+#include "xmalloc.h"
+#include "file.h"
+#include "utils.h"
+#include "cmus.h"
+#include "list.h"
+#include "prog.h"
+#include "misc.h"
+#include "debug.h"
 #include "config/libdir.h"
 
 #include <unistd.h>

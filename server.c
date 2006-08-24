@@ -17,10 +17,10 @@
  * 02111-1307, USA.
  */
 
-#include <server.h>
-#include <prog.h>
-#include <command_mode.h>
-#include <debug.h>
+#include "server.h"
+#include "prog.h"
+#include "command_mode.h"
+#include "debug.h"
 
 #include <unistd.h>
 #include <sys/un.h>

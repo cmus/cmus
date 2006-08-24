@@ -17,12 +17,12 @@
  * 02111-1307, USA.
  */
 
-#include <tabexp_file.h>
-#include <tabexp.h>
-#include <load_dir.h>
-#include <misc.h>
-#include <xmalloc.h>
-#include <xstrjoin.h>
+#include "tabexp_file.h"
+#include "tabexp.h"
+#include "load_dir.h"
+#include "misc.h"
+#include "xmalloc.h"
+#include "xstrjoin.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>

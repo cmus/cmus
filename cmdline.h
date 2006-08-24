@@ -5,7 +5,7 @@
 #ifndef CMDLINE_H
 #define CMDLINE_H
 
-#include <uchar.h>
+#include "uchar.h"
 
 struct cmdline {
 	/* length in bytes */

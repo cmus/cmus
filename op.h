@@ -20,7 +20,7 @@
 #ifndef _OP_H
 #define _OP_H
 
-#include <sf.h>
+#include "sf.h"
 
 enum {
 	/* no error */

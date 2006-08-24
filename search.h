@@ -20,7 +20,7 @@
 #ifndef _SEARCH_H
 #define _SEARCH_H
 
-#include <iter.h>
+#include "iter.h"
 
 enum search_direction { SEARCH_FORWARD, SEARCH_BACKWARD };
 

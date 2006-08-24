@@ -2,10 +2,10 @@
  * Copyright 2005-2006 Timo Hirvonen
  */
 
-#include <prog.h>
-#include <file.h>
-#include <path.h>
-#include <xmalloc.h>
+#include "prog.h"
+#include "file.h"
+#include "path.h"
+#include "xmalloc.h"
 
 #include <unistd.h>
 #include <fcntl.h>

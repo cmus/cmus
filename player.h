@@ -20,8 +20,8 @@
 #ifndef _PLAYER_H
 #define _PLAYER_H
 
-#include <locking.h>
-#include <comment.h>
+#include "locking.h"
+#include "comment.h"
 
 #include <pthread.h>
 

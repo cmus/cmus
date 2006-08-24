@@ -5,7 +5,7 @@
 #ifndef PROG_H
 #define PROG_H
 
-#include <compiler.h>
+#include "compiler.h"
 
 /* set in beginning of main */
 extern char *program_name;

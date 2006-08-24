@@ -17,15 +17,15 @@
  * 02111-1307, USA.
  */
 
-#include <browser.h>
-#include <load_dir.h>
-#include <cmus.h>
-#include <xmalloc.h>
-#include <xstrjoin.h>
-#include <ui_curses.h>
-#include <file.h>
-#include <misc.h>
-#include <options.h>
+#include "browser.h"
+#include "load_dir.h"
+#include "cmus.h"
+#include "xmalloc.h"
+#include "xstrjoin.h"
+#include "ui_curses.h"
+#include "file.h"
+#include "misc.h"
+#include "options.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>

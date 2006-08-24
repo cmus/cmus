@@ -17,9 +17,9 @@
  * 02111-1307, USA.
  */
 
-#include <op.h>
-#include <xmalloc.h>
-#include <debug.h>
+#include "op.h"
+#include "xmalloc.h"
+#include "debug.h"
 
 #include <artsc.h>
 

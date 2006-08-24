@@ -17,10 +17,10 @@
  * 02111-1307, USA.
  */
 
-#include <op.h>
-#include <sf.h>
-#include <xmalloc.h>
-#include <debug.h>
+#include "op.h"
+#include "sf.h"
+#include "xmalloc.h"
+#include "debug.h"
 
 #if defined(__OpenBSD__)
 #include <soundcard.h>

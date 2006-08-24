@@ -20,8 +20,8 @@
 #ifndef _IP_H
 #define _IP_H
 
-#include <comment.h>
-#include <sf.h>
+#include "comment.h"
+#include "sf.h"
 
 enum {
 	/* no error */

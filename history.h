@@ -20,7 +20,7 @@
 #ifndef _HISTORY_H
 #define _HISTORY_H
 
-#include <list.h>
+#include "list.h"
 
 struct history {
 	struct list_head head;

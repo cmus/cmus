@@ -2,8 +2,8 @@
  * Copyright 2004-2005 Timo Hirvonen
  */
 
-#include <debug.h>
-#include <prog.h>
+#include "debug.h"
+#include "prog.h"
 
 #include <stdio.h>
 #include <stdarg.h>

@@ -3,12 +3,12 @@
  */
 
 #include "id3.h"
-#include <comment.h>
-#include <xmalloc.h>
-#include <utf8_encode.h>
-#include <uchar.h>
-#include <options.h>
-#include <debug.h>
+#include "comment.h"
+#include "xmalloc.h"
+#include "utf8_encode.h"
+#include "uchar.h"
+#include "options.h"
+#include "debug.h"
 
 #include <unistd.h>
 #include <inttypes.h>

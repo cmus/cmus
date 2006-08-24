@@ -17,30 +17,30 @@
  * 02111-1307, USA.
  */
 
-#include <ui_curses.h>
-#include <cmdline.h>
-#include <search_mode.h>
-#include <command_mode.h>
-#include <options.h>
-#include <play_queue.h>
-#include <browser.h>
-#include <filters.h>
-#include <cmus.h>
-#include <player.h>
-#include <utils.h>
-#include <lib.h>
-#include <pl.h>
-#include <xmalloc.h>
-#include <xstrjoin.h>
-#include <window.h>
-#include <format_print.h>
-#include <misc.h>
-#include <prog.h>
-#include <uchar.h>
-#include <spawn.h>
-#include <server.h>
-#include <keys.h>
-#include <debug.h>
+#include "ui_curses.h"
+#include "cmdline.h"
+#include "search_mode.h"
+#include "command_mode.h"
+#include "options.h"
+#include "play_queue.h"
+#include "browser.h"
+#include "filters.h"
+#include "cmus.h"
+#include "player.h"
+#include "utils.h"
+#include "lib.h"
+#include "pl.h"
+#include "xmalloc.h"
+#include "xstrjoin.h"
+#include "window.h"
+#include "format_print.h"
+#include "misc.h"
+#include "prog.h"
+#include "uchar.h"
+#include "spawn.h"
+#include "server.h"
+#include "keys.h"
+#include "debug.h"
 
 #include <unistd.h>
 #include <stdlib.h>
