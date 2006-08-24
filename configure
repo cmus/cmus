@@ -2,8 +2,6 @@
 
 . scripts/configure.sh || exit 1
 
-VERSION="2.0.4"
-
 check_cflags()
 {
 	check_cc_flag -std=gnu99 -pipe -Wall -Wshadow -Wcast-align -Wpointer-arith \
@@ -204,13 +202,12 @@ test "$WORDS_BIGENDIAN" = y && CFLAGS="${CFLAGS} -DWORDS_BIGENDIAN"
 DATADIR="$datadir"
 LIBDIR="$libdir"
 
-config_header config/version.h VERSION
 config_header config/datadir.h DATADIR
 config_header config/libdir.h LIBDIR
 config_header config/debug.h DEBUG
 config_header config/tremor.h CONFIG_TREMOR
 
-makefile_vars VERSION bindir datadir libdir mandir
+makefile_vars bindir datadir libdir mandir
 makefile_vars CONFIG_FLAC CONFIG_MAD CONFIG_MODPLUG CONFIG_MPC CONFIG_VORBIS CONFIG_WAV
 makefile_vars CONFIG_ALSA CONFIG_AO CONFIG_ARTS CONFIG_OSS CONFIG_SUN
 

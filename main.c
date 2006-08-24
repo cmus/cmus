@@ -6,7 +6,6 @@
 #include <file.h>
 #include <path.h>
 #include <xmalloc.h>
-#include "config/version.h"
 
 #include <unistd.h>
 #include <fcntl.h>

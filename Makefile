@@ -1,9 +1,18 @@
+VERSION = 2.0.4
+
 all: main plugins man
 
 include config.mk
 include scripts/lib.mk
 
 CFLAGS	+= -I. -g
+
+input.o main.o ui_curses.o: .version
+input.o main.o ui_curses.o: CFLAGS += -DVERSION=\"$(VERSION)\"
+
+.version: Makefile
+	@test "`cat $@ 2> /dev/null`" = "$(VERSION)" && exit 0; \
+	echo "   GEN    $@"; echo $(VERSION) > $@
 
 # programs {{{
 cmus-y := \
@@ -119,7 +128,7 @@ quiet_cmd_ttman = MAN    $@
 data		= $(wildcard data/*)
 
 clean		+= *.o *.lo *.so cmus cmus-remote Doc/*.o Doc/ttman Doc/*.1
-distclean	+= config.mk config/*.h tags
+distclean	+= .version config.mk config/*.h tags
 
 main: cmus cmus-remote
 plugins: $(ip-y) $(op-y)

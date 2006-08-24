@@ -30,7 +30,6 @@
 #include <misc.h>
 #include <debug.h>
 #include "config/libdir.h"
-#include "config/version.h"
 
 #include <unistd.h>
 #include <string.h>
