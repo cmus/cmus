@@ -14,6 +14,29 @@ check_cflags()
 	return 0
 }
 
+check_compat()
+{
+	COMPAT_LIBS=
+	case `uname -s` in
+	SunOS)
+		# connect() etc.
+		try_link -lsocket && COMPAT_LIBS="$COMPAT_LIBS -lsocket"
+
+		# gethostbyname()
+		try_link -lnsl && COMPAT_LIBS="$COMPAT_LIBS -lnsl"
+
+		# nanosleep()
+		if try_link -lrt
+		then
+			COMPAT_LIBS="$COMPAT_LIBS -lrt"
+		elif try_link -lposix4
+		then
+			COMPAT_LIBS="$COMPAT_LIBS -lposix4"
+		fi
+	esac
+	makefile_vars COMPAT_LIBS
+}
+
 check_ncurses()
 {
 	if check_library NCURSES "" -lncursesw
@@ -178,6 +201,7 @@ check check_cc
 check check_cflags
 check check_cc_depgen
 check check_endianness
+check check_compat
 check check_dl
 check check_pthread
 check check_ncurses

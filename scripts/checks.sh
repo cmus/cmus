@@ -122,7 +122,6 @@ cc_cxx_common()
 
 	common_cf=
 	common_lf=
-	COMPAT_LIBS=
 
 	case `uname -s` in
 	*BSD)
@@ -158,27 +157,9 @@ cc_cxx_common()
 	SunOS)
 		common_cf="$common_cf -D__EXTENSIONS__ -I/usr/local/include"
 		common_lf="$common_lf -R/usr/local/lib -L/usr/local/lib"
-
-		# this is ugly but can be removed after Solaris is either
-		# dead or fixed
-
-		# connect() etc.
-		try_link -lsocket && COMPAT_LIBS="$COMPAT_LIBS -lsocket"
-
-		# gethostbyname()
-		try_link -lnsl && COMPAT_LIBS="$COMPAT_LIBS -lnsl"
-
-		# nanosleep()
-		if try_link -lrt
-		then
-			COMPAT_LIBS="$COMPAT_LIBS -lrt"
-		elif try_link -lposix4
-		then
-			COMPAT_LIBS="$COMPAT_LIBS -lposix4"
-		fi
 		;;
 	esac
-	makefile_vars SOFLAGS LDSOFLAGS LDDLFLAGS COMPAT_LIBS
+	makefile_vars SOFLAGS LDSOFLAGS LDDLFLAGS
 }
 
 # CC, LD, CFLAGS, LDFLAGS, SOFLAGS, LDSOFLAGS, LDDLFLAGS
