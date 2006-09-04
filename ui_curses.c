@@ -589,6 +589,11 @@ static void print_editable(struct window *win, int row, struct iter *iter)
 	window_get_sel(win, &sel);
 	selected = iters_equal(iter, &sel);
 
+	if (selected) {
+		cursor_x = 0;
+		cursor_y = 1 + row;
+	}
+
 	active = 1;
 	if (!selected && track->marked) {
 		selected = 1;
@@ -596,11 +601,6 @@ static void print_editable(struct window *win, int row, struct iter *iter)
 	}
 
 	bkgdset(pairs[(active << 2) | (selected << 1) | current]);
-
-	if (selected) {
-		cursor_x = 0;
-		cursor_y = 1 + row;
-	}
 
 	fill_track_fopts_track_info(track->info);
 
