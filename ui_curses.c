@@ -121,6 +121,9 @@ static int track_win_x = 0;
 static int track_win_y = 0;
 static int track_win_w = 0;
 
+static int cursor_x;
+static int cursor_y;
+
 enum {
 	CURSED_WIN,
 	CURSED_WIN_CUR,
@@ -423,6 +426,11 @@ static void print_tree(struct window *win, int row, struct iter *iter)
 	active = lib_cur_win == lib_tree_win;
 	bkgdset(pairs[(active << 2) | (selected << 1) | current]);
 
+	if (active && selected) {
+		cursor_x = 0;
+		cursor_y = 1 + row;
+	}
+
 	pos = 0;
 	print_buffer[pos++] = ' ';
 	str = artist->name;
@@ -552,6 +560,11 @@ static void print_track(struct window *win, int row, struct iter *iter)
 	active = lib_cur_win == lib_track_win;
 	bkgdset(pairs[(active << 2) | (selected << 1) | current]);
 
+	if (active && selected) {
+		cursor_x = track_win_x;
+		cursor_y = 1 + row;
+	}
+
 	fill_track_fopts(track);
 
 	if (track_info_has_tag(tree_track_info(track))) {
@@ -583,6 +596,11 @@ static void print_editable(struct window *win, int row, struct iter *iter)
 	}
 
 	bkgdset(pairs[(active << 2) | (selected << 1) | current]);
+
+	if (selected) {
+		cursor_x = 0;
+		cursor_y = 1 + row;
+	}
 
 	fill_track_fopts_track_info(track->info);
 
@@ -616,6 +634,11 @@ static void print_browser(struct window *win, int row, struct iter *iter)
 		}
 	}
 
+	if (selected) {
+		cursor_x = 0;
+		cursor_y = 1 + row;
+	}
+
 	/* file name encoding == terminal encoding. no need to convert */
 	if (using_utf8) {
 		sprint(row + 1, 0, e->name, COLS);
@@ -641,6 +664,11 @@ static void print_filter(struct window *win, int row, struct iter *iter)
 	window_get_sel(win, &sel);
 	selected = iters_equal(iter, &sel);
 	bkgdset(pairs[(active << 2) | (selected << 1) | current]);
+
+	if (selected) {
+		cursor_x = 0;
+		cursor_y = 1 + row;
+	}
 
 	ch1 = ' ';
 	ch3 = ' ';
@@ -808,6 +836,9 @@ static void draw_separator(void)
 
 static void do_update_view(int full)
 {
+	cursor_x = -1;
+	cursor_y = -1;
+
 	switch (cur_view) {
 	case TREE_VIEW:
 		editable_lock();
@@ -1181,7 +1212,11 @@ static void post_update(void)
 		refresh();
 		curs_set(1);
 	} else {
-		move(LINES - 1, 0);
+		if (cursor_x >= 0) {
+			move(cursor_y, cursor_x);
+		} else {
+			move(LINES - 1, 0);
+		}
 		refresh();
 		curs_set(0);
 	}
@@ -1342,40 +1377,32 @@ void set_view(int view)
 {
 	if (view == cur_view)
 		return;
-	cur_view = view;
 
-	editable_lock();
+	cur_view = view;
 	switch (cur_view) {
 	case TREE_VIEW:
 		searchable = tree_searchable;
-		update_tree_window();
-		update_track_window();
-		draw_separator();
 		break;
 	case SORTED_VIEW:
 		searchable = lib_editable.searchable;
-		update_sorted_window();
 		break;
 	case PLAYLIST_VIEW:
 		searchable = pl_editable.searchable;
-		update_pl_window();
 		break;
 	case QUEUE_VIEW:
 		searchable = pq_editable.searchable;
-		update_play_queue_window();
 		break;
 	case BROWSER_VIEW:
 		searchable = browser_searchable;
-		update_browser_window();
 		break;
 	case FILTERS_VIEW:
 		searchable = filters_searchable;
-		update_filters_window();
 		break;
 	}
-	editable_unlock();
 
-	refresh();
+	curs_set(0);
+	do_update_view(1);
+	post_update();
 }
 
 void enter_command_mode(void)
