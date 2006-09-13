@@ -540,7 +540,7 @@ int nomad_time_seek(struct nomad *nomad, double pos)
 				timer_to_seconds(nomad->timer),
 				ki);
 #endif
-		nomad->cbs.lseek(nomad->datasource, (nomad->xing.toc[ki] * nomad->xing.bytes) / 256, SEEK_SET);
+		nomad->cbs.lseek(nomad->datasource, ((unsigned long long)nomad->xing.toc[ki] * nomad->xing.bytes) / 256, SEEK_SET);
 	} else {
 		nomad->cbs.lseek(nomad->datasource, 0, SEEK_SET);
 	}
