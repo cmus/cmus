@@ -185,6 +185,8 @@ int http_open(const char *hostname, unsigned int port, int timeout_ms)
 		d_print("connecting. timeout=%ld s %ld us\n", tv.tv_sec, tv.tv_usec);
 		if (connect(sock, (struct sockaddr *)&addr, sizeof(addr)) == 0)
 			break;
+		if (errno == EISCONN)
+			break;
 		if (errno != EAGAIN && errno != EINPROGRESS)
 			goto close_exit;
 
