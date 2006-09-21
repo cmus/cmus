@@ -1,7 +1,7 @@
 /*
  * Copyright 2004-2006 Timo Hirvonen
  *
- * keys.(c|h) by Frank Terbeck <frank.terbeck@rwth-aachen.de>
+ * keys.[ch] by Frank Terbeck <ft@bewatermyfriend.de>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as

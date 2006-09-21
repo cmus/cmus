@@ -1005,5 +1005,5 @@ Feature requests and bug reports should go to the cmus-devel mailing list:
 cmus was mainly written by Timo Hirvonen <tihirvon\@gmail.com>.  Other
 contributers are listed in the `AUTHORS` file.
 
-This man page was written by Frank Terbeck <frank.terbeck\@rwth-aachen.de>,
+This man page was written by Frank Terbeck <ft\@bewatermyfriend.de>,
 Timo Hirvonen <tihirvon\@gmail.com>, and Clay Barnes <clay.barnes\@gmail.com>.
