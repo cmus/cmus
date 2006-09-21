@@ -46,6 +46,7 @@
 #include "debug.h"
 #include "load_dir.h"
 #include "config/datadir.h"
+#include "help.h"
 
 #include <stdlib.h>
 #include <ctype.h>
@@ -1360,6 +1361,9 @@ static void cmd_win_activate(char *arg)
 	case FILTERS_VIEW:
 		filters_activate();
 		break;
+	case HELP_VIEW:
+		help_select();
+		break;
 	}
 	editable_unlock();
 
@@ -1394,6 +1398,8 @@ static void cmd_win_mv_after(char *arg)
 		break;
 	case FILTERS_VIEW:
 		break;
+	case HELP_VIEW:
+		break;
 	}
 	editable_unlock();
 }
@@ -1416,6 +1422,8 @@ static void cmd_win_mv_before(char *arg)
 	case BROWSER_VIEW:
 		break;
 	case FILTERS_VIEW:
+		break;
+	case HELP_VIEW:
 		break;
 	}
 	editable_unlock();
@@ -1443,6 +1451,8 @@ static void cmd_win_remove(char *arg)
 	case FILTERS_VIEW:
 		filters_delete_filter();
 		break;
+	case HELP_VIEW:
+		break;
 	}
 	editable_unlock();
 }
@@ -1465,6 +1475,8 @@ static void cmd_win_sel_cur(char *arg)
 	case BROWSER_VIEW:
 		break;
 	case FILTERS_VIEW:
+		break;
+	case HELP_VIEW:
 		break;
 	}
 	editable_unlock();
@@ -1491,6 +1503,8 @@ static void cmd_win_toggle(char *arg)
 	case FILTERS_VIEW:
 		filters_toggle_filter();
 		break;
+	case HELP_VIEW:
+		break;
 	}
 	editable_unlock();
 }
@@ -1508,6 +1522,8 @@ static struct window *current_win(void)
 		return pq_editable.win;
 	case BROWSER_VIEW:
 		return browser_win;
+	case HELP_VIEW:
+		return help_win;
 	case FILTERS_VIEW:
 	default:
 		return filters_win;
@@ -2066,72 +2082,61 @@ static void expand_colorscheme(const char *str)
 
 /* tab exp }}} */
 
-struct command {
-	const char *name;
-	void (*func)(char *arg);
-
-	/* min/max number of arguments */
-	int min_args;
-	int max_args;
-
-	void (*expand)(const char *str);
-};
-
 /* sort by name */
-static struct command commands[] = {
-	{ "add",		cmd_add,	1, 1, expand_add	},
-	{ "bind",		cmd_bind,	1, 1, expand_bind_args	},
-	{ "browser-up",		cmd_browser_up,	0, 0, NULL		},
-	{ "cd",			cmd_cd,		0, 1, expand_directories},
-	{ "clear",		cmd_clear,	0, 1, NULL		},
-	{ "colorscheme",	cmd_colorscheme,1, 1, expand_colorscheme},
-	{ "echo",		cmd_echo,	1,-1, NULL		},
-	{ "factivate",		cmd_factivate,	0, 1, expand_factivate	},
-	{ "filter",		cmd_filter,	0, 1, NULL		},
-	{ "fset",		cmd_fset,	1, 1, NULL		},
-	{ "invert",		cmd_invert,	0, 0, NULL		},
-	{ "load",		cmd_load,	1, 1, expand_load_save	},
-	{ "mark",		cmd_mark,	0, 1, NULL		},
-	{ "player-next",	cmd_p_next,	0, 0, NULL		},
-	{ "player-pause",	cmd_p_pause,	0, 0, NULL		},
-	{ "player-play",	cmd_p_play,	0, 1, expand_playable	},
-	{ "player-prev",	cmd_p_prev,	0, 0, NULL		},
-	{ "player-stop",	cmd_p_stop,	0, 0, NULL		},
-	{ "quit",		cmd_quit,	0, 0, NULL		},
-	{ "refresh",		cmd_refresh,	0, 0, NULL		},
-	{ "run",		cmd_run,	1,-1, NULL		},
-	{ "save",		cmd_save,	0, 1, expand_load_save	},
-	{ "search-next",	cmd_search_next,0, 0, NULL		},
-	{ "search-prev",	cmd_search_prev,0, 0, NULL		},
-	{ "seek",		cmd_seek,	1, 1, NULL		},
-	{ "set",		cmd_set,	1, 1, expand_options	},
-	{ "showbind",		cmd_showbind,	1, 1, expand_unbind_args},
-	{ "shuffle",		cmd_reshuffle,	0, 0, NULL		},
-	{ "source",		cmd_source,	1, 1, expand_files	},
-	{ "toggle",		cmd_toggle,	1, 1, expand_toptions	},
-	{ "unbind",		cmd_unbind,	1, 1, expand_unbind_args},
-	{ "unmark",		cmd_unmark,	0, 0, NULL		},
-	{ "view",		cmd_view,	1, 1, NULL		},
-	{ "vol",		cmd_vol,	1, 2, NULL		},
-	{ "win-activate",	cmd_win_activate,0, 0, NULL		},
-	{ "win-add-l",		cmd_win_add_l,	0, 0, NULL		},
-	{ "win-add-p",		cmd_win_add_p,	0, 0, NULL		},
-	{ "win-add-Q",		cmd_win_add_Q,	0, 0, NULL		},
-	{ "win-add-q",		cmd_win_add_q,	0, 0, NULL		},
-	{ "win-bottom",		cmd_win_bottom,	0, 0, NULL		},
-	{ "win-down",		cmd_win_down,	0, 0, NULL		},
-	{ "win-mv-after",	cmd_win_mv_after,0, 0, NULL		},
-	{ "win-mv-before",	cmd_win_mv_before,0, 0, NULL		},
-	{ "win-next",		cmd_win_next,	0, 0, NULL		},
-	{ "win-page-down",	cmd_win_pg_down,0, 0, NULL		},
-	{ "win-page-up",	cmd_win_pg_up,	0, 0, NULL		},
-	{ "win-remove",		cmd_win_remove,	0, 0, NULL		},
-	{ "win-sel-cur",	cmd_win_sel_cur,0, 0, NULL		},
-	{ "win-toggle",		cmd_win_toggle,	0, 0, NULL		},
-	{ "win-top",		cmd_win_top,	0, 0, NULL		},
-	{ "win-up",		cmd_win_up,	0, 0, NULL		},
-	{ "win-update",		cmd_win_update,	0, 0, NULL		},
-	{ NULL,			NULL,		0, 0, 0			}
+struct command commands[] = {
+	{ "add",		cmd_add,	1, 1, expand_add,	  0 },
+	{ "bind",		cmd_bind,	1, 1, expand_bind_args,	  0 },
+	{ "browser-up",		cmd_browser_up,	0, 0, NULL,		  0 },
+	{ "cd",			cmd_cd,		0, 1, expand_directories, 0 },
+	{ "clear",		cmd_clear,	0, 1, NULL,		  0 },
+	{ "colorscheme",	cmd_colorscheme,1, 1, expand_colorscheme, 0 },
+	{ "echo",		cmd_echo,	1,-1, NULL,		  0 },
+	{ "factivate",		cmd_factivate,	0, 1, expand_factivate,	  0 },
+	{ "filter",		cmd_filter,	0, 1, NULL,		  0 },
+	{ "fset",		cmd_fset,	1, 1, NULL,		  0 },
+	{ "invert",		cmd_invert,	0, 0, NULL,		  0 },
+	{ "load",		cmd_load,	1, 1, expand_load_save,	  0 },
+	{ "mark",		cmd_mark,	0, 1, NULL,		  0 },
+	{ "player-next",	cmd_p_next,	0, 0, NULL,		  0 },
+	{ "player-pause",	cmd_p_pause,	0, 0, NULL,		  0 },
+	{ "player-play",	cmd_p_play,	0, 1, expand_playable,	  0 },
+	{ "player-prev",	cmd_p_prev,	0, 0, NULL,		  0 },
+	{ "player-stop",	cmd_p_stop,	0, 0, NULL,		  0 },
+	{ "quit",		cmd_quit,	0, 0, NULL,		  0 },
+	{ "refresh",		cmd_refresh,	0, 0, NULL,		  0 },
+	{ "run",		cmd_run,	1,-1, NULL,		  0 },
+	{ "save",		cmd_save,	0, 1, expand_load_save,	  0 },
+	{ "search-next",	cmd_search_next,0, 0, NULL,		  0 },
+	{ "search-prev",	cmd_search_prev,0, 0, NULL,		  0 },
+	{ "seek",		cmd_seek,	1, 1, NULL,		  0 },
+	{ "set",		cmd_set,	1, 1, expand_options,	  0 },
+	{ "showbind",		cmd_showbind,	1, 1, expand_unbind_args, 0 },
+	{ "shuffle",		cmd_reshuffle,	0, 0, NULL,		  0 },
+	{ "source",		cmd_source,	1, 1, expand_files,	  0 },
+	{ "toggle",		cmd_toggle,	1, 1, expand_toptions,	  0 },
+	{ "unbind",		cmd_unbind,	1, 1, expand_unbind_args, 0 },
+	{ "unmark",		cmd_unmark,	0, 0, NULL,		  0 },
+	{ "view",		cmd_view,	1, 1, NULL,		  0 },
+	{ "vol",		cmd_vol,	1, 2, NULL,		  0 },
+	{ "win-activate",	cmd_win_activate,0, 0, NULL,		  0 },
+	{ "win-add-l",		cmd_win_add_l,	0, 0, NULL,		  0 },
+	{ "win-add-p",		cmd_win_add_p,	0, 0, NULL,		  0 },
+	{ "win-add-Q",		cmd_win_add_Q,	0, 0, NULL,		  0 },
+	{ "win-add-q",		cmd_win_add_q,	0, 0, NULL,		  0 },
+	{ "win-bottom",		cmd_win_bottom,	0, 0, NULL,		  0 },
+	{ "win-down",		cmd_win_down,	0, 0, NULL,		  0 },
+	{ "win-mv-after",	cmd_win_mv_after,0, 0, NULL,		  0 },
+	{ "win-mv-before",	cmd_win_mv_before,0, 0, NULL,		  0 },
+	{ "win-next",		cmd_win_next,	0, 0, NULL,		  0 },
+	{ "win-page-down",	cmd_win_pg_down,0, 0, NULL,		  0 },
+	{ "win-page-up",	cmd_win_pg_up,	0, 0, NULL,		  0 },
+	{ "win-remove",		cmd_win_remove,	0, 0, NULL,		  0 },
+	{ "win-sel-cur",	cmd_win_sel_cur,0, 0, NULL,		  0 },
+	{ "win-toggle",		cmd_win_toggle,	0, 0, NULL,		  0 },
+	{ "win-top",		cmd_win_top,	0, 0, NULL,		  0 },
+	{ "win-up",		cmd_win_up,	0, 0, NULL,		  0 },
+	{ "win-update",		cmd_win_update,	0, 0, NULL,		  0 },
+	{ NULL,			NULL,		0, 0, 0,		  0 }
 };
 
 /* fills tabexp struct */
@@ -2165,7 +2170,7 @@ static void expand_commands(const char *str)
 	}
 }
 
-static const struct command *get_command(const char *str, int len)
+struct command *get_command(const char *str, int len)
 {
 	int i;
 

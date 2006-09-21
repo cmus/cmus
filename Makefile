@@ -16,7 +16,7 @@ input.o main.o ui_curses.o: CFLAGS += -DVERSION=\"$(VERSION)\"
 cmus-y := \
 	browser.o buffer.o cmdline.o cmus.o command_mode.o comment.o \
 	db.o debug.o editable.o expr.o filters.o \
-	format_print.o glob.o history.o http.o input.o \
+	format_print.o glob.o help.o history.o http.o input.o \
 	keys.o lib.o load_dir.o locking.o mergesort.o misc.o options.o \
 	output.o pcm.o pl.o play_queue.o player.o \
 	read_wrapper.o server.o search.o \

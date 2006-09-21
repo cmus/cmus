@@ -41,6 +41,7 @@
 #include "server.h"
 #include "keys.h"
 #include "debug.h"
+#include "help.h"
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -684,6 +685,39 @@ static void print_filter(struct window *win, int row, struct iter *iter)
 	dump_print_buffer(row + 1, 0);
 }
 
+static void print_help(struct window *win, int row, struct iter *iter)
+{
+	struct iter sel;
+	int selected;
+	int pos;
+	char buf[256];
+	struct help_entry *e = iter_to_help_entry(iter);
+
+	window_get_sel(win, &sel);
+	selected = iters_equal(iter, &sel);
+
+	bkgdset(pairs[selected << 1]);
+	if (e->type == HE_TEXT) {
+		snprintf(buf, sizeof(buf), "%s", e->text);
+	}
+	else if (e->type == HE_BOUND) {
+		snprintf(buf, sizeof(buf), "  %-20s %-20s %-20s",
+			key_context_names[e->binding->ctx],
+			e->binding->key->name,
+			e->binding->cmd);
+	}
+	else if (e->type == HE_UNBOUND) {
+		snprintf(buf, sizeof(buf), "  %s", e->command->name);
+	}
+	else {
+		return;
+	}
+	pos = format_str(print_buffer, buf, COLS - 1);
+	print_buffer[pos++] = ' ';
+	print_buffer[pos]   = 0;
+	dump_print_buffer(row + 1, 0);
+}
+
 static void update_window(struct window *win, int x, int y, int w, const char *title,
 		void (*print)(struct window *, int, struct iter *))
 {
@@ -823,6 +857,11 @@ static void update_filters_window(void)
 	update_window(filters_win, 0, 0, COLS, "Library Filters", print_filter);
 }
 
+static void update_help_window(void)
+{
+	update_window(help_win, 0, 0, COLS, "Keybindings/Unbound Commands", print_help);
+}
+
 static void draw_separator(void)
 {
 	int row;
@@ -869,6 +908,9 @@ static void do_update_view(int full)
 		break;
 	case FILTERS_VIEW:
 		update_filters_window();
+		break;
+	case HELP_VIEW:
+		update_help_window();
 		break;
 	}
 }
@@ -1353,6 +1395,9 @@ void search_not_found(void)
 		case FILTERS_VIEW:
 			what = "Filter";
 			break;
+		case HELP_VIEW:
+			what = "Help Item";
+			break;
 		}
 	} else {
 		switch (cur_view) {
@@ -1367,6 +1412,9 @@ void search_not_found(void)
 			break;
 		case FILTERS_VIEW:
 			what = "Filter";
+			break;
+		case HELP_VIEW:
+			what = "Help Item";
 			break;
 		}
 	}
@@ -1397,6 +1445,10 @@ void set_view(int view)
 		break;
 	case FILTERS_VIEW:
 		searchable = filters_searchable;
+		break;
+	case HELP_VIEW:
+		searchable = help_searchable;
+		update_help_window();
 		break;
 	}
 
@@ -1607,6 +1659,7 @@ static void update(void)
 			window_set_nr_rows(pl_editable.win, h - 1);
 			window_set_nr_rows(pq_editable.win, h - 1);
 			window_set_nr_rows(filters_win, h - 1);
+			window_set_nr_rows(help_win, h - 1);
 			window_set_nr_rows(browser_win, h - 1);
 			editable_unlock();
 			needs_title_update = 1;
@@ -1662,6 +1715,9 @@ static void update(void)
 		break;
 	case FILTERS_VIEW:
 		needs_view_update += filters_win->changed;
+		break;
+	case HELP_VIEW:
+		needs_view_update += help_win->changed;
 		break;
 	}
 
@@ -1946,6 +2002,7 @@ static void init_all(void)
 	cmus_init();
 	browser_init();
 	filters_init();
+	help_init();
 	cmdline_init();
 	commands_init();
 	search_mode_init();
@@ -1972,6 +2029,7 @@ static void init_all(void)
 		warn("Press <enter> to continue.");
 		fgets(buf, sizeof(buf), stdin);
 	}
+	help_add_all_unbound();
 
 	init_curses();
 }
@@ -1991,6 +2049,7 @@ static void exit_all(void)
 	commands_exit();
 	search_mode_exit();
 	filters_exit();
+	help_exit();
 	browser_exit();
 }
 

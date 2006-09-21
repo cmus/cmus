@@ -10,6 +10,7 @@ bind common 3 view 3
 bind common 4 view 4
 bind common 5 view 5
 bind common 6 view 6
+bind common F1 view 7
 bind common = vol +10%
 bind common C toggle continue
 bind common D win-remove

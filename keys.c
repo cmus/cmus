@@ -21,6 +21,7 @@
  */
 
 #include "keys.h"
+#include "help.h"
 #include "ui_curses.h"
 #include "command_mode.h"
 #include "xmalloc.h"
@@ -35,6 +36,7 @@ const char * const key_context_names[NR_CTXS + 1] = {
 	"browser",
 	"common",
 	"filters",
+	"help",
 	"library",
 	"playlist",
 	"queue",
@@ -49,7 +51,8 @@ static const enum key_context view_to_context[] = {
 	CTX_PLAYLIST,
 	CTX_QUEUE,
 	CTX_BROWSER,
-	CTX_FILTERS
+	CTX_FILTERS,
+	CTX_HELP
 };
 
 #define KEY_IS_CHAR -255
@@ -468,10 +471,21 @@ void show_binding(const char *context, const char *key)
 	}
 }
 
+static int comlen(const char *cmd)
+{
+	int i;
+	for (i=0;cmd[i];++i) {
+		if (cmd[i] == ' ')
+			return(i-1);
+	}
+	return(i);
+}
+
 int key_bind(const char *context, const char *key, const char *cmd, int force)
 {
 	const struct key *k;
 	struct binding *b, *ptr, *prev;
+	struct command *command;
 	int c, size;
 
 	c = find_context(context);
@@ -496,6 +510,7 @@ int key_bind(const char *context, const char *key, const char *cmd, int force)
 
 	b = xmalloc(sizeof(struct binding) + size);
 	b->key = k;
+	b->ctx = c;
 	memcpy(b->cmd, cmd, size);
 
 	/* insert keeping sorted by key */
@@ -513,6 +528,10 @@ int key_bind(const char *context, const char *key, const char *cmd, int force)
 	} else {
 		key_bindings[c] = b;
 	}
+	command = get_command(cmd, comlen(cmd));
+	if (command && !command->bc++)
+		help_remove_unbound(command);
+	help_add(b);
 	return 0;
 bound:
 	error_msg("key %s already bound in context %s", key, key_context_names[c]);
@@ -524,6 +543,7 @@ int key_unbind(const char *context, const char *key, int force)
 	enum key_context c;
 	const struct key *k;
 	struct binding *b, *prev;
+	struct command *command;
 
 	c = find_context(context);
 	if (c < 0)
@@ -542,6 +562,10 @@ int key_unbind(const char *context, const char *key, int force)
 			} else {
 				key_bindings[c] = b->next;
 			}
+			command = get_command(b->cmd, comlen(b->cmd));
+			if (command && !command->bc--)
+				help_add_unbound(command);
+			help_remove(b);
 			free(b);
 			return 0;
 		}

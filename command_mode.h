@@ -22,15 +22,36 @@
 
 #include "uchar.h"
 
+struct command {
+	const char *name;
+	void (*func)(char *arg);
+
+	/* min/max number of arguments */
+	int min_args;
+	int max_args;
+
+	void (*expand)(const char *str);
+
+	/* bind count (0 means: unbound) */
+	int bc;
+};
+
+extern struct command commands[];
+
 void command_mode_ch(uchar ch);
 void command_mode_key(int key);
 void commands_init(void);
 void commands_exit(void);
 void run_command(const char *buf);
 
+struct command *get_command(const char *str, int len);
+
 void view_clear(int view);
 void view_add(int view, char *arg, int prepend);
 void view_load(int view, char *arg);
 void view_save(int view, char *arg);
+
+int bc_incr(const char *cmd, int len);
+int bc_decr(const char *cmd, int len);
 
 #endif

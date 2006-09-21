@@ -28,6 +28,7 @@ enum key_context {
 	CTX_BROWSER,
 	CTX_COMMON,
 	CTX_FILTERS,
+	CTX_HELP,
 	CTX_LIBRARY,
 	CTX_PLAYLIST,
 	CTX_QUEUE
@@ -43,6 +44,7 @@ struct key {
 struct binding {
 	struct binding *next;
 	const struct key *key;
+	enum key_context ctx;
 	char cmd[0];
 };
 
