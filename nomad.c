@@ -206,9 +206,7 @@ static int fill_buffer(struct nomad *nomad)
 
 		len = read_size + remaining;
 
-		nomad->input_offset = nomad->cbs.lseek(nomad->datasource, 0, SEEK_CUR);
-		if (nomad->input_offset != (off_t)-1)
-			nomad->input_offset -= len;
+		nomad->input_offset += read_size;
 #if 0
 		if (len < MAD_BUFFER_GUARD) {
 			memset(nomad->input_buffer + len, 0, MAD_BUFFER_GUARD - len);
@@ -256,17 +254,17 @@ static void build_seek_index(struct nomad *nomad)
 	if (nomad->has_xing)
 		return;
 
-	if (nomad->input_offset == (off_t)-1)
-		return;
-
 	timer = nomad->timer;
 	mad_timer_add(&timer, nomad->header.duration);
 
 	if (timer.seconds < (nomad->seek_idx.size + 1) * SEEK_IDX_INTERVAL)
 		return;
 
-	/* figure out the byte offset for this frame */
+	/* offset = ftell() */
 	offset = nomad->input_offset;
+	/* subtract by buffer length to get offset to start of buffer */
+	offset -= (nomad->stream.bufend - nomad->input_buffer);
+	/* then add offset to the current frame */
 	offset += (nomad->stream.this_frame - nomad->input_buffer);
 
 	idx = nomad->seek_idx.size;
@@ -370,6 +368,7 @@ static int scan(struct nomad *nomad)
 		nomad->info.avg_bitrate = bitrate_sum / nomad->info.nr_frames;
 	nomad->cur_frame = 0;
 	nomad->cbs.lseek(nomad->datasource, 0, SEEK_SET);
+	nomad->input_offset = 0;
 	return 0;
 }
 
@@ -411,7 +410,7 @@ static void init_mad(struct nomad *nomad)
 	mad_timer_reset(&nomad->timer);
 	nomad->cur_frame = 0;
 	nomad->i = -1;
-	nomad->input_offset = (off_t)-1;
+	nomad->input_offset = 0;
 }
 
 static void free_mad(struct nomad *nomad)
@@ -609,7 +608,13 @@ int nomad_time_seek(struct nomad *nomad, double pos)
 			nomad->timer = nomad->seek_idx.table[idx].timer;
 		}
 
-		nomad->cbs.lseek(nomad->datasource, offset, SEEK_SET);
+		offset = nomad->cbs.lseek(nomad->datasource, offset, SEEK_SET);
+		if (offset == -1) {
+			mad_timer_reset(&nomad->timer);
+			nomad->cbs.lseek(nomad->datasource, 0, SEEK_SET);
+			offset = 0;
+		}
+		nomad->input_offset = offset;
 	} else {
 		nomad->cbs.lseek(nomad->datasource, 0, SEEK_SET);
 	}
