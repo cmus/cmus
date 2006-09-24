@@ -33,7 +33,6 @@ static inline struct help_entry *iter_to_help_entry(struct iter *iter)
 
 extern struct window *help_win;
 extern struct searchable *help_searchable;
-extern struct list_head help_head;
 
 void help_select(void);
 void help_add(const struct binding *bind);

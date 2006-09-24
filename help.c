@@ -15,7 +15,8 @@
 
 struct window *help_win;
 struct searchable *help_searchable;
-LIST_HEAD(help_head);
+
+static LIST_HEAD(help_head);
 static struct list_head *bound_head;
 static struct list_head *unbound_head;
 
@@ -48,18 +49,15 @@ static int help_search_matches(void *data, struct iter *iter, const char *text)
 				window_set_sel(help_win, iter);
 				matched = 1;
 				break;
-			}
-			if (ent->type == HE_TEXT) {
+			} if (ent->type == HE_TEXT) {
 				if (!u_strcasestr(ent->text, words[i]))
 					break;
-			}
-			else if (ent->type == HE_BOUND) {
+			} else if (ent->type == HE_BOUND) {
 				if (!u_strcasestr(key_context_names[ent->binding->ctx], words[i])
 					&& !u_strcasestr(ent->binding->cmd, words[i])
 					&& !u_strcasestr(ent->binding->key->name, words[i]))
 					break;
-			}
-			else if (ent->type == HE_UNBOUND) {
+			} else if (ent->type == HE_UNBOUND) {
 				if (!u_strcasestr(ent->command->name, words[i]))
 					break;
 			}
@@ -80,8 +78,8 @@ static struct list_head *help_add_text(const char *s)
 {
 	struct help_entry *ent;
 	ent = xnew(struct help_entry, 1);
-	ent->type=HE_TEXT;
-	ent->text=s;
+	ent->type = HE_TEXT;
+	ent->text = s;
 	list_add_tail(&ent->node, &help_head);
 	return(&ent->node);
 }
@@ -90,10 +88,10 @@ static void help_add_defaults(void)
 {
 	help_add_text("Current Keybindings");
 	help_add_text("-----------------------------");
-	bound_head=help_add_text("");
+	bound_head = help_add_text("");
 	help_add_text("Unbound Commands");
 	help_add_text("-----------------------------");
-	unbound_head=help_add_text("");
+	unbound_head = help_add_text("");
 }
 
 void help_remove_unbound(struct command *cmd)
@@ -129,7 +127,7 @@ void help_add_unbound(struct command *cmd)
 void help_add_all_unbound(void)
 {
 	int i;
-	for (i=0; commands[i].name; ++i)
+	for (i = 0; commands[i].name; ++i)
 		if (!commands[i].bc)
 			help_add_unbound(&commands[i]);
 }
@@ -142,10 +140,9 @@ void help_select(void)
 void help_add(const struct binding *bind)
 {
 	struct help_entry *ent;
-	ent=xnew(struct help_entry, 1);
-	ent->type=HE_BOUND;
-	ent->binding=bind;
-	list_init(&ent->node);
+	ent = xnew(struct help_entry, 1);
+	ent->type = HE_BOUND;
+	ent->binding = bind;
 	list_add_tail(&ent->node, bound_head);
 }
 
