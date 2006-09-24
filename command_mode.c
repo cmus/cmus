@@ -404,6 +404,7 @@ static void cmd_set(char *arg)
 	}
 	if (value) {
 		option_set(arg, value);
+		help_win->changed = 1;
 	} else {
 		struct cmus_opt *opt;
 		char buf[OPTION_MAX_SIZE];
@@ -433,6 +434,7 @@ static void cmd_toggle(char *arg)
 		return;
 	}
 	opt->toggle(opt->id);
+	help_win->changed = 1;
 }
 
 static int get_number(char *str, char **end)

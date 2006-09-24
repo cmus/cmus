@@ -17,12 +17,14 @@ struct help_entry {
 	enum {
 		HE_TEXT,		/* text entries 	*/
 		HE_BOUND,		/* bound keys		*/
-		HE_UNBOUND		/* unbound commands	*/
+		HE_UNBOUND,		/* unbound commands	*/
+		HE_OPTION,
 	} type;
 	union {
 		const char *text;			/* HE_TEXT	*/
 		const struct binding *binding;		/* HE_BOUND	*/
 		const struct command *command;		/* HE_UNBOUND	*/
+		const struct cmus_opt *option;
 	};
 };
 

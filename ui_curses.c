@@ -690,8 +690,9 @@ static void print_help(struct window *win, int row, struct iter *iter)
 	struct iter sel;
 	int selected;
 	int pos;
-	char buf[256];
-	struct help_entry *e = iter_to_help_entry(iter);
+	char buf[512];
+	const struct help_entry *e = iter_to_help_entry(iter);
+	const struct cmus_opt *opt;
 
 	window_get_sel(win, &sel);
 	selected = iters_equal(iter, &sel);
@@ -709,6 +710,11 @@ static void print_help(struct window *win, int row, struct iter *iter)
 		break;
 	case HE_UNBOUND:
 		snprintf(buf, sizeof(buf), " %s", e->command->name);
+		break;
+	case HE_OPTION:
+		opt = e->option;
+		snprintf(buf, sizeof(buf), " %-29s ", opt->name);
+		opt->get(opt->id, buf + strlen(buf));
 		break;
 	}
 	pos = format_str(print_buffer, buf, COLS - 1);
