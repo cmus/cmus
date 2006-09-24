@@ -1487,19 +1487,26 @@ static void cmd_win_sel_cur(char *arg)
 
 static void cmd_win_toggle(char *arg)
 {
-	editable_lock();
 	switch (cur_view) {
 	case TREE_VIEW:
+		editable_lock();
 		tree_toggle_expand_artist();
+		editable_unlock();
 		break;
 	case SORTED_VIEW:
+		editable_lock();
 		editable_toggle_mark(&lib_editable);
+		editable_unlock();
 		break;
 	case PLAYLIST_VIEW:
+		editable_lock();
 		editable_toggle_mark(&pl_editable);
+		editable_unlock();
 		break;
 	case QUEUE_VIEW:
+		editable_lock();
 		editable_toggle_mark(&pq_editable);
+		editable_unlock();
 		break;
 	case BROWSER_VIEW:
 		break;
@@ -1507,9 +1514,9 @@ static void cmd_win_toggle(char *arg)
 		filters_toggle_filter();
 		break;
 	case HELP_VIEW:
+		help_toggle();
 		break;
 	}
-	editable_unlock();
 }
 
 static struct window *current_win(void)

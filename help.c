@@ -12,6 +12,9 @@
 #include "command_mode.h"
 #include "ui_curses.h"
 #include "options.h"
+#include "cmdline.h"
+
+#include <stdio.h>
 
 struct window *help_win;
 struct searchable *help_searchable;
@@ -185,7 +188,53 @@ void help_add_all_unbound(void)
 
 void help_select(void)
 {
-	/* nothing right now */
+	struct iter sel;
+	struct help_entry *ent;
+	char buf[512];
+
+	if (!window_get_sel(help_win, &sel))
+		return;
+
+	ent = iter_to_help_entry(&sel);
+	switch (ent->type) {
+	case HE_BOUND:
+		snprintf(buf, sizeof(buf), "bind -f %s %s %s",
+				key_context_names[ent->binding->ctx],
+				ent->binding->key->name,
+				ent->binding->cmd);
+		cmdline_set_text(buf);
+		enter_command_mode();
+		break;
+	case HE_OPTION:
+		snprintf(buf, sizeof(buf), "set %s=", ent->option->name);
+		ent->option->get(ent->option->id, buf + strlen(buf));
+		cmdline_set_text(buf);
+		enter_command_mode();
+		break;
+	default:
+		break;
+	}
+}
+
+void help_toggle(void)
+{
+	struct iter sel;
+	struct help_entry *ent;
+
+	if (!window_get_sel(help_win, &sel))
+		return;
+
+	ent = iter_to_help_entry(&sel);
+	switch (ent->type) {
+	case HE_OPTION:
+		if (ent->option->toggle) {
+			ent->option->toggle(ent->option->id);
+			help_win->changed = 1;
+		}
+		break;
+	default:
+		break;
+	}
 }
 
 void help_remove(void)
