@@ -35,8 +35,8 @@ extern struct window *help_win;
 extern struct searchable *help_searchable;
 
 void help_select(void);
-void help_add(const struct binding *bind);
-void help_remove(const struct binding *bind);
+void help_add_bound(const struct binding *bind);
+void help_remove_bound(const struct binding *bind);
 
 void help_remove_unbound(struct command *cmd);
 void help_add_unbound(struct command *cmd);

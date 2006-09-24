@@ -531,7 +531,7 @@ int key_bind(const char *context, const char *key, const char *cmd, int force)
 	command = get_command(cmd, comlen(cmd));
 	if (command && !command->bc++)
 		help_remove_unbound(command);
-	help_add(b);
+	help_add_bound(b);
 	return 0;
 bound:
 	error_msg("key %s already bound in context %s", key, key_context_names[c]);
@@ -565,7 +565,7 @@ int key_unbind(const char *context, const char *key, int force)
 			command = get_command(b->cmd, comlen(b->cmd));
 			if (command && !command->bc--)
 				help_add_unbound(command);
-			help_remove(b);
+			help_remove_bound(b);
 			free(b);
 			return 0;
 		}

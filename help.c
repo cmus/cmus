@@ -137,7 +137,7 @@ void help_select(void)
 	/* nothing right now */
 }
 
-void help_add(const struct binding *bind)
+void help_add_bound(const struct binding *bind)
 {
 	struct help_entry *ent;
 	ent = xnew(struct help_entry, 1);
@@ -146,7 +146,7 @@ void help_add(const struct binding *bind)
 	list_add_tail(&ent->node, bound_head);
 }
 
-void help_remove(const struct binding *bind)
+void help_remove_bound(const struct binding *bind)
 {
 	struct help_entry *ent;
 	struct iter i;
