@@ -395,7 +395,8 @@ start:
 		goto start;
 	}
 	nomad->cur_frame++;
-	build_seek_index(nomad);
+	if (nomad->info.filesize > 0)
+		build_seek_index(nomad);
 	mad_timer_add(&nomad->timer, nomad->frame.header.duration);
 	mad_synth_frame(&nomad->synth, &nomad->frame);
 	return 0;
