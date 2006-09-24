@@ -32,6 +32,11 @@
 #include <string.h>
 #include <errno.h>
 
+struct seek_idx_entry {
+	off_t offset;
+	mad_timer_t timer;
+};
+
 struct nomad {
 	struct mad_stream stream;
 	struct mad_frame frame;
@@ -39,6 +44,7 @@ struct nomad {
 	struct mad_header header;
 	mad_timer_t timer;
 	unsigned long cur_frame;
+	off_t input_offset;
 	unsigned char input_buffer[INPUT_BUFFER_SIZE];
 	int i;
 	unsigned int fast : 1;
@@ -51,6 +57,11 @@ struct nomad {
 		unsigned int scale;
 		unsigned char toc[100];
 	} xing;
+
+	struct {
+		int size;
+		struct seek_idx_entry *table;
+	} seek_idx;
 
 	struct nomad_info info;
 	void *datasource;
@@ -194,6 +205,10 @@ static int fill_buffer(struct nomad *nomad)
 			return 0;
 
 		len = read_size + remaining;
+
+		nomad->input_offset = nomad->cbs.lseek(nomad->datasource, 0, SEEK_CUR);
+		if (nomad->input_offset != (off_t)-1)
+			nomad->input_offset -= len;
 #if 0
 		if (len < MAD_BUFFER_GUARD) {
 			memset(nomad->input_buffer + len, 0, MAD_BUFFER_GUARD - len);
@@ -227,6 +242,43 @@ static void handle_lost_sync(struct nomad *nomad)
 	}
 }
 
+
+/* builds a seek index as the file is decoded
+ * should be called after every call to mad_decode_header,
+ * and before increasing nomad->timer
+ */
+static void build_seek_index(struct nomad *nomad)
+{
+	mad_timer_t timer;
+	off_t offset;
+	int idx;
+
+	if (nomad->has_xing)
+		return;
+
+	if (nomad->input_offset == (off_t)-1)
+		return;
+
+	timer = nomad->timer;
+	mad_timer_add(&timer, nomad->header.duration);
+
+	if (timer.seconds < (nomad->seek_idx.size + 1) * SEEK_IDX_INTERVAL)
+		return;
+
+	/* figure out the byte offset for this frame */
+	offset = nomad->input_offset;
+	offset += (nomad->stream.this_frame - nomad->input_buffer);
+
+	idx = nomad->seek_idx.size;
+
+	nomad->seek_idx.table = xrenew(struct seek_idx_entry, nomad->seek_idx.table, idx + 1);
+	nomad->seek_idx.table[idx].offset = offset;
+	nomad->seek_idx.table[idx].timer = nomad->timer;
+
+	nomad->seek_idx.size++;
+}
+
+
 /*
  * fields
  *     nomad->info.avg_bitrate and
@@ -252,6 +304,7 @@ static int scan(struct nomad *nomad)
 
 		if (mad_header_decode(&nomad->header, &nomad->stream) == 0) {
 			bitrate_sum += nomad->header.bitrate;
+			build_seek_index(nomad);
 			mad_timer_add(&nomad->timer, nomad->header.duration);
 			nomad->info.nr_frames++;
 			if (!frame_decoded) {
@@ -343,6 +396,7 @@ start:
 		goto start;
 	}
 	nomad->cur_frame++;
+	build_seek_index(nomad);
 	mad_timer_add(&nomad->timer, nomad->frame.header.duration);
 	mad_synth_frame(&nomad->synth, &nomad->frame);
 	return 0;
@@ -357,6 +411,7 @@ static void init_mad(struct nomad *nomad)
 	mad_timer_reset(&nomad->timer);
 	nomad->cur_frame = 0;
 	nomad->i = -1;
+	nomad->input_offset = (off_t)-1;
 }
 
 static void free_mad(struct nomad *nomad)
@@ -434,7 +489,7 @@ int nomad_open(struct nomad **nomadp, int fd, int fast)
 {
 	struct nomad *nomad;
 
-	nomad = xnew(struct nomad, 1);
+	nomad = xnew0(struct nomad, 1);
 	nomad->datasource = &nomad->datasource_fd;
 	nomad->datasource_fd = fd;
 	nomad->cbs.read = default_read;
@@ -449,7 +504,7 @@ int nomad_open_callbacks(struct nomad **nomadp, void *datasource, int fast, stru
 {
 	struct nomad *nomad;
 
-	nomad = xnew(struct nomad, 1);
+	nomad = xnew0(struct nomad, 1);
 	nomad->datasource = datasource;
 	nomad->cbs = *cbs;
 	*nomadp = nomad;
@@ -461,6 +516,7 @@ void nomad_close(struct nomad *nomad)
 {
 	free_mad(nomad);
 	nomad->cbs.close(nomad->datasource);
+	free(nomad->seek_idx.table);
 	free(nomad);
 }
 
@@ -541,6 +597,19 @@ int nomad_time_seek(struct nomad *nomad, double pos)
 				ki);
 #endif
 		nomad->cbs.lseek(nomad->datasource, ((unsigned long long)nomad->xing.toc[ki] * nomad->xing.bytes) / 256, SEEK_SET);
+	} else if (nomad->seek_idx.size > 0) {
+		int idx = (int)(pos / SEEK_IDX_INTERVAL) - 1;
+		off_t offset = 0;
+
+		if (idx > nomad->seek_idx.size - 1)
+			idx = nomad->seek_idx.size - 1;
+
+		if (idx >= 0) {
+			offset = nomad->seek_idx.table[idx].offset;
+			nomad->timer = nomad->seek_idx.table[idx].timer;
+		}
+
+		nomad->cbs.lseek(nomad->datasource, offset, SEEK_SET);
 	} else {
 		nomad->cbs.lseek(nomad->datasource, 0, SEEK_SET);
 	}
@@ -554,6 +623,7 @@ int nomad_time_seek(struct nomad *nomad, double pos)
 			return 0;
 
 		if (mad_header_decode(&nomad->header, &nomad->stream) == 0) {
+			build_seek_index(nomad);
 			mad_timer_add(&nomad->timer, nomad->header.duration);
 		} else {
 			if (!MAD_RECOVERABLE(nomad->stream.error) && nomad->stream.error != MAD_ERROR_BUFLEN) {

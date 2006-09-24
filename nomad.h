@@ -25,6 +25,8 @@
 
 #define INPUT_BUFFER_SIZE	(5 * 8192)
 
+#define SEEK_IDX_INTERVAL  60
+
 /* default callbacks use read, lseek, close */
 struct nomad_callbacks {
 	ssize_t (*read)(void *datasource, void *buffer, size_t count);
