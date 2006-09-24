@@ -11,14 +11,14 @@
 #include "keys.h"
 #include "command_mode.h"
 
-#include <ctype.h>
-
 struct window *help_win;
 struct searchable *help_searchable;
 
 static LIST_HEAD(help_head);
 static struct list_head *bound_head;
+static struct list_head *bound_tail;
 static struct list_head *unbound_head;
+static struct list_head *unbound_tail;
 
 static inline void help_entry_to_iter(struct help_entry *e, struct iter *iter)
 {
@@ -76,24 +76,27 @@ static const struct searchable_ops help_search_ops = {
 	.matches = help_search_matches
 };
 
-static struct list_head *help_add_text(const char *s)
+static void help_add_text(const char *s)
 {
 	struct help_entry *ent;
 	ent = xnew(struct help_entry, 1);
 	ent->type = HE_TEXT;
 	ent->text = s;
 	list_add_tail(&ent->node, &help_head);
-	return(&ent->node);
 }
 
 static void help_add_defaults(void)
 {
 	help_add_text("Current Keybindings");
 	help_add_text("-------------------");
-	bound_head = help_add_text("");
+	bound_head = help_head.prev;
+	help_add_text("");
 	help_add_text("Unbound Commands");
 	help_add_text("----------------");
-	unbound_head = help_add_text("");
+	unbound_head = help_head.prev;
+
+	bound_tail = bound_head->next;
+	unbound_tail = unbound_head->next;
 }
 
 void help_remove_unbound(struct command *cmd)
@@ -113,17 +116,48 @@ void help_remove_unbound(struct command *cmd)
 	}
 }
 
+static void list_add_sorted(struct list_head *new, struct list_head *head,
+		struct list_head *tail,
+		int (*cmp)(struct list_head *, struct list_head *))
+{
+	struct list_head *item = tail->prev;
+
+	while (item != head) {
+		if (cmp(new, item) >= 0)
+			break;
+		item = item->prev;
+	}
+	/* add after item */
+	list_add(new, item);
+}
+
+static int bound_cmp(struct list_head *ai, struct list_head *bi)
+{
+	struct help_entry *a = container_of(ai, struct help_entry, node);
+	struct help_entry *b = container_of(bi, struct help_entry, node);
+	int ret = a->binding->ctx - b->binding->ctx;
+
+	if (!ret)
+		ret = strcmp(a->binding->key->name, b->binding->key->name);
+	return ret;
+}
+
+static int unbound_cmp(struct list_head *ai, struct list_head *bi)
+{
+	struct help_entry *a = container_of(ai, struct help_entry, node);
+	struct help_entry *b = container_of(bi, struct help_entry, node);
+
+	return strcmp(a->command->name, b->command->name);
+}
+
 void help_add_unbound(struct command *cmd)
 {
 	struct help_entry *ent;
-	struct command *c = cmd;
-	if (c->bc == 0) {
-		ent = xnew(struct help_entry, 1);
-		ent->type = HE_UNBOUND;
-		ent->command = cmd;
-		list_init(&ent->node);
-		list_add_tail(&ent->node, unbound_head);
-	}
+
+	ent = xnew(struct help_entry, 1);
+	ent->type = HE_UNBOUND;
+	ent->command = cmd;
+	list_add_sorted(&ent->node, unbound_head, unbound_tail, unbound_cmp);
 }
 
 void help_add_all_unbound(void)
@@ -145,7 +179,7 @@ void help_add_bound(const struct binding *bind)
 	ent = xnew(struct help_entry, 1);
 	ent->type = HE_BOUND;
 	ent->binding = bind;
-	list_add_tail(&ent->node, bound_head);
+	list_add_sorted(&ent->node, bound_head, bound_tail, bound_cmp);
 }
 
 void help_remove_bound(const struct binding *bind)
