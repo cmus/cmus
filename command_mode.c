@@ -1452,6 +1452,7 @@ static void cmd_win_remove(char *arg)
 		filters_delete_filter();
 		break;
 	case HELP_VIEW:
+		help_remove();
 		break;
 	}
 	editable_unlock();

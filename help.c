@@ -10,6 +10,7 @@
 #include "xmalloc.h"
 #include "keys.h"
 #include "command_mode.h"
+#include "ui_curses.h"
 
 struct window *help_win;
 struct searchable *help_searchable;
@@ -171,6 +172,26 @@ void help_add_all_unbound(void)
 void help_select(void)
 {
 	/* nothing right now */
+}
+
+void help_remove(void)
+{
+	struct iter sel;
+	struct help_entry *ent;
+
+	if (!window_get_sel(help_win, &sel))
+		return;
+
+	ent = iter_to_help_entry(&sel);
+	switch (ent->type) {
+	case HE_BOUND:
+		if (yes_no_query("Remove selected binding? [y/N]"))
+			key_unbind(key_context_names[ent->binding->ctx],
+					ent->binding->key->name, 0);
+		break;
+	default:
+		break;
+	}
 }
 
 void help_add_bound(const struct binding *bind)
