@@ -696,8 +696,13 @@ static void print_help(struct window *win, int row, struct iter *iter)
 
 	window_get_sel(win, &sel);
 	selected = iters_equal(iter, &sel);
-
 	bkgdset(pairs[selected << 1]);
+
+	if (selected) {
+		cursor_x = 0;
+		cursor_y = 1 + row;
+	}
+
 	switch (e->type) {
 	case HE_TEXT:
 		snprintf(buf, sizeof(buf), " %s", e->text);
