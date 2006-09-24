@@ -113,7 +113,7 @@ check_arts()
 check_oss()
 {
 	case `uname -s` in
-		Linux|FreeBSD)
+		Linux|*FreeBSD)
 			;;
 		*BSD)
 			check_library OSS "" "-lossaudio"
