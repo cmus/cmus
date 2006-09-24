@@ -697,24 +697,23 @@ static void print_help(struct window *win, int row, struct iter *iter)
 	selected = iters_equal(iter, &sel);
 
 	bkgdset(pairs[selected << 1]);
-	if (e->type == HE_TEXT) {
-		snprintf(buf, sizeof(buf), "%s", e->text);
-	}
-	else if (e->type == HE_BOUND) {
-		snprintf(buf, sizeof(buf), "  %-20s %-20s %-20s",
+	switch (e->type) {
+	case HE_TEXT:
+		snprintf(buf, sizeof(buf), " %s", e->text);
+		break;
+	case HE_BOUND:
+		snprintf(buf, sizeof(buf), " %-8s %-14s %s",
 			key_context_names[e->binding->ctx],
 			e->binding->key->name,
 			e->binding->cmd);
-	}
-	else if (e->type == HE_UNBOUND) {
-		snprintf(buf, sizeof(buf), "  %s", e->command->name);
-	}
-	else {
-		return;
+		break;
+	case HE_UNBOUND:
+		snprintf(buf, sizeof(buf), " %s", e->command->name);
+		break;
 	}
 	pos = format_str(print_buffer, buf, COLS - 1);
 	print_buffer[pos++] = ' ';
-	print_buffer[pos]   = 0;
+	print_buffer[pos] = 0;
 	dump_print_buffer(row + 1, 0);
 }
 

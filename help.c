@@ -38,7 +38,8 @@ static int help_search_get_current(void *data, struct iter *iter)
 static int help_search_matches(void *data, struct iter *iter, const char *text)
 {
 	int matched = 0;
-	char **words=get_words(text);
+	char **words = get_words(text);
+
 	if (words[0] != NULL) {
 		struct help_entry *ent;
 		int i;
@@ -49,7 +50,8 @@ static int help_search_matches(void *data, struct iter *iter, const char *text)
 				window_set_sel(help_win, iter);
 				matched = 1;
 				break;
-			} if (ent->type == HE_TEXT) {
+			}
+			if (ent->type == HE_TEXT) {
 				if (!u_strcasestr(ent->text, words[i]))
 					break;
 			} else if (ent->type == HE_BOUND) {
@@ -87,10 +89,10 @@ static struct list_head *help_add_text(const char *s)
 static void help_add_defaults(void)
 {
 	help_add_text("Current Keybindings");
-	help_add_text("-----------------------------");
+	help_add_text("-------------------");
 	bound_head = help_add_text("");
 	help_add_text("Unbound Commands");
-	help_add_text("-----------------------------");
+	help_add_text("----------------");
 	unbound_head = help_add_text("");
 }
 
@@ -116,9 +118,9 @@ void help_add_unbound(struct command *cmd)
 	struct help_entry *ent;
 	struct command *c = cmd;
 	if (c->bc == 0) {
-		ent=xnew(struct help_entry, 1);
-		ent->type=HE_UNBOUND;
-		ent->command=cmd;
+		ent = xnew(struct help_entry, 1);
+		ent->type = HE_UNBOUND;
+		ent->command = cmd;
 		list_init(&ent->node);
 		list_add_tail(&ent->node, unbound_head);
 	}
