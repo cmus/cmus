@@ -10,7 +10,7 @@ bind common 3 view playlist
 bind common 4 view queue
 bind common 5 view browser
 bind common 6 view filters
-bind common F1 view help
+bind common 7 view settings
 bind common = vol +10%
 bind common C toggle continue
 bind common D win-remove

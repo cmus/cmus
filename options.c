@@ -388,7 +388,7 @@ static void toggle_confirm_run(unsigned int id)
 }
 
 const char * const view_names[NR_VIEWS + 1] = {
-	"tree", "sorted", "playlist", "queue", "browser", "filters", "help", NULL
+	"tree", "sorted", "playlist", "queue", "browser", "filters", "settings", NULL
 };
 
 static void get_play_library(unsigned int id, char *buf)

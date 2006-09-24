@@ -36,8 +36,7 @@ it can be controlled from the outside via *cmus-remote*(1).
 
 @h1 VIEWS
 
-There are 7 views in cmus.  Press keys 1-6 (and F1 for help) to change active
-view.
+There are 7 views in cmus.  Press keys 1-7 to change active view.
 
 Library view (1)
 	Display all tracks in so-called *library*. Tracks are sorted
@@ -62,8 +61,8 @@ Browser (5)
 Filters view (6)
 	Lists user defined filters.
 
-Help view (7)
-	Lists all keybindings and unbound commands.
+Settings view (7)
+	Lists keybindings, unbound commands and options.
 
 @h1 COMMAND LINE
 
@@ -107,7 +106,7 @@ without path.
 
 In view 5 words are compared to filename without path.
 
-In the help view, the words are compared to all contents of the view.
+In the settings view, the words are compared to all contents of the view.
 
 @h1 PLAYLIST EDITING
 
@@ -179,6 +178,7 @@ See CONFIGURATION OPTIONS section for more information about these options.
 Here's list of default keybindings.  See *unbind* and *bind* commands in the
 COMMANDS section.
 
+
 @h2 Common Context
 @pre
 ^C             echo Type :quit<enter> to exit cmus.
@@ -202,13 +202,13 @@ o              toggle play_sorted
 r              toggle repeat
 t              toggle show_remaining_time
 s              toggle shuffle
-1              view 1
-2              view 2
-3              view 3
-4              view 4
-5              view 5
-6              view 6
-F1             view 7
+1              view tree
+2              view sorted
+3              view playlist
+4              view queue
+5              view browser
+6              view filters
+7              view settings
 ]              vol +0 +1
 [              vol +1 +0
 +, =           vol +10%

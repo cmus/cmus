@@ -864,7 +864,7 @@ static void update_filters_window(void)
 
 static void update_help_window(void)
 {
-	update_window(help_win, 0, 0, COLS, "Keybindings/Unbound Commands", print_help);
+	update_window(help_win, 0, 0, COLS, "Settings", print_help);
 }
 
 static void draw_separator(void)
@@ -1401,7 +1401,7 @@ void search_not_found(void)
 			what = "Filter";
 			break;
 		case HELP_VIEW:
-			what = "Help Item";
+			what = "Binding/command/option";
 			break;
 		}
 	} else {
@@ -1419,7 +1419,7 @@ void search_not_found(void)
 			what = "Filter";
 			break;
 		case HELP_VIEW:
-			what = "Help Item";
+			what = "Binding/command/option";
 			break;
 		}
 	}
