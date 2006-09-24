@@ -563,7 +563,7 @@ int key_unbind(const char *context, const char *key, int force)
 				key_bindings[c] = b->next;
 			}
 			command = get_command(b->cmd, comlen(b->cmd));
-			if (command && !command->bc--)
+			if (command && !--command->bc)
 				help_add_unbound(command);
 			help_remove_bound(b);
 			free(b);
