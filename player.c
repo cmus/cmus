@@ -904,6 +904,21 @@ void player_play(void)
 void player_pause(void)
 {
 	player_lock();
+
+	if (consumer_status == CS_STOPPED) {
+		__producer_play();
+		if (producer_status == PS_PLAYING) {
+			__consumer_play();
+			if (consumer_status != CS_PLAYING)
+				__producer_stop();
+		}
+		__player_status_changed();
+		if (consumer_status == CS_PLAYING)
+			__prebuffer();
+		player_unlock();
+		return;
+	}
+
 	if (ip && ip_is_remote(ip)) {
 		/* pausing not allowed */
 		player_unlock();
