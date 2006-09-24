@@ -104,9 +104,7 @@ In views 1-4 words are compared to artist, album and title tags. Type
 views 2-4. If the file doesn't have tags words are compared to filename
 without path.
 
-In view 5 words are compared to filename without path.
-
-In the settings view, the words are compared to all contents of the view.
+Searching works in views 5-7 too and its logic should be pretty obvious.
 
 @h1 PLAYLIST EDITING
 

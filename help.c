@@ -60,12 +60,14 @@ static int help_search_matches(void *data, struct iter *iter, const char *text)
 				if (!u_strcasestr(ent->text, words[i]))
 					break;
 			} else if (ent->type == HE_BOUND) {
-				if (!u_strcasestr(key_context_names[ent->binding->ctx], words[i])
-					&& !u_strcasestr(ent->binding->cmd, words[i])
-					&& !u_strcasestr(ent->binding->key->name, words[i]))
+				if (!u_strcasestr(ent->binding->cmd, words[i]) &&
+					!u_strcasestr(ent->binding->key->name, words[i]))
 					break;
 			} else if (ent->type == HE_UNBOUND) {
 				if (!u_strcasestr(ent->command->name, words[i]))
+					break;
+			} else if (ent->type == HE_OPTION) {
+				if (!u_strcasestr(ent->option->name, words[i]))
 					break;
 			}
 		}
@@ -94,8 +96,8 @@ static void help_add_defaults(void)
 {
 	struct cmus_opt *opt;
 
-	help_add_text("Current Keybindings");
-	help_add_text("-------------------");
+	help_add_text("Keybindings");
+	help_add_text("-----------");
 	bound_head = help_head.prev;
 	help_add_text("");
 	help_add_text("Unbound Commands");
