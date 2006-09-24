@@ -569,6 +569,8 @@ int nomad_read(struct nomad *nomad, char *buffer, int count)
 
 int nomad_time_seek(struct nomad *nomad, double pos)
 {
+	off_t offset = 0;
+
 	if (pos < 0.0 || pos > nomad->info.duration) {
 		errno = EINVAL;
 		return -1;
@@ -579,6 +581,8 @@ int nomad_time_seek(struct nomad *nomad, double pos)
 	}
 	free_mad(nomad);
 	init_mad(nomad);
+
+	/* calculate seek offset */
 	if (nomad->has_xing) {
 		/* seek to truncate(pos / duration * 100) / 100 * duration */
 		double k, tmp_pos;
@@ -595,10 +599,9 @@ int nomad_time_seek(struct nomad *nomad, double pos)
 				timer_to_seconds(nomad->timer),
 				ki);
 #endif
-		nomad->cbs.lseek(nomad->datasource, ((unsigned long long)nomad->xing.toc[ki] * nomad->xing.bytes) / 256, SEEK_SET);
+		offset = ((unsigned long long)nomad->xing.toc[ki] * nomad->xing.bytes) / 256;
 	} else if (nomad->seek_idx.size > 0) {
 		int idx = (int)(pos / SEEK_IDX_INTERVAL) - 1;
-		off_t offset = 0;
 
 		if (idx > nomad->seek_idx.size - 1)
 			idx = nomad->seek_idx.size - 1;
@@ -607,17 +610,11 @@ int nomad_time_seek(struct nomad *nomad, double pos)
 			offset = nomad->seek_idx.table[idx].offset;
 			nomad->timer = nomad->seek_idx.table[idx].timer;
 		}
-
-		offset = nomad->cbs.lseek(nomad->datasource, offset, SEEK_SET);
-		if (offset == -1) {
-			mad_timer_reset(&nomad->timer);
-			nomad->cbs.lseek(nomad->datasource, 0, SEEK_SET);
-			offset = 0;
-		}
-		nomad->input_offset = offset;
-	} else {
-		nomad->cbs.lseek(nomad->datasource, 0, SEEK_SET);
 	}
+	if (nomad->cbs.lseek(nomad->datasource, offset, SEEK_SET) < 0)
+		return -1;
+
+	nomad->input_offset = offset;
 	while (timer_to_seconds(nomad->timer) < pos) {
 		int rc;
 
