@@ -2170,9 +2170,14 @@ static void expand_commands(const char *str)
 	}
 }
 
-struct command *get_command(const char *str, int len)
+struct command *get_command(const char *str)
 {
-	int i;
+	int i, len;
+
+	while (*str == ' ')
+		str++;
+	for (len = 0; str[len] && str[len] != ' '; len++)
+		;
 
 	for (i = 0; commands[i].name; i++) {
 		if (strncmp(str, commands[i].name, len))
@@ -2218,7 +2223,7 @@ static void expand_command_line(const char *str)
 	}
 
 	/* command must be expandable */
-	cmd = get_command(cs, ce - cs);
+	cmd = get_command(cs);
 	if (cmd == NULL) {
 		/* command ambiguous or invalid */
 		return;

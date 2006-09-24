@@ -471,16 +471,6 @@ void show_binding(const char *context, const char *key)
 	}
 }
 
-static int comlen(const char *cmd)
-{
-	int i;
-	for (i=0;cmd[i];++i) {
-		if (cmd[i] == ' ')
-			return(i-1);
-	}
-	return(i);
-}
-
 int key_bind(const char *context, const char *key, const char *cmd, int force)
 {
 	const struct key *k;
@@ -528,7 +518,7 @@ int key_bind(const char *context, const char *key, const char *cmd, int force)
 	} else {
 		key_bindings[c] = b;
 	}
-	command = get_command(cmd, comlen(cmd));
+	command = get_command(cmd);
 	if (command && !command->bc++)
 		help_remove_unbound(command);
 	help_add_bound(b);
@@ -562,7 +552,7 @@ int key_unbind(const char *context, const char *key, int force)
 			} else {
 				key_bindings[c] = b->next;
 			}
-			command = get_command(b->cmd, comlen(b->cmd));
+			command = get_command(b->cmd);
 			if (command && !--command->bc)
 				help_add_unbound(command);
 			help_remove_bound(b);

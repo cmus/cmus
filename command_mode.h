@@ -44,7 +44,7 @@ void commands_init(void);
 void commands_exit(void);
 void run_command(const char *buf);
 
-struct command *get_command(const char *str, int len);
+struct command *get_command(const char *str);
 
 void view_clear(int view);
 void view_add(int view, char *arg, int prepend);
