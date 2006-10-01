@@ -65,7 +65,7 @@ static int mik_open(struct input_plugin_data *ip_data)
 	if (!mi)
 		return -IP_ERROR_INTERNAL;
 
-	mf = Player_Load((char *)ip_data->filename, 255, 0);
+	mf = Player_Load(ip_data->filename, 255, 0);
 
 	if (!mf)
 		return -IP_ERROR_ERRNO;
@@ -92,7 +92,7 @@ static int mik_close(struct input_plugin_data *ip_data)
 static int mik_read(struct input_plugin_data *ip_data, char *buffer, int count)
 {
 	int length;
-	struct mik_private *priv = (struct mik_private *)ip_data->private;
+	struct mik_private *priv = ip_data->private;
 
 	if (!Player_Active())
 		Player_Start(priv->file);
@@ -100,7 +100,7 @@ static int mik_read(struct input_plugin_data *ip_data, char *buffer, int count)
 	if (!Player_Active())
 		return 0;
 
-	length = VC_WriteBytes((SBYTE *) buffer, count);
+	length = VC_WriteBytes(buffer, count);
 
 	return length;
 }
