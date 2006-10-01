@@ -36,6 +36,7 @@ cmus-remote: main.o file.o path.o prog.o xmalloc.o
 # input plugins {{{
 flac-objs		:= flac.lo
 mad-objs		:= id3.lo mad.lo nomad.lo utf8_encode.lo
+mikmod-objs		:= mikmod.lo
 modplug-objs		:= modplug.lo
 mpc-objs		:= mpc.lo
 vorbis-objs		:= vorbis.lo
@@ -43,6 +44,7 @@ wav-objs		:= wav.lo
 
 ip-$(CONFIG_FLAC)	+= flac.so
 ip-$(CONFIG_MAD)	+= mad.so
+ip-$(CONFIG_MIKMOD)	+= mikmod.so
 ip-$(CONFIG_MODPLUG)	+= modplug.so
 ip-$(CONFIG_MPC)	+= mpc.so
 ip-$(CONFIG_VORBIS)	+= vorbis.so
@@ -50,6 +52,7 @@ ip-$(CONFIG_WAV)	+= wav.so
 
 $(flac-objs):		CFLAGS += $(FLAC_CFLAGS)
 $(mad-objs):		CFLAGS += $(MAD_CFLAGS)
+$(mikmod-objs):		CFLAGS += $(MIKMOD_CFLAGS)
 $(modplug-objs):	CFLAGS += $(MODPLUG_CFLAGS)
 $(mpc-objs):		CFLAGS += $(MPC_CFLAGS)
 $(vorbis-objs):		CFLAGS += $(VORBIS_CFLAGS)
@@ -59,6 +62,9 @@ flac.so: $(flac-objs)
 
 mad.so: $(mad-objs)
 	$(call cmd,ld_dl,$(MAD_LIBS))
+
+mikmod.so: $(mikmod-objs)
+	$(call cmd,ld_dl,$(MIKMOD_LIBS))
 
 modplug.so: $(modplug-objs)
 	$(call cmd,ld_dl,$(MODPLUG_LIBS))
