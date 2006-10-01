@@ -134,6 +134,10 @@ d_print("mik seek\n");
 
 static int mik_read_comments(struct input_plugin_data *ip_data, struct keyval **comments)
 {
+	/* Player_LoadTitle segfaults when we are playing a mod file.
+	 * This is a bug in libmikmod.
+	 */
+#if 0
 	struct keyval *c;
 	const char *name;
 
@@ -153,6 +157,9 @@ static int mik_read_comments(struct input_plugin_data *ip_data, struct keyval **
 		c[0].val = xstrdup(ip_data->filename);
 	}
 	*comments = c;
+#else
+	*comments = xnew0(struct keyval, 1);
+#endif
 	return 0;
 }
 
