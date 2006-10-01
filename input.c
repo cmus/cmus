@@ -49,6 +49,9 @@ struct input_plugin {
 	int http_code;
 	char *http_reason;
 
+	/* cached duration, -1 = unset */
+	int duration;
+
 	/*
 	 * pcm is converted to 16-bit signed little-endian stereo
 	 * NOTE: no conversion is done if channels > 2 or bits > 16
@@ -400,6 +403,7 @@ static void ip_init(struct input_plugin *ip, char *filename)
 	memset(ip, 0, sizeof(*ip));
 	ip->http_code = -1;
 	ip->pcm_convert_scale = -1;
+	ip->duration = -1;
 	ip->data.fd = -1;
 	ip->data.filename = filename;
 	ip->data.remote = is_url(filename);
@@ -573,7 +577,11 @@ int ip_read_comments(struct input_plugin *ip, struct keyval **comments)
 
 int ip_duration(struct input_plugin *ip)
 {
-	return ip->ops->duration(&ip->data);
+	if (ip->duration == -1)
+		ip->duration = ip->ops->duration(&ip->data);
+	if (ip->duration < 0)
+		return -1;
+	return ip->duration;
 }
 
 sample_format_t ip_get_sf(struct input_plugin *ip)

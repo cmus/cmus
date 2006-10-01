@@ -50,9 +50,6 @@ int ip_seek(struct input_plugin *ip, double offset);
  */
 int ip_read_comments(struct input_plugin *ip, struct keyval **comments);
 
-/*
- * errors: IP_ERROR_{ERRNO, FUNCTION_NOT_SUPPORTED}
- */
 int ip_duration(struct input_plugin *ip);
 
 sample_format_t ip_get_sf(struct input_plugin *ip);
