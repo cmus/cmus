@@ -21,16 +21,6 @@
  *
  */
 
-/*
- * reading sequence:
- * mod_open
- * (ip_open)
- * (alsa_set_hw_params)
- * mod_read (...)
- * mod_close
- * (-> mod_open)
- * */
-
 #include "ip.h"
 #include "xmalloc.h"
 #include <mikmod.h>
@@ -43,8 +33,6 @@ struct mik_private {
 static int mikmod_init(void)
 {
 	static int inited = 0;
-
-	d_print("mik init 0\n");
 
 	if (inited)
 		return 1;
@@ -74,8 +62,6 @@ static int mik_open(struct input_plugin_data *ip_data)
 	struct mik_private *priv;
 	int mi=mikmod_init();
 
-	d_print("mik open\n");
-
 	if (!mi)
 		return -IP_ERROR_INTERNAL;
 
@@ -89,15 +75,12 @@ static int mik_open(struct input_plugin_data *ip_data)
 
 	ip_data->private = priv;
 	ip_data->sf = sf_bits(16) | sf_rate(44100) | sf_channels(2) | sf_signed(1);
-
 	return 0;
 }
 
 static int mik_close(struct input_plugin_data *ip_data)
 {
 	struct mik_private *priv = ip_data->private;
-
-	d_print("mik close\n");
 
 	Player_Stop();
 	Player_Free(priv->file);
@@ -109,9 +92,6 @@ static int mik_close(struct input_plugin_data *ip_data)
 static int mik_read(struct input_plugin_data *ip_data, char *buffer, int count)
 {
 	int length;
-
-	/*d_print("mik read\n");*/
-
 	struct mik_private *priv = (struct mik_private *)ip_data->private;
 
 	if (!Player_Active())
@@ -127,7 +107,6 @@ static int mik_read(struct input_plugin_data *ip_data, char *buffer, int count)
 
 static int mik_seek(struct input_plugin_data *ip_data, double offset)
 {
-d_print("mik seek\n");
 	/* cannot seek in modules properly */
 	return -IP_ERROR_FUNCTION_NOT_SUPPORTED;
 }
@@ -141,18 +120,14 @@ static int mik_read_comments(struct input_plugin_data *ip_data, struct keyval **
 	struct keyval *c;
 	const char *name;
 
-	d_print("mik comments\n");
-
 	/* FIXME */
 	name=Player_LoadTitle(ip_data->filename);
 	c = xnew0(struct keyval, 2);
 
 	if (name != NULL && *name != 0) {
-		d_print("mik comments 1\n");
 		c[0].key = xstrdup("title");
 		c[0].val = xstrdup(name);
 	} else {
-		d_print("mik comments 2\n");
 		c[0].key = xstrdup("title");
 		c[0].val = xstrdup(ip_data->filename);
 	}
@@ -165,8 +140,6 @@ static int mik_read_comments(struct input_plugin_data *ip_data, struct keyval **
 
 static int mik_duration(struct input_plugin_data *ip_data)
 {
-	d_print("mik duration\n");
-	/* function not supported */
 	return -IP_ERROR_FUNCTION_NOT_SUPPORTED;
 }
 
@@ -186,4 +159,3 @@ const char * const ip_extensions[] = {
 };
 
 const char * const ip_mime_types[] = { NULL };
-
