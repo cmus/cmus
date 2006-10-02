@@ -180,11 +180,13 @@ int simple_track_cmp(const struct list_head *a_head, const struct list_head *b_h
 			res = a->num - b->num;
 			if (res)
 				break;
+			continue;
 		}
 		if (strcmp(key, "discnumber") == 0) {
 			res = a->disc - b->disc;
 			if (res)
 				break;
+			continue;
 		}
 		ai = a->info;
 		bi = b->info;
@@ -193,6 +195,7 @@ int simple_track_cmp(const struct list_head *a_head, const struct list_head *b_h
 			res = strcasecmp(ai->filename, bi->filename);
 			if (res)
 				break;
+			continue;
 		}
 		av = comments_get_val(ai->comments, key);
 		bv = comments_get_val(bi->comments, key);
