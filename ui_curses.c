@@ -1149,6 +1149,9 @@ static const char *get_stream_title(void)
 
 static void set_title(const char *title)
 {
+	if (!set_term_title)
+		return;
+
 	if (t_ts) {
 		printf("%s%s%s", tgoto(t_ts, 0, 0), title, t_fs);
 		fflush(stdout);
@@ -1157,9 +1160,6 @@ static void set_title(const char *title)
 
 static void do_update_titleline(void)
 {
-	if (!set_term_title)
-		return;
-
 	bkgdset(pairs[CURSED_TITLELINE]);
 	player_info_lock();
 	if (cur_track_info) {
