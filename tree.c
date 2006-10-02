@@ -488,16 +488,24 @@ void tree_add_track(struct tree_track *track)
 {
 	const struct track_info *ti = tree_track_info(track);
 	const char *album_name, *artist_name;
+	const char *compilation = NULL;
 	struct artist *artist;
 	struct album *album;
 	int date;
 
 	album_name = comments_get_val(ti->comments, "album");
 	artist_name = comments_get_val(ti->comments, "artist");
+	compilation = comments_get_val(ti->comments, "compilation");
 
 	if (artist_name == NULL && album_name == NULL && is_url(ti->filename)) {
 		artist_name = "<Stream>";
 		album_name = "<Stream>";
+	}
+
+	if (compilation && (!strcasecmp(compilation, "1")
+				|| !strcasecmp(compilation, "yes"))) {
+		/* Store all compilations under compilations */
+		artist_name = "<Compilations>";
 	}
 
 	find_artist_and_album(artist_name, album_name, &artist, &album);

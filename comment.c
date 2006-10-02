@@ -76,7 +76,7 @@ int comments_get_int(const struct keyval *comments, const char *key)
 }
 
 static const char *interesting[] = {
-	"artist", "album", "title", "tracknumber", "discnumber", "genre", "date", NULL
+	"artist", "album", "title", "tracknumber", "discnumber", "genre", "date", "compilation",  NULL
 };
 
 int is_interesting_key(const char *key)
