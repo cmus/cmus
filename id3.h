@@ -16,7 +16,8 @@ enum id3_key {
 	ID3_DATE,
 	ID3_GENRE,
 	ID3_DISC,
-	ID3_TRACK
+	ID3_TRACK,
+	ID3_ALBUMARTIST
 };
 #define NUM_ID3_KEYS (ID3_TRACK + 1)
 

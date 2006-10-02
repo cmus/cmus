@@ -512,6 +512,7 @@ static struct {
 	{ "TCON", ID3_GENRE },
 	{ "TPOS", ID3_DISC },
 	{ "TRCK", ID3_TRACK },
+	{ "TPE2", ID3_ALBUMARTIST },
 
 	/* obsolete frames (2.2.0) */
 	{ "TP1",  ID3_ARTIST },
@@ -845,8 +846,6 @@ char *id3_get_comment(ID3 *id3, enum id3_key key)
 					return NULL;
 				return xstrdup(genres[idx]);
 			}
-		case ID3_DISC:
-			return NULL;
 		case ID3_TRACK:
 			{
 				char *t;
@@ -857,6 +856,9 @@ char *id3_get_comment(ID3 *id3, enum id3_key key)
 				snprintf(t, 4, "%d", ((unsigned char *)id3->v1)[126]);
 				return t;
 			}
+		case ID3_DISC:
+		case ID3_ALBUMARTIST:
+			return NULL;
 		}
 	}
 	return NULL;
