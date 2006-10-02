@@ -1157,6 +1157,9 @@ static void set_title(const char *title)
 
 static void do_update_titleline(void)
 {
+	if (!set_term_title)
+		return;
+
 	bkgdset(pairs[CURSED_TITLELINE]);
 	player_info_lock();
 	if (cur_track_info) {

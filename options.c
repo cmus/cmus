@@ -40,6 +40,7 @@ int auto_reshuffle = 0;
 int confirm_run = 1;
 int show_hidden = 0;
 int show_remaining_time = 0;
+int set_term_title = 1;
 int play_library = 1;
 int repeat = 0;
 int shuffle = 0;
@@ -528,6 +529,21 @@ static void toggle_show_remaining_time(unsigned int id)
 	update_statusline();
 }
 
+static void get_set_term_title(unsigned int id, char *buf)
+{
+	strcpy(buf, bool_names[set_term_title]);
+}
+
+static void set_set_term_title(unsigned int id, const char *buf)
+{
+	parse_bool(buf, &set_term_title);
+}
+
+static void toggle_set_term_title(unsigned int id)
+{
+	set_term_title ^= 1;
+}
+
 static void get_shuffle(unsigned int id, char *buf)
 {
 	strcpy(buf, bool_names[shuffle]);
@@ -669,6 +685,7 @@ static const struct {
 	DT(repeat)
 	DT(show_hidden)
 	DT(show_remaining_time)
+	DT(set_term_title)
 	DT(shuffle)
 	DT(softvol)
 	DN(softvol_state)
