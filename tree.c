@@ -514,7 +514,8 @@ void tree_add_track(struct tree_track *track)
 		album_name = "<No Name>";
 
 	if (albumartist) {
-		artist_name = albumartist;
+		/* FIXME: user might want to create custom categories  */
+		artist_name = "<Compilations>";
 	} else {
 		const char *compilation = comments_get_val(ti->comments, "compilation");
 
