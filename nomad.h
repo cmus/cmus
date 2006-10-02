@@ -25,7 +25,7 @@
 
 #define INPUT_BUFFER_SIZE	(5 * 8192)
 
-#define SEEK_IDX_INTERVAL  60
+#define SEEK_IDX_INTERVAL  15
 
 /* default callbacks use read, lseek, close */
 struct nomad_callbacks {
