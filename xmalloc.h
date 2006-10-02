@@ -68,13 +68,6 @@ static inline char * __MALLOC xstrdup(const char *str)
 
 char * __MALLOC xstrndup(const char *str, size_t n);
 
-static inline char * __MALLOC xxstrdup(const char *str)
-{
-	if (str == NULL)
-		return NULL;
-	return xstrdup(str);
-}
-
 static inline void free_str_array(char **array)
 {
 	int i;

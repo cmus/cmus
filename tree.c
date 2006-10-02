@@ -395,11 +395,11 @@ static void find_artist_and_album(const char *artist_name,
 	list_for_each_entry(artist, &lib_artist_head, node) {
 		int res;
 
-		res = xstrcasecmp(artist->name, artist_name);
+		res = u_strcasecmp(artist->name, artist_name);
 		if (res == 0) {
 			*_artist = artist;
 			list_for_each_entry(album, &artist->album_head, node) {
-				res = xstrcasecmp(album->name, album_name);
+				res = u_strcasecmp(album->name, album_name);
 				if (res == 0) {
 					*_album = album;
 					return;
@@ -414,19 +414,27 @@ static void find_artist_and_album(const char *artist_name,
 	return;
 }
 
+static int special_name_cmp(const char *a, const char *b)
+{
+	/* keep <Stream> etc. top */
+	int cmp = (*a != '<') - (*b != '<');
+
+	if (cmp)
+		return cmp;
+	return u_strcasecmp(a, b);
+}
+
 static struct artist *add_artist(const char *name)
 {
 	struct list_head *item;
 	struct artist *artist;
 
 	artist = xnew(struct artist, 1);
-	artist->name = xxstrdup(name);
+	artist->name = xstrdup(name);
 	list_init(&artist->album_head);
 	artist->expanded = 0;
 	list_for_each(item, &lib_artist_head) {
-		struct artist *a = to_artist(item);
-
-		if (xstrcasecmp(name, a->name) < 0)
+		if (special_name_cmp(name, to_artist(item)->name) < 0)
 			break;
 	}
 	/* add before item */
@@ -440,7 +448,7 @@ static struct album *artist_add_album(struct artist *artist, const char *name, i
 	struct album *album;
 
 	album = xnew(struct album, 1);
-	album->name = xxstrdup(name);
+	album->name = xstrdup(name);
 	album->date = date;
 	list_init(&album->track_head);
 	album->artist = artist;
@@ -451,7 +459,7 @@ static struct album *artist_add_album(struct artist *artist, const char *name, i
 			break;
 		if (date > a->date)
 			continue;
-		if (xstrcasecmp(name, a->name) < 0)
+		if (special_name_cmp(name, a->name) < 0)
 			break;
 	}
 	/* add before item */
@@ -496,10 +504,14 @@ void tree_add_track(struct tree_track *track)
 	artist_name = comments_get_val(ti->comments, "artist");
 	albumartist = comments_get_val(ti->comments, "albumartist");
 
-	if (artist_name == NULL && album_name == NULL && is_url(ti->filename)) {
+	if (is_url(ti->filename)) {
 		artist_name = "<Stream>";
 		album_name = "<Stream>";
 	}
+	if (artist_name == NULL)
+		artist_name = "<No Name>";
+	if (album_name == NULL)
+		album_name = "<No Name>";
 
 	if (albumartist) {
 		artist_name = albumartist;

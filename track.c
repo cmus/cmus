@@ -14,7 +14,7 @@
 
 #include <string.h>
 
-int xstrcasecmp(const char *a, const char *b)
+static int xstrcasecmp(const char *a, const char *b)
 {
 	if (a == NULL) {
 		if (b == NULL)

@@ -46,9 +46,6 @@ static inline struct simple_track *iter_to_simple_track(const struct iter *iter)
 	return iter->data1;
 }
 
-/* @a and @b are UTF-8. either can be NULL */
-int xstrcasecmp(const char *a, const char *b);
-
 /* NOTE: does not ref ti */
 void simple_track_init(struct simple_track *track, struct track_info *ti);
 

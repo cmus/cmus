@@ -440,8 +440,6 @@ static void print_tree(struct window *win, int row, struct iter *iter)
 		print_buffer[pos++] = ' ';
 		str = album->name;
 	}
-	if (!str)
-		str = "<no name>";
 	pos += format_str(print_buffer + pos, str, tree_win_w - pos - 1);
 	print_buffer[pos++] = ' ';
 	print_buffer[pos++] = 0;

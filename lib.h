@@ -51,9 +51,6 @@ struct artist {
 
 	/* albums visible for this artist in the tree_win? */
 	unsigned int expanded : 1;
-
-	/* if streams == 1 && name == NULL then display <Stream> */
-	//unsigned int streams : 1;
 };
 
 enum aaa_mode {
