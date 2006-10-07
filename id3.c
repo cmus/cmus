@@ -858,6 +858,7 @@ char *id3_get_comment(ID3 *id3, enum id3_key key)
 			}
 		case ID3_DISC:
 		case ID3_ALBUMARTIST:
+		case NUM_ID3_KEYS:
 			return NULL;
 		}
 	}

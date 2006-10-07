@@ -17,9 +17,9 @@ enum id3_key {
 	ID3_GENRE,
 	ID3_DISC,
 	ID3_TRACK,
-	ID3_ALBUMARTIST
+	ID3_ALBUMARTIST,
+	NUM_ID3_KEYS
 };
-#define NUM_ID3_KEYS (ID3_TRACK + 1)
 
 #define UTF16_IS_LSURROGATE(uch) (0xdc00 <= uch && 0xdfff >= uch)
 #define UTF16_IS_HSURROGATE(uch) (0xd800 <= uch && 0xdbff >= uch)
