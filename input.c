@@ -450,10 +450,8 @@ int ip_open(struct input_plugin *ip)
 				rc == -1 ? strerror(errno) : "");
 		if (ip->data.fd != -1)
 			close(ip->data.fd);
-		ip->data.fd = -1;
-		ip->ops = NULL;
 		free(ip->data.metadata);
-		ip->data.metadata = NULL;
+		ip_init(ip, ip->data.filename);
 		return rc;
 	}
 	ip->open = 1;
