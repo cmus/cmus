@@ -467,8 +467,10 @@ int main(int argc, char *argv[])
 check_header()
 {
 	argc check_header $# 1
-	msg_checking "for header <$1>"
-	if try_compile "#include <$1>" "$@"
+	__header="$1"
+	shift
+	msg_checking "for header <$__header>"
+	if try_compile "#include <$__header>" "$@"
 	then
 		msg_result yes
 		return 0
