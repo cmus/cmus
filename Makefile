@@ -41,6 +41,7 @@ modplug-objs		:= modplug.lo
 mpc-objs		:= mpc.lo
 vorbis-objs		:= vorbis.lo
 wav-objs		:= wav.lo
+mp4-objs		:= mp4.lo
 
 ip-$(CONFIG_FLAC)	+= flac.so
 ip-$(CONFIG_MAD)	+= mad.so
@@ -49,6 +50,7 @@ ip-$(CONFIG_MODPLUG)	+= modplug.so
 ip-$(CONFIG_MPC)	+= mpc.so
 ip-$(CONFIG_VORBIS)	+= vorbis.so
 ip-$(CONFIG_WAV)	+= wav.so
+ip-$(CONFIG_MP4)	+= mp4.so
 
 $(flac-objs):		CFLAGS += $(FLAC_CFLAGS)
 $(mad-objs):		CFLAGS += $(MAD_CFLAGS)
@@ -56,6 +58,7 @@ $(mikmod-objs):		CFLAGS += $(MIKMOD_CFLAGS)
 $(modplug-objs):	CFLAGS += $(MODPLUG_CFLAGS)
 $(mpc-objs):		CFLAGS += $(MPC_CFLAGS)
 $(vorbis-objs):		CFLAGS += $(VORBIS_CFLAGS)
+$(mp4-objs):		CFLAGS += $(MP4_CFLAGS)
 
 flac.so: $(flac-objs)
 	$(call cmd,ld_dl,$(FLAC_LIBS))
@@ -77,6 +80,10 @@ vorbis.so: $(vorbis-objs)
 
 wav.so: $(wav-objs)
 	$(call cmd,ld_dl,)
+
+mp4.so: $(mp4-objs)
+	$(call cmd,ld_dl,$(MP4_LIBS))
+
 # }}}
 
 # output plugins {{{

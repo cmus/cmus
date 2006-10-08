@@ -157,6 +157,20 @@ check_sun()
 	fi
 }
 
+check_mp4()
+{
+	msg_checking "for header <neaacdec.h>"
+	if test -f /usr/include/neaacdec.h
+	then
+		msg_result "yes"
+	else
+		msg_result "no"
+		return 1
+	fi
+	check_library MP4 "" "-lmp4v2 -lfaad -lm"
+	return $?
+}
+
 # defaults
 prefix=/usr/local
 DEBUG=1
@@ -182,6 +196,7 @@ Optional Features: y/n
   CONFIG_VORBIS   Ogg/Vorbis support [auto]
   CONFIG_TREMOR   Use Tremor as Ogg/Vorbis input plugin [n]
   CONFIG_WAV      WAV support [y]
+  CONFIG_MP4      MPEG-4 AAC support [auto]
   CONFIG_ALSA     ALSA support [auto]
   CONFIG_AO       Libao cross-platform audio library [auto]
   CONFIG_ARTS     ARTS support [auto]
@@ -221,6 +236,7 @@ check check_mikmod  CONFIG_MIKMOD
 check check_modplug CONFIG_MODPLUG
 check check_mpc     CONFIG_MPC
 check check_vorbis  CONFIG_VORBIS
+check check_mp4     CONFIG_MP4
 # nothing to check, just validate the variable values
 check true          CONFIG_TREMOR
 check true          CONFIG_WAV
@@ -241,7 +257,7 @@ config_header config/debug.h DEBUG
 config_header config/tremor.h CONFIG_TREMOR
 
 makefile_vars bindir datadir libdir mandir
-makefile_vars CONFIG_FLAC CONFIG_MAD CONFIG_MIKMOD CONFIG_MODPLUG CONFIG_MPC CONFIG_VORBIS CONFIG_WAV
+makefile_vars CONFIG_FLAC CONFIG_MAD CONFIG_MIKMOD CONFIG_MODPLUG CONFIG_MPC CONFIG_VORBIS CONFIG_WAV CONFIG_MP4
 makefile_vars CONFIG_ALSA CONFIG_AO CONFIG_ARTS CONFIG_OSS CONFIG_SUN
 
 generate_config_mk
