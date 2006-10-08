@@ -159,14 +159,7 @@ check_sun()
 
 check_mp4()
 {
-	msg_checking "for header <neaacdec.h>"
-	if test -f /usr/include/neaacdec.h
-	then
-		msg_result "yes"
-	else
-		msg_result "no"
-		return 1
-	fi
+	check_header neaacdec.h &&
 	check_library MP4 "" "-lmp4v2 -lfaad -lm"
 	return $?
 }
