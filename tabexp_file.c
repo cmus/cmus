@@ -121,6 +121,7 @@ static void tabexp_load_dir(const char *dirname, const char *start,
 		}
 		ptr_array_add(&array, str);
 	}
+	dir_close(&dir);
 	if (array.count) {
 		ptr_array_sort(&array, strptrcmp);
 		ptr_array_plug(&array);
