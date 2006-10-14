@@ -42,6 +42,7 @@ mpc-objs		:= mpc.lo
 vorbis-objs		:= vorbis.lo
 wav-objs		:= wav.lo
 mp4-objs		:= mp4.lo
+aac-objs		:= id3.lo utf8_encode.lo aac.lo
 
 ip-$(CONFIG_FLAC)	+= flac.so
 ip-$(CONFIG_MAD)	+= mad.so
@@ -51,6 +52,7 @@ ip-$(CONFIG_MPC)	+= mpc.so
 ip-$(CONFIG_VORBIS)	+= vorbis.so
 ip-$(CONFIG_WAV)	+= wav.so
 ip-$(CONFIG_MP4)	+= mp4.so
+ip-$(CONFIG_AAC)	+= aac.so
 
 $(flac-objs):		CFLAGS += $(FLAC_CFLAGS)
 $(mad-objs):		CFLAGS += $(MAD_CFLAGS)
@@ -59,6 +61,7 @@ $(modplug-objs):	CFLAGS += $(MODPLUG_CFLAGS)
 $(mpc-objs):		CFLAGS += $(MPC_CFLAGS)
 $(vorbis-objs):		CFLAGS += $(VORBIS_CFLAGS)
 $(mp4-objs):		CFLAGS += $(MP4_CFLAGS)
+$(aac-objs):		CFLAGS += $(AAC_CFLAGS)
 
 flac.so: $(flac-objs)
 	$(call cmd,ld_dl,$(FLAC_LIBS))
@@ -83,6 +86,9 @@ wav.so: $(wav-objs)
 
 mp4.so: $(mp4-objs)
 	$(call cmd,ld_dl,$(MP4_LIBS))
+
+aac.so: $(aac-objs)
+	$(call cmd,ld_dl,$(AAC_LIBS))
 
 # }}}
 
