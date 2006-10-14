@@ -575,6 +575,8 @@ int ip_read_comments(struct input_plugin *ip, struct keyval **comments)
 
 int ip_duration(struct input_plugin *ip)
 {
+	if (ip->data.remote)
+		return -1;
 	if (ip->duration == -1)
 		ip->duration = ip->ops->duration(&ip->data);
 	if (ip->duration < 0)

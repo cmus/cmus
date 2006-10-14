@@ -400,11 +400,7 @@ static int aac_duration(struct input_plugin_data *ip_data)
 	off_t file_size;
 	char *sample_buf;
 
-	if (ip_data->remote)
-		return 0;
-
 	file_size = lseek(ip_data->fd, 0, SEEK_END);
-
 	if (file_size == -1)
 		return -IP_ERROR_FUNCTION_NOT_SUPPORTED;
 

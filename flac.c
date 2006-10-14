@@ -480,9 +480,6 @@ static int flac_seek(struct input_plugin_data *ip_data, double offset)
 	struct flac_private *priv = ip_data->private;
 	uint64_t sample;
 
-	if (ip_data->remote)
-		return -IP_ERROR_ERRNO;
-
 	sample = (uint64_t)(offset * (double)sf_get_rate(ip_data->sf) + 0.5);
 	if (!F(seek_absolute)(priv->dec, sample)) {
 		return -IP_ERROR_ERRNO;
