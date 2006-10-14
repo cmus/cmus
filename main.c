@@ -58,7 +58,7 @@ static void remote_connect(const char *address)
 		addrlen = sizeof(addr.un);
 	} else {
 		char *s = strchr(address, ':');
-		int port = 3000;
+		int port = DEFAULT_PORT;
 		struct hostent *hent;
 
 		if (s) {

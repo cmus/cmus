@@ -7,6 +7,7 @@ include scripts/lib.mk
 
 input.o main.o ui_curses.o: .version
 input.o main.o ui_curses.o: CFLAGS += -DVERSION=\"$(VERSION)\"
+main.o server.o: CFLAGS += -DDEFAULT_PORT=3000
 
 .version: Makefile
 	@test "`cat $@ 2> /dev/null`" = "$(VERSION)" && exit 0; \

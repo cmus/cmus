@@ -116,7 +116,7 @@ static void gethostbyname_failed(void)
 
 void server_init(char *address)
 {
-	int port = -1;
+	int port = DEFAULT_PORT;
 	int addrlen;
 
 	if (strchr(address, '/')) {
