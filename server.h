@@ -5,8 +5,10 @@
 #ifndef _SERVER_H
 #define _SERVER_H
 
-int remote_server_init(const char *address);
-int remote_server_serve(void);
-void remote_server_exit(void);
+extern int server_socket;
+
+void server_init(char *address);
+void server_exit(void);
+int server_serve(void);
 
 #endif

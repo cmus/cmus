@@ -20,18 +20,26 @@
 #include "server.h"
 #include "prog.h"
 #include "command_mode.h"
-#include "debug.h"
 
 #include <unistd.h>
-#include <sys/un.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/un.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
-static struct sockaddr_un addr;
-static int remote_socket = -1;
+int server_socket;
+
+static union {
+	struct sockaddr sa;
+	struct sockaddr_un un;
+	struct sockaddr_in in;
+} addr;
 
 #define MAX_CLIENTS 10
 
@@ -72,13 +80,13 @@ static void read_commands(int fd)
 	}
 }
 
-int remote_server_serve(void)
+int server_serve(void)
 {
 	struct sockaddr saddr;
 	socklen_t saddr_size = sizeof(saddr);
 	int fd;
 
-	fd = accept(remote_socket, &saddr, &saddr_size);
+	fd = accept(server_socket, &saddr, &saddr_size);
 	if (fd == -1) {
 		return -1;
 	}
@@ -87,54 +95,104 @@ int remote_server_serve(void)
 	return 0;
 }
 
-int remote_server_init(const char *address)
+static void gethostbyname_failed(void)
 {
-	/* create socket - domain, type, protocol (IP) */
-	remote_socket = socket(PF_UNIX, SOCK_STREAM, 0);
-	if (remote_socket == -1)
-		die_errno("socket");
-	addr.sun_family = AF_UNIX;
-	strncpy(addr.sun_path, address, sizeof(addr.sun_path) - 1);
+	const char *error = "Unknown error.";
 
-	if (bind(remote_socket, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
+	switch (h_errno) {
+	case HOST_NOT_FOUND:
+	case NO_ADDRESS:
+		error = "Host not found.";
+		break;
+	case NO_RECOVERY:
+		error = "A non-recoverable name server error.";
+		break;
+	case TRY_AGAIN:
+		error = "A temporary error occurred on an authoritative name server.";
+		break;
+	}
+	die("gethostbyname: %s\n", error);
+}
+
+void server_init(char *address)
+{
+	int port = -1;
+	int addrlen;
+
+	if (strchr(address, '/')) {
+		addr.sa.sa_family = AF_UNIX;
+		strncpy(addr.un.sun_path, address, sizeof(addr.un.sun_path) - 1);
+
+		addrlen = sizeof(struct sockaddr_un);
+	} else {
+		char *s = strchr(address, ':');
+		struct hostent *hent;
+
+		if (s) {
+			*s++ = 0;
+			port = atoi(s);
+		}
+		hent = gethostbyname(address);
+		if (!hent)
+			gethostbyname_failed();
+
+		addr.sa.sa_family = hent->h_addrtype;
+		switch (addr.sa.sa_family) {
+		case AF_INET:
+			memcpy(&addr.in.sin_addr, hent->h_addr_list[0], hent->h_length);
+			addr.in.sin_port = htons(port);
+
+			addrlen = sizeof(addr.in);
+			break;
+		default:
+			die("unsupported address type\n");
+		}
+	}
+
+	server_socket = socket(addr.sa.sa_family, SOCK_STREAM, 0);
+	if (server_socket == -1)
+		die_errno("socket");
+
+	if (bind(server_socket, &addr.sa, addrlen) == -1) {
 		int sock;
 
 		if (errno != EADDRINUSE)
 			die_errno("bind");
 
 		/* address already in use */
+		if (addr.sa.sa_family != AF_UNIX)
+			die("cmus is already listening on %s:%d\n", address, port);
 
 		/* try to connect to server */
-		sock = socket(PF_UNIX, SOCK_STREAM, 0);
+		sock = socket(AF_UNIX, SOCK_STREAM, 0);
 		if (sock == -1)
 			die_errno("socket");
 
-		if (connect(sock, (struct sockaddr *)&addr, sizeof(addr)) == -1) {
+		if (connect(sock, &addr.sa, addrlen) == -1) {
 			if (errno != ENOENT && errno != ECONNREFUSED)
 				die_errno("connect");
 
-			close(sock);
 			/* server not running => dead socket */
 
 			/* try to remove dead socket */
-			if (unlink(addr.sun_path) == -1 && errno != ENOENT)
+			if (unlink(addr.un.sun_path) == -1 && errno != ENOENT)
 				die_errno("unlink");
-			if (bind(remote_socket, (struct sockaddr *)&addr, sizeof(addr)) == -1)
+			if (bind(server_socket, &addr.sa, addrlen) == -1)
 				die_errno("bind");
 		} else {
 			/* server already running */
-			close(sock);
 			die("cmus is already listening on socket %s\n", address);
 		}
+		close(sock);
 	}
-	/* start listening */
-	BUG_ON(listen(remote_socket, MAX_CLIENTS) == -1);
-	return remote_socket;
+
+	if (listen(server_socket, MAX_CLIENTS) == -1)
+		die_errno("listen");
 }
 
-void remote_server_exit(void)
+void server_exit(void)
 {
-	close(remote_socket);
-	if (unlink(addr.sun_path) == -1)
-		d_print("unlink failed\n");
+	close(server_socket);
+	if (addr.sa.sa_family == AF_UNIX)
+		unlink(addr.un.sun_path);
 }

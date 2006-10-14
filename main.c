@@ -9,9 +9,12 @@
 
 #include <unistd.h>
 #include <fcntl.h>
-#include <sys/un.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/un.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -20,16 +23,70 @@
 static int sock;
 static int raw_args = 0;
 
-static void remote_connect(const char *server)
+static void gethostbyname_failed(void)
 {
-	struct sockaddr_un addr;
+	const char *error = "Unknown error.";
 
-	sock = socket(PF_UNIX, SOCK_STREAM, 0);
+	switch (h_errno) {
+	case HOST_NOT_FOUND:
+	case NO_ADDRESS:
+		error = "Host not found.";
+		break;
+	case NO_RECOVERY:
+		error = "A non-recoverable name server error.";
+		break;
+	case TRY_AGAIN:
+		error = "A temporary error occurred on an authoritative name server.";
+		break;
+	}
+	die("gethostbyname: %s\n", error);
+}
+
+static void remote_connect(const char *address)
+{
+	union {
+		struct sockaddr sa;
+		struct sockaddr_un un;
+		struct sockaddr_in in;
+	} addr;
+	int addrlen;
+
+	if (strchr(address, '/')) {
+		addr.sa.sa_family = AF_UNIX;
+		strncpy(addr.un.sun_path, address, sizeof(addr.un.sun_path) - 1);
+
+		addrlen = sizeof(addr.un);
+	} else {
+		char *s = strchr(address, ':');
+		int port = 3000;
+		struct hostent *hent;
+
+		if (s) {
+			*s++ = 0;
+			port = atoi(s);
+		}
+		hent = gethostbyname(address);
+		if (!hent)
+			gethostbyname_failed();
+
+		addr.sa.sa_family = hent->h_addrtype;
+		switch (addr.sa.sa_family) {
+		case AF_INET:
+			memcpy(&addr.in.sin_addr, hent->h_addr_list[0], hent->h_length);
+			addr.in.sin_port = htons(port);
+
+			addrlen = sizeof(addr.in);
+			break;
+		default:
+			die("unsupported address type\n");
+		}
+	}
+
+	sock = socket(addr.sa.sa_family, SOCK_STREAM, 0);
 	if (sock == -1)
 		die_errno("socket");
-	addr.sun_family = AF_UNIX;
-	strncpy(addr.sun_path, server, sizeof(addr.sun_path) - 1);
-	if (connect(sock, (struct sockaddr *)&addr, sizeof(addr))) {
+
+	if (connect(sock, &addr.sa, addrlen)) {
 		if (errno == ENOENT || errno == ECONNREFUSED) {
 			/* "cmus-remote -C" can be used to check if cmus is running */
 			if (!raw_args)

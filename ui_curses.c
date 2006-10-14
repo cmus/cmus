@@ -100,7 +100,6 @@ static int msg_is_error;
 static int error_count = 0;
 
 static char *server_address = NULL;
-static int remote_socket = -1;
 
 static char *charset = NULL;
 static char print_buffer[512];
@@ -1836,7 +1835,7 @@ static void main_loop(void)
 {
 	int rc, fd_high;
 
-	fd_high = remote_socket;
+	fd_high = server_socket;
 	while (running) {
 		fd_set set;
 		struct timeval tv;
@@ -1845,7 +1844,7 @@ static void main_loop(void)
 
 		FD_ZERO(&set);
 		FD_SET(0, &set);
-		FD_SET(remote_socket, &set);
+		FD_SET(server_socket, &set);
 
 		/* Timeout must be so small that screen updates seem instant.
 		 * Only affects changes done in other threads (worker, player).
@@ -1866,11 +1865,11 @@ static void main_loop(void)
 			continue;
 		}
 
-		if (FD_ISSET(remote_socket, &set)) {
+		if (FD_ISSET(server_socket, &set)) {
 			/* no error msgs for cmus-remote */
 			display_errors = 0;
 
-			remote_server_serve();
+			server_serve();
 		}
 		if (FD_ISSET(0, &set)) {
 			/* diplay errors for interactive commands */
@@ -1999,7 +1998,7 @@ static void init_curses(void)
 
 static void init_all(void)
 {
-	remote_socket = remote_server_init(server_address);
+	server_init(server_address);
 
 	/* does not select output plugin */
 	player_init(&player_callbacks);
@@ -2051,7 +2050,7 @@ static void exit_all(void)
 
 	options_exit();
 
-	remote_server_exit();
+	server_exit();
 	cmus_exit();
 	cmus_save(lib_for_each, lib_autosave_filename);
 	cmus_save(pl_for_each, pl_autosave_filename);
