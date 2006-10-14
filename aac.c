@@ -20,7 +20,6 @@
 #include "ip.h"
 #include "xmalloc.h"
 #include "debug.h"
-#include "file.h"
 #include "id3.h"
 #include "comment.h"
 #include "read_wrapper.h"
@@ -49,7 +48,6 @@ struct aac_private {
 
 	NeAACDecHandle decoder;	/* typedef void * */
 };
-
 
 static inline int buffer_length(const struct input_plugin_data *ip_data)
 {
@@ -86,7 +84,6 @@ static int buffer_fill(struct input_plugin_data *ip_data)
 		return 0;
 
 	priv->rbuf_len += n;
-
 	return 1;
 }
 
@@ -110,7 +107,6 @@ static int buffer_fill_min(struct input_plugin_data *ip_data, int len)
 		if (rc <= 0)
 			return rc;
 	}
-
 	return 1;
 }
 
@@ -136,7 +132,6 @@ static inline int parse_frame(const unsigned char data[6])
 	len |= data[4] << 3;	/* ..xx11111111xxx */
 	len |= data[5] >> 5;	/* ..xxxxxxxxxx111 */
 	len &= 0x1FFF;		/* 13 bits */
-
 	return len;
 }
 
@@ -145,12 +140,9 @@ static inline int parse_frame(const unsigned char data[6])
  */
 static int buffer_fill_frame(struct input_plugin_data *ip_data)
 {
-	struct aac_private *priv;
 	unsigned char *data;
 	int rc, n, len;
 	int max = 32768;
-
-	priv = ip_data->private;
 
 	while (1) {
 		/* need at least 6 bytes of data */
@@ -166,6 +158,7 @@ static int buffer_fill_frame(struct input_plugin_data *ip_data)
 			/* give up after 32KB */
 			if (max-- == 0) {
 				d_print("no frame found!\n");
+				/* FIXME: set errno? */
 				return -1;
 			}
 
@@ -197,12 +190,10 @@ static int aac_open(struct input_plugin_data *ip_data)
 	NeAACDecConfigurationPtr neaac_cfg;
 	int ret, n;
 
-
 	/* init private struct */
 	priv = xnew0(struct aac_private, 1);
-	ip_data->private = priv;
-
 	priv->decoder = NeAACDecOpen();
+	ip_data->private = priv;
 
 	/* set decoder config */
 	neaac_cfg = NeAACDecGetCurrentConfiguration(priv->decoder);
@@ -216,8 +207,6 @@ static int aac_open(struct input_plugin_data *ip_data)
 		ret = -IP_ERROR_FILE_FORMAT;
 		goto out;
 	}
-
-	d_print("frame found\n");
 
 	/* in case of a bug, make sure there is at least some data
 	 * in the buffer for NeAACDecInit() to work with.
@@ -250,28 +239,20 @@ static int aac_open(struct input_plugin_data *ip_data)
 #if defined(WORDS_BIGENDIAN)
 	ip_data->sf |= sf_bigendian(1);
 #endif
-
 	return 0;
-
 out:
-	if (priv->decoder)
-		NeAACDecClose(priv->decoder);
+	NeAACDecClose(priv->decoder);
 	free(priv);
 	return ret;
 }
 
 static int aac_close(struct input_plugin_data *ip_data)
 {
-	struct aac_private *priv;
+	struct aac_private *priv = ip_data->private;
 
-	priv = ip_data->private;
-
-	if (priv->decoder)
-		NeAACDecClose(priv->decoder);
-
+	NeAACDecClose(priv->decoder);
 	free(priv);
 	ip_data->private = NULL;
-
 	return 0;
 }
 
@@ -281,14 +262,12 @@ static int aac_close(struct input_plugin_data *ip_data)
  * number of bytes put in 'buffer' on success */
 static int decode_one_frame(struct input_plugin_data *ip_data, void *buffer, int count)
 {
-	struct aac_private *priv;
-	unsigned char *aac_data = NULL;
-	unsigned int aac_data_size = 0;
+	struct aac_private *priv = ip_data->private;
+	unsigned char *aac_data;
+	unsigned int aac_data_size;
 	NeAACDecFrameInfo frame_info;
 	char *sample_buf;
 	int bytes, rc;
-
-	priv = ip_data->private;
 
 	rc = buffer_fill_frame(ip_data);
 	if (rc <= 0)
@@ -333,16 +312,13 @@ static int decode_one_frame(struct input_plugin_data *ip_data, void *buffer, int
 	} else {
 		memcpy(buffer, sample_buf, bytes);
 	}
-
 	return bytes;
 }
 
 static int aac_read(struct input_plugin_data *ip_data, char *buffer, int count)
 {
-	struct aac_private *priv;
+	struct aac_private *priv = ip_data->private;
 	int rc;
-
-	priv = ip_data->private;
 
 	/* use overflow from previous call (if any) */
 	if (priv->overflow_buf_len) {
@@ -354,14 +330,12 @@ static int aac_read(struct input_plugin_data *ip_data, char *buffer, int count)
 		memcpy(buffer, priv->overflow_buf, len);
 		priv->overflow_buf += len;
 		priv->overflow_buf_len -= len;
-
 		return len;
 	}
 
 	do {
 		rc = decode_one_frame(ip_data, buffer, count);
 	} while (rc == -2);
-
 	return rc;
 }
 
@@ -415,19 +389,16 @@ static int aac_read_comments(struct input_plugin_data *ip_data,
 out:
 	close(fd);
 	id3_free(id3);
-
 	return 0;
 }
 
 static int aac_duration(struct input_plugin_data *ip_data)
 {
-	struct aac_private *priv;
+	struct aac_private *priv = ip_data->private;
 	NeAACDecFrameInfo frame_info;
 	int samples = 0, bytes = 0, frames = 0;
 	off_t file_size;
 	char *sample_buf;
-
-	priv = ip_data->private;
 
 	if (ip_data->remote)
 		return 0;
