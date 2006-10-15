@@ -106,9 +106,10 @@ void buffer_consume(int count)
 }
 
 /* chunk is marked filled if free bytes < 1024 or count == 0 */
-void buffer_fill(int count)
+int buffer_fill(int count)
 {
 	struct chunk *c;
+	int filled = 0;
 
 	cmus_mutex_lock(&buffer_mutex);
 	c = &buffer_chunks[buffer_widx];
@@ -119,9 +120,11 @@ void buffer_fill(int count)
 		c->filled = 1;
 		buffer_widx++;
 		buffer_widx %= buffer_nr_chunks;
+		filled = 1;
 	}
 
 	cmus_mutex_unlock(&buffer_mutex);
+	return filled;
 }
 
 void buffer_reset(void)
