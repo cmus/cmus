@@ -416,9 +416,8 @@ static void __prebuffer(void)
 			if (nr_read == -1 && errno == EAGAIN)
 				continue;
 			player_ip_error(nr_read, "reading file %s", ip_get_filename(ip));
-			ip_delete(ip);
-			producer_status = PS_UNLOADED;
-			return;
+			ip_set_eof(ip);
+			nr_read = 0;
 		}
 		if (ip_metadata_changed(ip))
 			metadata_changed();
@@ -763,12 +762,13 @@ static void *producer_loop(void *arg)
 				if (nr_read != -1 || errno != EAGAIN) {
 					player_ip_error(nr_read, "reading file %s",
 							ip_get_filename(ip));
-					ip_delete(ip);
-					producer_status = PS_UNLOADED;
+					ip_set_eof(ip);
+					nr_read = 0;
+				} else {
+					producer_unlock();
+					ms_sleep(50);
+					break;
 				}
-				producer_unlock();
-				ms_sleep(50);
-				break;
 			}
 			if (ip_metadata_changed(ip))
 				metadata_changed();

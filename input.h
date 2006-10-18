@@ -58,6 +58,7 @@ const char *ip_get_metadata(struct input_plugin *ip);
 int ip_is_remote(struct input_plugin *ip);
 int ip_metadata_changed(struct input_plugin *ip);
 int ip_eof(struct input_plugin *ip);
+void ip_set_eof(struct input_plugin *ip);
 char *ip_get_error_msg(struct input_plugin *ip, int rc, const char *arg);
 char **ip_get_supported_extensions(void);
 void ip_dump_plugins(void);

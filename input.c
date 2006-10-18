@@ -621,6 +621,12 @@ int ip_eof(struct input_plugin *ip)
 	return ip->eof;
 }
 
+void ip_set_eof(struct input_plugin *ip)
+{
+	BUG_ON(!ip->open);
+	ip->eof = 1;
+}
+
 char *ip_get_error_msg(struct input_plugin *ip, int rc, const char *arg)
 {
 	char buffer[1024];
