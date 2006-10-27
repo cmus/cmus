@@ -539,7 +539,7 @@ int ip_read(struct input_plugin *ip, char *buffer, int count)
 	}
 
 	rc = ip->ops->read(&ip->data, buf, count);
-	if (rc == 0)
+	if (rc <= 0)
 		ip->eof = 1;
 	if (rc == -1)
 		d_print("error: %s\n", strerror(errno));
@@ -619,12 +619,6 @@ int ip_eof(struct input_plugin *ip)
 {
 	BUG_ON(!ip->open);
 	return ip->eof;
-}
-
-void ip_set_eof(struct input_plugin *ip)
-{
-	BUG_ON(!ip->open);
-	ip->eof = 1;
 }
 
 char *ip_get_error_msg(struct input_plugin *ip, int rc, const char *arg)
