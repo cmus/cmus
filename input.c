@@ -508,6 +508,7 @@ int ip_read(struct input_plugin *ip, char *buffer, int count)
 	/* 4608 seems to be optimal for mp3s, 4096 for oggs */
 	char tmp[8 * 1024];
 	char *buf;
+	int sample_size;
 	int rc;
 
 	BUG_ON(count <= 0);
@@ -519,7 +520,6 @@ int ip_read(struct input_plugin *ip, char *buffer, int count)
 	tv.tv_usec = 50e3;
 	rc = select(ip->data.fd + 1, &readfds, NULL, NULL, &tv);
 	if (rc == -1) {
-		d_print("select: error: %s\n", strerror(errno));
 		if (errno == EINTR)
 			errno = EAGAIN;
 		return -1;
@@ -539,21 +539,21 @@ int ip_read(struct input_plugin *ip, char *buffer, int count)
 	}
 
 	rc = ip->ops->read(&ip->data, buf, count);
-	if (rc <= 0)
-		ip->eof = 1;
-	if (rc == -1)
-		d_print("error: %s\n", strerror(errno));
-
-	if (rc > 0) {
-		int sample_size = sf_get_sample_size(ip->data.sf);
-
-		if (ip->pcm_convert_in_place != NULL)
-			ip->pcm_convert_in_place(buf, rc / sample_size);
-		if (ip->pcm_convert != NULL)
-			ip->pcm_convert(buffer, tmp, rc / sample_size);
-		rc *= ip->pcm_convert_scale;
+	if (rc == -1 && (errno == EAGAIN || errno == EINTR)) {
+		errno = EAGAIN;
+		return -1;
 	}
-	return rc;
+	if (rc <= 0) {
+		ip->eof = 1;
+		return rc;
+	}
+
+	sample_size = sf_get_sample_size(ip->data.sf);
+	if (ip->pcm_convert_in_place != NULL)
+		ip->pcm_convert_in_place(buf, rc / sample_size);
+	if (ip->pcm_convert != NULL)
+		ip->pcm_convert(buffer, tmp, rc / sample_size);
+	return rc * ip->pcm_convert_scale;
 }
 
 int ip_seek(struct input_plugin *ip, double offset)
