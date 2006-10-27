@@ -20,6 +20,7 @@
 #include "server.h"
 #include "prog.h"
 #include "command_mode.h"
+#include "debug.h"
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -48,11 +49,8 @@ static void read_commands(int fd)
 	char buf[1024];
 	int pos = 0;
 
-	/* unix connection is secure, other insecure */
-	run_only_safe_commands = addr.sa.sa_family != AF_UNIX;
-
 	while (1) {
-		int rc, s;
+		int rc, s, i;
 
 		rc = read(fd, buf + pos, sizeof(buf) - pos);
 		if (rc == -1) {
@@ -64,25 +62,21 @@ static void read_commands(int fd)
 		pos += rc;
 
 		s = 0;
-		while (1) {
-			int i;
+		for (i = 0; i < pos; i++) {
+			const char *line;
 
-			for (i = s; i < pos; i++) {
-				if (buf[i] == '\n') {
-					buf[i] = 0;
-					run_command(buf + s);
-					s = i + 1;
-					break;
-				}
-			}
-			if (i == pos)
-				break;
+			if (buf[i] != '\n')
+				continue;
+
+			buf[i] = 0;
+			line = buf + s;
+			s = i + 1;
+
+			run_command(line);
 		}
 		memmove(buf, buf + s, pos - s);
 		pos -= s;
 	}
-
-	run_only_safe_commands = 0;
 }
 
 int server_serve(void)
@@ -95,7 +89,12 @@ int server_serve(void)
 	if (fd == -1) {
 		return -1;
 	}
+
+	/* unix connection is secure, other insecure */
+	run_only_safe_commands = addr.sa.sa_family != AF_UNIX;
 	read_commands(fd);
+	run_only_safe_commands = 0;
+
 	close(fd);
 	return 0;
 }
