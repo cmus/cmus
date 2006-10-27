@@ -128,6 +128,13 @@ void server_init(char *address)
 		char *s = strchr(address, ':');
 		struct hostent *hent;
 
+		/* Some kind of authentication is must.  Sending user/pass over
+		 * insecure connection isn't wise either considering what you
+		 * can do with cmus (anything).
+		 */
+
+		die("TCP/IP support is currently disabled. It's too dangerous.\n");
+
 		if (s) {
 			*s++ = 0;
 			port = atoi(s);
