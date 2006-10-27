@@ -48,6 +48,9 @@ static void read_commands(int fd)
 	char buf[1024];
 	int pos = 0;
 
+	/* unix connection is secure, other insecure */
+	run_only_safe_commands = addr.sa.sa_family != AF_UNIX;
+
 	while (1) {
 		int rc, s;
 
@@ -78,6 +81,8 @@ static void read_commands(int fd)
 		memmove(buf, buf + s, pos - s);
 		pos -= s;
 	}
+
+	run_only_safe_commands = 0;
 }
 
 int server_serve(void)

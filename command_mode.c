@@ -2094,59 +2094,59 @@ static void expand_colorscheme(const char *str)
 
 /* sort by name */
 struct command commands[] = {
-	{ "add",		cmd_add,	1, 1, expand_add,	  0 },
-	{ "bind",		cmd_bind,	1, 1, expand_bind_args,	  0 },
-	{ "browser-up",		cmd_browser_up,	0, 0, NULL,		  0 },
-	{ "cd",			cmd_cd,		0, 1, expand_directories, 0 },
-	{ "clear",		cmd_clear,	0, 1, NULL,		  0 },
-	{ "colorscheme",	cmd_colorscheme,1, 1, expand_colorscheme, 0 },
-	{ "echo",		cmd_echo,	1,-1, NULL,		  0 },
-	{ "factivate",		cmd_factivate,	0, 1, expand_factivate,	  0 },
-	{ "filter",		cmd_filter,	0, 1, NULL,		  0 },
-	{ "fset",		cmd_fset,	1, 1, NULL,		  0 },
-	{ "invert",		cmd_invert,	0, 0, NULL,		  0 },
-	{ "load",		cmd_load,	1, 1, expand_load_save,	  0 },
-	{ "mark",		cmd_mark,	0, 1, NULL,		  0 },
-	{ "player-next",	cmd_p_next,	0, 0, NULL,		  0 },
-	{ "player-pause",	cmd_p_pause,	0, 0, NULL,		  0 },
-	{ "player-play",	cmd_p_play,	0, 1, expand_playable,	  0 },
-	{ "player-prev",	cmd_p_prev,	0, 0, NULL,		  0 },
-	{ "player-stop",	cmd_p_stop,	0, 0, NULL,		  0 },
-	{ "quit",		cmd_quit,	0, 0, NULL,		  0 },
-	{ "refresh",		cmd_refresh,	0, 0, NULL,		  0 },
-	{ "run",		cmd_run,	1,-1, NULL,		  0 },
-	{ "save",		cmd_save,	0, 1, expand_load_save,	  0 },
-	{ "search-next",	cmd_search_next,0, 0, NULL,		  0 },
-	{ "search-prev",	cmd_search_prev,0, 0, NULL,		  0 },
-	{ "seek",		cmd_seek,	1, 1, NULL,		  0 },
-	{ "set",		cmd_set,	1, 1, expand_options,	  0 },
-	{ "showbind",		cmd_showbind,	1, 1, expand_unbind_args, 0 },
-	{ "shuffle",		cmd_reshuffle,	0, 0, NULL,		  0 },
-	{ "source",		cmd_source,	1, 1, expand_files,	  0 },
-	{ "toggle",		cmd_toggle,	1, 1, expand_toptions,	  0 },
-	{ "unbind",		cmd_unbind,	1, 1, expand_unbind_args, 0 },
-	{ "unmark",		cmd_unmark,	0, 0, NULL,		  0 },
-	{ "view",		cmd_view,	1, 1, NULL,		  0 },
-	{ "vol",		cmd_vol,	1, 2, NULL,		  0 },
-	{ "win-activate",	cmd_win_activate,0, 0, NULL,		  0 },
-	{ "win-add-l",		cmd_win_add_l,	0, 0, NULL,		  0 },
-	{ "win-add-p",		cmd_win_add_p,	0, 0, NULL,		  0 },
-	{ "win-add-Q",		cmd_win_add_Q,	0, 0, NULL,		  0 },
-	{ "win-add-q",		cmd_win_add_q,	0, 0, NULL,		  0 },
-	{ "win-bottom",		cmd_win_bottom,	0, 0, NULL,		  0 },
-	{ "win-down",		cmd_win_down,	0, 0, NULL,		  0 },
-	{ "win-mv-after",	cmd_win_mv_after,0, 0, NULL,		  0 },
-	{ "win-mv-before",	cmd_win_mv_before,0, 0, NULL,		  0 },
-	{ "win-next",		cmd_win_next,	0, 0, NULL,		  0 },
-	{ "win-page-down",	cmd_win_pg_down,0, 0, NULL,		  0 },
-	{ "win-page-up",	cmd_win_pg_up,	0, 0, NULL,		  0 },
-	{ "win-remove",		cmd_win_remove,	0, 0, NULL,		  0 },
-	{ "win-sel-cur",	cmd_win_sel_cur,0, 0, NULL,		  0 },
-	{ "win-toggle",		cmd_win_toggle,	0, 0, NULL,		  0 },
-	{ "win-top",		cmd_win_top,	0, 0, NULL,		  0 },
-	{ "win-up",		cmd_win_up,	0, 0, NULL,		  0 },
-	{ "win-update",		cmd_win_update,	0, 0, NULL,		  0 },
-	{ NULL,			NULL,		0, 0, 0,		  0 }
+	{ "add",		cmd_add,	1, 1, expand_add,	  0, 0 },
+	{ "bind",		cmd_bind,	1, 1, expand_bind_args,	  0, CMD_UNSAFE },
+	{ "browser-up",		cmd_browser_up,	0, 0, NULL,		  0, 0 },
+	{ "cd",			cmd_cd,		0, 1, expand_directories, 0, 0 },
+	{ "clear",		cmd_clear,	0, 1, NULL,		  0, 0 },
+	{ "colorscheme",	cmd_colorscheme,1, 1, expand_colorscheme, 0, 0 },
+	{ "echo",		cmd_echo,	1,-1, NULL,		  0, 0 },
+	{ "factivate",		cmd_factivate,	0, 1, expand_factivate,	  0, 0 },
+	{ "filter",		cmd_filter,	0, 1, NULL,		  0, 0 },
+	{ "fset",		cmd_fset,	1, 1, NULL,		  0, 0 },
+	{ "invert",		cmd_invert,	0, 0, NULL,		  0, 0 },
+	{ "load",		cmd_load,	1, 1, expand_load_save,	  0, 0 },
+	{ "mark",		cmd_mark,	0, 1, NULL,		  0, 0 },
+	{ "player-next",	cmd_p_next,	0, 0, NULL,		  0, 0 },
+	{ "player-pause",	cmd_p_pause,	0, 0, NULL,		  0, 0 },
+	{ "player-play",	cmd_p_play,	0, 1, expand_playable,	  0, 0 },
+	{ "player-prev",	cmd_p_prev,	0, 0, NULL,		  0, 0 },
+	{ "player-stop",	cmd_p_stop,	0, 0, NULL,		  0, 0 },
+	{ "quit",		cmd_quit,	0, 0, NULL,		  0, 0 },
+	{ "refresh",		cmd_refresh,	0, 0, NULL,		  0, 0 },
+	{ "run",		cmd_run,	1,-1, NULL,		  0, CMD_UNSAFE },
+	{ "save",		cmd_save,	0, 1, expand_load_save,	  0, CMD_UNSAFE },
+	{ "search-next",	cmd_search_next,0, 0, NULL,		  0, 0 },
+	{ "search-prev",	cmd_search_prev,0, 0, NULL,		  0, 0 },
+	{ "seek",		cmd_seek,	1, 1, NULL,		  0, 0 },
+	{ "set",		cmd_set,	1, 1, expand_options,	  0, 0 },
+	{ "showbind",		cmd_showbind,	1, 1, expand_unbind_args, 0, 0 },
+	{ "shuffle",		cmd_reshuffle,	0, 0, NULL,		  0, 0 },
+	{ "source",		cmd_source,	1, 1, expand_files,	  0, CMD_UNSAFE },
+	{ "toggle",		cmd_toggle,	1, 1, expand_toptions,	  0, 0 },
+	{ "unbind",		cmd_unbind,	1, 1, expand_unbind_args, 0, 0 },
+	{ "unmark",		cmd_unmark,	0, 0, NULL,		  0, 0 },
+	{ "view",		cmd_view,	1, 1, NULL,		  0, 0 },
+	{ "vol",		cmd_vol,	1, 2, NULL,		  0, 0 },
+	{ "win-activate",	cmd_win_activate,0, 0, NULL,		  0, 0 },
+	{ "win-add-l",		cmd_win_add_l,	0, 0, NULL,		  0, 0 },
+	{ "win-add-p",		cmd_win_add_p,	0, 0, NULL,		  0, 0 },
+	{ "win-add-Q",		cmd_win_add_Q,	0, 0, NULL,		  0, 0 },
+	{ "win-add-q",		cmd_win_add_q,	0, 0, NULL,		  0, 0 },
+	{ "win-bottom",		cmd_win_bottom,	0, 0, NULL,		  0, 0 },
+	{ "win-down",		cmd_win_down,	0, 0, NULL,		  0, 0 },
+	{ "win-mv-after",	cmd_win_mv_after,0, 0, NULL,		  0, 0 },
+	{ "win-mv-before",	cmd_win_mv_before,0, 0, NULL,		  0, 0 },
+	{ "win-next",		cmd_win_next,	0, 0, NULL,		  0, 0 },
+	{ "win-page-down",	cmd_win_pg_down,0, 0, NULL,		  0, 0 },
+	{ "win-page-up",	cmd_win_pg_up,	0, 0, NULL,		  0, 0 },
+	{ "win-remove",		cmd_win_remove,	0, 0, NULL,		  0, CMD_UNSAFE },
+	{ "win-sel-cur",	cmd_win_sel_cur,0, 0, NULL,		  0, 0 },
+	{ "win-toggle",		cmd_win_toggle,	0, 0, NULL,		  0, 0 },
+	{ "win-top",		cmd_win_top,	0, 0, NULL,		  0, 0 },
+	{ "win-up",		cmd_win_up,	0, 0, NULL,		  0, 0 },
+	{ "win-update",		cmd_win_update,	0, 0, NULL,		  0, 0 },
+	{ NULL,			NULL,		0, 0, 0,		  0, 0 }
 };
 
 /* fills tabexp struct */
@@ -2306,6 +2306,8 @@ static void reset_tab_expansion(void)
 	arg_expand_cmd = -1;
 }
 
+int run_only_safe_commands;
+
 /* FIXME: parse all arguments */
 void run_command(const char *buf)
 {
@@ -2344,27 +2346,33 @@ void run_command(const char *buf)
 	}
 	i = 0;
 	while (1) {
-		if (commands[i].name == NULL) {
+		const struct command *c = &commands[i];
+
+		if (c->name == NULL) {
 			error_msg("unknown command\n");
 			break;
 		}
-		if (strncmp(cmd, commands[i].name, cmd_len) == 0) {
+		if (strncmp(cmd, c->name, cmd_len) == 0) {
 			const char *next = commands[i + 1].name;
-			int exact = commands[i].name[cmd_len] == 0;
+			int exact = c->name[cmd_len] == 0;
 
 			if (!exact && next && strncmp(cmd, next, cmd_end - cmd_start) == 0) {
 				error_msg("ambiguous command\n");
 				break;
 			}
-			if (commands[i].min_args > 0 && arg == NULL) {
+			if (c->min_args > 0 && arg == NULL) {
 				error_msg("not enough arguments\n");
 				break;
 			}
-			if (commands[i].max_args == 0 && arg) {
+			if (c->max_args == 0 && arg) {
 				error_msg("too many arguments\n");
 				break;
 			}
-			commands[i].func(arg);
+			if (run_only_safe_commands && c->flags & CMD_UNSAFE) {
+				d_print("trying to execute unsafe command over net\n");
+				break;
+			}
+			c->func(arg);
 			break;
 		}
 		i++;

@@ -22,6 +22,9 @@
 
 #include "uchar.h"
 
+/* executing command is disabled over net */
+#define CMD_UNSAFE 0x01
+
 struct command {
 	const char *name;
 	void (*func)(char *arg);
@@ -34,9 +37,13 @@ struct command {
 
 	/* bind count (0 means: unbound) */
 	int bc;
+
+	/* CMD_* */
+	unsigned int flags;
 };
 
 extern struct command commands[];
+extern int run_only_safe_commands;
 
 void command_mode_ch(uchar ch);
 void command_mode_key(int key);
