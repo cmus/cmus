@@ -20,6 +20,7 @@
 #include "server.h"
 #include "prog.h"
 #include "command_mode.h"
+#include "options.h"
 #include "debug.h"
 
 #include <unistd.h>
@@ -48,6 +49,7 @@ static void read_commands(int fd)
 {
 	char buf[1024];
 	int pos = 0;
+	int authenticated = addr.sa.sa_family == AF_UNIX;
 
 	while (1) {
 		int rc, s, i;
@@ -72,6 +74,18 @@ static void read_commands(int fd)
 			line = buf + s;
 			s = i + 1;
 
+			if (!authenticated) {
+				if (!server_password) {
+					d_print("password is unset, tcp/ip disabled\n");
+					return;
+				}
+				authenticated = !strcmp(line, server_password);
+				if (!authenticated) {
+					d_print("authentication failed\n");
+					return;
+				}
+				continue;
+			}
 			run_command(line);
 		}
 		memmove(buf, buf + s, pos - s);

@@ -22,6 +22,7 @@
 
 static int sock;
 static int raw_args = 0;
+static char *passwd;
 
 static void gethostbyname_failed(void)
 {
@@ -42,6 +43,24 @@ static void gethostbyname_failed(void)
 	die("gethostbyname: %s\n", error);
 }
 
+static void write_line(const char *line)
+{
+	if (write_all(sock, line, strlen(line)) == -1)
+		die_errno("write");
+}
+
+static void send_cmd(const char *format, ...)
+{
+	char buf[512];
+	va_list ap;
+
+	va_start(ap, format);
+	vsnprintf(buf, sizeof(buf), format, ap);
+	va_end(ap);
+
+	write_line(buf);
+}
+
 static void remote_connect(const char *address)
 {
 	union {
@@ -52,6 +71,10 @@ static void remote_connect(const char *address)
 	int addrlen;
 
 	if (strchr(address, '/')) {
+		if (passwd)
+			warn("password ignored for unix connections\n");
+		passwd = NULL;
+
 		addr.sa.sa_family = AF_UNIX;
 		strncpy(addr.un.sun_path, address, sizeof(addr.un.sun_path) - 1);
 
@@ -60,6 +83,9 @@ static void remote_connect(const char *address)
 		char *s = strchr(address, ':');
 		int port = DEFAULT_PORT;
 		struct hostent *hent;
+
+		if (!passwd)
+			die("password required for tcp/ip connection\n");
 
 		if (s) {
 			*s++ = 0;
@@ -95,24 +121,9 @@ static void remote_connect(const char *address)
 		}
 		die_errno("connect");
 	}
-}
 
-static void write_line(const char *line)
-{
-	if (write_all(sock, line, strlen(line)) == -1)
-		die_errno("write");
-}
-
-static void send_cmd(const char *format, ...)
-{
-	char buf[512];
-	va_list ap;
-
-	va_start(ap, format);
-	vsnprintf(buf, sizeof(buf), format, ap);
-	va_end(ap);
-
-	write_line(buf);
+	if (passwd)
+		send_cmd("%s\n", passwd);
 }
 
 static char *file_url_absolute(const char *str)
@@ -130,6 +141,7 @@ static char *file_url_absolute(const char *str)
 
 enum flags {
 	FLAG_SERVER,
+	FLAG_PASSWD,
 	FLAG_HELP,
 	FLAG_VERSION,
 
@@ -155,6 +167,7 @@ enum flags {
 
 static struct option options[NR_FLAGS + 1] = {
 	{ 0, "server", 1 },
+	{ 0, "passwd", 1 },
 	{ 0, "help", 0 },
 	{ 0, "version", 0 },
 
@@ -188,6 +201,7 @@ static const char *usage =
 "\n"
 "      --server ADDR    connect using ADDR instead of ~/.cmus/socket\n"
 "                       ADDR is either a UNIX socket or host[:port]\n"
+"      --passwd PASSWD  password to use for TCP/IP connection\n"
 "      --help           display this help and exit\n"
 "      --version        " VERSION "\n"
 "\n"
@@ -247,6 +261,9 @@ int main(int argc, char *argv[])
 			return 0;
 		case FLAG_SERVER:
 			server = arg;
+			break;
+		case FLAG_PASSWD:
+			passwd = arg;
 			break;
 		case FLAG_VOLUME:
 			volume = arg;

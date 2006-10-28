@@ -36,6 +36,7 @@
 
 char *output_plugin = NULL;
 char *status_display_program = NULL;
+char *server_password;
 int auto_reshuffle = 0;
 int confirm_run = 1;
 int show_hidden = 0;
@@ -283,6 +284,27 @@ static void set_output_plugin(unsigned int id, const char *buf)
 	} else {
 		/* must set it later manually */
 		output_plugin = xstrdup(buf);
+	}
+}
+
+static void get_passwd(unsigned int id, char *buf)
+{
+	if (server_password)
+		strcpy(buf, server_password);
+}
+
+static void set_passwd(unsigned int id, const char *buf)
+{
+	int len = strlen(buf);
+
+	if (len == 0) {
+		free(server_password);
+		server_password = NULL;
+	} else if (len < 6) {
+		error_msg("unsafe password");
+	} else {
+		free(server_password);
+		server_password = xstrdup(buf);
 	}
 }
 
@@ -679,6 +701,7 @@ static const struct {
 	DN(id3_default_charset)
 	DN(lib_sort)
 	DN(output_plugin)
+	DN(passwd)
 	DN(pl_sort)
 	DT(play_library)
 	DT(play_sorted)
