@@ -1,0 +1,50 @@
+#compdef cmus cmus-remote
+
+local expl cmus_commands
+
+cmus_commands=(
+  add bind browser-up cd clear colorscheme echo factivate
+  filter fset invert load mark player-next player-pause
+  player-play quit refresh run save search-next search-prev
+  seek set showbind shuffle source toggle unbind unmark view
+  vol win-activate win-add-l win-add-p win-add-Q win-add-q
+  win-bottom win-down win-mv-after win-mv-before win-next
+  win-page-down win-page-up win-remove win-sel-cur
+  win-toggle win-top win-up win-update
+)
+_cmus_volume() {
+  local expl
+  compset -P '[-+]'
+  _wanted list expl volume compadd $expl - {0..100}
+}
+
+case $service in
+  (cmus-remote)
+    _arguments -C -s\
+      '--server[connect using socket SOCKET]:socket:_files' \
+      '--help[display this help and exit]:' \
+      '--version[Display version information and exit.]:' \
+      '(--play -p)'{--play,-p}'[Start playing.]:' \
+      '(--pause -u)'{--pause,-u}'[Toggle pause.]:' \
+      '(--stop -s)'{--stop,-s}'[Stop playing.]:' \
+      '(--next -n)'{--next,-n}'[Skip forward in playlist.]:' \
+      '(--prev -r)'{--prev,-r}'[Skip backward in playlist.]:' \
+      '(--repeat -R)'{--repeat,-R}'[Toggle repeat.]:' \
+      '(--shuffle -S)'{--shuffle,-S}'[Toggle shuffle.]:' \
+      '(--volume -v)'{--volume,-V+}'[Change volume. See vol command in cmus(1).]:volume:_cmus_volume' \
+      '(--seek -k)'{--seek,-k+}'[Seek. See seek command in cmus(1).]:seek [+-]<num>[m/h]'\
+      '(--library -l)'{--library,-l+}'[Modify library instead of playlist.]:playlists/files/directories/URLs:_files'\
+      '(--playlist -P)'{--playlist,-P}'[Modify playlist (default).]::Playlist:_files'\
+      '(--queue -q)'{--queue,-q}'[Modify play queue instead of playlist.]:'\
+      '(--clear -c)'{--clear,-c}'[Clear playlist, library (-l) or play queue (-q).]:playlist'\
+      '(--raw -C)'{--raw,-C+}'[Treat arguments (instead of stdin) as raw commands.]:command:(${cmus_commands[@]}):'\
+    ;;
+  (cmus)
+    _arguments \
+      '--listen[listen on ADDR instead of ~/.cmus/socket]:socket:_files'  \
+      '--plugins[list available plugins and exit]'                        \
+      '--help[display this help and exit]'                                \
+      '--version[display version information]'
+    ;;
+esac
+

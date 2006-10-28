@@ -1,2 +1,4 @@
-_cmus-remote
+_cmus (originally _cmus_remote)
 	zsh completion for cmus-remote by Christian Schneider strcat AT gmx DOT net
+  extended for the main cmus binary by Frank Terbeck.
+
