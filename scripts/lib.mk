@@ -157,3 +157,4 @@ endif
 .SECONDARY:
 
 .PHONY: clean distclean uninstall
+.NOTPARALLEL: clean distclean
