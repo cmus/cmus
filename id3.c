@@ -503,6 +503,7 @@ static struct {
 } frame_tab[] = {
 	/* 2.4.0 */
 	{ "TDRC", ID3_DATE },
+	{ "TDRL", ID3_DATE },
 
 	/* >= 2.3.0 */
 	{ "TPE1", ID3_ARTIST },
@@ -525,6 +526,30 @@ static struct {
 
 	{ "", -1 }
 };
+
+static void fix_date(char *buf)
+{
+	const char *ptr = buf;
+	int val = 0;
+	int len = 0;
+
+	while (*ptr) {
+		int ch = *ptr++;
+
+		if (ch >= '0' && ch <= '9') {
+			val *= 10;
+			val += ch - '0';
+			len++;
+		} else if (len == 4) {
+			// number which length is 4, must be a year
+			memmove(buf, ptr - 5, 4);
+			buf[4] = 0;
+		} else {
+			val = 0;
+			len = 0;
+		}
+	}
+}
 
 static void v2_add_frame(ID3 *id3, struct v2_frame_header *fh, const char *buf)
 {
@@ -571,6 +596,7 @@ static void v2_add_frame(ID3 *id3, struct v2_frame_header *fh, const char *buf)
 				return;
 			break;
 		}
+
 		if (key == ID3_TRACK || key == ID3_DISC)
 			fix_track_or_disc(out);
 		if (key == ID3_GENRE) {
@@ -581,6 +607,11 @@ static void v2_add_frame(ID3 *id3, struct v2_frame_header *fh, const char *buf)
 			free(out);
 			out = tmp;
 		}
+		if (key == ID3_DATE) {
+			id3_debug("date before: '%s'\n", out);
+			fix_date(out);
+		}
+
 		free(id3->v2[key]);
 		id3->v2[key] = out;
 		id3->has_v2 = 1;
