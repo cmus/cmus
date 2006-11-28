@@ -502,8 +502,9 @@ static struct {
 	enum id3_key key;
 } frame_tab[] = {
 	/* 2.4.0 */
-	{ "TDRC", ID3_DATE },
-	{ "TDRL", ID3_DATE },
+	{ "TDRC", ID3_DATE }, // recording date
+	{ "TDRL", ID3_DATE }, // release date
+	{ "TDOR", ID3_DATE }, // original release date
 
 	/* >= 2.3.0 */
 	{ "TPE1", ID3_ARTIST },
@@ -530,25 +531,23 @@ static struct {
 static void fix_date(char *buf)
 {
 	const char *ptr = buf;
-	int val = 0;
-	int len = 0;
+	int ch, len = 0;
 
-	while (*ptr) {
-		int ch = *ptr++;
-
+	do {
+		ch = *ptr++;
 		if (ch >= '0' && ch <= '9') {
-			val *= 10;
-			val += ch - '0';
 			len++;
-		} else if (len == 4) {
-			// number which length is 4, must be a year
+			continue;
+		}
+		if (len == 4) {
+			// number which length is 4, must be year
 			memmove(buf, ptr - 5, 4);
 			buf[4] = 0;
-		} else {
-			val = 0;
-			len = 0;
+			return;
 		}
-	}
+		len = 0;
+	} while (ch);
+	*buf = 0;
 }
 
 static void v2_add_frame(ID3 *id3, struct v2_frame_header *fh, const char *buf)
@@ -610,6 +609,11 @@ static void v2_add_frame(ID3 *id3, struct v2_frame_header *fh, const char *buf)
 		if (key == ID3_DATE) {
 			id3_debug("date before: '%s'\n", out);
 			fix_date(out);
+			if (!*out) {
+				id3_debug("date parsing failed\n");
+				free(out);
+				return;
+			}
 		}
 
 		free(id3->v2[key]);
