@@ -63,7 +63,8 @@ check_mpc()
 
 check_flac()
 {
-	check_library FLAC "" "-lFLAC -lm"
+	check_library FLAC "" "-lFLAC -lm" && return 0
+	check_library FLAC "" "-lFLAC -lvorbisfile -lm"
 	return $?
 }
 
