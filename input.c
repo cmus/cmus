@@ -548,6 +548,8 @@ int ip_read(struct input_plugin *ip, char *buffer, int count)
 		return rc;
 	}
 
+	BUG_ON((rc & ~((unsigned int)sf_get_frame_size(ip->data.sf) - 1U)) != rc);
+
 	sample_size = sf_get_sample_size(ip->data.sf);
 	if (ip->pcm_convert_in_place != NULL)
 		ip->pcm_convert_in_place(buf, rc / sample_size);
