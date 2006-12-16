@@ -185,7 +185,7 @@ dist:
 	@tarname=$(TARNAME);						\
 	test "$(_ver2)" || { echo "No such revision $(REV)"; exit 1; };	\
 	echo "   DIST   $$tarname.tar.bz2";				\
-	git tar-tree $(REV)^{tree} $$tarname | bzip2 -c -9 > $$tarname.tar.bz2
+	git archive --format=tar --prefix=$$tarname/ $(REV)^{tree} | bzip2 -c -9 > $$tarname.tar.bz2
 
 # }}}
 
