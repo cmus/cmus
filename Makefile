@@ -5,6 +5,8 @@ all: main plugins man
 include config.mk
 include scripts/lib.mk
 
+CFLAGS += -D_FILE_OFFSET_BITS=64
+
 input.o main.o ui_curses.o: .version
 input.o main.o ui_curses.o: CFLAGS += -DVERSION=\"$(VERSION)\"
 main.o server.o: CFLAGS += -DDEFAULT_PORT=3000
