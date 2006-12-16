@@ -171,8 +171,8 @@ static int wav_open(struct input_plugin_data *ip_data)
 	priv->sec_size = sf_get_second_size(ip_data->sf);
 	priv->pos = 0;
 
-	d_print("pcm start: %d\n", priv->pcm_start);
-	d_print("pcm size: %d\n", priv->pcm_size);
+	d_print("pcm start: %u\n", priv->pcm_start);
+	d_print("pcm size: %u\n", priv->pcm_size);
 	d_print("\n");
 	d_print("sr: %d, ch: %d, bits: %d, signed: %d\n", sf_get_rate(ip_data->sf),
 			sf_get_channels(ip_data->sf), sf_get_bits(ip_data->sf),
@@ -198,12 +198,12 @@ static int wav_close(struct input_plugin_data *ip_data)
 	return 0;
 }
 
-static int wav_read(struct input_plugin_data *ip_data, char *buffer, int count)
+static int wav_read(struct input_plugin_data *ip_data, char *buffer, int _count)
 {
-	struct wav_private *priv;
+	struct wav_private *priv = ip_data->private;
+	unsigned int count = _count;
 	int rc;
 
-	priv = ip_data->private;
 	if (priv->pos == priv->pcm_size) {
 		/* eof */
 		return 0;
@@ -225,16 +225,16 @@ static int wav_read(struct input_plugin_data *ip_data, char *buffer, int count)
 
 static int wav_seek(struct input_plugin_data *ip_data, double _offset)
 {
-	struct wav_private *priv;
-	int offset, rc;
+	struct wav_private *priv = ip_data->private;
+	unsigned int offset;
+	off_t rc;
 
-	priv = ip_data->private;
-	offset = (int)(_offset * (double)priv->sec_size + 0.5);
-	/* aling to 4 bytes (2 * 16 / 8) */
-	offset -= offset % 4;
+	offset = (unsigned int)(_offset * (double)priv->sec_size + 0.5);
+	/* align to 4 bytes (2 * 16 / 8) */
+	offset &= ~3U;
 	priv->pos = offset;
 	rc = lseek(ip_data->fd, priv->pcm_start + offset, SEEK_SET);
-	if (rc == -1)
+	if (rc == (off_t)-1)
 		return -1;
 	return 0;
 }
