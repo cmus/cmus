@@ -83,10 +83,10 @@ static pthread_t consumer_thread;
 static pthread_mutex_t consumer_mutex = CMUS_MUTEX_INITIALIZER;
 static int consumer_running = 1;
 static enum consumer_status consumer_status = CS_STOPPED;
-static int consumer_pos = 0;
+static unsigned int consumer_pos = 0;
 
 /* usually same as consumer_pos, sometimes less than consumer_pos */
-static int soft_vol_pos;
+static unsigned int soft_vol_pos;
 
 /* locking {{{ */
 
@@ -160,16 +160,17 @@ static inline void scale_sample(signed short *buf, int i, int vol)
 	}
 }
 
-static void soft_vol_scale(char *buffer, int *countp)
+static void soft_vol_scale(char *buffer, unsigned int *countp)
 {
 	signed short *buf;
-	int count = *countp;
+	unsigned int count = *countp;
 	int ch, bits, l, r, i;
 
-	if (consumer_pos != soft_vol_pos) {
-		int offs = soft_vol_pos - consumer_pos;
+	BUG_ON(soft_vol_pos < consumer_pos);
 
-		BUG_ON(offs < 0);
+	if (consumer_pos != soft_vol_pos) {
+		unsigned int offs = soft_vol_pos - consumer_pos;
+
 		if (offs >= count)
 			return;
 		buffer += offs;
@@ -199,7 +200,7 @@ static void soft_vol_scale(char *buffer, int *countp)
 	}
 }
 
-static inline int buffer_second_size(void)
+static inline unsigned int buffer_second_size(void)
 {
 	return sf_get_second_size(buffer_sf);
 }
@@ -342,10 +343,9 @@ static void __producer_buffer_fill_update(void)
  */
 static void __consumer_position_update(void)
 {
-	static int old_pos = -1;
-	int pos;
+	static unsigned int old_pos = -1;
+	unsigned int pos = 0;
 	
-	pos = 0;
 	if (consumer_status == CS_PLAYING || consumer_status == CS_PAUSED)
 		pos = consumer_pos / buffer_second_size();
 	if (pos != old_pos) {
@@ -364,7 +364,7 @@ static void __consumer_position_update(void)
  */
 static void __player_status_changed(void)
 {
-	int pos = 0;
+	unsigned int pos = 0;
 
 /* 	d_print("\n"); */
 	if (consumer_status == CS_PLAYING || consumer_status == CS_PAUSED)
