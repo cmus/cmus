@@ -177,6 +177,9 @@ static int wav_open(struct input_plugin_data *ip_data)
 	d_print("sr: %d, ch: %d, bits: %d, signed: %d\n", sf_get_rate(ip_data->sf),
 			sf_get_channels(ip_data->sf), sf_get_bits(ip_data->sf),
 			sf_get_signed(ip_data->sf));
+
+	/* clamp pcm_size to full frames (file might be corrupt or truncated) */
+	priv->pcm_size = priv->pcm_size & ~((unsigned int)sf_get_frame_size(ip_data->sf) - 1U);
 	return 0;
 error_exit:
 	save = errno;
