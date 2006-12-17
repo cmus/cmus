@@ -90,7 +90,7 @@ check_vorbis()
 {
 	if test "$CONFIG_TREMOR" = y
 	then
-		pkg_config VORBIS "vobisidec" "" "-lvorbisidec -lm"
+		pkg_config VORBIS "vorbisidec" "" "-lvorbisidec -lm"
 		return $?
 	else
 		pkg_config VORBIS "vorbisfile" "" "-lvorbisfile -lvorbis -lm -logg"
