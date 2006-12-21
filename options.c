@@ -753,7 +753,7 @@ static const struct {
 	{ "altformat_title",	"%f" },
 	{ "altformat_trackwin",	" %f%= %d " },
 	{ "format_current",	" %a - %l - %02n. %t%= %y " },
-	{ "format_playlist",	" %a - %l - %02n. %t%= %y %d " },
+	{ "format_playlist",	" %-20a %02n. %t%= %y %d " },
 	{ "format_title",	"%a - %l - %t (%y)" },
 	{ "format_trackwin",	" %02n. %t%= %y %d " },
 
