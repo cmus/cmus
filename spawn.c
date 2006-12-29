@@ -41,7 +41,7 @@ int spawn(char *argv[], int *status)
 		return -1;
 	} else if (pid == 0) {
 		/* child */
-		int dev_null, err;
+		int dev_null, err, i;
 
 		close(err_pipe[0]);
 		fcntl(err_pipe[1], F_SETFD, FD_CLOEXEC);
@@ -55,6 +55,10 @@ int spawn(char *argv[], int *status)
 
 		/* not interactive, close stdin */
 		close(0);
+
+		/* close unused fds */
+		for (i = 3; i < 30; i++)
+			close(i);
 
 		execvp(argv[0], argv);
 
