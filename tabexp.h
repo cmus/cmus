@@ -23,7 +23,6 @@
 struct tabexp {
 	char *head;
 	char **tails;
-	int nr_tails;
 };
 
 extern struct tabexp tabexp;

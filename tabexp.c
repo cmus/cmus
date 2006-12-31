@@ -26,8 +26,7 @@
 
 struct tabexp tabexp = {
 	.head = NULL,
-	.tails = NULL,
-	.nr_tails = 0,
+	.tails = NULL
 };
 
 /* index to tabexp.tails */
@@ -42,35 +41,34 @@ char *tabexp_expand(const char *src, void (*load_matches)(const char *src))
 
 		if (tabexp.tails == NULL) {
 			BUG_ON(tabexp.head != NULL);
-			BUG_ON(tabexp.nr_tails != 0);
 			return NULL;
 		}
 
 		BUG_ON(tabexp.head == NULL);
-		BUG_ON(tabexp.nr_tails < 1);
 
 		expanded = xstrjoin(tabexp.head, tabexp.tails[0]);
-		if (tabexp.nr_tails == 1)
+		if (!tabexp.tails[1])
 			tabexp_reset();
 		return expanded;
 	} else {
 		tabexp_index++;
-		tabexp_index %= tabexp.nr_tails;
+		if (!tabexp.tails[tabexp_index])
+			tabexp_index = 0;
 		return xstrjoin(tabexp.head, tabexp.tails[tabexp_index]);
 	}
 }
 
 void tabexp_reset(void)
 {
-	int i;
-
-	for (i = 0; i < tabexp.nr_tails; i++)
-		free(tabexp.tails[i]);
-	free(tabexp.tails);
+	if (tabexp.tails) {
+		int i;
+		for (i = 0; tabexp.tails[i]; i++)
+			free(tabexp.tails[i]);
+		free(tabexp.tails);
+	}
 	free(tabexp.head);
 	tabexp.tails = NULL;
 	tabexp.head = NULL;
-	tabexp.nr_tails = 0;
 
 	tabexp_index = 0;
 }

@@ -1736,7 +1736,6 @@ static void expand_key_context(const char *str, const char *force)
 	snprintf(expbuf, sizeof(expbuf), "%s%s", force, str);
 	tabexp.head = xstrdup(expbuf);
 	tabexp.tails = tails;
-	tabexp.nr_tails = pos;
 }
 
 static int get_context(const char *str, int len)
@@ -1832,7 +1831,6 @@ static void expand_bind_args(const char *str)
 		ptr_array_plug(&array);
 		tabexp.head = xstrdup(expbuf);
 		tabexp.tails = array.ptrs;
-		tabexp.nr_tails = array.count;
 		return;
 	}
 
@@ -1926,7 +1924,6 @@ static void expand_unbind_args(const char *str)
 	ptr_array_plug(&array);
 	tabexp.head = xstrdup(expbuf);
 	tabexp.tails = array.ptrs;
-	tabexp.nr_tails = array.count;
 }
 
 static void expand_factivate(const char *str)
@@ -1957,7 +1954,6 @@ static void expand_factivate(const char *str)
 	ptr_array_plug(&array);
 	tabexp.head = xstrdup(str);
 	tabexp.tails = array.ptrs;
-	tabexp.nr_tails = array.count;
 }
 
 static void expand_options(const char *str)
@@ -1985,7 +1981,6 @@ static void expand_options(const char *str)
 
 				tabexp.head = xstrdup(str);
 				tabexp.tails = tails;
-				tabexp.nr_tails = 1;
 				free(var);
 				return;
 			}
@@ -2013,7 +2008,6 @@ static void expand_options(const char *str)
 			tails[pos] = NULL;
 			tabexp.head = xstrdup(str);
 			tabexp.tails = tails;
-			tabexp.nr_tails = pos;
 		} else {
 			free(tails);
 		}
@@ -2039,7 +2033,6 @@ static void expand_toptions(const char *str)
 		tails[pos] = NULL;
 		tabexp.head = xstrdup(str);
 		tabexp.tails = tails;
-		tabexp.nr_tails = pos;
 	} else {
 		free(tails);
 	}
@@ -2086,7 +2079,6 @@ static void expand_colorscheme(const char *str)
 		ptr_array_plug(&array);
 		tabexp.head = xstrdup(str);
 		tabexp.tails = array.ptrs;
-		tabexp.nr_tails = array.count;
 	}
 }
 
@@ -2174,7 +2166,6 @@ static void expand_commands(const char *str)
 		tails[pos] = NULL;
 		tabexp.head = xstrdup(str);
 		tabexp.tails = tails;
-		tabexp.nr_tails = pos;
 	} else {
 		free(tails);
 	}
