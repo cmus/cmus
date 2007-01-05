@@ -527,7 +527,7 @@ win-add-q (*e*)
 
 	Analogous to *:add -q*
 
-win-bottom (*g*, *end*)
+win-bottom (*G*, *end*)
 	Goto bottom of the current window.
 
 win-down (*j*, *down*)
