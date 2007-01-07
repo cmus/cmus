@@ -1943,7 +1943,7 @@ static void init_curses(void)
 		 * xterm:            xterm, xterm-{,16,88,256}color
 		 */
 		if (!strcmp(term, "screen")) {
-			t_ts = "\033k";
+			t_ts = "\033_";
 			t_fs = "\033\\";
 		} else if (!strncmp(term, "xterm", 5) ||
 			   !strncmp(term, "rxvt", 4) ||
