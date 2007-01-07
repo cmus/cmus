@@ -186,6 +186,7 @@ static const char * const valid_sort_keys[] = {
 	"date",
 	"genre",
 	"filename",
+	"albumartist",
 	NULL
 };
 
