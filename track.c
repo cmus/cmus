@@ -150,14 +150,6 @@ again:
 	return NULL;
 }
 
-int simple_track_cmp(const struct list_head *a_head, const struct list_head *b_head, const char * const *keys)
-{
-	const struct simple_track *a = to_simple_track(a_head);
-	const struct simple_track *b = to_simple_track(b_head);
-
-	return track_info_cmp(a->info, b->info, keys);
-}
-
 void sorted_list_add_track(struct list_head *head, struct simple_track *track, const char * const *keys)
 {
 	struct list_head *item;
@@ -167,7 +159,10 @@ void sorted_list_add_track(struct list_head *head, struct simple_track *track, c
 	 */
 	item = head->prev;
 	while (item != head) {
-		if (simple_track_cmp(&track->node, item, keys) >= 0)
+		const struct simple_track *a = to_simple_track(&track->node);
+		const struct simple_track *b = to_simple_track(item);
+
+		if (track_info_cmp(a->info, b->info, keys) >= 0)
 			break;
 		item = item->prev;
 	}

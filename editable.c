@@ -105,7 +105,10 @@ static const char **sort_keys;
 
 static int list_cmp(const struct list_head *a_head, const struct list_head *b_head)
 {
-	return simple_track_cmp(a_head, b_head, sort_keys);
+	const struct simple_track *a = to_simple_track(a_head);
+	const struct simple_track *b = to_simple_track(b_head);
+
+	return track_info_cmp(a->info, b->info, sort_keys);
 }
 
 void editable_sort(struct editable *e)

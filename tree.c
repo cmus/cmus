@@ -485,7 +485,7 @@ static void album_add_track(struct album *album, struct tree_track *track)
 		const struct simple_track *a = (const struct simple_track *)track;
 		const struct simple_track *b = (const struct simple_track *)to_tree_track(item);
 
-		if (simple_track_cmp(&a->node, &b->node, album_track_sort_keys) < 0)
+		if (track_info_cmp(a->info, b->info, album_track_sort_keys) < 0)
 			break;
 	}
 	/* add before item */
