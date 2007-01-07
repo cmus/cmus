@@ -105,3 +105,54 @@ int track_info_matches(struct track_info *ti, const char *text, unsigned int fla
 	free_str_array(words);
 	return matched;
 }
+
+static int xstrcasecmp(const char *a, const char *b)
+{
+	if (a == NULL) {
+		if (b == NULL)
+			return 0;
+		return -1;
+	} else if (b == NULL) {
+		return 1;
+	}
+	return u_strcasecmp(a, b);
+}
+
+int track_info_cmp(const struct track_info *a, const struct track_info *b, const char * const *keys)
+{
+	int i, res = 0;
+
+	for (i = 0; keys[i]; i++) {
+		const char *key = keys[i];
+		const char *av, *bv;
+
+		/* numeric compare for tracknumber and discnumber */
+		if (strcmp(key, "tracknumber") == 0) {
+			res = comments_get_int(a->comments, key) -
+				comments_get_int(b->comments, key);
+			if (res)
+				break;
+			continue;
+		}
+		if (strcmp(key, "discnumber") == 0) {
+			res = comments_get_int(a->comments, key) -
+				comments_get_int(b->comments, key);
+			if (res)
+				break;
+			continue;
+		}
+		if (strcmp(key, "filename") == 0) {
+			/* NOTE: filenames are not necessarily UTF-8 */
+			res = strcasecmp(a->filename, b->filename);
+			if (res)
+				break;
+			continue;
+		}
+		av = comments_get_val(a->comments, key);
+		bv = comments_get_val(b->comments, key);
+		res = xstrcasecmp(av, bv);
+		if (res)
+			break;
+	}
+	return res;
+}

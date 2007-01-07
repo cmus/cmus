@@ -54,4 +54,6 @@ extern int track_info_has_tag(const struct track_info *ti);
  */
 extern int track_info_matches(struct track_info *ti, const char *text, unsigned int flags);
 
+int track_info_cmp(const struct track_info *a, const struct track_info *b, const char * const *keys);
+
 #endif

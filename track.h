@@ -11,14 +11,7 @@
 struct simple_track {
 	struct list_head node;
 	struct track_info *info;
-
 	unsigned int marked : 1;
-
-	/* -1.. */
-	int disc : 15;
-
-	/* -1.. */
-	int num : 16;
 };
 
 struct shuffle_track {

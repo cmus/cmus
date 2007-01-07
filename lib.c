@@ -4,6 +4,7 @@
 
 #include "lib.h"
 #include "editable.h"
+#include "track_info.h"
 #include "options.h"
 #include "xmalloc.h"
 #include "debug.h"
@@ -462,12 +463,12 @@ void sorted_sel_current(void)
 	}
 }
 
-static int ti_filename_cmp(const void *a, const void *b)
+static int ti_cmp(const void *a, const void *b)
 {
-	const struct track_info *tia = *(const struct track_info **)a;
-	const struct track_info *tib = *(const struct track_info **)b;
+	const struct track_info *ai = *(const struct track_info **)a;
+	const struct track_info *bi = *(const struct track_info **)b;
 
-	return strcmp(tia->filename, tib->filename);
+	return track_info_cmp(ai, bi, lib_editable.sort_keys);
 }
 
 int lib_for_each(int (*cb)(void *data, struct track_info *ti), void *data)
@@ -492,8 +493,8 @@ int lib_for_each(int (*cb)(void *data, struct track_info *ti), void *data)
 		}
 	}
 
-	/* sort them by filename and call cb for each */
-	qsort(tis, count, sizeof(struct track_info *), ti_filename_cmp);
+	/* sort to speed up playlist loading */
+	qsort(tis, count, sizeof(struct track_info *), ti_cmp);
 	for (i = 0; i < count; i++) {
 		rc = cb(data, tis[i]);
 		if (rc)

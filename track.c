@@ -14,24 +14,10 @@
 
 #include <string.h>
 
-static int xstrcasecmp(const char *a, const char *b)
-{
-	if (a == NULL) {
-		if (b == NULL)
-			return 0;
-		return -1;
-	} else if (b == NULL) {
-		return 1;
-	}
-	return u_strcasecmp(a, b);
-}
-
 void simple_track_init(struct simple_track *track, struct track_info *ti)
 {
 	track->info = ti;
 	track->marked = 0;
-	track->disc = comments_get_int(ti->comments, "discnumber");
-	track->num = comments_get_int(ti->comments, "tracknumber");
 }
 
 struct simple_track *simple_track_new(struct track_info *ti)
@@ -168,42 +154,8 @@ int simple_track_cmp(const struct list_head *a_head, const struct list_head *b_h
 {
 	const struct simple_track *a = to_simple_track(a_head);
 	const struct simple_track *b = to_simple_track(b_head);
-	int i, res = 0;
 
-	for (i = 0; keys[i]; i++) {
-		const char *key = keys[i];
-		const char *av, *bv;
-		const struct track_info *ai, *bi;
-
-		/* numeric compare for tracknumber and discnumber */
-		if (strcmp(key, "tracknumber") == 0) {
-			res = a->num - b->num;
-			if (res)
-				break;
-			continue;
-		}
-		if (strcmp(key, "discnumber") == 0) {
-			res = a->disc - b->disc;
-			if (res)
-				break;
-			continue;
-		}
-		ai = a->info;
-		bi = b->info;
-		if (strcmp(key, "filename") == 0) {
-			/* NOTE: filenames are not necessarily UTF-8 */
-			res = strcasecmp(ai->filename, bi->filename);
-			if (res)
-				break;
-			continue;
-		}
-		av = comments_get_val(ai->comments, key);
-		bv = comments_get_val(bi->comments, key);
-		res = xstrcasecmp(av, bv);
-		if (res)
-			break;
-	}
-	return res;
+	return track_info_cmp(a->info, b->info, keys);
 }
 
 void sorted_list_add_track(struct list_head *head, struct simple_track *track, const char * const *keys)

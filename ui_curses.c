@@ -470,44 +470,6 @@ static inline void fopt_set_time(struct format_option *fopt, int value, int empt
 	fopt->empty = empty;
 }
 
-static void fill_track_fopts(struct tree_track *track)
-{
-	const char *filename;
-	const struct track_info *ti = tree_track_info(track);
-	int num, disc;
-
-	if (using_utf8) {
-		filename = ti->filename;
-	} else {
-		utf8_encode(ti->filename);
-		filename = conv_buffer;
-	}
-	disc = track->shuffle_track.simple_track.disc;
-	num = track->shuffle_track.simple_track.num;
-
-	fopt_set_str(&track_fopts[TF_ARTIST], track->album->artist->name);
-	fopt_set_str(&track_fopts[TF_ALBUM], track->album->name);
-	fopt_set_int(&track_fopts[TF_DISC], disc, disc == -1);
-	fopt_set_int(&track_fopts[TF_TRACK], num, num == -1);
-	fopt_set_str(&track_fopts[TF_TITLE], comments_get_val(ti->comments, "title"));
-	fopt_set_str(&track_fopts[TF_YEAR], comments_get_val(ti->comments, "date"));
-	fopt_set_str(&track_fopts[TF_GENRE], comments_get_val(ti->comments, "genre"));
-	fopt_set_time(&track_fopts[TF_DURATION], ti->duration, ti->duration == -1);
-	fopt_set_str(&track_fopts[TF_PATHFILE], filename);
-	if (is_url(ti->filename)) {
-		fopt_set_str(&track_fopts[TF_FILE], filename);
-	} else {
-		const char *f;
-
-		f = strrchr(filename, '/');
-		if (f) {
-			fopt_set_str(&track_fopts[TF_FILE], f + 1);
-		} else {
-			fopt_set_str(&track_fopts[TF_FILE], filename);
-		}
-	}
-}
-
 static void fill_track_fopts_track_info(struct track_info *info)
 {
 	char *filename;
@@ -563,7 +525,7 @@ static void print_track(struct window *win, int row, struct iter *iter)
 		cursor_y = 1 + row;
 	}
 
-	fill_track_fopts(track);
+	fill_track_fopts_track_info(tree_track_info(track));
 
 	if (track_info_has_tag(tree_track_info(track))) {
 		format_print(print_buffer, track_win_w, track_win_format, track_fopts);
