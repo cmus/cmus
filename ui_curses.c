@@ -56,7 +56,7 @@
 #include <signal.h>
 #include <stdarg.h>
 
-#if defined(__sun__)
+#if defined(__sun__) || defined(__CYGWIN__)
 /* TIOCGWINSZ */
 #include <termios.h>
 #include <ncurses.h>

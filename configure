@@ -33,6 +33,10 @@ check_compat()
 		then
 			COMPAT_LIBS="$COMPAT_LIBS -lposix4"
 		fi
+		;;
+	CYGWIN*)
+		CONFIG_CYGWIN=y
+		makefile_vars CONFIG_CYGWIN
 	esac
 	makefile_vars COMPAT_LIBS
 }

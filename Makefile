@@ -7,6 +7,8 @@ include scripts/lib.mk
 
 CFLAGS += -D_FILE_OFFSET_BITS=64
 
+CMUS_LIBS = $(PTHREAD_LIBS) $(NCURSES_LIBS) $(ICONV_LIBS) $(DL_LIBS) -lm $(COMPAT_LIBS)
+
 input.o main.o ui_curses.o: .version
 input.o main.o ui_curses.o: CFLAGS += -DVERSION=\"$(VERSION)\"
 main.o server.o: CFLAGS += -DDEFAULT_PORT=3000
@@ -30,10 +32,23 @@ cmus-y := \
 $(cmus-y): CFLAGS += $(PTHREAD_CFLAGS) $(NCURSES_CFLAGS) $(ICONV_CFLAGS) $(DL_CFLAGS)
 
 cmus: $(cmus-y) file.o path.o prog.o xmalloc.o
-	$(call cmd,ld,$(PTHREAD_LIBS) $(NCURSES_LIBS) $(ICONV_LIBS) $(DL_LIBS) -lm $(COMPAT_LIBS))
+	$(call cmd,ld,$(CMUS_LIBS))
 
 cmus-remote: main.o file.o path.o prog.o xmalloc.o
 	$(call cmd,ld,$(COMPAT_LIBS))
+
+# cygwin compat
+DLLTOOL=dlltool
+
+libcmus-$(CONFIG_CYGWIN) := libcmus.a
+
+libcmus.a: $(cmus-y) file.o path.o prog.o xmalloc.o
+	$(LD) -shared -o cmus.exe -Wl,--out-implib=libcmus.a -Wl,--base-file,cmus.base \
+		-Wl,--export-all-symbols -Wl,--no-whole-archive $^ $(CMUS_LIBS)
+	$(DLLTOOL) --output-def cmus.def --dllname cmus.exe --export-all-symbols $^
+	$(DLLTOOL) --base-file cmus.base --dllname cmus.exe --input-def cmus.def --output-exp cmus.exp
+	$(LD) -o cmus.exe -Wl,cmus.exp $^ $(CMUS_LIBS)
+
 # }}}
 
 # input plugins {{{
@@ -66,31 +81,31 @@ $(vorbis-objs):		CFLAGS += $(VORBIS_CFLAGS)
 $(mp4-objs):		CFLAGS += $(MP4_CFLAGS)
 $(aac-objs):		CFLAGS += $(AAC_CFLAGS)
 
-flac.so: $(flac-objs)
+flac.so: $(flac-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(FLAC_LIBS))
 
-mad.so: $(mad-objs)
-	$(call cmd,ld_dl,$(MAD_LIBS))
+mad.so: $(mad-objs) $(libcmus-y)
+	$(call cmd,ld_dl,$(MAD_LIBS) $(ICONV_LIBS))
 
-mikmod.so: $(mikmod-objs)
+mikmod.so: $(mikmod-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(MIKMOD_LIBS))
 
-modplug.so: $(modplug-objs)
+modplug.so: $(modplug-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(MODPLUG_LIBS))
 
-mpc.so: $(mpc-objs)
+mpc.so: $(mpc-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(MPC_LIBS))
 
-vorbis.so: $(vorbis-objs)
+vorbis.so: $(vorbis-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(VORBIS_LIBS))
 
-wav.so: $(wav-objs)
+wav.so: $(wav-objs) $(libcmus-y)
 	$(call cmd,ld_dl,)
 
-mp4.so: $(mp4-objs)
+mp4.so: $(mp4-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(MP4_LIBS))
 
-aac.so: $(aac-objs)
+aac.so: $(aac-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(AAC_LIBS))
 
 # }}}
@@ -114,19 +129,19 @@ $(oss-objs):  CFLAGS	+= $(OSS_CFLAGS)
 $(sun-objs):  CFLAGS	+= $(SUN_CFLAGS)
 $(ao-objs):   CFLAGS	+= $(AO_CFLAGS)
 
-alsa.so: $(alsa-objs)
+alsa.so: $(alsa-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(ALSA_LIBS))
 
-arts.so: $(arts-objs)
+arts.so: $(arts-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(ARTS_LIBS))
 
-oss.so: $(oss-objs)
+oss.so: $(oss-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(OSS_LIBS))
 
-sun.so: $(sun-objs)
+sun.so: $(sun-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(SUN_LIBS))
 
-ao.so: $(ao-objs)
+ao.so: $(ao-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(AO_LIBS))
 # }}}
 
@@ -147,7 +162,7 @@ quiet_cmd_ttman = MAN    $@
 
 data		= $(wildcard data/*)
 
-clean		+= *.o *.lo *.so cmus cmus-remote Doc/*.o Doc/ttman Doc/*.1
+clean		+= *.o *.lo *.so cmus libcmus.a cmus.def cmus.base cmus.exp cmus-remote Doc/*.o Doc/ttman Doc/*.1
 distclean	+= .version config.mk config/*.h tags
 
 main: cmus cmus-remote

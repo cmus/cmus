@@ -43,6 +43,14 @@ const char *dir_read(struct directory *dir)
 	char *full = dir->path;
 	struct dirent *de;
 
+#if defined(__CYGWIN__)
+	/* Fix for cygwin "hang" bug when browsing /
+	 * Windows treats // as a network path.
+	 */
+	if (strcmp(full, "//") == 0)
+		full++;
+#endif
+
 	while ((de = readdir(d))) {
 		const char *name = de->d_name;
 		int nlen = strlen(name);
