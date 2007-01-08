@@ -68,6 +68,7 @@ static void clean_buffers(void)
 		if (!(hdr->dwFlags & WHDR_DONE))
 			break;
 		buffer_space += hdr->dwBufferLength;
+		waveOutUnprepareHeader(wave_out, hdr, sizeof(WAVEHDR));
 		hdr->dwFlags = 0;
 	}
 }
@@ -75,11 +76,11 @@ static void clean_buffers(void)
 static int waveout_open(sample_format_t sf)
 {
 	WAVEFORMATEX  format;
-	int i;
+	int rc, i;
 
-	/* WAVEFORMATEX does not support channels > 2, and waveOutWrite() wants signed PCM */
-	if (!sf_get_signed(sf) || sf_get_channels(sf) > 2) {
-		return -1;
+	/* WAVEFORMATEX does not support channels > 2, waveOutWrite() wants little endian signed PCM */
+	if (sf_get_bigendian(sf) || !sf_get_signed(sf) || sf_get_channels(sf) > 2) {
+		return -OP_ERROR_SAMPLE_FORMAT;
 	}
 
 	memset(&format, 0, sizeof(format));
@@ -91,8 +92,22 @@ static int waveout_open(sample_format_t sf)
 	format.nAvgBytesPerSec = sf_get_second_size(sf);
 	format.nBlockAlign = sf_get_frame_size(sf);
 
-	if (waveOutOpen(&wave_out, WAVE_MAPPER, &format, 0, 0, CALLBACK_NULL) != MMSYSERR_NOERROR) {
-		return -1;
+	if ((rc = waveOutOpen(&wave_out, WAVE_MAPPER, &format, 0, 0, CALLBACK_NULL)) != MMSYSERR_NOERROR) {
+		switch (rc) {
+		case MMSYSERR_ALLOCATED:
+			errno = EBUSY;
+			return -OP_ERROR_ERRNO;
+		case MMSYSERR_BADDEVICEID:
+		case MMSYSERR_NODRIVER:
+			errno = ENODEV;
+			return -OP_ERROR_ERRNO;
+		case MMSYSERR_NOMEM:
+			errno = ENOMEM;
+			return -OP_ERROR_ERRNO;
+		case WAVERR_BADFORMAT:
+			return -OP_ERROR_SAMPLE_FORMAT;
+		}
+		return -OP_ERROR_INTERNAL;
 	}
 
 	/* reset buffers */
