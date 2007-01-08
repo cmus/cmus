@@ -75,6 +75,43 @@ int comments_get_int(const struct keyval *comments, const char *key)
 	return ival;
 }
 
+/* Return date as an integer in the form YYYYMMDD, for sorting purposes.
+ * This function is not year 10000 compliant. */
+int comments_get_date(const struct keyval *comments, const char *key)
+{
+	const char *val;
+	char *endptr;
+	int year, month, day;
+	long int ival;
+
+	val = comments_get_val(comments, key);
+	if (val == NULL)
+		return -1;
+
+	year = strtol(val, &endptr, 10);
+	/* Looking for a four-digit number */
+	if (year < 1000 || year > 9999)
+		return -1;
+	ival = year * 10000;
+
+	if (*endptr == '-' || *endptr == ' ' || *endptr == '/') {
+		month = strtol(endptr+1, &endptr, 10);
+		if (month < 1 || month > 12)
+			return ival;
+		ival += month * 100;
+	}
+
+	if (*endptr == '-' || *endptr == ' ' || *endptr == '/') {
+		day = strtol(endptr+1, &endptr, 10);
+		if (day < 1 || day > 31)
+			return ival;
+		ival += day;
+	}
+
+
+	return ival;
+}
+
 static const char *interesting[] = {
 	"artist", "album", "title", "tracknumber", "discnumber", "genre",
 	"date", "compilation", "albumartist",  NULL

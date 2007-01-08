@@ -31,6 +31,7 @@ extern void comments_free(struct keyval *comments);
 /* case insensitive key */
 extern const char *comments_get_val(const struct keyval *comments, const char *key);
 extern int comments_get_int(const struct keyval *comments, const char *key);
+extern int comments_get_date(const struct keyval *comments, const char *key);
 
 int is_interesting_key(const char *key);
 void fix_track_or_disc(char *str);

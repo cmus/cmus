@@ -535,7 +535,7 @@ void tree_add_track(struct tree_track *track)
 			window_changed(lib_track_win);
 		}
 	} else if (artist) {
-		date = comments_get_int(ti->comments, "date");
+		date = comments_get_date(ti->comments, "date");
 		album = artist_add_album(artist, album_name, date);
 		album_add_track(album, track);
 
@@ -545,7 +545,7 @@ void tree_add_track(struct tree_track *track)
 			/* album is not selected => no need to update track_win */
 		}
 	} else {
-		date = comments_get_int(ti->comments, "date");
+		date = comments_get_date(ti->comments, "date");
 		artist = add_artist(artist_name);
 		album = artist_add_album(artist, album_name, date);
 		album_add_track(album, track);
