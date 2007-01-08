@@ -116,18 +116,21 @@ arts-objs		:= arts.lo
 oss-objs		:= oss.lo mixer_oss.lo
 sun-objs		:= sun.lo mixer_sun.lo
 ao-objs			:= ao.lo
+waveout-objs		:= waveout.lo
 
 op-$(CONFIG_ALSA)	+= alsa.so
 op-$(CONFIG_ARTS)	+= arts.so
 op-$(CONFIG_OSS)	+= oss.so
 op-$(CONFIG_SUN)	+= sun.so
 op-$(CONFIG_AO)		+= ao.so
+op-$(CONFIG_WAVEOUT)	+= waveout.so
 
 $(alsa-objs): CFLAGS	+= $(ALSA_CFLAGS)
 $(arts-objs): CFLAGS	+= $(ARTS_CFLAGS)
 $(oss-objs):  CFLAGS	+= $(OSS_CFLAGS)
 $(sun-objs):  CFLAGS	+= $(SUN_CFLAGS)
 $(ao-objs):   CFLAGS	+= $(AO_CFLAGS)
+$(waveout-objs): CFLAGS += $(WAVEOUT_CFLAGS)
 
 alsa.so: $(alsa-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(ALSA_LIBS))
@@ -143,6 +146,9 @@ sun.so: $(sun-objs) $(libcmus-y)
 
 ao.so: $(ao-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(AO_LIBS))
+
+waveout.so: $(waveout-objs) $(libcmus-y)
+	$(call cmd,ld_dl,$(WAVEOUT_LIBS))
 # }}}
 
 # man {{{

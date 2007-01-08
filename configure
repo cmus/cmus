@@ -162,6 +162,16 @@ check_sun()
 	fi
 }
 
+check_waveout()
+{
+	case `uname -s` in
+	CYGWIN*)
+		check_library WAVEOUT "" "-lwinmm"
+		return $?
+	esac
+	return 1
+}
+
 check_mp4()
 {
 	check_header neaacdec.h &&
@@ -208,6 +218,7 @@ Optional Features: y/n
   CONFIG_ARTS     ARTS                                            [auto]
   CONFIG_OSS      Open Sound System                               [auto]
   CONFIG_SUN      Sun Audio                                       [auto]
+  CONFIG_WAVEOUT  Windows Wave Out                                [auto]
 
 Also many standard variables like CC are recognized."
 
@@ -252,6 +263,7 @@ check check_ao      CONFIG_AO
 check check_arts    CONFIG_ARTS
 check check_oss     CONFIG_OSS
 check check_sun     CONFIG_SUN
+check check_waveout CONFIG_WAVEOUT
 
 test "$WORDS_BIGENDIAN" = y && CFLAGS="${CFLAGS} -DWORDS_BIGENDIAN"
 
@@ -265,6 +277,6 @@ config_header config/tremor.h CONFIG_TREMOR
 
 makefile_vars bindir datadir libdir mandir
 makefile_vars CONFIG_FLAC CONFIG_MAD CONFIG_MIKMOD CONFIG_MODPLUG CONFIG_MPC CONFIG_VORBIS CONFIG_WAV CONFIG_MP4 CONFIG_AAC
-makefile_vars CONFIG_ALSA CONFIG_AO CONFIG_ARTS CONFIG_OSS CONFIG_SUN
+makefile_vars CONFIG_ALSA CONFIG_AO CONFIG_ARTS CONFIG_OSS CONFIG_SUN CONFIG_WAVEOUT
 
 generate_config_mk
