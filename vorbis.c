@@ -252,6 +252,10 @@ static int vorbis_read_comments(struct input_plugin_data *ip_data,
 			continue;
 		}
 		key = xstrndup(str, i);
+		if (!strcasecmp(key, "album_artist")) {
+			free(key);
+			key = xstrdup("albumartist");
+		}
 		if (!is_interesting_key(key)) {
 			free(key);
 			continue;

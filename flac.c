@@ -338,6 +338,10 @@ static void metadata_cb(const Dec *dec, const FLAC__StreamMetadata *metadata, vo
 							&key, &val))
 					continue;
 
+				if (!strcasecmp(key, "album_artist")) {
+					free(key);
+					key = xstrdup("albumartist");
+				}
 				if (!is_interesting_key(key)) {
 					free(key);
 					free(val);
