@@ -534,6 +534,8 @@ int expr_eval(struct expr *expr, struct track_info *ti)
 			/* duration of a stream is infinite (well, almost) */
 			if (is_url(ti->filename))
 				val = INT_MAX;
+		} else if (strcmp(key, "date") == 0) {
+			val = comments_get_date(ti->comments, key) / 10000;
 		} else {
 			val = comments_get_int(ti->comments, key);
 		}
