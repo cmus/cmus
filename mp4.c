@@ -35,7 +35,7 @@ struct mp4_private {
 	int overflow_buf_len;
 
 	unsigned char channels;
-	uint32_t sample_rate;
+	unsigned long sample_rate;
 
 	faacDecHandle decoder;		/* typedef void * */
 

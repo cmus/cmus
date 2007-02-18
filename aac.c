@@ -41,7 +41,7 @@ struct aac_private {
 	int rbuf_pos;
 
 	unsigned char channels;
-	uint32_t sample_rate;
+	unsigned long sample_rate;
 
 	char *overflow_buf;
 	int overflow_buf_len;
