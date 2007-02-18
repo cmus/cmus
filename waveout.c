@@ -34,8 +34,10 @@ static int buffer_size = 4096;
 static int buffer_count = 12;
 static WAVEHDR *buffers;
 static int buffer_idx;
-static int buffer_space;
+static int buffers_free;
 
+#define FRAME_SIZE_ALIGN(x) \
+	(((x) / sf_get_frame_size(waveout_sf)) * sf_get_frame_size(waveout_sf))
 
 static void waveout_error(const char *name, int rc)
 {
@@ -67,7 +69,7 @@ static void clean_buffers(void)
 
 		if (!(hdr->dwFlags & WHDR_DONE))
 			break;
-		buffer_space += hdr->dwBufferLength;
+		buffers_free++;
 		waveOutUnprepareHeader(wave_out, hdr, sizeof(WAVEHDR));
 		hdr->dwFlags = 0;
 	}
@@ -115,7 +117,7 @@ static int waveout_open(sample_format_t sf)
 		buffers[i].dwFlags = 0;
 	}
 	buffer_idx = 0;
-	buffer_space = buffer_size * buffer_count;
+	buffers_free = buffer_count;
 
 	waveout_sf = sf;
 
@@ -173,8 +175,7 @@ static int waveout_write(const char *buffer, int count)
 	int written = 0;
 	int len, rc;
 
-	count /= sf_get_frame_size(waveout_sf);
-	count *= sf_get_frame_size(waveout_sf);
+	count = FRAME_SIZE_ALIGN(count);
 
 	clean_buffers();
 
@@ -186,7 +187,7 @@ static int waveout_write(const char *buffer, int count)
 			break;
 		}
 
-		len = min(count, buffer_size);
+		len = FRAME_SIZE_ALIGN( min(count, buffer_size) );
 		hdr->dwBufferLength = len;
 		memcpy(hdr->lpData, buffer + written, len);
 
@@ -205,9 +206,8 @@ static int waveout_write(const char *buffer, int count)
 		written += len;
 		count -= len;
 		buffer_idx = (buffer_idx + 1) % buffer_count;
+		buffers_free--;
 	}
-
-	buffer_space -= written;
 
 	return written;
 }
@@ -229,9 +229,9 @@ static int waveout_unpause(void)
 static int waveout_buffer_space(void)
 {
 	clean_buffers();
-	if (buffer_space == 0)
+	if (buffers_free == 0)
 		return -1;
-	return buffer_space;
+	return buffers_free * FRAME_SIZE_ALIGN(buffer_size);
 }
 
 static int waveout_set_option(int key, const char *val)
