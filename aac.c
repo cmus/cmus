@@ -24,7 +24,7 @@
 #include "comment.h"
 #include "read_wrapper.h"
 
-#include <neaacdec.h>
+#include <faad.h>
 
 #include <errno.h>
 #include <string.h>
@@ -41,12 +41,12 @@ struct aac_private {
 	int rbuf_pos;
 
 	unsigned char channels;
-	unsigned long sample_rate;
+	uint32_t sample_rate;
 
 	char *overflow_buf;
 	int overflow_buf_len;
 
-	NeAACDecHandle decoder;	/* typedef void * */
+	faacDecHandle decoder;	/* typedef void * */
 };
 
 static inline int buffer_length(const struct input_plugin_data *ip_data)
@@ -187,20 +187,20 @@ static int buffer_fill_frame(struct input_plugin_data *ip_data)
 static int aac_open(struct input_plugin_data *ip_data)
 {
 	struct aac_private *priv;
-	NeAACDecConfigurationPtr neaac_cfg;
+	faacDecConfigurationPtr neaac_cfg;
 	int ret, n;
 
 	/* init private struct */
 	priv = xnew0(struct aac_private, 1);
-	priv->decoder = NeAACDecOpen();
+	priv->decoder = faacDecOpen();
 	ip_data->private = priv;
 
 	/* set decoder config */
-	neaac_cfg = NeAACDecGetCurrentConfiguration(priv->decoder);
+	neaac_cfg = faacDecGetCurrentConfiguration(priv->decoder);
 	neaac_cfg->outputFormat = FAAD_FMT_16BIT;	/* force 16 bit audio */
 	neaac_cfg->downMatrix = 1;			/* 5.1 -> stereo */
 	neaac_cfg->dontUpSampleImplicitSBR = 0;		/* upsample, please! */
-	NeAACDecSetConfiguration(priv->decoder, neaac_cfg);
+	faacDecSetConfiguration(priv->decoder, neaac_cfg);
 
 	/* find a frame */
 	if (buffer_fill_frame(ip_data) <= 0) {
@@ -209,7 +209,7 @@ static int aac_open(struct input_plugin_data *ip_data)
 	}
 
 	/* in case of a bug, make sure there is at least some data
-	 * in the buffer for NeAACDecInit() to work with.
+	 * in the buffer for faacDecInit() to work with.
 	 */
 	if (buffer_fill_min(ip_data, 256) <= 0) {
 		d_print("not enough data\n");
@@ -218,10 +218,10 @@ static int aac_open(struct input_plugin_data *ip_data)
 	}
 
 	/* init decoder, returns the length of the header (if any) */
-	n = NeAACDecInit(priv->decoder, buffer_data(ip_data), buffer_length(ip_data),
+	n = faacDecInit(priv->decoder, buffer_data(ip_data), buffer_length(ip_data),
 		&priv->sample_rate, &priv->channels);
 	if (n < 0) {
-		d_print("NeAACDecInit failed\n");
+		d_print("faacDecInit failed\n");
 		ret = -IP_ERROR_FILE_FORMAT;
 		goto out;
 	}
@@ -233,7 +233,7 @@ static int aac_open(struct input_plugin_data *ip_data)
 
 	d_print("sample rate %luhz, channels %u\n", priv->sample_rate, priv->channels);
 
-	/*NeAACDecInitDRM(priv->decoder, priv->sample_rate, priv->channels);*/
+	/*faacDecInitDRM(priv->decoder, priv->sample_rate, priv->channels);*/
 
 	ip_data->sf = sf_rate(priv->sample_rate) | sf_channels(priv->channels) | sf_bits(16) | sf_signed(1);
 #if defined(WORDS_BIGENDIAN)
@@ -241,7 +241,7 @@ static int aac_open(struct input_plugin_data *ip_data)
 #endif
 	return 0;
 out:
-	NeAACDecClose(priv->decoder);
+	faacDecClose(priv->decoder);
 	free(priv);
 	return ret;
 }
@@ -250,7 +250,7 @@ static int aac_close(struct input_plugin_data *ip_data)
 {
 	struct aac_private *priv = ip_data->private;
 
-	NeAACDecClose(priv->decoder);
+	faacDecClose(priv->decoder);
 	free(priv);
 	ip_data->private = NULL;
 	return 0;
@@ -265,7 +265,7 @@ static int decode_one_frame(struct input_plugin_data *ip_data, void *buffer, int
 	struct aac_private *priv = ip_data->private;
 	unsigned char *aac_data;
 	unsigned int aac_data_size;
-	NeAACDecFrameInfo frame_info;
+	faacDecFrameInfo frame_info;
 	char *sample_buf;
 	int bytes, rc;
 
@@ -277,18 +277,18 @@ static int decode_one_frame(struct input_plugin_data *ip_data, void *buffer, int
 	aac_data_size = buffer_length(ip_data);
 
 	/* aac data -> raw pcm */
-	sample_buf = NeAACDecDecode(priv->decoder, &frame_info, aac_data, aac_data_size);
+	sample_buf = faacDecDecode(priv->decoder, &frame_info, aac_data, aac_data_size);
 
 	buffer_consume(ip_data, frame_info.bytesconsumed);
 
 	if (!sample_buf || frame_info.bytesconsumed <= 0) {
-		d_print("fatal error: %s\n", NeAACDecGetErrorMessage(frame_info.error));
+		d_print("fatal error: %s\n", faacDecGetErrorMessage(frame_info.error));
 		errno = EINVAL;
 		return -1;
 	}
 
 	if (frame_info.error != 0) {
-		d_print("frame error: %s\n", NeAACDecGetErrorMessage(frame_info.error));
+		d_print("frame error: %s\n", faacDecGetErrorMessage(frame_info.error));
 		return -2;
 	}
 
@@ -395,7 +395,7 @@ out:
 static int aac_duration(struct input_plugin_data *ip_data)
 {
 	struct aac_private *priv = ip_data->private;
-	NeAACDecFrameInfo frame_info;
+	faacDecFrameInfo frame_info;
 	int samples = 0, bytes = 0, frames = 0;
 	off_t file_size;
 	char *sample_buf;
@@ -409,7 +409,7 @@ static int aac_duration(struct input_plugin_data *ip_data)
 		if (buffer_fill_frame(ip_data) <= 0)
 			break;
 
-		sample_buf = NeAACDecDecode(priv->decoder, &frame_info,
+		sample_buf = faacDecDecode(priv->decoder, &frame_info,
 			buffer_data(ip_data), buffer_length(ip_data));
 		if (frame_info.error == 0 && frame_info.samples > 0) {
 			samples += frame_info.samples;

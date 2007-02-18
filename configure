@@ -174,14 +174,14 @@ check_waveout()
 
 check_mp4()
 {
-	check_header neaacdec.h &&
+	check_header faad.h &&
 	check_library MP4 "" "-lmp4v2 -lfaad -lm"
 	return $?
 }
 
 check_aac()
 {
-	check_header neaacdec.h &&
+	check_header faad.h &&
 	check_library AAC "" "-lfaad -lm"
 	return $?
 }
