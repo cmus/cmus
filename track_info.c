@@ -22,6 +22,7 @@
 #include "uchar.h"
 #include "misc.h"
 #include "xmalloc.h"
+#include "utils.h"
 #include "debug.h"
 
 #include <string.h>
@@ -88,13 +89,13 @@ int track_info_matches(struct track_info *ti, const char *text, unsigned int fla
 			if (flags & TI_MATCH_TITLE && title && u_strcasestr(title, word))
 				continue;
 		} else {
-			/* compare with filename (without path) */
-			char *filename = strrchr(ti->filename, '/');
+			/* compare with url or filename without path */
+			char *filename = ti->filename;
 
-			if (filename == NULL) {
-				filename = ti->filename;
-			} else {
-				filename++;
+			if (!is_url(filename)) {
+				char *slash = strrchr(ti->filename, '/');
+				if (slash)
+					filename = slash + 1;
 			}
 			if (u_strcasestr_filename(filename, word))
 				continue;
