@@ -1,6 +1,6 @@
 /*
  * help.c, heavily based on filters.c
- *  (c) 2006, <ft@bewatermyfriend.de>
+ *  (c) 2006, <ft@bewatermyfriend.org>
  */
 
 #include "help.h"

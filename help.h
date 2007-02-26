@@ -1,6 +1,6 @@
 /*
  * help.h, heavily based on filters.h
- *  (c) 2006, <ft@bewatermyfriend.de>
+ *  (c) 2006, <ft@bewatermyfriend.org>
  */
 
 #ifndef HELP_H
