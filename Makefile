@@ -61,6 +61,7 @@ vorbis-objs		:= vorbis.lo
 wav-objs		:= wav.lo
 mp4-objs		:= mp4.lo
 aac-objs		:= id3.lo utf8_encode.lo aac.lo
+ffmpeg-objs		:= ffmpeg.lo
 
 ip-$(CONFIG_FLAC)	+= flac.so
 ip-$(CONFIG_MAD)	+= mad.so
@@ -71,6 +72,7 @@ ip-$(CONFIG_VORBIS)	+= vorbis.so
 ip-$(CONFIG_WAV)	+= wav.so
 ip-$(CONFIG_MP4)	+= mp4.so
 ip-$(CONFIG_AAC)	+= aac.so
+ip-$(CONFIG_FFMPEG)	+= ffmpeg.so
 
 $(flac-objs):		CFLAGS += $(FLAC_CFLAGS)
 $(mad-objs):		CFLAGS += $(MAD_CFLAGS)
@@ -80,6 +82,7 @@ $(mpc-objs):		CFLAGS += $(MPC_CFLAGS)
 $(vorbis-objs):		CFLAGS += $(VORBIS_CFLAGS)
 $(mp4-objs):		CFLAGS += $(MP4_CFLAGS)
 $(aac-objs):		CFLAGS += $(AAC_CFLAGS)
+$(ffmpeg-objs):		CFLAGS += $(FFMPEG_CFLAGS)
 
 flac.so: $(flac-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(FLAC_LIBS))
@@ -107,6 +110,9 @@ mp4.so: $(mp4-objs) $(libcmus-y)
 
 aac.so: $(aac-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(AAC_LIBS))
+
+ffmpeg.so: $(ffmpeg-objs) $(libcmus-y)
+	$(call cmd,ld_dl,$(FFMPEG_LIBS))
 
 # }}}
 
