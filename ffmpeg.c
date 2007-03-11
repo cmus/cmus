@@ -285,10 +285,22 @@ static int ffmpeg_read(struct input_plugin_data *ip_data, char *buffer, int coun
 static int ffmpeg_seek(struct input_plugin_data *ip_data, double offset)
 {
   struct ffmpeg_private *priv = ip_data->private;
+  AVStream *st = priv->input_context->streams[priv->stream_index];
   int ret;
+  /* There is a bug that was fixed in ffmpeg revision 5099 that affects seeking.
+   * Apparently, the stream's timebase was not used consistently in asf.c.
+   * Prior to 5099, ASF seeking assumed seconds as inputs.  There is a
+   * window of incompatibility, since avformat's version was not updated at
+   * the same time.  Instead, the transition to 50.3.0 occurred at
+   * revision 5028. */
+#if (LIBAVFORMAT_VERSION_INT < ((50<<16)+(3<<8)+0))
+  int64_t pts = (int64_t) offset;
+#else
+  /* time base is 1/framerate */
+  int64_t pts = (int64_t) offset * st->time_base.den;
+#endif
 
-  ret = av_seek_frame(priv->input_context, priv->stream_index,
-                      (int64_t) offset, 0);
+  ret = av_seek_frame(priv->input_context, priv->stream_index, pts, 0);
 
   if (ret < 0) {
     return -IP_ERROR_FUNCTION_NOT_SUPPORTED;
