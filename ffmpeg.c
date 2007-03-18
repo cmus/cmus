@@ -230,6 +230,8 @@ static int ffmpeg_close(struct input_plugin_data *ip_data)
 static int ffmpeg_fill_buffer(AVFormatContext * ic, AVCodecContext * cc, struct ffmpeg_input *input,
 			      struct ffmpeg_output *output)
 {
+	/* frame_size specifies the size of output->buffer for
+	 * avcodec_decode_audio2. */
 	int frame_size = AVCODEC_MAX_AUDIO_FRAME_SIZE;
 	int len;
 
@@ -245,8 +247,15 @@ static int ffmpeg_fill_buffer(AVFormatContext * ic, AVCodecContext * cc, struct 
 			continue;
 		}
 
+		/* The change to avcodec_decode_audio2 occurred between
+		 * 51.28.0 and 51.29.0 */
+#if (LIBAVCODEC_VERSION_INT <= ((51<<16) + (28<<8) + 0))
 		len = avcodec_decode_audio(cc, (int16_t *)output->buffer, &frame_size,
 				input->curr_pkt_buf, input->curr_pkt_size);
+#else
+		len = avcodec_decode_audio2(cc, (int16_t *) output->buffer, &frame_size,
+				input->curr_pkt_buf, input->curr_pkt_size);
+#endif
 		input->curr_pkt_size -= len;
 		input->curr_pkt_buf += len;
 		if (frame_size > 0) {
@@ -362,4 +371,4 @@ const struct input_plugin_ops ip_ops = {
 };
 
 const char *const ip_extensions[] = { "wma", NULL };
-const char *const ip_mime_types[] = { "audio/x-ms-wma", NULL };
+const char *const ip_mime_types[] = { NULL };
