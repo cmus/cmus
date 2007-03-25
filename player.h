@@ -22,6 +22,7 @@
 
 #include "locking.h"
 #include "comment.h"
+#include "track_info.h"
 
 #include <pthread.h>
 
@@ -41,13 +42,14 @@ enum player_status {
 };
 
 struct player_callbacks {
-	int (*get_next)(char **filename);
+	int (*get_next)(struct track_info **ti);
 };
 
 struct player_info {
 	pthread_mutex_t mutex;
 
-	char filename[256];
+	/* current track */
+	struct track_info *ti;
 
 	/* stream metadata */
 	char metadata[255 * 16 + 1];
@@ -86,10 +88,10 @@ void player_init(const struct player_callbacks *callbacks);
 void player_exit(void);
 
 /* set current file */
-void player_set_file(const char *filename);
+void player_set_file(struct track_info *ti);
 
 /* set current file and start playing */
-void player_play_file(const char *filename);
+void player_play_file(struct track_info *ti);
 
 void player_play(void);
 void player_stop(void);

@@ -15,6 +15,7 @@
 #include "xstrjoin.h"
 #include "debug.h"
 #include "load_dir.h"
+#include "ui_curses.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -335,10 +336,8 @@ void cmus_next(void)
 	}
 	editable_unlock();
 
-	if (info) {
-		player_set_file(info->filename);
-		track_info_unref(info);
-	}
+	if (info)
+		player_set_file(info);
 }
 
 void cmus_prev(void)
@@ -353,15 +352,23 @@ void cmus_prev(void)
 	}
 	editable_unlock();
 
-	if (info) {
-		player_set_file(info->filename);
-		track_info_unref(info);
-	}
+	if (info)
+		player_set_file(info);
 }
 
 void cmus_play_file(const char *filename)
 {
-	player_play_file(filename);
+	struct track_info *ti;
+
+	track_db_lock();
+	ti = track_db_get_track(track_db, filename);
+	track_db_unlock();
+
+	if (!ti) {
+		error_msg("Couldn't get file information for %s\n", filename);
+		return;
+	}
+	player_play_file(ti);
 }
 
 enum file_type cmus_detect_ft(const char *name, char **ret)

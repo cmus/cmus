@@ -1202,7 +1202,7 @@ static void cmd_p_pause(char *arg)
 static void cmd_p_play(char *arg)
 {
 	if (arg) {
-		player_play_file(arg);
+		cmus_play_file(arg);
 	} else {
 		player_play();
 	}
@@ -1376,8 +1376,7 @@ static void cmd_win_activate(char *arg)
 		if (cur_view == 2)
 			play_library = 0;
 
-		player_play_file(info->filename);
-		track_info_unref(info);
+		player_play_file(info);
 	}
 }
 

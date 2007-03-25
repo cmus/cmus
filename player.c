@@ -49,7 +49,7 @@ enum consumer_status {
 
 struct player_info player_info = {
 	.mutex = CMUS_MUTEX_INITIALIZER,
-	.filename = { 0, },
+	.ti = NULL,
 	.metadata = { 0, },
 	.status = PLAYER_STATUS_STOPPED,
 	.pos = 0,
@@ -205,23 +205,25 @@ static inline unsigned int buffer_second_size(void)
 	return sf_get_second_size(buffer_sf);
 }
 
-static inline int get_next(char **filename)
+static inline int get_next(struct track_info **ti)
 {
-	return player_cbs->get_next(filename);
+	return player_cbs->get_next(ti);
 }
 
 /* updating player status {{{ */
 
-static inline void file_changed(void)
+static inline void file_changed(struct track_info *ti)
 {
 	player_info_lock();
-	if (producer_status == PS_UNLOADED) {
-		player_info.filename[0] = 0;
+	if (player_info.ti)
+		track_info_unref(player_info.ti);
+
+	player_info.ti = ti;
+	if (ti) {
+		d_print("file: %s\n", ti->filename);
 	} else {
-		strncpy(player_info.filename, ip_get_filename(ip), sizeof(player_info.filename));
-		player_info.filename[sizeof(player_info.filename) - 1] = 0;
+		d_print("unloaded\n");
 	}
-	d_print("%s\n", player_info.filename);
 	player_info.metadata[0] = 0;
 	player_info.file_changed = 1;
 	player_info_unlock();
@@ -438,22 +440,23 @@ static void __prebuffer(void)
 static void __producer_play(void)
 {
 	if (producer_status == PS_UNLOADED) {
-		char *filename;
+		struct track_info *ti;
 
-		if (get_next(&filename) == 0) {
+		if (get_next(&ti) == 0) {
 			int rc;
 
-			ip = ip_new(filename);
+			ip = ip_new(ti->filename);
 			rc = ip_open(ip);
 			if (rc) {
-				player_ip_error(rc, "opening file `%s'", filename);
+				player_ip_error(rc, "opening file `%s'", ti->filename);
 				ip_delete(ip);
+				track_info_unref(ti);
+				file_changed(NULL);
 			} else {
 				ip_setup(ip);
 				producer_status = PS_PLAYING;
+				file_changed(ti);
 			}
-			free(filename);
-			file_changed();
 		}
 	} else if (producer_status == PS_PLAYING) {
 		if (ip_seek(ip, 0.0) == 0) {
@@ -503,12 +506,12 @@ static void __producer_pause(void)
 	}
 }
 
-static void __producer_set_file(const char *filename)
+static void __producer_set_file(struct track_info *ti)
 {
 	__producer_unload();
-	ip = ip_new(filename);
+	ip = ip_new(ti->filename);
 	producer_status = PS_STOPPED;
-	file_changed();
+	file_changed(ti);
 }
 
 /* setting producer status }}} */
@@ -594,7 +597,7 @@ static int change_sf(sample_format_t sf, int drop)
 
 static void __consumer_handle_eof(void)
 {
-	char *filename;
+	struct track_info *ti;
 
 	if (ip_is_remote(ip)) {
 		__producer_stop();
@@ -603,31 +606,31 @@ static void __consumer_handle_eof(void)
 		return;
 	}
 
-	if (get_next(&filename) == 0) {
+	if (get_next(&ti) == 0) {
 		__producer_unload();
-		ip = ip_new(filename);
+		ip = ip_new(ti->filename);
 		producer_status = PS_STOPPED;
 		/* PS_STOPPED, CS_PLAYING */
 		if (player_cont) {
 			__producer_play();
 			if (producer_status == PS_UNLOADED) {
 				__consumer_stop();
-				file_changed();
+				track_info_unref(ti);
+				file_changed(NULL);
 			} else {
 				/* PS_PLAYING */
-				file_changed();
+				file_changed(ti);
 				if (!change_sf(ip_get_sf(ip), 0))
 					__prebuffer();
 			}
 		} else {
 			__consumer_drain_and_stop();
-			file_changed();
+			file_changed(ti);
 		}
-		free(filename);
 	} else {
 		__producer_unload();
 		__consumer_drain_and_stop();
-		file_changed();
+		file_changed(NULL);
 	}
 	__player_status_changed();
 }
@@ -930,10 +933,10 @@ void player_pause(void)
 	player_unlock();
 }
 
-void player_set_file(const char *filename)
+void player_set_file(struct track_info *ti)
 {
 	player_lock();
-	__producer_set_file(filename);
+	__producer_set_file(ti);
 	if (producer_status == PS_UNLOADED) {
 		__consumer_stop();
 		goto out;
@@ -955,10 +958,10 @@ out:
 	player_unlock();
 }
 
-void player_play_file(const char *filename)
+void player_play_file(struct track_info *ti)
 {
 	player_lock();
-	__producer_set_file(filename);
+	__producer_set_file(ti);
 	if (producer_status == PS_UNLOADED) {
 		__consumer_stop();
 		goto out;

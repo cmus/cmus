@@ -1649,11 +1649,7 @@ static void update(void)
 	if (player_info.file_changed) {
 		if (cur_track_info)
 			track_info_unref(cur_track_info);
-		if (player_info.filename[0] == 0) {
-			cur_track_info = NULL;
-		} else {
-			cur_track_info = cmus_get_track_info(player_info.filename);
-		}
+		cur_track_info = player_info.ti;
 		player_info.file_changed = 0;
 		needs_title_update = 1;
 		needs_status_update = 1;
@@ -1858,7 +1854,7 @@ static void main_loop(void)
 	}
 }
 
-static int get_next(char **filename)
+static int get_next(struct track_info **ti)
 {
 	struct track_info *info;
 
@@ -1876,8 +1872,7 @@ static int get_next(char **filename)
 	if (info == NULL)
 		return -1;
 
-	*filename = xstrdup(info->filename);
-	track_info_unref(info);
+	*ti = info;
 	return 0;
 }
 
