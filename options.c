@@ -549,13 +549,31 @@ static void set_replaygain(unsigned int id, const char *buf)
 
 	if (!parse_enum(buf, 0, 2, replaygain_names, &tmp))
 		return;
-
 	player_set_rg(tmp);
 }
 
 static void toggle_replaygain(unsigned int id)
 {
 	player_set_rg((replaygain + 1) % 3);
+}
+
+static void get_replaygain_limit(unsigned int id, char *buf)
+{
+	strcpy(buf, bool_names[replaygain_limit]);
+}
+
+static void set_replaygain_limit(unsigned int id, const char *buf)
+{
+	int tmp;
+
+	if (!parse_bool(buf, &tmp))
+		return;
+	player_set_rg_limit(tmp);
+}
+
+static void toggle_replaygain_limit(unsigned int id)
+{
+	player_set_rg_limit(replaygain_limit ^ 1);
 }
 
 static void get_show_hidden(unsigned int id, char *buf)
@@ -750,6 +768,7 @@ static const struct {
 	DT(play_sorted)
 	DT(repeat)
 	DT(replaygain)
+	DT(replaygain_limit)
 	DN(replaygain_preamp)
 	DT(show_hidden)
 	DT(show_remaining_time)

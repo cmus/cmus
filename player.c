@@ -70,6 +70,10 @@ struct player_info player_info = {
 /* continue playing after track is finished? */
 int player_cont = 1;
 
+enum replaygain replaygain;
+int replaygain_limit = 1;
+double replaygain_preamp = 6.0;
+
 static const struct player_callbacks *player_cbs = NULL;
 
 static sample_format_t buffer_sf;
@@ -90,9 +94,6 @@ static unsigned int consumer_pos = 0;
  * usually same as consumer_pos, sometimes less than consumer_pos
  */
 static unsigned int scale_pos;
-
-enum replaygain replaygain;
-double replaygain_preamp = 6.0;
 static double replaygain_scale = 1.0;
 
 /* locking {{{ */
@@ -156,24 +157,18 @@ static const unsigned short soft_vol_db[100] = {
 	0xcdf1, 0xd71a, 0xe59c, 0xefd3
 };
 
-static int clips;
-
 static inline void scale_sample(signed short *buf, int i, int vol)
 {
 	int sample = buf[i];
 
 	if (sample < 0) {
 		sample = (sample * vol - SOFT_VOL_SCALE / 2) / SOFT_VOL_SCALE;
-		if (sample < -32768) {
+		if (sample < -32768)
 			sample = -32768;
-			clips++;
-		}
 	} else {
 		sample = (sample * vol + SOFT_VOL_SCALE / 2) / SOFT_VOL_SCALE;
-		if (sample > 32767) {
+		if (sample > 32767)
 			sample = 32767;
-			clips++;
-		}
 	}
 	buf[i] = sample;
 }
@@ -264,7 +259,7 @@ static void update_rg_scale(void)
 	scale = pow(10.0, db / 20.0);
 	replaygain_scale = scale;
 	limit = 1.0 / peak;
-	if (replaygain_scale > limit)
+	if (replaygain_limit && replaygain_scale > limit)
 		replaygain_scale = limit;
 
 	d_print("gain = %f, peak = %f, db = %f, scale = %f, limit = %f, replaygain_scale = %f\n",
@@ -288,8 +283,6 @@ static inline void file_changed(struct track_info *ti)
 	player_info_lock();
 	if (player_info.ti)
 		track_info_unref(player_info.ti);
-
-	d_print("%d clipped samples\n", clips);
 
 	player_info.ti = ti;
 	if (ti) {
@@ -1280,6 +1273,18 @@ void player_set_rg(enum replaygain rg)
 	if (!soft_vol && !replaygain)
 		scale_pos = consumer_pos;
 	replaygain = rg;
+
+	player_info_lock();
+	update_rg_scale();
+	player_info_unlock();
+
+	player_unlock();
+}
+
+void player_set_rg_limit(int limit)
+{
+	player_lock();
+	replaygain_limit = limit;
 
 	player_info_lock();
 	update_rg_scale();

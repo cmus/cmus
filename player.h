@@ -85,6 +85,7 @@ struct player_info {
 extern struct player_info player_info;
 extern int player_cont;
 extern enum replaygain replaygain;
+extern int replaygain_limit;
 extern double replaygain_preamp;
 
 /* defined in output.c */
@@ -116,6 +117,7 @@ int player_get_volume(int *left, int *right);
 int player_set_volume(int left, int right);
 void player_set_soft_vol(int soft);
 void player_set_rg(enum replaygain rg);
+void player_set_rg_limit(int limit);
 void player_set_rg_preamp(double db);
 
 int player_set_op_option(unsigned int id, const char *val);
