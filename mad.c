@@ -162,6 +162,10 @@ static int mad_read_comments(struct input_plugin_data *ip_data,
 	get_comment(c, &i, id3, ID3_DISC, "discnumber");
 	get_comment(c, &i, id3, ID3_TRACK, "tracknumber");
 	get_comment(c, &i, id3, ID3_ALBUMARTIST, "albumartist");
+	get_comment(c, &i, id3, ID3_RG_TRACK_GAIN, "replaygain_track_gain");
+	get_comment(c, &i, id3, ID3_RG_TRACK_PEAK, "replaygain_track_peak");
+	get_comment(c, &i, id3, ID3_RG_ALBUM_GAIN, "replaygain_album_gain");
+	get_comment(c, &i, id3, ID3_RG_ALBUM_PEAK, "replaygain_album_peak");
 	*comments = c;
 	id3_free(id3);
 	return 0;

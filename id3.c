@@ -528,6 +528,17 @@ static struct {
 	{ "", -1 }
 };
 
+static int frame_tab_index(const char *id)
+{
+	int i;
+
+	for (i = 0; frame_tab[i].key != -1; i++) {
+		if (!strncmp(id, frame_tab[i].name, 4))
+			return i;
+	}
+	return -1;
+}
+
 static void fix_date(char *buf)
 {
 	const char *ptr = buf;
@@ -550,51 +561,51 @@ static void fix_date(char *buf)
 	*buf = 0;
 }
 
+static char *decode_str(const char *buf, int len, int encoding)
+{
+	char *in, *out = NULL;
+	int rc = 0;
+
+	switch (encoding) {
+	case 0x00: /* ISO-8859-1 */
+		in = xstrndup(buf, len);
+		rc = utf8_encode(in, id3_default_charset, &out);
+		free(in);
+		break;
+	case 0x03: /* UTF-8 */
+		in = xstrndup(buf, len);
+		if (u_is_valid(in)) {
+			out = in;
+		} else {
+			rc = utf8_encode(in, id3_default_charset, &out);
+			free(in);
+		}
+		break;
+	case 0x01: /* UTF-16 */
+		out = utf16_to_utf8((const unsigned char *)buf, len);
+		break;
+	case 0x02: /* UTF-16BE */
+		out = utf16be_to_utf8((const unsigned char *)buf, len);
+		break;
+	}
+	return out;
+}
+
 static void v2_add_frame(ID3 *id3, struct v2_frame_header *fh, const char *buf)
 {
-	int i, encoding = *buf++, len = fh->size - 1;
+	int idx, encoding = *buf++, len = fh->size - 1;
+	enum id3_key key = NUM_ID3_KEYS;
+	char *out;
 
 	if (encoding > 3)
 		return;
 
-	for (i = 0; frame_tab[i].key != -1; i++) {
-		enum id3_key key = frame_tab[i].key;
-		char *in, *out;
-		int rc;
-
-		if (strncmp(fh->id, frame_tab[i].name, 4))
-			continue;
-
-		switch (encoding) {
-		case 0x00: /* ISO-8859-1 */
-			in = xstrndup(buf, len);
-			rc = utf8_encode(in, id3_default_charset, &out);
-			free(in);
-			if (rc)
-				return;
-			break;
-		case 0x03: /* UTF-8 */
-			in = xstrndup(buf, len);
-			if (u_is_valid(in)) {
-				out = in;
-			} else {
-				rc = utf8_encode(in, id3_default_charset, &out);
-				free(in);
-				if (rc)
-					return;
-			}
-			break;
-		case 0x01: /* UTF-16 */
-			out = utf16_to_utf8((const unsigned char *)buf, len);
-			if (out == NULL)
-				return;
-			break;
-		case 0x02: /* UTF-16BE */
-			out = utf16be_to_utf8((const unsigned char *)buf, len);
-			if (out == NULL)
-				return;
-			break;
-		}
+	idx = frame_tab_index(fh->id);
+	if (idx >= 0) {
+		key = frame_tab[idx].key;
+		out = decode_str(buf, len, encoding);
+		if (!out)
+			return;
 
 		if (key == ID3_TRACK || key == ID3_DISC)
 			fix_track_or_disc(out);
@@ -616,12 +627,50 @@ static void v2_add_frame(ID3 *id3, struct v2_frame_header *fh, const char *buf)
 			}
 		}
 
-		free(id3->v2[key]);
-		id3->v2[key] = out;
-		id3->has_v2 = 1;
-		id3_debug("%s '%s'\n", frame_tab[i].name, out);
-		break;
+		id3_debug("%s '%s'\n", frame_tab[idx].name, out);
+	} else if (!strncmp(fh->id, "TXXX", 4)) {
+		int size;
+
+		id3_debug("TXXX\n");
+
+		/* TXXX<len><encoding><key><val> */
+		out = decode_str(buf, len, encoding);
+		if (!out)
+			return;
+
+		id3_debug("TXXX, key = '%s'\n", out);
+		if (!strcasecmp(out, "replaygain_track_gain"))
+			key = ID3_RG_TRACK_GAIN;
+		if (!strcasecmp(out, "replaygain_track_peak"))
+			key = ID3_RG_TRACK_PEAK;
+		if (!strcasecmp(out, "replaygain_album_gain"))
+			key = ID3_RG_ALBUM_GAIN;
+		if (!strcasecmp(out, "replaygain_album_peak"))
+			key = ID3_RG_ALBUM_PEAK;
+
+		size = strlen(out) + 1;
+		free(out);
+
+		if (key == NUM_ID3_KEYS)
+			return;
+
+		buf += size;
+		len -= size;
+		if (len <= 0)
+			return;
+
+		out = decode_str(buf, len, encoding);
+		if (!out)
+			return;
+
+		id3_debug("TXXX, val = '%s'\n", out);
+	} else {
+		return;
 	}
+
+	free(id3->v2[key]);
+	id3->v2[key] = out;
+	id3->has_v2 = 1;
 }
 
 static void unsync(unsigned char *buf, int *lenp)
@@ -891,9 +940,7 @@ char *id3_get_comment(ID3 *id3, enum id3_key key)
 				snprintf(t, 4, "%d", ((unsigned char *)id3->v1)[126]);
 				return t;
 			}
-		case ID3_DISC:
-		case ID3_ALBUMARTIST:
-		case NUM_ID3_KEYS:
+		default:
 			return NULL;
 		}
 	}
