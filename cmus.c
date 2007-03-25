@@ -360,13 +360,16 @@ void cmus_play_file(const char *filename)
 {
 	struct track_info *ti;
 
-	track_db_lock();
-	ti = track_db_get_track(track_db, filename);
-	track_db_unlock();
-
-	if (!ti) {
-		error_msg("Couldn't get file information for %s\n", filename);
-		return;
+	if (is_url(filename)) {
+		ti = track_info_url_new(filename);
+	} else {
+		track_db_lock();
+		ti = track_db_get_track(track_db, filename);
+		track_db_unlock();
+		if (!ti) {
+			error_msg("Couldn't get file information for %s\n", filename);
+			return;
+		}
 	}
 	player_play_file(ti);
 }
