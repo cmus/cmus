@@ -226,12 +226,16 @@ static int aac_open(struct input_plugin_data *ip_data)
 		goto out;
 	}
 
+	d_print("sample rate %luhz, channels %u\n", priv->sample_rate, priv->channels);
+	if (!priv->sample_rate || !priv->channels) {
+		ret = -IP_ERROR_FILE_FORMAT;
+		goto out;
+	}
+
 	/* skip the header */
 	d_print("skipping header (%d bytes)\n", n);
 
 	buffer_consume(ip_data, n);
-
-	d_print("sample rate %luhz, channels %u\n", priv->sample_rate, priv->channels);
 
 	/*faacDecInitDRM(priv->decoder, priv->sample_rate, priv->channels);*/
 
