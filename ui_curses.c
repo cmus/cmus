@@ -83,9 +83,6 @@ char *pl_filename = NULL;
 
 /* ------------------------------------------------------------------------- */
 
-/* currently playing file */
-static struct track_info *cur_track_info = NULL;
-
 static int running = 1;
 static char *lib_autosave_filename;
 static char *pl_autosave_filename;
@@ -904,10 +901,10 @@ static void do_update_statusline(void)
 	fopt_set_str(&status_fopts[SF_SHUFFLE], shuffle_strs[shuffle]);
 	fopt_set_str(&status_fopts[SF_PLAYLISTMODE], aaa_mode_names[aaa_mode]);
 
-	if (cur_track_info)
-		duration = cur_track_info->duration;
-
 	player_info_lock();
+
+	if (player_info.ti)
+		duration = player_info.ti->duration;
 
 	if (volume_max == 0) {
 		vol_left = vol_right = vol = -1;
@@ -944,7 +941,7 @@ static void do_update_statusline(void)
 			strcat(format, "vol: %v ");
 		}
 	}
-	if (cur_track_info && is_url(cur_track_info->filename))
+	if (player_info.ti && is_url(player_info.ti->filename))
 		strcat(format, "buf: %b ");
 	strcat(format, "%=");
 	if (play_library) {
@@ -1123,19 +1120,19 @@ static void do_update_titleline(void)
 {
 	bkgdset(pairs[CURSED_TITLELINE]);
 	player_info_lock();
-	if (cur_track_info) {
+	if (player_info.ti) {
 		int i, use_alt_format = 0;
 		char *wtitle;
 
-		fill_track_fopts_track_info(cur_track_info);
-		if (is_url(cur_track_info->filename)) {
+		fill_track_fopts_track_info(player_info.ti);
+		if (is_url(player_info.ti->filename)) {
 			const char *title = get_stream_title();
 
 			if (title == NULL)
 				use_alt_format = 1;
 			fopt_set_str(&track_fopts[TF_TITLE], title);
 		} else {
-			use_alt_format = !track_info_has_tag(cur_track_info);
+			use_alt_format = !track_info_has_tag(player_info.ti);
 		}
 
 		if (use_alt_format) {
@@ -1514,22 +1511,21 @@ static void spawn_status_program(void)
 	status = player_info.status;
 	if (status == 1)
 		stream_title = get_stream_title();
-	player_info_unlock();
 
 	i = 0;
 	argv[i++] = xstrdup(status_display_program);
 
 	argv[i++] = xstrdup("status");
 	argv[i++] = xstrdup(status_strs[status]);
-	if (cur_track_info) {
+	if (player_info.ti) {
 		static const char *keys[] = {
 			"artist", "album", "discnumber", "tracknumber", "title", "date", NULL
 		};
 		int j;
 
-		if (is_url(cur_track_info->filename)) {
+		if (is_url(player_info.ti->filename)) {
 			argv[i++] = xstrdup("url");
-			argv[i++] = xstrdup(cur_track_info->filename);
+			argv[i++] = xstrdup(player_info.ti->filename);
 			if (stream_title) {
 				argv[i++] = xstrdup("title");
 				argv[i++] = xstrdup(stream_title);
@@ -1538,23 +1534,25 @@ static void spawn_status_program(void)
 			char buf[32];
 
 			argv[i++] = xstrdup("file");
-			argv[i++] = xstrdup(cur_track_info->filename);
+			argv[i++] = xstrdup(player_info.ti->filename);
 			for (j = 0; keys[j]; j++) {
 				const char *key = keys[j];
 				const char *val;
 
-				val = comments_get_val(cur_track_info->comments, key);
+				val = comments_get_val(player_info.ti->comments, key);
 				if (val) {
 					argv[i++] = xstrdup(key);
 					argv[i++] = xstrdup(val);
 				}
 			}
-			snprintf(buf, sizeof(buf), "%d", cur_track_info->duration);
+			snprintf(buf, sizeof(buf), "%d", player_info.ti->duration);
 			argv[i++] = xstrdup("duration");
 			argv[i++] = xstrdup(buf);
 		}
 	}
 	argv[i++] = NULL;
+	player_info_unlock();
+
 	if (spawn(argv, &status) == -1)
 		error_msg("couldn't run `%s': %s", status_display_program, strerror(errno));
 	for (i = 0; argv[i]; i++)
@@ -1647,9 +1645,6 @@ static void update(void)
 		player_info.metadata_changed;
 
 	if (player_info.file_changed) {
-		if (cur_track_info)
-			track_info_unref(cur_track_info);
-		cur_track_info = player_info.ti;
 		player_info.file_changed = 0;
 		needs_title_update = 1;
 		needs_status_update = 1;
