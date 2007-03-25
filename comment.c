@@ -114,7 +114,12 @@ int comments_get_date(const struct keyval *comments, const char *key)
 
 static const char *interesting[] = {
 	"artist", "album", "title", "tracknumber", "discnumber", "genre",
-	"date", "compilation", "albumartist",  NULL
+	"date", "compilation", "albumartist",
+	"replaygain_track_gain",
+	"replaygain_track_peak",
+	"replaygain_album_gain",
+	"replaygain_album_peak",
+	NULL
 };
 
 int is_interesting_key(const char *key)
