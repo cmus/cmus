@@ -41,6 +41,12 @@ enum player_status {
 	PLAYER_STATUS_PAUSED
 };
 
+enum replaygain {
+	RG_DISABLED,
+	RG_TRACK,
+	RG_ALBUM
+};
+
 struct player_callbacks {
 	int (*get_next)(struct track_info **ti);
 };
@@ -78,6 +84,8 @@ struct player_info {
 
 extern struct player_info player_info;
 extern int player_cont;
+extern enum replaygain replaygain;
+extern double replaygain_preamp;
 
 /* defined in output.c */
 extern int volume_max;
@@ -107,6 +115,8 @@ int player_get_fileinfo(const char *filename, int *duration, struct keyval **com
 int player_get_volume(int *left, int *right);
 int player_set_volume(int left, int right);
 void player_set_soft_vol(int soft);
+void player_set_rg(enum replaygain rg);
+void player_set_rg_preamp(double db);
 
 int player_set_op_option(unsigned int id, const char *val);
 int player_get_op_option(unsigned int id, char **val);

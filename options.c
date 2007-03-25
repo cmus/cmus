@@ -309,6 +309,24 @@ static void set_passwd(unsigned int id, const char *buf)
 	}
 }
 
+static void get_replaygain_preamp(unsigned int id, char *buf)
+{
+	sprintf(buf, "%f", replaygain_preamp);
+}
+
+static void set_replaygain_preamp(unsigned int id, const char *buf)
+{
+	double val;
+	char *end;
+
+	val = strtod(buf, &end);
+	if (end == buf) {
+		error_msg("floating point number expected (dB)");
+		return;
+	}
+	player_set_rg_preamp(val);
+}
+
 static void get_softvol_state(unsigned int id, char *buf)
 {
 	sprintf(buf, "%d %d", soft_vol_l, soft_vol_r);
@@ -516,6 +534,30 @@ static void toggle_repeat(unsigned int id)
 	update_statusline();
 }
 
+const char * const replaygain_names[] = {
+	"disabled", "track", "album", NULL
+};
+
+static void get_replaygain(unsigned int id, char *buf)
+{
+	strcpy(buf, replaygain_names[replaygain]);
+}
+
+static void set_replaygain(unsigned int id, const char *buf)
+{
+	int tmp;
+
+	if (!parse_enum(buf, 0, 2, replaygain_names, &tmp))
+		return;
+
+	player_set_rg(tmp);
+}
+
+static void toggle_replaygain(unsigned int id)
+{
+	player_set_rg((replaygain + 1) % 3);
+}
+
 static void get_show_hidden(unsigned int id, char *buf)
 {
 	strcpy(buf, bool_names[show_hidden]);
@@ -707,6 +749,8 @@ static const struct {
 	DT(play_library)
 	DT(play_sorted)
 	DT(repeat)
+	DT(replaygain)
+	DN(replaygain_preamp)
 	DT(show_hidden)
 	DT(show_remaining_time)
 	DT(set_term_title)

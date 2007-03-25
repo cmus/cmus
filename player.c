@@ -33,6 +33,7 @@
 #include <string.h>
 #include <sys/time.h>
 #include <stdarg.h>
+#include <math.h>
 
 enum producer_status {
 	PS_UNLOADED,
@@ -85,8 +86,14 @@ static int consumer_running = 1;
 static enum consumer_status consumer_status = CS_STOPPED;
 static unsigned int consumer_pos = 0;
 
-/* usually same as consumer_pos, sometimes less than consumer_pos */
-static unsigned int soft_vol_pos;
+/* for replay gain and soft vol
+ * usually same as consumer_pos, sometimes less than consumer_pos
+ */
+static unsigned int scale_pos;
+
+enum replaygain replaygain;
+double replaygain_preamp = 6.0;
+static double replaygain_scale = 1.0;
 
 /* locking {{{ */
 
@@ -114,7 +121,7 @@ static void reset_buffer(void)
 {
 	buffer_reset();
 	consumer_pos = 0;
-	soft_vol_pos = 0;
+	scale_pos = 0;
 }
 
 static void set_buffer_sf(sample_format_t sf)
@@ -149,37 +156,48 @@ static const unsigned short soft_vol_db[100] = {
 	0xcdf1, 0xd71a, 0xe59c, 0xefd3
 };
 
+static int clips;
+
 static inline void scale_sample(signed short *buf, int i, int vol)
 {
 	int sample = buf[i];
 
 	if (sample < 0) {
-		buf[i] = (sample * vol - SOFT_VOL_SCALE / 2) / SOFT_VOL_SCALE;
+		sample = (sample * vol - SOFT_VOL_SCALE / 2) / SOFT_VOL_SCALE;
+		if (sample < -32768) {
+			sample = -32768;
+			clips++;
+		}
 	} else {
-		buf[i] = (sample * vol + SOFT_VOL_SCALE / 2) / SOFT_VOL_SCALE;
+		sample = (sample * vol + SOFT_VOL_SCALE / 2) / SOFT_VOL_SCALE;
+		if (sample > 32767) {
+			sample = 32767;
+			clips++;
+		}
 	}
+	buf[i] = sample;
 }
 
-static void soft_vol_scale(char *buffer, unsigned int *countp)
+static void scale_samples(char *buffer, unsigned int *countp)
 {
 	signed short *buf;
 	unsigned int count = *countp;
 	int ch, bits, l, r, i;
 
-	BUG_ON(soft_vol_pos < consumer_pos);
+	BUG_ON(scale_pos < consumer_pos);
 
-	if (consumer_pos != soft_vol_pos) {
-		unsigned int offs = soft_vol_pos - consumer_pos;
+	if (consumer_pos != scale_pos) {
+		unsigned int offs = scale_pos - consumer_pos;
 
 		if (offs >= count)
 			return;
 		buffer += offs;
 		count -= offs;
 	}
-	soft_vol_pos += count;
+	scale_pos += count;
 	buf = (signed short *)buffer;
 
-	if (soft_vol_l == 100 && soft_vol_r == 100)
+	if (replaygain_scale == 1.0 && soft_vol_l == 100 && soft_vol_r == 100)
 		return;
 
 	ch = sf_get_channels(buffer_sf);
@@ -194,10 +212,63 @@ static void soft_vol_scale(char *buffer, unsigned int *countp)
 	if (soft_vol_r != 100)
 		r = soft_vol_db[soft_vol_r];
 
+	l *= replaygain_scale;
+	r *= replaygain_scale;
+
 	for (i = 0; i < count / 4; i++) {
 		scale_sample(buf, i * 2, l);
 		scale_sample(buf, i * 2 + 1, r);
 	}
+}
+
+static int parse_double(const char *str, double *val)
+{
+	char *end;
+
+	*val = strtod(str, &end);
+	return str == end;
+}
+
+static void update_rg_scale(void)
+{
+	const char *g, *p;
+	double gain, peak, db, scale, limit;
+
+	replaygain_scale = 1.0;
+	if (!player_info.ti || !replaygain)
+		return;
+
+	if (replaygain == RG_TRACK) {
+		g = comments_get_val(player_info.ti->comments, "replaygain_track_gain");
+		p = comments_get_val(player_info.ti->comments, "replaygain_track_peak");
+	} else {
+		g = comments_get_val(player_info.ti->comments, "replaygain_album_gain");
+		p = comments_get_val(player_info.ti->comments, "replaygain_album_peak");
+	}
+
+	if (!g || !p) {
+		d_print("gain or peak not available\n");
+		return;
+	}
+	if (parse_double(g, &gain) || parse_double(p, &peak)) {
+		d_print("could not parse gain (%s) or peak (%s)\n", g, p);
+		return;
+	}
+	if (peak < 0.05) {
+		d_print("peak (%g) is too small\n", peak);
+		return;
+	}
+
+	db = replaygain_preamp + gain;
+
+	scale = pow(10.0, db / 20.0);
+	replaygain_scale = scale;
+	limit = 1.0 / peak;
+	if (replaygain_scale > limit)
+		replaygain_scale = limit;
+
+	d_print("gain = %f, peak = %f, db = %f, scale = %f, limit = %f, replaygain_scale = %f\n",
+			gain, peak, db, scale, limit, replaygain_scale);
 }
 
 static inline unsigned int buffer_second_size(void)
@@ -218,12 +289,15 @@ static inline void file_changed(struct track_info *ti)
 	if (player_info.ti)
 		track_info_unref(player_info.ti);
 
+	d_print("%d clipped samples\n", clips);
+
 	player_info.ti = ti;
 	if (ti) {
 		d_print("file: %s\n", ti->filename);
 	} else {
 		d_print("unloaded\n");
 	}
+	update_rg_scale();
 	player_info.metadata[0] = 0;
 	player_info.file_changed = 1;
 	player_info_unlock();
@@ -705,8 +779,8 @@ static void *consumer_loop(void *arg)
 			}
 			if (size > space)
 				size = space;
-			if (soft_vol)
-				soft_vol_scale(rpos, &size);
+			if (soft_vol || replaygain)
+				scale_samples(rpos, &size);
 			rc = op_write(rpos, size);
 			if (rc < 0) {
 				d_print("op_write returned %d %s\n", rc,
@@ -1043,7 +1117,7 @@ void player_seek(double offset, int relative)
 			op_drop();
 			reset_buffer();
 			consumer_pos = new_pos * buffer_second_size();
-			soft_vol_pos = consumer_pos;
+			scale_pos = consumer_pos;
 			__consumer_position_update();
 		} else {
 			d_print("error: ip_seek returned %d\n", rc);
@@ -1190,13 +1264,40 @@ void player_set_soft_vol(int soft)
 	int l, r;
 
 	consumer_lock();
-	/* don't mess with soft_vol_pos if soft_vol is already true */
-	if (!soft_vol)
-		soft_vol_pos = consumer_pos;
+	/* don't mess with scale_pos if soft_vol or replaygain is already enabled */
+	if (!soft_vol && !replaygain)
+		scale_pos = consumer_pos;
 	op_set_soft_vol(soft);
 	if (!op_get_volume(&l, &r))
 		volume_update(l, r);
 	consumer_unlock();
+}
+
+void player_set_rg(enum replaygain rg)
+{
+	player_lock();
+	/* don't mess with scale_pos if soft_vol or replaygain is already enabled */
+	if (!soft_vol && !replaygain)
+		scale_pos = consumer_pos;
+	replaygain = rg;
+
+	player_info_lock();
+	update_rg_scale();
+	player_info_unlock();
+
+	player_unlock();
+}
+
+void player_set_rg_preamp(double db)
+{
+	player_lock();
+	replaygain_preamp = db;
+
+	player_info_lock();
+	update_rg_scale();
+	player_info_unlock();
+
+	player_unlock();
 }
 
 int player_set_op_option(unsigned int id, const char *val)
