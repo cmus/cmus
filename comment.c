@@ -140,3 +140,36 @@ void fix_track_or_disc(char *str)
 	if (slash)
 		*slash = 0;
 }
+
+/*
+ * @c       keyvals
+ * @allocp  number of allocated keyvals
+ * @n       new number of keyvals
+ */
+struct keyval *comments_resize(struct keyval *c, int *allocp, int n)
+{
+	if (n > *allocp) {
+		n = (n + 3) & ~3;
+		c = xrenew(struct keyval, c, n);
+		*allocp = n;
+	}
+	return c;
+}
+
+/*
+ * @c       keyvals
+ * @allocp  number of allocated keyvals
+ * @count   number of keyvals in @c
+ */
+struct keyval *comments_terminate(struct keyval *c, int *allocp, int count)
+{
+	int alloc = count + 1;
+
+	if (alloc > *allocp) {
+		c = xrenew(struct keyval, c, alloc);
+		*allocp = alloc;
+	}
+	c[count].key = NULL;
+	c[count].val = NULL;
+	return c;
+}

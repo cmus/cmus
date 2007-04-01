@@ -36,4 +36,7 @@ extern int comments_get_date(const struct keyval *comments, const char *key);
 int is_interesting_key(const char *key);
 void fix_track_or_disc(char *str);
 
+struct keyval *comments_resize(struct keyval *c, int *allocp, int n);
+struct keyval *comments_terminate(struct keyval *c, int *allocp, int count);
+
 #endif
