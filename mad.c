@@ -113,23 +113,13 @@ static int mad_seek(struct input_plugin_data *ip_data, double offset)
 	return nomad_time_seek(nomad, offset);
 }
 
-static void get_comment(struct keyval *c, int *iptr, ID3 *id3, enum id3_key key, const char *key_name)
-{
-	int i = *iptr;
-
-	c[i].val = id3_get_comment(id3, key);
-	if (c[i].val == NULL)
-		return;
-	c[i].key = xstrdup(key_name);
-	*iptr = i + 1;
-}
-
 static int mad_read_comments(struct input_plugin_data *ip_data,
 		struct keyval **comments)
 {
 	ID3 *id3;
-	struct keyval *c;
 	int fd, rc, save, i;
+	struct keyval *c = NULL;
+	int count = 0, alloc = 0;
 
 	fd = open(ip_data->filename, O_RDONLY);
 	if (fd == -1) {
@@ -148,25 +138,21 @@ static int mad_read_comments(struct input_plugin_data *ip_data,
 			return -1;
 		}
 		d_print("corrupted tag?\n");
-		*comments = xnew0(struct keyval, 1);
-		return 0;
+		goto out;
 	}
 
-	c = xnew0(struct keyval, NUM_ID3_KEYS + 1);
-	i = 0;
-	get_comment(c, &i, id3, ID3_ARTIST, "artist");
-	get_comment(c, &i, id3, ID3_ALBUM, "album");
-	get_comment(c, &i, id3, ID3_TITLE, "title");
-	get_comment(c, &i, id3, ID3_DATE, "date");
-	get_comment(c, &i, id3, ID3_GENRE, "genre");
-	get_comment(c, &i, id3, ID3_DISC, "discnumber");
-	get_comment(c, &i, id3, ID3_TRACK, "tracknumber");
-	get_comment(c, &i, id3, ID3_ALBUMARTIST, "albumartist");
-	get_comment(c, &i, id3, ID3_RG_TRACK_GAIN, "replaygain_track_gain");
-	get_comment(c, &i, id3, ID3_RG_TRACK_PEAK, "replaygain_track_peak");
-	get_comment(c, &i, id3, ID3_RG_ALBUM_GAIN, "replaygain_album_gain");
-	get_comment(c, &i, id3, ID3_RG_ALBUM_PEAK, "replaygain_album_peak");
-	*comments = c;
+	for (i = 0; i < NUM_ID3_KEYS; i++) {
+		char *val = id3_get_comment(id3, i);
+
+		if (val && id3_key_names[i]) {
+			c = comments_resize(c, &alloc, count + 1);
+			c[count].key = xstrdup(id3_key_names[i]);
+			c[count].val = val;
+			count++;
+		}
+	}
+out:
+	*comments = comments_terminate(c, &alloc, count);
 	id3_free(id3);
 	return 0;
 }

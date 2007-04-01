@@ -221,6 +221,21 @@ static const char *genres[NR_GENRES] = {
 #define id3_debug(...) do { } while (0)
 #endif
 
+const char * const id3_key_names[NUM_ID3_KEYS] = {
+	"artist",
+	"album",
+	"title",
+	"date",
+	"genre",
+	"discnumber",
+	"tracknumber",
+	"albumartist",
+	"replaygain_track_gain",
+	"replaygain_track_peak",
+	"replaygain_album_gain",
+	"replaygain_album_peak"
+};
+
 static int utf16_is_special(const uchar uch)
 {
 	if (UTF16_IS_HSURROGATE(uch) || UTF16_IS_LSURROGATE(uch) || UTF16_IS_BOM(uch))

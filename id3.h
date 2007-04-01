@@ -31,6 +31,8 @@ enum id3_key {
 
 typedef struct ID3 ID3;
 
+extern const char * const id3_key_names[NUM_ID3_KEYS];
+
 extern int id3_tag_size(const char *buf, int buf_size);
 
 extern ID3 *id3_new(void);
