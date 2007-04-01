@@ -163,12 +163,8 @@ static int find_ape_tag_slow(int fd)
 	return -1;
 }
 
-static int read_header(int fd, struct ape_header *h)
+static int ape_parse_header(const char *buf, struct ape_header *h)
 {
-	char buf[HEADER_SIZE];
-
-	if (read_all(fd, buf, sizeof(buf)) != sizeof(buf))
-		return 0;
 	if (memcmp(buf, preamble, PREAMBLE_SIZE))
 		return 0;
 
@@ -177,6 +173,15 @@ static int read_header(int fd, struct ape_header *h)
 	h->count = get_le32(buf + 16);
 	h->flags = get_le32(buf + 20);
 	return 1;
+}
+
+static int read_header(int fd, struct ape_header *h)
+{
+	char buf[HEADER_SIZE];
+
+	if (read_all(fd, buf, sizeof(buf)) != sizeof(buf))
+		return 0;
+	return ape_parse_header(buf, h);
 }
 
 /* sets fd right after the header and returns 1 if found,
@@ -210,15 +215,11 @@ static int find_ape_tag(int fd, struct ape_header *h)
  *
  * Also support "discnumber" (vorbis) and "disc" (non-standard)
  */
-static int parse_ape_tag(char *buf, const int size, const int count, struct keyval **comments)
+static int ape_parse_one(const char *buf, int size, struct keyval *c)
 {
-	struct keyval *c;
-	int i, n, pos;
+	int pos = 0;
 
-	c = xnew0(struct keyval, count + 1);
-	i = 0;
-	pos = 0;
-	for (n = 0; n < count; n++) {
+	while (size - pos > 8) {
 		uint32_t val_len, flags;
 		char *key, *val;
 		int max_key_len, key_len;
@@ -252,7 +253,7 @@ static int parse_ape_tag(char *buf, const int size, const int count, struct keyv
 		val = xstrndup(buf + pos, val_len);
 		pos += val_len;
 
-		/* normalize key names */
+		/* normalize key */
 		if (!strcasecmp(key, "track")) {
 			free(key);
 			key = xstrdup("tracknumber");
@@ -265,12 +266,7 @@ static int parse_ape_tag(char *buf, const int size, const int count, struct keyv
 			key = xstrdup("discnumber");
 		}
 
-		if (!is_interesting_key(key)) {
-			free(key);
-			free(val);
-			continue;
-		}
-
+		/* normalize value */
 		if (!strcasecmp(key, "tracknumber") || !strcasecmp(key, "discnumber")) {
 			fix_track_or_disc(val);
 		} else if (!strcasecmp(key, "year") || !strcasecmp(key, "record date")) {
@@ -291,14 +287,13 @@ static int parse_ape_tag(char *buf, const int size, const int count, struct keyv
 				val[4] = 0;
 		}
 
-		c[i].key = key;
-		c[i].val = val;
-		i++;
+		c->key = key;
+		c->val = val;
+		return pos;
 	}
-
-	*comments = c;
-	return 0;
+	return -1;
 }
+
 /* }}} */
 
 static int mpc_open(struct input_plugin_data *ip_data)
@@ -430,13 +425,36 @@ static int mpc_seek(struct input_plugin_data *ip_data, double offset)
 	return -1;
 }
 
+static char *gain_to_str(int gain)
+{
+	char buf[16];
+	int b, a = gain / 100;
+
+	if (gain < 0) {
+		b = -gain % 100;
+	} else {
+		b = gain % 100;
+	}
+	sprintf(buf, "%d.%02d", a, b);
+	return xstrdup(buf);
+}
+
+static char *peak_to_str(unsigned int peak)
+{
+	char buf[16];
+	sprintf(buf, "%d.%05d", peak / 32767, peak % 32767);
+	return xstrdup(buf);
+}
+
 static int mpc_read_comments(struct input_plugin_data *ip_data, struct keyval **comments)
 {
+	struct mpc_private *priv = ip_data->private;
 	int old_pos, fd = ip_data->fd;
 	struct ape_header h;
 	char *buf;
 
-	*comments = NULL;
+	struct keyval *c = NULL;
+	int count = 0, alloc = 0;
 
 	/* save position */
 	old_pos = lseek(fd, 0, SEEK_CUR);
@@ -455,13 +473,48 @@ static int mpc_read_comments(struct input_plugin_data *ip_data, struct keyval **
 		goto out;
 
 	buf = xnew(char, h.size);
-	if (read_all(fd, buf, h.size) == h.size)
-		parse_ape_tag(buf, h.size, h.count, comments);
+	if (read_all(fd, buf, h.size) == h.size) {
+		int pos = 0, rc;
+
+		while (pos < h.size) {
+			c = comments_resize(c, &alloc, count + 1);
+			rc = ape_parse_one(buf + pos, h.size - pos, c + count);
+			if (rc < 0)
+				break;
+
+			pos += rc;
+			if (!is_interesting_key(c[count].key)) {
+				free(c[count].key);
+				free(c[count].val);
+				continue;
+			}
+			count++;
+		}
+	}
 	free(buf);
 out:
-	if (*comments == NULL)
-		*comments = xnew0(struct keyval, 1);
+	if (priv->info.gain_title && priv->info.peak_title) {
+		c = comments_resize(c, &alloc, count + 2);
+		c[count].key = xstrdup("replaygain_track_gain");
+		c[count].val = gain_to_str(priv->info.gain_title);
+		count++;
+		c[count].key = xstrdup("replaygain_track_peak");
+		c[count].val = peak_to_str(priv->info.peak_title);
+		count++;
+	}
+	if (priv->info.gain_album && priv->info.peak_album) {
+		c = comments_resize(c, &alloc, count + 2);
+		c[count].key = xstrdup("replaygain_album_gain");
+		c[count].val = gain_to_str(priv->info.gain_album);
+		count++;
+		c[count].key = xstrdup("replaygain_album_peak");
+		c[count].val = peak_to_str(priv->info.peak_album);
+		count++;
+	}
+	c = comments_terminate(c, &alloc, count);
+
 	lseek(fd, old_pos, SEEK_SET);
+	*comments = c;
 	return 0;
 }
 
