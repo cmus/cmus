@@ -118,8 +118,7 @@ static int mad_read_comments(struct input_plugin_data *ip_data,
 {
 	ID3 *id3;
 	int fd, rc, save, i;
-	struct keyval *c = NULL;
-	int count = 0, alloc = 0;
+	GROWING_KEYVALS(c);
 
 	fd = open(ip_data->filename, O_RDONLY);
 	if (fd == -1) {
@@ -144,15 +143,12 @@ static int mad_read_comments(struct input_plugin_data *ip_data,
 	for (i = 0; i < NUM_ID3_KEYS; i++) {
 		char *val = id3_get_comment(id3, i);
 
-		if (val && id3_key_names[i]) {
-			c = comments_resize(c, &alloc, count + 1);
-			c[count].key = xstrdup(id3_key_names[i]);
-			c[count].val = val;
-			count++;
-		}
+		if (val)
+			comments_add(&c, id3_key_names[i], val);
 	}
 out:
-	*comments = comments_terminate(c, &alloc, count);
+	comments_terminate(&c);
+	*comments = c.comments;
 	id3_free(id3);
 	return 0;
 }

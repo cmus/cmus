@@ -307,17 +307,6 @@ static int mp4_seek(struct input_plugin_data *ip_data, double offset)
 	return 0;
 }
 
-/* used by mp4_read_comments only. 'val' should be malloced */
-static void push_comment(struct keyval **comments, int *count, const char *key, char *val)
-{
-	*comments = xrenew(struct keyval, *comments, *count + 2);
-	(*comments)[*count+0].key = xstrdup(key);
-	(*comments)[*count+0].val = val;
-	(*comments)[*count+1].key = NULL;
-	(*comments)[*count+1].val = NULL;
-	(*count)++;
-}
-
 static int mp4_read_comments(struct input_plugin_data *ip_data,
 		struct keyval **comments)
 {
@@ -327,27 +316,25 @@ static int mp4_read_comments(struct input_plugin_data *ip_data,
 	/*uint8_t *ustr;
 	uint32_t size;*/
 	char *str;
-	int n = 0;
+	GROWING_KEYVALS(c);
 
 	priv = ip_data->private;
-
-	*comments = NULL;
 
 	/* MP4GetMetadata* provides malloced pointers, and the data
 	 * is in UTF-8 (or at least it should be). */
 	if (MP4GetMetadataArtist(priv->mp4.handle, &str))
-		push_comment(comments, &n, "artist", str);
+		comments_add(&c, "artist", str);
 	if (MP4GetMetadataAlbum(priv->mp4.handle, &str))
-		push_comment(comments, &n, "album", str);
+		comments_add(&c, "album", str);
 	if (MP4GetMetadataName(priv->mp4.handle, &str))
-		push_comment(comments, &n, "title", str);
+		comments_add(&c, "title", str);
 	if (MP4GetMetadataGenre(priv->mp4.handle, &str))
-		push_comment(comments, &n, "genre", str);
+		comments_add(&c, "genre", str);
 	if (MP4GetMetadataYear(priv->mp4.handle, &str))
-		push_comment(comments, &n, "date", str);
+		comments_add(&c, "date", str);
 
 	if (MP4GetMetadataCompilation(priv->mp4.handle, &val))
-		push_comment(comments, &n, "compilation", xstrdup(val ? "yes" : "no"));
+		comments_add_const(&c, "compilation", val ? "yes" : "no");
 #if 0
 	if (MP4GetBytesProperty(priv->mp4.handle, "moov.udta.meta.ilst.aART.data", &ustr, &size)) {
 		char *xstr;
@@ -366,23 +353,23 @@ static int mp4_read_comments(struct input_plugin_data *ip_data,
 		xstr = xmalloc(size + 1);
 		memcpy(xstr, ustr, size);
 		xstr[size] = 0;
-		push_comment(comments, &n, "albumartist", xstr);
+		comments_add(&c, "albumartist", xstr);
+		free(xstr);
 	}
 #endif
 	if (MP4GetMetadataTrack(priv->mp4.handle, &meta_num, &meta_total)) {
-		str = xmalloc(6);
-		snprintf(str, 6, "%u", meta_num);
-		push_comment(comments, &n, "tracknumber", str);
+		char buf[6];
+		snprintf(buf, 6, "%u", meta_num);
+		comments_add_const(&c, "tracknumber", buf);
 	}
 	if (MP4GetMetadataDisk(priv->mp4.handle, &meta_num, &meta_total)) {
-		str = xmalloc(6);
-		snprintf(str, 6, "%u", meta_num);
-		push_comment(comments, &n, "discnumber", str);
+		char buf[6];
+		snprintf(buf, 6, "%u", meta_num);
+		comments_add_const(&c, "discnumber", buf);
 	}
 
-	if (*comments == NULL)
-		*comments = xnew0(struct keyval, 1);
-
+	comments_terminate(&c);
+	*comments = c.comments;
 	return 0;
 }
 

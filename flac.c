@@ -323,39 +323,24 @@ static void metadata_cb(const Dec *dec, const FLAC__StreamMetadata *metadata, vo
 		if (priv->comments) {
 			d_print("Ignoring\n");
 		} else {
-			struct keyval *c;
-			int s, d, nr;
+			GROWING_KEYVALS(c);
+			int i, nr;
 
 			nr = metadata->data.vorbis_comment.num_comments;
-			c = xnew0(struct keyval, nr + 1);
-			for (s = 0, d = 0; s < nr; s++) {
+			for (i = 0; i < nr; i++) {
 				char *key, *val;
 
 				/* until you have finished reading this function name
 				 * you have already forgot WTF you're doing */
-				if (!FLAC__metadata_object_vorbiscomment_entry_to_name_value_pair(
-							metadata->data.vorbis_comment.comments[s],
-							&key, &val))
-					continue;
-
-				if (!strcasecmp(key, "album_artist")) {
+				if (FLAC__metadata_object_vorbiscomment_entry_to_name_value_pair(
+							metadata->data.vorbis_comment.comments[i],
+							&key, &val)) {
+					comments_add(&c, key, val);
 					free(key);
-					key = xstrdup("albumartist");
 				}
-				if (!is_interesting_key(key)) {
-					free(key);
-					free(val);
-					continue;
-				}
-				if (!strcasecmp(key, "tracknumber") || !strcasecmp(key, "discnumber"))
-					fix_track_or_disc(val);
-
-				d_print("comment: '%s=%s'\n", key, val);
-				c[d].key = key;
-				c[d].val = val;
-				d++;
 			}
-			priv->comments = c;
+			comments_terminate(&c);
+			priv->comments = c.comments;
 		}
 		break;
 	default:

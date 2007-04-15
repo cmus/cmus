@@ -1,20 +1,5 @@
 /* 
- * Copyright 2004 Timo Hirvonen
- * 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License as
- * published by the Free Software Foundation; either version 2 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
- * 02111-1307, USA.
+ * Copyright 2004-2007 Timo Hirvonen
  */
 
 #include "comment.h"
@@ -122,54 +107,72 @@ static const char *interesting[] = {
 	NULL
 };
 
-int is_interesting_key(const char *key)
+static struct {
+	const char *old;
+	const char *new;
+} key_map[] = {
+	{ "album_artist", "albumartist" },
+	{ "disc", "discnumber" },
+	{ "track", "tracknumber" },
+	{ NULL, NULL }
+};
+
+static const char *fix_key(const char *key)
 {
 	int i;
 
 	for (i = 0; interesting[i]; i++) {
-		if (strcasecmp(key, interesting[i]) == 0)
-			return 1;
+		if (!strcasecmp(key, interesting[i]))
+			return interesting[i];
 	}
-	return 0;
+	for (i = 0; key_map[i].old; i++) {
+		if (!strcasecmp(key, key_map[i].old))
+			return key_map[i].new;
+	}
+	return NULL;
 }
 
-void fix_track_or_disc(char *str)
+int comments_add(struct growing_keyvals *c, const char *key, char *val)
 {
-	char *slash = strchr(str, '/');
+	int n = c->count + 1;
 
-	if (slash)
-		*slash = 0;
-}
+	key = fix_key(key);
+	if (!key) {
+		free(val);
+		return 0;
+	}
 
-/*
- * @c       keyvals
- * @allocp  number of allocated keyvals
- * @n       new number of keyvals
- */
-struct keyval *comments_resize(struct keyval *c, int *allocp, int n)
-{
-	if (n > *allocp) {
+	if (!strcmp(key, "tracknumber") || !strcmp(key, "discnumber")) {
+		char *slash = strchr(val, '/');
+		if (slash)
+			*slash = 0;
+	}
+
+	if (n > c->alloc) {
 		n = (n + 3) & ~3;
-		c = xrenew(struct keyval, c, n);
-		*allocp = n;
+		c->comments = xrenew(struct keyval, c->comments, n);
+		c->alloc = n;
 	}
-	return c;
+
+	c->comments[c->count].key = xstrdup(key);
+	c->comments[c->count].val = val;
+	c->count++;
+	return 1;
 }
 
-/*
- * @c       keyvals
- * @allocp  number of allocated keyvals
- * @count   number of keyvals in @c
- */
-struct keyval *comments_terminate(struct keyval *c, int *allocp, int count)
+int comments_add_const(struct growing_keyvals *c, const char *key, const char *val)
 {
-	int alloc = count + 1;
+	return comments_add(c, key, xstrdup(val));
+}
 
-	if (alloc > *allocp) {
-		c = xrenew(struct keyval, c, alloc);
-		*allocp = alloc;
+void comments_terminate(struct growing_keyvals *c)
+{
+	int alloc = c->count + 1;
+
+	if (alloc > c->alloc) {
+		c->comments = xrenew(struct keyval, c->comments, alloc);
+		c->alloc = alloc;
 	}
-	c[count].key = NULL;
-	c[count].val = NULL;
-	return c;
+	c->comments[c->count].key = NULL;
+	c->comments[c->count].val = NULL;
 }

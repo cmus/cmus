@@ -226,10 +226,10 @@ static int vorbis_seek(struct input_plugin_data *ip_data, double offset)
 static int vorbis_read_comments(struct input_plugin_data *ip_data,
 		struct keyval **comments)
 {
-	struct keyval *c;
+	GROWING_KEYVALS(c);
 	struct vorbis_private *priv;
 	vorbis_comment *vc;
-	int i, s, d;
+	int i;
 
 	priv = ip_data->private;
 	vc = ov_comment(&priv->vf, -1);
@@ -238,37 +238,22 @@ static int vorbis_read_comments(struct input_plugin_data *ip_data,
 		*comments = xnew0(struct keyval, 1);
 		return 0;
 	}
-	c = xnew0(struct keyval, vc->comments + 1);
-	for (s = 0, d = 0; s < vc->comments; s++) {
-		const char *str = vc->user_comments[s];
-		char *key, *val;
+	for (i = 0; i < vc->comments; i++) {
+		const char *str = vc->user_comments[i];
+		const char *eq = strchr(str, '=');
+		char *key;
 
-		for (i = 0; str[i]; i++) {
-			if (str[i] == '=')
-				break;
-		}
-		if (str[i] != '=') {
+		if (!eq) {
 			d_print("invalid comment: '%s' ('=' expected)\n", str);
 			continue;
 		}
-		key = xstrndup(str, i);
-		if (!strcasecmp(key, "album_artist")) {
-			free(key);
-			key = xstrdup("albumartist");
-		}
-		if (!is_interesting_key(key)) {
-			free(key);
-			continue;
-		}
 
-		val = xstrdup(str + i + 1);
-		if (!strcasecmp(key, "tracknumber") || !strcasecmp(key, "discnumber"))
-			fix_track_or_disc(val);
-		c[d].key = key;
-		c[d].val = val;
-		d++;
+		key = xstrndup(str, eq - str);
+		comments_add_const(&c, key, eq + 1);
+		free(key);
 	}
-	*comments = c;
+	comments_terminate(&c);
+	*comments = c.comments;
 	return 0;
 }
 

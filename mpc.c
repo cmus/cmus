@@ -215,7 +215,7 @@ static int find_ape_tag(int fd, struct ape_header *h)
  *
  * Also support "discnumber" (vorbis) and "disc" (non-standard)
  */
-static int ape_parse_one(const char *buf, int size, struct keyval *c)
+static int ape_parse_one(const char *buf, int size, char **keyp, char **valp)
 {
 	int pos = 0;
 
@@ -253,23 +253,13 @@ static int ape_parse_one(const char *buf, int size, struct keyval *c)
 		val = xstrndup(buf + pos, val_len);
 		pos += val_len;
 
-		/* normalize key */
-		if (!strcasecmp(key, "track")) {
+		/* could be moved to comment.c but I don't think anyone else would use it */
+		if (!strcasecmp(key, "record date")) {
 			free(key);
-			key = xstrdup("tracknumber");
-		} else if (!strcasecmp(key, "disc")) {
-			/* "disc" is totally non-standard but since there is
-			 * "track" to "tracknumber" conversion this might make sense,
-			 * at least this is totally harmless
-			 */
-			free(key);
-			key = xstrdup("discnumber");
+			key = xstrdup("year");
 		}
 
-		/* normalize value */
-		if (!strcasecmp(key, "tracknumber") || !strcasecmp(key, "discnumber")) {
-			fix_track_or_disc(val);
-		} else if (!strcasecmp(key, "year") || !strcasecmp(key, "record date")) {
+		if (!strcasecmp(key, "year")) {
 			/* Date format
 			 *
 			 * 1999-08-11 12:34:56
@@ -287,8 +277,8 @@ static int ape_parse_one(const char *buf, int size, struct keyval *c)
 				val[4] = 0;
 		}
 
-		c->key = key;
-		c->val = val;
+		*keyp = key;
+		*valp = val;
 		return pos;
 	}
 	return -1;
@@ -425,9 +415,9 @@ static int mpc_seek(struct input_plugin_data *ip_data, double offset)
 	return -1;
 }
 
-static char *gain_to_str(int gain)
+static const char *gain_to_str(int gain)
 {
-	char buf[16];
+	static char buf[16];
 	int b, a = gain / 100;
 
 	if (gain < 0) {
@@ -436,14 +426,14 @@ static char *gain_to_str(int gain)
 		b = gain % 100;
 	}
 	sprintf(buf, "%d.%02d", a, b);
-	return xstrdup(buf);
+	return buf;
 }
 
-static char *peak_to_str(unsigned int peak)
+static const char *peak_to_str(unsigned int peak)
 {
-	char buf[16];
+	static char buf[16];
 	sprintf(buf, "%d.%05d", peak / 32767, peak % 32767);
-	return xstrdup(buf);
+	return buf;
 }
 
 static int mpc_read_comments(struct input_plugin_data *ip_data, struct keyval **comments)
@@ -452,9 +442,7 @@ static int mpc_read_comments(struct input_plugin_data *ip_data, struct keyval **
 	int old_pos, fd = ip_data->fd;
 	struct ape_header h;
 	char *buf;
-
-	struct keyval *c = NULL;
-	int count = 0, alloc = 0;
+	GROWING_KEYVALS(c);
 
 	/* save position */
 	old_pos = lseek(fd, 0, SEEK_CUR);
@@ -477,44 +465,29 @@ static int mpc_read_comments(struct input_plugin_data *ip_data, struct keyval **
 		int pos = 0, rc;
 
 		while (pos < h.size) {
-			c = comments_resize(c, &alloc, count + 1);
-			rc = ape_parse_one(buf + pos, h.size - pos, c + count);
+			char *k, *v;
+			rc = ape_parse_one(buf + pos, h.size - pos, &k, &v);
 			if (rc < 0)
 				break;
 
-			pos += rc;
-			if (!is_interesting_key(c[count].key)) {
-				free(c[count].key);
-				free(c[count].val);
-				continue;
-			}
-			count++;
+			comments_add(&c, k, v);
+			free(k);
 		}
 	}
 	free(buf);
 out:
 	if (priv->info.gain_title && priv->info.peak_title) {
-		c = comments_resize(c, &alloc, count + 2);
-		c[count].key = xstrdup("replaygain_track_gain");
-		c[count].val = gain_to_str(priv->info.gain_title);
-		count++;
-		c[count].key = xstrdup("replaygain_track_peak");
-		c[count].val = peak_to_str(priv->info.peak_title);
-		count++;
+		comments_add_const(&c, "replaygain_track_gain", gain_to_str(priv->info.gain_title));
+		comments_add_const(&c, "replaygain_track_peak", peak_to_str(priv->info.peak_title));
 	}
 	if (priv->info.gain_album && priv->info.peak_album) {
-		c = comments_resize(c, &alloc, count + 2);
-		c[count].key = xstrdup("replaygain_album_gain");
-		c[count].val = gain_to_str(priv->info.gain_album);
-		count++;
-		c[count].key = xstrdup("replaygain_album_peak");
-		c[count].val = peak_to_str(priv->info.peak_album);
-		count++;
+		comments_add_const(&c, "replaygain_album_gain", gain_to_str(priv->info.gain_album));
+		comments_add_const(&c, "replaygain_album_peak", peak_to_str(priv->info.peak_album));
 	}
-	c = comments_terminate(c, &alloc, count);
+	comments_terminate(&c);
 
 	lseek(fd, old_pos, SEEK_SET);
-	*comments = c;
+	*comments = c.comments;
 	return 0;
 }
 

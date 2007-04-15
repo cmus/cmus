@@ -622,8 +622,6 @@ static void v2_add_frame(ID3 *id3, struct v2_frame_header *fh, const char *buf)
 		if (!out)
 			return;
 
-		if (key == ID3_TRACK || key == ID3_DISC)
-			fix_track_or_disc(out);
 		if (key == ID3_GENRE) {
 			char *tmp;
 
