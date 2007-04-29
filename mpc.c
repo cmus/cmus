@@ -71,7 +71,7 @@ static inline uint32_t get_le32(const char *buf)
 {
 	const unsigned char *b = (const unsigned char *)buf;
 
-	return b[0] | (b[1] >> 8) | (b[2] >> 16) | (b[3] >> 24);
+	return b[0] | (b[1] << 8) | (b[2] << 16) | (b[3] << 24);
 }
 
 /* callbacks {{{ */
@@ -451,8 +451,9 @@ static int mpc_read_comments(struct input_plugin_data *ip_data, struct keyval **
 		goto out;
 
 	if (AF_IS_FOOTER(h.flags)) {
+		off_t file_size = get_size_impl(ip_data);
 		/* seek back right after the header */
-		if (lseek(fd, -h.size, SEEK_CUR) == -1)
+		if (lseek(fd, file_size - h.size, SEEK_SET) == -1)
 			goto out;
 	}
 
@@ -472,6 +473,8 @@ static int mpc_read_comments(struct input_plugin_data *ip_data, struct keyval **
 
 			comments_add(&c, k, v);
 			free(k);
+
+			pos += rc;
 		}
 	}
 	free(buf);
