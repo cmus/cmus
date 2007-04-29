@@ -112,6 +112,7 @@ static struct {
 	const char *new;
 } key_map[] = {
 	{ "album_artist", "albumartist" },
+	{ "album artist", "albumartist" },
 	{ "disc", "discnumber" },
 	{ "track", "tracknumber" },
 	{ NULL, NULL }

@@ -660,6 +660,8 @@ static void v2_add_frame(ID3 *id3, struct v2_frame_header *fh, const char *buf)
 			key = ID3_RG_ALBUM_GAIN;
 		if (!strcasecmp(out, "replaygain_album_peak"))
 			key = ID3_RG_ALBUM_PEAK;
+		if (!strcasecmp(out, "album artist"))
+			key = ID3_ALBUMARTIST;
 
 		size = strlen(out) + 1;
 		free(out);
