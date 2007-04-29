@@ -254,12 +254,12 @@ static int ape_parse_one(const char *buf, int size, char **keyp, char **valp)
 		pos += val_len;
 
 		/* could be moved to comment.c but I don't think anyone else would use it */
-		if (!strcasecmp(key, "record date")) {
+		if (!strcasecmp(key, "record date") || !strcasecmp(key, "year")) {
 			free(key);
-			key = xstrdup("year");
+			key = xstrdup("date");
 		}
 
-		if (!strcasecmp(key, "year")) {
+		if (!strcasecmp(key, "date")) {
 			/* Date format
 			 *
 			 * 1999-08-11 12:34:56
