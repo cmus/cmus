@@ -230,6 +230,8 @@ const char * const id3_key_names[NUM_ID3_KEYS] = {
 	"discnumber",
 	"tracknumber",
 	"albumartist",
+	"artistsort",
+	"albumartistsort",
 	"replaygain_track_gain",
 	"replaygain_track_peak",
 	"replaygain_album_gain",
@@ -520,6 +522,7 @@ static struct {
 	{ "TDRC", ID3_DATE }, // recording date
 	{ "TDRL", ID3_DATE }, // release date
 	{ "TDOR", ID3_DATE }, // original release date
+	{ "TSOP", ID3_ARTISTSORT },
 
 	/* >= 2.3.0 */
 	{ "TPE1", ID3_ARTIST },
@@ -530,6 +533,7 @@ static struct {
 	{ "TPOS", ID3_DISC },
 	{ "TRCK", ID3_TRACK },
 	{ "TPE2", ID3_ALBUMARTIST },
+	{ "XSOP", ID3_ARTISTSORT }, // obsolete
 
 	/* obsolete frames (2.2.0) */
 	{ "TP1",  ID3_ARTIST },
@@ -662,6 +666,8 @@ static void v2_add_frame(ID3 *id3, struct v2_frame_header *fh, const char *buf)
 			key = ID3_RG_ALBUM_PEAK;
 		if (!strcasecmp(out, "album artist"))
 			key = ID3_ALBUMARTIST;
+		if (!strcasecmp(out, "albumartistsort"))
+			key = ID3_ALBUMARTISTSORT;
 
 		size = strlen(out) + 1;
 		free(out);

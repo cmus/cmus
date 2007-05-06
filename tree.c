@@ -495,7 +495,8 @@ static void album_add_track(struct album *album, struct tree_track *track)
 void tree_add_track(struct tree_track *track)
 {
 	const struct track_info *ti = tree_track_info(track);
-	const char *album_name, *artist_name, *albumartist;
+	const char *album_name, *artist_name, *albumartist,
+		  *artist_sort, *albumartist_sort;
 	struct artist *artist;
 	struct album *album;
 	int date;
@@ -503,19 +504,26 @@ void tree_add_track(struct tree_track *track)
 	album_name = comments_get_val(ti->comments, "album");
 	artist_name = comments_get_val(ti->comments, "artist");
 	albumartist = comments_get_val(ti->comments, "albumartist");
+	artist_sort = comments_get_val(ti->comments, "artistsort");
+	albumartist_sort = comments_get_val(ti->comments, "albumartistsort");
 
 	if (is_url(ti->filename)) {
 		artist_name = "<Stream>";
 		album_name = "<Stream>";
 	}
+
 	if (artist_name == NULL)
 		artist_name = "<No Name>";
 	if (album_name == NULL)
 		album_name = "<No Name>";
 
-	if (albumartist) {
+	if (albumartist_sort)
+		artist_name = albumartist_sort;
+	else if (albumartist)
 		artist_name = albumartist;
-	} else {
+	else if (artist_sort)
+		artist_name = artist_sort;
+	else {
 		const char *compilation = comments_get_val(ti->comments, "compilation");
 
 		if (compilation && (!strcasecmp(compilation, "1")
