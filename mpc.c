@@ -5,6 +5,7 @@
  */
 
 #include "ip.h"
+#include "ape.h"
 #include "comment.h"
 #include "file.h"
 #include "xmalloc.h"
@@ -13,35 +14,6 @@
 #include <mpcdec/mpcdec.h>
 #include <inttypes.h>
 #include <errno.h>
-
-/* http://www.personal.uni-jena.de/~pfk/mpp/sv8/apetag.html */
-
-#define PREAMBLE_SIZE (8)
-static const char preamble[PREAMBLE_SIZE] = { 'A', 'P', 'E', 'T', 'A', 'G', 'E', 'X' };
-
-/* NOTE: not sizeof(struct ape_header)! */
-#define HEADER_SIZE (32)
-
-struct ape_header {
-	/* 1000 or 2000 (1.0, 2.0) */
-	uint32_t version;
-
-	/* tag size (header + tags, excluding footer) */
-	uint32_t size;
-
-	/* number of items */
-	uint32_t count;
-
-	/* global flags for each tag
-	 * there are also private flags for every tag
-	 * NOTE: 0 for version 1.0 (1000)
-	 */
-	uint32_t flags;
-};
-
-/* ape flags */
-#define AF_IS_UTF8(f)		(((f) & 6) == 0)
-#define AF_IS_FOOTER(f)		(((f) & (1 << 29)) == 0)
 
 struct mpc_private {
 	mpc_decoder decoder;
@@ -67,14 +39,7 @@ struct mpc_private {
 	MPC_SAMPLE_FORMAT samples[MPC_DECODER_BUFFER_LENGTH];
 };
 
-static inline uint32_t get_le32(const char *buf)
-{
-	const unsigned char *b = (const unsigned char *)buf;
-
-	return b[0] | (b[1] << 8) | (b[2] << 16) | (b[3] << 24);
-}
-
-/* callbacks {{{ */
+/* callbacks */
 static mpc_int32_t read_impl(void *data, void *ptr, mpc_int32_t size)
 {
 	struct input_plugin_data *ip_data = data;
@@ -122,169 +87,6 @@ static mpc_bool_t canseek_impl(void *data)
 
 	return !ip_data->remote;
 }
-/* }}} */
-
-/* ape {{{ */
-
-/* returns position of APE header or -1 if not found */
-static int find_ape_tag_slow(int fd)
-{
-	char buf[4096];
-	int match = 0;
-	int pos = 0;
-
-	/* seek to start of file */
-	if (lseek(fd, pos, SEEK_SET) == -1)
-		return -1;
-
-	while (1) {
-		int i, got = read(fd, buf, sizeof(buf));
-
-		if (got == -1) {
-			if (errno == EAGAIN || errno == EINTR)
-				continue;
-			break;
-		}
-		if (got == 0)
-			break;
-
-		for (i = 0; i < got; i++) {
-			if (buf[i] != preamble[match]) {
-				match = 0;
-				continue;
-			}
-
-			match++;
-			if (match == PREAMBLE_SIZE)
-				return pos + i + 1 - PREAMBLE_SIZE;
-		}
-		pos += got;
-	}
-	return -1;
-}
-
-static int ape_parse_header(const char *buf, struct ape_header *h)
-{
-	if (memcmp(buf, preamble, PREAMBLE_SIZE))
-		return 0;
-
-	h->version = get_le32(buf + 8);
-	h->size = get_le32(buf + 12);
-	h->count = get_le32(buf + 16);
-	h->flags = get_le32(buf + 20);
-	return 1;
-}
-
-static int read_header(int fd, struct ape_header *h)
-{
-	char buf[HEADER_SIZE];
-
-	if (read_all(fd, buf, sizeof(buf)) != sizeof(buf))
-		return 0;
-	return ape_parse_header(buf, h);
-}
-
-/* sets fd right after the header and returns 1 if found,
- * otherwise returns 0
- */
-static int find_ape_tag(int fd, struct ape_header *h)
-{
-	int pos;
-
-	if (lseek(fd, -HEADER_SIZE, SEEK_END) == -1)
-		return 0;
-	if (read_header(fd, h))
-		return 1;
-
-	pos = find_ape_tag_slow(fd);
-	if (pos == -1)
-		return 0;
-	if (lseek(fd, pos, SEEK_SET) == -1)
-		return 0;
-	return read_header(fd, h);
-}
-
-/*
- * All keys are ASCII and length is 2..255
- *
- * UTF-8:	Artist, Album, Title, Genre
- * Integer:	Track (N or N/M)
- * Date:	Year (release), "Record Date"
- *
- * UTF-8 strings are NOT zero terminated.
- *
- * Also support "discnumber" (vorbis) and "disc" (non-standard)
- */
-static int ape_parse_one(const char *buf, int size, char **keyp, char **valp)
-{
-	int pos = 0;
-
-	while (size - pos > 8) {
-		uint32_t val_len, flags;
-		char *key, *val;
-		int max_key_len, key_len;
-
-		val_len = get_le32(buf + pos); pos += 4;
-		flags = get_le32(buf + pos); pos += 4;
-
-		max_key_len = size - pos - val_len - 1;
-		if (max_key_len < 0) {
-			/* corrupt */
-			break;
-		}
-
-		for (key_len = 0; key_len < max_key_len && buf[pos + key_len]; key_len++)
-			; /* nothing */
-		if (buf[pos + key_len]) {
-			/* corrupt */
-			break;
-		}
-
-		if (!AF_IS_UTF8(flags)) {
-			/* ignore binary data */
-			pos += key_len + 1 + val_len;
-			continue;
-		}
-
-		key = xstrdup(buf + pos);
-		pos += key_len + 1;
-
-		/* should not be NUL-terminated */
-		val = xstrndup(buf + pos, val_len);
-		pos += val_len;
-
-		/* could be moved to comment.c but I don't think anyone else would use it */
-		if (!strcasecmp(key, "record date") || !strcasecmp(key, "year")) {
-			free(key);
-			key = xstrdup("date");
-		}
-
-		if (!strcasecmp(key, "date")) {
-			/* Date format
-			 *
-			 * 1999-08-11 12:34:56
-			 * 1999-08-11 12:34
-			 * 1999-08-11
-			 * 1999-08
-			 * 1999
-			 * 1999-W34	(week 34, totally crazy)
-			 *
-			 * convert to year, pl.c supports only years anyways
-			 *
-			 * FIXME: which one is the most common tag (year or record date)?
-			 */
-			if (strlen(val) > 4)
-				val[4] = 0;
-		}
-
-		*keyp = key;
-		*valp = val;
-		return pos;
-	}
-	return -1;
-}
-
-/* }}} */
 
 static int mpc_open(struct input_plugin_data *ip_data)
 {
@@ -439,45 +241,24 @@ static const char *peak_to_str(unsigned int peak)
 static int mpc_read_comments(struct input_plugin_data *ip_data, struct keyval **comments)
 {
 	struct mpc_private *priv = ip_data->private;
-	int old_pos, fd = ip_data->fd;
-	struct ape_header h;
-	char *buf;
 	GROWING_KEYVALS(c);
+	int count, i;
+	APE *ape;
 
-	/* save position */
-	old_pos = lseek(fd, 0, SEEK_CUR);
-
-	if (!find_ape_tag(fd, &h))
+	ape = ape_new();
+	count = ape_read_tags(ape, ip_data->fd, 1);
+	if (count < 0)
 		goto out;
 
-	if (AF_IS_FOOTER(h.flags)) {
-		off_t file_size = get_size_impl(ip_data);
-		/* seek back right after the header */
-		if (lseek(fd, file_size - h.size, SEEK_SET) == -1)
-			goto out;
+	for (i = 0; i < count; i++) {
+		char *k, *v;
+		k = ape_get_comment(ape, &v);
+		if (!k)
+			break;
+		comments_add(&c, k, v);
+		free(k);
 	}
 
-	/* ignore insane tags */
-	if (h.size > 1024 * 1024)
-		goto out;
-
-	buf = xnew(char, h.size);
-	if (read_all(fd, buf, h.size) == h.size) {
-		int pos = 0, rc;
-
-		while (pos < h.size) {
-			char *k, *v;
-			rc = ape_parse_one(buf + pos, h.size - pos, &k, &v);
-			if (rc < 0)
-				break;
-
-			comments_add(&c, k, v);
-			free(k);
-
-			pos += rc;
-		}
-	}
-	free(buf);
 out:
 	if (priv->info.gain_title && priv->info.peak_title) {
 		comments_add_const(&c, "replaygain_track_gain", gain_to_str(priv->info.gain_title));
@@ -489,8 +270,8 @@ out:
 	}
 	comments_terminate(&c);
 
-	lseek(fd, old_pos, SEEK_SET);
 	*comments = c.comments;
+	ape_free(ape);
 	return 0;
 }
 

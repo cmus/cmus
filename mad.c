@@ -20,6 +20,7 @@
 #include "ip.h"
 #include "nomad.h"
 #include "id3.h"
+#include "ape.h"
 #include "xmalloc.h"
 #include "read_wrapper.h"
 #include "debug.h"
@@ -117,6 +118,7 @@ static int mad_read_comments(struct input_plugin_data *ip_data,
 		struct keyval **comments)
 {
 	ID3 *id3;
+	APE *ape;
 	int fd, rc, save, i;
 	GROWING_KEYVALS(c);
 
@@ -137,7 +139,7 @@ static int mad_read_comments(struct input_plugin_data *ip_data,
 			return -1;
 		}
 		d_print("corrupted tag?\n");
-		goto out;
+		goto next;
 	}
 
 	for (i = 0; i < NUM_ID3_KEYS; i++) {
@@ -146,10 +148,29 @@ static int mad_read_comments(struct input_plugin_data *ip_data,
 		if (val)
 			comments_add(&c, id3_key_names[i], val);
 	}
+
+next:
+	id3_free(id3);
+
+	ape = ape_new();
+	rc = ape_read_tags(ape, ip_data->fd, 0);
+	if (rc < 0)
+		goto out;
+
+	for (i = 0; i < rc; i++) {
+		char *k, *v;
+		k = ape_get_comment(ape, &v);
+		if (!k)
+			break;
+		comments_add(&c, k, v);
+		free(k);
+	}
+
 out:
+	ape_free(ape);
+
 	comments_terminate(&c);
 	*comments = c.comments;
-	id3_free(id3);
 	return 0;
 }
 

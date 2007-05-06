@@ -102,6 +102,12 @@ check_vorbis()
 	fi
 }
 
+check_wavpack()
+{
+	pkg_config WAVPACK "wavpack" "" "-lwavpack"
+	return $?
+}
+
 check_alsa()
 {
 	# the alsa.pc file should be always available
@@ -217,6 +223,7 @@ Optional Features: y/n
   CONFIG_VORBIS   Ogg/Vorbis (.ogg, application/ogg, audio/x-ogg) [auto]
   CONFIG_TREMOR   Use Tremor as Ogg/Vorbis input plugin           [n]
   CONFIG_WAV      WAV                                             [y]
+  CONFIG_WAVPACK  WavPack (.wv, audio/x-wavpack)                  [auto]
   CONFIG_MP4      MPEG-4 AAC (.mp4, .m4a, .m4b)                   [auto]
   CONFIG_AAC      AAC (.aac, audio/aac, audio/aacp)               [auto]
   CONFIG_FFMPEG   FFMPEG (.shn, .wma)                             [auto]
@@ -260,6 +267,7 @@ check check_mikmod  CONFIG_MIKMOD
 check check_modplug CONFIG_MODPLUG
 check check_mpc     CONFIG_MPC
 check check_vorbis  CONFIG_VORBIS
+check check_wavpack CONFIG_WAVPACK
 check check_mp4     CONFIG_MP4
 check check_aac     CONFIG_AAC
 check check_ffmpeg  CONFIG_FFMPEG
@@ -284,7 +292,7 @@ config_header config/debug.h DEBUG
 config_header config/tremor.h CONFIG_TREMOR
 
 makefile_vars bindir datadir libdir mandir
-makefile_vars CONFIG_FLAC CONFIG_MAD CONFIG_MIKMOD CONFIG_MODPLUG CONFIG_MPC CONFIG_VORBIS CONFIG_WAV CONFIG_MP4 CONFIG_AAC CONFIG_FFMPEG
+makefile_vars CONFIG_FLAC CONFIG_MAD CONFIG_MIKMOD CONFIG_MODPLUG CONFIG_MPC CONFIG_VORBIS CONFIG_WAVPACK CONFIG_WAV CONFIG_MP4 CONFIG_AAC CONFIG_FFMPEG
 makefile_vars CONFIG_ALSA CONFIG_AO CONFIG_ARTS CONFIG_OSS CONFIG_SUN CONFIG_WAVEOUT
 
 generate_config_mk
