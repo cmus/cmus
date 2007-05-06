@@ -135,7 +135,7 @@ static const char *fix_key(const char *key)
 
 int comments_add(struct growing_keyvals *c, const char *key, char *val)
 {
-	int n = c->count + 1;
+	int i, n = c->count + 1;
 
 	key = fix_key(key);
 	if (!key) {
@@ -147,6 +147,14 @@ int comments_add(struct growing_keyvals *c, const char *key, char *val)
 		char *slash = strchr(val, '/');
 		if (slash)
 			*slash = 0;
+	}
+
+	/* don't add duplicates. can't use comments_get_val() */
+	for (i = 0; i < c->count; i++) {
+		if (!strcasecmp(key, c->comments[i].key) && !strcmp(val, c->comments[i].val)) {
+			free(val);
+			return 0;
+		}
 	}
 
 	if (n > c->alloc) {
