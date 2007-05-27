@@ -21,13 +21,13 @@ main.o server.o: CFLAGS += -DDEFAULT_PORT=3000
 cmus-y := \
 	ape.o browser.o buffer.o cmdline.o cmus.o command_mode.o comment.o \
 	db.o debug.o editable.o expr.o filters.o \
-	format_print.o glob.o help.o history.o http.o input.o \
+	format_print.o glob.o help.o history.o http.o id3.o input.o \
 	keys.o lib.o load_dir.o locking.o mergesort.o misc.o options.o \
 	output.o pcm.o pl.o play_queue.o player.o \
 	read_wrapper.o server.o search.o \
 	search_mode.o spawn.o tabexp.o tabexp_file.o \
-	track.o track_db.o track_info.o tree.o uchar.o ui_curses.o window.o \
-	worker.o xstrjoin.o
+	track.o track_db.o track_info.o tree.o uchar.o ui_curses.o \
+	utf8_encode.lo window.o worker.o xstrjoin.o
 
 $(cmus-y): CFLAGS += $(PTHREAD_CFLAGS) $(NCURSES_CFLAGS) $(ICONV_CFLAGS) $(DL_CFLAGS)
 
@@ -53,15 +53,15 @@ libcmus.a: $(cmus-y) file.o path.o prog.o xmalloc.o
 
 # input plugins {{{
 flac-objs		:= flac.lo
-mad-objs		:= id3.lo mad.lo nomad.lo utf8_encode.lo
+mad-objs		:= mad.lo nomad.lo
 mikmod-objs		:= mikmod.lo
 modplug-objs		:= modplug.lo
 mpc-objs		:= mpc.lo
 vorbis-objs		:= vorbis.lo
-wavpack-objs		:= id3.lo wavpack.lo utf8_encode.lo
+wavpack-objs		:= wavpack.lo
 wav-objs		:= wav.lo
 mp4-objs		:= mp4.lo
-aac-objs		:= id3.lo utf8_encode.lo aac.lo
+aac-objs		:= aac.lo
 ffmpeg-objs		:= ffmpeg.lo
 
 ip-$(CONFIG_FLAC)	+= flac.so
