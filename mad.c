@@ -118,8 +118,8 @@ static int mad_read_comments(struct input_plugin_data *ip_data,
 		struct keyval **comments)
 {
 	ID3 *id3;
-	APE *ape;
 	int fd, rc, save, i;
+	APETAG(ape);
 	GROWING_KEYVALS(c);
 
 	fd = open(ip_data->filename, O_RDONLY);
@@ -152,14 +152,13 @@ static int mad_read_comments(struct input_plugin_data *ip_data,
 next:
 	id3_free(id3);
 
-	ape = ape_new();
-	rc = ape_read_tags(ape, ip_data->fd, 0);
+	rc = ape_read_tags(&ape, ip_data->fd, 0);
 	if (rc < 0)
 		goto out;
 
 	for (i = 0; i < rc; i++) {
 		char *k, *v;
-		k = ape_get_comment(ape, &v);
+		k = ape_get_comment(&ape, &v);
 		if (!k)
 			break;
 		comments_add(&c, k, v);
@@ -167,7 +166,7 @@ next:
 	}
 
 out:
-	ape_free(ape);
+	ape_free(&ape);
 
 	comments_terminate(&c);
 	*comments = c.comments;

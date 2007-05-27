@@ -23,33 +23,6 @@ static const char preamble[PREAMBLE_SIZE] = { 'A', 'P', 'E', 'T', 'A', 'G', 'E',
 /* NOTE: not sizeof(struct ape_header)! */
 #define HEADER_SIZE (32)
 
-struct ape_header {
-	/* 1000 or 2000 (1.0, 2.0) */
-	uint32_t version;
-
-	/* tag size (header + tags, excluding footer) */
-	uint32_t size;
-
-	/* number of items */
-	uint32_t count;
-
-	/* global flags for each tag
-	 * there are also private flags for every tag
-	 * NOTE: 0 for version 1.0 (1000)
-	 */
-	uint32_t flags;
-};
-
-/* ape flags */
-#define AF_IS_UTF8(f)		(((f) & 6) == 0)
-#define AF_IS_FOOTER(f)		(((f) & (1 << 29)) == 0)
-
-struct APE {
-	char *buf;
-	int pos;
-	struct ape_header header;
-};
-
 static inline uint32_t get_le32(const char *buf)
 {
 	const unsigned char *b = (const unsigned char *)buf;
@@ -227,13 +200,8 @@ static off_t get_size(int fd)
 	return statbuf.st_size;
 }
 
-APE *ape_new(void)
-{
-	return xnew0(APE, 1);
-}
-
 /* return the number of comments, or -1 */
-int ape_read_tags(APE *ape, int fd, int slow)
+int ape_read_tags(struct apetag *ape, int fd, int slow)
 {
 	struct ape_header *h = &ape->header;
 	int old_pos, rc = -1;
@@ -266,7 +234,7 @@ fail:
 }
 
 /* returned key-name must be free'd */
-char *ape_get_comment(APE *ape, char **val)
+char *ape_get_comment(struct apetag *ape, char **val)
 {
 	struct ape_header *h = &ape->header;
 	char *key;
@@ -281,11 +249,4 @@ char *ape_get_comment(APE *ape, char **val)
 	ape->pos += rc;
 
 	return key;
-}
-
-void ape_free(APE *ape)
-{
-	if (ape->buf)
-		free(ape->buf);
-	free(ape);
 }

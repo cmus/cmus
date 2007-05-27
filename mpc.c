@@ -243,16 +243,15 @@ static int mpc_read_comments(struct input_plugin_data *ip_data, struct keyval **
 	struct mpc_private *priv = ip_data->private;
 	GROWING_KEYVALS(c);
 	int count, i;
-	APE *ape;
+	APETAG(ape);
 
-	ape = ape_new();
-	count = ape_read_tags(ape, ip_data->fd, 1);
+	count = ape_read_tags(&ape, ip_data->fd, 1);
 	if (count < 0)
 		goto out;
 
 	for (i = 0; i < count; i++) {
 		char *k, *v;
-		k = ape_get_comment(ape, &v);
+		k = ape_get_comment(&ape, &v);
 		if (!k)
 			break;
 		comments_add(&c, k, v);
@@ -271,7 +270,7 @@ out:
 	comments_terminate(&c);
 
 	*comments = c.comments;
-	ape_free(ape);
+	ape_free(&ape);
 	return 0;
 }
 
