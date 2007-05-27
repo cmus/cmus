@@ -62,7 +62,9 @@ Filters view (6)
 	Lists user defined filters.
 
 Settings view (7)
-	Lists keybindings, unbound commands and options.
+	Lists keybindings, unbound commands and options.  Remove bindings with
+	*D* or *del*, change bindings and variables with *enter* and toggle
+	variables with *space*.
 
 @h1 COMMAND LINE
 
@@ -501,7 +503,8 @@ vol [+-]NUM[%] [[+-]NUM[%]]
 win-activate (*enter*)
 	In views 1-3 start playing the selected track.  In view 5 start
 	playing the selected track or change to the selected directory.  In
-	view 6 activate the selected filters.
+	view 6 activate the selected filters.  In settings view (7) change
+	binding or variable.
 
 win-add-l (*a*)
 	Add the currently marked or selected track(s) (views 3-4), or the
@@ -555,7 +558,8 @@ win-page-up (*^B*, *page_up*)
 
 win-remove (*D*, *delete*)
 	Remove the selected entry.  For tracks no confirmations are made.  For
-	files (view 5) and filters (view 6) user has to confirm the action.
+	files (view 5), filters (view 6) and bindings (view 7) user has to
+	confirm the action.
 
 win-sel-cur (*i*)
 	Select the current track (position in library or playlist, not
@@ -563,8 +567,8 @@ win-sel-cur (*i*)
 	1-3, does nothing in other views.
 
 win-toggle (*space*)
-	Expand albums in library view (1), mark tracks in views (2-4), toggle
-	selection of a filter in view 6.
+	Expand albums in library view (1), mark tracks in views 2-4, toggle
+	selection of a filter in view 6, toggle variable value in view 7.
 
 win-top (*g*, *home*)
 	Goto top of the current window.
