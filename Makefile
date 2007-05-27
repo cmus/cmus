@@ -19,7 +19,7 @@ main.o server.o: CFLAGS += -DDEFAULT_PORT=3000
 
 # programs {{{
 cmus-y := \
-	browser.o buffer.o cmdline.o cmus.o command_mode.o comment.o \
+	ape.o browser.o buffer.o cmdline.o cmus.o command_mode.o comment.o \
 	db.o debug.o editable.o expr.o filters.o \
 	format_print.o glob.o help.o history.o http.o input.o \
 	keys.o lib.o load_dir.o locking.o mergesort.o misc.o options.o \
@@ -53,12 +53,12 @@ libcmus.a: $(cmus-y) file.o path.o prog.o xmalloc.o
 
 # input plugins {{{
 flac-objs		:= flac.lo
-mad-objs		:= ape.lo id3.lo mad.lo nomad.lo utf8_encode.lo
+mad-objs		:= id3.lo mad.lo nomad.lo utf8_encode.lo
 mikmod-objs		:= mikmod.lo
 modplug-objs		:= modplug.lo
-mpc-objs		:= ape.lo mpc.lo
+mpc-objs		:= mpc.lo
 vorbis-objs		:= vorbis.lo
-wavpack-objs		:= ape.lo id3.lo wavpack.lo utf8_encode.lo
+wavpack-objs		:= id3.lo wavpack.lo utf8_encode.lo
 wav-objs		:= wav.lo
 mp4-objs		:= mp4.lo
 aac-objs		:= id3.lo utf8_encode.lo aac.lo
