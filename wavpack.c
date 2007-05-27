@@ -227,8 +227,7 @@ static int wavpack_read(struct input_plugin_data *ip_data, char *buffer, int cou
 	sample_count = count / bps;
 
 	rc = WavpackUnpackSamples(priv->wpc, priv->samples, sample_count / channels);
-	format_samples(bps, buffer, priv->samples, sample_count);
-
+	format_samples(bps, buffer, priv->samples, rc * channels);
 	return rc * channels * bps;
 }
 
