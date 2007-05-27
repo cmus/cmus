@@ -234,17 +234,10 @@ static int wavpack_read(struct input_plugin_data *ip_data, char *buffer, int cou
 
 static int wavpack_seek(struct input_plugin_data *ip_data, double offset)
 {
-	struct wavpack_private *priv;
-	int rc;
+	struct wavpack_private *priv = ip_data->private;
 
-	priv = ip_data->private;
-
-	rc = WavpackSeekSample(priv->wpc, WavpackGetSampleRate(priv->wpc) * offset);
-
-	switch (rc) {
-	case FALSE:
+	if (!WavpackSeekSample(priv->wpc, WavpackGetSampleRate(priv->wpc) * offset))
 		return -IP_ERROR_INTERNAL;
-	}
 	return 0;
 }
 
