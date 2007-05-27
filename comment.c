@@ -47,6 +47,14 @@ const char *comments_get_val(const struct keyval *comments, const char *key)
 	return NULL;
 }
 
+const char *comments_get_albumartist(const struct keyval *comments)
+{
+	const char *val = comments_get_val(comments, "albumartist");
+	if (!val)
+		val = comments_get_val(comments, "artist");
+	return val;
+}
+
 int comments_get_int(const struct keyval *comments, const char *key)
 {
 	const char *val;

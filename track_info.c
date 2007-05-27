@@ -149,6 +149,15 @@ int track_info_cmp(const struct track_info *a, const struct track_info *b, const
 				break;
 			continue;
 		}
+		if (strcmp(key, "albumartist") == 0) {
+			av = comments_get_albumartist(a->comments);
+			bv = comments_get_albumartist(b->comments);
+			res = xstrcasecmp(av, bv);
+			if (res)
+				break;
+			continue;
+		}
+
 		av = comments_get_val(a->comments, key);
 		bv = comments_get_val(b->comments, key);
 		res = xstrcasecmp(av, bv);
