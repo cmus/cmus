@@ -38,6 +38,7 @@
 
 struct wavpack_private {
 	WavpackContext *wpc;
+	off_t len;
 	int32_t samples[CHUNK_SIZE * WV_CHANNEL_MAX];
 };
 
@@ -93,20 +94,14 @@ static int push_back_byte(void *data, int c)
 static uint32_t get_length(void *data)
 {
 	struct input_plugin_data *ip_data = data;
-	struct stat statbuf;
-
-	if (fstat(ip_data->fd, &statbuf) || !(statbuf.st_mode & S_IFREG))
-		return 0;
-
-	return statbuf.st_size;
+	struct wavpack_private *priv = ip_data->private;
+	return priv->len;
 }
 
 static int can_seek(void *data)
 {
 	struct input_plugin_data *ip_data = data;
-	struct stat statbuf;
-
-	return !fstat(ip_data->fd, &statbuf) && (statbuf.st_mode & S_IFREG);
+	return !ip_data->remote;
 }
 
 static int32_t write_bytes(void *data, void *ptr, int32_t count)
@@ -144,10 +139,16 @@ static WavpackStreamReader callbacks = {
 static int wavpack_open(struct input_plugin_data *ip_data)
 {
 	struct wavpack_private *priv;
+	struct stat st;
 	char msg[80];
 
 	priv = xnew(struct wavpack_private, 1);
 	priv->wpc = NULL;
+	priv->len = 0;
+	if (!ip_data->remote && !fstat(ip_data->fd, &st))
+		priv->len = st.st_size;
+	ip_data->private = priv;
+
 	*msg = '\0';
 
 	priv->wpc = WavpackOpenFileInputEx(&callbacks, ip_data, NULL, msg,
@@ -158,13 +159,11 @@ static int wavpack_open(struct input_plugin_data *ip_data)
 		free(priv);
 		return -IP_ERROR_FILE_FORMAT;
 	}
-	ip_data->private = priv;
 
 	ip_data->sf = sf_rate(WavpackGetSampleRate(priv->wpc))
 		| sf_channels(WavpackGetReducedChannels(priv->wpc))
 		| sf_bits(WavpackGetBitsPerSample(priv->wpc))
 		| sf_signed(1);
-
 	return 0;
 }
 
