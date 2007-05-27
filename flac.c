@@ -420,6 +420,7 @@ static int flac_open(struct input_plugin_data *ip_data)
 #endif
 
 #ifdef FLAC_NEW_API
+	FLAC__stream_decoder_set_metadata_respond_all(dec);
 	if (FLAC__stream_decoder_init_stream(dec, read_cb, seek_cb, tell_cb,
 				length_cb, eof_cb, write_cb, metadata_cb,
 				error_cb, ip_data) != E(INIT_STATUS_OK)) {
