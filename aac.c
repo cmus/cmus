@@ -349,7 +349,7 @@ static int aac_seek(struct input_plugin_data *ip_data, double offset)
 }
 
 /* copied from mad.c */
-static void get_comment(struct keyval *c, int *iptr, ID3 *id3, enum id3_key key, const char *key_name)
+static void get_comment(struct keyval *c, int *iptr, struct id3tag *id3, enum id3_key key, const char *key_name)
 {
 	int i = *iptr;
 
@@ -364,16 +364,15 @@ static void get_comment(struct keyval *c, int *iptr, ID3 *id3, enum id3_key key,
 static int aac_read_comments(struct input_plugin_data *ip_data,
 		struct keyval **comments)
 {
-	struct ID3 *id3;
+	struct id3tag id3;
 	int rc, fd, i;
 
 	fd = open(ip_data->filename, O_RDONLY);
 	if (fd == -1)
 		return -1;
 
-	id3 = id3_new();
-
-	rc = id3_read_tags(id3, fd, ID3_V1 | ID3_V2);
+	id3_init(&id3);
+	rc = id3_read_tags(&id3, fd, ID3_V1 | ID3_V2);
 	if (rc == -1) {
 		d_print("error: %s\n", strerror(errno));
 		*comments = xnew0(struct keyval, 1);
@@ -382,17 +381,17 @@ static int aac_read_comments(struct input_plugin_data *ip_data,
 
 	*comments = xnew0(struct keyval, NUM_ID3_KEYS + 1);
 	i = 0;
-	get_comment(*comments, &i, id3, ID3_ARTIST, "artist");
-	get_comment(*comments, &i, id3, ID3_ALBUM, "album");
-	get_comment(*comments, &i, id3, ID3_TITLE, "title");
-	get_comment(*comments, &i, id3, ID3_DATE, "date");
-	get_comment(*comments, &i, id3, ID3_GENRE, "genre");
-	get_comment(*comments, &i, id3, ID3_DISC, "discnumber");
-	get_comment(*comments, &i, id3, ID3_TRACK, "tracknumber");
-	get_comment(*comments, &i, id3, ID3_ALBUMARTIST, "albumartist");
+	get_comment(*comments, &i, &id3, ID3_ARTIST, "artist");
+	get_comment(*comments, &i, &id3, ID3_ALBUM, "album");
+	get_comment(*comments, &i, &id3, ID3_TITLE, "title");
+	get_comment(*comments, &i, &id3, ID3_DATE, "date");
+	get_comment(*comments, &i, &id3, ID3_GENRE, "genre");
+	get_comment(*comments, &i, &id3, ID3_DISC, "discnumber");
+	get_comment(*comments, &i, &id3, ID3_TRACK, "tracknumber");
+	get_comment(*comments, &i, &id3, ID3_ALBUMARTIST, "albumartist");
 out:
 	close(fd);
-	id3_free(id3);
+	id3_free(&id3);
 	return 0;
 }
 

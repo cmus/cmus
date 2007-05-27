@@ -117,7 +117,7 @@ static int mad_seek(struct input_plugin_data *ip_data, double offset)
 static int mad_read_comments(struct input_plugin_data *ip_data,
 		struct keyval **comments)
 {
-	ID3 *id3;
+	struct id3tag id3;
 	int fd, rc, save, i;
 	APETAG(ape);
 	GROWING_KEYVALS(c);
@@ -128,8 +128,8 @@ static int mad_read_comments(struct input_plugin_data *ip_data,
 	}
 	d_print("filename: %s\n", ip_data->filename);
 
-	id3 = id3_new();
-	rc = id3_read_tags(id3, fd, ID3_V1 | ID3_V2);
+	id3_init(&id3);
+	rc = id3_read_tags(&id3, fd, ID3_V1 | ID3_V2);
 	save = errno;
 	close(fd);
 	errno = save;
@@ -143,14 +143,14 @@ static int mad_read_comments(struct input_plugin_data *ip_data,
 	}
 
 	for (i = 0; i < NUM_ID3_KEYS; i++) {
-		char *val = id3_get_comment(id3, i);
+		char *val = id3_get_comment(&id3, i);
 
 		if (val)
 			comments_add(&c, id3_key_names[i], val);
 	}
 
 next:
-	id3_free(id3);
+	id3_free(&id3);
 
 	rc = ape_read_tags(&ape, ip_data->fd, 0);
 	if (rc < 0)

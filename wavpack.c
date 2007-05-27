@@ -242,7 +242,7 @@ static int wavpack_seek(struct input_plugin_data *ip_data, double offset)
 static int wavpack_read_comments(struct input_plugin_data *ip_data,
 		struct keyval **comments)
 {
-	ID3 *id3;
+	struct id3tag id3;
 	APETAG(ape);
 	GROWING_KEYVALS(c);
 	int fd, rc, save, i;
@@ -252,8 +252,8 @@ static int wavpack_read_comments(struct input_plugin_data *ip_data,
 		return -1;
 	d_print("filename: %s\n", ip_data->filename);
 
-	id3 = id3_new();
-	rc = id3_read_tags(id3, fd, ID3_V1);
+	id3_init(&id3);
+	rc = id3_read_tags(&id3, fd, ID3_V1);
 	save = errno;
 	close(fd);
 	errno = save;
@@ -267,13 +267,13 @@ static int wavpack_read_comments(struct input_plugin_data *ip_data,
 	}
 
 	for (i = 0; i < NUM_ID3_KEYS; i++) {
-		char *val = id3_get_comment(id3, i);
+		char *val = id3_get_comment(&id3, i);
 		if (val)
 			comments_add(&c, id3_key_names[i], val);
 	}
 
 next:
-	id3_free(id3);
+	id3_free(&id3);
 
 	rc = ape_read_tags(&ape, ip_data->fd, 1);
 	if (rc < 0)

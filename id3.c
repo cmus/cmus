@@ -26,14 +26,6 @@
  * if v2 is at beginning _and_ at end then there must be a seek tag at beginning
  */
 
-struct ID3 {
-	char v1[128];
-	char *v2[NUM_ID3_KEYS];
-
-	unsigned int has_v1 : 1;
-	unsigned int has_v2 : 1;
-};
-
 struct v2_header {
 	unsigned char ver_major;
 	unsigned char ver_minor;
@@ -610,7 +602,7 @@ static char *decode_str(const char *buf, int len, int encoding)
 	return out;
 }
 
-static void v2_add_frame(ID3 *id3, struct v2_frame_header *fh, const char *buf)
+static void v2_add_frame(struct id3tag *id3, struct v2_frame_header *fh, const char *buf)
 {
 	int idx, encoding = *buf++, len = fh->size - 1;
 	enum id3_key key = NUM_ID3_KEYS;
@@ -722,7 +714,7 @@ static void unsync(unsigned char *buf, int *lenp)
 	*lenp = d;
 }
 
-static int v2_read(ID3 *id3, int fd, const struct v2_header *header)
+static int v2_read(struct id3tag *id3, int fd, const struct v2_header *header)
 {
 	char *buf;
 	int rc, buf_size;
@@ -823,21 +815,15 @@ int id3_tag_size(const char *buf, int buf_size)
 	return 0;
 }
 
-ID3 *id3_new(void)
-{
-	return xnew0(ID3, 1);
-}
-
-void id3_free(ID3 *id3)
+void id3_free(struct id3tag *id3)
 {
 	int i;
 
 	for (i = 0; i < NUM_ID3_KEYS; i++)
 		free(id3->v2[i]);
-	free(id3);
 }
 
-int id3_read_tags(ID3 *id3, int fd, unsigned int flags)
+int id3_read_tags(struct id3tag *id3, int fd, unsigned int flags)
 {
 	off_t off;
 	int rc;
@@ -927,7 +913,7 @@ static char *v1_get_str(const char *buf, int len)
 	return out;
 }
 
-char *id3_get_comment(ID3 *id3, enum id3_key key)
+char *id3_get_comment(struct id3tag *id3, enum id3_key key)
 {
 	if (id3->has_v2) {
 		if (id3->v2[key])
