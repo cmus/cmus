@@ -196,8 +196,8 @@ install-plugins: plugins
 
 install-data: man
 	$(INSTALL) -m644 $(datadir)/cmus $(data)
-	$(INSTALL) -m755 $(datadir)/doc/cmus/examples cmus-status-display
 	$(INSTALL) -m644 $(mandir)/man1 $(man1)
+	$(INSTALL) -m755 $(exampledir) cmus-status-display
 
 install: all install-main install-plugins install-data
 

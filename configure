@@ -212,6 +212,7 @@ Options:
   datadir         Read-only data         [\$prefix/share]
   libdir          Libraries              [\$prefix/lib]
   mandir          Man pages              [\$datadir/man]
+  exampledir      Examples               [\$datadir/doc/cmus/examples]
   DEBUG           Debugging level (0-2)  [$DEBUG]
 
 Optional Features: y/n
@@ -250,6 +251,7 @@ var_default bindir "${prefix}/bin"
 var_default datadir "${prefix}/share"
 var_default libdir "${prefix}/lib"
 var_default mandir "${datadir}/man"
+var_default exampledir "${datadir}/doc/cmus/examples"
 
 check check_cc
 check check_cflags
@@ -291,7 +293,7 @@ config_header config/libdir.h LIBDIR
 config_header config/debug.h DEBUG
 config_header config/tremor.h CONFIG_TREMOR
 
-makefile_vars bindir datadir libdir mandir
+makefile_vars bindir datadir libdir mandir exampledir
 makefile_vars CONFIG_FLAC CONFIG_MAD CONFIG_MIKMOD CONFIG_MODPLUG CONFIG_MPC CONFIG_VORBIS CONFIG_WAVPACK CONFIG_WAV CONFIG_MP4 CONFIG_AAC CONFIG_FFMPEG
 makefile_vars CONFIG_ALSA CONFIG_AO CONFIG_ARTS CONFIG_OSS CONFIG_SUN CONFIG_WAVEOUT
 
