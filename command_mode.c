@@ -1614,6 +1614,115 @@ static void cmd_refresh(char *arg)
 	refresh();
 }
 
+static int cmp_intp(const void *ap, const void *bp)
+{
+	int a = *(int *)ap;
+	int b = *(int *)bp;
+	return a - b;
+}
+
+static int *rand_array(int size, int nmax)
+{
+	int *r = xnew(int, size + 1);
+	int i, offset = 0;
+	int count = size;
+
+	if (count > nmax / 2) {
+		/*
+		 * Imagine that there are 1000 tracks in library and we want to
+		 * add 998 random tracks to queue.  After we have added 997
+		 * random numbers to the array it would be quite hard to find a
+		 * random number that isn't already in the array (3/1000
+		 * probability).
+		 *
+		 * So we invert the logic:
+		 *
+		 * Find two (1000 - 998) random numbers in 0..999 range and put
+		 * them at end of the array.  Sort the numbers and then fill
+		 * the array starting at index 0 with incrementing values that
+		 * are not in the set of random numbers.
+		 */
+		count = nmax - count;
+		offset = size - count;
+	}
+
+	for (i = 0; i < count; ) {
+		int v, j;
+found:
+		v = rand() % nmax;
+		for (j = 0; j < i; j++) {
+			if (r[offset + j] == v)
+				goto found;
+		}
+		r[offset + i++] = v;
+	}
+	qsort(r + offset, count, sizeof(*r), cmp_intp);
+
+	if (offset) {
+		int j, n;
+
+		/* simplifies next loop */
+		r[size] = nmax;
+
+		/* convert the indexes we don't want to those we want */
+		i = 0;
+		j = offset;
+		n = 0;
+		do {
+			while (n < r[j])
+				r[i++] = n++;
+			j++;
+			n++;
+		} while (i < size);
+	}
+	return r;
+}
+
+static void cmd_tqueue(char *arg)
+{
+	LIST_HEAD(head);
+	struct list_head *item;
+	int count = 1, i, pos;
+	int *r;
+
+	if (arg) {
+		long int val;
+
+		if (str_to_int(arg, &val) || val <= 0) {
+			error_msg("argument must be positive integer");
+			return;
+		}
+		count = val;
+	}
+	if (count > lib_editable.nr_tracks)
+		count = lib_editable.nr_tracks;
+	if (!count)
+		return;
+
+	r = rand_array(count, lib_editable.nr_tracks);
+	item = lib_editable.head.next;
+	pos = 0;
+	for (i = 0; i < count; i++) {
+		struct simple_track *t;
+
+		while (pos < r[i]) {
+			item = item->next;
+			pos++;
+		}
+		t = simple_track_new(to_simple_track(item)->info);
+		list_add_rand(&head, &t->node, i);
+	}
+	free(r);
+
+	item = head.next;
+	do {
+		struct list_head *next = item->next;
+		struct simple_track *t = to_simple_track(item);
+		editable_add(&pq_editable, t);
+		item = next;
+	} while (item != &head);
+}
+
 /* tab exp {{{
  *
  * these functions fill tabexp struct, which is resetted beforehand
@@ -2115,6 +2224,7 @@ struct command commands[] = {
 	{ "shuffle",		cmd_reshuffle,	0, 0, NULL,		  0, 0 },
 	{ "source",		cmd_source,	1, 1, expand_files,	  0, CMD_UNSAFE },
 	{ "toggle",		cmd_toggle,	1, 1, expand_toptions,	  0, 0 },
+	{ "tqueue",		cmd_tqueue,	0, 1, NULL,		  0, 0 },
 	{ "unbind",		cmd_unbind,	1, 1, expand_unbind_args, 0, 0 },
 	{ "unmark",		cmd_unmark,	0, 0, NULL,		  0, 0 },
 	{ "view",		cmd_view,	1, 1, NULL,		  0, 0 },
