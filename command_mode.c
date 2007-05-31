@@ -1713,11 +1713,12 @@ static void cmd_lqueue(char *arg)
 		}
 		count = val;
 	}
+	editable_lock();
 	nmax = count_albums();
 	if (count > nmax)
 		count = nmax;
 	if (!count)
-		return;
+		goto unlock;
 
 	r = rand_array(count, nmax);
 	album = to_album(to_artist(lib_artist_head.next)->album_head.next);
@@ -1752,6 +1753,8 @@ static void cmd_lqueue(char *arg)
 		free(a);
 		item = next;
 	} while (item != &head);
+unlock:
+	editable_unlock();
 }
 
 static void cmd_tqueue(char *arg)
@@ -1770,10 +1773,11 @@ static void cmd_tqueue(char *arg)
 		}
 		count = val;
 	}
+	editable_lock();
 	if (count > lib_editable.nr_tracks)
 		count = lib_editable.nr_tracks;
 	if (!count)
-		return;
+		goto unlock;
 
 	r = rand_array(count, lib_editable.nr_tracks);
 	item = lib_editable.head.next;
@@ -1797,6 +1801,8 @@ static void cmd_tqueue(char *arg)
 		editable_add(&pq_editable, t);
 		item = next;
 	} while (item != &head);
+unlock:
+	editable_unlock();
 }
 
 /* tab exp {{{
