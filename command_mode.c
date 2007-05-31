@@ -1678,6 +1678,82 @@ found:
 	return r;
 }
 
+static int count_albums(void)
+{
+	struct artist *artist;
+	struct list_head *item;
+	int count = 0;
+
+	list_for_each_entry(artist, &lib_artist_head, node) {
+		list_for_each(item, &artist->album_head)
+			count++;
+	}
+	return count;
+}
+
+struct album_list {
+	struct list_head node;
+	const struct album *album;
+};
+
+static void cmd_lqueue(char *arg)
+{
+	LIST_HEAD(head);
+	const struct list_head *item;
+	const struct album *album;
+	int count = 1, nmax, i, pos;
+	int *r;
+
+	if (arg) {
+		long int val;
+
+		if (str_to_int(arg, &val) || val <= 0) {
+			error_msg("argument must be positive integer");
+			return;
+		}
+		count = val;
+	}
+	nmax = count_albums();
+	if (count > nmax)
+		count = nmax;
+	if (!count)
+		return;
+
+	r = rand_array(count, nmax);
+	album = to_album(to_artist(lib_artist_head.next)->album_head.next);
+	pos = 0;
+	for (i = 0; i < count; i++) {
+		struct album_list *a;
+
+		while (pos < r[i]) {
+			struct artist *artist = album->artist;
+			if (album->node.next == &artist->album_head) {
+				artist = to_artist(artist->node.next);
+				album = to_album(artist->album_head.next);
+			} else {
+				album = to_album(album->node.next);
+			}
+			pos++;
+		}
+		a = xnew(struct album_list, 1);
+		a->album = album;
+		list_add_rand(&head, &a->node, i);
+	}
+	free(r);
+
+	item = head.next;
+	do {
+		struct list_head *next = item->next;
+		struct album_list *a = container_of(item, struct album_list, node);
+		struct tree_track *t;
+
+		list_for_each_entry(t, &a->album->track_head, node)
+			editable_add(&pq_editable, simple_track_new(tree_track_info(t)));
+		free(a);
+		item = next;
+	} while (item != &head);
+}
+
 static void cmd_tqueue(char *arg)
 {
 	LIST_HEAD(head);
@@ -2206,6 +2282,7 @@ struct command commands[] = {
 	{ "fset",		cmd_fset,	1, 1, NULL,		  0, 0 },
 	{ "invert",		cmd_invert,	0, 0, NULL,		  0, 0 },
 	{ "load",		cmd_load,	1, 1, expand_load_save,	  0, 0 },
+	{ "lqueue",		cmd_lqueue,	0, 1, NULL,		  0, 0 },
 	{ "mark",		cmd_mark,	0, 1, NULL,		  0, 0 },
 	{ "player-next",	cmd_p_next,	0, 0, NULL,		  0, 0 },
 	{ "player-pause",	cmd_p_pause,	0, 0, NULL,		  0, 0 },
