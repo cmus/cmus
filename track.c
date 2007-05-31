@@ -170,7 +170,7 @@ void sorted_list_add_track(struct list_head *head, struct simple_track *track, c
 	list_add(&track->node, item);
 }
 
-void shuffle_list_add_track(struct list_head *head, struct list_head *node, int nr)
+void list_add_rand(struct list_head *head, struct list_head *node, int nr)
 {
 	struct list_head *item;
 	int pos;
@@ -210,7 +210,7 @@ void reshuffle(struct list_head *head)
 	while (1) {
 		struct list_head *next = item->next;
 
-		shuffle_list_add_track(head, item, i++);
+		list_add_rand(head, item, i++);
 		if (item == last)
 			break;
 		item = next;

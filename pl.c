@@ -106,7 +106,7 @@ void pl_add_track(struct track_info *ti)
 
 	track_info_ref(ti);
 	simple_track_init((struct simple_track *)track, ti);
-	shuffle_list_add_track(&pl_shuffle_head, &track->node, pl_editable.nr_tracks);
+	list_add_rand(&pl_shuffle_head, &track->node, pl_editable.nr_tracks);
 	editable_add(&pl_editable, (struct simple_track *)track);
 }
 

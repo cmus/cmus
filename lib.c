@@ -42,7 +42,7 @@ static void all_wins_changed(void)
 
 static void shuffle_add(struct tree_track *track)
 {
-	shuffle_list_add_track(&lib_shuffle_head, &track->shuffle_track.node, lib_editable.nr_tracks);
+	list_add_rand(&lib_shuffle_head, &track->shuffle_track.node, lib_editable.nr_tracks);
 }
 
 static void views_add_track(struct track_info *ti)
