@@ -65,6 +65,7 @@ static struct history cmd_history;
 static char *cmd_history_filename;
 static char *history_search_text = NULL;
 static int arg_expand_cmd = -1;
+static int prev_view = -1;
 
 static char *get_home_dir(const char *username)
 {
@@ -1181,12 +1182,24 @@ err:
 	error_msg("expecting 1 or 2 arguments (total or L and R volumes [+-]INTEGER[%%])\n");
 }
 
+static void cmd_prev_view(char *arg)
+{
+	int tmp;
+	if (prev_view >= 0) {
+		tmp = cur_view;
+		set_view(prev_view);
+		prev_view = tmp;
+	}
+}
+
 static void cmd_view(char *arg)
 {
 	int view;
 
-	if (parse_enum(arg, 1, NR_VIEWS, view_names, &view))
+	if (parse_enum(arg, 1, NR_VIEWS, view_names, &view) && (view - 1) != cur_view) {
+		prev_view = cur_view;
 		set_view(view - 1);
+	}
 }
 
 static void cmd_p_next(char *arg)
@@ -2295,6 +2308,7 @@ struct command commands[] = {
 	{ "player-play",	cmd_p_play,	0, 1, expand_playable,	  0, 0 },
 	{ "player-prev",	cmd_p_prev,	0, 0, NULL,		  0, 0 },
 	{ "player-stop",	cmd_p_stop,	0, 0, NULL,		  0, 0 },
+	{ "prev-view",  	cmd_prev_view,	0, 0, NULL,		  0, 0 },
 	{ "quit",		cmd_quit,	0, 0, NULL,		  0, 0 },
 	{ "refresh",		cmd_refresh,	0, 0, NULL,		  0, 0 },
 	{ "run",		cmd_run,	1,-1, NULL,		  0, CMD_UNSAFE },
