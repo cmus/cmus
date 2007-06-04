@@ -74,9 +74,9 @@ static int entry_cmp(const struct browser_entry *a, const struct browser_entry *
 	if (a->type == BROWSER_ENTRY_DIR) {
 		if (b->type == BROWSER_ENTRY_FILE)
 			return -1;
-		if (!strcmp(a->name, ".."))
+		if (!strcmp(a->name, "../"))
 			return -1;
-		if (!strcmp(b->name, ".."))
+		if (!strcmp(b->name, "../"))
 			return 1;
 		return strcmp(a->name, b->name);
 	}
