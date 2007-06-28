@@ -646,13 +646,14 @@ static void print_help(struct window *win, int row, struct iter *iter)
 	struct iter sel;
 	int selected;
 	int pos;
+	int active = 1;
 	char buf[512];
 	const struct help_entry *e = iter_to_help_entry(iter);
 	const struct cmus_opt *opt;
 
 	window_get_sel(win, &sel);
 	selected = iters_equal(iter, &sel);
-	bkgdset(pairs[selected << 1]);
+	bkgdset(pairs[(active << 2) | (selected << 1)]);
 
 	if (selected) {
 		cursor_x = 0;
