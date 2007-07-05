@@ -192,5 +192,5 @@ const struct input_plugin_ops ip_ops = {
 
 const char * const ip_extensions[] = { "mp3", "mp2", NULL };
 const char * const ip_mime_types[] = {
-	"audio/mpeg", "audio/x-mp3", "audio/x-mpeg", "audio/x-mpegurl", NULL
+	"audio/mpeg", "audio/x-mp3", "audio/x-mpeg", NULL
 };

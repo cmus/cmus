@@ -83,6 +83,12 @@ static LIST_HEAD(ip_head);
 static int http_connection_timeout = 5e3;
 static int http_read_timeout = 5e3;
 
+static const char *pl_mime_types[] = {
+	"audio/m3u",
+	"audio/x-scpls",
+	"audio/x-mpegurl"
+};
+
 static const char *get_extension(const char *filename)
 {
 	const char *ext;
@@ -313,10 +319,14 @@ static int open_remote(struct input_plugin *ip)
 
 	val = http_headers_get_value(headers, "Content-Type");
 	if (val) {
+		int i;
+
 		d_print("Content-Type: %s\n", val);
-		if (!strcasecmp(val, "audio/x-scpls") || !strcasecmp(val, "audio/m3u")) {
-			http_headers_free(headers);
-			return read_playlist(ip, sock);
+		for (i = 0; i < sizeof(pl_mime_types) / sizeof(pl_mime_types[0]); i++) {
+			if (!strcasecmp(val, pl_mime_types[i])) {
+				http_headers_free(headers);
+				return read_playlist(ip, sock);
+			}
 		}
 	}
 
