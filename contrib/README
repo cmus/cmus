@@ -4,3 +4,7 @@ _cmus (originally _cmus_remote)
 
 cmus-updategaim.py
 	 Joshua Kwan <joshk@triplehelix.org>
+
+cmus-updatepidgin.py
+	Based on Joshua's cmus-updategaim.py script.
+	David Thiel <lx@redundancy.redundancy.org>
