@@ -223,6 +223,7 @@ static int setup_remote(struct input_plugin *ip, const struct http_header *heade
 
 	val = http_headers_get_value(headers, "Content-Type");
 	if (val) {
+		d_print("Content-Type: %s\n", val);
 		ip->ops = get_ops_by_mime_type(val);
 		if (ip->ops == NULL) {
 			d_print("unsupported content type: %s\n", val);
@@ -321,9 +322,9 @@ static int open_remote(struct input_plugin *ip)
 	if (val) {
 		int i;
 
-		d_print("Content-Type: %s\n", val);
 		for (i = 0; i < sizeof(pl_mime_types) / sizeof(pl_mime_types[0]); i++) {
 			if (!strcasecmp(val, pl_mime_types[i])) {
+				d_print("Content-Type: %s\n", val);
 				http_headers_free(headers);
 				return read_playlist(ip, sock);
 			}
