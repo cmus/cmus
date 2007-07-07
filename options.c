@@ -950,7 +950,7 @@ void options_load(void)
 		const char *def = DATADIR "/cmus/rc";
 
 		if (errno != ENOENT)
-			warn_errno("loading %s", filename);
+			error_msg("loading %s: %s", filename, strerror(errno));
 
 		/* load defaults */
 		if (source_file(def) == -1)
@@ -961,7 +961,7 @@ void options_load(void)
 	snprintf(filename, sizeof(filename), "%s/rc", cmus_config_dir);
 	if (source_file(filename) == -1) {
 		if (errno != ENOENT)
-			warn_errno("loading %s", filename);
+			error_msg("loading %s: %s", filename, strerror(errno));
 	}
 }
 

@@ -26,9 +26,9 @@
 #include "utils.h"
 #include "cmus.h"
 #include "list.h"
-#include "prog.h"
 #include "misc.h"
 #include "debug.h"
+#include "ui_curses.h"
 #include "config/libdir.h"
 
 #include <unistd.h>
@@ -356,7 +356,7 @@ void ip_load_plugins(void)
 
 	dir = opendir(plugin_dir);
 	if (dir == NULL) {
-		warn_errno("couldn't open directory `%s'", plugin_dir);
+		error_msg("couldn't open directory `%s': %s", plugin_dir, strerror(errno));
 		return;
 	}
 	while ((d = readdir(dir)) != NULL) {
@@ -378,7 +378,7 @@ void ip_load_plugins(void)
 
 		so = dlopen(filename, RTLD_NOW);
 		if (so == NULL) {
-			warn("%s\n", dlerror());
+			error_msg("%s", dlerror());
 			continue;
 		}
 
@@ -402,7 +402,7 @@ void ip_load_plugins(void)
 		list_add_tail(&ip->node, &ip_head);
 		continue;
 sym_err:
-		warn("%s: symbol %s not found\n", filename, sym);
+		error_msg("%s: symbol %s not found", filename, sym);
 		free(ip);
 		dlclose(so);
 	}

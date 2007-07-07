@@ -21,11 +21,11 @@
 #include "op.h"
 #include "mixer.h"
 #include "sf.h"
-#include "prog.h"
 #include "utils.h"
 #include "xmalloc.h"
 #include "list.h"
 #include "debug.h"
+#include "ui_curses.h"
 #include "config/libdir.h"
 
 #include <string.h>
@@ -84,7 +84,7 @@ void op_load_plugins(void)
 
 	dir = opendir(plugin_dir);
 	if (dir == NULL) {
-		warn("couldn't open directory `%s': %s\n", plugin_dir, strerror(errno));
+		error_msg("couldn't open directory `%s': %s", plugin_dir, strerror(errno));
 		return;
 	}
 	while ((d = readdir(dir)) != NULL) {
@@ -106,7 +106,7 @@ void op_load_plugins(void)
 
 		so = dlopen(filename, RTLD_NOW);
 		if (so == NULL) {
-			warn("%s\n", dlerror());
+			error_msg("%s", dlerror());
 			continue;
 		}
 
@@ -143,7 +143,7 @@ void op_load_plugins(void)
 		add_plugin(plug);
 		continue;
 sym_err:
-		warn("%s: symbol %s not found\n", filename, sym);
+		error_msg("%s: symbol %s not found", filename, sym);
 		free(plug);
 		dlclose(so);
 	}
