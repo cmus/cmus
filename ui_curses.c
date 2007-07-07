@@ -74,10 +74,7 @@ int ui_initialized = 0;
 enum ui_input_mode input_mode = NORMAL_MODE;
 int cur_view = TREE_VIEW;
 struct searchable *searchable;
-
-/* display parse errors? (command line) */
-int display_errors = 0;
-
+int display_errors = 1;
 char *lib_filename = NULL;
 char *pl_filename = NULL;
 
