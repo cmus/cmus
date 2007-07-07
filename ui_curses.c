@@ -1290,13 +1290,15 @@ void error_msg(const char *format, ...)
 {
 	va_list ap;
 
-	if (!display_errors)
-		return;
-
 	strcpy(error_buf, "Error: ");
 	va_start(ap, format);
 	vsnprintf(error_buf + 7, sizeof(error_buf) - 7, format, ap);
 	va_end(ap);
+
+	d_print("%s\n", error_buf);
+
+	if (!display_errors)
+		return;
 
 	msg_is_error = 1;
 	error_count++;
