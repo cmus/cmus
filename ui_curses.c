@@ -1480,8 +1480,8 @@ static void clear_error(void)
 {
 	time_t t = time(NULL);
 
-	/* error msg is visible at least 3s */
-	if (t - error_time < 3)
+	/* prevent accidental clearing of error messages */
+	if (t - error_time < 2)
 		return;
 
 	if (error_buf[0]) {
