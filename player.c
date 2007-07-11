@@ -1061,6 +1061,17 @@ out:
 void player_seek(double offset, int relative)
 {
 	player_lock();
+	if (consumer_status == CS_STOPPED) {
+		__producer_play();
+		if (producer_status == PS_PLAYING) {
+			__consumer_play();
+			if (consumer_status != CS_PLAYING) {
+				__producer_stop();
+				player_unlock();
+				return;
+			}
+		}
+	}
 	if (consumer_status == CS_PLAYING || consumer_status == CS_PAUSED) {
 		double pos, duration, new_pos;
 		int rc;
