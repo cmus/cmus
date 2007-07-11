@@ -1108,10 +1108,10 @@ void player_seek(double offset, int relative)
 				player_unlock();
 				return;
 			}
-			if (new_pos > duration) {
-				d_print("seek offset too large\n");
-				player_unlock();
-				return;
+			if (new_pos > duration - 5.0) {
+				new_pos = duration - 5.0;
+				if (new_pos < 0.0)
+					new_pos = 0.0;
 			}
 		}
 /* 		d_print("seeking %g/%g (%g from eof)\n", new_pos, duration, duration - new_pos); */
