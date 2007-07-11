@@ -33,7 +33,6 @@ extern int ui_initialized;
 extern enum ui_input_mode input_mode;
 extern int cur_view;
 extern struct searchable *searchable;
-extern int display_errors;
 
 extern char *lib_filename;
 extern char *pl_filename;

@@ -2633,9 +2633,6 @@ void command_mode_ch(uchar ch)
 		cmdline_clear_end();
 		break;
 	case 0x09:
-		/* tab expansion should not complain  */
-		display_errors = 0;
-
 		tab_expand();
 		break;
 	case 0x15:

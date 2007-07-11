@@ -74,7 +74,6 @@ int ui_initialized = 0;
 enum ui_input_mode input_mode = NORMAL_MODE;
 int cur_view = TREE_VIEW;
 struct searchable *searchable;
-int display_errors = 1;
 char *lib_filename = NULL;
 char *pl_filename = NULL;
 
@@ -1294,9 +1293,6 @@ void error_msg(const char *format, ...)
 
 	d_print("%s\n", error_buf);
 
-	if (!display_errors)
-		return;
-
 	msg_is_error = 1;
 	error_count++;
 
@@ -1818,16 +1814,9 @@ static void main_loop(void)
 			continue;
 		}
 
-		if (FD_ISSET(server_socket, &set)) {
-			/* no error msgs for cmus-remote */
-			display_errors = 0;
-
+		if (FD_ISSET(server_socket, &set))
 			server_serve();
-		}
 		if (FD_ISSET(0, &set)) {
-			/* diplay errors for interactive commands */
-			display_errors = 1;
-
 			if (using_utf8) {
 				u_getch();
 			} else {
