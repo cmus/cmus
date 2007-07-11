@@ -105,9 +105,16 @@ static int alsa_error_to_op_error(int err)
 	return -OP_ERROR_INTERNAL;
 }
 
+/* we don't want error messages to stderr */
+static void error_handler(const char *file, int line, const char *function, int err, const char *fmt, ...)
+{
+}
+
 static int op_alsa_init(void)
 {
 	int rc;
+
+	snd_lib_error_set_handler(error_handler);
 
 	if (alsa_dsp_device == NULL)
 		alsa_dsp_device = xstrdup("default");
