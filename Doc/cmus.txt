@@ -360,6 +360,10 @@ load [-l] [-p] <playlist>
 	@li -p
 	load to playlist view
 
+lqueue [NUM]
+	Queue NUM (default 1) random albums from the library. See also
+	*tqueue*.
+
 mark <filter-expression>
 	Mark tracks in playlist and queue view by using a filter expression.
 
@@ -378,6 +382,9 @@ player-prev (*z*)
 
 player-stop (*v*)
 	Stop playback.
+
+prev-view
+	Go to previously used view.
 
 quit
 	Exit cmus.
@@ -461,6 +468,10 @@ source <filename>
 toggle <option>
 	Toggle value of a toggle-able option (all booleans and tristate
 	*aaa_mode*).
+
+tqueue [NUM]
+	Queue NUM (default 1) random tracks from the library. See also
+	*lqueue*.
 
 unbind [-f] <context> <key>
 	Remove a key binding. Use tab to cycle through bound keys.
