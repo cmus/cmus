@@ -697,7 +697,8 @@ err:
 
 static void cmd_quit(char *arg)
 {
-	cmus_running = 0;
+	if (!worker_has_job(JOB_TYPE_ANY) || yes_no_query("Tracks are being added. Quit and truncate playlist(s)? [y/N]"))
+		cmus_running = 0;
 }
 
 static void cmd_reshuffle(char *arg)
