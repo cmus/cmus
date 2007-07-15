@@ -21,6 +21,8 @@ void worker_add_job(int type, void (*job_cb)(void *data),
  */
 void worker_remove_jobs(int type);
 
+int worker_has_job(int type);
+
 /*
  * @type: type of this job
  *

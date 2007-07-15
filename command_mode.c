@@ -269,14 +269,22 @@ void view_save(int view, char *arg)
 	switch (view) {
 	case TREE_VIEW:
 	case SORTED_VIEW:
+		if (worker_has_job(JOB_TYPE_LIB))
+			goto worker_running;
 		do_save(lib_for_each, arg, &lib_filename);
 		break;
 	case PLAYLIST_VIEW:
+		if (worker_has_job(JOB_TYPE_PL))
+			goto worker_running;
 		do_save(pl_for_each, arg, &pl_filename);
 		break;
 	default:
 		info_msg(":save only works in views 1 & 2 (library) and 3 (playlist)");
 	}
+	free(arg);
+	return;
+worker_running:
+	error_msg("can't save when tracks are being added");
 	free(arg);
 }
 

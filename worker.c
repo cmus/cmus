@@ -130,6 +130,24 @@ void worker_remove_jobs(int type)
 	worker_unlock();
 }
 
+int worker_has_job(int type)
+{
+	struct worker_job *job;
+	int has_job = 0;
+
+	worker_lock();
+	list_for_each_entry(job, &worker_job_head, node) {
+		if (type == JOB_TYPE_ANY || type == job->type) {
+			has_job = 1;
+			break;
+		}
+	}
+	if (cur_job && (type == JOB_TYPE_ANY || type == cur_job->type))
+		has_job = 1;
+	worker_unlock();
+	return has_job;
+}
+
 /*
  * this is only called from the worker thread
  * cur_job is guaranteed to be non-NULL
