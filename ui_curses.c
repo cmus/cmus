@@ -70,6 +70,7 @@ char *tgoto(const char *cap, int col, int row);
 
 /* globals. documented in ui_curses.h */
 
+int cmus_running = 1;
 int ui_initialized = 0;
 enum ui_input_mode input_mode = NORMAL_MODE;
 int cur_view = TREE_VIEW;
@@ -79,7 +80,6 @@ char *pl_filename = NULL;
 
 /* ------------------------------------------------------------------------- */
 
-static int running = 1;
 static char *lib_autosave_filename;
 static char *pl_autosave_filename;
 
@@ -1448,11 +1448,6 @@ void enter_search_backward_mode(void)
 	update_commandline();
 }
 
-void quit(void)
-{
-	running = 0;
-}
-
 void update_colors(void)
 {
 	int i;
@@ -1785,7 +1780,7 @@ static void main_loop(void)
 	int rc, fd_high;
 
 	fd_high = server_socket;
-	while (running) {
+	while (cmus_running) {
 		fd_set set;
 		struct timeval tv;
 

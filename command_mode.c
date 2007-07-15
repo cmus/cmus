@@ -697,7 +697,7 @@ err:
 
 static void cmd_quit(char *arg)
 {
-	quit();
+	cmus_running = 0;
 }
 
 static void cmd_reshuffle(char *arg)

@@ -29,6 +29,7 @@ enum ui_input_mode {
 	SEARCH_MODE
 };
 
+extern int cmus_running;
 extern int ui_initialized;
 extern enum ui_input_mode input_mode;
 extern int cur_view;
@@ -49,6 +50,5 @@ void set_view(int view);
 void enter_command_mode(void);
 void enter_search_mode(void);
 void enter_search_backward_mode(void);
-void quit(void);
 
 #endif
