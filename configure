@@ -80,7 +80,9 @@ check_mad()
 
 check_mikmod()
 {
-	check_library MIKMOD "" "-lmikmod"
+	app_config MIKMOD libmikmod-config && return 0
+	# mikmod is linked against pthread
+	check_library MIKMOD "$PTHREAD_CFLAGS" "-lmikmod $PTHREAD_LIBS"
 	return $?
 }
 
