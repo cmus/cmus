@@ -244,23 +244,21 @@ static void handle_lost_sync(struct nomad *nomad)
 }
 
 
-/* builds a seek index as the file is decoded
- * should be called after every call to mad_decode_header,
- * and before increasing nomad->timer
+/* Builds a seek index as the file is decoded
+ * NOTE: increases nomad->timer (current position)
  */
 static void build_seek_index(struct nomad *nomad)
 {
-	mad_timer_t timer;
+	mad_timer_t timer_now = nomad->timer;
 	off_t offset;
 	int idx;
+
+	mad_timer_add(&nomad->timer, nomad->frame.header.duration);
 
 	if (nomad->has_xing)
 		return;
 
-	timer = nomad->timer;
-	mad_timer_add(&timer, nomad->frame.header.duration);
-
-	if (timer.seconds < (nomad->seek_idx.size + 1) * SEEK_IDX_INTERVAL)
+	if (nomad->timer.seconds < (nomad->seek_idx.size + 1) * SEEK_IDX_INTERVAL)
 		return;
 
 	/* offset = ftell() */
@@ -274,7 +272,7 @@ static void build_seek_index(struct nomad *nomad)
 
 	nomad->seek_idx.table = xrenew(struct seek_idx_entry, nomad->seek_idx.table, idx + 1);
 	nomad->seek_idx.table[idx].offset = offset;
-	nomad->seek_idx.table[idx].timer = nomad->timer;
+	nomad->seek_idx.table[idx].timer = timer_now;
 
 	nomad->seek_idx.size++;
 }
@@ -327,10 +325,10 @@ static int scan(struct nomad *nomad)
 			continue;
 		}
 
-		bitrate_sum += header->bitrate;
 		build_seek_index(nomad);
-		mad_timer_add(&nomad->timer, header->duration);
+		bitrate_sum += header->bitrate;
 		nomad->info.nr_frames++;
+
 		if (!frame_decoded) {
 			nomad->info.sample_rate = header->samplerate;
 			nomad->info.channels = MAD_NCHANNELS(header);
@@ -398,9 +396,11 @@ start:
 		goto start;
 	}
 	nomad->cur_frame++;
-	if (nomad->info.filesize > 0)
+	if (nomad->info.filesize > 0) {
 		build_seek_index(nomad);
-	mad_timer_add(&nomad->timer, nomad->frame.header.duration);
+	} else {
+		mad_timer_add(&nomad->timer, nomad->frame.header.duration);
+	}
 	mad_synth_frame(&nomad->synth, &nomad->frame);
 	return 0;
 }
@@ -628,7 +628,6 @@ int nomad_time_seek(struct nomad *nomad, double pos)
 
 		if (mad_header_decode(&nomad->frame.header, &nomad->stream) == 0) {
 			build_seek_index(nomad);
-			mad_timer_add(&nomad->timer, nomad->frame.header.duration);
 		} else {
 			if (!MAD_RECOVERABLE(nomad->stream.error) && nomad->stream.error != MAD_ERROR_BUFLEN) {
 				d_print("unrecoverable frame level error.\n");
