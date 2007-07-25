@@ -276,6 +276,19 @@ static void build_seek_index(struct nomad *nomad)
 	nomad->seek_idx.size++;
 }
 
+static void calc_fast(struct nomad *nomad)
+{
+	nomad->info.avg_bitrate = -1;
+	nomad->info.vbr = -1;
+	if (nomad->has_xing && (nomad->xing.flags & XING_FRAMES)) {
+		nomad->info.nr_frames = nomad->xing.nr_frames;
+		mad_timer_multiply(&nomad->timer, nomad->info.nr_frames);
+	} else {
+		nomad->info.nr_frames = nomad->info.filesize /
+			(nomad->stream.next_frame - nomad->stream.this_frame);
+		mad_timer_multiply(&nomad->timer, nomad->info.nr_frames);
+	}
+}
 
 /*
  * fields
@@ -333,16 +346,7 @@ static int scan(struct nomad *nomad)
 #endif
 
 				if (nomad->fast) {
-					nomad->info.avg_bitrate = -1;
-					nomad->info.vbr = -1;
-					if (nomad->has_xing && (nomad->xing.flags & XING_FRAMES)) {
-						nomad->info.nr_frames = nomad->xing.nr_frames;
-						mad_timer_multiply(&nomad->timer, nomad->info.nr_frames);
-					} else {
-						nomad->info.nr_frames = nomad->info.filesize /
-							(nomad->stream.next_frame - nomad->stream.this_frame);
-						mad_timer_multiply(&nomad->timer, nomad->info.nr_frames);
-					}
+					calc_fast(nomad);
 					break;
 				}
 			} else {
