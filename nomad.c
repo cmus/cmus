@@ -170,6 +170,10 @@ static int xing_parse(struct nomad *nomad)
 		bitlen -= 32;
 	}
 	nomad->has_xing = 1;
+#if defined(DEBUG_XING)
+	if (nomad->xing.flags & XING_FRAMES)
+		d_print("frames: %d (xing)\n", nomad->xing.nr_frames);
+#endif
 	return 0;
 }
 
@@ -348,11 +352,6 @@ static int scan(struct nomad *nomad)
 			}
 			frame_decoded = 1;
 			xing_parse(nomad);
-
-#if defined(DEBUG_XING)
-			if (nomad->has_xing && (nomad->xing.flags & XING_FRAMES))
-				d_print("xing: frames: %d (xing)\n", nomad->xing.nr_frames);
-#endif
 
 			if (nomad->fast) {
 				calc_fast(nomad);
