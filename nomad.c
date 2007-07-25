@@ -41,7 +41,6 @@ struct nomad {
 	struct mad_stream stream;
 	struct mad_frame frame;
 	struct mad_synth synth;
-	struct mad_header header;
 	mad_timer_t timer;
 	unsigned long cur_frame;
 	off_t input_offset;
@@ -259,7 +258,7 @@ static void build_seek_index(struct nomad *nomad)
 		return;
 
 	timer = nomad->timer;
-	mad_timer_add(&timer, nomad->header.duration);
+	mad_timer_add(&timer, nomad->frame.header.duration);
 
 	if (timer.seconds < (nomad->seek_idx.size + 1) * SEEK_IDX_INTERVAL)
 		return;
@@ -302,6 +301,7 @@ static void calc_fast(struct nomad *nomad)
  */
 static int scan(struct nomad *nomad)
 {
+	struct mad_header *header = &nomad->frame.header;
 	int frame_decoded = 0;
 	int old_bitrate = 0;
 	unsigned long long int bitrate_sum = 0;
@@ -317,7 +317,7 @@ static int scan(struct nomad *nomad)
 		if (rc == 0)
 			break;
 
-		if (mad_header_decode(&nomad->header, &nomad->stream)) {
+		if (mad_header_decode(header, &nomad->stream)) {
 			if (!MAD_RECOVERABLE(nomad->stream.error) && nomad->stream.error != MAD_ERROR_BUFLEN) {
 				d_print("unrecoverable frame level error.\n");
 				return -1;
@@ -327,18 +327,17 @@ static int scan(struct nomad *nomad)
 			continue;
 		}
 
-		bitrate_sum += nomad->header.bitrate;
+		bitrate_sum += header->bitrate;
 		build_seek_index(nomad);
-		mad_timer_add(&nomad->timer, nomad->header.duration);
+		mad_timer_add(&nomad->timer, header->duration);
 		nomad->info.nr_frames++;
 		if (!frame_decoded) {
-			nomad->info.sample_rate = nomad->header.samplerate;
-			nomad->info.channels = MAD_NCHANNELS(&nomad->header);
-			nomad->info.layer = nomad->header.layer;
-			nomad->info.dual_channel = nomad->header.mode == MAD_MODE_DUAL_CHANNEL;
-			nomad->info.joint_stereo = nomad->header.mode == MAD_MODE_JOINT_STEREO;
+			nomad->info.sample_rate = header->samplerate;
+			nomad->info.channels = MAD_NCHANNELS(header);
+			nomad->info.layer = header->layer;
+			nomad->info.dual_channel = header->mode == MAD_MODE_DUAL_CHANNEL;
+			nomad->info.joint_stereo = header->mode == MAD_MODE_JOINT_STEREO;
 
-			nomad->frame.header = nomad->header;
 			if (mad_frame_decode(&nomad->frame, &nomad->stream) == -1) {
 				if (nomad->stream.error == MAD_ERROR_BUFLEN)
 					continue;
@@ -358,10 +357,10 @@ static int scan(struct nomad *nomad)
 				break;
 			}
 		} else {
-			if (old_bitrate != nomad->header.bitrate)
+			if (old_bitrate != header->bitrate)
 				nomad->info.vbr = 1;
 		}
-		old_bitrate = nomad->header.bitrate;
+		old_bitrate = header->bitrate;
 	}
 	if (nomad->info.nr_frames == 0) {
 		d_print("error: not an mp3 file!\n");
@@ -411,7 +410,6 @@ static void init_mad(struct nomad *nomad)
 	mad_stream_init(&nomad->stream);
 	mad_frame_init(&nomad->frame);
 	mad_synth_init(&nomad->synth);
-	mad_header_init(&nomad->header);
 	mad_timer_reset(&nomad->timer);
 	nomad->cur_frame = 0;
 	nomad->i = -1;
@@ -423,7 +421,6 @@ static void free_mad(struct nomad *nomad)
 	mad_stream_finish(&nomad->stream);
 	mad_frame_finish(&nomad->frame);
 	mad_synth_finish(nomad->synth);
-	mad_header_finish(&nomad->header);
 }
 
 static int do_open(struct nomad *nomad, int fast)
@@ -447,8 +444,8 @@ static int do_open(struct nomad *nomad, int fast)
 		nomad->info.sample_rate = nomad->frame.header.samplerate;
 		nomad->info.channels = MAD_NCHANNELS(&nomad->frame.header);
 		nomad->info.layer = nomad->frame.header.layer;
-		nomad->info.dual_channel = nomad->header.mode == MAD_MODE_DUAL_CHANNEL;
-		nomad->info.joint_stereo = nomad->header.mode == MAD_MODE_JOINT_STEREO;
+		nomad->info.dual_channel = nomad->frame.header.mode == MAD_MODE_DUAL_CHANNEL;
+		nomad->info.joint_stereo = nomad->frame.header.mode == MAD_MODE_JOINT_STEREO;
 
 		/* unknown */
 		nomad->info.duration = -1.0;
@@ -629,9 +626,9 @@ int nomad_time_seek(struct nomad *nomad, double pos)
 		if (rc == 0)
 			return 0;
 
-		if (mad_header_decode(&nomad->header, &nomad->stream) == 0) {
+		if (mad_header_decode(&nomad->frame.header, &nomad->stream) == 0) {
 			build_seek_index(nomad);
-			mad_timer_add(&nomad->timer, nomad->header.duration);
+			mad_timer_add(&nomad->timer, nomad->frame.header.duration);
 		} else {
 			if (!MAD_RECOVERABLE(nomad->stream.error) && nomad->stream.error != MAD_ERROR_BUFLEN) {
 				d_print("unrecoverable frame level error.\n");
