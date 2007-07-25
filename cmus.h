@@ -1,7 +1,7 @@
 #ifndef _CMUS_H
 #define _CMUS_H
 
-#include "track_db.h"
+#include "track_info.h"
 
 /*
  * these types are only used to determine what jobs we should cancel.

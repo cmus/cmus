@@ -20,8 +20,6 @@
 #ifndef _MISC_H
 #define _MISC_H
 
-#include "list.h"
-
 extern const char *cmus_config_dir;
 extern const char *home_dir;
 extern const char *user_name;
