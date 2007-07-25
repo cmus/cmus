@@ -313,55 +313,56 @@ static int scan(struct nomad *nomad)
 		if (rc == 0)
 			break;
 
-		if (mad_header_decode(&nomad->header, &nomad->stream) == 0) {
-			bitrate_sum += nomad->header.bitrate;
-			build_seek_index(nomad);
-			mad_timer_add(&nomad->timer, nomad->header.duration);
-			nomad->info.nr_frames++;
-			if (!frame_decoded) {
-				nomad->info.sample_rate = nomad->header.samplerate;
-				nomad->info.channels = MAD_NCHANNELS(&nomad->header);
-				nomad->info.layer = nomad->header.layer;
-				nomad->info.dual_channel = nomad->header.mode == MAD_MODE_DUAL_CHANNEL;
-				nomad->info.joint_stereo = nomad->header.mode == MAD_MODE_JOINT_STEREO;
-
-				nomad->frame.header = nomad->header;
-				if (mad_frame_decode(&nomad->frame, &nomad->stream) == -1) {
-					if (nomad->stream.error == MAD_ERROR_BUFLEN)
-						continue;
-					if (!MAD_RECOVERABLE(nomad->stream.error)) {
-						d_print("unrecoverable frame level error.\n");
-						return -1;
-					}
-					if (nomad->stream.error == MAD_ERROR_LOSTSYNC)
-						handle_lost_sync(nomad);
-					continue;
-				}
-				frame_decoded = 1;
-				xing_parse(nomad);
-
-#if defined(DEBUG_XING)
-				if (nomad->has_xing && (nomad->xing.flags & XING_FRAMES))
-					d_print("xing: frames: %d (xing)\n", nomad->xing.nr_frames);
-#endif
-
-				if (nomad->fast) {
-					calc_fast(nomad);
-					break;
-				}
-			} else {
-				if (old_bitrate != nomad->header.bitrate)
-					nomad->info.vbr = 1;
-			}
-			old_bitrate = nomad->header.bitrate;
-		} else {
+		if (mad_header_decode(&nomad->header, &nomad->stream)) {
 			if (!MAD_RECOVERABLE(nomad->stream.error) && nomad->stream.error != MAD_ERROR_BUFLEN) {
 				d_print("unrecoverable frame level error.\n");
 				return -1;
 			}
 			if (nomad->stream.error == MAD_ERROR_LOSTSYNC)
 				handle_lost_sync(nomad);
+			continue;
 		}
+
+		bitrate_sum += nomad->header.bitrate;
+		build_seek_index(nomad);
+		mad_timer_add(&nomad->timer, nomad->header.duration);
+		nomad->info.nr_frames++;
+		if (!frame_decoded) {
+			nomad->info.sample_rate = nomad->header.samplerate;
+			nomad->info.channels = MAD_NCHANNELS(&nomad->header);
+			nomad->info.layer = nomad->header.layer;
+			nomad->info.dual_channel = nomad->header.mode == MAD_MODE_DUAL_CHANNEL;
+			nomad->info.joint_stereo = nomad->header.mode == MAD_MODE_JOINT_STEREO;
+
+			nomad->frame.header = nomad->header;
+			if (mad_frame_decode(&nomad->frame, &nomad->stream) == -1) {
+				if (nomad->stream.error == MAD_ERROR_BUFLEN)
+					continue;
+				if (!MAD_RECOVERABLE(nomad->stream.error)) {
+					d_print("unrecoverable frame level error.\n");
+					return -1;
+				}
+				if (nomad->stream.error == MAD_ERROR_LOSTSYNC)
+					handle_lost_sync(nomad);
+				continue;
+			}
+			frame_decoded = 1;
+			xing_parse(nomad);
+
+#if defined(DEBUG_XING)
+			if (nomad->has_xing && (nomad->xing.flags & XING_FRAMES))
+				d_print("xing: frames: %d (xing)\n", nomad->xing.nr_frames);
+#endif
+
+			if (nomad->fast) {
+				calc_fast(nomad);
+				break;
+			}
+		} else {
+			if (old_bitrate != nomad->header.bitrate)
+				nomad->info.vbr = 1;
+		}
+		old_bitrate = nomad->header.bitrate;
 	}
 	if (nomad->info.nr_frames == 0) {
 		d_print("error: not an mp3 file!\n");
