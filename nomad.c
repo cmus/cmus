@@ -300,7 +300,6 @@ static void calc_fast(struct nomad *nomad)
 static int scan(struct nomad *nomad)
 {
 	struct mad_header *header = &nomad->frame.header;
-	int frame_decoded = 0;
 	int old_bitrate = 0;
 	unsigned long long int bitrate_sum = 0;
 
@@ -315,8 +314,10 @@ static int scan(struct nomad *nomad)
 		if (rc == 0)
 			break;
 
-		if (mad_header_decode(header, &nomad->stream)) {
-			if (!MAD_RECOVERABLE(nomad->stream.error) && nomad->stream.error != MAD_ERROR_BUFLEN) {
+		if (mad_frame_decode(&nomad->frame, &nomad->stream) == -1) {
+			if (nomad->stream.error == MAD_ERROR_BUFLEN)
+				continue;
+			if (!MAD_RECOVERABLE(nomad->stream.error)) {
 				d_print("unrecoverable frame level error.\n");
 				return -1;
 			}
@@ -329,25 +330,14 @@ static int scan(struct nomad *nomad)
 		bitrate_sum += header->bitrate;
 		nomad->info.nr_frames++;
 
-		if (!frame_decoded) {
+		if (nomad->info.nr_frames == 1) {
+			// first valid frame
 			nomad->info.sample_rate = header->samplerate;
 			nomad->info.channels = MAD_NCHANNELS(header);
 			nomad->info.layer = header->layer;
 			nomad->info.dual_channel = header->mode == MAD_MODE_DUAL_CHANNEL;
 			nomad->info.joint_stereo = header->mode == MAD_MODE_JOINT_STEREO;
 
-			if (mad_frame_decode(&nomad->frame, &nomad->stream) == -1) {
-				if (nomad->stream.error == MAD_ERROR_BUFLEN)
-					continue;
-				if (!MAD_RECOVERABLE(nomad->stream.error)) {
-					d_print("unrecoverable frame level error.\n");
-					return -1;
-				}
-				if (nomad->stream.error == MAD_ERROR_LOSTSYNC)
-					handle_lost_sync(nomad);
-				continue;
-			}
-			frame_decoded = 1;
 			xing_parse(nomad);
 
 			if (nomad->fast) {
