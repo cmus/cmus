@@ -20,9 +20,14 @@ it can be controlled from the outside via *cmus-remote*(1).
 
 --listen ADDR
 	Listen to ADDR (UNIX socket) instead of `/tmp/cmus-$USER`.
+	ADDR is either a UNIX socket or host[:port].
+
+	*WARNING*: Using host[:port] is insecure even with password!
+	It might be useful though in LAN if you want multiple local users to
+	able to control cmus.  Never make cmus listen to the internet.
 
 	NOTE: Don't use this option to run multiple instances as same user.
-	That would corrupt track metadata cache.
+	That would corrupt the track metadata cache.
 
 --plugins
 	List available plugins and exit.

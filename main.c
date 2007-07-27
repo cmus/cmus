@@ -201,6 +201,7 @@ static const char *usage =
 "\n"
 "      --server ADDR    connect using ADDR instead of ~/.cmus/socket\n"
 "                       ADDR is either a UNIX socket or host[:port]\n"
+"                       WARNING: using TCP/IP is insecure!\n"
 "      --passwd PASSWD  password to use for TCP/IP connection\n"
 "      --help           display this help and exit\n"
 "      --version        " VERSION "\n"
