@@ -752,6 +752,15 @@ play_sorted (false)
 repeat (false)
 	Repeat after all tracks played.
 
+replaygain (false)
+	Enable Replay Gain.
+
+replaygain_limit (true)
+	Use replay gain limiting when clipping.
+
+replaygain_preamp (6.0)
+	Replay gain preamplification in decibels.
+
 show_hidden (false)
 	Display hidden files in browser.
 
