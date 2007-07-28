@@ -1,7 +1,6 @@
 #include "worker.h"
 #include "locking.h"
 #include "list.h"
-#include "utils.h"
 #include "xmalloc.h"
 #include "debug.h"
 
@@ -19,6 +18,7 @@ struct worker_job {
 
 static LIST_HEAD(worker_job_head);
 static pthread_mutex_t worker_mutex = CMUS_MUTEX_INITIALIZER;
+static pthread_cond_t worker_cond = PTHREAD_COND_INITIALIZER;
 static pthread_t worker_thread;
 static int running = 1;
 static int cancel_type = JOB_TYPE_NONE;
@@ -35,15 +35,17 @@ static struct worker_job *cur_job = NULL;
 
 static void *worker_loop(void *arg)
 {
+	worker_lock();
 	while (1) {
-		worker_lock();
 		if (list_empty(&worker_job_head)) {
-			if (!running) {
-				worker_unlock();
-				return NULL;
-			}
-			worker_unlock();
-			ms_sleep(100);
+			int rc;
+
+			if (!running)
+				break;
+
+			rc = pthread_cond_wait(&worker_cond, &worker_mutex);
+			if (rc)
+				d_print("pthread_cond_wait: %s\n", strerror(rc));
 		} else {
 			struct list_head *item = worker_job_head.next;
 			uint64_t st, et;
@@ -61,9 +63,14 @@ static void *worker_loop(void *arg)
 			cur_job->free_cb(cur_job->data);
 			free(cur_job);
 			cur_job = NULL;
-			worker_unlock();
+
+			// wakeup worker_remove_jobs() if needed
+			if (cancel_type != JOB_TYPE_NONE)
+				pthread_cond_signal(&worker_cond);
 		}
 	}
+	worker_unlock();
+	return NULL;
 }
 
 void worker_init(void)
@@ -77,6 +84,7 @@ void worker_exit(void)
 {
 	worker_lock();
 	running = 0;
+	pthread_cond_signal(&worker_cond);
 	worker_unlock();
 
 	pthread_join(worker_thread, NULL);
@@ -95,6 +103,7 @@ void worker_add_job(int type, void (*job_cb)(void *data),
 
 	worker_lock();
 	list_add_tail(&job->node, &worker_job_head);
+	pthread_cond_signal(&worker_cond);
 	worker_unlock();
 }
 
@@ -120,11 +129,8 @@ void worker_remove_jobs(int type)
 	}
 
 	/* wait current job to finish or cancel if it's of the specified type */
-	while (cur_job && (type == JOB_TYPE_ANY || type == cur_job->type)) {
-		worker_unlock();
-		ms_sleep(50);
-		worker_lock();
-	}
+	if (cur_job && (type == JOB_TYPE_ANY || type == cur_job->type))
+		pthread_cond_wait(&worker_cond, &worker_mutex);
 
 	cancel_type = JOB_TYPE_NONE;
 	worker_unlock();
