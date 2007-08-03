@@ -534,7 +534,7 @@ static void toggle_repeat(unsigned int id)
 	update_statusline();
 }
 
-const char * const replaygain_names[] = {
+static const char * const replaygain_names[] = {
 	"disabled", "track", "album", NULL
 };
 

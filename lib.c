@@ -13,11 +13,11 @@
 #include <string.h>
 
 struct editable lib_editable;
-LIST_HEAD(lib_shuffle_head);
 struct tree_track *lib_cur_track = NULL;
 unsigned int play_sorted = 0;
 enum aaa_mode aaa_mode = AAA_MODE_ALL;
 
+static LIST_HEAD(lib_shuffle_head);
 static struct expr *filter = NULL;
 static int remove_from_hash = 1;
 
