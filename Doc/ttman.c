@@ -347,10 +347,12 @@ static struct token *get_indent(struct token *tok, int *ip)
 static struct token *check_line(struct token *tok, int *ip)
 {
 	struct token *start;
+	int tok_type;
 
 	start = tok = get_indent(tok, ip);
 
-	switch (tok->type) {
+	tok_type = tok->type;
+	switch (tok_type) {
 	case TOK_TEXT:
 	case TOK_BOLD:
 	case TOK_ITALIC:
@@ -390,7 +392,7 @@ static struct token *check_line(struct token *tok, int *ip)
 				return start;
 			default:
 				syntax(tok->line, "@%s can contain only text\n",
-						keyword_name(tok->type));
+						keyword_name(tok_type));
 			}
 			tok = tok->next;
 		}
