@@ -54,10 +54,17 @@ static int cur_line = 1;
 static struct token head = { &head, &head, TOK_TEXT, 0, NULL, 0 };
 
 #define CONST_STR(str) { str, sizeof(str) - 1 }
-static const struct keyword {
+static const struct {
 	const char *str;
 	int len;
-} keywords[] = {
+} token_names[] = {
+	CONST_STR("text"),
+	CONST_STR("nl"),
+	CONST_STR("italic"),
+	CONST_STR("bold"),
+	CONST_STR("indent"),
+
+	// keywords
 	CONST_STR("h1"),
 	CONST_STR("h2"),
 	CONST_STR("li"),
@@ -68,7 +75,7 @@ static const struct keyword {
 	CONST_STR("endraw"),
 	CONST_STR("title")
 };
-#define NR_KEYWORDS (sizeof(keywords) / sizeof(struct keyword))
+#define NR_TOKEN_NAMES (sizeof(token_names) / sizeof(token_names[0]))
 #define BUG() die("BUG in %s\n", __FUNCTION__)
 
 #ifdef __GNUC__
@@ -110,7 +117,7 @@ static inline const char *keyword_name(int type)
 {
 	if (type < TOK_H1 || type > TOK_TITLE)
 		die("BUG: no keyword name for type %d\n", type);
-	return keywords[type - TOK_H1].str;
+	return token_names[type].str;
 }
 
 static void *xmalloc(size_t size)
@@ -182,11 +189,11 @@ static int emit_keyword(const char *buf, int size)
 	if (!len)
 		syntax(cur_line, "keyword expected\n");
 
-	for (i = 0; i < NR_KEYWORDS; i++) {
-		if (len != keywords[i].len)
+	for (i = TOK_H1; i < NR_TOKEN_NAMES; i++) {
+		if (len != token_names[i].len)
 			continue;
-		if (!strncmp(buf, keywords[i].str, len)) {
-			emit(TOK_H1 + i);
+		if (!strncmp(buf, token_names[i].str, len)) {
+			emit(i);
 			return len;
 		}
 	}
