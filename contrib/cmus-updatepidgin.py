@@ -1,4 +1,5 @@
-#!/usr/local/bin/python
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
 
 import dbus
 import sys
