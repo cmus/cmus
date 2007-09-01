@@ -1069,7 +1069,8 @@ void player_seek(double offset, int relative)
 				__producer_stop();
 				player_unlock();
 				return;
-			}
+			} else
+				__player_status_changed();
 		}
 	}
 	if (consumer_status == CS_PLAYING || consumer_status == CS_PAUSED) {
