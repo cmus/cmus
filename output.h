@@ -5,11 +5,12 @@
 #ifndef _OUTPUT_H
 #define _OUTPUT_H
 
+#include "mixer.h"
 #include "sf.h"
 
-extern int soft_vol;
-extern int soft_vol_l;
-extern int soft_vol_r;
+extern int volume_max;
+extern int volume_l;
+extern int volume_r;
 
 void op_load_plugins(void);
 void op_exit_plugins(void);
@@ -66,10 +67,11 @@ int op_buffer_space(void);
  */
 int op_reset(void);
 
-int op_set_volume(int left, int right);
-int op_get_volume(int *left, int *right);
-
-void op_set_soft_vol(int soft);
+void mixer_open(void);
+void mixer_close(void);
+int mixer_set_volume(int left, int right);
+int mixer_read_volume(void);
+int mixer_get_fds(int *fds);
 
 /*
  * errors: OP_ERROR_{NO_PLUGIN, NOT_INITIALIZED, NOT_OPTION}

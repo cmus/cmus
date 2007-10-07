@@ -64,10 +64,6 @@ struct player_info {
 	enum player_status status;
 	int pos;
 
-	/* volume */
-	int vol_left;
-	int vol_right;
-
 	int buffer_fill;
 	int buffer_size;
 
@@ -79,7 +75,6 @@ struct player_info {
 	unsigned int status_changed : 1;
 	unsigned int position_changed : 1;
 	unsigned int buffer_fill_changed : 1;
-	unsigned int vol_changed : 1;
 };
 
 extern struct player_info player_info;
@@ -87,9 +82,9 @@ extern int player_cont;
 extern enum replaygain replaygain;
 extern int replaygain_limit;
 extern double replaygain_preamp;
-
-/* defined in output.c */
-extern int volume_max;
+extern int soft_vol;
+extern int soft_vol_l;
+extern int soft_vol_r;
 
 void player_load_plugins(void);
 
@@ -113,8 +108,7 @@ int player_get_buffer_chunks(void);
 void player_set_buffer_seconds(unsigned int seconds);
 int player_get_fileinfo(const char *filename, int *duration, struct keyval **comments);
 
-int player_get_volume(int *left, int *right);
-int player_set_volume(int left, int right);
+void player_set_soft_volume(int l, int r);
 void player_set_soft_vol(int soft);
 void player_set_rg(enum replaygain rg);
 void player_set_rg_limit(int limit);

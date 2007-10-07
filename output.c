@@ -54,12 +54,10 @@ static const char * const plugin_dir = LIBDIR "/cmus/op";
 static LIST_HEAD(op_head);
 static struct output_plugin *op = NULL;
 
-int soft_vol;
-int soft_vol_l = 100;
-int soft_vol_r = 100;
-
 /* volume is between 0 and volume_max */
 int volume_max = 0;
+int volume_l = -1;
+int volume_r = -1;
 
 static void add_plugin(struct output_plugin *plugin)
 {
@@ -182,7 +180,7 @@ void op_exit_plugins(void)
 	}
 }
 
-static void close_mixer(void)
+void mixer_close(void)
 {
 	volume_max = 0;
 	if (op && op->mixer_open) {
@@ -192,13 +190,8 @@ static void close_mixer(void)
 	}
 }
 
-static void open_mixer(void)
+void mixer_open(void)
 {
-	if (soft_vol) {
-		volume_max = 100;
-		return;
-	}
-
 	if (op == NULL)
 		return;
 
@@ -209,6 +202,7 @@ static void open_mixer(void)
 		rc = op->mixer_ops->open(&volume_max);
 		if (rc == 0) {
 			op->mixer_open = 1;
+			mixer_read_volume();
 		} else {
 			volume_max = 0;
 		}
@@ -222,10 +216,7 @@ static int select_plugin(struct output_plugin *o)
 
 	if (!o->pcm_initialized)
 		return -OP_ERROR_NOT_INITIALIZED;
-
-	close_mixer();
 	op = o;
-	open_mixer();
 	return 0;
 }
 
@@ -302,13 +293,8 @@ int op_buffer_space(void)
 	return rc;
 }
 
-int op_set_volume(int left, int right)
+int mixer_set_volume(int left, int right)
 {
-	if (soft_vol) {
-		soft_vol_l = left;
-		soft_vol_r = right;
-		return 0;
-	}
 	if (op == NULL)
 		return -OP_ERROR_NOT_INITIALIZED;
 	if (!op->mixer_open)
@@ -316,25 +302,24 @@ int op_set_volume(int left, int right)
 	return op->mixer_ops->set_volume(left, right);
 }
 
-int op_get_volume(int *left, int *right)
+int mixer_read_volume(void)
 {
-	if (soft_vol) {
-		*left = soft_vol_l;
-		*right = soft_vol_r;
-		return 0;
-	}
 	if (op == NULL)
 		return -OP_ERROR_NOT_INITIALIZED;
 	if (!op->mixer_open)
 		return -OP_ERROR_NOT_SUPPORTED;
-	return op->mixer_ops->get_volume(left, right);
+	return op->mixer_ops->get_volume(&volume_l, &volume_r);
 }
 
-void op_set_soft_vol(int soft)
+int mixer_get_fds(int *fds)
 {
-	close_mixer();
-	soft_vol = soft;
-	open_mixer();
+	if (op == NULL)
+		return -OP_ERROR_NOT_INITIALIZED;
+	if (!op->mixer_ops->get_fds)
+		return -OP_ERROR_NOT_SUPPORTED;
+	if (!op->mixer_open)
+		return -OP_ERROR_NOT_SUPPORTED;
+	return op->mixer_ops->get_fds(fds);
 }
 
 #define OP_OPT_ID(plugin_idx, is_mixer, option_idx) \
@@ -351,6 +336,8 @@ static struct output_plugin *find_plugin(int idx)
 	}
 	return NULL;
 }
+
+extern int soft_vol;
 
 int op_set_option(unsigned int id, const char *val)
 {
@@ -369,8 +356,9 @@ int op_set_option(unsigned int id, const char *val)
 		if (rc == 0 && op && op->mixer_ops == mo) {
 			/* option of the current op was set
 			 * try to reopen the mixer */
-			close_mixer();
-			open_mixer();
+			mixer_close();
+			if (!soft_vol)
+				mixer_open();
 		}
 		return rc;
 	}

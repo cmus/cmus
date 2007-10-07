@@ -28,6 +28,7 @@
 #include "browser.h"
 #include "filters.h"
 #include "player.h"
+#include "output.h"
 #include "editable.h"
 #include "lib.h"
 #include "pl.h"
@@ -1145,16 +1146,16 @@ err:
 	return -1;
 }
 
-static int calc_vol(int val, int old, unsigned int flags)
+static int calc_vol(int val, int old, int max, unsigned int flags)
 {
 	if (flags & VF_RELATIVE) {
 		if (flags & VF_PERCENTAGE)
-			val = scale_from_percentage(val, volume_max);
+			val = scale_from_percentage(val, max);
 		val += old;
 	} else if (flags & VF_PERCENTAGE) {
-		val = scale_from_percentage(val, volume_max);
+		val = scale_from_percentage(val, max);
 	}
-	return clamp(val, 0, volume_max);
+	return clamp(val, 0, max);
 }
 
 /*
@@ -1166,7 +1167,7 @@ static void cmd_vol(char *arg)
 {
 	char **values = get_words(arg);
 	unsigned int lf, rf;
-	int l, r, ol, or;
+	int l, r;
 
 	if (values[1] && values[2])
 		goto err;
@@ -1181,10 +1182,17 @@ static void cmd_vol(char *arg)
 
 	free_str_array(values);
 
-	player_get_volume(&ol, &or);
-	l = calc_vol(l, ol, lf);
-	r = calc_vol(r, or, rf);
-	player_set_volume(l, r);
+	if (soft_vol) {
+		l = calc_vol(l, soft_vol_l, 100, lf);
+		r = calc_vol(r, soft_vol_r, 100, rf);
+		player_set_soft_volume(l, r);
+	} else {
+		mixer_read_volume();
+		l = calc_vol(l, volume_l, volume_max, lf);
+		r = calc_vol(r, volume_r, volume_max, rf);
+		mixer_set_volume(l, r);
+	}
+	update_statusline();
 	return;
 err:
 	free_str_array(values);

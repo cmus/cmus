@@ -27,6 +27,7 @@
 #include "filters.h"
 #include "cmus.h"
 #include "player.h"
+#include "output.h"
 #include "utils.h"
 #include "lib.h"
 #include "pl.h"
@@ -903,11 +904,15 @@ static void do_update_statusline(void)
 	if (player_info.ti)
 		duration = player_info.ti->duration;
 
-	if (volume_max == 0) {
+	if (soft_vol) {
+		vol_left = soft_vol_l;
+		vol_right = soft_vol_r;
+		vol = (vol_left + vol_right + 1) / 2;
+	} else if (!volume_max) {
 		vol_left = vol_right = vol = -1;
 	} else {
-		vol_left = scale_to_percentage(player_info.vol_left, volume_max);
-		vol_right = scale_to_percentage(player_info.vol_right, volume_max);
+		vol_left = scale_to_percentage(volume_l, volume_max);
+		vol_right = scale_to_percentage(volume_r, volume_max);
 		vol = (vol_left + vol_right + 1) / 2;
 	}
 	buffer_fill = scale_to_percentage(player_info.buffer_fill, player_info.buffer_size);
@@ -931,8 +936,8 @@ static void do_update_statusline(void)
 	if (duration != -1)
 		strcat(format, "/ %d ");
 	strcat(format, "- %t ");
-	if (volume_max != 0) {
-		if (player_info.vol_left != player_info.vol_right) {
+	if (vol >= 0) {
+		if (vol_left != vol_right) {
 			strcat(format, "vol: %l,%r ");
 		} else {
 			strcat(format, "vol: %v ");
@@ -1644,10 +1649,9 @@ static void update(void)
 		player_info.metadata_changed = 0;
 		needs_title_update = 1;
 	}
-	if (player_info.position_changed || player_info.status_changed || player_info.vol_changed) {
+	if (player_info.position_changed || player_info.status_changed) {
 		player_info.position_changed = 0;
 		player_info.status_changed = 0;
-		player_info.vol_changed = 0;
 
 		needs_status_update = 1;
 	}
@@ -1783,12 +1787,23 @@ static void main_loop(void)
 	while (cmus_running) {
 		fd_set set;
 		struct timeval tv;
+		int i, nr_fds = 0;
+		int fds[NR_MIXER_FDS];
 
 		update();
 
 		FD_ZERO(&set);
 		FD_SET(0, &set);
 		FD_SET(server_socket, &set);
+		if (!soft_vol) {
+			nr_fds = mixer_get_fds(fds);
+			for (i = 0; i < nr_fds; i++) {
+				BUG_ON(fds[i] <= 0);
+				FD_SET(fds[i], &set);
+				if (fds[i] > fd_high)
+					fd_high = fds[i];
+			}
+		}
 
 		/* Timeout must be so small that screen updates seem instant.
 		 * Only affects changes done in other threads (worker, player).
@@ -1809,6 +1824,13 @@ static void main_loop(void)
 			continue;
 		}
 
+		for (i = 0; i < nr_fds; i++) {
+			if (FD_ISSET(fds[i], &set)) {
+				d_print("vol changed\n");
+				mixer_read_volume();
+				update_statusline();
+			}
+		}
 		if (FD_ISSET(server_socket, &set))
 			server_serve();
 		if (FD_ISSET(0, &set)) {
@@ -1958,8 +1980,8 @@ static void init_all(void)
 
 	/* finally we can set the output plugin */
 	player_set_op(output_plugin);
-
-	player_get_volume(&player_info.vol_left, &player_info.vol_right);
+	if (!soft_vol)
+		mixer_open();
 
 	lib_autosave_filename = xstrjoin(cmus_config_dir, "/lib.pl");
 	pl_autosave_filename = xstrjoin(cmus_config_dir, "/playlist.pl");

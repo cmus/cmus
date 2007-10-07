@@ -54,8 +54,6 @@ struct player_info player_info = {
 	.metadata = { 0, },
 	.status = PLAYER_STATUS_STOPPED,
 	.pos = 0,
-	.vol_left = 0,
-	.vol_right = 0,
 	.buffer_fill = 0,
 	.buffer_size = 0,
 	.error_msg = NULL,
@@ -64,7 +62,6 @@ struct player_info player_info = {
 	.status_changed = 0,
 	.position_changed = 0,
 	.buffer_fill_changed = 0,
-	.vol_changed = 0,
 };
 
 /* continue playing after track is finished? */
@@ -73,6 +70,10 @@ int player_cont = 1;
 enum replaygain replaygain;
 int replaygain_limit = 1;
 double replaygain_preamp = 6.0;
+
+int soft_vol;
+int soft_vol_l;
+int soft_vol_r;
 
 static const struct player_callbacks *player_cbs = NULL;
 
@@ -305,18 +306,6 @@ static inline void metadata_changed(void)
 	player_info_unlock();
 }
 
-static inline void volume_update(int left, int right)
-{
-	if (player_info.vol_left == left && player_info.vol_right == right)
-		return;
-
-	player_info_lock();
-	player_info.vol_left = left;
-	player_info.vol_right = right;
-	player_info.vol_changed = 1;
-	player_info_unlock();
-}
-
 static void player_error(const char *msg)
 {
 	player_info_lock();
@@ -365,29 +354,6 @@ static void __FORMAT(2, 3) player_op_error(int rc, const char *format, ...)
 	msg = op_get_error_msg(rc, buffer);
 	player_error(msg);
 	free(msg);
-}
-
-/* FIXME: don't poll */
-static void mixer_check(void)
-{
-	static struct timeval old_t = { 0L, 0L };
-	struct timeval t;
-	long usec, sec;
-	int l, r;
-
-	gettimeofday(&t, NULL);
-	usec = t.tv_usec - old_t.tv_usec;
-	sec = t.tv_sec - old_t.tv_sec;
-	if (sec) {
-		/* multiplying sec with 1e6 can overflow */
-		usec += 1e6L;
-	}
-	if (usec < 300e3)
-		return;
-
-	old_t = t;
-	if (!op_get_volume(&l, &r))
-		volume_update(l, r);
 }
 
 /*
@@ -714,7 +680,6 @@ static void *consumer_loop(void *arg)
 			break;
 
 		if (consumer_status == CS_PAUSED || consumer_status == CS_STOPPED) {
-			mixer_check();
 			consumer_unlock();
 			ms_sleep(50);
 			continue;
@@ -733,7 +698,6 @@ static void *consumer_loop(void *arg)
 			/* 25 ms is 4410 B */
 			if (space < 4096) {
 				__consumer_position_update();
-				mixer_check();
 				consumer_unlock();
 				ms_sleep(25);
 				break;
@@ -1136,7 +1100,7 @@ void player_seek(double offset, int relative)
  */
 void player_set_op(const char *name)
 {
-	int rc, l, r;
+	int rc;
 
 	player_lock();
 
@@ -1177,9 +1141,6 @@ void player_set_op(const char *name)
 		if (consumer_status == CS_PAUSED)
 			op_pause();
 	}
-
-	if (!op_get_volume(&l, &r))
-		volume_update(l, r);
 
 	player_unlock();
 }
@@ -1242,39 +1203,21 @@ int player_get_fileinfo(const char *filename, int *duration,
 	return rc;
 }
 
-int player_get_volume(int *left, int *right)
+void player_set_soft_volume(int l, int r)
 {
-	int rc;
-
 	consumer_lock();
-	rc = op_get_volume(left, right);
+	soft_vol_l = l;
+	soft_vol_r = r;
 	consumer_unlock();
-	return rc;
-}
-
-int player_set_volume(int left, int right)
-{
-	int rc;
-
-	consumer_lock();
-	rc = op_set_volume(left, right);
-	if (!rc)
-		volume_update(left, right);
-	consumer_unlock();
-	return rc;
 }
 
 void player_set_soft_vol(int soft)
 {
-	int l, r;
-
 	consumer_lock();
 	/* don't mess with scale_pos if soft_vol or replaygain is already enabled */
 	if (!soft_vol && !replaygain)
 		scale_pos = consumer_pos;
-	op_set_soft_vol(soft);
-	if (!op_get_volume(&l, &r))
-		volume_update(l, r);
+	soft_vol = soft;
 	consumer_unlock();
 }
 

@@ -281,7 +281,11 @@ static void get_output_plugin(unsigned int id, char *buf)
 static void set_output_plugin(unsigned int id, const char *buf)
 {
 	if (ui_initialized) {
+		if (!soft_vol)
+			mixer_close();
 		player_set_op(buf);
+		if (!soft_vol)
+			mixer_open();
 	} else {
 		/* must set it later manually */
 		output_plugin = xstrdup(buf);
@@ -350,14 +354,7 @@ static void set_softvol_state(unsigned int id, const char *buf)
 	if (str_to_int(ptr, &r) == -1 || r < 0 || r > 100)
 		goto err;
 
-	if (soft_vol) {
-		/* avoid race condition */
-		player_set_volume(l, r);
-	} else {
-		/* can't use player_set_volume(), no race condition */
-		soft_vol_l = l;
-		soft_vol_r = r;
-	}
+	player_set_soft_volume(l, r);
 	return;
 err:
 	error_msg("two integers in range 0..100 expected");
@@ -650,18 +647,28 @@ static void get_softvol(unsigned int id, char *buf)
 	strcpy(buf, bool_names[soft_vol]);
 }
 
+static void do_set_softvol(int soft)
+{
+	if (!soft_vol)
+		mixer_close();
+	player_set_soft_vol(soft);
+	if (!soft_vol)
+		mixer_open();
+	update_statusline();
+}
+
 static void set_softvol(unsigned int id, const char *buf)
 {
 	int soft;
 
 	if (!parse_bool(buf, &soft))
 		return;
-	player_set_soft_vol(soft);
+	do_set_softvol(soft);
 }
 
 static void toggle_softvol(unsigned int id)
 {
-	player_set_soft_vol(soft_vol ^ 1);
+	do_set_softvol(soft_vol ^ 1);
 }
 
 /* }}} */
