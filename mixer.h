@@ -20,11 +20,14 @@
 #ifndef _MIXER_H
 #define _MIXER_H
 
+#define NR_MIXER_FDS 4
+
 struct mixer_plugin_ops {
 	int (*init)(void);
 	int (*exit)(void);
 	int (*open)(int *volume_max);
 	int (*close)(void);
+	int (*get_fds)(int *fds);
 	int (*set_volume)(int l, int r);
 	int (*get_volume)(int *l, int *r);
 	int (*set_option)(int key, const char *val);
