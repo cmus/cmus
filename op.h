@@ -33,6 +33,8 @@ enum {
 	OP_ERROR_NOT_INITIALIZED,
 	/* function not supported */
 	OP_ERROR_NOT_SUPPORTED,
+	/* mixer not open */
+	OP_ERROR_NOT_OPEN,
 	/* plugin does not support the sample format */
 	OP_ERROR_SAMPLE_FORMAT,
 	/* plugin does not have this option */

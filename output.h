@@ -6,6 +6,7 @@
 #define _OUTPUT_H
 
 #include "mixer.h"
+#include "op.h"
 #include "sf.h"
 
 extern int volume_max;

@@ -298,7 +298,7 @@ int mixer_set_volume(int left, int right)
 	if (op == NULL)
 		return -OP_ERROR_NOT_INITIALIZED;
 	if (!op->mixer_open)
-		return -OP_ERROR_NOT_SUPPORTED;
+		return -OP_ERROR_NOT_OPEN;
 	return op->mixer_ops->set_volume(left, right);
 }
 
@@ -307,7 +307,7 @@ int mixer_read_volume(void)
 	if (op == NULL)
 		return -OP_ERROR_NOT_INITIALIZED;
 	if (!op->mixer_open)
-		return -OP_ERROR_NOT_SUPPORTED;
+		return -OP_ERROR_NOT_OPEN;
 	return op->mixer_ops->get_volume(&volume_l, &volume_r);
 }
 
@@ -318,7 +318,7 @@ int mixer_get_fds(int *fds)
 	if (!op->mixer_ops->get_fds)
 		return -OP_ERROR_NOT_SUPPORTED;
 	if (!op->mixer_open)
-		return -OP_ERROR_NOT_SUPPORTED;
+		return -OP_ERROR_NOT_OPEN;
 	return op->mixer_ops->get_fds(fds);
 }
 
@@ -427,6 +427,10 @@ char *op_get_error_msg(int rc, const char *arg)
 	case OP_ERROR_NOT_SUPPORTED:
 		snprintf(buffer, sizeof(buffer),
 				"%s: function not supported", arg);
+		break;
+	case OP_ERROR_NOT_OPEN:
+		snprintf(buffer, sizeof(buffer),
+				"%s: mixer is not open", arg);
 		break;
 	case OP_ERROR_SAMPLE_FORMAT:
 		snprintf(buffer, sizeof(buffer),
