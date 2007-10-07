@@ -43,6 +43,7 @@
 #include "keys.h"
 #include "debug.h"
 #include "help.h"
+#include "worker.h"
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -1787,23 +1788,11 @@ static void main_loop(void)
 	while (cmus_running) {
 		fd_set set;
 		struct timeval tv;
+		int poll_mixer = 0;
 		int i, nr_fds = 0;
 		int fds[NR_MIXER_FDS];
 
 		update();
-
-		FD_ZERO(&set);
-		FD_SET(0, &set);
-		FD_SET(server_socket, &set);
-		if (!soft_vol) {
-			nr_fds = mixer_get_fds(fds);
-			for (i = 0; i < nr_fds; i++) {
-				BUG_ON(fds[i] <= 0);
-				FD_SET(fds[i], &set);
-				if (fds[i] > fd_high)
-					fd_high = fds[i];
-			}
-		}
 
 		/* Timeout must be so small that screen updates seem instant.
 		 * Only affects changes done in other threads (worker, player).
@@ -1814,8 +1803,53 @@ static void main_loop(void)
 		 * The timeout is accuracy of player position.
 		 */
 		tv.tv_sec = 0;
-		tv.tv_usec = 100e3;
-		rc = select(fd_high + 1, &set, NULL, NULL, &tv);
+		tv.tv_usec = 0;
+
+		player_info_lock();
+		if (player_info.status == PLAYER_STATUS_PLAYING) {
+			// player position updates need to be fast
+			tv.tv_usec = 100e3;
+		}
+		player_info_unlock();
+
+		if (!tv.tv_usec && worker_has_job(JOB_TYPE_ANY)) {
+			// playlist is loading. screen needs to be updated
+			tv.tv_usec = 250e3;
+		}
+
+		FD_ZERO(&set);
+		FD_SET(0, &set);
+		FD_SET(server_socket, &set);
+		if (!soft_vol) {
+			nr_fds = mixer_get_fds(fds);
+			if (nr_fds == -OP_ERROR_NOT_SUPPORTED) {
+				// mixer has no pollable file descriptors
+				poll_mixer = 1;
+				if (!tv.tv_usec)
+					tv.tv_usec = 500e3;
+			}
+			for (i = 0; i < nr_fds; i++) {
+				BUG_ON(fds[i] <= 0);
+				FD_SET(fds[i], &set);
+				if (fds[i] > fd_high)
+					fd_high = fds[i];
+			}
+		}
+
+		if (tv.tv_usec) {
+			rc = select(fd_high + 1, &set, NULL, NULL, &tv);
+		} else {
+			rc = select(fd_high + 1, &set, NULL, NULL, NULL);
+		}
+		if (poll_mixer) {
+			int ol = volume_l;
+			int or = volume_r;
+
+			mixer_read_volume();
+			if (ol != volume_l || or != volume_r)
+				update_statusline();
+
+		}
 		if (rc <= 0) {
 			if (ctrl_c_pressed) {
 				handle_ch(0x03);
