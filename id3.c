@@ -224,6 +224,7 @@ const char * const id3_key_names[NUM_ID3_KEYS] = {
 	"albumartist",
 	"artistsort",
 	"albumartistsort",
+	"compilation",
 	"replaygain_track_gain",
 	"replaygain_track_peak",
 	"replaygain_album_gain",
@@ -526,6 +527,7 @@ static struct {
 	{ "TRCK", ID3_TRACK },
 	{ "TPE2", ID3_ALBUMARTIST },
 	{ "XSOP", ID3_ARTISTSORT }, // obsolete
+	{ "TCMP", ID3_COMPILATION },
 
 	/* obsolete frames (2.2.0) */
 	{ "TP1",  ID3_ARTIST },
@@ -660,6 +662,8 @@ static void v2_add_frame(struct id3tag *id3, struct v2_frame_header *fh, const c
 			key = ID3_ALBUMARTIST;
 		if (!strcasecmp(out, "albumartistsort"))
 			key = ID3_ALBUMARTISTSORT;
+		if (!strcasecmp(out, "compilation"))
+			key = ID3_COMPILATION;
 
 		size = strlen(out) + 1;
 		free(out);
