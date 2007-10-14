@@ -348,22 +348,10 @@ static int aac_seek(struct input_plugin_data *ip_data, double offset)
 	return -IP_ERROR_FUNCTION_NOT_SUPPORTED;
 }
 
-/* copied from mad.c */
-static void get_comment(struct keyval *c, int *iptr, struct id3tag *id3, enum id3_key key, const char *key_name)
-{
-	int i = *iptr;
-
-	c[i].val = id3_get_comment(id3, key);
-	if (c[i].val == NULL)
-		return;
-	c[i].key = xstrdup(key_name);
-	*iptr = i + 1;
-}
-
-/* based on read_comments from mad.c */
 static int aac_read_comments(struct input_plugin_data *ip_data,
 		struct keyval **comments)
 {
+	GROWING_KEYVALS(c);
 	struct id3tag id3;
 	int rc, fd, i;
 
@@ -375,23 +363,20 @@ static int aac_read_comments(struct input_plugin_data *ip_data,
 	rc = id3_read_tags(&id3, fd, ID3_V1 | ID3_V2);
 	if (rc == -1) {
 		d_print("error: %s\n", strerror(errno));
-		*comments = xnew0(struct keyval, 1);
 		goto out;
 	}
 
-	*comments = xnew0(struct keyval, NUM_ID3_KEYS + 1);
-	i = 0;
-	get_comment(*comments, &i, &id3, ID3_ARTIST, "artist");
-	get_comment(*comments, &i, &id3, ID3_ALBUM, "album");
-	get_comment(*comments, &i, &id3, ID3_TITLE, "title");
-	get_comment(*comments, &i, &id3, ID3_DATE, "date");
-	get_comment(*comments, &i, &id3, ID3_GENRE, "genre");
-	get_comment(*comments, &i, &id3, ID3_DISC, "discnumber");
-	get_comment(*comments, &i, &id3, ID3_TRACK, "tracknumber");
-	get_comment(*comments, &i, &id3, ID3_ALBUMARTIST, "albumartist");
+	for (i = 0; i < NUM_ID3_KEYS; i++) {
+		char *val = id3_get_comment(&id3, i);
+
+		if (val)
+			comments_add(&c, id3_key_names[i], val);
+	}
 out:
 	close(fd);
 	id3_free(&id3);
+	comments_terminate(&c);
+	*comments = c.comments;
 	return 0;
 }
 
