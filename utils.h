@@ -26,6 +26,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <time.h>
+#include <inttypes.h>
 
 static inline int min(int a, int b)
 {
@@ -107,6 +108,20 @@ static inline void ms_sleep(int ms)
 static inline int is_url(const char *name)
 {
 	return strncmp(name, "http://", 7) == 0;
+}
+
+static inline uint32_t read_le32(const char *buf)
+{
+	const unsigned char *b = (const unsigned char *)buf;
+
+	return b[0] | (b[1] << 8) | (b[2] << 16) | (b[3] << 24);
+}
+
+static inline uint16_t read_le16(const char *buf)
+{
+	const unsigned char *b = (const unsigned char *)buf;
+
+	return b[0] | (b[1] << 8);
 }
 
 #endif

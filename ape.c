@@ -8,8 +8,8 @@
 #include "ape.h"
 #include "file.h"
 #include "xmalloc.h"
+#include "utils.h"
 
-#include <inttypes.h>
 #include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -22,13 +22,6 @@ static const char preamble[PREAMBLE_SIZE] = { 'A', 'P', 'E', 'T', 'A', 'G', 'E',
 
 /* NOTE: not sizeof(struct ape_header)! */
 #define HEADER_SIZE (32)
-
-static inline uint32_t get_le32(const char *buf)
-{
-	const unsigned char *b = (const unsigned char *)buf;
-
-	return b[0] | (b[1] << 8) | (b[2] << 16) | (b[3] << 24);
-}
 
 /* returns position of APE header or -1 if not found */
 static int find_ape_tag_slow(int fd)
@@ -72,10 +65,10 @@ static int ape_parse_header(const char *buf, struct ape_header *h)
 	if (memcmp(buf, preamble, PREAMBLE_SIZE))
 		return 0;
 
-	h->version = get_le32(buf + 8);
-	h->size = get_le32(buf + 12);
-	h->count = get_le32(buf + 16);
-	h->flags = get_le32(buf + 20);
+	h->version = read_le32(buf + 8);
+	h->size = read_le32(buf + 12);
+	h->count = read_le32(buf + 16);
+	h->flags = read_le32(buf + 20);
 	return 1;
 }
 
@@ -131,8 +124,8 @@ static int ape_parse_one(const char *buf, int size, char **keyp, char **valp)
 		char *key, *val;
 		int max_key_len, key_len;
 
-		val_len = get_le32(buf + pos); pos += 4;
-		flags = get_le32(buf + pos); pos += 4;
+		val_len = read_le32(buf + pos); pos += 4;
+		flags = read_le32(buf + pos); pos += 4;
 
 		max_key_len = size - pos - val_len - 1;
 		if (max_key_len < 0) {

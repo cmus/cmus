@@ -21,6 +21,7 @@
 #include "file.h"
 #include "xmalloc.h"
 #include "debug.h"
+#include "utils.h"
 
 #include <string.h>
 #include <errno.h>
@@ -37,20 +38,6 @@ struct wav_private {
 	unsigned int sec_size;
 };
 
-static inline unsigned short read_u2(const char *buffer)
-{
-	const unsigned char *buf = (const unsigned char *)buffer;
-
-	return buf[0] + (buf[1] << 8);
-}
-
-static inline unsigned int read_u4(const char *buffer)
-{
-	const unsigned char *buf = (const unsigned char *)buffer;
-
-	return buf[0] + (buf[1] << 8) + (buf[2] << 16) + (buf[3] << 24);
-}
-
 static int read_chunk_header(int fd, const char *name, unsigned int *size)
 {
 	int rc;
@@ -61,7 +48,7 @@ static int read_chunk_header(int fd, const char *name, unsigned int *size)
 		return -IP_ERROR_ERRNO;
 	if (rc != 8)
 		return -IP_ERROR_FILE_FORMAT;
-	*size = read_u4(buf + 4);
+	*size = read_le32(buf + 4);
 	if (memcmp(buf, name, 4))
 		return -IP_ERROR_FILE_FORMAT;
 	return 0;
@@ -137,12 +124,12 @@ static int wav_open(struct input_plugin_data *ip_data)
 	{
 		int format_tag, channels, rate, bits;
 
-		format_tag = read_u2(fmt + 0);
-		channels = read_u2(fmt + 2);
-		rate = read_u4(fmt + 4);
+		format_tag = read_le16(fmt + 0);
+		channels = read_le16(fmt + 2);
+		rate = read_le32(fmt + 4);
 		/* 4 bytes, bytes per second */
 		/* 2 bytes, bytes per sample */
-		bits = read_u2(fmt + 14);
+		bits = read_le16(fmt + 14);
 		free(fmt);
 
 		if (format_tag != 1) {
