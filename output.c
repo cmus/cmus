@@ -315,10 +315,10 @@ int mixer_get_fds(int *fds)
 {
 	if (op == NULL)
 		return -OP_ERROR_NOT_INITIALIZED;
-	if (!op->mixer_ops->get_fds)
-		return -OP_ERROR_NOT_SUPPORTED;
 	if (!op->mixer_open)
 		return -OP_ERROR_NOT_OPEN;
+	if (!op->mixer_ops->get_fds)
+		return -OP_ERROR_NOT_SUPPORTED;
 	return op->mixer_ops->get_fds(fds);
 }
 
