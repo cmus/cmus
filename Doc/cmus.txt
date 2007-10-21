@@ -625,7 +625,7 @@ altformat_playlist [`Format String`]
 	Alternative format string for the list views (2-4).
 
 altformat_title [`Format String`]
-	Alternative format string for terminal tittle.  NOTE: not all
+	Alternative format string for terminal title.  NOTE: not all
 	terminals support changing window title.
 
 altformat_trackwin [`Format String`]
@@ -720,7 +720,7 @@ format_playlist [`Format String`]
 	Format string for the list views (2-4).
 
 format_title [`Format String`]
-	Format string for terminal tittle.
+	Format string for terminal title.
 
 	NOTE: not all terminals support changing window title.
 
