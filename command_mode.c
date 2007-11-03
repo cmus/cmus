@@ -1146,16 +1146,16 @@ err:
 	return -1;
 }
 
-static int calc_vol(int val, int old, int max, unsigned int flags)
+static int calc_vol(int val, int old, int max_vol, unsigned int flags)
 {
 	if (flags & VF_RELATIVE) {
 		if (flags & VF_PERCENTAGE)
-			val = scale_from_percentage(val, max);
+			val = scale_from_percentage(val, max_vol);
 		val += old;
 	} else if (flags & VF_PERCENTAGE) {
-		val = scale_from_percentage(val, max);
+		val = scale_from_percentage(val, max_vol);
 	}
-	return clamp(val, 0, max);
+	return clamp(val, 0, max_vol);
 }
 
 /*
