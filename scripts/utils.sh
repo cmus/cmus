@@ -113,7 +113,7 @@ tmp_file()
 # @name:  name of the variable
 get_var()
 {
-	eval echo \"\$${1}\"
+	eval echo '"$'${1}'"'
 }
 
 # set variable by name
