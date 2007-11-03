@@ -426,13 +426,68 @@ try_compile()
 	return $?
 }
 
+# @contents:  file contents to compile and link
+# @flags:     extra flags (optional)
+try_compile_link()
+{
+	argc try_compile $# 1
+	case $__check_lang in
+	c)
+		__src=`tmp_file prog.c`
+		__exe=`tmp_file prog`
+		echo "$1" > $__src || exit 1
+		shift
+		__cmd="$CC $CFLAGS $LDFLAGS $@ $__src -o $__exe"
+		$CC $CFLAGS $LDFLAGS "$@" $__src -o $__exe 2>/dev/null
+		;;
+	cxx)
+		__src=`tmp_file prog.cc`
+		__exe=`tmp_file prog`
+		echo "$1" > $__src || exit 1
+		shift
+		__cmd="$CXX $CXXFLAGS $CXXLDFLAGS $@ $__src -o $__exe"
+		$CXX $CXXFLAGS $CXXLDFLAGS "$@" $__src -o $__exe 2>/dev/null
+		;;
+	esac
+	return $?
+}
+
+# optionally used after try_compile or try_compile_link
+__compile_failed()
+{
+	warn
+	warn "Failed to compile simple program:"
+	warn "---"
+	cat $__src >&2
+	warn "---"
+	warn "Command: $__cmd"
+	case $__check_lang in
+	c)
+		warn "Make sure your CC and CFLAGS are sane."
+		;;
+	cxx)
+		warn "Make sure your CXX and CXXFLAGS are sane."
+		;;
+	esac
+	exit 1
+}
+
 # tries to link against a lib
 # 
 # @ldadd:  something like -L/usr/X11R6/lib -lX11
 try_link()
 {
-	try_compile "int main(int argc, char *argv[]) { return 0; }" || __compile_failed
-	__try_link "$@"
+	try_compile_link "int main(int argc, char *argv[]) { return 0; }" "$@"
+	return $?
+}
+
+# compile and run
+#
+# @code:  simple program code to run
+run_code()
+{
+	try_compile_link "$1" || __compile_failed
+	./$__exe
 	return $?
 }
 
@@ -442,14 +497,12 @@ try_link()
 check_endianness()
 {
 	msg_checking "byte order"
-	try_compile "
+	if run_code "
 int main(int argc, char *argv[])
 {
 	unsigned int i = 1;
 	return *(char *)&i;
-}" || __compile_failed
-	__try_link || __link_failed
-	if ./$__exe
+}"
 	then
 		msg_result "big-endian"
 		WORDS_BIGENDIAN=y
