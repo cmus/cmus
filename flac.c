@@ -105,9 +105,7 @@ static T(ReadStatus) read_cb(const Dec *dec, unsigned char *buf, unsigned *size,
 		return E(READ_STATUS_ERROR);
 #endif
 	}
-	if (*size != rc) {
-		d_print("%d != %d\n", rc, *size);
-	}
+
 	priv->pos += rc;
 	*size = rc;
 	if (rc == 0) {
