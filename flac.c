@@ -61,7 +61,11 @@ struct flac_private {
 	unsigned int ignore_next_write : 1;
 };
 
+#ifdef FLAC_NEW_API
+static T(ReadStatus) read_cb(const Dec *dec, unsigned char *buf, size_t *size, void *data)
+#else
 static T(ReadStatus) read_cb(const Dec *dec, unsigned char *buf, unsigned *size, void *data)
+#endif
 {
 	struct input_plugin_data *ip_data = data;
 	struct flac_private *priv = ip_data->private;
