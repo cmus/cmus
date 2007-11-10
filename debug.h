@@ -62,7 +62,7 @@ static inline void timer_print(const char *what, uint64_t usec)
 	uint64_t a = usec / 1e6;
 	uint64_t b = usec - a * 1e6;
 
-	__debug_print("TIMER", "%s: %11Lu.%06Lu\n", what, a, b);
+	__debug_print("TIMER", "%s: %11u.%06u\n", what, (unsigned int)a, (unsigned int)b);
 }
 
 #endif
