@@ -182,6 +182,7 @@ void search_mode_ch(uchar ch)
 	case 0x15:
 		cmdline_backspace_to_bol();
 		break;
+	case 0x08: // ^H
 	case 127:
 		backspace();
 		break;
