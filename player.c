@@ -158,9 +158,18 @@ static const unsigned short soft_vol_db[100] = {
 	0xcdf1, 0xd71a, 0xe59c, 0xefd3
 };
 
+static inline unsigned short swap16(unsigned short u)
+{
+	return (u << 8) | (u >> 8);
+}
+
 static inline void scale_sample(signed short *buf, int i, int vol)
 {
+#ifdef WORDS_BIGENDIAN
+	int sample = (short)swap16(buf[i]);
+#else
 	int sample = buf[i];
+#endif
 
 	if (sample < 0) {
 		sample = (sample * vol - SOFT_VOL_SCALE / 2) / SOFT_VOL_SCALE;
@@ -171,7 +180,11 @@ static inline void scale_sample(signed short *buf, int i, int vol)
 		if (sample > 32767)
 			sample = 32767;
 	}
+#ifdef WORDS_BIGENDIAN
+	buf[i] = swap16(sample);
+#else
 	buf[i] = sample;
+#endif
 }
 
 static void scale_samples(char *buffer, unsigned int *countp)
