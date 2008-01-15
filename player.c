@@ -224,9 +224,18 @@ static void scale_samples(char *buffer, unsigned int *countp)
 	l *= replaygain_scale;
 	r *= replaygain_scale;
 
-	for (i = 0; i < count / 4; i++) {
-		scale_sample(buf, i * 2, l);
-		scale_sample(buf, i * 2 + 1, r);
+	/* avoid underflowing -32768 to 32767 when scale is 65536 */
+	if (l != SOFT_VOL_SCALE && r != SOFT_VOL_SCALE) {
+		for (i = 0; i < count / 4; i++) {
+			scale_sample(buf, i * 2, l);
+			scale_sample(buf, i * 2 + 1, r);
+		}
+	} else if (l != SOFT_VOL_SCALE) {
+		for (i = 0; i < count / 4; i++)
+			scale_sample(buf, i * 2, l);
+	} else if (r != SOFT_VOL_SCALE) {
+		for (i = 0; i < count / 4; i++)
+			scale_sample(buf, i * 2 + 1, r);
 	}
 }
 
