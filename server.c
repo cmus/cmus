@@ -21,6 +21,7 @@
 #include "prog.h"
 #include "command_mode.h"
 #include "options.h"
+#include "xmalloc.h"
 #include "debug.h"
 
 #include <unistd.h>
@@ -34,8 +35,11 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <fcntl.h>
 
 int server_socket;
+LIST_HEAD(client_head);
 
 static union {
 	struct sockaddr sa;
@@ -45,7 +49,7 @@ static union {
 
 #define MAX_CLIENTS 10
 
-static void read_commands(int fd)
+static void read_commands(struct client *client)
 {
 	char buf[1024];
 	int pos = 0;
@@ -54,13 +58,16 @@ static void read_commands(int fd)
 	while (1) {
 		int rc, s, i;
 
-		rc = read(fd, buf + pos, sizeof(buf) - pos);
+		rc = read(client->fd, buf + pos, sizeof(buf) - pos);
 		if (rc == -1) {
-			break;
+			if (errno == EINTR)
+				continue;
+			if (errno == EAGAIN)
+				return;
+			goto close;
 		}
-		if (rc == 0) {
-			break;
-		}
+		if (rc == 0)
+			goto close;
 		pos += rc;
 
 		s = 0;
@@ -77,12 +84,12 @@ static void read_commands(int fd)
 			if (!authenticated) {
 				if (!server_password) {
 					d_print("password is unset, tcp/ip disabled\n");
-					return;
+					goto close;
 				}
 				authenticated = !strcmp(line, server_password);
 				if (!authenticated) {
 					d_print("authentication failed\n");
-					return;
+					goto close;
 				}
 				continue;
 			}
@@ -91,26 +98,37 @@ static void read_commands(int fd)
 		memmove(buf, buf + s, pos - s);
 		pos -= s;
 	}
+	return;
+close:
+	close(client->fd);
+	list_del(&client->node);
+	free(client);
 }
 
-int server_serve(void)
+void server_accept(void)
 {
+	struct client *client;
 	struct sockaddr saddr;
 	socklen_t saddr_size = sizeof(saddr);
 	int fd;
 
 	fd = accept(server_socket, &saddr, &saddr_size);
-	if (fd == -1) {
-		return -1;
-	}
+	if (fd == -1)
+		return;
 
+	fcntl(fd, F_SETFL, O_NONBLOCK);
+
+	client = xnew(struct client, 1);
+	client->fd = fd;
+	list_add_tail(&client->node, &client_head);
+}
+
+void server_serve(struct client *client)
+{
 	/* unix connection is secure, other insecure */
 	run_only_safe_commands = addr.sa.sa_family != AF_UNIX;
-	read_commands(fd);
+	read_commands(client);
 	run_only_safe_commands = 0;
-
-	close(fd);
-	return 0;
 }
 
 static void gethostbyname_failed(void)

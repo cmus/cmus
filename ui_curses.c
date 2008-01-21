@@ -1791,6 +1791,8 @@ static void main_loop(void)
 		int poll_mixer = 0;
 		int i, nr_fds = 0;
 		int fds[NR_MIXER_FDS];
+		struct list_head *item;
+		struct client *client;
 
 		update();
 
@@ -1820,6 +1822,11 @@ static void main_loop(void)
 		FD_ZERO(&set);
 		FD_SET(0, &set);
 		FD_SET(server_socket, &set);
+		list_for_each_entry(client, &client_head, node) {
+			FD_SET(client->fd, &set);
+			if (client->fd > fd_high)
+				fd_high = client->fd;
+		}
 		if (!soft_vol) {
 			nr_fds = mixer_get_fds(fds);
 			if (nr_fds == -OP_ERROR_NOT_SUPPORTED) {
@@ -1866,7 +1873,18 @@ static void main_loop(void)
 			}
 		}
 		if (FD_ISSET(server_socket, &set))
-			server_serve();
+			server_accept();
+
+		// server_serve() can remove client from the list
+		item = client_head.next;
+		while (item != &client_head) {
+			struct list_head *next = item->next;
+			client = container_of(item, struct client, node);
+			if (FD_ISSET(client->fd, &set))
+				server_serve(client);
+			item = next;
+		}
+
 		if (FD_ISSET(0, &set)) {
 			if (using_utf8) {
 				u_getch();
