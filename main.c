@@ -190,6 +190,7 @@ enum flags {
 	FLAG_SHUFFLE,
 	FLAG_VOLUME,
 	FLAG_SEEK,
+	FLAG_QUERY,
 
 	FLAG_LIBRARY,
 	FLAG_PLAYLIST,
@@ -216,6 +217,7 @@ static struct option options[NR_FLAGS + 1] = {
 	{ 'S', "shuffle", 0 },
 	{ 'v', "volume", 1 },
 	{ 'k', "seek", 1 },
+	{ 'Q', "query", 0 },
 
 	{ 'l', "library", 0 },
 	{ 'P', "playlist", 0 },
@@ -252,6 +254,7 @@ static const char *usage =
 "  -S, --shuffle        toggle shuffle\n"
 "  -v, --volume VOL     vol VOL\n"
 "  -k, --seek SEEK      seek SEEK\n"
+"  -Q, --query          get player status (same as -C status)\n"
 "\n"
 "  -l, --library        modify library instead of playlist\n"
 "  -P, --playlist       modify playlist (default)\n"
@@ -274,6 +277,7 @@ int main(int argc, char *argv[])
 	char *play_file = NULL;
 	char *volume = NULL;
 	char *seek = NULL;
+	int query = 0;
 	int i, nr_cmds = 0;
 	int context = 'p';
 
@@ -307,6 +311,10 @@ int main(int argc, char *argv[])
 			break;
 		case FLAG_SEEK:
 			seek = arg;
+			nr_cmds++;
+			break;
+		case FLAG_QUERY:
+			query = 1;
 			nr_cmds++;
 			break;
 		case FLAG_FILE:
@@ -400,5 +408,7 @@ int main(int argc, char *argv[])
 		send_cmd("vol %s\n", volume);
 	if (seek)
 		send_cmd("seek %s\n", seek);
+	if (query)
+		send_cmd("status\n");
 	return 0;
 }
