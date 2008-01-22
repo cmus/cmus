@@ -22,6 +22,9 @@
 #include "command_mode.h"
 #include "options.h"
 #include "xmalloc.h"
+#include "player.h"
+#include "file.h"
+#include "compiler.h"
 #include "debug.h"
 
 #include <unistd.h>
@@ -37,6 +40,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <stdarg.h>
 
 int server_socket;
 LIST_HEAD(client_head);
@@ -48,6 +52,106 @@ static union {
 } addr;
 
 #define MAX_CLIENTS 10
+
+static void buf_grow(char **bufp, size_t *allocp, size_t *lenp, size_t n)
+{
+	size_t alloc = *lenp + n + 1;
+
+	if (alloc > *allocp) {
+		size_t align = 4096;
+		alloc = (alloc + align) & ~(align - 1);
+		*bufp = xrealloc(*bufp, alloc);
+		*allocp = alloc;
+	}
+}
+
+__FORMAT(4, 5)
+static void buf_addf(char **bufp, size_t *allocp, size_t *lenp, const char *fmt, ...)
+{
+	char *buf = *bufp;
+	size_t alloc = *allocp;
+	size_t len = *lenp;
+	va_list ap;
+	int slen;
+
+	va_start(ap, fmt);
+	slen = vsnprintf(buf + len, alloc - len, fmt, ap);
+	va_end(ap);
+
+	if (slen > alloc - len - 1) {
+		buf_grow(&buf, &alloc, &len, slen);
+		*bufp = buf;
+		*allocp = alloc;
+
+		va_start(ap, fmt);
+		slen = vsnprintf(buf + len, alloc - len, fmt, ap);
+		va_end(ap);
+	}
+
+	*lenp = len + slen;
+}
+
+static const char *escape(const char *str)
+{
+	static char *buf = NULL;
+	static size_t alloc = 0;
+	size_t len = strlen(str);
+	size_t need = len * 2 + 1;
+	int s, d;
+
+	if (need > alloc) {
+		alloc = (need + 16) & ~(16 - 1);
+		buf = xrealloc(buf, alloc);
+	}
+
+	d = 0;
+	for (s = 0; str[s]; s++) {
+		if (str[s] == '\\') {
+			buf[d++] = '\\';
+			buf[d++] = '\\';
+			continue;
+		}
+		if (str[s] == '\n') {
+			buf[d++] = '\\';
+			buf[d++] = 'n';
+			continue;
+		}
+		buf[d++] = str[s];
+	}
+	buf[d] = 0;
+	return buf;
+}
+
+static int cmd_status(struct client *client)
+{
+	const char *status[] = { "stopped", "playing", "paused" };
+	const struct track_info *ti;
+	char *buf = NULL;
+	size_t alloc = 0;
+	size_t len = 0;
+	int i, ret;
+
+	buf_grow(&buf, &alloc, &len, 0);
+
+	player_info_lock();
+	buf_addf(&buf, &alloc, &len, "status %s\n", status[player_info.status]);
+	ti = player_info.ti;
+	if (ti) {
+		buf_addf(&buf, &alloc, &len, "file %s\n", escape(ti->filename));
+		buf_addf(&buf, &alloc, &len, "duration %d\n", ti->duration);
+		buf_addf(&buf, &alloc, &len, "position %d\n", player_info.pos);
+		for (i = 0; ti->comments[i].key; i++)
+			buf_addf(&buf, &alloc, &len, "tag %s %s\n",
+					ti->comments[i].key,
+					escape(ti->comments[i].val));
+	}
+	buf_addf(&buf, &alloc, &len, "\n");
+	player_info_unlock();
+
+	ret = write_all(client->fd, buf, strlen(buf));
+	free(buf);
+	return ret;
+}
 
 static void read_commands(struct client *client)
 {
@@ -73,6 +177,7 @@ static void read_commands(struct client *client)
 		s = 0;
 		for (i = 0; i < pos; i++) {
 			const char *line;
+			int ret;
 
 			if (buf[i] != '\n')
 				continue;
@@ -93,7 +198,16 @@ static void read_commands(struct client *client)
 				}
 				continue;
 			}
-			run_command(line);
+			if (!strcmp(line, "status")) {
+				ret = cmd_status(client);
+			} else {
+				run_command(line);
+				ret = write_all(client->fd, "\n", 1);
+			}
+			if (ret < 0) {
+				d_print("write: %s\n", strerror(errno));
+				goto close;
+			}
 		}
 		memmove(buf, buf + s, pos - s);
 		pos -= s;
