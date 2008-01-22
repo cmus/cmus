@@ -1945,6 +1945,11 @@ static void init_curses(void)
 
 	sigemptyset(&act.sa_mask);
 	act.sa_flags = 0;
+	act.sa_handler = SIG_IGN;
+	sigaction(SIGPIPE, &act, NULL);
+
+	sigemptyset(&act.sa_mask);
+	act.sa_flags = 0;
 	act.sa_handler = sig_winch;
 	sigaction(SIGWINCH, &act, NULL);
 
