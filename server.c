@@ -177,6 +177,7 @@ static void read_commands(struct client *client)
 		s = 0;
 		for (i = 0; i < pos; i++) {
 			const char *line;
+			char *cmd, *arg;
 			int ret;
 
 			if (buf[i] != '\n')
@@ -198,10 +199,18 @@ static void read_commands(struct client *client)
 				}
 				continue;
 			}
-			if (!strcmp(line, "status")) {
-				ret = cmd_status(client);
+
+			if (parse_command(line, &cmd, &arg)) {
+				if (!strcmp(cmd, "status")) {
+					ret = cmd_status(client);
+				} else {
+					run_parsed_command(cmd, arg);
+					ret = write_all(client->fd, "\n", 1);
+				}
+				free(cmd);
+				free(arg);
 			} else {
-				run_command(line);
+				// don't hang cmus-remote
 				ret = write_all(client->fd, "\n", 1);
 			}
 			if (ret < 0) {
