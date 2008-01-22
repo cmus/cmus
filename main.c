@@ -43,10 +43,45 @@ static void gethostbyname_failed(void)
 	die("gethostbyname: %s\n", error);
 }
 
+static void read_answer(void)
+{
+	char buf[8192];
+	int got_nl = 0;
+	int len = 0;
+
+	while (1) {
+		int rc = read(sock, buf, sizeof(buf));
+
+		if (rc < 0) {
+			warn_errno("read");
+			return;
+		}
+		if (!rc)
+			die("unexpected EOF\n");
+
+		len += rc;
+
+		// Last line should be empty (i.e. read "\n" or "...\n\n").
+		// Write everything but the last \n to stdout.
+		if (got_nl && buf[0] == '\n')
+			return;
+		if (len == 1 && buf[0] == '\n')
+			return;
+		if (rc > 1 && buf[rc - 1] == '\n' && buf[rc - 2] == '\n') {
+			write_all(1, buf, rc - 1);
+			return;
+		}
+		got_nl = buf[rc - 1] == '\n';
+		write_all(1, buf, rc);
+	}
+}
+
 static void write_line(const char *line)
 {
 	if (write_all(sock, line, strlen(line)) == -1)
 		die_errno("write");
+
+	read_answer();
 }
 
 static void send_cmd(const char *format, ...)
