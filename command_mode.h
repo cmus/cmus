@@ -49,6 +49,8 @@ void command_mode_ch(uchar ch);
 void command_mode_key(int key);
 void commands_init(void);
 void commands_exit(void);
+int parse_command(const char *buf, char **cmdp, char **argp);
+void run_parsed_command(char *cmd, char *arg);
 void run_command(const char *buf);
 
 struct command *get_command(const char *str);

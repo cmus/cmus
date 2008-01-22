@@ -2520,12 +2520,8 @@ static void reset_tab_expansion(void)
 	arg_expand_cmd = -1;
 }
 
-int run_only_safe_commands;
-
-/* FIXME: parse all arguments */
-void run_command(const char *buf)
+int parse_command(const char *buf, char **cmdp, char **argp)
 {
-	char *cmd, *arg;
 	int cmd_start, cmd_end, cmd_len;
 	int arg_start, arg_end;
 	int i;
@@ -2535,7 +2531,7 @@ void run_command(const char *buf)
 		i++;
 
 	if (buf[i] == '#')
-		return;
+		return 0;
 
 	cmd_start = i;
 	while (buf[i] && buf[i] != ' ')
@@ -2550,15 +2546,24 @@ void run_command(const char *buf)
 
 	cmd_len = cmd_end - cmd_start;
 	if (cmd_len == 0)
-		return;
+		return 0;
 
-	cmd = xstrndup(buf + cmd_start, cmd_len);
+	*cmdp = xstrndup(buf + cmd_start, cmd_len);
 	if (arg_start == arg_end) {
-		arg = NULL;
+		*argp = NULL;
 	} else {
-		arg = xstrndup(buf + arg_start, arg_end - arg_start);
+		*argp = xstrndup(buf + arg_start, arg_end - arg_start);
 	}
-	i = 0;
+	return 1;
+}
+
+int run_only_safe_commands;
+
+void run_parsed_command(char *cmd, char *arg)
+{
+	int cmd_len = strlen(cmd);
+	int i = 0;
+
 	while (1) {
 		const struct command *c = &commands[i];
 
@@ -2570,7 +2575,7 @@ void run_command(const char *buf)
 			const char *next = commands[i + 1].name;
 			int exact = c->name[cmd_len] == 0;
 
-			if (!exact && next && strncmp(cmd, next, cmd_end - cmd_start) == 0) {
+			if (!exact && next && strncmp(cmd, next, cmd_len) == 0) {
 				error_msg("ambiguous command\n");
 				break;
 			}
@@ -2591,6 +2596,16 @@ void run_command(const char *buf)
 		}
 		i++;
 	}
+}
+
+void run_command(const char *buf)
+{
+	char *cmd, *arg;
+
+	if (!parse_command(buf, &cmd, &arg))
+		return;
+
+	run_parsed_command(cmd, arg);
 	free(arg);
 	free(cmd);
 }
