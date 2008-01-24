@@ -25,13 +25,11 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-static pthread_mutex_t track_db_mutex = CMUS_MUTEX_INITIALIZER;
-static struct track_db *track_db;
+pthread_mutex_t track_db_mutex = CMUS_MUTEX_INITIALIZER;
+struct track_db *track_db;
+
 static char **playable_exts;
 static const char * const playlist_exts[] = { "m3u", "pl", "pls", NULL };
-
-#define track_db_lock() cmus_mutex_lock(&track_db_mutex)
-#define track_db_unlock() cmus_mutex_unlock(&track_db_mutex)
 
 /* add (worker job) {{{ */
 

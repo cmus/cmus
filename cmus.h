@@ -2,6 +2,7 @@
 #define _CMUS_H
 
 #include "track_info.h"
+#include "locking.h"
 
 /*
  * these types are only used to determine what jobs we should cancel.
@@ -33,6 +34,12 @@ typedef int (*for_each_sel_ti_cb)(track_info_cb cb, void *data, int reverse);
 
 /* lib_add_track, pl_add_track, play_queue_append, play_queue_prepend */
 typedef void (*add_ti_cb)(struct track_info *);
+
+extern pthread_mutex_t track_db_mutex;
+extern struct track_db *track_db;
+
+#define track_db_lock() cmus_mutex_lock(&track_db_mutex)
+#define track_db_unlock() cmus_mutex_unlock(&track_db_mutex)
 
 int cmus_init(void);
 void cmus_exit(void);
