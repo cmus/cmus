@@ -15,22 +15,40 @@
 #include <unistd.h>
 #include <errno.h>
 
-static void add_url(add_ti_cb add, const char *filename)
-{
-	struct track_info *ti;
+static struct track_info *ti_buffer[32];
+static int ti_buffer_fill;
+static struct add_data *jd;
 
-	ti = track_info_url_new(filename);
+static void flush_ti_buffer(void)
+{
+	int i;
+
 	editable_lock();
-	add(ti);
+	for (i = 0; i < ti_buffer_fill; i++) {
+		jd->add(ti_buffer[i]);
+		track_info_unref(ti_buffer[i]);
+	}
 	editable_unlock();
-	track_info_unref(ti);
+	ti_buffer_fill = 0;
+}
+
+static void add_ti(struct track_info *ti)
+{
+	if (ti_buffer_fill == sizeof(ti_buffer) / sizeof(ti_buffer[0]))
+		flush_ti_buffer();
+	ti_buffer[ti_buffer_fill++] = ti;
+}
+
+static void add_url(const char *filename)
+{
+	add_ti(track_info_url_new(filename));
 }
 
 /* add file to the playlist
  *
  * @filename: absolute filename with extraneous slashes stripped
  */
-static void add_file(add_ti_cb add, const char *filename)
+static void add_file(const char *filename)
 {
 	struct track_info *ti;
 
@@ -38,13 +56,8 @@ static void add_file(add_ti_cb add, const char *filename)
 	ti = track_db_get_track(track_db, filename);
 	track_db_unlock();
 
-	if (ti == NULL)
-		return;
-
-	editable_lock();
-	add(ti);
-	editable_unlock();
-	track_info_unref(ti);
+	if (ti)
+		add_ti(ti);
 }
 
 static int dir_entry_cmp(const void *ap, const void *bp)
@@ -75,7 +88,7 @@ static int points_within(const char *target, const char *root)
 	return target[rlen] == '/' || !target[rlen];
 }
 
-static void do_add_dir(add_ti_cb add, const char *dirname, const char *root)
+static void do_add_dir(const char *dirname, const char *root)
 {
 	struct directory dir;
 	struct dir_entry **ents;
@@ -121,7 +134,7 @@ static void do_add_dir(add_ti_cb add, const char *dirname, const char *root)
 	}
 	dir_close(&dir);
 
-	if (add == play_queue_prepend) {
+	if (jd->add == play_queue_prepend) {
 		ptr_array_sort(&array, dir_entry_cmp_reverse);
 	} else {
 		ptr_array_sort(&array, dir_entry_cmp);
@@ -137,9 +150,9 @@ static void do_add_dir(add_ti_cb add, const char *dirname, const char *root)
 
 			memcpy(dir.path + dir.len, ents[i]->name, len + 1);
 			if (S_ISDIR(ents[i]->mode)) {
-				do_add_dir(add, dir.path, root);
+				do_add_dir(dir.path, root);
 			} else {
-				add_file(add, dir.path);
+				add_file(dir.path);
 			}
 		}
 		free(ents[i]);
@@ -147,27 +160,25 @@ static void do_add_dir(add_ti_cb add, const char *dirname, const char *root)
 	free(ents);
 }
 
-static void add_dir(add_ti_cb add, const char *dirname)
+static void add_dir(const char *dirname)
 {
-	do_add_dir(add, dirname, dirname);
+	do_add_dir(dirname, dirname);
 }
 
 static int handle_line(void *data, const char *line)
 {
-	add_ti_cb add = data;
-
 	if (worker_cancelling())
 		return 1;
 
 	if (is_url(line)) {
-		add_url(add, line);
+		add_url(line);
 	} else {
-		add_file(add, line);
+		add_file(line);
 	}
 	return 0;
 }
 
-static void add_pl(add_ti_cb add, const char *filename)
+static void add_pl(const char *filename)
 {
 	char *buf;
 	int size, reverse;
@@ -178,41 +189,42 @@ static void add_pl(add_ti_cb add, const char *filename)
 
 	if (buf) {
 		/* beautiful hack */
-		reverse = add == play_queue_prepend;
+		reverse = jd->add == play_queue_prepend;
 
-		cmus_playlist_for_each(buf, size, reverse, handle_line, add);
+		cmus_playlist_for_each(buf, size, reverse, handle_line, NULL);
 		munmap(buf, size);
 	}
 }
 
 void do_add_job(void *data)
 {
-	struct add_data *jd = data;
-
+	jd = data;
 	switch (jd->type) {
 	case FILE_TYPE_URL:
-		add_url(jd->add, jd->name);
+		add_url(jd->name);
 		break;
 	case FILE_TYPE_PL:
-		add_pl(jd->add, jd->name);
+		add_pl(jd->name);
 		break;
 	case FILE_TYPE_DIR:
-		add_dir(jd->add, jd->name);
+		add_dir(jd->name);
 		break;
 	case FILE_TYPE_FILE:
-		add_file(jd->add, jd->name);
+		add_file(jd->name);
 		break;
 	case FILE_TYPE_INVALID:
 		break;
 	}
+	if (ti_buffer_fill)
+		flush_ti_buffer();
 }
 
 void free_add_job(void *data)
 {
-	struct add_data *jd = data;
-
+	jd = data;
 	free(jd->name);
 	free(jd);
+	jd = NULL;
 }
 
 void do_update_job(void *data)
