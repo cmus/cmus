@@ -44,6 +44,15 @@ struct track_info *track_info_new(const char *filename)
 	return ti;
 }
 
+struct track_info *track_info_url_new(const char *url)
+{
+	struct track_info *ti = track_info_new(url);
+	ti->comments = xnew0(struct keyval, 1);
+	ti->duration = -1;
+	ti->mtime = -1;
+	return ti;
+}
+
 void track_info_ref(struct track_info *ti)
 {
 	BUG_ON(ti->ref < 1);

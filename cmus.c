@@ -41,15 +41,6 @@ struct add_data {
 	add_ti_cb add;
 };
 
-static struct track_info *track_info_url_new(const char *url)
-{
-	struct track_info *ti = track_info_new(url);
-	ti->comments = xnew0(struct keyval, 1);
-	ti->duration = -1;
-	ti->mtime = -1;
-	return ti;
-}
-
 static void add_url(add_ti_cb add, const char *filename)
 {
 	struct track_info *ti;
