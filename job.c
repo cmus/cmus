@@ -212,14 +212,14 @@ void do_add_job(void *data)
 	}
 	if (ti_buffer_fill)
 		flush_ti_buffer();
+	jd = NULL;
 }
 
 void free_add_job(void *data)
 {
-	jd = data;
-	free(jd->name);
-	free(jd);
-	jd = NULL;
+	struct add_data *d = data;
+	free(d->name);
+	free(d);
 }
 
 void do_update_job(void *data)
