@@ -88,7 +88,7 @@ static int points_within(const char *target, const char *root)
 	return target[rlen] == '/' || !target[rlen];
 }
 
-static void do_add_dir(const char *dirname, const char *root)
+static void add_dir(const char *dirname, const char *root)
 {
 	struct directory dir;
 	struct dir_entry **ents;
@@ -150,7 +150,7 @@ static void do_add_dir(const char *dirname, const char *root)
 
 			memcpy(dir.path + dir.len, ents[i]->name, len + 1);
 			if (S_ISDIR(ents[i]->mode)) {
-				do_add_dir(dir.path, root);
+				add_dir(dir.path, root);
 			} else {
 				add_file(dir.path);
 			}
@@ -158,11 +158,6 @@ static void do_add_dir(const char *dirname, const char *root)
 		free(ents[i]);
 	}
 	free(ents);
-}
-
-static void add_dir(const char *dirname)
-{
-	do_add_dir(dirname, dirname);
 }
 
 static int handle_line(void *data, const char *line)
@@ -207,7 +202,7 @@ void do_add_job(void *data)
 		add_pl(jd->name);
 		break;
 	case FILE_TYPE_DIR:
-		add_dir(jd->name);
+		add_dir(jd->name, jd->name);
 		break;
 	case FILE_TYPE_FILE:
 		add_file(jd->name);
