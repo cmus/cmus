@@ -230,19 +230,6 @@ void cmus_update_tis(struct track_info **tis, int nr)
 	worker_add_job(JOB_TYPE_LIB, do_update_job, free_update_job, data);
 }
 
-struct track_info *cmus_get_track_info(const char *name)
-{
-	struct track_info *ti;
-
-	if (is_url(name))
-		return track_info_url_new(name);
-
-	track_db_lock();
-	ti = track_db_get_track(track_db, name);
-	track_db_unlock();
-	return ti;
-}
-
 static const char *get_ext(const char *filename)
 {
 	const char *ext = strrchr(filename, '.');
