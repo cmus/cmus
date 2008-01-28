@@ -37,13 +37,12 @@ char *xstrndup(const char *str, size_t n)
 	int len;
 	char *s;
 
-	len = strlen(str);
-	if (n > len)
-		n = len;
-	s = malloc(n + 1);
+	for (len = 0; len < n && str[len]; len++)
+		;
+	s = malloc(len + 1);
 	if (unlikely(s == NULL))
 		malloc_fail();
-	memcpy(s, str, n);
-	s[n] = 0;
+	memcpy(s, str, len);
+	s[len] = 0;
 	return s;
 }
