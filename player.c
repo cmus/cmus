@@ -1195,36 +1195,6 @@ int player_get_buffer_chunks(void)
 	return buffer_nr_chunks;
 }
 
-int player_get_fileinfo(const char *filename, int *duration,
-		struct keyval **comments)
-{
-	struct input_plugin *plug;
-	int rc;
-
-	*comments = NULL;
-	*duration = -1;
-	plug = ip_new(filename);
-	if (ip_is_remote(plug)) {
-		*comments = xnew0(struct keyval, 1);
-		ip_delete(plug);
-		return 0;
-	}
-	rc = ip_open(plug);
-	if (rc) {
-		int save = errno;
-
-		ip_delete(plug);
-		errno = save;
-		if (rc != -1)
-			rc = -PLAYER_ERROR_NOT_SUPPORTED;
-		return rc;
-	}
-	*duration = ip_duration(plug);
-	rc = ip_read_comments(plug, comments);
-	ip_delete(plug);
-	return rc;
-}
-
 void player_set_soft_volume(int l, int r)
 {
 	consumer_lock();

@@ -1,6 +1,6 @@
 #include "job.h"
 #include "worker.h"
-#include "track_db.h"
+#include "cache.h"
 #include "xmalloc.h"
 #include "debug.h"
 #include "load_dir.h"
@@ -10,6 +10,7 @@
 #include "lib.h"
 #include "utils.h"
 #include "file.h"
+#include "cache.h"
 
 #include <string.h>
 #include <unistd.h>
@@ -52,9 +53,9 @@ static void add_file(const char *filename)
 {
 	struct track_info *ti;
 
-	track_db_lock();
-	ti = track_db_get_track(track_db, filename);
-	track_db_unlock();
+	cache_lock();
+	ti = cache_get_ti(filename);
+	cache_unlock();
 
 	if (ti)
 		add_ti(ti);
@@ -230,20 +231,25 @@ void do_update_job(void *data)
 	for (i = 0; i < d->used; i++) {
 		struct track_info *ti = d->ti[i];
 		struct stat s;
+		int rc;
 
 		/* stat follows symlinks, lstat does not */
-		if (stat(ti->filename, &s) == -1) {
-			d_print("removing dead file %s\n", ti->filename);
-			editable_lock();
-			lib_remove(ti);
-			editable_unlock();
-		} else if (ti->mtime != s.st_mtime) {
-			d_print("mtime changed: %s\n", ti->filename);
+		rc = stat(ti->filename, &s);
+		if (rc || ti->mtime != s.st_mtime) {
 			editable_lock();
 			lib_remove(ti);
 			editable_unlock();
 
-			cmus_add(lib_add_track, ti->filename, FILE_TYPE_FILE, JOB_TYPE_LIB);
+			cache_lock();
+			cache_remove_ti(ti);
+			cache_unlock();
+
+			if (rc) {
+				d_print("removing dead file %s\n", ti->filename);
+			} else {
+				d_print("mtime changed: %s\n", ti->filename);
+				cmus_add(lib_add_track, ti->filename, FILE_TYPE_FILE, JOB_TYPE_LIB);
+			}
 		}
 		track_info_unref(ti);
 	}

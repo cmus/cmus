@@ -24,6 +24,10 @@
 
 struct track_info {
 	struct keyval *comments;
+
+	// next track_info in the hash table (cache.c)
+	struct track_info *next;
+
 	time_t mtime;
 	int duration;
 	int ref;

@@ -6,7 +6,7 @@
 #include "input.h"
 #include "play_queue.h"
 #include "worker.h"
-#include "track_db.h"
+#include "cache.h"
 #include "misc.h"
 #include "file.h"
 #include "utils.h"
@@ -17,6 +17,7 @@
 #include "debug.h"
 #include "load_dir.h"
 #include "ui_curses.h"
+#include "cache.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -26,24 +27,14 @@
 #include <stdlib.h>
 #include <ctype.h>
 
-pthread_mutex_t track_db_mutex = CMUS_MUTEX_INITIALIZER;
-struct track_db *track_db;
-
 static char **playable_exts;
 static const char * const playlist_exts[] = { "m3u", "pl", "pls", NULL };
 
 int cmus_init(void)
 {
-	char *db_filename_base;
-
 	playable_exts = ip_get_supported_extensions();
-
-	db_filename_base = xstrjoin(cmus_config_dir, "/trackdb");
-	track_db = track_db_new(db_filename_base);
-	free(db_filename_base);
-
+	cache_init();
 	worker_init();
-
 	play_queue_init();
 	return 0;
 }
@@ -52,7 +43,7 @@ void cmus_exit(void)
 {
 	worker_remove_jobs(JOB_TYPE_ANY);
 	worker_exit();
-	if (track_db_close(track_db))
+	if (cache_close())
 		d_print("error: %s\n", strerror(errno));
 }
 
@@ -98,9 +89,9 @@ void cmus_play_file(const char *filename)
 	if (is_url(filename)) {
 		ti = track_info_url_new(filename);
 	} else {
-		track_db_lock();
-		ti = track_db_get_track(track_db, filename);
-		track_db_unlock();
+		cache_lock();
+		ti = cache_get_ti(filename);
+		cache_unlock();
 		if (!ti) {
 			error_msg("Couldn't get file information for %s\n", filename);
 			return;

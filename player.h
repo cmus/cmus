@@ -106,7 +106,6 @@ char *player_get_op(void);
 void player_set_buffer_chunks(unsigned int nr_chunks);
 int player_get_buffer_chunks(void);
 void player_set_buffer_seconds(unsigned int seconds);
-int player_get_fileinfo(const char *filename, int *duration, struct keyval **comments);
 
 void player_set_soft_volume(int l, int r);
 void player_set_soft_vol(int soft);
