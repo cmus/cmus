@@ -246,6 +246,25 @@ static int ti_filename_cmp(const void *a, const void *b)
 	return strcmp(ai->filename, bi->filename);
 }
 
+static struct track_info **get_track_infos(void)
+{
+	struct track_info **tis;
+	int i, c;
+
+	tis = xnew(struct track_info *, total);
+	c = 0;
+	for (i = 0; i < HASH_SIZE; i++) {
+		struct track_info *ti = hash_table[i];
+
+		while (ti) {
+			tis[c++] = ti;
+			ti = ti->next;
+		}
+	}
+	qsort(tis, total, sizeof(struct track_info *), ti_filename_cmp);
+	return tis;
+}
+
 struct growing_buffer {
 	char *buffer;
 	size_t alloc;
@@ -355,7 +374,7 @@ int cache_close(void)
 	GROWING_BUFFER(buf);
 	struct track_info **tis;
 	unsigned int offset;
-	int i, c, fd;
+	int i, fd;
 	char *tmp;
 
 	if (!new && !removed)
@@ -366,17 +385,7 @@ int cache_close(void)
 	if (fd < 0)
 		return -1;
 
-	tis = xnew(struct track_info *, total);
-	c = 0;
-	for (i = 0; i < HASH_SIZE; i++) {
-		struct track_info *ti = hash_table[i];
-
-		while (ti) {
-			tis[c++] = ti;
-			ti = ti->next;
-		}
-	}
-	qsort(tis, total, sizeof(struct track_info *), ti_filename_cmp);
+	tis = get_track_infos();
 
 	buf_resize(&buf, 64 * 1024);
 	buf_add(&buf, cache_header, sizeof(cache_header));
