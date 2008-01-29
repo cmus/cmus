@@ -48,16 +48,15 @@ static void *worker_loop(void *arg)
 				d_print("pthread_cond_wait: %s\n", strerror(rc));
 		} else {
 			struct list_head *item = worker_job_head.next;
-			uint64_t st, et;
+			uint64_t t;
 
 			list_del(item);
 			cur_job = container_of(item, struct worker_job, node);
 			worker_unlock();
 
-			timer_get(&st);
+			t = timer_get();
 			cur_job->job_cb(cur_job->data);
-			timer_get(&et);
-			timer_print("worker job", et - st);
+			timer_print("worker job", timer_get() - t);
 
 			worker_lock();
 			cur_job->free_cb(cur_job->data);

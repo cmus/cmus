@@ -36,9 +36,9 @@ void __debug_print(const char *function, const char *fmt, ...) __FORMAT(2, 3);
 
 #define d_print(...) do { } while (0)
 
-static inline void timer_get(uint64_t *usec)
+static inline uint64_t timer_get(void)
 {
-	*usec = 0;
+	return 0;
 }
 
 static inline void timer_print(const char *what, uint64_t usec)
@@ -49,12 +49,12 @@ static inline void timer_print(const char *what, uint64_t usec)
 
 #define d_print(...) __debug_print(__FUNCTION__, __VA_ARGS__)
 
-static inline void timer_get(uint64_t *usec)
+static inline uint64_t timer_get(void)
 {
 	struct timeval tv;
 
 	gettimeofday(&tv, NULL);
-	*usec = tv.tv_sec * 1e6L + tv.tv_usec;
+	return tv.tv_sec * 1e6L + tv.tv_usec;
 }
 
 static inline void timer_print(const char *what, uint64_t usec)
