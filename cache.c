@@ -55,9 +55,8 @@ static unsigned int filename_hash(const char *filename)
 	return hash;
 }
 
-static void add_ti(struct track_info *ti)
+static void add_ti(struct track_info *ti, unsigned int hash)
 {
-	unsigned int hash = filename_hash(ti->filename);
 	unsigned int pos = hash % HASH_SIZE;
 	struct track_info *next = hash_table[pos];
 
@@ -130,9 +129,8 @@ static struct track_info *cache_entry_to_ti(struct cache_entry *e)
 	return ti;
 }
 
-static struct track_info *lookup_cache_entry(const char *filename)
+static struct track_info *lookup_cache_entry(const char *filename, unsigned int hash)
 {
-	unsigned int hash = filename_hash(filename);
 	struct track_info *ti = hash_table[hash % HASH_SIZE];
 
 	while (ti) {
@@ -143,9 +141,9 @@ static struct track_info *lookup_cache_entry(const char *filename)
 	return NULL;
 }
 
-void cache_remove_ti(struct track_info *ti)
+static void do_cache_remove_ti(struct track_info *ti, unsigned int hash)
 {
-	unsigned int pos = filename_hash(ti->filename) % HASH_SIZE;
+	unsigned int pos = hash % HASH_SIZE;
 	struct track_info *t = hash_table[pos];
 	struct track_info *next, *prev = NULL;
 
@@ -165,6 +163,11 @@ void cache_remove_ti(struct track_info *ti)
 		prev = t;
 		t = next;
 	}
+}
+
+void cache_remove_ti(struct track_info *ti)
+{
+	do_cache_remove_ti(ti, filename_hash(ti->filename));
 }
 
 static int read_cache(void)
@@ -197,11 +200,13 @@ static int read_cache(void)
 	offset = sizeof(cache_header);
 	while (offset < size) {
 		struct cache_entry *e = (struct cache_entry *)(buf + offset);
+		struct track_info *ti;
 
 		if (!valid_cache_entry(e, size - offset))
 			goto corrupt;
 
-		add_ti(cache_entry_to_ti(e));
+		ti = cache_entry_to_ti(e);
+		add_ti(ti, filename_hash(ti->filename));
 		offset += ALIGN(e->size);
 	}
 	munmap(buf, size);
@@ -414,22 +419,23 @@ static struct track_info *ip_get_ti(const char *filename)
 
 struct track_info *cache_get_ti(const char *filename)
 {
+	unsigned int hash = filename_hash(filename);
 	time_t mtime = file_get_mtime(filename);
 	struct track_info *ti;
 
-	ti = lookup_cache_entry(filename);
+	ti = lookup_cache_entry(filename, hash);
 	if (ti) {
 		if (mtime < 0 || ti->mtime == mtime)
 			goto ref;
 
-		cache_remove_ti(ti);
+		do_cache_remove_ti(ti, hash);
 	}
 
 	ti = ip_get_ti(filename);
 	if (!ti)
 		return NULL;
 	ti->mtime = mtime;
-	add_ti(ti);
+	add_ti(ti, hash);
 	new++;
 ref:
 	track_info_ref(ti);
