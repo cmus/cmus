@@ -429,24 +429,17 @@ static struct track_info *ip_get_ti(const char *filename)
 struct track_info *cache_get_ti(const char *filename)
 {
 	unsigned int hash = filename_hash(filename);
-	time_t mtime = file_get_mtime(filename);
 	struct track_info *ti;
 
 	ti = lookup_cache_entry(filename, hash);
-	if (ti) {
-		if (mtime < 0 || ti->mtime == mtime)
-			goto ref;
-
-		do_cache_remove_ti(ti, hash);
+	if (!ti) {
+		ti = ip_get_ti(filename);
+		if (!ti)
+			return NULL;
+		ti->mtime = file_get_mtime(filename);
+		add_ti(ti, hash);
+		new++;
 	}
-
-	ti = ip_get_ti(filename);
-	if (!ti)
-		return NULL;
-	ti->mtime = mtime;
-	add_ti(ti, hash);
-	new++;
-ref:
 	track_info_ref(ti);
 	return ti;
 }
