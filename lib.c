@@ -423,16 +423,17 @@ void lib_set_filter(struct expr *expr)
 	}
 }
 
-void lib_remove(struct track_info *ti)
+int lib_remove(struct track_info *ti)
 {
 	struct simple_track *track;
 
 	list_for_each_entry(track, &lib_editable.head, node) {
 		if (track->info == ti) {
 			editable_remove_track(&lib_editable, track);
-			break;
+			return 1;
 		}
 	}
+	return 0;
 }
 
 void lib_clear_store(void)

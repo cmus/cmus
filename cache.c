@@ -450,3 +450,67 @@ ref:
 	track_info_ref(ti);
 	return ti;
 }
+
+struct track_info **cache_refresh(int *count)
+{
+	struct track_info **tis = get_track_infos();
+	int i;
+
+	for (i = 0; i < total; i++) {
+		unsigned int hash;
+		struct track_info *ti = tis[i];
+		struct stat st;
+		int rc;
+
+		/*
+		 * If no-one else has reference to tis[i] then it is set to NULL
+		 * otherwise:
+		 *
+		 * unchanged: tis[i] = NULL
+		 * deleted:   tis[i]->next = NULL
+		 * changed:   tis[i]->next = new
+		 */
+
+		rc = stat(ti->filename, &st);
+		if (!rc && ti->mtime == st.st_mtime) {
+			// unchanged
+			tis[i] = NULL;
+			continue;
+		}
+
+		hash = filename_hash(ti->filename);
+		track_info_ref(ti);
+		do_cache_remove_ti(ti, hash);
+
+		if (!rc) {
+			// changed
+			struct track_info *new_ti = ip_get_ti(ti->filename);
+
+			if (new_ti) {
+				new_ti->mtime = st.st_mtime;
+				add_ti(new_ti, hash);
+				new++;
+
+				if (ti->ref == 1) {
+					track_info_unref(ti);
+					tis[i] = NULL;
+				} else {
+					track_info_ref(new_ti);
+					ti->next = new_ti;
+				}
+				continue;
+			}
+			// treat as deleted
+		}
+
+		// deleted
+		if (ti->ref == 1) {
+			track_info_unref(ti);
+			tis[i] = NULL;
+		} else {
+			ti->next = NULL;
+		}
+	}
+	*count = total;
+	return tis;
+}

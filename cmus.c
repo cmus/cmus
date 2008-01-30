@@ -194,6 +194,11 @@ static int update_cb(void *data, struct track_info *ti)
 	return 0;
 }
 
+void cmus_update_cache(void)
+{
+	worker_add_job(JOB_TYPE_LIB, do_update_cache_job, free_update_cache_job, NULL);
+}
+
 void cmus_update_lib(void)
 {
 	struct update_data *data;

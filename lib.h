@@ -79,7 +79,7 @@ struct track_info *lib_set_next(void);
 struct track_info *lib_set_prev(void);
 void lib_add_track(struct track_info *track_info);
 void lib_set_filter(struct expr *expr);
-void lib_remove(struct track_info *ti);
+int lib_remove(struct track_info *ti);
 void lib_clear_store(void);
 void lib_reshuffle(void);
 void lib_set_view(int view);

@@ -13,5 +13,6 @@ int cache_init(void);
 int cache_close(void);
 struct track_info *cache_get_ti(const char *filename);
 void cache_remove_ti(struct track_info *ti);
+struct track_info **cache_refresh(int *count);
 
 #endif

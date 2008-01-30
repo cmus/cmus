@@ -54,6 +54,7 @@ void cmus_add(add_ti_cb, const char *name, enum file_type ft, int jt);
 
 int cmus_save(for_each_ti_cb for_each_ti, const char *filename);
 
+void cmus_update_cache(void);
 void cmus_update_lib(void);
 void cmus_update_tis(struct track_info **tis, int nr);
 

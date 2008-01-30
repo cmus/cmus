@@ -591,6 +591,11 @@ static void cmd_unmark(char *arg)
 	editable_unlock();
 }
 
+static void cmd_update_cache(char *arg)
+{
+	cmus_update_cache();
+}
+
 static void cmd_cd(char *arg)
 {
 	if (arg) {
@@ -2341,6 +2346,7 @@ struct command commands[] = {
 	{ "tqueue",		cmd_tqueue,	0, 1, NULL,		  0, 0 },
 	{ "unbind",		cmd_unbind,	1, 1, expand_unbind_args, 0, 0 },
 	{ "unmark",		cmd_unmark,	0, 0, NULL,		  0, 0 },
+	{ "update-cache",	cmd_update_cache,0, 0, NULL,		  0, 0 },
 	{ "view",		cmd_view,	1, 1, NULL,		  0, 0 },
 	{ "vol",		cmd_vol,	1, 2, NULL,		  0, 0 },
 	{ "win-activate",	cmd_win_activate,0, 0, NULL,		  0, 0 },

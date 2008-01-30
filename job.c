@@ -262,3 +262,35 @@ void free_update_job(void *data)
 	free(d->ti);
 	free(d);
 }
+
+void do_update_cache_job(void *data)
+{
+	struct track_info **tis;
+	int i, count;
+
+	cache_lock();
+	tis = cache_refresh(&count);
+	editable_lock();
+	for (i = 0; i < count; i++) {
+		struct track_info *new, *old = tis[i];
+
+		if (!old)
+			continue;
+
+		new = old->next;
+		if (lib_remove(old) && new)
+			lib_add_track(new);
+		// FIXME: other views
+
+		track_info_unref(old);
+		if (new)
+			track_info_unref(new);
+	}
+	editable_unlock();
+	cache_unlock();
+	free(tis);
+}
+
+void free_update_cache_job(void *data)
+{
+}
