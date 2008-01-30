@@ -1,5 +1,6 @@
 bind browser backspace browser-up
 bind browser i toggle show_hidden
+bind browser u win-update
 bind common + vol +10%
 bind common , seek -1m
 bind common - vol -10%
@@ -54,7 +55,7 @@ bind common s toggle shuffle
 bind common space win-toggle
 bind common t toggle show_remaining_time
 bind common tab win-next
-bind common u win-update
+bind common u update-cache
 bind common up win-up
 bind common v player-stop
 bind common x player-play
