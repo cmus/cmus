@@ -9,9 +9,6 @@
 #   make V=0    silent
 #   make V=1    clean (default)
 #   make V=2    verbose
-#
-# Source code checking with sparse:
-#   make C=1
 
 # build verbosity (0-2), default is 1
 ifneq ($(origin V),command line)
@@ -19,11 +16,6 @@ ifneq ($(origin V),command line)
 endif
 ifneq ($(findstring s,$(MAKEFLAGS)),)
   V := 0
-endif
-
-# check source code with sparse?
-ifneq ($(origin C),command line)
-  C := 0
 endif
 
 ifeq ($(V),2)
@@ -45,9 +37,6 @@ endif
 #  - adds $(DESTDIR) to front of files
 INSTALL		:= @$(topdir)/scripts/install
 INSTALL_LOG	:= $(topdir)/.install.log
-
-SPARSE		?= sparse
-SPARSE_FLAGS	?= -D__i386__
 
 dependencies	:= $(wildcard .dep-*)
 clean		:= $(dependencies)
@@ -74,7 +63,6 @@ uninstall:
 
 # object files for programs and static libs
 %.o: %.c
-	$(call cmd,sparse)
 	$(call cmd,cc)
 
 %.o: %.cc
@@ -85,7 +73,6 @@ uninstall:
 
 # object files for shared libs
 %.lo: %.c
-	$(call cmd,sparse)
 	$(call cmd,cc_lo)
 
 %.lo: %.cc
@@ -141,12 +128,6 @@ quiet_cmd_ar = AR     $@
 # assembler
 quiet_cmd_as = AS     $@
       cmd_as = $(AS) -c $(ASFLAGS) -o $@ $<
-
-# source code checker
-ifneq ($(C),0)
-quiet_cmd_sparse = SPARSE $<
-      cmd_sparse = $(SPARSE) $(CFLAGS) $(SPARSE_FLAGS) $<
-endif
 
 cmd = @$(if $($(quiet)cmd_$(1)),echo '   $(call $(quiet)cmd_$(1),$(2))' &&) $(call cmd_$(1),$(2))
 
