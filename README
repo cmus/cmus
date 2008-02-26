@@ -1,13 +1,10 @@
 
                      cmus - C* Music Player
 
-		http://onion.dynserv.net/~timo/cmus.html
+		    http://cmus.sourceforge.net/
 
-	 Copyright 2004-2006 Timo Hirvonen <tihirvon@gmail.com>
+	 Copyright 2004-2008 Timo Hirvonen <tihirvon@gmail.com>
 
-
-Installation
-============
 
 Configuration
 -------------
@@ -65,19 +62,39 @@ Remember to replace 'make' with 'gmake' if needed.
 
 
 Mailing List
-============
+------------
 
 To subscribe to cmus-devel@lists.sourceforge.net visit
 
   http://lists.sourceforge.net/lists/listinfo/cmus-devel
 
-The list is open (you can post to the list without subscribing).
+The list is open but moderated (you can post to the list without
+subscribing but it's not recommended because I have to accept each email
+form non-subscribed users).  Traffic of the list is low.
 
 
 Reporting Bugs
-==============
+--------------
 
 After a crash send bug report with last lines of /tmp/cmus-debug (or
 $TMPDIR/cmus-debug) to cmus-devel@lists.sourceforge.net.  The file
 exists only if you configured cmus with maximum debug level
 (./configure DEBUG=2).
+
+
+GIT Repository
+--------------
+
+gitweb: http://repo.or.cz/w/cmus.git
+clone:  git://repo.or.cz/cmus.git cmus
+
+
+Hacking
+-------
+
+cmus uses the Linux kernel coding style.  Use hard tabs. Tabs are
+_always_ 8 characters wide.  Keep the style consistent with rest of the
+code.
+
+Use git format-patch to generate patches from your commits.
+Alternatively you can use "diff -up" if you don't want to use git.
