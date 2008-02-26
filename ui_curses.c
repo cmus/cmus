@@ -1563,6 +1563,11 @@ static void sig_int(int sig)
 	ctrl_c_pressed = 1;
 }
 
+static void sig_hup(int sig)
+{
+	cmus_running = 0;
+}
+
 static int needs_to_resize = 1;
 
 static void sig_winch(int sig)
@@ -1862,6 +1867,7 @@ static void main_loop(void)
 				handle_ch(0x03);
 				ctrl_c_pressed = 0;
 			}
+
 			continue;
 		}
 
@@ -1942,6 +1948,11 @@ static void init_curses(void)
 	act.sa_flags = 0;
 	act.sa_handler = sig_int;
 	sigaction(SIGINT, &act, NULL);
+
+	sigemptyset(&act.sa_mask);
+	act.sa_flags = 0;
+	act.sa_handler = sig_hup;
+	sigaction(SIGHUP, &act, NULL);
 
 	sigemptyset(&act.sa_mask);
 	act.sa_flags = 0;
