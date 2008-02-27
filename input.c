@@ -257,50 +257,62 @@ static int setup_remote(struct input_plugin *ip, const struct http_header *heade
 	return 0;
 }
 
+struct read_playlist_data {
+	struct input_plugin *ip;
+	int rc;
+};
+
 static int handle_line(void *data, const char *line)
 {
-	char **firstp = data;
+	struct read_playlist_data *rpd;
+	struct http_header *headers;
+	int sock, code;
+	char *reason;
+	const char *uri = line;
 
-	*firstp = xstrdup(line);
-	/* ignore other lines */
+	rpd = (struct read_playlist_data *)data;
+
+	if (uri == NULL) {
+		d_print("empty playlist\n");
+		rpd->rc = -IP_ERROR_HTTP_RESPONSE;
+		return 1;
+	}
+
+	sock = do_http_get(uri, &headers, &code, &reason);
+	if (sock < 0) {
+		/*
+		 * URI in the _playlist_ is invalid, not our fault
+		 * Try next.
+		 */
+		rpd->ip->http_code = code;
+		rpd->ip->http_reason = reason;
+		if (sock == -IP_ERROR_INVALID_URI)
+			sock = -IP_ERROR_HTTP_RESPONSE;
+		rpd->rc = sock;
+		return 0;
+	}
+
+	rpd->rc = setup_remote(rpd->ip, headers, sock);
+	http_headers_free(headers);
 	return 1;
 }
 
 static int read_playlist(struct input_plugin *ip, int sock)
 {
-	struct http_header *headers;
-	char *body, *reason, *first;
-	int rc, code;
+	struct read_playlist_data rpd;
+	char *body;
+	int rc;
 
 	rc = http_read_body(sock, &body, http_read_timeout);
 	close(sock);
 	if (rc)
 		return -IP_ERROR_ERRNO;
 
-	/* get only first URL from the playlist */
-	first = NULL;
-	cmus_playlist_for_each(body, strlen(body), 0, handle_line, &first);
+	rpd.ip = ip;
+	cmus_playlist_for_each(body, strlen(body), 0, handle_line, &rpd);
 	free(body);
 
-	if (first == NULL) {
-		d_print("empty playlist\n");
-		return -IP_ERROR_HTTP_RESPONSE;
-	}
-
-	sock = do_http_get(first, &headers, &code, &reason);
-	free(first);
-	if (sock < 0) {
-		ip->http_code = code;
-		ip->http_reason = reason;
-		/* URI in the _playlist_ is invalid, not our fault */
-		if (sock == -IP_ERROR_INVALID_URI)
-			sock = -IP_ERROR_HTTP_RESPONSE;
-		return sock;
-	}
-
-	rc = setup_remote(ip, headers, sock);
-	http_headers_free(headers);
-	return rc;
+	return rpd.rc;
 }
 
 static int open_remote(struct input_plugin *ip)
