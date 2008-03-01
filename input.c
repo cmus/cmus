@@ -145,7 +145,7 @@ static int do_http_get(const char *uri, struct http_header **headersp, int *code
 	struct http_uri u;
 	struct http_header *h;
 	int sock, i, rc, code;
-	char *reason;
+	char *reason, *redirloc;
 
 	*headersp = NULL;
 	*codep = -1;
@@ -154,7 +154,7 @@ static int do_http_get(const char *uri, struct http_header **headersp, int *code
 	if (http_parse_uri(uri, &u))
 		return -IP_ERROR_INVALID_URI;
 
-/* 	d_print("%s -> '%s':'%s'@'%s':%d'%s'\n", uri, user, pass, host, port, path); */
+	d_print("%s -> '%s':'%s'@'%s':%d'%s'\n", uri, u.user, u.pass, u.host, u.port, u.path);
 
 	sock = http_open(u.host, u.port, http_connection_timeout);
 	if (sock == -1) {
@@ -206,8 +206,41 @@ static int do_http_get(const char *uri, struct http_header **headersp, int *code
 		close(sock);
 		return -IP_ERROR_HTTP_RESPONSE;
 	}
+
+	/*
+	 * FIXME: Use information from the headers, we read.
+	 *
+	 * especially interesting:
+	 *  + icy-name
+	 *  + icy-url
+	 */
 	d_print("HTTP response: %d %s\n", code, reason);
-	if (code != 200) {
+	for (i = 0; (*headersp)[i].key != NULL; i++)
+		d_print("%s: %s\n", (*headersp)[i].key, (*headersp)[i].val);
+
+	switch (code) {
+	case 200: /* OK */
+		break;
+
+	/*
+	 * 3xx Codes (Redirections)
+	 *     unhandled: 300 Multiple Choices
+	 */
+	case 301: /* Moved Permanently */
+	case 302: /* Found */
+	case 303: /* See Other */
+	case 307: /* Temporary Redirect */
+		redirloc = xstrdup(http_headers_get_value(*headersp, "location"));
+		http_headers_free(*headersp);
+
+		close(sock);
+		d_print("Redirected to %s\n", redirloc);
+		sock = do_http_get(redirloc, headersp, codep, reasonp);
+		free(redirloc);
+
+		break;
+
+	default:
 		*codep = code;
 		*reasonp = reason;
 		close(sock);
