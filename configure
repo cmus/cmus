@@ -7,7 +7,10 @@ check_cflags()
 	check_cc_flag -std=gnu99 -pipe -Wall -Wshadow -Wcast-align -Wpointer-arith \
 		-Wwrite-strings -Wundef -Wmissing-prototypes -Wredundant-decls
 
-	for i in -Wdeclaration-after-statement -Wold-style-definition -Wno-pointer-sign
+	for i in -Wdeclaration-after-statement \
+		-Wold-style-definition \
+		-Wno-pointer-sign \
+		-Werror-implicit-function-declaration
 	do
 		check_cc_flag $i
 	done
