@@ -375,8 +375,8 @@ static int aac_read_comments(struct input_plugin_data *ip_data,
 out:
 	close(fd);
 	id3_free(&id3);
-	comments_terminate(&c);
-	*comments = c.comments;
+	keyvals_terminate(&c);
+	*comments = c.keyvals;
 	return 0;
 }
 

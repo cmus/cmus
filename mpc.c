@@ -267,9 +267,9 @@ out:
 		comments_add_const(&c, "replaygain_album_gain", gain_to_str(priv->info.gain_album));
 		comments_add_const(&c, "replaygain_album_peak", peak_to_str(priv->info.peak_album));
 	}
-	comments_terminate(&c);
+	keyvals_terminate(&c);
 
-	*comments = c.comments;
+	*comments = c.keyvals;
 	ape_free(&ape);
 	return 0;
 }

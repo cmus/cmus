@@ -8,50 +8,11 @@
 
 #include <string.h>
 
-struct keyval *comments_dup(const struct keyval *comments)
-{
-	struct keyval *c;
-	int i;
-
-	for (i = 0; comments[i].key; i++)
-		; /* nothing */
-	c = xnew(struct keyval, i + 1);
-	for (i = 0; comments[i].key; i++) {
-		c[i].key = xstrdup(comments[i].key);
-		c[i].val = xstrdup(comments[i].val);
-	}
-	c[i].key = NULL;
-	c[i].val = NULL;
-	return c;
-}
-
-void comments_free(struct keyval *comments)
-{
-	int i;
-
-	for (i = 0; comments[i].key; i++) {
-		free(comments[i].key);
-		free(comments[i].val);
-	}
-	free(comments);
-}
-
-const char *comments_get_val(const struct keyval *comments, const char *key)
-{
-	int i;
-
-	for (i = 0; comments[i].key; i++) {
-		if (strcasecmp(comments[i].key, key) == 0)
-			return comments[i].val;
-	}
-	return NULL;
-}
-
 const char *comments_get_albumartist(const struct keyval *comments)
 {
-	const char *val = comments_get_val(comments, "albumartist");
+	const char *val = keyvals_get_val(comments, "albumartist");
 	if (!val)
-		val = comments_get_val(comments, "artist");
+		val = keyvals_get_val(comments, "artist");
 	return val;
 }
 
@@ -60,7 +21,7 @@ int comments_get_int(const struct keyval *comments, const char *key)
 	const char *val;
 	long int ival;
 
-	val = comments_get_val(comments, key);
+	val = keyvals_get_val(comments, key);
 	if (val == NULL)
 		return -1;
 	if (str_to_int(val, &ival) == -1)
@@ -77,7 +38,7 @@ int comments_get_date(const struct keyval *comments, const char *key)
 	int year, month, day;
 	long int ival;
 
-	val = comments_get_val(comments, key);
+	val = keyvals_get_val(comments, key);
 	if (val == NULL)
 		return -1;
 
@@ -143,7 +104,7 @@ static const char *fix_key(const char *key)
 
 int comments_add(struct growing_keyvals *c, const char *key, char *val)
 {
-	int i, n = c->count + 1;
+	int i;
 
 	key = fix_key(key);
 	if (!key) {
@@ -157,39 +118,19 @@ int comments_add(struct growing_keyvals *c, const char *key, char *val)
 			*slash = 0;
 	}
 
-	/* don't add duplicates. can't use comments_get_val() */
+	/* don't add duplicates. can't use keyvals_get_val() */
 	for (i = 0; i < c->count; i++) {
-		if (!strcasecmp(key, c->comments[i].key) && !strcmp(val, c->comments[i].val)) {
+		if (!strcasecmp(key, c->keyvals[i].key) && !strcmp(val, c->keyvals[i].val)) {
 			free(val);
 			return 0;
 		}
 	}
 
-	if (n > c->alloc) {
-		n = (n + 3) & ~3;
-		c->comments = xrenew(struct keyval, c->comments, n);
-		c->alloc = n;
-	}
-
-	c->comments[c->count].key = xstrdup(key);
-	c->comments[c->count].val = val;
-	c->count++;
+	keyvals_add(c, key, val);
 	return 1;
 }
 
 int comments_add_const(struct growing_keyvals *c, const char *key, const char *val)
 {
 	return comments_add(c, key, xstrdup(val));
-}
-
-void comments_terminate(struct growing_keyvals *c)
-{
-	int alloc = c->count + 1;
-
-	if (alloc > c->alloc) {
-		c->comments = xrenew(struct keyval, c->comments, alloc);
-		c->alloc = alloc;
-	}
-	c->comments[c->count].key = NULL;
-	c->comments[c->count].val = NULL;
 }

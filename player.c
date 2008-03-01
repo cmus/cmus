@@ -257,11 +257,11 @@ static void update_rg_scale(void)
 		return;
 
 	if (replaygain == RG_TRACK) {
-		g = comments_get_val(player_info.ti->comments, "replaygain_track_gain");
-		p = comments_get_val(player_info.ti->comments, "replaygain_track_peak");
+		g = keyvals_get_val(player_info.ti->comments, "replaygain_track_gain");
+		p = keyvals_get_val(player_info.ti->comments, "replaygain_track_peak");
 	} else {
-		g = comments_get_val(player_info.ti->comments, "replaygain_album_gain");
-		p = comments_get_val(player_info.ti->comments, "replaygain_album_peak");
+		g = keyvals_get_val(player_info.ti->comments, "replaygain_album_gain");
+		p = keyvals_get_val(player_info.ti->comments, "replaygain_album_peak");
 	}
 
 	if (!g || !p) {

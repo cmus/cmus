@@ -479,13 +479,13 @@ static void fill_track_fopts_track_info(struct track_info *info)
 	disc = comments_get_int(info->comments, "discnumber");
 	num = comments_get_int(info->comments, "tracknumber");
 
-	fopt_set_str(&track_fopts[TF_ARTIST], comments_get_val(info->comments, "artist"));
-	fopt_set_str(&track_fopts[TF_ALBUM], comments_get_val(info->comments, "album"));
+	fopt_set_str(&track_fopts[TF_ARTIST], keyvals_get_val(info->comments, "artist"));
+	fopt_set_str(&track_fopts[TF_ALBUM], keyvals_get_val(info->comments, "album"));
 	fopt_set_int(&track_fopts[TF_DISC], disc, disc == -1);
 	fopt_set_int(&track_fopts[TF_TRACK], num, num == -1);
-	fopt_set_str(&track_fopts[TF_TITLE], comments_get_val(info->comments, "title"));
-	fopt_set_str(&track_fopts[TF_YEAR], comments_get_val(info->comments, "date"));
-	fopt_set_str(&track_fopts[TF_GENRE], comments_get_val(info->comments, "genre"));
+	fopt_set_str(&track_fopts[TF_TITLE], keyvals_get_val(info->comments, "title"));
+	fopt_set_str(&track_fopts[TF_YEAR], keyvals_get_val(info->comments, "date"));
+	fopt_set_str(&track_fopts[TF_GENRE], keyvals_get_val(info->comments, "genre"));
 	fopt_set_time(&track_fopts[TF_DURATION], info->duration, info->duration == -1);
 	fopt_set_str(&track_fopts[TF_PATHFILE], filename);
 	if (is_url(info->filename)) {
@@ -1536,7 +1536,7 @@ static void spawn_status_program(void)
 				const char *key = keys[j];
 				const char *val;
 
-				val = comments_get_val(player_info.ti->comments, key);
+				val = keyvals_get_val(player_info.ti->comments, key);
 				if (val) {
 					argv[i++] = xstrdup(key);
 					argv[i++] = xstrdup(val);

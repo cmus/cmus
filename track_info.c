@@ -29,7 +29,7 @@
 
 static void track_info_free(struct track_info *ti)
 {
-	comments_free(ti->comments);
+	keyvals_free(ti->comments);
 	free(ti);
 }
 
@@ -69,16 +69,16 @@ void track_info_unref(struct track_info *ti)
 
 int track_info_has_tag(const struct track_info *ti)
 {
-	return comments_get_val(ti->comments, "artist") ||
-		comments_get_val(ti->comments, "album") ||
-		comments_get_val(ti->comments, "title");
+	return keyvals_get_val(ti->comments, "artist") ||
+		keyvals_get_val(ti->comments, "album") ||
+		keyvals_get_val(ti->comments, "title");
 }
 
 int track_info_matches(struct track_info *ti, const char *text, unsigned int flags)
 {
-	const char *artist = comments_get_val(ti->comments, "artist");
-	const char *album = comments_get_val(ti->comments, "album");
-	const char *title = comments_get_val(ti->comments, "title");
+	const char *artist = keyvals_get_val(ti->comments, "artist");
+	const char *album = keyvals_get_val(ti->comments, "album");
+	const char *title = keyvals_get_val(ti->comments, "title");
 	char **words;
 	int i, matched = 1;
 
@@ -167,8 +167,8 @@ int track_info_cmp(const struct track_info *a, const struct track_info *b, const
 			continue;
 		}
 
-		av = comments_get_val(a->comments, key);
-		bv = comments_get_val(b->comments, key);
+		av = keyvals_get_val(a->comments, key);
+		bv = keyvals_get_val(b->comments, key);
 		res = xstrcasecmp(av, bv);
 		if (res)
 			break;

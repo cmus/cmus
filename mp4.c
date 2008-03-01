@@ -368,8 +368,8 @@ static int mp4_read_comments(struct input_plugin_data *ip_data,
 		comments_add_const(&c, "discnumber", buf);
 	}
 
-	comments_terminate(&c);
-	*comments = c.comments;
+	keyvals_terminate(&c);
+	*comments = c.keyvals;
 	return 0;
 }
 

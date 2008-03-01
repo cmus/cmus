@@ -22,7 +22,7 @@ cmus-y := \
 	ape.o browser.o buffer.o cache.o cmdline.o cmus.o command_mode.o comment.o \
 	debug.o editable.o expr.o filters.o \
 	format_print.o glob.o help.o history.o http.o id3.o input.o job.o \
-	keys.o lib.o load_dir.o locking.o mergesort.o misc.o options.o \
+	keys.o keyval.o lib.o load_dir.o locking.o mergesort.o misc.o options.o \
 	output.o pcm.o pl.o play_queue.o player.o \
 	read_wrapper.o server.o search.o \
 	search_mode.o spawn.o tabexp.o tabexp_file.o \

@@ -341,8 +341,8 @@ static void metadata_cb(const Dec *dec, const FLAC__StreamMetadata *metadata, vo
 				comments_add(&c, key, val);
 				free(key);
 			}
-			comments_terminate(&c);
-			priv->comments = c.comments;
+			keyvals_terminate(&c);
+			priv->comments = c.keyvals;
 		}
 		break;
 	default:
@@ -373,7 +373,7 @@ static void free_priv(struct input_plugin_data *ip_data)
 	F(finish)(priv->dec);
 	F(delete)(priv->dec);
 	if (priv->comments)
-		comments_free(priv->comments);
+		keyvals_free(priv->comments);
 	free(priv->buf);
 	free(priv);
 	ip_data->private = NULL;
@@ -538,7 +538,7 @@ static int flac_read_comments(struct input_plugin_data *ip_data, struct keyval *
 	struct flac_private *priv = ip_data->private;
 
 	if (priv->comments) {
-		*comments = comments_dup(priv->comments);
+		*comments = keyvals_dup(priv->comments);
 	} else {
 		*comments = xnew0(struct keyval, 1);
 	}

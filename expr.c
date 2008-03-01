@@ -513,7 +513,7 @@ int expr_eval(struct expr *expr, struct track_info *ti)
 		if (strcmp(key, "filename") == 0) {
 			val = ti->filename;
 		} else {
-			val = comments_get_val(ti->comments, key);
+			val = keyvals_get_val(ti->comments, key);
 			if (val == NULL) {
 				/* NULL="something" is false */
 				if (expr->estr.op == SOP_EQ)

@@ -168,8 +168,8 @@ next:
 out:
 	ape_free(&ape);
 
-	comments_terminate(&c);
-	*comments = c.comments;
+	keyvals_terminate(&c);
+	*comments = c.keyvals;
 	return 0;
 }
 
