@@ -147,14 +147,14 @@ static int do_http_get(struct http_get *hg, const char *uri)
 	const char *val;
 	char *redirloc;
 
+	d_print("%s\n", uri);
+
 	hg->headers = NULL;
 	hg->reason = NULL;
 	hg->code = -1;
 	hg->fd = -1;
 	if (http_parse_uri(uri, &hg->uri))
 		return -IP_ERROR_INVALID_URI;
-
-	d_print("%s -> '%s':'%s'@'%s':%d'%s'\n", uri, hg->uri.user, hg->uri.pass, hg->uri.host, hg->uri.port, hg->uri.path);
 
 	if (http_open(hg, http_connection_timeout))
 		return -IP_ERROR_ERRNO;
@@ -196,7 +196,7 @@ static int do_http_get(struct http_get *hg, const char *uri)
 	 */
 	d_print("HTTP response: %d %s\n", hg->code, hg->reason);
 	for (i = 0; hg->headers[i].key != NULL; i++)
-		d_print("%s: %s\n", hg->headers[i].key, hg->headers[i].val);
+		d_print("  %s: %s\n", hg->headers[i].key, hg->headers[i].val);
 
 	switch (hg->code) {
 	case 200: /* OK */
@@ -216,7 +216,6 @@ static int do_http_get(struct http_get *hg, const char *uri)
 		http_get_free(hg);
 		close(hg->fd);
 
-		d_print("Redirected to %s\n", redirloc);
 		rc = do_http_get(hg, redirloc);
 		free(redirloc);
 		return rc;
