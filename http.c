@@ -453,7 +453,8 @@ int http_read_body(int fd, char **bodyp, int timeout_ms)
 void http_get_free(struct http_get *hg)
 {
 	http_free_uri(&hg->uri);
-	keyvals_free(hg->headers);
+	if (hg->headers)
+		keyvals_free(hg->headers);
 	free(hg->reason);
 }
 
