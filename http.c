@@ -389,13 +389,12 @@ out:
 	return rc;
 }
 
-int http_read_body(int fd, char **bodyp, int timeout_ms)
+char *http_read_body(int fd, size_t *size, int timeout_ms)
 {
 	GBUF(buf);
 
-	*bodyp = NULL;
 	if (read_timeout(fd, timeout_ms))
-		return -1;
+		return NULL;
 	while (1) {
 		int count = 1023;
 		int rc;
@@ -404,13 +403,12 @@ int http_read_body(int fd, char **bodyp, int timeout_ms)
 		rc = read_all(fd, buf.buffer + buf.len, count);
 		if (rc == -1) {
 			gbuf_free(&buf);
-			return -1;
+			return NULL;
 		}
 		buf.len += rc;
 		if (rc == 0) {
-			buf.buffer[buf.len] = 0;
-			*bodyp = gbuf_steal(&buf);
-			return 0;
+			*size = buf.len;
+			return gbuf_steal(&buf);
 		}
 	}
 }

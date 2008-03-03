@@ -22,6 +22,8 @@
 
 #include "keyval.h"
 
+#include <unistd.h>
+
 /*
  * 1xx indicates an informational message only
  * 2xx indicates success of some kind
@@ -61,7 +63,7 @@ int http_open(struct http_get *hg, int timeout_ms);
 int http_get(struct http_get *hg, struct keyval *headers, int timeout_ms);
 void http_get_free(struct http_get *hg);
 
-int http_read_body(int fd, char **bodyp, int timeout_ms);
+char *http_read_body(int fd, size_t *size, int timeout_ms);
 char *base64_encode(const char *str);
 
 #endif

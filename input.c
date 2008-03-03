@@ -301,14 +301,14 @@ static int read_playlist(struct input_plugin *ip, int sock)
 {
 	struct read_playlist_data rpd = { ip, 0, 0 };
 	char *body;
-	int rc;
+	size_t size;
 
-	rc = http_read_body(sock, &body, http_read_timeout);
+	body = http_read_body(sock, &size, http_read_timeout);
 	close(sock);
-	if (rc)
+	if (!body)
 		return -IP_ERROR_ERRNO;
 
-	cmus_playlist_for_each(body, strlen(body), 0, handle_line, &rpd);
+	cmus_playlist_for_each(body, size, 0, handle_line, &rpd);
 	free(body);
 	if (!rpd.count) {
 		d_print("empty playlist\n");
