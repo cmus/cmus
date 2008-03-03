@@ -156,18 +156,19 @@ void http_free_uri(struct http_uri *u)
 int http_open(struct http_get *hg, int timeout_ms)
 {
 	struct hostent *hostent;
-	struct sockaddr_in addr;
+	union {
+		struct sockaddr sa;
+		struct sockaddr_in in;
+	} addr;
 	struct timeval tv;
 	int save, flags;
 
 	hostent = gethostbyname(hg->uri.host);
 	if (hostent == NULL)
 		return -1;
-	if (hostent->h_length > sizeof(addr.sin_addr))
-		hostent->h_length = sizeof(addr.sin_addr);
-	addr.sin_family = AF_INET;
-	addr.sin_port = htons(hg->uri.port);
-	memcpy(&addr.sin_addr, hostent->h_addr_list[0], hostent->h_length);
+	addr.in.sin_family = AF_INET;
+	addr.in.sin_port = htons(hg->uri.port);
+	memcpy(&addr.in.sin_addr, hostent->h_addr_list[0], hostent->h_length);
 
 	hg->fd = socket(PF_INET, SOCK_STREAM, 0);
 	if (hg->fd == -1)
@@ -183,7 +184,7 @@ int http_open(struct http_get *hg, int timeout_ms)
 		fd_set wfds;
 
 		d_print("connecting. timeout=%ld s %ld us\n", tv.tv_sec, tv.tv_usec);
-		if (connect(hg->fd, (struct sockaddr *)&addr, sizeof(addr)) == 0)
+		if (connect(hg->fd, &addr.sa, sizeof(addr.in)) == 0)
 			break;
 		if (errno == EISCONN)
 			break;
