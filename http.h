@@ -38,20 +38,28 @@ struct http_uri {
 	int port;
 };
 
+struct http_get {
+	struct http_uri uri;
+	int fd;
+	struct keyval *headers;
+	char *reason;
+	int code;
+};
+
 int http_parse_uri(const char *uri, struct http_uri *u);
 
 /* frees contents of @u, not @u itself */
 void http_free_uri(struct http_uri *u);
 
-int http_open(const char *hostname, unsigned int port, int timeout_ms);
+int http_open(struct http_get *hg, int timeout_ms);
 
 /*
  * returns:  0 success
  *          -1 check errno
  *          -2 parse error
  */
-int http_get(int fd, const char *path, struct keyval *headers, int *codep,
-		char **errp, struct keyval **ret_headersp, int timeout_ms);
+int http_get(struct http_get *hg, struct keyval *headers, int timeout_ms);
+void http_get_free(struct http_get *hg);
 
 int http_read_body(int fd, char **bodyp, int timeout_ms);
 char *base64_encode(const char *str);

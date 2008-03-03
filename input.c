@@ -140,36 +140,32 @@ static const struct input_plugin_ops *get_ops_by_mime_type(const char *mime_type
 	return NULL;
 }
 
-static int do_http_get(const char *uri, struct keyval **headersp, int *codep, char **reasonp)
+static int do_http_get(struct http_get *hg, const char *uri)
 {
-	struct http_uri u;
 	GROWING_KEYVALS(h);
-	int sock, i, rc, code;
-	char *reason, *redirloc;
+	int i, rc;
+	char *redirloc;
 
-	*headersp = NULL;
-	*codep = -1;
-	*reasonp = NULL;
-
-	if (http_parse_uri(uri, &u))
+	hg->headers = NULL;
+	hg->reason = NULL;
+	hg->code = -1;
+	hg->fd = -1;
+	if (http_parse_uri(uri, &hg->uri))
 		return -IP_ERROR_INVALID_URI;
 
-	d_print("%s -> '%s':'%s'@'%s':%d'%s'\n", uri, u.user, u.pass, u.host, u.port, u.path);
+	d_print("%s -> '%s':'%s'@'%s':%d'%s'\n", uri, hg->uri.user, hg->uri.pass, hg->uri.host, hg->uri.port, hg->uri.path);
 
-	sock = http_open(u.host, u.port, http_connection_timeout);
-	if (sock == -1) {
-		http_free_uri(&u);
+	if (http_open(hg, http_connection_timeout))
 		return -IP_ERROR_ERRNO;
-	}
 
-	keyvals_add(&h, "Host", xstrdup(u.host));
+	keyvals_add(&h, "Host", xstrdup(hg->uri.host));
 	keyvals_add(&h, "User-Agent", xstrdup("cmus/" VERSION));
 	keyvals_add(&h, "Icy-MetaData", xstrdup("1"));
-	if (u.user && u.pass) {
+	if (hg->uri.user && hg->uri.pass) {
 		char buf[256];
 		char *encoded;
 
-		snprintf(buf, sizeof(buf), "%s:%s", u.user, u.pass);
+		snprintf(buf, sizeof(buf), "%s:%s", hg->uri.user, hg->uri.pass);
 		encoded = base64_encode(buf);
 		if (encoded == NULL) {
 			d_print("couldn't base64 encode '%s'\n", buf);
@@ -181,17 +177,12 @@ static int do_http_get(const char *uri, struct keyval **headersp, int *codep, ch
 	}
 	keyvals_terminate(&h);
 
-	rc = http_get(sock, u.path, h.keyvals, &code, &reason, headersp, http_read_timeout);
+	rc = http_get(hg, h.keyvals, http_read_timeout);
 	keyvals_free(h.keyvals);
-	http_free_uri(&u);
 	switch (rc) {
 	case -1:
-		d_print("error: %s\n", strerror(errno));
-		close(sock);
 		return -IP_ERROR_ERRNO;
 	case -2:
-		d_print("error parsing HTTP response\n");
-		close(sock);
 		return -IP_ERROR_HTTP_RESPONSE;
 	}
 
@@ -202,14 +193,13 @@ static int do_http_get(const char *uri, struct keyval **headersp, int *codep, ch
 	 *  + icy-name
 	 *  + icy-url
 	 */
-	d_print("HTTP response: %d %s\n", code, reason);
-	for (i = 0; (*headersp)[i].key != NULL; i++)
-		d_print("%s: %s\n", (*headersp)[i].key, (*headersp)[i].val);
+	d_print("HTTP response: %d %s\n", hg->code, hg->reason);
+	for (i = 0; hg->headers[i].key != NULL; i++)
+		d_print("%s: %s\n", hg->headers[i].key, hg->headers[i].val);
 
-	switch (code) {
+	switch (hg->code) {
 	case 200: /* OK */
-		break;
-
+		return 0;
 	/*
 	 * 3xx Codes (Redirections)
 	 *     unhandled: 300 Multiple Choices
@@ -218,24 +208,17 @@ static int do_http_get(const char *uri, struct keyval **headersp, int *codep, ch
 	case 302: /* Found */
 	case 303: /* See Other */
 	case 307: /* Temporary Redirect */
-		redirloc = xstrdup(keyvals_get_val(*headersp, "location"));
-		keyvals_free(*headersp);
+		redirloc = xstrdup(keyvals_get_val(hg->headers, "location"));
+		http_get_free(hg);
+		close(hg->fd);
 
-		close(sock);
 		d_print("Redirected to %s\n", redirloc);
-		sock = do_http_get(redirloc, headersp, codep, reasonp);
+		rc = do_http_get(hg, redirloc);
 		free(redirloc);
-
-		break;
-
+		return rc;
 	default:
-		*codep = code;
-		*reasonp = reason;
-		close(sock);
 		return -IP_ERROR_HTTP_STATUS;
 	}
-	free(reason);
-	return sock;
 }
 
 static int setup_remote(struct input_plugin *ip, const struct keyval *headers, int sock)
@@ -286,10 +269,9 @@ struct read_playlist_data {
 static int handle_line(void *data, const char *line)
 {
 	struct read_playlist_data *rpd;
-	struct keyval *headers;
-	int sock, code;
-	char *reason;
+	struct http_get hg;
 	const char *uri = line;
+	int rc;
 
 	rpd = (struct read_playlist_data *)data;
 
@@ -299,22 +281,21 @@ static int handle_line(void *data, const char *line)
 		return 1;
 	}
 
-	sock = do_http_get(uri, &headers, &code, &reason);
-	if (sock < 0) {
-		/*
-		 * URI in the _playlist_ is invalid, not our fault
-		 * Try next.
-		 */
-		rpd->ip->http_code = code;
-		rpd->ip->http_reason = reason;
-		if (sock == -IP_ERROR_INVALID_URI)
-			sock = -IP_ERROR_HTTP_RESPONSE;
-		rpd->rc = sock;
+	rc = do_http_get(&hg, uri);
+	if (rc) {
+		rpd->ip->http_code = hg.code;
+		rpd->ip->http_reason = hg.reason;
+		rpd->rc = rc;
+		if (hg.fd >= 0)
+			close(hg.fd);
+
+		hg.reason = NULL;
+		http_get_free(&hg);
 		return 0;
 	}
 
-	rpd->rc = setup_remote(rpd->ip, headers, sock);
-	keyvals_free(headers);
+	rpd->rc = setup_remote(rpd->ip, hg.headers, hg.fd);
+	http_get_free(&hg);
 	return 1;
 }
 
@@ -339,33 +320,34 @@ static int read_playlist(struct input_plugin *ip, int sock)
 static int open_remote(struct input_plugin *ip)
 {
 	struct input_plugin_data *d = &ip->data;
-	char *reason;
-	int sock, rc, code;
-	struct keyval *headers;
+	struct http_get hg;
 	const char *val;
+	int rc;
 
-	sock = do_http_get(d->filename, &headers, &code, &reason);
-	if (sock < 0) {
-		ip->http_code = code;
-		ip->http_reason = reason;
-		return sock;
+	rc = do_http_get(&hg, d->filename);
+	if (rc) {
+		ip->http_code = hg.code;
+		ip->http_reason = hg.reason;
+		hg.reason = NULL;
+		http_get_free(&hg);
+		return rc;
 	}
 
-	val = keyvals_get_val(headers, "Content-Type");
+	val = keyvals_get_val(hg.headers, "Content-Type");
 	if (val) {
 		int i;
 
 		for (i = 0; i < sizeof(pl_mime_types) / sizeof(pl_mime_types[0]); i++) {
 			if (!strcasecmp(val, pl_mime_types[i])) {
 				d_print("Content-Type: %s\n", val);
-				keyvals_free(headers);
-				return read_playlist(ip, sock);
+				http_get_free(&hg);
+				return read_playlist(ip, hg.fd);
 			}
 		}
 	}
 
-	rc = setup_remote(ip, headers, sock);
-	keyvals_free(headers);
+	rc = setup_remote(ip, hg.headers, hg.fd);
+	http_get_free(&hg);
 	return rc;
 }
 

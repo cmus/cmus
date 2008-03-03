@@ -153,28 +153,28 @@ void http_free_uri(struct http_uri *u)
 	free(u->path);
 }
 
-int http_open(const char *hostname, unsigned int port, int timeout_ms)
+int http_open(struct http_get *hg, int timeout_ms)
 {
 	struct hostent *hostent;
 	struct sockaddr_in addr;
 	struct timeval tv;
-	int sock, save, flags;
+	int save, flags;
 
-	hostent = gethostbyname(hostname);
+	hostent = gethostbyname(hg->uri.host);
 	if (hostent == NULL)
 		return -1;
 	if (hostent->h_length > sizeof(addr.sin_addr))
 		hostent->h_length = sizeof(addr.sin_addr);
 	addr.sin_family = AF_INET;
-	addr.sin_port = htons(port);
+	addr.sin_port = htons(hg->uri.port);
 	memcpy(&addr.sin_addr, hostent->h_addr_list[0], hostent->h_length);
 
-	sock = socket(PF_INET, SOCK_STREAM, 0);
-	if (sock == -1)
+	hg->fd = socket(PF_INET, SOCK_STREAM, 0);
+	if (hg->fd == -1)
 		return -1;
 
-	flags = fcntl(sock, F_GETFL);
-	if (fcntl(sock, F_SETFL, O_NONBLOCK) == -1)
+	flags = fcntl(hg->fd, F_GETFL);
+	if (fcntl(hg->fd, F_SETFL, O_NONBLOCK) == -1)
 		goto close_exit;
 
 	tv.tv_sec = timeout_ms / 1000;
@@ -183,7 +183,7 @@ int http_open(const char *hostname, unsigned int port, int timeout_ms)
 		fd_set wfds;
 
 		d_print("connecting. timeout=%ld s %ld us\n", tv.tv_sec, tv.tv_usec);
-		if (connect(sock, (struct sockaddr *)&addr, sizeof(addr)) == 0)
+		if (connect(hg->fd, (struct sockaddr *)&addr, sizeof(addr)) == 0)
 			break;
 		if (errno == EISCONN)
 			break;
@@ -191,11 +191,11 @@ int http_open(const char *hostname, unsigned int port, int timeout_ms)
 			goto close_exit;
 
 		FD_ZERO(&wfds);
-		FD_SET(sock, &wfds);
+		FD_SET(hg->fd, &wfds);
 		while (1) {
 			int rc;
 
-			rc = select(sock + 1, NULL, &wfds, NULL, &tv);
+			rc = select(hg->fd + 1, NULL, &wfds, NULL, &tv);
 			if (rc == -1) {
 				if (errno != EINTR)
 					goto close_exit;
@@ -214,12 +214,12 @@ int http_open(const char *hostname, unsigned int port, int timeout_ms)
 	}
 
 	/* restore old flags */
-	if (fcntl(sock, F_SETFL, flags) == -1)
+	if (fcntl(hg->fd, F_SETFL, flags) == -1)
 		goto close_exit;
-	return sock;
+	return 0;
 close_exit:
 	save = errno;
-	close(sock);
+	close(hg->fd);
 	errno = save;
 	return -1;
 }
@@ -409,9 +409,7 @@ static int http_parse_response(const char *str, int *codep, char **reasonp, stru
 	return 0;
 }
 
-int http_get(int fd, const char *path, struct keyval *headers,
-		int *codep, char **reasonp, struct keyval **ret_headersp,
-		int timeout_ms)
+int http_get(struct http_get *hg, struct keyval *headers, int timeout_ms)
 {
 	char *buf = NULL;
 	int size = 0;
@@ -419,7 +417,7 @@ int http_get(int fd, const char *path, struct keyval *headers,
 	int i, rc, save;
 
 	buf_write(&buf, &size, &pos, "GET ");
-	buf_write(&buf, &size, &pos, path);
+	buf_write(&buf, &size, &pos, hg->uri.path);
 	buf_write(&buf, &size, &pos, " HTTP/1.0\r\n");
 	for (i = 0; headers[i].key; i++) {
 		buf_write(&buf, &size, &pos, headers[i].key);
@@ -429,16 +427,16 @@ int http_get(int fd, const char *path, struct keyval *headers,
 	}
 	buf_write(&buf, &size, &pos, "\r\n");
 	
-	rc = http_write(fd, buf, pos, timeout_ms);
+	rc = http_write(hg->fd, buf, pos, timeout_ms);
 	if (rc)
 		goto out;
 
 	pos = 0;
-	rc = http_read_response(fd, &buf, &size, &pos, timeout_ms);
+	rc = http_read_response(hg->fd, &buf, &size, &pos, timeout_ms);
 	if (rc)
 		goto out;
 
-	rc = http_parse_response(buf, codep, reasonp, ret_headersp);
+	rc = http_parse_response(buf, &hg->code, &hg->reason, &hg->headers);
 out:
 	save = errno;
 	free(buf);
@@ -472,6 +470,13 @@ int http_read_body(int fd, char **bodyp, int timeout_ms)
 		}
 		pos += rc;
 	}
+}
+
+void http_get_free(struct http_get *hg)
+{
+	http_free_uri(&hg->uri);
+	keyvals_free(hg->headers);
+	free(hg->reason);
 }
 
 char *base64_encode(const char *str)
