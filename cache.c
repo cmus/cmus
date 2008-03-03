@@ -314,21 +314,10 @@ static void buf_set(struct growing_buffer *buf, int c, size_t count)
 	buf->count += count;
 }
 
-static void buf_consume(struct growing_buffer *buf, size_t count)
-{
-	size_t n = buf->count - count;
-
-	if (!n) {
-		buf->count = 0;
-		return;
-	}
-	memmove(buf->buffer, buf->buffer + count, n);
-}
-
 static void flush_buffer(int fd, struct growing_buffer *buf)
 {
 	write_all(fd, buf->buffer, buf->count);
-	buf_consume(buf, buf->count);
+	buf->count = 0;
 }
 
 static void write_ti(int fd, struct growing_buffer *buf, struct track_info *ti, unsigned int *offsetp)
