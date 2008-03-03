@@ -20,6 +20,8 @@
 #ifndef _HTTP_H
 #define _HTTP_H
 
+#include "keyval.h"
+
 /*
  * 1xx indicates an informational message only
  * 2xx indicates success of some kind
@@ -27,11 +29,6 @@
  * 4xx indicates an error on the client's part
  * 5xx indicates an error on the server's part
  */
-
-struct http_header {
-	char *key;
-	char *val;
-};
 
 struct http_uri {
 	char *user;
@@ -53,12 +50,10 @@ int http_open(const char *hostname, unsigned int port, int timeout_ms);
  *          -1 check errno
  *          -2 parse error
  */
-int http_get(int fd, const char *path, struct http_header *headers, int *codep,
-		char **errp, struct http_header **ret_headersp, int timeout_ms);
+int http_get(int fd, const char *path, struct keyval *headers, int *codep,
+		char **errp, struct keyval **ret_headersp, int timeout_ms);
 
 int http_read_body(int fd, char **bodyp, int timeout_ms);
-const char *http_headers_get_value(const struct http_header *headers, const char *key);
-void http_headers_free(struct http_header *headers);
 char *base64_encode(const char *str);
 
 #endif

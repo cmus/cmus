@@ -140,10 +140,10 @@ static const struct input_plugin_ops *get_ops_by_mime_type(const char *mime_type
 	return NULL;
 }
 
-static int do_http_get(const char *uri, struct http_header **headersp, int *codep, char **reasonp)
+static int do_http_get(const char *uri, struct keyval **headersp, int *codep, char **reasonp)
 {
 	struct http_uri u;
-	struct http_header *h;
+	struct keyval *h;
 	int sock, i, rc, code;
 	char *reason, *redirloc;
 
@@ -162,7 +162,7 @@ static int do_http_get(const char *uri, struct http_header **headersp, int *code
 		return -IP_ERROR_ERRNO;
 	}
 
-	h = xnew(struct http_header, 5);
+	h = xnew(struct keyval, 5);
 	i = 0;
 	h[i].key = xstrdup("Host");
 	h[i].val = xstrdup(u.host);
@@ -194,7 +194,7 @@ static int do_http_get(const char *uri, struct http_header **headersp, int *code
 	i++;
 
 	rc = http_get(sock, u.path, h, &code, &reason, headersp, http_read_timeout);
-	http_headers_free(h);
+	keyvals_free(h);
 	http_free_uri(&u);
 	switch (rc) {
 	case -1:
@@ -230,8 +230,8 @@ static int do_http_get(const char *uri, struct http_header **headersp, int *code
 	case 302: /* Found */
 	case 303: /* See Other */
 	case 307: /* Temporary Redirect */
-		redirloc = xstrdup(http_headers_get_value(*headersp, "location"));
-		http_headers_free(*headersp);
+		redirloc = xstrdup(keyvals_get_val(*headersp, "location"));
+		keyvals_free(*headersp);
 
 		close(sock);
 		d_print("Redirected to %s\n", redirloc);
@@ -250,11 +250,11 @@ static int do_http_get(const char *uri, struct http_header **headersp, int *code
 	return sock;
 }
 
-static int setup_remote(struct input_plugin *ip, const struct http_header *headers, int sock)
+static int setup_remote(struct input_plugin *ip, const struct keyval *headers, int sock)
 {
 	const char *val;
 
-	val = http_headers_get_value(headers, "Content-Type");
+	val = keyvals_get_val(headers, "Content-Type");
 	if (val) {
 		d_print("Content-Type: %s\n", val);
 		ip->ops = get_ops_by_mime_type(val);
@@ -278,7 +278,7 @@ static int setup_remote(struct input_plugin *ip, const struct http_header *heade
 	ip->data.fd = sock;
 	ip->data.metadata = (char *)xmalloc(16 * 255 + 1);
 
-	val = http_headers_get_value(headers, "icy-metaint");
+	val = keyvals_get_val(headers, "icy-metaint");
 	if (val) {
 		long int lint;
 
@@ -298,7 +298,7 @@ struct read_playlist_data {
 static int handle_line(void *data, const char *line)
 {
 	struct read_playlist_data *rpd;
-	struct http_header *headers;
+	struct keyval *headers;
 	int sock, code;
 	char *reason;
 	const char *uri = line;
@@ -326,7 +326,7 @@ static int handle_line(void *data, const char *line)
 	}
 
 	rpd->rc = setup_remote(rpd->ip, headers, sock);
-	http_headers_free(headers);
+	keyvals_free(headers);
 	return 1;
 }
 
@@ -353,7 +353,7 @@ static int open_remote(struct input_plugin *ip)
 	struct input_plugin_data *d = &ip->data;
 	char *reason;
 	int sock, rc, code;
-	struct http_header *headers;
+	struct keyval *headers;
 	const char *val;
 
 	sock = do_http_get(d->filename, &headers, &code, &reason);
@@ -363,21 +363,21 @@ static int open_remote(struct input_plugin *ip)
 		return sock;
 	}
 
-	val = http_headers_get_value(headers, "Content-Type");
+	val = keyvals_get_val(headers, "Content-Type");
 	if (val) {
 		int i;
 
 		for (i = 0; i < sizeof(pl_mime_types) / sizeof(pl_mime_types[0]); i++) {
 			if (!strcasecmp(val, pl_mime_types[i])) {
 				d_print("Content-Type: %s\n", val);
-				http_headers_free(headers);
+				keyvals_free(headers);
 				return read_playlist(ip, sock);
 			}
 		}
 	}
 
 	rc = setup_remote(ip, headers, sock);
-	http_headers_free(headers);
+	keyvals_free(headers);
 	return rc;
 }
 

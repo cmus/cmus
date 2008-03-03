@@ -319,7 +319,7 @@ static int http_read_response(int fd, char **bufp, int *sizep, int *posp, int ti
 	}
 }
 
-static int http_parse_response(const char *str, int *codep, char **reasonp, struct http_header **hp)
+static int http_parse_response(const char *str, int *codep, char **reasonp, struct keyval **hp)
 {
 	/* str is 0 terminated buffer of lines
 	 * every line ends with '\n'
@@ -329,7 +329,7 @@ static int http_parse_response(const char *str, int *codep, char **reasonp, stru
 	const char *end;
 	char *reason;
 	int code, i, count;
-	struct http_header *h;
+	struct keyval *h;
 
 	*codep = -1;
 	*reasonp = NULL;
@@ -369,14 +369,14 @@ static int http_parse_response(const char *str, int *codep, char **reasonp, stru
 
 	/* headers */
 	count = 4;
-	h = xnew(struct http_header, count);
+	h = xnew(struct keyval, count);
 	i = 0;
 	while (*str) {
 		const char *ptr;
 
 		if (i == count - 1) {
 			count *= 2;
-			h = xrenew(struct http_header, h, count);
+			h = xrenew(struct keyval, h, count);
 		}
 
 		end = strchr(str, '\n');
@@ -409,8 +409,8 @@ static int http_parse_response(const char *str, int *codep, char **reasonp, stru
 	return 0;
 }
 
-int http_get(int fd, const char *path, struct http_header *headers,
-		int *codep, char **reasonp, struct http_header **ret_headersp,
+int http_get(int fd, const char *path, struct keyval *headers,
+		int *codep, char **reasonp, struct keyval **ret_headersp,
 		int timeout_ms)
 {
 	char *buf = NULL;
@@ -472,28 +472,6 @@ int http_read_body(int fd, char **bodyp, int timeout_ms)
 		}
 		pos += rc;
 	}
-}
-
-const char *http_headers_get_value(const struct http_header *headers, const char *key)
-{
-	int i;
-
-	for (i = 0; headers[i].key; i++) {
-		if (strcasecmp(headers[i].key, key) == 0)
-			return headers[i].val;
-	}
-	return NULL;
-}
-
-void http_headers_free(struct http_header *headers)
-{
-	int i;
-
-	for (i = 0; headers[i].key; i++) {
-		free(headers[i].key);
-		free(headers[i].val);
-	}
-	free(headers);
 }
 
 char *base64_encode(const char *str)
