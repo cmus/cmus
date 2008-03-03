@@ -5,6 +5,8 @@
 #include "gbuf.h"
 #include "xmalloc.h"
 
+#include <stdarg.h>
+
 char gbuf_empty_buffer[1];
 
 static inline void gbuf_init(struct gbuf *buf)
@@ -60,6 +62,28 @@ void gbuf_add_str(struct gbuf *buf, const char *str)
 	gbuf_grow(buf, len);
 	memcpy(buf->buffer + buf->len, str, len + 1);
 	buf->len += len;
+}
+
+void gbuf_addf(struct gbuf *buf, const char *fmt, ...)
+{
+	va_list ap;
+	size_t avail = gbuf_avail(buf);
+	int slen;
+
+	va_start(ap, fmt);
+	slen = vsnprintf(buf->buffer + buf->len, avail, fmt, ap);
+	va_end(ap);
+
+	if (slen > avail) {
+		gbuf_grow(buf, slen);
+
+		va_start(ap, fmt);
+		slen = vsnprintf(buf->buffer + buf->len, gbuf_avail(buf), fmt, ap);
+		va_end(ap);
+	}
+
+	buf->len += slen;
+	buf->buffer[buf->len] = 0;
 }
 
 void gbuf_set(struct gbuf *buf, int c, size_t count)
