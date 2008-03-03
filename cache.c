@@ -6,6 +6,7 @@
 #include "utils.h"
 #include "xmalloc.h"
 #include "xstrjoin.h"
+#include "gbuf.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -265,62 +266,15 @@ static struct track_info **get_track_infos(void)
 	return tis;
 }
 
-struct growing_buffer {
-	char *buffer;
-	size_t alloc;
-	size_t count;
-};
-
-#define GROWING_BUFFER(name) struct growing_buffer name = { NULL, 0, 0 }
-
-static size_t buf_avail(struct growing_buffer *buf)
+static void flush_buffer(int fd, struct gbuf *buf)
 {
-	return buf->alloc - buf->count;
+	if (buf->len) {
+		write_all(fd, buf->buffer, buf->len);
+		gbuf_clear(buf);
+	}
 }
 
-static void buf_resize(struct growing_buffer *buf, size_t size)
-{
-	size_t align = 4096 - 1;
-
-	buf->alloc = (size + align) & ~align;
-	buf->buffer = xrealloc(buf->buffer, buf->alloc);
-}
-
-static void buf_free(struct growing_buffer *buf)
-{
-	free(buf->buffer);
-	buf->buffer = NULL;
-	buf->alloc = 0;
-	buf->count = 0;
-}
-
-static void buf_add(struct growing_buffer *buf, void *data, size_t count)
-{
-	size_t avail = buf_avail(buf);
-
-	if (avail < count)
-		buf_resize(buf, buf->count + count);
-	memcpy(buf->buffer + buf->count, data, count);
-	buf->count += count;
-}
-
-static void buf_set(struct growing_buffer *buf, int c, size_t count)
-{
-	size_t avail = buf_avail(buf);
-
-	if (avail < count)
-		buf_resize(buf, buf->count + count);
-	memset(buf->buffer + buf->count, c, count);
-	buf->count += count;
-}
-
-static void flush_buffer(int fd, struct growing_buffer *buf)
-{
-	write_all(fd, buf->buffer, buf->count);
-	buf->count = 0;
-}
-
-static void write_ti(int fd, struct growing_buffer *buf, struct track_info *ti, unsigned int *offsetp)
+static void write_ti(int fd, struct gbuf *buf, struct track_info *ti, unsigned int *offsetp)
 {
 	const struct keyval *kv = ti->comments;
 	unsigned int offset = *offsetp;
@@ -342,17 +296,17 @@ static void write_ti(int fd, struct growing_buffer *buf, struct track_info *ti, 
 	}
 
 	pad = ALIGN(offset) - offset;
-	if (buf_avail(buf) < pad + e.size)
+	if (gbuf_avail(buf) < pad + e.size)
 		flush_buffer(fd, buf);
 
 	count = 0;
 	if (pad)
-		buf_set(buf, 0, pad);
-	buf_add(buf, &e, sizeof(e));
-	buf_add(buf, ti->filename, len[count++]);
+		gbuf_set(buf, 0, pad);
+	gbuf_add_bytes(buf, &e, sizeof(e));
+	gbuf_add_bytes(buf, ti->filename, len[count++]);
 	for (i = 0; kv[i].key; i++) {
-		buf_add(buf, kv[i].key, len[count++]);
-		buf_add(buf, kv[i].val, len[count++]);
+		gbuf_add_bytes(buf, kv[i].key, len[count++]);
+		gbuf_add_bytes(buf, kv[i].val, len[count++]);
 	}
 
 	*offsetp = offset + pad + e.size;
@@ -360,7 +314,7 @@ static void write_ti(int fd, struct growing_buffer *buf, struct track_info *ti, 
 
 int cache_close(void)
 {
-	GROWING_BUFFER(buf);
+	GBUF(buf);
 	struct track_info **tis;
 	unsigned int offset;
 	int i, fd;
@@ -376,13 +330,13 @@ int cache_close(void)
 
 	tis = get_track_infos();
 
-	buf_resize(&buf, 64 * 1024);
-	buf_add(&buf, cache_header, sizeof(cache_header));
+	gbuf_grow(&buf, 64 * 1024 - 1);
+	gbuf_add_bytes(&buf, cache_header, sizeof(cache_header));
 	offset = sizeof(cache_header);
 	for (i = 0; i < total; i++)
 		write_ti(fd, &buf, tis[i], &offset);
 	flush_buffer(fd, &buf);
-	buf_free(&buf);
+	gbuf_free(&buf);
 
 	close(fd);
 	if (rename(tmp, cache_filename))
