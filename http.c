@@ -329,7 +329,6 @@ static int http_parse_response(char *str, struct http_get *hg)
 	 */
 	GROWING_KEYVALS(h);
 	char *end;
-	int i;
 
 	if (strncmp(str, "HTTP/", 5) == 0) {
 		str += 5;
@@ -348,14 +347,13 @@ static int http_parse_response(char *str, struct http_get *hg)
 		str++;
 
 	hg->code = 0;
-	for (i = 0; i < 3; i++) {
-		if (*str < '0' || *str > '9') {
-			return -2;
-		}
+	while (*str >= '0' && *str <= '9') {
 		hg->code *= 10;
 		hg->code += *str - '0';
 		str++;
 	}
+	if (!hg->code)
+		return -2;
 	while (*str == ' ')
 		str++;
 
