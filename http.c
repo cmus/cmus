@@ -21,6 +21,7 @@
 #include "file.h"
 #include "debug.h"
 #include "xmalloc.h"
+#include "gbuf.h"
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -32,37 +33,6 @@
 #include <arpa/inet.h>
 #include <string.h>
 #include <errno.h>
-
-static void buf_ensure_space(char **bufp, int *sizep, int *posp, int len)
-{
-	int size = *sizep;
-	int pos = *posp;
-
-	if (size - pos < len) {
-		if (size == 0)
-			size = 128;
-		while (size - pos < len)
-			size *= 2;
-		*bufp = xrenew(char, *bufp, size);
-		*sizep = size;
-	}
-}
-
-static void buf_write(char **bufp, int *sizep, int *posp, const char *str)
-{
-	int len = strlen(str);
-
-	buf_ensure_space(bufp, sizep, posp, len);
-	memcpy(*bufp + *posp, str, len);
-	*posp += len;
-}
-
-static void buf_write_ch(char **bufp, int *sizep, int *posp, char ch)
-{
-	buf_ensure_space(bufp, sizep, posp, 1);
-	(*bufp)[*posp] = ch;
-	*posp += 1;
-}
 
 /*
  * @uri is http://[user[:pass]@]host[:port][/path][?query]
@@ -293,13 +263,13 @@ static int read_timeout(int fd, int timeout_ms)
 }
 
 /* reads response, ignores fscking carriage returns */
-static int http_read_response(int fd, char **bufp, int *sizep, int *posp, int timeout_ms)
+static int http_read_response(int fd, struct gbuf *buf, int timeout_ms)
 {
+	char prev = 0;
+
 	if (read_timeout(fd, timeout_ms))
 		return -1;
 	while (1) {
-		char *buf = *bufp;
-		int pos = *posp;
 		int rc;
 		char ch;
 
@@ -312,11 +282,10 @@ static int http_read_response(int fd, char **bufp, int *sizep, int *posp, int ti
 		}
 		if (ch == '\r')
 			continue;
-		if (ch == '\n' && pos > 0 && buf[pos - 1] == '\n') {
-			buf_write_ch(bufp, sizep, posp, 0);
+		if (ch == '\n' && prev == '\n')
 			return 0;
-		}
-		buf_write_ch(bufp, sizep, posp, ch);
+		gbuf_add_ch(buf, ch);
+		prev = ch;
 	}
 }
 
@@ -389,64 +358,60 @@ static int http_parse_response(char *str, struct http_get *hg)
 
 int http_get(struct http_get *hg, struct keyval *headers, int timeout_ms)
 {
-	char *buf = NULL;
-	int size = 0;
-	int pos = 0;
+	GBUF(buf);
 	int i, rc, save;
 
-	buf_write(&buf, &size, &pos, "GET ");
-	buf_write(&buf, &size, &pos, hg->uri.path);
-	buf_write(&buf, &size, &pos, " HTTP/1.0\r\n");
+	gbuf_add_str(&buf, "GET ");
+	gbuf_add_str(&buf, hg->uri.path);
+	gbuf_add_str(&buf, " HTTP/1.0\r\n");
 	for (i = 0; headers[i].key; i++) {
-		buf_write(&buf, &size, &pos, headers[i].key);
-		buf_write(&buf, &size, &pos, ": ");
-		buf_write(&buf, &size, &pos, headers[i].val);
-		buf_write(&buf, &size, &pos, "\r\n");
+		gbuf_add_str(&buf, headers[i].key);
+		gbuf_add_str(&buf, ": ");
+		gbuf_add_str(&buf, headers[i].val);
+		gbuf_add_str(&buf, "\r\n");
 	}
-	buf_write(&buf, &size, &pos, "\r\n");
+	gbuf_add_str(&buf, "\r\n");
 	
-	rc = http_write(hg->fd, buf, pos, timeout_ms);
+	rc = http_write(hg->fd, buf.buffer, buf.len, timeout_ms);
 	if (rc)
 		goto out;
 
-	pos = 0;
-	rc = http_read_response(hg->fd, &buf, &size, &pos, timeout_ms);
+	gbuf_clear(&buf);
+	rc = http_read_response(hg->fd, &buf, timeout_ms);
 	if (rc)
 		goto out;
 
-	rc = http_parse_response(buf, hg);
+	rc = http_parse_response(buf.buffer, hg);
 out:
 	save = errno;
-	free(buf);
+	gbuf_free(&buf);
 	errno = save;
 	return rc;
 }
 
 int http_read_body(int fd, char **bodyp, int timeout_ms)
 {
-	char *body = NULL;
-	int size = 0;
-	int pos = 0;
+	GBUF(buf);
 
 	*bodyp = NULL;
 	if (read_timeout(fd, timeout_ms))
 		return -1;
 	while (1) {
+		int count = 1023;
 		int rc;
 
-		buf_ensure_space(&body, &size, &pos, 256);
-		rc = read_all(fd, body + pos, size - pos);
+		gbuf_grow(&buf, count);
+		rc = read_all(fd, buf.buffer + buf.len, count);
 		if (rc == -1) {
-			free(body);
+			gbuf_free(&buf);
 			return -1;
 		}
+		buf.len += rc;
 		if (rc == 0) {
-			buf_ensure_space(&body, &size, &pos, 1);
-			body[pos] = 0;
-			*bodyp = body;
+			buf.buffer[buf.len] = 0;
+			*bodyp = gbuf_steal(&buf);
 			return 0;
 		}
-		pos += rc;
 	}
 }
 
