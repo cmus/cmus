@@ -144,6 +144,7 @@ static int do_http_get(struct http_get *hg, const char *uri)
 {
 	GROWING_KEYVALS(h);
 	int i, rc;
+	const char *val;
 	char *redirloc;
 
 	hg->headers = NULL;
@@ -208,7 +209,10 @@ static int do_http_get(struct http_get *hg, const char *uri)
 	case 302: /* Found */
 	case 303: /* See Other */
 	case 307: /* Temporary Redirect */
-		redirloc = xstrdup(keyvals_get_val(hg->headers, "location"));
+		val = keyvals_get_val(hg->headers, "location");
+		if (!val)
+			return -IP_ERROR_HTTP_RESPONSE;
+		redirloc = xstrdup(val);
 		http_get_free(hg);
 		close(hg->fd);
 
