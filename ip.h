@@ -42,6 +42,8 @@ enum {
 	IP_ERROR_HTTP_RESPONSE,
 	/* usually 404 */
 	IP_ERROR_HTTP_STATUS,
+	/* too many redirections */
+	IP_ERROR_HTTP_REDIRECT_LIMIT,
 	/*  */
 	IP_ERROR_INTERNAL
 };

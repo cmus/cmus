@@ -140,7 +140,7 @@ static const struct input_plugin_ops *get_ops_by_mime_type(const char *mime_type
 	return NULL;
 }
 
-static int do_http_get(struct http_get *hg, const char *uri)
+static int do_http_get(struct http_get *hg, const char *uri, int redirections)
 {
 	GROWING_KEYVALS(h);
 	int i, rc;
@@ -216,7 +216,11 @@ static int do_http_get(struct http_get *hg, const char *uri)
 		http_get_free(hg);
 		close(hg->fd);
 
-		rc = do_http_get(hg, redirloc);
+		redirections++;
+		if (redirections > 2)
+			return -IP_ERROR_HTTP_REDIRECT_LIMIT;
+
+		rc = do_http_get(hg, redirloc, redirections);
 		free(redirloc);
 		return rc;
 	default:
@@ -276,7 +280,7 @@ static int handle_line(void *data, const char *uri)
 	struct http_get hg;
 
 	rpd->count++;
-	rpd->rc = do_http_get(&hg, uri);
+	rpd->rc = do_http_get(&hg, uri, 0);
 	if (rpd->rc) {
 		rpd->ip->http_code = hg.code;
 		rpd->ip->http_reason = hg.reason;
@@ -320,7 +324,7 @@ static int open_remote(struct input_plugin *ip)
 	const char *val;
 	int rc;
 
-	rc = do_http_get(&hg, d->filename);
+	rc = do_http_get(&hg, d->filename, 0);
 	if (rc) {
 		ip->http_code = hg.code;
 		ip->http_reason = hg.reason;
@@ -682,6 +686,9 @@ char *ip_get_error_msg(struct input_plugin *ip, int rc, const char *arg)
 		free(ip->http_reason);
 		ip->http_reason = NULL;
 		ip->http_code = -1;
+		break;
+	case IP_ERROR_HTTP_REDIRECT_LIMIT:
+		snprintf(buffer, sizeof(buffer), "%s: too many HTTP redirections", arg);
 		break;
 	case IP_ERROR_INTERNAL:
 		snprintf(buffer, sizeof(buffer), "%s: internal error", arg);
