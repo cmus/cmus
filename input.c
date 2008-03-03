@@ -264,28 +264,19 @@ static int setup_remote(struct input_plugin *ip, const struct keyval *headers, i
 struct read_playlist_data {
 	struct input_plugin *ip;
 	int rc;
+	int count;
 };
 
-static int handle_line(void *data, const char *line)
+static int handle_line(void *data, const char *uri)
 {
-	struct read_playlist_data *rpd;
+	struct read_playlist_data *rpd = data;
 	struct http_get hg;
-	const char *uri = line;
-	int rc;
 
-	rpd = (struct read_playlist_data *)data;
-
-	if (uri == NULL) {
-		d_print("empty playlist\n");
-		rpd->rc = -IP_ERROR_HTTP_RESPONSE;
-		return 1;
-	}
-
-	rc = do_http_get(&hg, uri);
-	if (rc) {
+	rpd->count++;
+	rpd->rc = do_http_get(&hg, uri);
+	if (rpd->rc) {
 		rpd->ip->http_code = hg.code;
 		rpd->ip->http_reason = hg.reason;
-		rpd->rc = rc;
 		if (hg.fd >= 0)
 			close(hg.fd);
 
@@ -301,7 +292,7 @@ static int handle_line(void *data, const char *line)
 
 static int read_playlist(struct input_plugin *ip, int sock)
 {
-	struct read_playlist_data rpd;
+	struct read_playlist_data rpd = { ip, 0, 0 };
 	char *body;
 	int rc;
 
@@ -310,10 +301,12 @@ static int read_playlist(struct input_plugin *ip, int sock)
 	if (rc)
 		return -IP_ERROR_ERRNO;
 
-	rpd.ip = ip;
 	cmus_playlist_for_each(body, strlen(body), 0, handle_line, &rpd);
 	free(body);
-
+	if (!rpd.count) {
+		d_print("empty playlist\n");
+		rpd.rc = -IP_ERROR_HTTP_RESPONSE;
+	}
 	return rpd.rc;
 }
 
