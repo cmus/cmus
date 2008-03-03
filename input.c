@@ -143,7 +143,7 @@ static const struct input_plugin_ops *get_ops_by_mime_type(const char *mime_type
 static int do_http_get(const char *uri, struct keyval **headersp, int *codep, char **reasonp)
 {
 	struct http_uri u;
-	struct keyval *h;
+	GROWING_KEYVALS(h);
 	int sock, i, rc, code;
 	char *reason, *redirloc;
 
@@ -162,17 +162,9 @@ static int do_http_get(const char *uri, struct keyval **headersp, int *codep, ch
 		return -IP_ERROR_ERRNO;
 	}
 
-	h = xnew(struct keyval, 5);
-	i = 0;
-	h[i].key = xstrdup("Host");
-	h[i].val = xstrdup(u.host);
-	i++;
-	h[i].key = xstrdup("User-Agent");
-	h[i].val = xstrdup("cmus/" VERSION);
-	i++;
-	h[i].key = xstrdup("Icy-MetaData");
-	h[i].val = xstrdup("1");
-	i++;
+	keyvals_add(&h, "Host", xstrdup(u.host));
+	keyvals_add(&h, "User-Agent", xstrdup("cmus/" VERSION));
+	keyvals_add(&h, "Icy-MetaData", xstrdup("1"));
 	if (u.user && u.pass) {
 		char buf[256];
 		char *encoded;
@@ -184,17 +176,13 @@ static int do_http_get(const char *uri, struct keyval **headersp, int *codep, ch
 		} else {
 			snprintf(buf, sizeof(buf), "Basic %s", encoded);
 			free(encoded);
-			h[i].key = xstrdup("Authorization");
-			h[i].val = xstrdup(buf);
-			i++;
+			keyvals_add(&h, "Authorization", xstrdup(buf));
 		}
 	}
-	h[i].key = NULL;
-	h[i].val = NULL;
-	i++;
+	keyvals_terminate(&h);
 
-	rc = http_get(sock, u.path, h, &code, &reason, headersp, http_read_timeout);
-	keyvals_free(h);
+	rc = http_get(sock, u.path, h.keyvals, &code, &reason, headersp, http_read_timeout);
+	keyvals_free(h.keyvals);
 	http_free_uri(&u);
 	switch (rc) {
 	case -1:
