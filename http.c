@@ -320,21 +320,16 @@ static int http_read_response(int fd, char **bufp, int *sizep, int *posp, int ti
 	}
 }
 
-static int http_parse_response(const char *str, int *codep, char **reasonp, struct keyval **hp)
+static int http_parse_response(char *str, struct http_get *hg)
 {
 	/* str is 0 terminated buffer of lines
 	 * every line ends with '\n'
 	 * no carriage returns
 	 * no empty lines
 	 */
-	const char *end;
-	char *reason;
-	int code, i, count;
-	struct keyval *h;
-
-	*codep = -1;
-	*reasonp = NULL;
-	*hp = NULL;
+	GROWING_KEYVALS(h);
+	char *end;
+	int i;
 
 	if (strncmp(str, "HTTP/", 5) == 0) {
 		str += 5;
@@ -352,61 +347,45 @@ static int http_parse_response(const char *str, int *codep, char **reasonp, stru
 	while (*str == ' ')
 		str++;
 
-	code = 0;
+	hg->code = 0;
 	for (i = 0; i < 3; i++) {
 		if (*str < '0' || *str > '9') {
 			return -2;
 		}
-		code *= 10;
-		code += *str - '0';
+		hg->code *= 10;
+		hg->code += *str - '0';
 		str++;
 	}
 	while (*str == ' ')
 		str++;
 
 	end = strchr(str, '\n');
-	reason = xstrndup(str, end - str);
+	hg->reason = xstrndup(str, end - str);
 	str = end + 1;
 
 	/* headers */
-	count = 4;
-	h = xnew(struct keyval, count);
-	i = 0;
 	while (*str) {
-		const char *ptr;
-
-		if (i == count - 1) {
-			count *= 2;
-			h = xrenew(struct keyval, h, count);
-		}
+		char *ptr;
 
 		end = strchr(str, '\n');
 		ptr = strchr(str, ':');
 		if (ptr == NULL || ptr > end) {
-			int j;
-
-			for (j = 0; j < i; j++) {
-				free(h[j].key);
-				free(h[j].val);
-			}
-			free(h);
-			free(reason);
-			*reasonp = NULL;
+			free(hg->reason);
+			hg->reason = NULL;
+			keyvals_terminate(&h);
+			keyvals_free(h.keyvals);
 			return -2;
 		}
-		h[i].key = xstrndup(str, ptr - str);
-		ptr++;
+
+		*ptr++ = 0;
 		while (*ptr == ' ')
 			ptr++;
-		h[i].val = xstrndup(ptr, end - ptr);
-		i++;
+
+		keyvals_add(&h, str, xstrndup(ptr, end - ptr));
 		str = end + 1;
 	}
-	h[i].key = NULL;
-	h[i].val = NULL;
-	*codep = code;
-	*reasonp = reason;
-	*hp = h;
+	keyvals_terminate(&h);
+	hg->headers = h.keyvals;
 	return 0;
 }
 
@@ -437,7 +416,7 @@ int http_get(struct http_get *hg, struct keyval *headers, int timeout_ms)
 	if (rc)
 		goto out;
 
-	rc = http_parse_response(buf, &hg->code, &hg->reason, &hg->headers);
+	rc = http_parse_response(buf, hg);
 out:
 	save = errno;
 	free(buf);
