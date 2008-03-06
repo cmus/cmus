@@ -1997,7 +1997,8 @@ static void init_curses(void)
 	if (!t_fs)
 		t_ts = NULL;
 
-	if (!t_ts && (term = getenv("TERM"))) {
+	term = getenv("TERM");
+	if (!t_ts && term) {
 		/*
 		 * Eterm:            Eterm
 		 * aterm:            rxvt

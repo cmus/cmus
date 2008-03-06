@@ -94,7 +94,8 @@ static int waveout_open(sample_format_t sf)
 	format.nAvgBytesPerSec = sf_get_second_size(sf);
 	format.nBlockAlign = sf_get_frame_size(sf);
 
-	if ((rc = waveOutOpen(&wave_out, WAVE_MAPPER, &format, 0, 0, CALLBACK_NULL)) != MMSYSERR_NOERROR) {
+	rc = waveOutOpen(&wave_out, WAVE_MAPPER, &format, 0, 0, CALLBACK_NULL);
+	if (rc != MMSYSERR_NOERROR) {
 		switch (rc) {
 		case MMSYSERR_ALLOCATED:
 			errno = EBUSY;
@@ -132,7 +133,8 @@ static int waveout_close(void)
 
 	clean_buffers();
 
-	if ((rc = waveOutClose(wave_out)) != MMSYSERR_NOERROR) {
+	rc = waveOutClose(wave_out);
+	if (rc != MMSYSERR_NOERROR) {
 		waveout_error("waveOutClose", rc);
 		return -1;
 	}
@@ -191,12 +193,14 @@ static int waveout_write(const char *buffer, int count)
 		hdr->dwBufferLength = len;
 		memcpy(hdr->lpData, buffer + written, len);
 
-		if ((rc = waveOutPrepareHeader(wave_out, hdr, sizeof(WAVEHDR))) != MMSYSERR_NOERROR) {
+		rc = waveOutPrepareHeader(wave_out, hdr, sizeof(WAVEHDR));
+		if (rc != MMSYSERR_NOERROR) {
 			waveout_error("waveOutPrepareHeader", rc);
 			break;
 		}
 
-		if ((rc = waveOutWrite(wave_out, hdr, sizeof(WAVEHDR))) != MMSYSERR_NOERROR) {
+		rc = waveOutWrite(wave_out, hdr, sizeof(WAVEHDR));
+		if (rc != MMSYSERR_NOERROR) {
 			waveOutUnprepareHeader(wave_out, hdr, sizeof(WAVEHDR));
 			hdr->dwFlags = 0;
 			waveout_error("waveOutWrite", rc);

@@ -181,14 +181,14 @@ static int sun_close(void)
 
 static int sun_write(const char *buf, int cnt)
 {
-	int rc;
 	const char *t;
 
 	cnt /= 4;
 	cnt *= 4;
 	t = buf;
 	while (cnt > 0) {
-		if ((rc = write(sun_fd, buf, cnt)) == -1) {
+		int rc = write(sun_fd, buf, cnt);
+		if (rc == -1) {
 			if (errno == EINTR)
 				continue;
 			else
