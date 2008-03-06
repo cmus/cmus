@@ -105,7 +105,6 @@ void player_set_op(const char *name);
 char *player_get_op(void);
 void player_set_buffer_chunks(unsigned int nr_chunks);
 int player_get_buffer_chunks(void);
-void player_set_buffer_seconds(unsigned int seconds);
 
 void player_set_soft_volume(int l, int r);
 void player_set_soft_vol(int soft);
