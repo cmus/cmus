@@ -34,4 +34,8 @@ struct mixer_plugin_ops {
 	int (*get_option)(int key, char **val);
 };
 
+/* symbols exported by plugin */
+extern const struct mixer_plugin_ops op_mixer_ops;
+extern const char * const op_mixer_options[];
+
 #endif

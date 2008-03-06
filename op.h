@@ -60,4 +60,9 @@ struct output_plugin_ops {
 	int (*get_option)(int key, char **val);
 };
 
+/* symbols exported by plugin */
+extern const struct output_plugin_ops op_pcm_ops;
+extern const char * const op_pcm_options[];
+extern const int op_priority;
+
 #endif

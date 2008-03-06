@@ -76,4 +76,9 @@ struct input_plugin_ops {
 	int (*duration)(struct input_plugin_data *ip_data);
 };
 
+/* symbols exported by plugin */
+extern const struct input_plugin_ops ip_ops;
+extern const char * const ip_extensions[];
+extern const char * const ip_mime_types[];
+
 #endif
