@@ -227,7 +227,7 @@ static int ffmpeg_close(struct input_plugin_data *ip_data)
  * This returns the number of bytes added to the buffer.
  * It returns < 0 on error.  0 on EOF.
  */
-static int ffmpeg_fill_buffer(AVFormatContext * ic, AVCodecContext * cc, struct ffmpeg_input *input,
+static int ffmpeg_fill_buffer(AVFormatContext *ic, AVCodecContext *cc, struct ffmpeg_input *input,
 			      struct ffmpeg_output *output)
 {
 	/* frame_size specifies the size of output->buffer for

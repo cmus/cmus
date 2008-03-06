@@ -63,7 +63,7 @@ int search(struct searchable *s, const char *text, enum search_direction dir, in
 	if (beginning) {
 		/* first or last item */
 		iter = s->head;
-		if (dir == SEARCH_FORWARD){
+		if (dir == SEARCH_FORWARD) {
 			ret = s->ops.get_next(&iter);
 		} else {
 			ret = s->ops.get_prev(&iter);

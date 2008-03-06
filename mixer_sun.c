@@ -153,7 +153,7 @@ static int sun_mixer_init(void)
 static int sun_mixer_exit(void)
 {
 	if (sun_mixer_device != NULL) {
-		free (sun_mixer_device);
+		free(sun_mixer_device);
 		sun_mixer_device = NULL;
 	}
 	if (sun_mixer_channel != NULL) {

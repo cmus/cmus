@@ -42,9 +42,8 @@ static int mikmod_init(void)
 
 	md_reverb = 0;
 	/* we should let the user decide which one is better... */
-	md_mode = (DMODE_SOFT_MUSIC | DMODE_SOFT_SNDFX | DMODE_STEREO | DMODE_16BITS
-	/* | DMODE_HQMIXER */
-			| DMODE_INTERP );
+	md_mode = DMODE_SOFT_MUSIC | DMODE_SOFT_SNDFX | DMODE_STEREO |
+		DMODE_16BITS | DMODE_INTERP;
 
 	if (MikMod_Init(NULL)) {
 		d_print("Could not initialize mikmod, reason: %s\n",
@@ -60,7 +59,7 @@ static int mik_open(struct input_plugin_data *ip_data)
 {
 	MODULE *mf = NULL;
 	struct mik_private *priv;
-	int mi=mikmod_init();
+	int mi = mikmod_init();
 
 	if (!mi)
 		return -IP_ERROR_INTERNAL;
@@ -121,7 +120,7 @@ static int mik_read_comments(struct input_plugin_data *ip_data, struct keyval **
 	const char *name;
 
 	/* FIXME */
-	name=Player_LoadTitle(ip_data->filename);
+	name = Player_LoadTitle(ip_data->filename);
 	c = xnew0(struct keyval, 2);
 
 	if (name != NULL && *name != 0) {

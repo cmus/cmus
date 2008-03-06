@@ -90,7 +90,7 @@ static inline void list_add_tail(struct list_head *new, struct list_head *head)
  * This is only for internal list manipulation where we know
  * the prev/next entries already!
  */
-static inline void __list_del(struct list_head * prev, struct list_head * next)
+static inline void __list_del(struct list_head *prev, struct list_head *next)
 {
 	next->prev = prev;
 	prev->next = next;
@@ -126,8 +126,8 @@ static inline void list_del_init(struct list_head *entry)
  */
 static inline void list_move(struct list_head *list, struct list_head *head)
 {
-        __list_del(list->prev, list->next);
-        list_add(list, head);
+	__list_del(list->prev, list->next);
+	list_add(list, head);
 }
 
 /**
@@ -138,8 +138,8 @@ static inline void list_move(struct list_head *list, struct list_head *head)
 static inline void list_move_tail(struct list_head *list,
 				  struct list_head *head)
 {
-        __list_del(list->prev, list->next);
-        list_add_tail(list, head);
+	__list_del(list->prev, list->next);
+	list_add_tail(list, head);
 }
 
 /**
@@ -204,8 +204,8 @@ static inline void list_splice_init(struct list_head *list,
  *
  */
 #define container_of(ptr, type, member) ({			\
-        const __typeof__( ((type *)0)->member ) *__mptr = (ptr);	\
-        (type *)( (char *)__mptr - offsetof(type,member) );})
+	const __typeof__( ((type *)0)->member ) *__mptr = (ptr);	\
+	(type *)( (char *)__mptr - offsetof(type,member) );})
 
 /**
  * list_entry - get the struct for this entry
@@ -223,7 +223,7 @@ static inline void list_splice_init(struct list_head *list,
  */
 #define list_for_each(pos, head) \
 	for (pos = (head)->next, prefetch(pos->next); pos != (head); \
-        	pos = pos->next, prefetch(pos->next))
+		pos = pos->next, prefetch(pos->next))
 
 /**
  * __list_for_each	-	iterate over a list
@@ -245,7 +245,7 @@ static inline void list_splice_init(struct list_head *list,
  */
 #define list_for_each_prev(pos, head) \
 	for (pos = (head)->prev, prefetch(pos->prev); pos != (head); \
-        	pos = pos->prev, prefetch(pos->prev))
+		pos = pos->prev, prefetch(pos->prev))
 
 /**
  * list_for_each_safe	-	iterate over a list safe against removal of list entry

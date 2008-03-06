@@ -235,7 +235,7 @@ static const char *get_ext(const char *filename)
 	return ext;
 }
 
-static int str_in_array(const char *str, const char * const * array)
+static int str_in_array(const char *str, const char * const *array)
 {
 	int i;
 
