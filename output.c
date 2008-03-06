@@ -90,7 +90,6 @@ void op_load_plugins(void)
 		struct output_plugin *plug;
 		void *so, *symptr;
 		char *ext;
-		const char *sym;
 
 		if (d->d_name[0] == '.')
 			continue;
@@ -110,23 +109,19 @@ void op_load_plugins(void)
 
 		plug = xnew(struct output_plugin, 1);
 
-		sym = "op_pcm_ops";
-		if (!(plug->pcm_ops = dlsym(so, sym)))
-			goto sym_err;
-
-		sym = "op_pcm_options";
-		if (!(plug->pcm_options = dlsym(so, sym)))
-			goto sym_err;
-
-		sym = "op_priority";
-		symptr = dlsym(so, sym);
-		if (symptr == NULL)
-			goto sym_err;
+		plug->pcm_ops = dlsym(so, "op_pcm_ops");
+		plug->pcm_options = dlsym(so, "op_pcm_options");
+		symptr = dlsym(so, "op_priority");
+		if (!plug->pcm_ops || !plug->pcm_options || !symptr) {
+			error_msg("%s: missing symbol", filename);
+			free(plug);
+			dlclose(so);
+			continue;
+		}
 		plug->priority = *(int *)symptr;
 
 		plug->mixer_ops = dlsym(so, "op_mixer_ops");
 		plug->mixer_options = dlsym(so, "op_mixer_options");
-
 		if (plug->mixer_ops == NULL || plug->mixer_options == NULL) {
 			plug->mixer_ops = NULL;
 			plug->mixer_options = NULL;
@@ -139,11 +134,6 @@ void op_load_plugins(void)
 		plug->mixer_open = 0;
 
 		add_plugin(plug);
-		continue;
-sym_err:
-		error_msg("%s: symbol %s not found", filename, sym);
-		free(plug);
-		dlclose(so);
 	}
 	closedir(dir);
 }

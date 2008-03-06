@@ -379,7 +379,6 @@ void ip_load_plugins(void)
 		struct ip *ip;
 		void *so;
 		char *ext;
-		const char *sym;
 
 		if (d->d_name[0] == '.')
 			continue;
@@ -399,27 +398,20 @@ void ip_load_plugins(void)
 
 		ip = xnew(struct ip, 1);
 
-		sym = "ip_extensions";
-		if (!(ip->extensions = dlsym(so, sym)))
-			goto sym_err;
-
-		sym = "ip_mime_types";
-		if (!(ip->mime_types = dlsym(so, sym)))
-			goto sym_err;
-
-		sym = "ip_ops";
-		if (!(ip->ops = dlsym(so, sym)))
-			goto sym_err;
+		ip->extensions = dlsym(so, "ip_extensions");
+		ip->mime_types = dlsym(so, "ip_mime_types");
+		ip->ops = dlsym(so, "ip_ops");
+		if (!ip->extensions || !ip->mime_types || !ip->ops) {
+			error_msg("%s: missing symbol", filename);
+			free(ip);
+			dlclose(so);
+			continue;
+		}
 
 		ip->name = xstrndup(d->d_name, ext - d->d_name);
 		ip->handle = so;
 
 		list_add_tail(&ip->node, &ip_head);
-		continue;
-sym_err:
-		error_msg("%s: symbol %s not found", filename, sym);
-		free(ip);
-		dlclose(so);
 	}
 	closedir(dir);
 }
