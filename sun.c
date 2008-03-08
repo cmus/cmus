@@ -37,20 +37,6 @@ static int sun_fd = -1;
 
 static char *sun_audio_device = NULL;
 
-static int sun_reset(void);
-static int sun_set_sf(sample_format_t);
-static int sun_device_exists(const char *);
-static int sun_init(void);
-static int sun_exit(void);
-static int sun_open(sample_format_t);
-static int sun_close(void);
-static int sun_write(const char *, int);
-static int sun_pause(void);
-static int sun_unpause(void);
-static int sun_buffer_space(void);
-static int op_sun_set_option(int, const char *);
-static int op_sun_get_option(int, char **);
-
 static int sun_reset(void)
 {
 	if (ioctl(sun_fd, AUDIO_FLUSH, NULL) == -1)
