@@ -20,7 +20,6 @@
 #include "op.h"
 #include "sf.h"
 #include "xmalloc.h"
-#include "debug.h"
 
 #if defined(__OpenBSD__)
 #include <soundcard.h>
@@ -56,10 +55,9 @@ static int oss_set_sf(sample_format_t sf)
 	oss_reset();
 	oss_sf = sf;
 	tmp = sf_get_channels(oss_sf) - 1;
-	if (ioctl(oss_fd, SNDCTL_DSP_STEREO, &tmp) == -1) {
-		d_print("SNDCTL_DSP_STEREO failed: %s\n", strerror(errno));
+	if (ioctl(oss_fd, SNDCTL_DSP_STEREO, &tmp) == -1)
 		return -1;
-	}
+
 	if (sf_get_bits(oss_sf) == 16) {
 		if (sf_get_signed(oss_sf)) {
 			if (sf_get_bigendian(oss_sf)) {
@@ -81,35 +79,26 @@ static int oss_set_sf(sample_format_t sf)
 			tmp = AFMT_U8;
 		}
 	} else {
-		d_print("bits is neither 8 nor 16\n");
 		return -1;
 	}
-	if (ioctl(oss_fd, SNDCTL_DSP_SAMPLESIZE, &tmp) == -1) {
-		d_print("SNDCTL_DSP_SAMPLESIZE failed: %s\n", strerror(errno));
+	if (ioctl(oss_fd, SNDCTL_DSP_SAMPLESIZE, &tmp) == -1)
 		return -1;
-	}
+
 	tmp = sf_get_rate(oss_sf);
-	if (ioctl(oss_fd, SNDCTL_DSP_SPEED, &tmp) == -1) {
-		d_print("SNDCTL_DSP_SPEED failed: %s\n", strerror(errno));
+	if (ioctl(oss_fd, SNDCTL_DSP_SPEED, &tmp) == -1)
 		return -1;
-	}
-#if 1
+
 	bytes_per_second = sf_get_second_size(oss_sf);
 	log2_fragment_size = 0;
 	while (1 << log2_fragment_size < bytes_per_second / 25)
 		log2_fragment_size++;
 	log2_fragment_size--;
 	nr_fragments = 32;
-/* 	device_buffer_size = (1 << log2_fragment_size) * (nr_fragments + 1); */
+
 	/* bits 0..15 = size of fragment, 16..31 = log2(number of fragments) */
 	tmp = (nr_fragments << 16) + log2_fragment_size;
-	d_print("fragment: %d\n", tmp);
-	if (ioctl(oss_fd, SNDCTL_DSP_SETFRAGMENT, &tmp) == -1) {
-		d_print("fragment: %d\n", tmp);
-		d_print("SNDCTL_DSP_SETFRAGMENT failed: %s\n", strerror(errno));
+	if (ioctl(oss_fd, SNDCTL_DSP_SETFRAGMENT, &tmp) == -1)
 		return -1;
-	}
-#endif
 	return 0;
 }
 
@@ -117,12 +106,9 @@ static int oss_device_exists(const char *device)
 {
 	struct stat s;
 
-	if (stat(device, &s) == 0) {
-		d_print("device %s exists\n", device);
-		return 1;
-	}
-	d_print("device %s does not exist\n", device);
-	return 0;
+	if (stat(device, &s))
+		return 0;
+	return 1;
 }
 
 static int oss_init(void)
@@ -204,7 +190,6 @@ static int oss_buffer_space(void)
 	if (ioctl(oss_fd, SNDCTL_DSP_GETOSPACE, &info) == -1)
 		return -1;
 	space = info.bytes;
-/* 	d_print("%d\n", space); */
 	return space;
 }
 
