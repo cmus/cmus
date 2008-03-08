@@ -1246,26 +1246,3 @@ void player_set_rg_preamp(double db)
 
 	player_unlock();
 }
-
-int player_set_op_option(unsigned int id, const char *val)
-{
-	int rc;
-
-	player_lock();
-	__consumer_stop();
-	__producer_stop();
-	rc = op_set_option(id, val);
-	__player_status_changed();
-	player_unlock();
-	return rc;
-}
-
-int player_get_op_option(unsigned int id, char **val)
-{
-	int rc;
-
-	player_lock();
-	rc = op_get_option(id, val);
-	player_unlock();
-	return rc;
-}

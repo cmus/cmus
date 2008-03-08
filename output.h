@@ -74,13 +74,7 @@ int mixer_set_volume(int left, int right);
 int mixer_read_volume(void);
 int mixer_get_fds(int *fds);
 
-/*
- * errors: OP_ERROR_{NO_PLUGIN, NOT_INITIALIZED, NOT_OPTION}
- */
-int op_set_option(unsigned int id, const char *val);
-int op_get_option(unsigned int id, char **val);
-
-int op_for_each_option(void (*cb)(unsigned int id, const char *key));
+void op_add_options(void);
 char *op_get_error_msg(int rc, const char *arg);
 void op_dump_plugins(void);
 const char *op_get_current(void);

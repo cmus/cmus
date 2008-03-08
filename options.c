@@ -881,34 +881,6 @@ void option_set(const char *name, const char *value)
 		opt->set(opt->id, value);
 }
 
-static void get_op_option(unsigned int id, char *buf)
-{
-	char *val = NULL;
-
-	player_get_op_option(id, &val);
-	if (val) {
-		strcpy(buf, val);
-		free(val);
-	}
-}
-
-static void set_op_option(unsigned int id, const char *buf)
-{
-	int rc = player_set_op_option(id, buf);
-
-	if (rc) {
-		char *msg = op_get_error_msg(rc, "setting option");
-		error_msg("%s", msg);
-		free(msg);
-	}
-}
-
-/* id is ((plugin_index << 16) | option_index) */
-static void add_op_option(unsigned int id, const char *name)
-{
-	option_add(xstrdup(name), id, get_op_option, set_op_option, NULL);
-}
-
 void options_add(void)
 {
 	int i;
@@ -923,7 +895,7 @@ void options_add(void)
 	for (i = 0; i < NR_COLORS; i++)
 		option_add(color_names[i], i, get_color, set_color, NULL);
 
-	op_for_each_option(add_op_option);
+	op_add_options();
 }
 
 static int handle_line(void *data, const char *line)

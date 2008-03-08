@@ -26,6 +26,7 @@
 #include "list.h"
 #include "debug.h"
 #include "ui_curses.h"
+#include "options.h"
 #include "config/libdir.h"
 
 #include <string.h>
@@ -312,9 +313,6 @@ int mixer_get_fds(int *fds)
 	return op->mixer_ops->get_fds(fds);
 }
 
-#define OP_OPT_ID(plugin_idx, is_mixer, option_idx) \
-	(((plugin_idx) << 16) | ((is_mixer) << 15) | (option_idx))
-
 static struct output_plugin *find_plugin(int idx)
 {
 	struct output_plugin *o;
@@ -329,73 +327,87 @@ static struct output_plugin *find_plugin(int idx)
 
 extern int soft_vol;
 
-int op_set_option(unsigned int id, const char *val)
+static void option_error(int rc)
 {
-	unsigned int pid = id >> 16;
-	unsigned int mix = id & 0x8000;
-	unsigned int oid = id & 0x7fff;
-	const struct output_plugin *o = find_plugin(pid);
+	char *msg = op_get_error_msg(rc, "setting option");
+	error_msg("%s", msg);
+	free(msg);
+}
 
-	if (o == NULL)
-		return -OP_ERROR_NOT_OPTION;
+static void set_dsp_option(unsigned int id, const char *val)
+{
+	const struct output_plugin *o = find_plugin(id >> 16);
+	int rc;
 
-	if (mix) {
-		const struct mixer_plugin_ops *mo = o->mixer_ops;
-		int rc = mo->set_option(oid, val);
+	rc = o->pcm_ops->set_option(id & 0xffff, val);
+	if (rc)
+		option_error(rc);
+}
 
-		if (rc == 0 && op && op->mixer_ops == mo) {
-			/* option of the current op was set
-			 * try to reopen the mixer */
-			mixer_close();
-			if (!soft_vol)
-				mixer_open();
-		}
-		return rc;
+static void set_mixer_option(unsigned int id, const char *val)
+{
+	const struct output_plugin *o = find_plugin(id >> 16);
+	int rc;
+
+	rc = o->mixer_ops->set_option(id & 0xffff, val);
+	if (rc) {
+		option_error(rc);
+		return;
 	}
-	return o->pcm_ops->set_option(oid, val);
+	if (op && op->mixer_ops == o->mixer_ops) {
+		/* option of the current op was set
+		 * try to reopen the mixer */
+		mixer_close();
+		if (!soft_vol)
+			mixer_open();
+	}
 }
 
-int op_get_option(unsigned int id, char **val)
+static void get_dsp_option(unsigned int id, char *buf)
 {
-	unsigned int pid = id >> 16;
-	unsigned int mix = id & 0x8000;
-	unsigned int oid = id & 0x7fff;
-	const struct output_plugin *o = find_plugin(pid);
+	const struct output_plugin *o = find_plugin(id >> 16);
+	char *val = NULL;
 
-	if (o == NULL)
-		return -OP_ERROR_NOT_OPTION;
-
-	if (mix)
-		return o->mixer_ops->get_option(oid, val);
-	return o->pcm_ops->get_option(oid, val);
+	o->pcm_ops->get_option(id & 0xffff, &val);
+	if (val) {
+		strcpy(buf, val);
+		free(val);
+	}
 }
 
-int op_for_each_option(void (*cb)(unsigned int id, const char *key))
+static void get_mixer_option(unsigned int id, char *buf)
+{
+	const struct output_plugin *o = find_plugin(id >> 16);
+	char *val = NULL;
+
+	o->mixer_ops->get_option(id & 0xffff, &val);
+	if (val) {
+		strcpy(buf, val);
+		free(val);
+	}
+}
+
+void op_add_options(void)
 {
 	struct output_plugin *o;
-	unsigned int pid, oid;
+	unsigned int oid, pid = 0;
 	char key[64];
 
-	pid = -1;
 	list_for_each_entry(o, &op_head, node) {
-		pid++;
-
 		for (oid = 0; o->pcm_options[oid]; oid++) {
 			snprintf(key, sizeof(key), "dsp.%s.%s",
 					o->name,
 					o->pcm_options[oid]);
-			cb(OP_OPT_ID(pid, 0, oid), key);
+			option_add(xstrdup(key), (pid << 16) | oid, get_dsp_option, set_dsp_option, NULL);
 		}
-		if (o->mixer_ops == NULL)
-			continue;
-		for (oid = 0; o->mixer_options[oid]; oid++) {
+		for (oid = 0; o->mixer_ops && o->mixer_options[oid]; oid++) {
 			snprintf(key, sizeof(key), "mixer.%s.%s",
 					o->name,
 					o->mixer_options[oid]);
-			cb(OP_OPT_ID(pid, 1, oid), key);
+			option_add(xstrdup(key), (pid << 16) | oid, get_mixer_option, set_mixer_option, NULL);
 		}
+		pid++;
 	}
-	return 0;
 }
 
 char *op_get_error_msg(int rc, const char *arg)
