@@ -27,7 +27,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "debug.h"
 #include "op.h"
 #include "sf.h"
 #include "xmalloc.h"
@@ -82,21 +81,16 @@ static int sun_set_sf(sample_format_t sf)
 			ainf.play.encoding = AUDIO_ENCODING_ULINEAR;
 		break;
 	default:
-		d_print("sun: bits is neither 8 nor 16\n");
 		return -1;
 	}
 
-	if (ioctl(sun_fd, AUDIO_SETINFO, &ainf) == -1) {
-		d_print("sun: AUDIO_SETINFO failed: %s", strerror(errno));
+	if (ioctl(sun_fd, AUDIO_SETINFO, &ainf) == -1)
 		return -1;
-	}
 
 	if (ioctl(sun_fd, AUDIO_GETINFO, &ainf) == -1)
 		return -1;
-	/* XXX: check if sample rate is supported */
-	d_print("sun: sample_rate: %d chanels: %d\n", ainf.play.sample_rate,
-	    ainf.play.channels);
 
+	/* FIXME: check if sample rate is supported */
 	return 0;
 }
 
@@ -104,13 +98,9 @@ static int sun_device_exists(const char *dev)
 {
 	struct stat s;
 
-	if (stat(dev, &s) == 0) {
-		d_print("device %s exists\n", dev);
-		return 1;
-	}
-	d_print("device %s does not exist\n", dev);
-
-	return 0;
+	if (stat(dev, &s))
+		return 0;
+	return 1;
 }
 
 static int sun_init(void)
