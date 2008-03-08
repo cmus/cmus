@@ -83,6 +83,6 @@ int op_get_option(unsigned int id, char **val);
 int op_for_each_option(void (*cb)(unsigned int id, const char *key));
 char *op_get_error_msg(int rc, const char *arg);
 void op_dump_plugins(void);
-char *op_get_current(void);
+const char *op_get_current(void);
 
 #endif

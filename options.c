@@ -271,11 +271,10 @@ static void set_pl_sort(unsigned int id, const char *buf)
 
 static void get_output_plugin(unsigned int id, char *buf)
 {
-	char *value = player_get_op();
+	const char *value = op_get_current();
 
 	if (value)
 		strcpy(buf, value);
-	free(value);
 }
 
 static void set_output_plugin(unsigned int id, const char *buf)

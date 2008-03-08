@@ -453,9 +453,9 @@ void op_dump_plugins(void)
 	}
 }
 
-char *op_get_current(void)
+const char *op_get_current(void)
 {
 	if (op)
-		return xstrdup(op->name);
+		return op->name;
 	return NULL;
 }

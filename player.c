@@ -1167,11 +1167,6 @@ void player_set_op(const char *name)
 	player_unlock();
 }
 
-char *player_get_op(void)
-{
-	return op_get_current();
-}
-
 void player_set_buffer_chunks(unsigned int nr_chunks)
 {
 	if (nr_chunks < 3)
