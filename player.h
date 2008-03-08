@@ -114,7 +114,6 @@ void player_set_rg_preamp(double db);
 
 int player_set_op_option(unsigned int id, const char *val);
 int player_get_op_option(unsigned int id, char **val);
-void player_dump_plugins(void);
 
 #define player_info_lock() cmus_mutex_lock(&player_info.mutex)
 #define player_info_unlock() cmus_mutex_unlock(&player_info.mutex)

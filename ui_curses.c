@@ -44,6 +44,7 @@
 #include "debug.h"
 #include "help.h"
 #include "worker.h"
+#include "input.h"
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -2169,7 +2170,8 @@ int main(int argc, char *argv[])
 
 	player_load_plugins();
 	if (list_plugins) {
-		player_dump_plugins();
+		ip_dump_plugins();
+		op_dump_plugins();
 		return 0;
 	}
 	init_all();

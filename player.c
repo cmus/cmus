@@ -1274,9 +1274,3 @@ int player_get_op_option(unsigned int id, char **val)
 	player_unlock();
 	return rc;
 }
-
-void player_dump_plugins(void)
-{
-	ip_dump_plugins();
-	op_dump_plugins();
-}
