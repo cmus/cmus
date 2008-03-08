@@ -914,8 +914,6 @@ void options_add(void)
 {
 	int i;
 
-	/* add options */
-
 	for (i = 0; simple_options[i].name; i++)
 		option_add(simple_options[i].name, 0, simple_options[i].get,
 				simple_options[i].set, simple_options[i].toggle);
@@ -926,7 +924,7 @@ void options_add(void)
 	for (i = 0; i < NR_COLORS; i++)
 		option_add(color_names[i], i, get_color, set_color, NULL);
 
-	player_for_each_op_option(add_op_option);
+	op_for_each_option(add_op_option);
 }
 
 static int handle_line(void *data, const char *line)

@@ -1275,17 +1275,6 @@ int player_get_op_option(unsigned int id, char **val)
 	return rc;
 }
 
-int player_for_each_op_option(void (*callback)(unsigned int id, const char *key))
-{
-	player_lock();
-	__consumer_stop();
-	__producer_stop();
-	op_for_each_option(callback);
-	__player_status_changed();
-	player_unlock();
-	return 0;
-}
-
 void player_dump_plugins(void)
 {
 	ip_dump_plugins();
