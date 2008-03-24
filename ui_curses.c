@@ -2084,6 +2084,7 @@ static void exit_all(void)
 	cmus_save(pl_for_each, pl_autosave_filename);
 
 	player_exit();
+	op_exit_plugins();
 	commands_exit();
 	search_mode_exit();
 	filters_exit();
