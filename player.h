@@ -86,8 +86,6 @@ extern int soft_vol;
 extern int soft_vol_l;
 extern int soft_vol_r;
 
-void player_load_plugins(void);
-
 void player_init(const struct player_callbacks *callbacks);
 void player_exit(void);
 

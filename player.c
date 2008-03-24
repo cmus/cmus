@@ -850,12 +850,6 @@ static void *producer_loop(void *arg)
 	return NULL;
 }
 
-void player_load_plugins(void)
-{
-	ip_load_plugins();
-	op_load_plugins();
-}
-
 void player_init(const struct player_callbacks *callbacks)
 {
 	int rc;

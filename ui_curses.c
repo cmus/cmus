@@ -2168,7 +2168,8 @@ int main(int argc, char *argv[])
 	debug_init();
 	d_print("charset = '%s'\n", charset);
 
-	player_load_plugins();
+	ip_load_plugins();
+	op_load_plugins();
 	if (list_plugins) {
 		ip_dump_plugins();
 		op_dump_plugins();
