@@ -515,13 +515,9 @@ int expr_eval(struct expr *expr, struct track_info *ti)
 			val = ti->filename;
 		} else {
 			val = keyvals_get_val(ti->comments, key);
-			if (val == NULL) {
-				/* NULL="something" is false */
-				if (expr->estr.op == SOP_EQ)
-					return 0;
-				/* NULL!="something" is true */
-				return 1;
-			}
+			/* non-existing string tag equals to "" */
+			if (!val)
+				val = "";
 		}
 		res = glob_match(&expr->estr.glob_head, val);
 		if (expr->estr.op == SOP_EQ)
