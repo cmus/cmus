@@ -604,90 +604,99 @@ static char *decode_str(const char *buf, int len, int encoding)
 	return out;
 }
 
+static void add_v2(struct id3tag *id3, enum id3_key key, char *value)
+{
+	free(id3->v2[key]);
+	id3->v2[key] = value;
+	id3->has_v2 = 1;
+}
+
+static void decode_normal(struct id3tag *id3, const char *buf, int len, int encoding, enum id3_key key)
+{
+	char *out = decode_str(buf, len, encoding);
+
+	if (!out)
+		return;
+
+	if (key == ID3_GENRE) {
+		char *tmp;
+
+		id3_debug("genre before: '%s'\n", out);
+		tmp = parse_genre(out);
+		free(out);
+		out = tmp;
+	}
+	if (key == ID3_DATE) {
+		id3_debug("date before: '%s'\n", out);
+		fix_date(out);
+		if (!*out) {
+			id3_debug("date parsing failed\n");
+			free(out);
+			return;
+		}
+	}
+	add_v2(id3, key, out);
+}
+
+static void decode_txxx(struct id3tag *id3, const char *buf, int len, int encoding)
+{
+	enum id3_key key = NUM_ID3_KEYS;
+	int size;
+	char *out;
+
+	out = decode_str(buf, len, encoding);
+	if (!out)
+		return;
+
+	id3_debug("TXXX, key = '%s'\n", out);
+	if (!strcasecmp(out, "replaygain_track_gain"))
+		key = ID3_RG_TRACK_GAIN;
+	if (!strcasecmp(out, "replaygain_track_peak"))
+		key = ID3_RG_TRACK_PEAK;
+	if (!strcasecmp(out, "replaygain_album_gain"))
+		key = ID3_RG_ALBUM_GAIN;
+	if (!strcasecmp(out, "replaygain_album_peak"))
+		key = ID3_RG_ALBUM_PEAK;
+	if (!strcasecmp(out, "album artist"))
+		key = ID3_ALBUMARTIST;
+	if (!strcasecmp(out, "albumartistsort"))
+		key = ID3_ALBUMARTISTSORT;
+	if (!strcasecmp(out, "compilation"))
+		key = ID3_COMPILATION;
+
+	size = strlen(out) + 1;
+	free(out);
+
+	if (key == NUM_ID3_KEYS)
+		return;
+
+	buf += size;
+	len -= size;
+	if (len <= 0)
+		return;
+
+	out = decode_str(buf, len, encoding);
+	if (!out)
+		return;
+
+	add_v2(id3, key, out);
+}
+
 static void v2_add_frame(struct id3tag *id3, struct v2_frame_header *fh, const char *buf)
 {
-	int idx, encoding = *buf++, len = fh->size - 1;
-	enum id3_key key = NUM_ID3_KEYS;
-	char *out;
+	int encoding = *buf++;
+	int len = fh->size - 1;
+	int idx;
 
 	if (encoding > 3)
 		return;
 
 	idx = frame_tab_index(fh->id);
 	if (idx >= 0) {
-		key = frame_tab[idx].key;
-		out = decode_str(buf, len, encoding);
-		if (!out)
-			return;
-
-		if (key == ID3_GENRE) {
-			char *tmp;
-
-			id3_debug("genre before: '%s'\n", out);
-			tmp = parse_genre(out);
-			free(out);
-			out = tmp;
-		}
-		if (key == ID3_DATE) {
-			id3_debug("date before: '%s'\n", out);
-			fix_date(out);
-			if (!*out) {
-				id3_debug("date parsing failed\n");
-				free(out);
-				return;
-			}
-		}
-
-		id3_debug("%s '%s'\n", frame_tab[idx].name, out);
+		decode_normal(id3, buf, len, encoding, frame_tab[idx].key);
 	} else if (!strncmp(fh->id, "TXXX", 4)) {
-		int size;
-
-		id3_debug("TXXX\n");
-
-		/* TXXX<len><encoding><key><val> */
-		out = decode_str(buf, len, encoding);
-		if (!out)
-			return;
-
-		id3_debug("TXXX, key = '%s'\n", out);
-		if (!strcasecmp(out, "replaygain_track_gain"))
-			key = ID3_RG_TRACK_GAIN;
-		if (!strcasecmp(out, "replaygain_track_peak"))
-			key = ID3_RG_TRACK_PEAK;
-		if (!strcasecmp(out, "replaygain_album_gain"))
-			key = ID3_RG_ALBUM_GAIN;
-		if (!strcasecmp(out, "replaygain_album_peak"))
-			key = ID3_RG_ALBUM_PEAK;
-		if (!strcasecmp(out, "album artist"))
-			key = ID3_ALBUMARTIST;
-		if (!strcasecmp(out, "albumartistsort"))
-			key = ID3_ALBUMARTISTSORT;
-		if (!strcasecmp(out, "compilation"))
-			key = ID3_COMPILATION;
-
-		size = strlen(out) + 1;
-		free(out);
-
-		if (key == NUM_ID3_KEYS)
-			return;
-
-		buf += size;
-		len -= size;
-		if (len <= 0)
-			return;
-
-		out = decode_str(buf, len, encoding);
-		if (!out)
-			return;
-
-		id3_debug("TXXX, val = '%s'\n", out);
-	} else {
-		return;
+		decode_txxx(id3, buf, len, encoding);
 	}
-
-	free(id3->v2[key]);
-	id3->v2[key] = out;
-	id3->has_v2 = 1;
 }
 
 static void unsync(unsigned char *buf, int *lenp)
