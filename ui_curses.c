@@ -199,6 +199,7 @@ enum {
 	TF_TITLE,
 	TF_YEAR,
 	TF_GENRE,
+	TF_COMMENT,
 	TF_DURATION,
 	TF_PATHFILE,
 	TF_FILE,
@@ -213,6 +214,7 @@ static struct format_option track_fopts[NR_TFS + 1] = {
 	DEF_FO_STR('t'),
 	DEF_FO_STR('y'),
 	DEF_FO_STR('g'),
+	DEF_FO_STR('c'),
 	DEF_FO_TIME('d'),
 	DEF_FO_STR('f'),
 	DEF_FO_STR('F'),
@@ -487,6 +489,7 @@ static void fill_track_fopts_track_info(struct track_info *info)
 	fopt_set_str(&track_fopts[TF_TITLE], keyvals_get_val(info->comments, "title"));
 	fopt_set_str(&track_fopts[TF_YEAR], keyvals_get_val(info->comments, "date"));
 	fopt_set_str(&track_fopts[TF_GENRE], keyvals_get_val(info->comments, "genre"));
+	fopt_set_str(&track_fopts[TF_COMMENT], keyvals_get_val(info->comments, "comment"));
 	fopt_set_time(&track_fopts[TF_DURATION], info->duration, info->duration == -1);
 	fopt_set_str(&track_fopts[TF_PATHFILE], filename);
 	if (is_url(info->filename)) {
