@@ -228,7 +228,8 @@ const char * const id3_key_names[NUM_ID3_KEYS] = {
 	"replaygain_track_gain",
 	"replaygain_track_peak",
 	"replaygain_album_gain",
-	"replaygain_album_peak"
+	"replaygain_album_peak",
+	"comment",
 };
 
 static int utf16_is_special(const uchar uch)
@@ -682,6 +683,24 @@ static void decode_txxx(struct id3tag *id3, const char *buf, int len, int encodi
 	add_v2(id3, key, out);
 }
 
+static void decode_comment(struct id3tag *id3, const char *buf, int len, int encoding)
+{
+	char *out;
+
+	if (len <= 4)
+		return;
+
+	/* skip language */
+	buf += 4;
+	len -= 4;
+
+	out = decode_str(buf, len, encoding);
+	if (!out)
+		return;
+
+	add_v2(id3, ID3_COMMENT, out);
+}
+
 static void v2_add_frame(struct id3tag *id3, struct v2_frame_header *fh, const char *buf)
 {
 	int encoding = *buf++;
@@ -696,6 +715,10 @@ static void v2_add_frame(struct id3tag *id3, struct v2_frame_header *fh, const c
 		decode_normal(id3, buf, len, encoding, frame_tab[idx].key);
 	} else if (!strncmp(fh->id, "TXXX", 4)) {
 		decode_txxx(id3, buf, len, encoding);
+	} else if (!strncmp(fh->id, "COMM", 4)) {
+		decode_comment(id3, buf, len, encoding);
+	} else if (!strncmp(fh->id, "COM", 4)) {
+		decode_comment(id3, buf, len, encoding);
 	}
 }
 
