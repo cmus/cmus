@@ -73,6 +73,7 @@ static const char *interesting[] = {
 	"replaygain_track_peak",
 	"replaygain_album_gain",
 	"replaygain_album_peak",
+	"comment",
 	NULL
 };
 
