@@ -18,9 +18,16 @@
  */
 
 #include <stdio.h>
+
+#ifdef HAVE_FFMPEG_AVCODEC_H
 #include <ffmpeg/avcodec.h>
 #include <ffmpeg/avformat.h>
 #include <ffmpeg/avio.h>
+#else
+#include <libavcodec/avcodec.h>
+#include <libavformat/avformat.h>
+#include <libavformat/avio.h>
+#endif
 
 #include "ip.h"
 #include "xmalloc.h"

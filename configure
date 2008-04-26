@@ -200,6 +200,10 @@ check_aac()
 check_ffmpeg()
 {
 	pkg_config FFMPEG "libavformat"
+	if check_header 'ffmpeg/avcodec.h'
+	then
+		makefile_var 'HAVE_FFMPEG_AVCODEC_H' 1
+	fi
 	return $?
 }
 
