@@ -425,6 +425,7 @@ int format_valid(const char *format)
 			case 'l':
 			case 't':
 			case 'd':
+			case 'g':
 			case 'f':
 			case 'F':
 				if (pad_zero)
@@ -433,7 +434,6 @@ int format_valid(const char *format)
 			case 'D':
 			case 'n':
 			case 'y':
-			case 'g':
 				break;
 			default:
 				return 0;
