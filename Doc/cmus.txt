@@ -266,8 +266,10 @@ C              toggle continue
 M              toggle play_library
 o              toggle play_sorted
 r              toggle repeat
+^R             toggle repeat_current
 t              toggle show_remaining_time
 s              toggle shuffle
+u              update-cache
 1              view tree
 2              view sorted
 3              view playlist
@@ -298,13 +300,13 @@ i              win-sel-cur
 space          win-toggle
 g, home        win-top
 k, up          win-up
-u              win-update
 @endpre
 
 @h2 Browser Context
 @pre
 backspace      browser-up
 i              toggle show_hidden
+u              win-update
 @endpre
 
 @h1 COMMANDS
