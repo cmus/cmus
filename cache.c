@@ -19,7 +19,7 @@
 #define CACHE_64_BIT	0x01
 #define CACHE_BE	0x02
 
-// Cmus Track Cache version 0 + 4 bytes flags
+// Cmus Track Cache version X + 4 bytes flags
 static char cache_header[8] = "CTC\0\0\0\0\0";
 
 // host byte order
@@ -234,6 +234,9 @@ int cache_init(void)
 	cache_header[6] = flags & 0xff; flags >>= 8;
 	cache_header[5] = flags & 0xff; flags >>= 8;
 	cache_header[4] = flags & 0xff; flags >>= 8;
+
+	/* assumed version */
+	cache_header[3] = 0x01;
 
 	cache_filename = xstrjoin(cmus_config_dir, "/cache");
 	return read_cache();
