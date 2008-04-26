@@ -737,8 +737,7 @@ static int v2_read(struct id3tag *id3, int fd, const struct v2_header *header)
 	if (header->flags & V2_HEADER_EXTENDED) {
 		struct v2_extended_header ext;
 
-		v2_extended_header_parse(&ext, buf);
-		if (ext.size > buf_size) {
+		if (!v2_extended_header_parse(&ext, buf) || ext.size > buf_size) {
 			id3_debug("extended header corrupted\n");
 			free(buf);
 			return -2;
