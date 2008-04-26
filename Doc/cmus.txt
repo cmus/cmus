@@ -988,7 +988,7 @@ subexpressions and *!* negates result of the expression following it.
 
 @h2 Strings
 
-*filename*, *artist*, *album*, *title*, *genre*
+*filename*, *artist*, *album*, *title*, *genre*, *comment*
 
 Comparators: *=* and *!=* (not equal)
 

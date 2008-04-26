@@ -416,6 +416,7 @@ static const struct {
 } builtin[] = {
 	{ "album",	EXPR_STR },
 	{ "artist",	EXPR_STR },
+	{ "comment",	EXPR_STR },
 	{ "date",	EXPR_INT },
 	{ "discnumber",	EXPR_INT },
 	{ "duration",	EXPR_INT },
