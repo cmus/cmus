@@ -951,7 +951,9 @@ static void do_update_statusline(void)
 	if (player_info.ti && is_url(player_info.ti->filename))
 		strcat(format, "buf: %b ");
 	strcat(format, "%=");
-	if (play_library) {
+	if (player_repeat_current) {
+		strcat(format, "repeat current");
+	} else if (play_library) {
 		/* artist/album modes work only in lib */
 		if (shuffle) {
 			/* shuffle overrides sorted mode */

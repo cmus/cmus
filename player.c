@@ -67,6 +67,9 @@ struct player_info player_info = {
 /* continue playing after track is finished? */
 int player_cont = 1;
 
+/* repeat current track forever? */
+int player_repeat_current;
+
 enum replaygain replaygain;
 int replaygain_limit = 1;
 double replaygain_preamp = 6.0;
@@ -658,6 +661,18 @@ static void __consumer_handle_eof(void)
 		__producer_stop();
 		__consumer_drain_and_stop();
 		player_error("lost connection");
+		return;
+	}
+
+	if (player_repeat_current) {
+		if (player_cont) {
+			ip_seek(ip, 0);
+			reset_buffer();
+		} else {
+			__producer_stop();
+			__consumer_drain_and_stop();
+			__player_status_changed();
+		}
 		return;
 	}
 

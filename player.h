@@ -79,6 +79,7 @@ struct player_info {
 
 extern struct player_info player_info;
 extern int player_cont;
+extern int player_repeat_current;
 extern enum replaygain replaygain;
 extern int replaygain_limit;
 extern double replaygain_preamp;

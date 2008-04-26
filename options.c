@@ -410,6 +410,24 @@ static void toggle_continue(unsigned int id)
 	update_statusline();
 }
 
+static void get_repeat_current(unsigned int id, char *buf)
+{
+	strcpy(buf, bool_names[player_repeat_current]);
+}
+
+static void set_repeat_current(unsigned int id, const char *buf)
+{
+	if (!parse_bool(buf, &player_repeat_current))
+		return;
+	update_statusline();
+}
+
+static void toggle_repeat_current(unsigned int id)
+{
+	player_repeat_current ^= 1;
+	update_statusline();
+}
+
 static void get_confirm_run(unsigned int id, char *buf)
 {
 	strcpy(buf, bool_names[confirm_run]);
@@ -773,6 +791,7 @@ static const struct {
 	DT(play_library)
 	DT(play_sorted)
 	DT(repeat)
+	DT(repeat_current)
 	DT(replaygain)
 	DT(replaygain_limit)
 	DN(replaygain_preamp)
