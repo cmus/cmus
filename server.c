@@ -171,7 +171,7 @@ static void read_commands(struct client *client)
 					line++;
 					restricted = 1;
 				}
-				search_text(line, restricted);
+				search_text(line, restricted, 1);
 				ret = write_all(client->fd, "\n", 1);
 			} else if (*line == '?') {
 				int restricted = 0;
@@ -181,7 +181,7 @@ static void read_commands(struct client *client)
 					line++;
 					restricted = 1;
 				}
-				search_text(line, restricted);
+				search_text(line, restricted, 1);
 				ret = write_all(client->fd, "\n", 1);
 			} else if (parse_command(line, &cmd, &arg)) {
 				if (!strcmp(cmd, "status")) {

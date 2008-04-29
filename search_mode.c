@@ -120,7 +120,7 @@ static void delete(void)
 	search_restricted = restricted;
 }
 
-void search_text(const char *text, int restricted)
+void search_text(const char *text, int restricted, int beginning)
 {
 	if (text[0] == 0) {
 		/* cmdline is "/", "?", "//" or "??" */
@@ -138,7 +138,7 @@ void search_text(const char *text, int restricted)
 
 		/* search not yet done if up or down arrow was pressed */
 		search_restricted = restricted;
-		if (!search(searchable, search_str, search_direction, 0))
+		if (!search(searchable, search_str, search_direction, beginning))
 			search_not_found();
 	}
 }
@@ -176,7 +176,7 @@ void search_mode_ch(uchar ch)
 		break;
 	case 0x0A:
 		parse_line(&text, &restricted);
-		search_text(text, restricted);
+		search_text(text, restricted, 0);
 		cmdline_clear();
 		input_mode = NORMAL_MODE;
 		break;
