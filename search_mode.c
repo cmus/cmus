@@ -45,7 +45,6 @@ enum search_direction search_direction = SEARCH_FORWARD;
 char *search_str = NULL;
 int search_restricted = 0;
 
-static int search_found = 0;
 static struct history search_history;
 static char *search_history_filename;
 static char *history_search_text = NULL;
@@ -115,7 +114,7 @@ static void delete(void)
 	cmdline_delete_ch();
 	parse_line(&text, &search_restricted);
 	if (text[0])
-		search_found = search(searchable, text, search_direction, 0);
+		search(searchable, text, search_direction, 0);
 
 	/* restore old value */
 	search_restricted = restricted;
@@ -159,7 +158,8 @@ void search_mode_ch(uchar ch)
 			if (search_str) {
 				/* use old search string */
 				search_restricted = restricted;
-				search_found = search_next(searchable, search_str, search_direction);
+				if (!search_next(searchable, search_str, search_direction))
+					search_not_found();
 			}
 		} else {
 			/* set new search string and add it to the history */
@@ -169,11 +169,10 @@ void search_mode_ch(uchar ch)
 
 			/* search not yet done if up or down arrow was pressed */
 			search_restricted = restricted;
-			search_found = search(searchable, search_str, search_direction, 0);
+			if (!search(searchable, search_str, search_direction, 0))
+				search_not_found();
 		}
 		cmdline_clear();
-		if (!search_found)
-			search_not_found();
 		input_mode = NORMAL_MODE;
 		break;
 	case 0x0B:
@@ -202,7 +201,7 @@ void search_mode_ch(uchar ch)
 
 			cmdline_insert_ch(ch);
 			parse_line(&text, &search_restricted);
-			search_found = search(searchable, text, search_direction, beginning);
+			search(searchable, text, search_direction, beginning);
 
 			/* restore old value */
 			search_restricted = restricted;
