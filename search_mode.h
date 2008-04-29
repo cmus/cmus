@@ -34,4 +34,6 @@ extern void search_mode_key(int key);
 extern void search_mode_init(void);
 extern void search_mode_exit(void);
 
+void search_text(const char *text, int restricted);
+
 #endif

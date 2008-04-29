@@ -20,6 +20,7 @@
 #include "server.h"
 #include "prog.h"
 #include "command_mode.h"
+#include "search_mode.h"
 #include "options.h"
 #include "xmalloc.h"
 #include "player.h"
@@ -41,6 +42,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <ctype.h>
 
 int server_socket;
 LIST_HEAD(client_head);
@@ -158,7 +160,30 @@ static void read_commands(struct client *client)
 				continue;
 			}
 
-			if (parse_command(line, &cmd, &arg)) {
+			while (isspace(*line))
+				line++;
+
+			if (*line == '/') {
+				int restricted = 0;
+				line++;
+				search_direction = SEARCH_FORWARD;
+				if (*line == '/') {
+					line++;
+					restricted = 1;
+				}
+				search_text(line, restricted);
+				ret = write_all(client->fd, "\n", 1);
+			} else if (*line == '?') {
+				int restricted = 0;
+				line++;
+				search_direction = SEARCH_BACKWARD;
+				if (*line == '?') {
+					line++;
+					restricted = 1;
+				}
+				search_text(line, restricted);
+				ret = write_all(client->fd, "\n", 1);
+			} else if (parse_command(line, &cmd, &arg)) {
 				if (!strcmp(cmd, "status")) {
 					ret = cmd_status(client);
 				} else {

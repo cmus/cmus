@@ -120,6 +120,29 @@ static void delete(void)
 	search_restricted = restricted;
 }
 
+void search_text(const char *text, int restricted)
+{
+	if (text[0] == 0) {
+		/* cmdline is "/", "?", "//" or "??" */
+		if (search_str) {
+			/* use old search string */
+			search_restricted = restricted;
+			if (!search_next(searchable, search_str, search_direction))
+				search_not_found();
+		}
+	} else {
+		/* set new search string and add it to the history */
+		free(search_str);
+		search_str = xstrdup(text);
+		history_add_line(&search_history, text);
+
+		/* search not yet done if up or down arrow was pressed */
+		search_restricted = restricted;
+		if (!search(searchable, search_str, search_direction, 0))
+			search_not_found();
+	}
+}
+
 void search_mode_ch(uchar ch)
 {
 	const char *text;
@@ -153,25 +176,7 @@ void search_mode_ch(uchar ch)
 		break;
 	case 0x0A:
 		parse_line(&text, &restricted);
-		if (text[0] == 0) {
-			/* cmdline is "/", "?", "//" or "??" */
-			if (search_str) {
-				/* use old search string */
-				search_restricted = restricted;
-				if (!search_next(searchable, search_str, search_direction))
-					search_not_found();
-			}
-		} else {
-			/* set new search string and add it to the history */
-			free(search_str);
-			search_str = xstrdup(text);
-			history_add_line(&search_history, text);
-
-			/* search not yet done if up or down arrow was pressed */
-			search_restricted = restricted;
-			if (!search(searchable, search_str, search_direction, 0))
-				search_not_found();
-		}
+		search_text(text, restricted);
 		cmdline_clear();
 		input_mode = NORMAL_MODE;
 		break;
