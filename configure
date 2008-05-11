@@ -228,12 +228,15 @@ check_aac()
 
 check_ffmpeg()
 {
-	pkg_config FFMPEG "libavformat"
-	if check_header 'ffmpeg/avcodec.h'
+	if pkg_config FFMPEG "libavformat"
 	then
-		FFMPEG_CFLAGS="$FFMPEG_CFLAGS -DHAVE_FFMPEG_AVCODEC_H"
+		if check_header 'ffmpeg/avcodec.h'
+		then
+			FFMPEG_CFLAGS="$FFMPEG_CFLAGS -DHAVE_FFMPEG_AVCODEC_H"
+		fi
+		return 0
 	fi
-	return $?
+	return 1
 }
 
 # defaults
