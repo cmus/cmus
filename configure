@@ -44,6 +44,35 @@ check_compat()
 	makefile_vars COMPAT_LIBS
 }
 
+rtsched_code="
+#include <pthread.h>
+
+int main(int argc, char *argv[])
+{
+	pthread_attr_t attr;
+	struct sched_param param;
+
+	pthread_attr_init(&attr);
+	pthread_attr_setschedpolicy(&attr, SCHED_RR);
+	param.sched_priority = sched_get_priority_max(SCHED_RR);
+	pthread_attr_setschedparam(&attr, &param);
+	return 0;
+}
+"
+
+check_rtsched()
+{
+	msg_checking "for realtime scheduling"
+	if try_compile_link "$rtsched_code" $PTHREAD_CFLAGS $PTHREAD_LIBS
+	then
+		msg_result yes
+		EXTRA_CFLAGS="$EXTRA_CFLAGS -DREALTIME_SCHEDULING"
+	else
+		msg_result no
+	fi
+	return 0
+}
+
 check_ncurses()
 {
 	if check_library NCURSES "" -lncursesw
@@ -269,6 +298,7 @@ check check_endianness
 check check_compat
 check check_dl
 check check_pthread
+check check_rtsched
 check check_ncurses
 check check_iconv
 

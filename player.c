@@ -868,7 +868,7 @@ static void *producer_loop(void *arg)
 void player_init(const struct player_callbacks *callbacks)
 {
 	int rc;
-#if defined(__linux__) || defined(__FreeBSD__)
+#ifdef REALTIME_SCHEDULING
 	pthread_attr_t attr;
 #endif
 	pthread_attr_t *attrp = NULL;
@@ -881,7 +881,7 @@ void player_init(const struct player_callbacks *callbacks)
 
 	player_cbs = callbacks;
 
-#if defined(__linux__) || defined(__FreeBSD__)
+#ifdef REALTIME_SCHEDULING
 	rc = pthread_attr_init(&attr);
 	BUG_ON(rc);
 	rc = pthread_attr_setschedpolicy(&attr, SCHED_RR);
