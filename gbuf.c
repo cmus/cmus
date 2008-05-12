@@ -67,23 +67,21 @@ void gbuf_add_str(struct gbuf *buf, const char *str)
 void gbuf_addf(struct gbuf *buf, const char *fmt, ...)
 {
 	va_list ap;
-	size_t avail = gbuf_avail(buf);
 	int slen;
 
 	va_start(ap, fmt);
-	slen = vsnprintf(buf->buffer + buf->len, avail, fmt, ap);
+	slen = vsnprintf(buf->buffer + buf->len, buf->alloc - buf->len, fmt, ap);
 	va_end(ap);
 
-	if (slen > avail) {
-		gbuf_grow(buf, slen);
+	if (slen > gbuf_avail(buf)) {
+		gbuf_grow(buf, slen + 1);
 
 		va_start(ap, fmt);
-		slen = vsnprintf(buf->buffer + buf->len, gbuf_avail(buf), fmt, ap);
+		slen = vsnprintf(buf->buffer + buf->len, buf->alloc - buf->len, fmt, ap);
 		va_end(ap);
 	}
 
 	buf->len += slen;
-	buf->buffer[buf->len] = 0;
 }
 
 void gbuf_set(struct gbuf *buf, int c, size_t count)
