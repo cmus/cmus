@@ -536,35 +536,37 @@ static void update_artist_name(struct artist *artist, char *new_name)
 void tree_add_track(struct tree_track *track)
 {
 	const struct track_info *ti = tree_track_info(track);
-	const char *album_name, *artist_name, *compilation, *artist_name_fancy;
+	const char *album_name, *artist_name, *artist_name_fancy = NULL;
 	struct artist *artist;
 	struct album *album;
 	int date;
 
-	album_name = keyvals_get_val(ti->comments, "album");
-	artist_name = keyvals_get_val(ti->comments, "artist");
-	compilation = keyvals_get_val(ti->comments, "compilation");
-
-	artist_name_fancy = keyvals_get_val(ti->comments, "albumartistsort");
-	if (!artist_name_fancy)
-		artist_name_fancy = keyvals_get_val(ti->comments, "albumartist");
-	if (!artist_name_fancy)
-		artist_name_fancy = keyvals_get_val(ti->comments, "artistsort");
-
 	if (is_url(ti->filename)) {
 		artist_name = "<Stream>";
 		album_name = "<Stream>";
-	}
+	} else {
+		const char *compilation;
 
-	if (artist_name == NULL)
-		artist_name = "<No Name>";
-	if (album_name == NULL)
-		album_name = "<No Name>";
+		artist_name = keyvals_get_val(ti->comments, "artist");
+		album_name = keyvals_get_val(ti->comments, "album");
 
-	if (compilation && (!strcasecmp(compilation, "1")
-				|| !strcasecmp(compilation, "yes"))) {
-		/* Store all compilations under compilations */
-		artist_name = "<Compilations>";
+		artist_name_fancy = keyvals_get_val(ti->comments, "albumartistsort");
+		if (!artist_name_fancy)
+			artist_name_fancy = keyvals_get_val(ti->comments, "albumartist");
+		if (!artist_name_fancy)
+			artist_name_fancy = keyvals_get_val(ti->comments, "artistsort");
+
+		if (artist_name == NULL)
+			artist_name = "<No Name>";
+		if (album_name == NULL)
+			album_name = "<No Name>";
+
+		compilation = keyvals_get_val(ti->comments, "compilation");
+		if (compilation && (!strcasecmp(compilation, "1")
+					|| !strcasecmp(compilation, "yes"))) {
+			/* Store all compilations under compilations */
+			artist_name = "<Compilations>";
+		}
 	}
 
 	find_artist_and_album(artist_name, album_name, &artist, &album);
