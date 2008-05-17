@@ -22,6 +22,8 @@
 #include "command_mode.h"
 #include "search_mode.h"
 #include "options.h"
+#include "output.h"
+#include "utils.h"
 #include "xmalloc.h"
 #include "player.h"
 #include "file.h"
@@ -89,8 +91,25 @@ static const char *escape(const char *str)
 static int cmd_status(struct client *client)
 {
 	const char *status[] = { "stopped", "playing", "paused" };
+	const char *export_options[] = {
+		"aaa_mode",
+		"continue",
+		"play_library",
+		"play_sorted",
+		"replaygain",
+		"replaygain_limit",
+		"replaygain_preamp",
+		"repeat",
+		"repeat_current",
+		"shuffle",
+		"softvol",
+		NULL
+	};
 	const struct track_info *ti;
+	struct cmus_opt *opt;
+	char optbuf[OPTION_MAX_SIZE];
 	GBUF(buf);
+	int vol_left, vol_right;
 	int i, ret;
 
 	player_info_lock();
@@ -105,6 +124,31 @@ static int cmd_status(struct client *client)
 					ti->comments[i].key,
 					escape(ti->comments[i].val));
 	}
+
+	/* output options */
+	for (i = 0; export_options[i]; i++) {
+		opt = option_find(export_options[i]);
+		if (opt) {
+			opt->get(opt->id, optbuf);
+			gbuf_addf(&buf, "set %s %s\n", opt->name, optbuf);
+		}
+	}
+
+	/* get volume (copied from ui_curses.c) */
+	if (soft_vol) {
+		vol_left = soft_vol_l;
+		vol_right = soft_vol_r;
+	} else if (!volume_max) {
+		vol_left = vol_right = -1;
+	} else {
+		vol_left = scale_to_percentage(volume_l, volume_max);
+		vol_right = scale_to_percentage(volume_r, volume_max);
+	}
+
+	/* output volume */
+	gbuf_addf(&buf, "set vol_left %d\n", vol_left);
+	gbuf_addf(&buf, "set vol_right %d\n", vol_right);
+
 	gbuf_add_str(&buf, "\n");
 	player_info_unlock();
 
