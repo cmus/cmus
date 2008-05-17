@@ -19,10 +19,10 @@ Add `FILE/DIR/PLAYLIST` to playlist, library (*-l*) or play queue (*-q*).
 If no arguments are given cmus-remote reads raw commands from stdin (one
 command per line).  Raw commands are cmus' command mode commands.  These same
 commands are used in configuration files and key bindings.  *cmus*(1) contains
-full list of commands.
+full list of commands.  For consistency also searching is supported:
+*-C /text*.
 
 When *-C* is given all command line arguments are treated as raw commands.
-
 
 @h1 OPTIONS
 
@@ -104,6 +104,12 @@ Three different ways to toggle repeat:
 	$ cmus-remote
 	toggle repeat
 	^D
+	@endpre
+
+Search works too:
+
+	@pre
+	$ cmus-remote -C /beatles
 	@endpre
 
 @h1 SEE ALSO
