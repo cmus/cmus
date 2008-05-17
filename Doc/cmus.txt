@@ -550,6 +550,9 @@ unbind [-f] <context> <key>
 unmark
 	Unmark all tracks (see *mark*).
 
+update-cache
+	Update track metadata cache (~/.cmus/cache).
+
 view <name or 1-7>
 	Switches active view.
 
