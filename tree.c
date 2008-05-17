@@ -536,26 +536,20 @@ static void update_artist_name(struct artist *artist, char *new_name)
 void tree_add_track(struct tree_track *track)
 {
 	const struct track_info *ti = tree_track_info(track);
-	const char *album_name, *artist_name, *albumartist,
-		  *artist_sort, *albumartist_sort, *compilation,
-		  *artist_name_fancy = NULL;
+	const char *album_name, *artist_name, *compilation, *artist_name_fancy;
 	struct artist *artist;
 	struct album *album;
 	int date;
 
 	album_name = keyvals_get_val(ti->comments, "album");
 	artist_name = keyvals_get_val(ti->comments, "artist");
-	albumartist = keyvals_get_val(ti->comments, "albumartist");
-	artist_sort = keyvals_get_val(ti->comments, "artistsort");
-	albumartist_sort = keyvals_get_val(ti->comments, "albumartistsort");
 	compilation = keyvals_get_val(ti->comments, "compilation");
 
-	if (albumartist_sort)
-		artist_name_fancy = albumartist_sort;
-	else if (albumartist)
-		artist_name_fancy = albumartist;
-	else if (artist_sort)
-		artist_name_fancy = artist_sort;
+	artist_name_fancy = keyvals_get_val(ti->comments, "albumartistsort");
+	if (!artist_name_fancy)
+		artist_name_fancy = keyvals_get_val(ti->comments, "albumartist");
+	if (!artist_name_fancy)
+		artist_name_fancy = keyvals_get_val(ti->comments, "artistsort");
 
 	if (is_url(ti->filename)) {
 		artist_name = "<Stream>";
