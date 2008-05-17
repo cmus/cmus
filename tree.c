@@ -521,6 +521,8 @@ static void album_add_track(struct album *album, struct tree_track *track)
 	list_add_tail(&track->node, item);
 }
 
+static void remove_artist(struct artist *artist);
+
 static void update_artist_name(struct artist *artist, char *new_name)
 {
 	free(artist->name);
@@ -528,6 +530,7 @@ static void update_artist_name(struct artist *artist, char *new_name)
 
 	list_del(&artist->node);
 	insert_artist(artist);
+	window_changed(lib_tree_win);
 }
 
 void tree_add_track(struct tree_track *track)
