@@ -32,6 +32,9 @@ it can be controlled from the outside via *cmus-remote*(1).
 --plugins
 	List available plugins and exit.
 
+--show-cursor
+	Keep cursor always visible.  This is useful for screen readers.
+
 --help
 	Display usage information and exit.
 

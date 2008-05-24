@@ -117,6 +117,7 @@ static int track_win_x = 0;
 static int track_win_y = 0;
 static int track_win_w = 0;
 
+static int show_cursor;
 static int cursor_x;
 static int cursor_y;
 
@@ -1244,7 +1245,13 @@ static void post_update(void)
 			move(LINES - 1, 0);
 		}
 		refresh();
-		curs_set(0);
+
+		/* visible cursor is useful for screen readers */
+		if (show_cursor) {
+			curs_set(1);
+		} else {
+			curs_set(0);
+		}
 	}
 }
 
@@ -2106,6 +2113,7 @@ static void exit_all(void)
 enum {
 	FLAG_LISTEN,
 	FLAG_PLUGINS,
+	FLAG_SHOW_CURSOR,
 	FLAG_HELP,
 	FLAG_VERSION,
 	NR_FLAGS
@@ -2114,6 +2122,7 @@ enum {
 static struct option options[NR_FLAGS + 1] = {
 	{ 0, "listen", 1 },
 	{ 0, "plugins", 0 },
+	{ 0, "show-cursor", 0 },
 	{ 0, "help", 0 },
 	{ 0, "version", 0 },
 	{ 0, NULL, 0 }
@@ -2127,6 +2136,7 @@ static const char *usage =
 "                      ADDR is either a UNIX socket or host[:port]\n"
 "                      WARNING: using TCP/IP is insecure!\n"
 "      --plugins       list available plugins and exit\n"
+"      --show-cursor   always visible cursor\n"
 "      --help          display this help and exit\n"
 "      --version       " VERSION "\n"
 "\n"
@@ -2159,6 +2169,9 @@ int main(int argc, char *argv[])
 			break;
 		case FLAG_LISTEN:
 			server_address = xstrdup(arg);
+			break;
+		case FLAG_SHOW_CURSOR:
+			show_cursor = 1;
 			break;
 		}
 	}
