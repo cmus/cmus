@@ -47,8 +47,6 @@ struct artist {
 
 	/* list of albums */
 	struct list_head album_head;
-
-	char *raw_name;
 	char *name;
 
 	/* albums visible for this artist in the tree_win? */
@@ -88,6 +86,7 @@ void lib_set_view(int view);
 int lib_for_each(int (*cb)(void *data, struct track_info *ti), void *data);
 
 struct track_info *tree_set_selected(void);
+void tree_sort_artists(void);
 void tree_add_track(struct tree_track *track);
 void tree_remove(struct tree_track *track);
 void tree_remove_sel(void);

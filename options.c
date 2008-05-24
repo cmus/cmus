@@ -45,6 +45,8 @@ int set_term_title = 1;
 int play_library = 1;
 int repeat = 0;
 int shuffle = 0;
+int pretty_artist_name;
+int fuzzy_artist_sort;
 
 int colors[NR_COLORS] = {
 	-1,
@@ -498,6 +500,40 @@ static void toggle_play_sorted(unsigned int id)
 	update_statusline();
 }
 
+static void get_fuzzy_artist_sort(unsigned int id, char *buf)
+{
+	strcpy(buf, bool_names[fuzzy_artist_sort]);
+}
+
+static void set_fuzzy_artist_sort(unsigned int id, const char *buf)
+{
+	if (parse_bool(buf, &fuzzy_artist_sort))
+		tree_sort_artists();
+}
+
+static void toggle_fuzzy_artist_sort(unsigned int id)
+{
+	fuzzy_artist_sort ^= 1;
+	tree_sort_artists();
+}
+
+static void get_pretty_artist_name(unsigned int id, char *buf)
+{
+	strcpy(buf, bool_names[pretty_artist_name]);
+}
+
+static void set_pretty_artist_name(unsigned int id, const char *buf)
+{
+	parse_bool(buf, &pretty_artist_name);
+	lib_tree_win->changed = 1;
+}
+
+static void toggle_pretty_artist_name(unsigned int id)
+{
+	pretty_artist_name ^= 1;
+	lib_tree_win->changed = 1;
+}
+
 const char * const aaa_mode_names[] = {
 	"all", "artist", "album", NULL
 };
@@ -784,6 +820,7 @@ static const struct {
 	DN(buffer_seconds)
 	DT(confirm_run)
 	DT(continue)
+	DT(fuzzy_artist_sort)
 	DN(id3_default_charset)
 	DN(lib_sort)
 	DN(output_plugin)
@@ -791,6 +828,7 @@ static const struct {
 	DN(pl_sort)
 	DT(play_library)
 	DT(play_sorted)
+	DT(pretty_artist_name)
 	DT(repeat)
 	DT(repeat_current)
 	DT(replaygain)

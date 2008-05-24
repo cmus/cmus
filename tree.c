@@ -5,10 +5,11 @@
 #include "lib.h"
 #include "search_mode.h"
 #include "xmalloc.h"
-#include "xstrjoin.h"
 #include "comment.h"
 #include "utils.h"
 #include "debug.h"
+#include "mergesort.h"
+#include "options.h"
 
 struct searchable *tree_searchable;
 struct window *lib_tree_win;
@@ -325,7 +326,6 @@ static inline void tree_win_get_selected(struct artist **artist, struct album **
 
 static void artist_free(struct artist *artist)
 {
-	free(artist->raw_name);
 	free(artist->name);
 	free(artist);
 }
@@ -397,15 +397,7 @@ static const char *artist_name_skip_the(const char *a)
 	return a;
 }
 
-static int artist_name_cmp(const char *a, const char *b)
-{
-	a = artist_name_skip_the(a);
-	b = artist_name_skip_the(b);
-
-	return u_strcasecmp(a, b);
-}
-
-static void find_artist_and_album(const char *artist_raw_name,
+static void find_artist_and_album(const char *artist_name,
 		const char *album_name, struct artist **_artist,
 		struct album **_album)
 {
@@ -415,7 +407,7 @@ static void find_artist_and_album(const char *artist_raw_name,
 	list_for_each_entry(artist, &lib_artist_head, node) {
 		int res;
 
-		res = artist_name_cmp(artist->raw_name, artist_raw_name);
+		res = u_strcasecmp(artist->name, artist_name);
 		if (res == 0) {
 			*_artist = artist;
 			list_for_each_entry(album, &artist->album_head, node) {
@@ -446,23 +438,51 @@ static int special_name_cmp(const char *a, const char *b)
 
 static void insert_artist(struct artist *artist)
 {
+	const char *a = artist->name;
 	struct list_head *item;
 
+	if (fuzzy_artist_sort)
+		a = artist_name_skip_the(a);
+
 	list_for_each(item, &lib_artist_head) {
-		if (special_name_cmp(artist->name, to_artist(item)->name) < 0)
+		const char *b = to_artist(item)->name;
+
+		if (fuzzy_artist_sort)
+			b = artist_name_skip_the(b);
+
+		if (special_name_cmp(a, b) < 0)
 			break;
 	}
 	/* add before item */
 	list_add_tail(&artist->node, item);
 }
 
-static struct artist *add_artist(const char *name, const char *raw_name)
+static int artist_cmp(const struct list_head *a, const struct list_head *b)
+{
+	return special_name_cmp(to_artist(a)->name, to_artist(b)->name);
+}
+
+static int fuzzy_artist_cmp(const struct list_head *a, const struct list_head *b)
+{
+	return special_name_cmp(artist_name_skip_the(to_artist(a)->name),
+				artist_name_skip_the(to_artist(b)->name));
+}
+
+void tree_sort_artists(void)
+{
+	if (fuzzy_artist_sort)
+		list_mergesort(&lib_artist_head, fuzzy_artist_cmp);
+	else
+		list_mergesort(&lib_artist_head, artist_cmp);
+	window_changed(lib_tree_win);
+}
+
+static struct artist *add_artist(const char *name)
 {
 	struct artist *artist;
 
 	artist = xnew(struct artist, 1);
 	artist->name = xstrdup(name);
-	artist->raw_name = xstrdup(raw_name);
 	list_init(&artist->album_head);
 	artist->expanded = 0;
 
@@ -521,22 +541,10 @@ static void album_add_track(struct album *album, struct tree_track *track)
 	list_add_tail(&track->node, item);
 }
 
-static void remove_artist(struct artist *artist);
-
-static void update_artist_name(struct artist *artist, char *new_name)
-{
-	free(artist->name);
-	artist->name = new_name;	/* no need to make a copy here */
-
-	list_del(&artist->node);
-	insert_artist(artist);
-	window_changed(lib_tree_win);
-}
-
 void tree_add_track(struct tree_track *track)
 {
 	const struct track_info *ti = tree_track_info(track);
-	const char *album_name, *artist_name, *artist_name_fancy = NULL;
+	const char *album_name, *artist_name;
 	struct artist *artist;
 	struct album *album;
 	int date;
@@ -545,50 +553,30 @@ void tree_add_track(struct tree_track *track)
 		artist_name = "<Stream>";
 		album_name = "<Stream>";
 	} else {
-		const char *compilation;
-
-		artist_name = keyvals_get_val(ti->comments, "artist");
 		album_name = keyvals_get_val(ti->comments, "album");
 
-		artist_name_fancy = keyvals_get_val(ti->comments, "albumartistsort");
-		if (!artist_name_fancy)
-			artist_name_fancy = keyvals_get_val(ti->comments, "albumartist");
-		if (!artist_name_fancy)
-			artist_name_fancy = keyvals_get_val(ti->comments, "artistsort");
+		artist_name = keyvals_get_val(ti->comments, "albumartistsort");
+		if (!artist_name)
+			artist_name= keyvals_get_val(ti->comments, "albumartist");
+		if (!artist_name)
+			artist_name= keyvals_get_val(ti->comments, "artistsort");
+		if (!artist_name) {
+			const char *compilation = keyvals_get_val(ti->comments, "compilation");
+			if (compilation && (!strcasecmp(compilation, "1") ||
+					    !strcasecmp(compilation, "yes")))
+				artist_name = "<Compilations>";
+		}
+		if (!artist_name)
+			artist_name = keyvals_get_val(ti->comments, "artist");
 
 		if (artist_name == NULL)
 			artist_name = "<No Name>";
 		if (album_name == NULL)
 			album_name = "<No Name>";
 
-		compilation = keyvals_get_val(ti->comments, "compilation");
-		if (compilation && (!strcasecmp(compilation, "1")
-					|| !strcasecmp(compilation, "yes"))) {
-			/* Store all compilations under compilations */
-			artist_name = "<Compilations>";
-		}
 	}
 
 	find_artist_and_album(artist_name, album_name, &artist, &album);
-
-	/* update artist name if better one is available */
-	if (artist) {
-		if (artist_name_fancy &&
-				u_strcasecmp(artist->name, artist_name_fancy))
-			/* we've got a new fancy name */
-			update_artist_name(artist, xstrdup(artist_name_fancy));
-		else if (!artist_name_fancy) {
-			const char *artist_name_no_the = artist_name_skip_the(artist_name);
-
-			if (artist_name_no_the != artist_name &&
-				!u_strncasecmp(artist->name,
-					artist_name_no_the,
-					strlen(artist->name)))
-				/* same name, but starting with "The" */
-				update_artist_name(artist, xstrjoin(artist_name_no_the, ", The"));
-		}
-	}
-
 	if (album) {
 		album_add_track(album, track);
 
@@ -608,19 +596,8 @@ void tree_add_track(struct tree_track *track)
 			/* album is not selected => no need to update track_win */
 		}
 	} else {
-		const char *artist_name_no_the = artist_name_skip_the(artist_name);
-
-		if (artist_name_fancy)
-			artist = add_artist(artist_name_fancy, artist_name);
-		else if (artist_name_no_the == artist_name)
-			artist = add_artist(artist_name, artist_name);
-		else {
-			char *artist_name_full = xstrjoin(artist_name_no_the, ", The");
-			artist = add_artist(artist_name_full, artist_name);
-			free(artist_name_full);
-		}
-
 		date = comments_get_date(ti->comments, "date");
+		artist = add_artist(artist_name);
 		album = artist_add_album(artist, album_name, date);
 		album_add_track(album, track);
 

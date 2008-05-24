@@ -407,6 +407,7 @@ static void print_tree(struct window *win, int row, struct iter *iter)
 	struct artist *artist;
 	struct album *album;
 	struct iter sel;
+	char buf[256];
 	int current, selected, active, pos;
 
 	artist = iter_to_artist(iter);
@@ -431,11 +432,16 @@ static void print_tree(struct window *win, int row, struct iter *iter)
 
 	pos = 0;
 	print_buffer[pos++] = ' ';
-	str = artist->name;
 	if (album) {
 		print_buffer[pos++] = ' ';
 		print_buffer[pos++] = ' ';
 		str = album->name;
+	} else {
+		str = artist->name;
+		if (pretty_artist_name && !strncasecmp(str, "the ", 4)) {
+			snprintf(buf, sizeof(buf), "%s, The", str + 4);
+			str = buf;
+		}
 	}
 	pos += format_str(print_buffer + pos, str, tree_win_w - pos - 1);
 	print_buffer[pos++] = ' ';
