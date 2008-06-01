@@ -57,7 +57,6 @@ struct flac_private {
 	struct keyval *comments;
 	int duration;
 
-	unsigned int eof : 1;
 	unsigned int ignore_next_write : 1;
 };
 
@@ -71,9 +70,8 @@ static T(ReadStatus) read_cb(const Dec *dec, unsigned char *buf, unsigned *size,
 	struct flac_private *priv = ip_data->private;
 	int rc;
 
-	if (priv->eof) {
+	if (priv->pos == priv->len) {
 		*size = 0;
-		d_print("EOF! EOF! EOF!\n");
 #ifdef FLAC_NEW_API
 		return E(READ_STATUS_END_OF_STREAM);
 #else
@@ -109,9 +107,7 @@ static T(ReadStatus) read_cb(const Dec *dec, unsigned char *buf, unsigned *size,
 	priv->pos += rc;
 	*size = rc;
 	if (rc == 0) {
-		/* never reached! */
-		priv->eof = 1;
-		d_print("EOF\n");
+		/* should not happen */
 #ifdef FLAC_NEW_API
 		return E(READ_STATUS_END_OF_STREAM);
 #else
@@ -168,11 +164,8 @@ static int eof_cb(const Dec *dec, void *data)
 {
 	struct input_plugin_data *ip_data = data;
 	struct flac_private *priv = ip_data->private;
-	int eof = priv->eof;
 
-	if (eof)
-		d_print("EOF\n");
-	return eof;
+	return priv->pos == priv->len;;
 }
 
 #if defined(WORDS_BIGENDIAN)
@@ -443,7 +436,7 @@ static int flac_open(struct input_plugin_data *ip_data)
 	}
 
 	ip_data->sf = 0;
-	while (priv->buf_wpos == 0 && !priv->eof) {
+	while (priv->buf_wpos == 0 && priv->pos < priv->len) {
 		if (!F(process_single)(priv->dec)) {
 			free_priv(ip_data);
 			return -IP_ERROR_ERRNO;
@@ -476,30 +469,17 @@ static int flac_read(struct input_plugin_data *ip_data, char *buffer, int count)
 {
 	struct flac_private *priv = ip_data->private;
 	int avail;
-	int libflac_suck_count = 0;
 
 	while (1) {
-		int old_pos = priv->buf_wpos;
-
 		avail = priv->buf_wpos - priv->buf_rpos;
 		BUG_ON(avail < 0);
 		if (avail > 0)
 			break;
-		if (priv->eof)
+		if (priv->pos == priv->len)
 			return 0;
 		if (!F(process_single)(priv->dec)) {
 			d_print("process_single failed\n");
 			return -1;
-		}
-		if (old_pos == priv->buf_wpos) {
-			libflac_suck_count++;
-		} else {
-			libflac_suck_count = 0;
-		}
-		if (libflac_suck_count > 5) {
-			d_print("libflac sucks\n");
-			priv->eof = 1;
-			return 0;
 		}
 	}
 	if (count > avail)
