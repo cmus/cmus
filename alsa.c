@@ -413,19 +413,20 @@ again:
 static int op_alsa_buffer_space(void)
 {
 	int rc;
-	snd_pcm_uframes_t f;
+	snd_pcm_sframes_t f;
 
-	rc = snd_pcm_status(alsa_handle, status);
-	if (rc < 0) {
-		debug_ret("snd_pcm_status", rc);
-		return alsa_error_to_op_error(rc);
+	f = snd_pcm_avail_update(alsa_handle);
+	while (f < 0) {
+		d_print("snd_pcm_avail_update failed: %s, trying to recover\n",
+			snd_strerror(f));
+		rc = snd_pcm_recover(alsa_handle, f, 1);
+		if (rc < 0) {
+			d_print("recovery failed: %s\n", snd_strerror(rc));
+			return alsa_error_to_op_error(rc);
+		}
+		f = snd_pcm_avail_update(alsa_handle);
 	}
 
-	f = snd_pcm_status_get_avail(status);
-	if (f > 1e6) {
-		d_print("snd_pcm_status_get_avail returned huge number: %lu\n", f);
-		f = 1024;
-	}
 	return f * alsa_frame_size;
 }
 
