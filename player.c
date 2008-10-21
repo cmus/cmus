@@ -1004,6 +1004,7 @@ void player_set_file(struct track_info *ti)
 
 	/* PS_STOPPED */
 	if (consumer_status == CS_PLAYING || consumer_status == CS_PAUSED) {
+		op_drop();
 		__producer_play();
 		if (producer_status == PS_UNLOADED) {
 			__consumer_stop();
@@ -1042,6 +1043,7 @@ void player_play_file(struct track_info *ti)
 		if (consumer_status == CS_STOPPED)
 			__producer_stop();
 	} else {
+		op_drop();
 		change_sf(ip_get_sf(ip), 1);
 	}
 out:
