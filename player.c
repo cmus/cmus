@@ -733,7 +733,7 @@ static void *consumer_loop(void *arg)
 
 		while (1) {
 			/* 25 ms is 4410 B */
-			if (space < 4096) {
+			if (space == 0) {
 				__consumer_position_update();
 				consumer_unlock();
 				ms_sleep(25);
