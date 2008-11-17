@@ -1,0 +1,5 @@
+
+2008-11-17	Jason Woofenden
+	6ee8cb8: Forked
+	c9c7357: Patch from Adam Hoka (well, most of it) patch to call isspace() and friends correctly for chars with high bit set
+	1449461: Patch from Adam Hoka which tweaks sun.c so it compiles on NetBSD
