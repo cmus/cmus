@@ -23,6 +23,7 @@
 #include <sys/ioctl.h>
 #include <sys/audioio.h>
 #include <sys/stat.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
@@ -132,6 +133,16 @@ static int sun_exit(void)
 	return 0;
 }
 
+static int sun_close(void)
+{
+	if (sun_fd != -1) {
+		close(sun_fd);
+		sun_fd = -1;
+	}
+
+	return 0;
+}
+
 static int sun_open(sample_format_t sf)
 {
 	sun_fd = open(sun_audio_device, O_WRONLY);
@@ -140,16 +151,6 @@ static int sun_open(sample_format_t sf)
 	if (sun_set_sf(sf) == -1) {
 		sun_close();
 		return -1;
-	}
-
-	return 0;
-}
-
-static int sun_close(void)
-{
-	if (sun_fd != -1) {
-		close(sun_fd);
-		sun_fd = -1;
 	}
 
 	return 0;
