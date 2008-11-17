@@ -496,7 +496,7 @@ inside:
 		goto err;
 
 	if (count == 1) {
-		switch (tolower(*arg)) {
+		switch (tolower((unsigned char)*arg)) {
 		case 'h':
 			seek *= 60;
 		case 'm':

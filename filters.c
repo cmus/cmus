@@ -272,7 +272,7 @@ static int validate_filter_name(const char *name)
 	int i;
 
 	for (i = 0; name[i]; i++) {
-		if (isalnum(name[i]))
+		if (isalnum((unsigned char)name[i]))
 			continue;
 		if (name[i] == '_' || name[i] == '-')
 			continue;

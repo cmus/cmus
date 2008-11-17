@@ -278,7 +278,7 @@ static int pl_handle_line(void *data, const char *line)
 	struct pl_data *d = data;
 	int i = 0;
 
-	while (isspace(line[i]))
+	while (isspace((unsigned char)line[i]))
 		i++;
 	if (line[i] == 0)
 		return 0;

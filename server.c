@@ -204,7 +204,7 @@ static void read_commands(struct client *client)
 				continue;
 			}
 
-			while (isspace(*line))
+			while (isspace((unsigned char)*line))
 				line++;
 
 			if (*line == '/') {

@@ -182,7 +182,7 @@ static int emit_keyword(const char *buf, int size)
 	int i, len;
 
 	for (len = 0; len < size; len++) {
-		if (!isalnum(buf[len]))
+		if (!isalnum((unsigned char)buf[len]))
 			break;
 	}
 
