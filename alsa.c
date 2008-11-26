@@ -175,12 +175,6 @@ error:
 	return rc;
 }
 
-/* randomize sw params */
-static int alsa_set_sw_params(void)
-{
-	return 0;
-}
-
 static int op_alsa_open(sample_format_t sf)
 {
 	int rc;
@@ -193,9 +187,6 @@ static int op_alsa_open(sample_format_t sf)
 		goto error;
 
 	rc = alsa_set_hw_params();
-	if (rc)
-		goto close_error;
-	rc = alsa_set_sw_params();
 	if (rc)
 		goto close_error;
 
