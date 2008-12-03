@@ -1,4 +1,5 @@
 /* 
+ * Copyright 2008 Jonathan Kleinehellefort
  * Copyright 2004-2005 Timo Hirvonen
  * 
  * This program is free software; you can redistribute it and/or
@@ -59,15 +60,6 @@
 
 #include <alsa/asoundlib.h>
 
-/* without one of these play-back won't start */
-#define SET_BUFFER_TIME
-#define SET_PERIOD_TIME
-
-#define SET_AVAIL_MIN
-
-/* with this alsa hangs sometimes (ogg, not enough data with first write?) */
-/* #define SET_START_THRESHOLD */
-
 static sample_format_t alsa_sf;
 static snd_pcm_t *alsa_handle;
 static snd_pcm_format_t alsa_fmt;
@@ -79,14 +71,6 @@ static int alsa_frame_size;
 
 /* configuration */
 static char *alsa_dsp_device = NULL;
-
-#ifdef SET_START_THRESHOLD
-static int alsa_buffer_size;
-#endif
-
-#ifdef SET_AVAIL_MIN
-static int alsa_period_size;
-#endif
 
 #if 0
 #define debug_ret(func, ret) \
@@ -143,15 +127,6 @@ static int alsa_set_hw_params(void)
 	const char *cmd;
 	unsigned int rate;
 	int rc, dir;
-#if defined(SET_AVAIL_MIN) || defined(SET_START_THRESHOLD)
-	snd_pcm_uframes_t frames;
-#endif
-#ifdef SET_BUFFER_TIME
-	unsigned int alsa_buffer_time = 500e3;
-#endif
-#ifdef SET_PERIOD_TIME
-	unsigned int alsa_period_time = 50e3;
-#endif
 
 	snd_pcm_hw_params_alloca(&hwparams);
 
@@ -190,42 +165,6 @@ static int alsa_set_hw_params(void)
 		goto error;
 	d_print("rate=%d\n", rate);
 
-#ifdef SET_BUFFER_TIME
-	cmd = "snd_pcm_hw_params_set_buffer_time_near";
-	dir = 0;
-	rc = snd_pcm_hw_params_set_buffer_time_near(alsa_handle, hwparams, &alsa_buffer_time, &dir);
-	if (rc < 0)
-		goto error;
-#endif
-
-#ifdef SET_PERIOD_TIME
-	cmd = "snd_pcm_hw_params_set_period_time_near";
-	dir = 0;
-	rc = snd_pcm_hw_params_set_period_time_near(alsa_handle, hwparams, &alsa_period_time, &dir);
-	if (rc < 0)
-		goto error;
-#endif
-
-#ifdef SET_AVAIL_MIN
-	rc = snd_pcm_hw_params_get_period_size(hwparams, &frames, &dir);
-	if (rc < 0) {
-		alsa_period_size = -1;
-	} else {
-		alsa_period_size = frames * alsa_frame_size;
-	}
-	d_print("period_size = %d (dir = %d)\n", alsa_period_size, dir);
-#endif
-
-#ifdef SET_START_THRESHOLD
-	rc = snd_pcm_hw_params_get_buffer_size(hwparams, &frames);
-	if (rc < 0) {
-		alsa_buffer_size = -1;
-	} else {
-		alsa_buffer_size = frames * alsa_frame_size;
-	}
-	d_print("buffer_size = %d\n", alsa_buffer_size);
-#endif
-
 	cmd = "snd_pcm_hw_params";
 	rc = snd_pcm_hw_params(alsa_handle, hwparams);
 	if (rc < 0)
@@ -234,66 +173,6 @@ static int alsa_set_hw_params(void)
 error:
 	d_print("%s: error: %s\n", cmd, snd_strerror(rc));
 	return rc;
-}
-
-/* randomize sw params */
-static int alsa_set_sw_params(void)
-{
-#if defined(SET_START_THRESHOLD) || defined(SET_AVAIL_MIN)
-	snd_pcm_sw_params_t *swparams;
-	const char *cmd;
-	int rc;
-
-	/* allocate the software parameter structure */
-	snd_pcm_sw_params_alloca(&swparams);
-
-	/* fetch the current software parameters */
-	cmd = "snd_pcm_sw_params_current";
-	rc = snd_pcm_sw_params_current(alsa_handle, swparams);
-	if (rc < 0)
-		goto error;
-
-#ifdef SET_START_THRESHOLD
-	if (alsa_buffer_size > 0) {
-		/* start the transfer when N frames available */
-		cmd = "snd_pcm_sw_params_set_start_threshold";
-		/* start playing when hardware buffer is full (64 kB, 372 ms) */
-		rc = snd_pcm_sw_params_set_start_threshold(alsa_handle, swparams, alsa_buffer_size / alsa_frame_size);
-		if (rc < 0)
-			goto error;
-	}
-#endif
-
-#ifdef SET_AVAIL_MIN
-	if (alsa_period_size > 0) {
-		snd_pcm_uframes_t frames = alsa_period_size / alsa_frame_size;
-
-		/* minimum avail frames to consider pcm ready. must be power of 2 */
-		cmd = "snd_pcm_sw_params_set_avail_min";
-		/* underrun when available is <8192 B or 46.5 ms */
-		rc = snd_pcm_sw_params_set_avail_min(alsa_handle, swparams, frames);
-		if (rc < 0)
-			goto error;
-
-		cmd = "snd_pcm_sw_params_set_silence_threshold";
-		rc = snd_pcm_sw_params_set_silence_threshold(alsa_handle, swparams, frames);
-		if (rc < 0)
-			goto error;
-	}
-#endif
-
-	/* commit the params structure to ALSA */
-	cmd = "snd_pcm_sw_params";
-	rc = snd_pcm_sw_params(alsa_handle, swparams);
-	if (rc < 0)
-		goto error;
-	return 0;
-error:
-	d_print("%s: error: %s\n", cmd, snd_strerror(rc));
-	return rc;
-#else
-	return 0;
-#endif
 }
 
 static int op_alsa_open(sample_format_t sf)
@@ -310,9 +189,6 @@ static int op_alsa_open(sample_format_t sf)
 	rc = alsa_set_hw_params();
 	if (rc)
 		goto close_error;
-	rc = alsa_set_sw_params();
-	if (rc)
-		goto close_error;
 
 	rc = snd_pcm_prepare(alsa_handle);
 	if (rc < 0)
@@ -324,28 +200,11 @@ error:
 	return alsa_error_to_op_error(rc);
 }
 
-static unsigned int period_fill = 0;
-
 static int op_alsa_write(const char *buffer, int count);
 
 static int op_alsa_close(void)
 {
 	int rc;
-
-	/* it is impossible to calculate period_fill if period_size is -1 */
-	if (alsa_period_size > 0 && period_fill) {
-		char buf[8192];
-		int silence_bytes = alsa_period_size - period_fill;
-
-		if (silence_bytes > sizeof(buf)) {
-			d_print("silence buf not big enough %d\n", silence_bytes);
-			silence_bytes = sizeof(buf);
-		}
-		d_print("silencing %d bytes\n", silence_bytes);
-		snd_pcm_format_set_silence(alsa_fmt, buf, silence_bytes / sf_get_sample_size(alsa_sf));
-		op_alsa_write(buf, silence_bytes);
-		period_fill = 0;
-	}
 
 	rc = snd_pcm_drain(alsa_handle);
 	debug_ret("snd_pcm_drain", rc);
@@ -358,12 +217,6 @@ static int op_alsa_close(void)
 static int op_alsa_drop(void)
 {
 	int rc;
-
-	period_fill = 0;
-
-	/* infinite timeout */
-	rc = snd_pcm_wait(alsa_handle, -1);
-	debug_ret("snd_pcm_wait", rc);
 
 	rc = snd_pcm_drop(alsa_handle);
 	debug_ret("snd_pcm_drop", rc);
@@ -405,28 +258,27 @@ again:
 	}
 
 	rc *= alsa_frame_size;
-	period_fill += rc;
-	period_fill %= alsa_period_size;
 	return rc;
 }
 
 static int op_alsa_buffer_space(void)
 {
 	int rc;
-	snd_pcm_uframes_t f;
+	snd_pcm_sframes_t f;
 
-	rc = snd_pcm_status(alsa_handle, status);
-	if (rc < 0) {
-		debug_ret("snd_pcm_status", rc);
-		return alsa_error_to_op_error(rc);
+	f = snd_pcm_avail_update(alsa_handle);
+	while (f < 0) {
+		d_print("snd_pcm_avail_update failed: %s, trying to recover\n",
+			snd_strerror(f));
+		rc = snd_pcm_recover(alsa_handle, f, 1);
+		if (rc < 0) {
+			d_print("recovery failed: %s\n", snd_strerror(rc));
+			return alsa_error_to_op_error(rc);
+		}
+		f = snd_pcm_avail_update(alsa_handle);
 	}
 
-	f = snd_pcm_status_get_avail(status);
-	if (f > 1e6) {
-		d_print("snd_pcm_status_get_avail returned huge number: %lu\n", f);
-		f = 1024;
-	}
-	return f * alsa_frame_size;
+	return f == 0 ? - 1 : f * alsa_frame_size;
 }
 
 static int op_alsa_pause(void)

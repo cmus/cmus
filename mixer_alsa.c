@@ -54,14 +54,42 @@ static int alsa_mixer_exit(void)
 	return 0;
 }
 
+static snd_mixer_elem_t *find_mixer_elem_by_name(const char *goal_name)
+{
+	snd_mixer_elem_t *elem;
+	snd_mixer_selem_id_t *sid;
+
+	snd_mixer_selem_id_alloca(&sid);
+
+	for (elem = snd_mixer_first_elem(alsa_mixer_handle); elem;
+		 elem = snd_mixer_elem_next(elem)) {
+
+		const char *name;
+
+		snd_mixer_selem_get_id(elem, sid);
+		name = snd_mixer_selem_id_get_name(sid);
+		d_print("name = %s\n", name);
+		d_print("has playback volume = %d\n", snd_mixer_selem_has_playback_volume(elem));
+		d_print("has playback switch = %d\n", snd_mixer_selem_has_playback_switch(elem));
+
+		if (strcasecmp(name, goal_name) == 0) {
+			if (snd_mixer_selem_has_playback_volume(elem)) {
+				return elem;
+			} else {
+				d_print("mixer element `%s' does not have playback volume\n", name);
+				return NULL;
+			}
+		}
+	}
+
+	return NULL;
+}
+
 static int alsa_mixer_open(int *volume_max)
 {
-	snd_mixer_selem_id_t *sid;
 	snd_mixer_elem_t *elem;
 	int count;
 	int rc;
-
-	snd_mixer_selem_id_alloca(&sid);
 
 	rc = snd_mixer_open(&alsa_mixer_handle, 0);
 	if (rc < 0)
@@ -80,35 +108,23 @@ static int alsa_mixer_open(int *volume_max)
 		d_print("error: mixer does not have elements\n");
 		return -2;
 	}
-	elem = snd_mixer_first_elem(alsa_mixer_handle);
-	while (elem) {
-		const char *name;
-		int has_vol, has_switch;
 
-		snd_mixer_selem_get_id(elem, sid);
-		name = snd_mixer_selem_id_get_name(sid);
-		d_print("name = %s\n", name);
-		d_print("has playback volume = %d\n", snd_mixer_selem_has_playback_volume(elem));
-		d_print("has playback switch = %d\n", snd_mixer_selem_has_playback_switch(elem));
-		if (strcasecmp(name, alsa_mixer_element)) {
-			elem = snd_mixer_elem_next(elem);
-			continue;
-		}
-		has_vol = snd_mixer_selem_has_playback_volume(elem);
-		if (!has_vol) {
-			d_print("mixer element `%s' does not have playback volume\n", name);
+	elem = find_mixer_elem_by_name(alsa_mixer_element);
+	if (!elem) {
+		d_print("mixer element `%s' not found, trying `Master'\n", alsa_mixer_element);
+		elem = find_mixer_elem_by_name("Master");
+		if (!elem) {
+			d_print("error: cannot find suitable mixer element\n");
 			return -2;
 		}
-		snd_mixer_selem_get_playback_volume_range(elem,
-				&mixer_vol_min, &mixer_vol_max);
-		has_switch = snd_mixer_selem_has_playback_switch(elem);
-		/* FIXME: get number of channels */
-		mixer_elem = elem;
-		*volume_max = mixer_vol_max - mixer_vol_min;
-		return 0;
 	}
-	d_print("error: mixer element `%s' not found\n", alsa_mixer_element);
-	return -2;
+	snd_mixer_selem_get_playback_volume_range(elem, &mixer_vol_min, &mixer_vol_max);
+	/* FIXME: get number of channels */
+	mixer_elem = elem;
+	*volume_max = mixer_vol_max - mixer_vol_min;
+
+	return 0;
+
 error:
 	d_print("error: %s\n", snd_strerror(rc));
 	return -1;
