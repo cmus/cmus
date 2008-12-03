@@ -563,20 +563,28 @@ void tree_add_track(struct tree_track *track)
 		 *
 		 * If that still didn't turn up anything, we check if the
 		 * 'compilation' tag is either 'yes' or '1' - if so, the track
-		 * gets sorted under a special name. (If the 'compilation' tag
-		 * is set but to another value, we make a note so that
-		 * print_track() later knows which format to use).
+		 * gets sorted under a special name.
 		 *
-		 * If not, we use the normal 'artist' tag to get the information.
+		 * If the 'compilation' tag is set but to another value or
+		 * 'albumartist{,sort}' is set, we make a note so that
+		 * print_track() later knows which format to use.
+		 *
+		 * In any case if we don't know the artist name by now, we use
+		 * the normal 'artist' tag to get the information.
 		 */
+		track->tree_sort = SORT_NORMAL;
 		album_name = keyvals_get_val(ti->comments, "album");
 		artist_name = keyvals_get_val(ti->comments, "albumartistsort");
 		if (!artist_name)
 			artist_name= keyvals_get_val(ti->comments, "albumartist");
+		else
+			track->tree_sort = SORT_COMPILATION;
+
 		if (!artist_name)
 			artist_name= keyvals_get_val(ti->comments, "artistsort");
+		else
+			track->tree_sort = SORT_COMPILATION;
 
-		track->tree_sort = SORT_NORMAL;
 		compilation = keyvals_get_val(ti->comments, "compilation");
 		if (compilation) {
 			if (!strcasecmp(compilation, "1") ||
