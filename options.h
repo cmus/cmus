@@ -102,6 +102,7 @@ extern int colors[NR_COLORS];
 
 /* format string for track window (tree view) */
 extern char *track_win_format;
+extern char *track_win_format_va;
 extern char *track_win_alt_format;
 
 /* format string for shuffle, sorted and play queue views */

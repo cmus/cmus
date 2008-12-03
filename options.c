@@ -81,6 +81,7 @@ int colors[NR_COLORS] = {
 
 /* uninitialized option variables */
 char *track_win_format = NULL;
+char *track_win_format_va = NULL;
 char *track_win_alt_format = NULL;
 char *list_win_format = NULL;
 char *list_win_alt_format = NULL;
@@ -148,9 +149,10 @@ enum format_id {
 	FMT_CURRENT,
 	FMT_PLAYLIST,
 	FMT_TITLE,
-	FMT_TRACKWIN
+	FMT_TRACKWIN,
+	FMT_TRACKWIN_VA
 };
-#define NR_FMTS 8
+#define NR_FMTS 9
 
 /* callbacks for normal options {{{ */
 
@@ -780,6 +782,8 @@ static char **id_to_fmt(enum format_id id)
 		return &window_title_format;
 	case FMT_TRACKWIN:
 		return &track_win_format;
+	case FMT_TRACKWIN_VA:
+		return &track_win_format_va;
 	}
 	return NULL;
 }
@@ -885,6 +889,7 @@ static const struct {
 	{ "format_playlist",	" %-20a %02n. %t%= %y %d " },
 	{ "format_title",	"%a - %l - %t (%y)" },
 	{ "format_trackwin",	" %02n. %t%= %y %d " },
+	{ "format_trackwin_va",	" %02n. %a / %t%= %y %d " },
 
 	{ "lib_sort"	,	"artist album discnumber tracknumber title filename" },
 	{ "pl_sort",		"" },

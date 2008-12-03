@@ -518,6 +518,7 @@ static void print_track(struct window *win, int row, struct iter *iter)
 	struct tree_track *track;
 	struct iter sel;
 	int current, selected, active;
+	char *format;
 
 	track = iter_to_tree_track(iter);
 	current = lib_cur_track == track;
@@ -534,7 +535,12 @@ static void print_track(struct window *win, int row, struct iter *iter)
 	fill_track_fopts_track_info(tree_track_info(track));
 
 	if (track_info_has_tag(tree_track_info(track))) {
-		format_print(print_buffer, track_win_w, track_win_format, track_fopts);
+		if (track->tree_sort == SORT_COMPILATION)
+			format = track_win_format_va;
+		else
+			format = track_win_format;
+
+		format_print(print_buffer, track_win_w, format, track_fopts);
 	} else {
 		format_print(print_buffer, track_win_w, track_win_alt_format, track_fopts);
 	}

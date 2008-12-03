@@ -544,7 +544,7 @@ static void album_add_track(struct album *album, struct tree_track *track)
 void tree_add_track(struct tree_track *track)
 {
 	const struct track_info *ti = tree_track_info(track);
-	const char *album_name, *artist_name;
+	const char *album_name, *artist_name, *compilation;
 	struct artist *artist;
 	struct album *album;
 	int date;
@@ -553,19 +553,42 @@ void tree_add_track(struct tree_track *track)
 		artist_name = "<Stream>";
 		album_name = "<Stream>";
 	} else {
+		/*
+		 * 'album' is for album names, obviously.
+		 *
+		 * 'albumartistsort' is our first source for artist names.
+		 * If that does not bring anything up, we try 'albumartist',
+		 * then 'artistsort'. These are for supporting fancy sorting
+		 * techniques.
+		 *
+		 * If that still didn't turn up anything, we check if the
+		 * 'compilation' tag is either 'yes' or '1' - if so, the track
+		 * gets sorted under a special name. (If the 'compilation' tag
+		 * is set but to another value, we make a note so that
+		 * print_track() later knows which format to use).
+		 *
+		 * If not, we use the normal 'artist' tag to get the information.
+		 */
 		album_name = keyvals_get_val(ti->comments, "album");
-
 		artist_name = keyvals_get_val(ti->comments, "albumartistsort");
 		if (!artist_name)
 			artist_name= keyvals_get_val(ti->comments, "albumartist");
 		if (!artist_name)
 			artist_name= keyvals_get_val(ti->comments, "artistsort");
-		if (!artist_name) {
-			const char *compilation = keyvals_get_val(ti->comments, "compilation");
-			if (compilation && (!strcasecmp(compilation, "1") ||
-					    !strcasecmp(compilation, "yes")))
-				artist_name = "<Compilations>";
+
+		track->tree_sort = SORT_NORMAL;
+		compilation = keyvals_get_val(ti->comments, "compilation");
+		if (compilation) {
+			if (!strcasecmp(compilation, "1") ||
+			    !strcasecmp(compilation, "yes")) {
+				if (!artist_name)
+					artist_name = "<Compilations>";
+			} else {
+				track->tree_sort = SORT_COMPILATION;
+			}
+
 		}
+
 		if (!artist_name)
 			artist_name = keyvals_get_val(ti->comments, "artist");
 
@@ -573,7 +596,6 @@ void tree_add_track(struct tree_track *track)
 			artist_name = "<No Name>";
 		if (album_name == NULL)
 			album_name = "<No Name>";
-
 	}
 
 	find_artist_and_album(artist_name, album_name, &artist, &album);
