@@ -166,6 +166,12 @@ int track_info_cmp(const struct track_info *a, const struct track_info *b, const
 				break;
 			continue;
 		}
+		if (strcmp(key, "filemtime") == 0) {
+			res = a->mtime - b->mtime;
+			if (res)
+				break;
+			continue;
+		}
 
 		av = keyvals_get_val(a->comments, key);
 		bv = keyvals_get_val(b->comments, key);

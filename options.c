@@ -190,6 +190,7 @@ static const char * const valid_sort_keys[] = {
 	"comment",
 	"filename",
 	"albumartist",
+	"filemtime",
 	NULL
 };
 

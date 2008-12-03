@@ -928,7 +928,7 @@ Examples:
 Sort option (lib_sort, pl_sort) value is space separated list of the following
 sort keys:
 
-	artist, album, title, tracknumber, discnumber, date, genre, comment, filename
+	artist, album, title, tracknumber, discnumber, date, genre, comment, filename, filemtime
 
 
 @h1 PLUGIN OPTIONS

@@ -1,6 +1,22 @@
 
+2008-12-03	Jason Woofenden
+	3f0006f: Merge http://molb.org/~jk/cmus
+
+2008-11-26	Jonathan Kleinehellefort
+	abe32e8: alsa: Remove empty function
+
+2008-10-21	Jonathan Kleinehellefort
+	2e1b5df: alsa: Add `Master' as fallback mixer element
+	0a1a0c1: Make the player drop frames on song change for better latency
+
 2008-11-17	Jason Woofenden
+	8117075: Patch from Jonathan Kleinehellefort which calls snd_pcm_drop/prepare when alsa_can_pause is false
 	3f02a0b: Added Changelog
 	6ee8cb8: Forked
 	c9c7357: Patch from Adam Hoka (well, most of it) patch to call isspace() and friends correctly for chars with high bit set
 	1449461: Patch from Adam Hoka which tweaks sun.c so it compiles on NetBSD
+
+2008-10-21	Jonathan Kleinehellefort
+	1da7f84: alsa: Do not configure buffering
+	09db31f: alsa: Recover from underruns in op_alsa_buffer_space()
+	2a76227: alsa: Handle (un)pause for devices which do not support snd_pcm_pause()
