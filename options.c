@@ -150,9 +150,10 @@ enum format_id {
 	FMT_PLAYLIST,
 	FMT_TITLE,
 	FMT_TRACKWIN,
-	FMT_TRACKWIN_VA
+	FMT_TRACKWIN_VA,
+
+	NR_FMTS
 };
-#define NR_FMTS 9
 
 /* callbacks for normal options {{{ */
 
@@ -784,6 +785,8 @@ static char **id_to_fmt(enum format_id id)
 		return &track_win_format;
 	case FMT_TRACKWIN_VA:
 		return &track_win_format_va;
+	default:
+		die("unhandled format code: %d\n", id);
 	}
 	return NULL;
 }
