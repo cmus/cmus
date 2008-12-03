@@ -796,6 +796,10 @@ format_title [`Format String`]
 format_trackwin [`Format String`]
 	Format string for the tree view's (1) track window.
 
+format_trackwin_va [`Format String`]
+	Format string for the tree view's (1) track window, if a compilation
+	tag is found (see `LIBRARY VIEW SORTING` for details).
+
 id3_default_charset (ISO-8859-1)
 	Default character set to use for ID3v1 and broken ID3v2 tags.
 
