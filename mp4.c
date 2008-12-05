@@ -35,7 +35,7 @@ struct mp4_private {
 	int overflow_buf_len;
 
 	unsigned char channels;
-	unsigned long sample_rate;
+	uint32_t sample_rate;
 
 	faacDecHandle decoder;		/* typedef void * */
 
@@ -145,7 +145,7 @@ static int mp4_open(struct input_plugin_data *ip_data)
 
 	free(buf);
 
-	d_print("sample rate %luhz, channels %u\n", priv->sample_rate, priv->channels);
+	d_print("sample rate %uhz, channels %u\n", priv->sample_rate, priv->channels);
 
 	ip_data->sf = sf_rate(priv->sample_rate) | sf_channels(priv->channels) | sf_bits(16) | sf_signed(1);
 #if defined(WORDS_BIGENDIAN)
