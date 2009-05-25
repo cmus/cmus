@@ -1663,6 +1663,8 @@ static void update(void)
 			needs_status_update = 1;
 			needs_command_update = 1;
 		}
+		clearok(curscr, TRUE);
+		refresh();
 	}
 
 	player_info_lock();
