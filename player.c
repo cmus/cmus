@@ -161,6 +161,9 @@ static const unsigned short soft_vol_db[100] = {
 	0xcdf1, 0xd71a, 0xe59c, 0xefd3
 };
 
+#ifdef swap16   /* e.g. OpenBSD */
+#undef swap16
+#endif
 static inline unsigned short swap16(unsigned short u)
 {
 	return (u << 8) | (u >> 8);
