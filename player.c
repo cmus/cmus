@@ -732,7 +732,6 @@ static void *consumer_loop(void *arg)
 /* 		d_print("BS: %6d %3d\n", space, space * 1000 / (44100 * 2 * 2)); */
 
 		while (1) {
-			/* 25 ms is 4410 B */
 			if (space == 0) {
 				__consumer_position_update();
 				consumer_unlock();
