@@ -18,8 +18,12 @@
  */
 
 /*
+ * Gapless decoding added by Chun-Yu Shei <cshei AT cs.indiana.edu>
+ */
+
+/*
  * Xing code copied from xmms-mad plugin.
- * 
+ * Lame code copied from mpd
  */
 
 #include "nomad.h"
@@ -31,6 +35,10 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+
+/* the number of samples of silence the decoder inserts at start */
+#define DECODERDELAY 529
+
 
 struct seek_idx_entry {
 	off_t offset;
@@ -44,10 +52,19 @@ struct nomad {
 	mad_timer_t timer;
 	unsigned long cur_frame;
 	off_t input_offset;
-	unsigned char input_buffer[INPUT_BUFFER_SIZE];
+	/* MAD_BUFFER_GUARD zeros are required at the end of the stream to decode the last frame
+	   ref: http://www.mars.org/mailman/public/mad-dev/2001-May/000262.html */
+	unsigned char input_buffer[INPUT_BUFFER_SIZE + MAD_BUFFER_GUARD];
 	int i;
 	unsigned int fast : 1;
 	unsigned int has_xing : 1;
+	unsigned int has_lame : 1;
+	unsigned int seen_first_frame : 1;
+	unsigned int readEOF : 1;
+	int start_drop_frames;
+	int start_drop_samples;
+	int end_drop_samples;
+	int end_drop_frames;
 
 	struct {
 		unsigned int flags;
@@ -56,6 +73,18 @@ struct nomad {
 		unsigned int scale;
 		unsigned char toc[100];
 	} xing;
+
+	struct {
+		char encoder[10];   /* 9 byte encoder name/version ("LAME3.97b") */
+#if 0
+		/* See related comment in parse_lame() */
+		float peak;         /* replaygain peak */
+		float trackGain;    /* replaygain track gain */
+		float albumGain;    /* replaygain album gain */
+#endif
+		int encoderDelay;   /* # of added samples at start of mp3 */
+		int encoderPadding; /* # of added samples at end of mp3 */
+	} lame;
 
 	struct {
 		int size;
@@ -112,6 +141,67 @@ static inline double timer_to_seconds(mad_timer_t timer)
 	return (double)ms / 1000.0;
 }
 
+static int parse_lame(struct nomad *nomad, struct mad_bitptr ptr, int bitlen)
+{
+	int i;
+
+	/* Unlike the xing header, the lame tag has a fixed length.  Fail if
+	 * not all 36 bytes (288 bits) are there. */
+	if (bitlen < 288) return 0;
+
+	for (i = 0; i < 9; i++) nomad->lame.encoder[i] = (char)mad_bit_read(&ptr, 8);
+	nomad->lame.encoder[9] = '\0';
+
+	/* This is technically incorrect, since the encoder might not be lame.
+	 * But there's no other way to determine if this is a lame tag, and we
+	 * wouldn't want to go reading a tag that's not there. */
+	if (strncmp(nomad->lame.encoder, "LAME", 4) != 0) return 0;
+
+#if 0
+	/* Apparently lame versions <3.97b1 do not calculate replaygain.  I'm
+	 * using lame 3.97b2, and while it does calculate replaygain, it's
+	 * setting the values to 0.  Using --replaygain-(fast|accurate) doesn't
+	 * make any difference.  Leaving this code unused until we have a way
+	 * of testing it. -- jat */
+
+	mad_bit_read(&ptr, 16);
+
+	mad_bit_read(&ptr, 32); /* peak */
+
+	mad_bit_read(&ptr, 6); /* header */
+	bits = mad_bit_read(&ptr, 1); /* sign bit */
+	nomad->lame.trackGain = mad_bit_read(&ptr, 9); /* gain*10 */
+	nomad->lame.trackGain = (&bits ? -nomad->lame.trackGain : nomad->lame.trackGain) / 10;
+
+	mad_bit_read(&ptr, 6); /* header */
+	bits = mad_bit_read(&ptr, 1); /* sign bit */
+	nomad->lame.albumGain = mad_bit_read(&ptr, 9); /* gain*10 */
+	nomad->lame.albumGain = (bits ? -nomad->lame.albumGain : nomad->lame.albumGain) / 10;
+
+	mad_bit_read(&ptr, 16);
+#else
+	mad_bit_read(&ptr, 96);
+#endif
+
+	nomad->lame.encoderDelay = mad_bit_read(&ptr, 12);
+	nomad->lame.encoderPadding = mad_bit_read(&ptr, 12);
+#if defined(DEBUG_LAME)
+	d_print("encoderDelay: %d, encoderPadding: %d\n", nomad->lame.encoderDelay, nomad->lame.encoderPadding);
+#endif
+
+	mad_bit_read(&ptr, 96);
+
+	bitlen -= 288;
+
+	nomad->start_drop_frames = 1;	/* XING/LAME header is an empty frame */
+	nomad->start_drop_samples = nomad->lame.encoderDelay + DECODERDELAY;
+	nomad->end_drop_samples = nomad->lame.encoderPadding - DECODERDELAY;
+
+	nomad->has_lame = 1;
+
+	return 1;
+}
+
 enum {
 	XING_FRAMES = 0x00000001L,
 	XING_BYTES  = 0x00000002L,
@@ -132,9 +222,12 @@ enum {
 static int xing_parse(struct nomad *nomad)
 {
 	struct mad_bitptr ptr = nomad->stream.anc_ptr;
+	int oldbitlen = nomad->stream.anc_bitlen;
 	int bitlen = nomad->stream.anc_bitlen;
+	int bitsleft;
 
 	nomad->has_xing = 0;
+	nomad->has_lame = 0;
 	if (bitlen < 64)
 		return -1;
 	if (mad_bit_read(&ptr, 32) != (('X' << 24) | ('i' << 16) | ('n' << 8) | 'g'))
@@ -168,11 +261,24 @@ static int xing_parse(struct nomad *nomad)
 		nomad->xing.scale = mad_bit_read(&ptr, 32);
 		bitlen -= 32;
 	}
+
+	/* Make sure we consume no less than 120 bytes (960 bits) in hopes that
+	 * the LAME tag is found there, and not right after the Xing header */
+	bitsleft = 960 - (oldbitlen - bitlen);
+	if (bitsleft < 0) return -1;
+	else if (bitsleft > 0) {
+		mad_bit_read(&ptr, bitsleft);
+		bitlen -= bitsleft;
+	}
+
 	nomad->has_xing = 1;
 #if defined(DEBUG_XING)
 	if (nomad->xing.flags & XING_FRAMES)
 		d_print("frames: %d (xing)\n", nomad->xing.nr_frames);
 #endif
+
+	parse_lame(nomad, ptr, bitlen);
+
 	return 0;
 }
 
@@ -204,18 +310,20 @@ static int fill_buffer(struct nomad *nomad)
 				d_print("read error on bitstream (%d:%s)\n", errno, strerror(errno));
 			return -1;
 		}
-		if (read_size == 0)
-			return 0;
+		if (read_size == 0) {
+			if (!nomad->readEOF) {
+				memset(nomad->input_buffer + remaining, 0, MAD_BUFFER_GUARD);
+				remaining += MAD_BUFFER_GUARD;
+				d_print("hit end of stream, appended MAD_BUFFER_GUARD zeros\n");
+				nomad->readEOF = 1;
+			}
+			else return 0;
+		}
 
 		len = read_size + remaining;
 
 		nomad->input_offset += read_size;
-#if 0
-		if (len < MAD_BUFFER_GUARD) {
-			memset(nomad->input_buffer + len, 0, MAD_BUFFER_GUARD - len);
-			len = MAD_BUFFER_GUARD;
-		}
-#endif
+
 		mad_stream_buffer(&nomad->stream, nomad->input_buffer, len);
 		nomad->stream.error = 0;
 	}
@@ -404,6 +512,8 @@ static void init_mad(struct nomad *nomad)
 	nomad->cur_frame = 0;
 	nomad->i = -1;
 	nomad->input_offset = 0;
+	nomad->seen_first_frame = 0;
+	nomad->readEOF = 0;
 }
 
 static void free_mad(struct nomad *nomad)
@@ -486,6 +596,8 @@ int nomad_open(struct nomad **nomadp, int fd, int fast)
 	nomad->cbs.read = default_read;
 	nomad->cbs.lseek = default_lseek;
 	nomad->cbs.close = default_close;
+	nomad->start_drop_samples = 0;
+	nomad->end_drop_samples = 0;
 	*nomadp = nomad;
 	/* on error do_open calls nomad_close */
 	return do_open(nomad, fast);
@@ -523,6 +635,7 @@ int nomad_read(struct nomad *nomad, char *buffer, int count)
 	if (nomad->i == -1) {
 		int rc;
 
+next_frame:
 		rc = decode(nomad);
 		if (rc < 0)
 			return rc;
@@ -530,8 +643,56 @@ int nomad_read(struct nomad *nomad, char *buffer, int count)
 			return 0;
 		nomad->i = 0;
 	}
+
+	if (nomad->has_lame) {
+		/* skip samples at start for gapless playback */
+		if (nomad->start_drop_frames) {
+			nomad->start_drop_frames--;
+			/* XING header is an empty frame we want to skip */
+			if (!nomad->seen_first_frame) {
+				nomad->cur_frame--;
+				nomad->seen_first_frame = 1;
+			}
+#if defined(DEBUG_LAME)
+			d_print("skipped a frame at start\n");
+#endif
+			goto next_frame;
+		}
+		if (nomad->start_drop_samples) {
+			if (nomad->start_drop_samples < nomad->synth.pcm.length) {
+				nomad->i += nomad->start_drop_samples;
+				nomad->start_drop_samples = 0;
+				/* Take advantage of the fact that this block is only executed once per file, and
+				   calculate the # of samples/frames to skip at the end.  Note that synth.pcm.length
+				   is needed for the calculation. */
+				nomad->end_drop_frames = nomad->end_drop_samples / nomad->synth.pcm.length;
+				nomad->end_drop_samples = nomad->end_drop_samples % nomad->synth.pcm.length;
+#if defined(DEBUG_LAME)
+				d_print("skipped %d samples at start\n", nomad->i);
+				d_print("will skip %d samples and %d frame(s) at end\n",
+					nomad->end_drop_samples, nomad->end_drop_frames);
+#endif
+			}
+			else {
+				nomad->start_drop_samples -= nomad->synth.pcm.length;
+#if defined(DEBUG_LAME)
+				d_print("skipped %d samples at start and moving to next frame\n", nomad->synth.pcm.length);
+#endif
+				goto next_frame;
+			}
+		}
+		/* skip samples/frames at end for gapless playback */
+		if (nomad->cur_frame == (nomad->xing.nr_frames + 1 - nomad->end_drop_frames)) {
+#if defined(DEBUG_LAME)
+				d_print("skipped %d frame(s) at end\n", nomad->end_drop_frames);
+#endif
+			return 0;
+		}
+	}
+
 	psize = nomad->info.channels * 16 / 8;
 	size = (nomad->synth.pcm.length - nomad->i) * psize;
+
 	if (size > count) {
 		to = nomad->i + count / psize;
 	} else {
@@ -541,6 +702,17 @@ int nomad_read(struct nomad *nomad, char *buffer, int count)
 	for (i = nomad->i; i < to; i++) {
 		short sample;
 
+		/* skip samples/frames at end for gapless playback */
+		if (nomad->has_lame
+		    && nomad->end_drop_samples
+		    && (nomad->cur_frame == (nomad->xing.nr_frames - nomad->end_drop_frames))
+		    && i == (nomad->synth.pcm.length - nomad->end_drop_samples)) {
+			nomad->i = -1;
+#if defined(DEBUG_LAME)
+			d_print("skipped %d samples at end of frame %d\n", nomad->end_drop_samples, (int)nomad->cur_frame);
+#endif
+			return j;
+		}
 		sample = scale(nomad->synth.pcm.samples[0][i]);
 		buffer[j++] = (sample >> 0) & 0xff;
 		buffer[j++] = (sample >> 8) & 0xff;
@@ -559,6 +731,44 @@ int nomad_read(struct nomad *nomad, char *buffer, int count)
 	return j;
 }
 
+static int nomad_time_seek_accurate(struct nomad *nomad, double pos)
+{
+	int rc;
+
+	/* seek to beginning of file and search frame-by-frame */
+	if (nomad->cbs.lseek(nomad->datasource, 0, SEEK_SET) < 0)
+		return -1;
+
+	/* XING header should NOT be counted - if we're here, we know it's present */
+	nomad->cur_frame = -1;
+
+	while (timer_to_seconds(nomad->timer) < pos) {
+		rc = fill_buffer(nomad);
+		if (rc == -1)
+			return -1;
+		if (rc == 0)
+			return 1;
+
+		if (mad_header_decode(&nomad->frame.header, &nomad->stream)) {
+			if (nomad->stream.error == MAD_ERROR_BUFLEN)
+				continue;
+			if (!MAD_RECOVERABLE(nomad->stream.error)) {
+				d_print("unrecoverable frame level error.\n");
+				return -1;
+			}
+			if (nomad->stream.error == MAD_ERROR_LOSTSYNC)
+				handle_lost_sync(nomad);
+			continue;
+		}
+		nomad->cur_frame++;
+		mad_timer_add(&nomad->timer, nomad->frame.header.duration);
+	}
+#if defined(DEBUG_LAME)
+		d_print("seeked to %g = %g\n", pos, timer_to_seconds(nomad->timer));
+#endif
+	return 0;
+}
+
 int nomad_time_seek(struct nomad *nomad, double pos)
 {
 	off_t offset = 0;
@@ -574,8 +784,11 @@ int nomad_time_seek(struct nomad *nomad, double pos)
 	free_mad(nomad);
 	init_mad(nomad);
 
-	/* calculate seek offset */
-	if (nomad->has_xing) {
+	/* if file has a LAME header, perform frame-accurate seek for gapless playback */
+	if (nomad->has_lame) {
+		return nomad_time_seek_accurate(nomad, pos);
+	} else if (nomad->has_xing) {
+		/* calculate seek offset */
 		/* seek to truncate(pos / duration * 100) / 100 * duration */
 		double k, tmp_pos;
 		int ki;
