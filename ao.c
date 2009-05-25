@@ -36,7 +36,7 @@ static int is_wav = 0;
 
 /* configuration */
 static char *libao_driver = NULL;
-static int libao_buffer_space = 8192;
+static int libao_buffer_space = 16384;
 
 
 static int op_ao_init(void)

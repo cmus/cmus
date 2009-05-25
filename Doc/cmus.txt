@@ -948,8 +948,8 @@ mixer.alsa.device
 	Mixer device for ALSA plugin, usually "default".
 
 dsp.ao.buffer_size
-	Buffer size, default is 8192 but you may want to try bigger values if
-	you experience buffer under-runs.
+	Buffer size, default is 16kB (but you may want to try bigger values if
+	you experience buffer under-runs).
 
 dsp.ao.driver
 	Output driver for libao plugin.  Example values: "alsa09", "esd",
