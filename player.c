@@ -327,9 +327,23 @@ static inline void file_changed(struct track_info *ti)
 
 static inline void metadata_changed(void)
 {
+	struct keyval *comments;
+	int rc;
+
 	player_info_lock();
-	d_print("metadata changed: %s\n", ip_get_metadata(ip));
-	memcpy(player_info.metadata, ip_get_metadata(ip), 255 * 16 + 1);
+	if (ip_get_metadata(ip)) {
+		d_print("metadata changed: %s\n", ip_get_metadata(ip));
+		memcpy(player_info.metadata, ip_get_metadata(ip),
+		       255 * 16 + 1);
+	}
+
+	rc = ip_read_comments(ip, &comments);
+	if (!rc) {
+		if (player_info.ti->comments)
+			keyvals_free(player_info.ti->comments);
+		player_info.ti->comments = comments;
+	}
+
 	player_info.metadata_changed = 1;
 	player_info_unlock();
 }

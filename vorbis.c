@@ -110,7 +110,7 @@ static int vorbis_open(struct input_plugin_data *ip_data)
 	int rc;
 
 	priv = xnew(struct vorbis_private, 1);
-	priv->current_section = 0;
+	priv->current_section = -1;
 	memset(&priv->vf, 0, sizeof(priv->vf));
 
 	rc = ov_open_callbacks(ip_data, &priv->vf, NULL, 0, callbacks);
@@ -161,14 +161,21 @@ static int vorbis_read(struct input_plugin_data *ip_data, char *buffer, int coun
 {
 	struct vorbis_private *priv;
 	int rc;
+	int current_section;
 
 	priv = ip_data->private;
 #ifdef CONFIG_TREMOR
 	/* Tremor can only handle signed 16 bit data */
-	rc = ov_read(&priv->vf, buffer, count, &priv->current_section);
+	rc = ov_read(&priv->vf, buffer, count, &current_section);
 #else
-	rc = ov_read(&priv->vf, buffer, count, 0, 2, 1, &priv->current_section);
+	rc = ov_read(&priv->vf, buffer, count, 0, 2, 1, &current_section);
 #endif
+
+	if (ip_data->remote && current_section != priv->current_section) {
+		ip_data->metadata_changed = 1;
+		priv->current_section = current_section;
+	}
+
 	switch (rc) {
 	case OV_HOLE:
 		errno = EAGAIN;

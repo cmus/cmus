@@ -516,6 +516,7 @@ static void fill_track_fopts_track_info(struct track_info *info)
 static void print_track(struct window *win, int row, struct iter *iter)
 {
 	struct tree_track *track;
+	struct track_info *ti;
 	struct iter sel;
 	int current, selected, active;
 	char *format;
@@ -532,9 +533,10 @@ static void print_track(struct window *win, int row, struct iter *iter)
 		cursor_y = 1 + row;
 	}
 
-	fill_track_fopts_track_info(tree_track_info(track));
+	ti = tree_track_info(track);
+	fill_track_fopts_track_info(ti);
 
-	if (track_info_has_tag(tree_track_info(track))) {
+	if (track_info_has_tag(ti) && !is_url(ti->filename)) {
 		if (track->tree_sort == SORT_COMPILATION)
 			format = track_win_format_va;
 		else
@@ -1147,14 +1149,15 @@ static void do_update_titleline(void)
 		char *wtitle;
 
 		fill_track_fopts_track_info(player_info.ti);
-		if (is_url(player_info.ti->filename)) {
+
+		use_alt_format = !track_info_has_tag(player_info.ti);
+		if (use_alt_format && is_url(player_info.ti->filename)) {
 			const char *title = get_stream_title();
 
-			if (title == NULL)
-				use_alt_format = 1;
-			fopt_set_str(&track_fopts[TF_TITLE], title);
-		} else {
-			use_alt_format = !track_info_has_tag(player_info.ti);
+			if (title != NULL) {
+				use_alt_format = 0;
+				fopt_set_str(&track_fopts[TF_TITLE], title);
+			}
 		}
 
 		if (use_alt_format) {
@@ -1547,16 +1550,12 @@ static void spawn_status_program(void)
 
 		if (is_url(player_info.ti->filename)) {
 			argv[i++] = xstrdup("url");
-			argv[i++] = xstrdup(player_info.ti->filename);
-			if (stream_title) {
-				argv[i++] = xstrdup("title");
-				argv[i++] = xstrdup(stream_title);
-			}
 		} else {
-			char buf[32];
-
 			argv[i++] = xstrdup("file");
-			argv[i++] = xstrdup(player_info.ti->filename);
+		}
+		argv[i++] = xstrdup(player_info.ti->filename);
+
+		if (track_info_has_tag(player_info.ti)) {
 			for (j = 0; keys[j]; j++) {
 				const char *key = keys[j];
 				const char *val;
@@ -1567,9 +1566,16 @@ static void spawn_status_program(void)
 					argv[i++] = xstrdup(val);
 				}
 			}
-			snprintf(buf, sizeof(buf), "%d", player_info.ti->duration);
-			argv[i++] = xstrdup("duration");
-			argv[i++] = xstrdup(buf);
+			if (player_info.ti->duration > 0) {
+			char buf[32];
+				snprintf(buf, sizeof(buf), "%d",
+					 player_info.ti->duration);
+				argv[i++] = xstrdup("duration");
+				argv[i++] = xstrdup(buf);
+			}
+		} else if (stream_title) {
+			argv[i++] = xstrdup("title");
+			argv[i++] = xstrdup(stream_title);
 		}
 	}
 	argv[i++] = NULL;
