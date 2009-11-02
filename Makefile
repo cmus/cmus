@@ -9,8 +9,8 @@ CFLAGS += -D_FILE_OFFSET_BITS=64
 
 CMUS_LIBS = $(PTHREAD_LIBS) $(NCURSES_LIBS) $(ICONV_LIBS) $(DL_LIBS) -lm $(COMPAT_LIBS)
 
-input.o main.o ui_curses.o: .version
-input.o main.o ui_curses.o: CFLAGS += -DVERSION=\"$(VERSION)\"
+input.o main.o ui_curses.o pulse.lo: .version
+input.o main.o ui_curses.o pulse.lo: CFLAGS += -DVERSION=\"$(VERSION)\"
 main.o server.o: CFLAGS += -DDEFAULT_PORT=3000
 
 .version: Makefile
@@ -123,6 +123,7 @@ ffmpeg.so: $(ffmpeg-objs) $(libcmus-y)
 # }}}
 
 # output plugins {{{
+pulse-objs		:= pulse.lo
 alsa-objs		:= alsa.lo mixer_alsa.lo
 arts-objs		:= arts.lo
 oss-objs		:= oss.lo mixer_oss.lo
@@ -130,6 +131,7 @@ sun-objs		:= sun.lo mixer_sun.lo
 ao-objs			:= ao.lo
 waveout-objs		:= waveout.lo
 
+op-$(CONFIG_PULSE)	+= pulse.so
 op-$(CONFIG_ALSA)	+= alsa.so
 op-$(CONFIG_ARTS)	+= arts.so
 op-$(CONFIG_OSS)	+= oss.so
@@ -137,12 +139,16 @@ op-$(CONFIG_SUN)	+= sun.so
 op-$(CONFIG_AO)		+= ao.so
 op-$(CONFIG_WAVEOUT)	+= waveout.so
 
+$(pulse-objs): CFLAGS	+= $(PULSE_CFLAGS)
 $(alsa-objs): CFLAGS	+= $(ALSA_CFLAGS)
 $(arts-objs): CFLAGS	+= $(ARTS_CFLAGS)
 $(oss-objs):  CFLAGS	+= $(OSS_CFLAGS)
 $(sun-objs):  CFLAGS	+= $(SUN_CFLAGS)
 $(ao-objs):   CFLAGS	+= $(AO_CFLAGS)
 $(waveout-objs): CFLAGS += $(WAVEOUT_CFLAGS)
+
+pulse.so: $(pulse-objs) $(libcmus-y)
+	$(call cmd,ld_dl,$(PULSE_LIBS))
 
 alsa.so: $(alsa-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(ALSA_LIBS))

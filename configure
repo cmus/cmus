@@ -142,6 +142,12 @@ check_wavpack()
 	return $?
 }
 
+check_pulse()
+{
+	pkg_config PULSE "libpulse >= 0.9.19"
+	return $?
+}
+
 check_alsa()
 {
 	# the alsa.pc file should be always available
@@ -269,6 +275,7 @@ Optional Features: y/n
   CONFIG_MP4      MPEG-4 AAC (.mp4, .m4a, .m4b)                   [auto]
   CONFIG_AAC      AAC (.aac, audio/aac, audio/aacp)               [auto]
   CONFIG_FFMPEG   FFMPEG (.shn, .wma)                             [auto]
+  CONFIG_PULSE    native PulseAudio output                        [auto]
   CONFIG_ALSA     ALSA                                            [auto]
   CONFIG_AO       Libao cross-platform audio library              [auto]
   CONFIG_ARTS     ARTS                                            [auto]
@@ -318,6 +325,7 @@ check check_ffmpeg  CONFIG_FFMPEG
 # nothing to check, just validate the variable values
 check true          CONFIG_TREMOR
 check true          CONFIG_WAV
+check check_pulse   CONFIG_PULSE
 check check_alsa    CONFIG_ALSA
 check check_ao      CONFIG_AO
 check check_arts    CONFIG_ARTS
@@ -337,6 +345,6 @@ config_header config/tremor.h CONFIG_TREMOR
 
 makefile_vars bindir datadir libdir mandir exampledir
 makefile_vars CONFIG_FLAC CONFIG_MAD CONFIG_MIKMOD CONFIG_MODPLUG CONFIG_MPC CONFIG_VORBIS CONFIG_WAVPACK CONFIG_WAV CONFIG_MP4 CONFIG_AAC CONFIG_FFMPEG
-makefile_vars CONFIG_ALSA CONFIG_AO CONFIG_ARTS CONFIG_OSS CONFIG_SUN CONFIG_WAVEOUT
+makefile_vars CONFIG_PULSE CONFIG_ALSA CONFIG_AO CONFIG_ARTS CONFIG_OSS CONFIG_SUN CONFIG_WAVEOUT
 
 generate_config_mk

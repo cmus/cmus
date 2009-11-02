@@ -808,7 +808,7 @@ id3_default_charset (ISO-8859-1)
 lib_sort (artist album discnumber tracknumber title filename) [`Sort Keys`]
 	Sort keys for the sorted library view (2).
 
-output_plugin [alsa, arts, oss, sun]
+output_plugin [pulse, alsa, arts, oss, sun]
 	Name of output plugin.
 
 pl_sort () [`Sort Keys`]
