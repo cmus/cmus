@@ -21,8 +21,8 @@ bind common I echo {}
 bind common M toggle play_library
 bind common N search-prev
 bind common P win-mv-before
-bind common [ vol +1 +0
-bind common ] vol +0 +1
+bind common [ vol +1% +0
+bind common ] vol +0 +1%
 bind common ^B win-page-up
 bind common ^C echo Type :quit<enter> to exit cmus.
 bind common ^F win-page-down
@@ -62,8 +62,8 @@ bind common v player-stop
 bind common x player-play
 bind common y win-add-p
 bind common z player-prev
-bind common { vol -1 -0
-bind common } vol -0 -1
+bind common { vol -1% -0
+bind common } vol -0 -1%
 fset 90s=date>=1990&date<2000
 fset missing-tag=!stream&(artist=""|album=""|title=""|tracknumber=-1|date=-1)
 fset mp3=filename="*.mp3"
