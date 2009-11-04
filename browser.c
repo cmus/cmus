@@ -200,7 +200,8 @@ static int do_browser_load(const char *name)
 		dir_close(&dir);
 
 		/* try to update currect working directory */
-		chdir(name);
+		if (chdir(name))
+			return -1;
 	} else {
 		errno = ENOTDIR;
 		return -1;
