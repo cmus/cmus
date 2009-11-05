@@ -152,14 +152,13 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 
 	ffmpeg_init();
 
-	do {
-		err = av_open_input_file(&ic, ip_data->filename, NULL, 0, NULL);
-		if (err < 0) {
-			d_print("av_open failed: %d\n", err);
-			err = -IP_ERROR_FILE_FORMAT;
-			break;
-		}
+	err = av_open_input_file(&ic, ip_data->filename, NULL, 0, NULL);
+	if (err < 0) {
+		d_print("av_open failed: %d\n", err);
+		return -IP_ERROR_FILE_FORMAT;
+	}
 
+	do {
 		err = av_find_stream_info(ic);
 		if (err < 0) {
 			d_print("unable to find stream info: %d\n", err);
