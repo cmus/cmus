@@ -268,6 +268,10 @@ static int ffmpeg_fill_buffer(AVFormatContext *ic, AVCodecContext *cc, struct ff
 		len = avcodec_decode_audio2(cc, (int16_t *) output->buffer, &frame_size,
 				input->curr_pkt_buf, input->curr_pkt_size);
 #endif
+		if (len < 0) {
+			d_print("trouble decoding frame");
+			return -IP_ERROR_INTERNAL;
+		}
 		input->curr_pkt_size -= len;
 		input->curr_pkt_buf += len;
 		if (frame_size > 0) {
