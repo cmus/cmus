@@ -100,6 +100,28 @@ static pa_proplist *__create_stream_proplist(void)
 	return pl;
 }
 
+static const char *__pa_context_state_str(pa_context_state_t s)
+{
+	switch (s) {
+	case PA_CONTEXT_AUTHORIZING:
+		return "PA_CONTEXT_AUTHORIZING";
+	case PA_CONTEXT_CONNECTING:
+		return "PA_CONTEXT_CONNECTING";
+	case PA_CONTEXT_FAILED:
+		return "PA_CONTEXT_FAILED";
+	case PA_CONTEXT_READY:
+		return "PA_CONTEXT_READY";
+	case PA_CONTEXT_SETTING_NAME:
+		return "PA_CONTEXT_SETTING_NAME";
+	case PA_CONTEXT_TERMINATED:
+		return "PA_CONTEXT_TERMINATED";
+	case PA_CONTEXT_UNCONNECTED:
+		return "PA_CONTEXT_UNCONNECTED";
+	}
+
+	return "unknown";
+}
+
 static void __pa_context_running_cb(pa_context *c, void *data)
 {
 	pa_context_state_t	 s;
@@ -123,7 +145,27 @@ static void __pa_context_running_cb(pa_context *c, void *data)
 		break;
 	}
 
+	d_print("pulse: context state has changed to %s\n", __pa_context_state_str(s));
+
 	pa_threaded_mainloop_signal(pa_ml, 0);
+}
+
+static const char *__pa_stream_state_str(pa_stream_state_t s)
+{
+	switch (s) {
+	case PA_STREAM_CREATING:
+		return "PA_STREAM_CREATING";
+	case PA_STREAM_FAILED:
+		return "PA_STREAM_FAILED";
+	case PA_STREAM_READY:
+		return "PA_STREAM_READY";
+	case PA_STREAM_TERMINATED:
+		return "PA_STREAM_TERMINATED";
+	case PA_STREAM_UNCONNECTED:
+		return "PA_STREAM_UNCONNECTED";
+	}
+
+	return "unknown";
 }
 
 static void __pa_stream_running_cb(pa_stream *s, void *data)
@@ -146,6 +188,8 @@ static void __pa_stream_running_cb(pa_stream *s, void *data)
 		*running = 1;
 		break;
 	}
+
+	d_print("pulse: stream state has changed to %s\n", __pa_stream_state_str(ss));
 
 	pa_threaded_mainloop_signal(pa_ml, 0);
 }
