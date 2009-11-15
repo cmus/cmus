@@ -61,7 +61,7 @@ static pa_proplist *__create_app_proplist(void)
 	pl = pa_proplist_new();
 	BUG_ON(!pl);
 
-	rc = pa_proplist_sets(pl, PA_PROP_APPLICATION_NAME, "Cmus Music Player");
+	rc = pa_proplist_sets(pl, PA_PROP_APPLICATION_NAME, "C* Music Player");
 	BUG_ON(rc);
 
 	rc = pa_proplist_sets(pl, PA_PROP_APPLICATION_VERSION, VERSION);
@@ -269,7 +269,7 @@ static int __pa_init(void)
 
 	pa_threaded_mainloop_lock(pa_ml);
 
-	pa_ctx = pa_context_new_with_proplist(api, "Cmus Music Player", pl);
+	pa_ctx = pa_context_new_with_proplist(api, "C* Music Player", pl);
 	BUG_ON(!pa_ctx);
 	pa_proplist_free(pl);
 
