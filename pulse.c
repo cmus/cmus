@@ -33,8 +33,8 @@ static pa_stream		*pa_s;
 static pa_channel_map		 pa_cmap;
 static pa_cvolume		 pa_vol;
 
-static int		 _pa_context_running;
-static int		 _pa_stream_running;
+static pa_context_state_t	 pa_cs = PA_CONTEXT_UNCONNECTED;
+static pa_stream_state_t	 pa_ss = PA_STREAM_UNCONNECTED;
 
 #define ret_pa_error(err)						\
 	do {								\
@@ -108,6 +108,23 @@ static pa_proplist *__create_stream_proplist(void)
 	return pl;
 }
 
+static int __pa_context_intermediate(pa_context_state_t s)
+{
+	switch (s) {
+	case PA_CONTEXT_UNCONNECTED:
+	case PA_CONTEXT_CONNECTING:
+	case PA_CONTEXT_AUTHORIZING:
+	case PA_CONTEXT_SETTING_NAME:
+		return 1;
+	case PA_CONTEXT_READY:
+	case PA_CONTEXT_FAILED:
+	case PA_CONTEXT_TERMINATED:
+		return 0;
+	}
+
+	return 0;
+}
+
 static const char *__pa_context_state_str(pa_context_state_t s)
 {
 	switch (s) {
@@ -132,27 +149,26 @@ static const char *__pa_context_state_str(pa_context_state_t s)
 
 static void __pa_context_running_cb(pa_context *c, void *data)
 {
-	pa_context_state_t s;
+	pa_cs = pa_context_get_state(c);
 
-	s = pa_context_get_state(c);
-	switch (s) {
-	case PA_CONTEXT_UNCONNECTED:
-	case PA_CONTEXT_CONNECTING:
-	case PA_CONTEXT_AUTHORIZING:
-	case PA_CONTEXT_SETTING_NAME:
-		break;
-	case PA_CONTEXT_FAILED:
-	case PA_CONTEXT_TERMINATED:
-		_pa_context_running = -1;
-		break;
-	case PA_CONTEXT_READY:
-		_pa_context_running = 1;
-		break;
-	}
-
-	d_print("pulse: context state has changed to %s\n", __pa_context_state_str(s));
+	d_print("pulse: context state has changed to %s\n", __pa_context_state_str(pa_cs));
 
 	pa_threaded_mainloop_signal(pa_ml, 0);
+}
+
+static int __pa_stream_intermediate(pa_stream_state_t s)
+{
+	switch (s) {
+	case PA_STREAM_UNCONNECTED:
+	case PA_STREAM_CREATING:
+		return 1;
+	case PA_STREAM_READY:
+	case PA_STREAM_FAILED:
+	case PA_STREAM_TERMINATED:
+		return 0;
+	}
+
+	return 0;
 }
 
 static const char *__pa_stream_state_str(pa_stream_state_t s)
@@ -175,23 +191,9 @@ static const char *__pa_stream_state_str(pa_stream_state_t s)
 
 static void __pa_stream_running_cb(pa_stream *s, void *data)
 {
-	pa_stream_state_t ss;
+	pa_ss = pa_stream_get_state(s);
 
-	ss = pa_stream_get_state(s);
-	switch (ss) {
-	case PA_STREAM_UNCONNECTED:
-	case PA_STREAM_CREATING:
-		break;
-	case PA_STREAM_FAILED:
-	case PA_STREAM_TERMINATED:
-		_pa_stream_running = -1;
-		break;
-	case PA_STREAM_READY:
-		_pa_stream_running = 1;
-		break;
-	}
-
-	d_print("pulse: stream state has changed to %s\n", __pa_stream_state_str(ss));
+	d_print("pulse: stream state has changed to %s\n", __pa_stream_state_str(pa_ss));
 
 	pa_threaded_mainloop_signal(pa_ml, 0);
 }
@@ -282,8 +284,8 @@ static void __pa_shutdown(void)
 		pa_ml = NULL;
 	}
 
-	_pa_context_running	= 0;
-	_pa_stream_running	= 0;
+	pa_cs = PA_CONTEXT_UNCONNECTED;
+	pa_ss = PA_STREAM_UNCONNECTED;
 }
 
 static int __pa_init(void)
@@ -321,15 +323,14 @@ static int __pa_init(void)
 
 	pa_context_set_state_callback(pa_ctx, __pa_context_running_cb, NULL);
 
-	_pa_context_running = 0;
 	rc = pa_context_connect(pa_ctx, NULL, PA_CONTEXT_NOFLAGS, NULL);
 	if (rc < 0)
 		goto out_fail;
 
-	while (_pa_context_running == 0)
+	while (__pa_context_intermediate(pa_cs))
 		pa_threaded_mainloop_wait(pa_ml);
 
-	if (_pa_context_running < 0)
+	if (pa_cs != PA_CONTEXT_READY)
 		goto out_fail;
 
 	pa_threaded_mainloop_unlock(pa_ml);
@@ -398,7 +399,6 @@ static int op_pulse_open(sample_format_t sf)
 
 	pa_stream_set_state_callback(pa_s, __pa_stream_running_cb, NULL);
 
-	_pa_stream_running = 0;
 	rc = pa_stream_connect_playback(pa_s,
 					NULL,
 					&ba,
@@ -408,10 +408,10 @@ static int op_pulse_open(sample_format_t sf)
 	if (rc < 0)
 		goto out_fail;
 
-	while (_pa_stream_running == 0)
+	while (__pa_stream_intermediate(pa_ss))
 		pa_threaded_mainloop_wait(pa_ml);
 
-	if (_pa_stream_running < 0)
+	if (pa_ss != PA_STREAM_READY)
 		goto out_fail;
 
 	pa_threaded_mainloop_unlock(pa_ml);
@@ -430,12 +430,16 @@ static int op_pulse_close(void)
 {
 	pa_threaded_mainloop_lock(pa_ml);
 
-	_pa_stream_running = 0;
 	pa_stream_disconnect(pa_s);
-	while (_pa_stream_running == 0)
+
+	while (pa_ss != PA_STREAM_TERMINATED &&
+	       pa_ss != PA_STREAM_FAILED)
 		pa_threaded_mainloop_wait(pa_ml);
 
 	pa_threaded_mainloop_unlock(pa_ml);
+
+	if (pa_ss != PA_STREAM_TERMINATED)
+		ret_pa_error(pa_context_errno(pa_ctx));
 
 	return OP_ERROR_SUCCESS;
 }
