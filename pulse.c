@@ -33,8 +33,8 @@ static pa_stream		*pa_s;
 static pa_channel_map		 pa_cmap;
 static pa_cvolume		 pa_vol;
 
-static pa_context_state_t	 pa_cs = PA_CONTEXT_UNCONNECTED;
-static pa_stream_state_t	 pa_ss = PA_STREAM_UNCONNECTED;
+static pa_context_state_t	 pa_cs;
+static pa_stream_state_t	 pa_ss;
 
 #define ret_pa_error(err)						\
 	do {								\
@@ -261,7 +261,7 @@ static int __pa_stream_cork(int pause_)
 	return OP_ERROR_SUCCESS;
 }
 
-static void __pa_shutdown(void)
+static void __pa_close(void)
 {
 	pa_threaded_mainloop_lock(pa_ml);
 
@@ -277,29 +277,13 @@ static void __pa_shutdown(void)
 	}
 
 	pa_threaded_mainloop_unlock(pa_ml);
-
-	if (pa_ml) {
-		pa_threaded_mainloop_stop(pa_ml);
-		pa_threaded_mainloop_free(pa_ml);
-		pa_ml = NULL;
-	}
-
-	pa_cs = PA_CONTEXT_UNCONNECTED;
-	pa_ss = PA_STREAM_UNCONNECTED;
 }
 
-static int __pa_init(void)
+static int __pa_open(void)
 {
-	pa_channel_map	*cm;
 	pa_mainloop_api	*api;
 	pa_proplist	*pl;
 	int		 rc;
-
-	cm = pa_channel_map_init_stereo(&pa_cmap);
-	if (!cm)
-		return -OP_ERROR_INTERNAL;
-
-	pa_cvolume_reset(&pa_vol, 2);
 
 	pl = __create_app_proplist();
 
@@ -340,24 +324,38 @@ static int __pa_init(void)
 out_fail:
 	pa_threaded_mainloop_unlock(pa_ml);
 
-	__pa_shutdown();
+	__pa_close();
 
 	ret_pa_error(rc);
 }
 
 static int op_pulse_init(void)
 {
-	/*
-	 * op_pulse_mixer_init should already be called
-	 */
+	pa_proplist	*pl;
+	int		 rc;
+
+	pl = __create_app_proplist();
+
+	pa_ml = pa_threaded_mainloop_new();
+	BUG_ON(!pa_ml);
+
+	rc = pa_threaded_mainloop_start(pa_ml);
+	if (rc < 0) {
+		pa_threaded_mainloop_free(pa_ml);
+		ret_pa_error(rc);
+	}
+
 	return OP_ERROR_SUCCESS;
 }
 
 static int op_pulse_exit(void)
 {
-	/*
-	 * op_pulse_mixer_exit should take care of cleaning up
-	 */
+	if (pa_ml) {
+		pa_threaded_mainloop_stop(pa_ml);
+		pa_threaded_mainloop_free(pa_ml);
+		pa_ml = NULL;
+	}
+
 	return OP_ERROR_SUCCESS;
 }
 
@@ -385,6 +383,10 @@ static int op_pulse_open(sample_format_t sf)
 
 	if (!pa_sample_spec_valid(&ss))
 		return -OP_ERROR_SAMPLE_FORMAT;
+
+	rc = __pa_open();
+	if (rc)
+		return rc;
 
 	pl = __create_stream_proplist();
 
@@ -428,18 +430,7 @@ out_fail:
 
 static int op_pulse_close(void)
 {
-	pa_threaded_mainloop_lock(pa_ml);
-
-	pa_stream_disconnect(pa_s);
-
-	while (pa_ss != PA_STREAM_TERMINATED &&
-	       pa_ss != PA_STREAM_FAILED)
-		pa_threaded_mainloop_wait(pa_ml);
-
-	pa_threaded_mainloop_unlock(pa_ml);
-
-	if (pa_ss != PA_STREAM_TERMINATED)
-		ret_pa_error(pa_context_errno(pa_ctx));
+	__pa_close();
 
 	return OP_ERROR_SUCCESS;
 }
@@ -510,13 +501,16 @@ static int op_pulse_get_option(int key, char **val)
 
 static int op_pulse_mixer_init(void)
 {
-	return __pa_init();
+	if (!pa_channel_map_init_stereo(&pa_cmap))
+		return -OP_ERROR_INTERNAL;
+
+	pa_cvolume_reset(&pa_vol, 2);
+
+	return OP_ERROR_SUCCESS;
 }
 
 static int op_pulse_mixer_exit(void)
 {
-	__pa_shutdown();
-
 	return OP_ERROR_SUCCESS;
 }
 
@@ -541,8 +535,6 @@ static int op_pulse_mixer_set_volume(int l, int r)
 {
 	pa_operation *o;
 
-	pa_threaded_mainloop_lock(pa_ml);
-
 	pa_cvolume_set_position(&pa_vol,
 				&pa_cmap,
 				PA_CHANNEL_POSITION_FRONT_LEFT,
@@ -553,11 +545,11 @@ static int op_pulse_mixer_set_volume(int l, int r)
 				PA_CHANNEL_POSITION_FRONT_RIGHT,
 				(pa_volume_t)r);
 
-	if (!pa_s) {
-		pa_threaded_mainloop_unlock(pa_ml);
-
+	if (!pa_s)
 		return OP_ERROR_SUCCESS;
-	} else {
+	else {
+		pa_threaded_mainloop_lock(pa_ml);
+
 		o = pa_context_set_sink_input_volume(pa_ctx,
 						     pa_stream_get_index(pa_s),
 						     &pa_vol,
