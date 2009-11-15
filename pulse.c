@@ -132,10 +132,7 @@ static const char *__pa_context_state_str(pa_context_state_t s)
 
 static void __pa_context_running_cb(pa_context *c, void *data)
 {
-	pa_context_state_t	 s;
-	int			*running;
-
-	running = (int*)data;
+	pa_context_state_t s;
 
 	s = pa_context_get_state(c);
 	switch (s) {
@@ -146,10 +143,10 @@ static void __pa_context_running_cb(pa_context *c, void *data)
 		break;
 	case PA_CONTEXT_FAILED:
 	case PA_CONTEXT_TERMINATED:
-		*running = -1;
+		_pa_context_running = -1;
 		break;
 	case PA_CONTEXT_READY:
-		*running = 1;
+		_pa_context_running = 1;
 		break;
 	}
 
@@ -178,10 +175,7 @@ static const char *__pa_stream_state_str(pa_stream_state_t s)
 
 static void __pa_stream_running_cb(pa_stream *s, void *data)
 {
-	pa_stream_state_t	 ss;
-	int			*running;
-
-	running = (int*)data;
+	pa_stream_state_t ss;
 
 	ss = pa_stream_get_state(s);
 	switch (ss) {
@@ -190,10 +184,10 @@ static void __pa_stream_running_cb(pa_stream *s, void *data)
 		break;
 	case PA_STREAM_FAILED:
 	case PA_STREAM_TERMINATED:
-		*running = -1;
+		_pa_stream_running = -1;
 		break;
 	case PA_STREAM_READY:
-		*running = 1;
+		_pa_stream_running = 1;
 		break;
 	}
 
@@ -325,7 +319,7 @@ static int __pa_init(void)
 	BUG_ON(!pa_ctx);
 	pa_proplist_free(pl);
 
-	pa_context_set_state_callback(pa_ctx, __pa_context_running_cb, &_pa_context_running);
+	pa_context_set_state_callback(pa_ctx, __pa_context_running_cb, NULL);
 
 	_pa_context_running = 0;
 	rc = pa_context_connect(pa_ctx, NULL, PA_CONTEXT_NOFLAGS, NULL);
@@ -402,7 +396,7 @@ static int op_pulse_open(sample_format_t sf)
 		return -OP_ERROR_INTERNAL;
 	}
 
-	pa_stream_set_state_callback(pa_s, __pa_stream_running_cb, &_pa_stream_running);
+	pa_stream_set_state_callback(pa_s, __pa_stream_running_cb, NULL);
 
 	_pa_stream_running = 0;
 	rc = pa_stream_connect_playback(pa_s,
