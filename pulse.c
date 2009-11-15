@@ -38,7 +38,7 @@ static pa_stream_state_t	 pa_ss = PA_STREAM_UNCONNECTED;
 
 #define ret_pa_error(err)						\
 	do {								\
-		d_print("pulseaudio error: %s\n", pa_strerror(err));	\
+		d_print("PulseAudio error: %s\n", pa_strerror(err));	\
 		return -OP_ERROR_INTERNAL;				\
 	} while (0)
 
