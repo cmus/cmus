@@ -52,7 +52,7 @@ static int __pa_ret_volume(int *l, int *r)
 
 static pa_proplist *__create_app_proplist(void)
 {
-	size_t const	 BUFSIZE = 1024;
+	const size_t	 BUFSIZE = 1024;
 
 	pa_proplist	*pl;
 	char		 buf[BUFSIZE];
