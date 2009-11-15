@@ -233,8 +233,7 @@ static int waveout_unpause(void)
 static int waveout_buffer_space(void)
 {
 	clean_buffers();
-	if (buffers_free == 0)
-		return -1;
+
 	return buffers_free * FRAME_SIZE_ALIGN(buffer_size);
 }
 

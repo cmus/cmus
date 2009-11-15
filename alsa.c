@@ -278,7 +278,7 @@ static int op_alsa_buffer_space(void)
 		f = snd_pcm_avail_update(alsa_handle);
 	}
 
-	return f == 0 ? - 1 : f * alsa_frame_size;
+	return f * alsa_frame_size;
 }
 
 static int op_alsa_pause(void)

@@ -739,11 +739,16 @@ static void *consumer_loop(void *arg)
 			continue;
 		}
 		space = op_buffer_space();
-		if (space == -1) {
-			/* busy */
-			__consumer_position_update();
+		if (space < 0) {
+			d_print("op_buffer_space returned %d %s\n", space,
+					space == -1 ? strerror(errno) : "");
+
+			/* try to reopen */
+			op_close();
+			consumer_status = CS_STOPPED;
+			__consumer_play();
+
 			consumer_unlock();
-			ms_sleep(50);
 			continue;
 		}
 /* 		d_print("BS: %6d %3d\n", space, space * 1000 / (44100 * 2 * 2)); */
