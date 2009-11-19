@@ -226,37 +226,41 @@ static uint8_t __pa_nchannels(sample_format_t sf)
 	return sf_get_channels(sf);
 }
 
-static int __pa_stream_cork(int pause_)
+static int __pa_wait_unlock(pa_operation *o)
 {
-	pa_operation *o;
+	int state;
 
-	pa_threaded_mainloop_lock(pa_ml);
-
-	o = pa_stream_cork(pa_s, pause_, NULL, NULL);
 	if (!o) {
 		pa_threaded_mainloop_unlock(pa_ml);
 		return -OP_ERROR_INTERNAL;
 	}
 
-	pa_operation_unref(o);
-
-	pa_threaded_mainloop_unlock(pa_ml);
-
-	return OP_ERROR_SUCCESS;
-}
-
-static void __pa_stream_drain_locked(void)
-{
-	pa_operation *o;
-
-	o = pa_stream_drain(pa_s, __pa_stream_success_cb, NULL);
-	if (!o)
-		return;
-
 	while (pa_operation_get_state(o) == PA_OPERATION_RUNNING)
 		pa_threaded_mainloop_wait(pa_ml);
 
+	state = pa_operation_get_state(o);
+
 	pa_operation_unref(o);
+	pa_threaded_mainloop_unlock(pa_ml);
+
+	if (state == PA_OPERATION_DONE)
+		return OP_ERROR_SUCCESS;
+	else
+		ret_pa_error(pa_context_errno(pa_ctx));
+}
+
+static int __pa_stream_cork(int pause_)
+{
+	pa_threaded_mainloop_lock(pa_ml);
+
+	return __pa_wait_unlock(pa_stream_cork(pa_s, pause_, __pa_stream_success_cb, NULL));
+}
+
+static int __pa_stream_drain(void)
+{
+	pa_threaded_mainloop_lock(pa_ml);
+
+	return __pa_wait_unlock(pa_stream_drain(pa_s, __pa_stream_success_cb, NULL));
 }
 
 static void __pa_close(void)
@@ -264,7 +268,7 @@ static void __pa_close(void)
 	pa_threaded_mainloop_lock(pa_ml);
 
 	if (pa_s) {
-		__pa_stream_drain_locked();
+		__pa_stream_drain();
 
 		pa_stream_disconnect(pa_s);
 		pa_stream_unref(pa_s);
@@ -436,21 +440,9 @@ static int op_pulse_close(void)
 
 static int op_pulse_drop(void)
 {
-	pa_operation *o;
-
 	pa_threaded_mainloop_lock(pa_ml);
 
-	o = pa_stream_flush(pa_s, NULL, NULL);
-	if (!o) {
-		pa_threaded_mainloop_unlock(pa_ml);
-		return -OP_ERROR_INTERNAL;
-	}
-
-	pa_operation_unref(o);
-
-	pa_threaded_mainloop_unlock(pa_ml);
-
-	return OP_ERROR_SUCCESS;
+	return __pa_wait_unlock(pa_stream_flush(pa_s, __pa_stream_success_cb, NULL));
 }
 
 static int op_pulse_write(const char *buf, int count)
@@ -559,6 +551,10 @@ static int op_pulse_mixer_set_volume(int l, int r)
 			return -OP_ERROR_INTERNAL;
 		}
 
+		/*
+		 * Do not wait for operation to complete
+		 */
+
 		pa_operation_unref(o);
 
 		pa_threaded_mainloop_unlock(pa_ml);
@@ -569,30 +565,20 @@ static int op_pulse_mixer_set_volume(int l, int r)
 
 static int op_pulse_mixer_get_volume(int *l, int *r)
 {
-	pa_operation *o;
+	int rc;
 
 	if (!pa_s) {
 		return __pa_ret_volume(l, r);
 	} else {
 		pa_threaded_mainloop_lock(pa_ml);
 
-		o = pa_context_get_sink_input_info(pa_ctx,
-						   pa_stream_get_index(pa_s),
-						   __pa_sink_input_info_cb,
-						   NULL);
-		if (!o) {
-			pa_threaded_mainloop_unlock(pa_ml);
-			return -OP_ERROR_INTERNAL;
-		}
+		rc = __pa_wait_unlock(pa_context_get_sink_input_info(pa_ctx,
+								     pa_stream_get_index(pa_s),
+								     __pa_sink_input_info_cb,
+								     NULL));
+		__pa_ret_volume(l, r);
 
-		while (pa_operation_get_state(o) == PA_OPERATION_RUNNING)
-			pa_threaded_mainloop_wait(pa_ml);
-
-		pa_operation_unref(o);
-
-		pa_threaded_mainloop_unlock(pa_ml);
-
-		return __pa_ret_volume(l, r);
+		return rc;
 	}
 }
 
