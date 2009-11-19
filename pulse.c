@@ -208,16 +208,6 @@ static pa_sample_format_t __pa_sample_format(sample_format_t sf)
 	return PA_SAMPLE_INVALID;
 }
 
-static uint32_t __pa_sample_rate(sample_format_t sf)
-{
-	return sf_get_rate(sf);
-}
-
-static uint8_t __pa_nchannels(sample_format_t sf)
-{
-	return sf_get_channels(sf);
-}
-
 static int __pa_wait_unlock(pa_operation *o)
 {
 	pa_operation_state_t state;
@@ -371,8 +361,8 @@ static int op_pulse_open(sample_format_t sf)
 
 	const pa_sample_spec ss = {
 		.format		= __pa_sample_format(sf),
-		.rate		= __pa_sample_rate(sf),
-		.channels	= __pa_nchannels(sf)
+		.rate		= sf_get_rate(sf),
+		.channels	= sf_get_channels(sf)
 	};
 
 	if (!pa_sample_spec_valid(&ss))
