@@ -182,10 +182,10 @@ static void __pa_sink_input_info_cb(pa_context *c,
 				    int eol,
 				    void *data)
 {
-	if (i)
+	if (i) {
 		memcpy(&pa_vol, &i->volume, sizeof(pa_vol));
-
-	pa_threaded_mainloop_signal(pa_ml, 0);
+		pa_threaded_mainloop_signal(pa_ml, 0);
+	}
 }
 
 static pa_sample_format_t __pa_sample_format(sample_format_t sf)
