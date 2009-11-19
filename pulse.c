@@ -546,9 +546,9 @@ static int op_pulse_mixer_set_volume(int l, int r)
 				PA_CHANNEL_POSITION_FRONT_RIGHT,
 				(pa_volume_t)r);
 
-	if (!pa_s)
+	if (!pa_s) {
 		return OP_ERROR_SUCCESS;
-	else {
+	} else {
 		pa_threaded_mainloop_lock(pa_ml);
 
 		o = pa_context_set_sink_input_volume(pa_ctx,
@@ -573,9 +573,9 @@ static int op_pulse_mixer_get_volume(int *l, int *r)
 {
 	pa_operation *o;
 
-	if (!pa_s)
+	if (!pa_s) {
 		return __pa_ret_volume(l, r);
-	else {
+	} else {
 		pa_threaded_mainloop_lock(pa_ml);
 
 		o = pa_context_get_sink_input_info(pa_ctx,
