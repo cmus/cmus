@@ -39,14 +39,6 @@ static pa_cvolume		 pa_vol;
 		return -OP_ERROR_INTERNAL;				\
 	} while (0)
 
-static int __pa_ret_volume(int *l, int *r)
-{
-	*l = (int)pa_cvolume_get_position(&pa_vol, &pa_cmap, PA_CHANNEL_POSITION_FRONT_LEFT);
-	*r = (int)pa_cvolume_get_position(&pa_vol, &pa_cmap, PA_CHANNEL_POSITION_FRONT_RIGHT);
-
-	return OP_ERROR_SUCCESS;
-}
-
 static pa_proplist *__create_app_proplist(void)
 {
 	const size_t	 BUFSIZE = 1024;
@@ -563,21 +555,21 @@ static int op_pulse_mixer_set_volume(int l, int r)
 
 static int op_pulse_mixer_get_volume(int *l, int *r)
 {
-	int rc;
+	int rc = OP_ERROR_SUCCESS;
 
-	if (!pa_s) {
-		return __pa_ret_volume(l, r);
-	} else {
+	if (pa_s) {
 		pa_threaded_mainloop_lock(pa_ml);
 
 		rc = __pa_wait_unlock(pa_context_get_sink_input_info(pa_ctx,
 								     pa_stream_get_index(pa_s),
 								     __pa_sink_input_info_cb,
 								     NULL));
-		__pa_ret_volume(l, r);
-
-		return rc;
 	}
+
+	*l = (int)pa_cvolume_get_position(&pa_vol, &pa_cmap, PA_CHANNEL_POSITION_FRONT_LEFT);
+	*r = (int)pa_cvolume_get_position(&pa_vol, &pa_cmap, PA_CHANNEL_POSITION_FRONT_RIGHT);
+
+	return rc;
 }
 
 static int op_pulse_mixer_set_option(int key, const char *val)
