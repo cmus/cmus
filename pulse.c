@@ -188,6 +188,11 @@ static void __pa_sink_input_info_cb(pa_context *c,
 	}
 }
 
+static void __pa_stream_success_cb(pa_stream *s, int success, void *data)
+{
+	pa_threaded_mainloop_signal(pa_ml, 0);
+}
+
 static pa_sample_format_t __pa_sample_format(sample_format_t sf)
 {
 	const int signed_	= sf_get_signed(sf);
@@ -240,11 +245,27 @@ static int __pa_stream_cork(int pause_)
 	return OP_ERROR_SUCCESS;
 }
 
+static void __pa_stream_drain_locked(void)
+{
+	pa_operation *o;
+
+	o = pa_stream_drain(pa_s, __pa_stream_success_cb, NULL);
+	if (!o)
+		return;
+
+	while (pa_operation_get_state(o) == PA_OPERATION_RUNNING)
+		pa_threaded_mainloop_wait(pa_ml);
+
+	pa_operation_unref(o);
+}
+
 static void __pa_close(void)
 {
 	pa_threaded_mainloop_lock(pa_ml);
 
 	if (pa_s) {
+		__pa_stream_drain_locked();
+
 		pa_stream_disconnect(pa_s);
 		pa_stream_unref(pa_s);
 		pa_s = NULL;
