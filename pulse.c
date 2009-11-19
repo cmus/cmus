@@ -328,7 +328,7 @@ out_fail:
 
 	__pa_close();
 
-	ret_pa_error(rc);
+	ret_pa_error(pa_context_errno(pa_ctx));
 }
 
 static int op_pulse_init(void)
@@ -426,7 +426,7 @@ out_fail:
 
 	pa_threaded_mainloop_unlock(pa_ml);
 
-	ret_pa_error(rc);
+	ret_pa_error(pa_context_errno(pa_ctx));
 }
 
 static int op_pulse_close(void)
