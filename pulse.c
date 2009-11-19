@@ -266,7 +266,7 @@ static void __pa_close(void)
 	pa_threaded_mainloop_unlock(pa_ml);
 }
 
-static int __pa_open(void)
+static int __pa_create_context(void)
 {
 	pa_mainloop_api	*api;
 	pa_proplist	*pl;
@@ -358,7 +358,7 @@ static int op_pulse_open(sample_format_t sf)
 	if (!pa_sample_spec_valid(&ss))
 		return -OP_ERROR_SAMPLE_FORMAT;
 
-	rc = __pa_open();
+	rc = __pa_create_context();
 	if (rc)
 		return rc;
 
