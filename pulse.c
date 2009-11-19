@@ -267,6 +267,7 @@ static void __pa_close(void)
 
 	if (pa_s) {
 		pa_stream_disconnect(pa_s);
+		pa_stream_unref(pa_s);
 		pa_s = NULL;
 	}
 
