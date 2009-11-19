@@ -228,17 +228,15 @@ static uint8_t __pa_nchannels(sample_format_t sf)
 
 static int __pa_wait_unlock(pa_operation *o)
 {
-	int state;
+	pa_operation_state_t state;
 
 	if (!o) {
 		pa_threaded_mainloop_unlock(pa_ml);
 		return -OP_ERROR_INTERNAL;
 	}
 
-	while (pa_operation_get_state(o) == PA_OPERATION_RUNNING)
+	while ((state = pa_operation_get_state(o)) == PA_OPERATION_RUNNING)
 		pa_threaded_mainloop_wait(pa_ml);
-
-	state = pa_operation_get_state(o);
 
 	pa_operation_unref(o);
 	pa_threaded_mainloop_unlock(pa_ml);
