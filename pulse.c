@@ -278,7 +278,7 @@ static int __pa_create_context(void)
 	pa_context_set_state_callback(pa_ctx, __pa_context_running_cb, NULL);
 
 	rc = pa_context_connect(pa_ctx, NULL, PA_CONTEXT_NOFLAGS, NULL);
-	if (rc < 0)
+	if (rc)
 		goto out_fail;
 
 	pa_threaded_mainloop_wait(pa_ml);
@@ -310,7 +310,7 @@ static int op_pulse_init(void)
 	BUG_ON(!pa_ml);
 
 	rc = pa_threaded_mainloop_start(pa_ml);
-	if (rc < 0) {
+	if (rc) {
 		pa_threaded_mainloop_free(pa_ml);
 		ret_pa_error(rc);
 	}
@@ -377,7 +377,7 @@ static int op_pulse_open(sample_format_t sf)
 					PA_STREAM_NOFLAGS,
 					&pa_vol,
 					NULL);
-	if (rc < 0)
+	if (rc)
 		goto out_fail;
 
 	pa_threaded_mainloop_wait(pa_ml);
@@ -435,7 +435,7 @@ static int op_pulse_write(const char *buf, int count)
 	rc = pa_stream_write(pa_s, buf, count, NULL, 0, PA_SEEK_RELATIVE);
 	pa_threaded_mainloop_unlock(pa_ml);
 
-	if (rc < 0)
+	if (rc)
 		ret_pa_error(rc);
 	else
 		return count;
