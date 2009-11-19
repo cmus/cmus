@@ -231,6 +231,19 @@ static int __pa_wait_unlock(pa_operation *o)
 		ret_pa_last_error();
 }
 
+static int __pa_nowait_unlock(pa_operation *o)
+{
+	if (!o) {
+		pa_threaded_mainloop_unlock(pa_ml);
+		ret_pa_last_error();
+	}
+
+	pa_operation_unref(o);
+	pa_threaded_mainloop_unlock(pa_ml);
+
+	return OP_ERROR_SUCCESS;
+}
+
 static int __pa_stream_cork(int pause_)
 {
 	pa_threaded_mainloop_lock(pa_ml);
@@ -493,8 +506,6 @@ static int op_pulse_mixer_get_fds(int *fds)
 
 static int op_pulse_mixer_set_volume(int l, int r)
 {
-	pa_operation *o;
-
 	pa_cvolume_set_position(&pa_vol,
 				&pa_cmap,
 				PA_CHANNEL_POSITION_FRONT_LEFT,
@@ -510,25 +521,11 @@ static int op_pulse_mixer_set_volume(int l, int r)
 	} else {
 		pa_threaded_mainloop_lock(pa_ml);
 
-		o = pa_context_set_sink_input_volume(pa_ctx,
-						     pa_stream_get_index(pa_s),
-						     &pa_vol,
-						     NULL,
-						     NULL);
-		if (!o) {
-			pa_threaded_mainloop_unlock(pa_ml);
-			ret_pa_last_error();
-		}
-
-		/*
-		 * Do not wait for operation to complete
-		 */
-
-		pa_operation_unref(o);
-
-		pa_threaded_mainloop_unlock(pa_ml);
-
-		return OP_ERROR_SUCCESS;
+		return __pa_nowait_unlock(pa_context_set_sink_input_volume(pa_ctx,
+								           pa_stream_get_index(pa_s),
+								           &pa_vol,
+								           NULL,
+								           NULL));
 	}
 }
 
