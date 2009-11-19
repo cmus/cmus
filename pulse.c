@@ -245,27 +245,6 @@ static int __pa_stream_drain(void)
 	return __pa_wait_unlock(pa_stream_drain(pa_s, __pa_stream_success_cb, NULL));
 }
 
-static void __pa_close(void)
-{
-	pa_threaded_mainloop_lock(pa_ml);
-
-	if (pa_s) {
-		__pa_stream_drain();
-
-		pa_stream_disconnect(pa_s);
-		pa_stream_unref(pa_s);
-		pa_s = NULL;
-	}
-
-	if (pa_ctx) {
-		pa_context_disconnect(pa_ctx);
-		pa_context_unref(pa_ctx);
-		pa_ctx = NULL;
-	}
-
-	pa_threaded_mainloop_unlock(pa_ml);
-}
-
 static int __pa_create_context(void)
 {
 	pa_mainloop_api	*api;
@@ -292,16 +271,20 @@ static int __pa_create_context(void)
 	pa_threaded_mainloop_wait(pa_ml);
 
 	if (pa_context_get_state(pa_ctx) != PA_CONTEXT_READY)
-		goto out_fail;
+		goto out_fail_connected;
 
 	pa_threaded_mainloop_unlock(pa_ml);
 
 	return OP_ERROR_SUCCESS;
 
-out_fail:
-	pa_threaded_mainloop_unlock(pa_ml);
+out_fail_connected:
+	pa_context_disconnect(pa_ctx);
 
-	__pa_close();
+out_fail:
+	pa_context_unref(pa_ctx);
+	pa_ctx = NULL;
+
+	pa_threaded_mainloop_unlock(pa_ml);
 
 	ret_pa_last_error();
 }
@@ -403,7 +386,23 @@ out_fail:
 
 static int op_pulse_close(void)
 {
-	__pa_close();
+	pa_threaded_mainloop_lock(pa_ml);
+
+	if (pa_s) {
+		__pa_stream_drain();
+
+		pa_stream_disconnect(pa_s);
+		pa_stream_unref(pa_s);
+		pa_s = NULL;
+	}
+
+	if (pa_ctx) {
+		pa_context_disconnect(pa_ctx);
+		pa_context_unref(pa_ctx);
+		pa_ctx = NULL;
+	}
+
+	pa_threaded_mainloop_unlock(pa_ml);
 
 	return OP_ERROR_SUCCESS;
 }
