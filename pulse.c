@@ -249,13 +249,6 @@ static int __pa_stream_cork(int pause_)
 	return __pa_wait_unlock(pa_stream_cork(pa_s, pause_, __pa_stream_success_cb, NULL));
 }
 
-static int __pa_stream_drain(void)
-{
-	pa_threaded_mainloop_lock(pa_ml);
-
-	return __pa_wait_unlock(pa_stream_drain(pa_s, __pa_stream_success_cb, NULL));
-}
-
 static int __pa_create_context(void)
 {
 	pa_mainloop_api	*api;
@@ -400,8 +393,6 @@ static int op_pulse_close(void)
 	pa_threaded_mainloop_lock(pa_ml);
 
 	if (pa_s) {
-		__pa_stream_drain();
-
 		pa_stream_disconnect(pa_s);
 		pa_stream_unref(pa_s);
 		pa_s = NULL;
