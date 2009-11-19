@@ -39,6 +39,8 @@ static pa_cvolume		 pa_vol;
 		return -OP_ERROR_INTERNAL;				\
 	} while (0)
 
+#define ret_pa_last_error() ret_pa_error(pa_context_errno(pa_ctx))
+
 static pa_proplist *__create_app_proplist(void)
 {
 	const size_t	 BUFSIZE = 1024;
@@ -214,7 +216,7 @@ static int __pa_wait_unlock(pa_operation *o)
 
 	if (!o) {
 		pa_threaded_mainloop_unlock(pa_ml);
-		return -OP_ERROR_INTERNAL;
+		ret_pa_last_error();
 	}
 
 	while ((state = pa_operation_get_state(o)) == PA_OPERATION_RUNNING)
@@ -226,7 +228,7 @@ static int __pa_wait_unlock(pa_operation *o)
 	if (state == PA_OPERATION_DONE)
 		return OP_ERROR_SUCCESS;
 	else
-		ret_pa_error(pa_context_errno(pa_ctx));
+		ret_pa_last_error();
 }
 
 static int __pa_stream_cork(int pause_)
@@ -310,7 +312,7 @@ out_fail:
 
 	__pa_close();
 
-	ret_pa_error(pa_context_errno(pa_ctx));
+	ret_pa_last_error();
 }
 
 static int op_pulse_init(void)
@@ -380,7 +382,7 @@ static int op_pulse_open(sample_format_t sf)
 	pa_proplist_free(pl);
 	if (!pa_s) {
 		pa_threaded_mainloop_unlock(pa_ml);
-		return -OP_ERROR_INTERNAL;
+		ret_pa_last_error();
 	}
 
 	pa_stream_set_state_callback(pa_s, __pa_stream_running_cb, NULL);
@@ -408,7 +410,7 @@ out_fail:
 
 	pa_threaded_mainloop_unlock(pa_ml);
 
-	ret_pa_error(pa_context_errno(pa_ctx));
+	ret_pa_last_error();
 }
 
 static int op_pulse_close(void)
@@ -473,7 +475,7 @@ static int op_pulse_get_option(int key, char **val)
 static int op_pulse_mixer_init(void)
 {
 	if (!pa_channel_map_init_stereo(&pa_cmap))
-		return -OP_ERROR_INTERNAL;
+		ret_pa_last_error();
 
 	pa_cvolume_reset(&pa_vol, 2);
 
@@ -528,7 +530,7 @@ static int op_pulse_mixer_set_volume(int l, int r)
 						     NULL);
 		if (!o) {
 			pa_threaded_mainloop_unlock(pa_ml);
-			return -OP_ERROR_INTERNAL;
+			ret_pa_last_error();
 		}
 
 		/*
