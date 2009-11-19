@@ -274,17 +274,8 @@ static int __pa_open(void)
 
 	pl = __create_app_proplist();
 
-	pa_ml = pa_threaded_mainloop_new();
-	BUG_ON(!pa_ml);
-
 	api = pa_threaded_mainloop_get_api(pa_ml);
 	BUG_ON(!api);
-
-	rc = pa_threaded_mainloop_start(pa_ml);
-	if (rc < 0) {
-		pa_threaded_mainloop_free(pa_ml);
-		ret_pa_error(rc);
-	}
 
 	pa_threaded_mainloop_lock(pa_ml);
 
@@ -317,10 +308,7 @@ out_fail:
 
 static int op_pulse_init(void)
 {
-	pa_proplist	*pl;
-	int		 rc;
-
-	pl = __create_app_proplist();
+	int rc;
 
 	pa_ml = pa_threaded_mainloop_new();
 	BUG_ON(!pa_ml);
