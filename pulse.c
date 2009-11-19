@@ -33,9 +33,6 @@ static pa_stream		*pa_s;
 static pa_channel_map		 pa_cmap;
 static pa_cvolume		 pa_vol;
 
-static pa_context_state_t	 pa_cs;
-static pa_stream_state_t	 pa_ss;
-
 #define ret_pa_error(err)						\
 	do {								\
 		d_print("PulseAudio error: %s\n", pa_strerror(err));	\
@@ -132,11 +129,11 @@ static const char *__pa_context_state_str(pa_context_state_t s)
 
 static void __pa_context_running_cb(pa_context *c, void *data)
 {
-	pa_cs = pa_context_get_state(c);
+	const pa_context_state_t cs = pa_context_get_state(c);
 
-	d_print("pulse: context state has changed to %s\n", __pa_context_state_str(pa_cs));
+	d_print("pulse: context state has changed to %s\n", __pa_context_state_str(cs));
 
-	switch (pa_cs) {
+	switch (cs) {
 	case PA_CONTEXT_READY:
 	case PA_CONTEXT_FAILED:
 	case PA_CONTEXT_TERMINATED:
@@ -166,11 +163,11 @@ static const char *__pa_stream_state_str(pa_stream_state_t s)
 
 static void __pa_stream_running_cb(pa_stream *s, void *data)
 {
-	pa_ss = pa_stream_get_state(s);
+	const pa_stream_state_t ss = pa_stream_get_state(s);
 
-	d_print("pulse: stream state has changed to %s\n", __pa_stream_state_str(pa_ss));
+	d_print("pulse: stream state has changed to %s\n", __pa_stream_state_str(ss));
 
-	switch (pa_ss) {
+	switch (ss) {
 	case PA_STREAM_READY:
 	case PA_STREAM_FAILED:
 	case PA_STREAM_TERMINATED:
@@ -296,7 +293,7 @@ static int __pa_open(void)
 
 	pa_threaded_mainloop_wait(pa_ml);
 
-	if (pa_cs != PA_CONTEXT_READY)
+	if (pa_context_get_state(pa_ctx) != PA_CONTEXT_READY)
 		goto out_fail;
 
 	pa_threaded_mainloop_unlock(pa_ml);
@@ -394,7 +391,7 @@ static int op_pulse_open(sample_format_t sf)
 
 	pa_threaded_mainloop_wait(pa_ml);
 
-	if (pa_ss != PA_STREAM_READY)
+	if (pa_stream_get_state(pa_s) != PA_STREAM_READY)
 		goto out_fail;
 
 	pa_threaded_mainloop_unlock(pa_ml);
