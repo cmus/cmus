@@ -12,16 +12,10 @@
 
 #include <sys/time.h>
 
-enum tree_sort_method {
-	SORT_NORMAL=1,
-	SORT_COMPILATION
-};
-
 struct tree_track {
 	struct shuffle_track shuffle_track;
 	struct list_head node;
 	struct album *album;
-	enum tree_sort_method tree_sort;
 };
 
 static inline struct track_info *tree_track_info(const struct tree_track *track)

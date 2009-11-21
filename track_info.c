@@ -74,6 +74,29 @@ int track_info_has_tag(const struct track_info *ti)
 		keyvals_get_val(ti->comments, "title");
 }
 
+static int is_freeform_true(const char *c)
+{
+	return	!strcasecmp(c, "1")	||
+		!strcasecmp(c, "y")	||
+		!strcasecmp(c, "yes")	||
+		!strcasecmp(c, "true");
+}
+
+int track_info_is_compilation(const struct track_info *ti)
+{
+	const char *c	= keyvals_get_val(ti->comments, "compilation");
+	const char *a	= keyvals_get_val(ti->comments, "artist");
+	const char *aa	= keyvals_get_val(ti->comments, "albumartist");
+
+	if (c && is_freeform_true(c))
+		return 1;
+
+	if (aa && a && strcmp(aa, a))
+		return 1;
+
+	return 0;
+}
+
 int track_info_matches(struct track_info *ti, const char *text, unsigned int flags)
 {
 	const char *artist = keyvals_get_val(ti->comments, "artist");
