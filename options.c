@@ -892,7 +892,7 @@ static const struct {
 	{ "format_playlist",	" %-20a %02n. %t%= %y %d " },
 	{ "format_title",	"%a - %l - %t (%y)" },
 	{ "format_trackwin",	" %02n. %t%= %y %d " },
-	{ "format_trackwin_va",	" %02n. %a / %t%= %y %d " },
+	{ "format_trackwin_va",	" %02n. %t (%a)%= %y %d " },
 
 	{ "lib_sort"	,	"artist album discnumber tracknumber title filename" },
 	{ "pl_sort",		"" },
