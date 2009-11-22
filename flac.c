@@ -346,16 +346,7 @@ static void metadata_cb(const Dec *dec, const FLAC__StreamMetadata *metadata, vo
 
 static void error_cb(const Dec *dec, FLAC__StreamDecoderErrorStatus status, void *data)
 {
-	static const char *strings[3] = {
-		"lost sync",
-		"bad header",
-		"frame crc mismatch"
-	};
-	const char *str = "unknown error";
-
-	if (status >= 0 && status < 3)
-		str = strings[status];
-	d_print("%d %s\n", status, str);
+	d_print("FLAC error: %s\n", FLAC__StreamDecoderErrorStatusString[status]);
 }
 
 static void free_priv(struct input_plugin_data *ip_data)
