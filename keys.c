@@ -530,7 +530,7 @@ bound:
 
 int key_unbind(const char *context, const char *key, int force)
 {
-	enum key_context c;
+	int c;
 	const struct key *k;
 	struct binding *b, *prev;
 	struct command *command;
