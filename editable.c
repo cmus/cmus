@@ -119,7 +119,7 @@ void editable_sort(struct editable *e)
 	window_goto_top(e->win);
 }
 
-static void keys_to_str(const char **keys, char *buf)
+static void keys_to_str(const char **keys, char *buf, size_t bufsize)
 {
 	int i, pos = 0;
 
@@ -127,7 +127,7 @@ static void keys_to_str(const char **keys, char *buf)
 		const char *key = keys[i];
 		int len = strlen(key);
 
-		if (sizeof(buf) - pos - len - 2 < 0)
+		if ((int)bufsize - pos - len - 2 < 0)
 			break;
 
 		memcpy(buf + pos, key, len);
@@ -144,7 +144,7 @@ void editable_set_sort_keys(struct editable *e, const char **keys)
 	free(e->sort_keys);
 	e->sort_keys = keys;
 	editable_sort(e);
-	keys_to_str(keys, e->sort_str);
+	keys_to_str(keys, e->sort_str, sizeof(e->sort_str));
 }
 
 void editable_toggle_mark(struct editable *e)
