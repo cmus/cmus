@@ -63,6 +63,12 @@ This is useful when creating binary packages.
 Remember to replace 'make' with 'gmake' if needed.
 
 
+Running
+-------
+
+See Doc/first-time-tutorial.txt
+
+
 Mailing List
 ------------
 
