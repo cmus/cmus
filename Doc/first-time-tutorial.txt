@@ -59,8 +59,8 @@ can take a while if you added a folder with a lot in it. As files are added,
 you will see the second time in the bottom right go up. This is the total
 duration of all the music in the cmus library.
 
-Note: cmus does not make copies of your music files, it just adds the file
-paths to ~/.cmus/lib.pl and caches the metadata (duration, author, etc.)
+Note: cmus does not move, duplicate or change your files. It just remembers
+where they are and caches the metadata (duration, author, etc.)
 
 Just to be on the safe side, lets save. Type ":save" and press Enter.
 
@@ -109,9 +109,9 @@ Here are the toggles:
 
 [R]epeat
 
-    When this is on (and continue is on), cmus reaches the end of the
-    group of tracks you're playing (selected with the "m" key) it will start
-    again from the beginning. Press "r" to toggle this setting.
+    If this is on (and continue is on), when cmus reaches the end of the group
+    of tracks you're playing (selected with the "m" key) it will start again
+    from the beginning. Press "r" to toggle this setting.
 
 [S]huffle
 
@@ -143,20 +143,27 @@ start playing it.
 Step 5: The Playlist
 --------------------
 
+The playlist works like another library (like view 2) except that (like
+the queue) you manually set the order of the tracks. This can be quite useful
+if you want to create a mix of specific tracks or if you want to listen to an
+audio book without having the chapters play when you're playing "all from
+library".
+
 The playlist is on view "3". But before we go there, lets add some tracks.
 Press "2" to go to the simple library view, go to a track you want and press
-"y" to add it to the playlist. Add a few more so you have something to work
-with.
+"y" to add it to the playlist. The only visual feedback you'll get that
+anything happened is that the hilight will move down one row. Add a few more so
+you have something to work with.
 
 Now press "3" to go to the playlist.
 
 Just like the queue, you can use the "p", "P" and "D" keys to move and delete
 tracks from the playlist.
 
-Note that changing the view does not change what pool of tracks cmus selects
-from when it reaches the end of a track. Cmus will switch to playing from the
-playlist if you press Enter to play from the playlist, or you can press shift-M
-to switch between the library and the playlist.
+Note: Changing the view (e.g. by pressing "3") does not affect what cmus will
+play next. To put cmus into "play from the playlist" mode, press Enter on one
+of the tracks in the playlist. To switch modes without interrupting the
+currently-playing song, you can press shift-M.
 
 
 Step 6: Quit
@@ -180,6 +187,6 @@ Also, from within cmus, press "7" to see a listing of the current keybindings
 and available commands.
 
 Cmus has some very cool settings you can tweak, like changing the way tracks
-are displayed (eg. to display disk numbers) or enabling vorbisgain support. And
-there are more commands and features not covered hear like loading and saving
-playlists, controlling cmus remotely with cmus-remote, etc.
+are displayed (e.g. to display disk numbers) or enabling vorbisgain support.
+And there are more commands and features not covered hear like loading and
+saving playlists, controlling cmus remotely with cmus-remote, etc.
