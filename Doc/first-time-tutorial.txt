@@ -1,5 +1,14 @@
-Cmus tutorial
+Cmus Tutorial
 =============
+
+Step 1: Starting Cmus
+Step 2: Adding Music
+Step 3: Playing Tracks From The Library
+Step 4: Managing The Queue
+Step 5: The Playlist
+Step 6: Quit
+Step 7: Further Reading
+
 
 Step 1: Starting Cmus
 -------------
@@ -100,7 +109,7 @@ Here are the toggles:
 
 [R]epeat
 
-    When this is on, (and continue is on) when cmus reaches the end of the
+    When this is on (and continue is on), cmus reaches the end of the
     group of tracks you're playing (selected with the "m" key) it will start
     again from the beginning. Press "r" to toggle this setting.
 
@@ -115,7 +124,7 @@ Step 4: Managing The Queue
 
 Lets say you're listening to a song, and you want to select which song will
 play next, without interrupting the currently playing song. No problem! Just go
-to the song you want to hear next (in any of the views) end press "e". The
+to the song you want to hear next (in any of the views) and press "e". The
 queue is FIFO, meaning if you queue up another track, it will play after the
 one you already had queued up.
 
@@ -171,6 +180,6 @@ Also, from within cmus, press "7" to see a listing of the current keybindings
 and available commands.
 
 Cmus has some very cool settings you can tweak, like changing the way tracks
-are displayed (eg to display disk numbers) or enabling vorbisgain support. And
+are displayed (eg. to display disk numbers) or enabling vorbisgain support. And
 there are more commands and features not covered hear like loading and saving
 playlists, controlling cmus remotely with cmus-remote, etc.
