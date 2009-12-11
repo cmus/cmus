@@ -325,17 +325,6 @@ static int op_pulse_open(sample_format_t sf)
 	pa_proplist	*pl;
 	int		 rc;
 
-	/*
-	 * Configure PulseAudio for highest possible latency
-	 */
-	const pa_buffer_attr ba = {
-		.maxlength	= -1,
-		.tlength	= -1,
-		.prebuf		= -1,
-		.minreq		= -1,
-		.fragsize	= -1
-	};
-
 	const pa_sample_spec ss = {
 		.format		= __pa_sample_format(sf),
 		.rate		= sf_get_rate(sf),
@@ -364,7 +353,7 @@ static int op_pulse_open(sample_format_t sf)
 
 	rc = pa_stream_connect_playback(pa_s,
 					NULL,
-					&ba,
+					NULL,
 					PA_STREAM_NOFLAGS,
 					&pa_vol,
 					NULL);
