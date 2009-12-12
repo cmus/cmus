@@ -44,6 +44,7 @@ struct ffmpeg_input {
 
 struct ffmpeg_output {
 	uint8_t *buffer;
+	uint8_t *buffer_malloc;
 	uint8_t *buffer_pos;	/* current buffer position */
 	int buffer_used_len;
 };
@@ -79,7 +80,11 @@ static struct ffmpeg_output *ffmpeg_output_create(void)
 {
 	struct ffmpeg_output *output = xnew(struct ffmpeg_output, 1);
 
-	output->buffer = xnew(uint8_t, AVCODEC_MAX_AUDIO_FRAME_SIZE);
+	output->buffer_malloc = xnew(uint8_t, AVCODEC_MAX_AUDIO_FRAME_SIZE + 15);
+	output->buffer = output->buffer_malloc;
+	/* align to 16 bytes so avcodec can SSE/Altivec/etc */
+	while ((intptr_t) output->buffer % 16)
+		output->buffer += 1;
 	output->buffer_pos = output->buffer;
 	output->buffer_used_len = 0;
 	return output;
@@ -87,7 +92,8 @@ static struct ffmpeg_output *ffmpeg_output_create(void)
 
 static void ffmpeg_output_free(struct ffmpeg_output *output)
 {
-	free(output->buffer);
+	free(output->buffer_malloc);
+	output->buffer_malloc = NULL;
 	output->buffer = NULL;
 	free(output);
 }
