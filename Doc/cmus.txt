@@ -158,9 +158,10 @@ value of special tagging information. First, it is checked if cmus should use
 a special artist name (e.g.: `'Various Artists'`). If so, that one will be used
 instead of the real artist name.
 
-If that special name tag is not set, cmus checks if another tag is set.
-If that is the case, the album will be given the special artist name
-*<Compilations>*.
+If that special name tag is not set, cmus checks if another tag is
+set. If that is the case, the album will be given the special artist
+name *<Compilations>*. Albums filed under *<Compilations>* are sorted
+alphanumerically by album name instead of by date.
 
 That way, you do not end up with compilation tracks scattered around your
 library view.

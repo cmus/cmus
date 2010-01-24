@@ -490,7 +490,7 @@ static struct artist *add_artist(const char *name)
 	return artist;
 }
 
-static struct album *artist_add_album(struct artist *artist, const char *name, int date)
+static struct album *artist_add_album(struct artist *artist, const char *name, int date, int is_compilation)
 {
 	struct list_head *item;
 	struct album *album;
@@ -501,16 +501,30 @@ static struct album *artist_add_album(struct artist *artist, const char *name, i
 	list_init(&album->track_head);
 	album->artist = artist;
 
-	list_for_each(item, &artist->album_head) {
-		struct album *a = to_album(item);
+	/*
+	 * Sort regular albums by date, but sort compilations
+	 * alphabetically.
+	 */
+	if (is_compilation) {
+		list_for_each(item, &artist->album_head) {
+			struct album *a = to_album(item);
 
-		if (date < a->date)
-			break;
-		if (date > a->date)
-			continue;
-		if (special_name_cmp(name, a->name) < 0)
-			break;
+			if (special_name_cmp(name, a->name) < 0)
+				break;
+		}
+	} else {
+		list_for_each(item, &artist->album_head) {
+			struct album *a = to_album(item);
+
+			if (date < a->date)
+				break;
+			if (date > a->date)
+				continue;
+			if (special_name_cmp(name, a->name) < 0)
+				break;
+		}
 	}
+
 	/* add before item */
 	list_add_tail(&album->node, item);
 	return album;
@@ -548,6 +562,7 @@ void tree_add_track(struct tree_track *track)
 	struct artist *artist;
 	struct album *album;
 	int date;
+	int is_compilation = 0;
 
 	if (is_url(ti->filename)) {
 		artist_name = "<Stream>";
@@ -560,8 +575,10 @@ void tree_add_track(struct tree_track *track)
 			artist_name= keyvals_get_val(ti->comments, "albumartist");
 		if (!artist_name)
 			artist_name= keyvals_get_val(ti->comments, "artistsort");
-		if (!artist_name && track_info_is_compilation(ti))
+		if (!artist_name && track_info_is_compilation(ti)) {
 			artist_name = "<Compilations>";
+			is_compilation = 1;
+		}
 		if (!artist_name)
 			artist_name = keyvals_get_val(ti->comments, "artist");
 
@@ -582,7 +599,7 @@ void tree_add_track(struct tree_track *track)
 		}
 	} else if (artist) {
 		date = comments_get_date(ti->comments, "date");
-		album = artist_add_album(artist, album_name, date);
+		album = artist_add_album(artist, album_name, date, is_compilation);
 		album_add_track(album, track);
 
 		if (artist->expanded) {
@@ -593,7 +610,7 @@ void tree_add_track(struct tree_track *track)
 	} else {
 		date = comments_get_date(ti->comments, "date");
 		artist = add_artist(artist_name);
-		album = artist_add_album(artist, album_name, date);
+		album = artist_add_album(artist, album_name, date, is_compilation);
 		album_add_track(album, track);
 
 		window_changed(lib_tree_win);
