@@ -232,9 +232,24 @@ const char * const id3_key_names[NUM_ID3_KEYS] = {
 	"comment",
 };
 
-static int utf16_is_special(const uchar uch)
+static int utf16_is_lsurrogate(uchar uch)
 {
-	if (UTF16_IS_HSURROGATE(uch) || UTF16_IS_LSURROGATE(uch) || UTF16_IS_BOM(uch))
+	return 0xdc00 <= uch && 0xdfff >= uch;
+}
+
+static int utf16_is_hsurrogate(uchar uch)
+{
+	return 0xd800 <= uch && 0xdbff >= uch;
+}
+
+static int utf16_is_bom(uchar uch)
+{
+	return uch == 0xfeff;
+}
+
+static int utf16_is_special(uchar uch)
+{
+	if (utf16_is_hsurrogate(uch) || utf16_is_lsurrogate(uch) || utf16_is_bom(uch))
 		return -1;
 	return 0;
 }

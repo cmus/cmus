@@ -40,10 +40,6 @@ struct id3tag {
 	unsigned int has_v2 : 1;
 };
 
-#define UTF16_IS_LSURROGATE(uch) (0xdc00 <= uch && 0xdfff >= uch)
-#define UTF16_IS_HSURROGATE(uch) (0xd800 <= uch && 0xdbff >= uch)
-#define UTF16_IS_BOM(uch) (uch == 0xfeff)
-
 extern const char * const id3_key_names[NUM_ID3_KEYS];
 
 int id3_tag_size(const char *buf, int buf_size);
