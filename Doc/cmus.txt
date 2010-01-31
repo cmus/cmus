@@ -116,67 +116,6 @@ without path.
 
 Searching works in views 5-7 too and its logic should be pretty obvious.
 
-@h1 LIBRARY VIEW SORTING
-
-The library view (the tree-like one; not the sorted library view, for which
-the sorting is controlled by the user by setting lib_sort - see `CONFIGURATION
-OPTIONS`), is sorted automatically by cmus using the information found in the
-tagging information provided by the audio files.
-
-Generally, in the library view cmus uses three levels of sorting: the first
-level would be the artist name, the second one the album and finally the
-actual track.
-
-At first, cmus checks if the "filename" looks like an URL, if it does, the
-item is given the special artist and album name *<Stream>*.
-
-If it is a file, it is checked if the artist and album tags are set. If not,
-cmus assigns the special name *<No Name>* for the unset tag.
-
-As the first level, cmus sorts alphanumerically by the value of the artist
-tag. (<Stream> and <No Name> will be used as if they where normal names.)
-
-For album names, alphanumerical sorting is not the primary method, though.
-To decide, how the second level should be sorted, cmus looks at the date of
-the first track of each album. Sorting is done from young to old. Of course,
-if one artist happens to have more then one album from one year,
-alphanumerical sorting will be used after sorting by date.
-
-If the date header is not set, the album will be placed on top of the list (in
-fact, the internal integer value for unset album tags is -1).
-
-The method for third sorting level (the track) is very similar to album
-sorting. First two numerical values are checked (discnumber and tracknumber).
-If sorting is still ambiguous, sorting will be done alphanumerically by the
-value of the track's `filename` (not track name!).
-
-For simple albums, that is it. There is a special case, though. Albums, that
-feature various artists, also known as samplers or compilations.
-
-If a track belongs to a compilation is again decided by the existence and
-value of special tagging information. First, it is checked if cmus should use
-a special artist name (e.g.: `'Various Artists'`). If so, that one will be used
-instead of the real artist name.
-
-If that special name tag is not set, cmus checks if another tag is
-set. If that is the case, the album will be given the special artist
-name *<Compilations>*. Albums filed under *<Compilations>* are sorted
-alphanumerically by album name instead of by date.
-
-That way, you do not end up with compilation tracks scattered around your
-library view.
-
-The problem with compilation tagging is, that there is no generic tag or
-method, that can be regarded as a standard across all different formats,
-supported by cmus.
-
-For mp3, the special-name tag would be the id3v2 *TPE2* frame. The
-mark-as-compilation tag is the *TCMP* frame (which is a user defined id3v2.3
-frame, used at least by amarok and apple's iTunes[tm]).
-
-For vorbis style tags (for example in ogg vorbis and flac files), the
-special-name tag is *ALBUMARTIST* and the mark-as-compilation tag is
-*COMPILATION*. Vorbis tags names are case insensitive.
 
 @h1 PLAYLIST EDITING
 
@@ -312,6 +251,70 @@ backspace      browser-up
 i              toggle show_hidden
 u              win-update
 @endpre
+
+
+@h1 LIBRARY VIEW SORTING
+
+The library view (the tree-like one; not the sorted library view, for which
+the sorting is controlled by the user by setting lib_sort - see `CONFIGURATION
+OPTIONS`), is sorted automatically by cmus using the information found in the
+tagging information provided by the audio files.
+
+Generally, in the library view cmus uses three levels of sorting: the first
+level would be the artist name, the second one the album and finally the
+actual track.
+
+At first, cmus checks if the "filename" looks like an URL, if it does, the
+item is given the special artist and album name *<Stream>*.
+
+If it is a file, it is checked if the artist and album tags are set. If not,
+cmus assigns the special name *<No Name>* for the unset tag.
+
+As the first level, cmus sorts alphanumerically by the value of the artist
+tag. (<Stream> and <No Name> will be used as if they where normal names.)
+
+For album names, alphanumerical sorting is not the primary method, though.
+To decide, how the second level should be sorted, cmus looks at the date of
+the first track of each album. Sorting is done from young to old. Of course,
+if one artist happens to have more then one album from one year,
+alphanumerical sorting will be used after sorting by date.
+
+If the date header is not set, the album will be placed on top of the list (in
+fact, the internal integer value for unset album tags is -1).
+
+The method for third sorting level (the track) is very similar to album
+sorting. First two numerical values are checked (discnumber and tracknumber).
+If sorting is still ambiguous, sorting will be done alphanumerically by the
+value of the track's `filename` (not track name!).
+
+For simple albums, that is it. There is a special case, though. Albums, that
+feature various artists, also known as samplers or compilations.
+
+If a track belongs to a compilation is again decided by the existence and
+value of special tagging information. First, it is checked if cmus should use
+a special artist name (e.g.: `'Various Artists'`). If so, that one will be used
+instead of the real artist name.
+
+If that special name tag is not set, cmus checks if another tag is
+set. If that is the case, the album will be given the special artist
+name *<Compilations>*. Albums filed under *<Compilations>* are sorted
+alphanumerically by album name instead of by date.
+
+That way, you do not end up with compilation tracks scattered around your
+library view.
+
+The problem with compilation tagging is, that there is no generic tag or
+method, that can be regarded as a standard across all different formats,
+supported by cmus.
+
+For mp3, the special-name tag would be the id3v2 *TPE2* frame. The
+mark-as-compilation tag is the *TCMP* frame (which is a user defined id3v2.3
+frame, used at least by amarok and apple's iTunes[tm]).
+
+For vorbis style tags (for example in ogg vorbis and flac files), the
+special-name tag is *ALBUMARTIST* and the mark-as-compilation tag is
+*COMPILATION*. Vorbis tags names are case insensitive.
+
 
 @h1 COMMANDS
 
