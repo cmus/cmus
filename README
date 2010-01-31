@@ -40,6 +40,7 @@ script:
 
 The Tremor library is supposed to be used on hardware that has no FPU.
 
+
 Building
 --------
 
@@ -48,6 +49,7 @@ Building
 Or on some BSD systems you need to explicitly use GNU make:
 
   $ gmake
+
 
 Installation
 ------------
@@ -63,10 +65,14 @@ This is useful when creating binary packages.
 Remember to replace 'make' with 'gmake' if needed.
 
 
-Running
+Manuals
 -------
 
-See Doc/first-time-tutorial.txt
+  $ man cmus-tutorial
+
+And
+
+  $ man cmus
 
 
 Mailing List
