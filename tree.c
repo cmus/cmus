@@ -582,9 +582,9 @@ void tree_add_track(struct tree_track *track)
 		if (!artist_name)
 			artist_name = keyvals_get_val(ti->comments, "artist");
 
-		if (artist_name == NULL)
+		if (!artist_name || strcmp(artist_name, "") == 0)
 			artist_name = "<No Name>";
-		if (album_name == NULL)
+		if (!album_name || strcmp(album_name, "") == 0)
 			album_name = "<No Name>";
 	}
 
