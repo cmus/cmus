@@ -246,9 +246,7 @@ static int utf16_is_bom(uchar uch)
 
 static int utf16_is_special(uchar uch)
 {
-	if (utf16_is_hsurrogate(uch) || utf16_is_lsurrogate(uch) || utf16_is_bom(uch))
-		return -1;
-	return 0;
+	return utf16_is_hsurrogate(uch) || utf16_is_lsurrogate(uch) || utf16_is_bom(uch);
 }
 
 static char *utf16_to_utf8(const unsigned char *buf, int buf_size)
@@ -263,7 +261,7 @@ static char *utf16_to_utf8(const unsigned char *buf, int buf_size)
 
 		u = buf[i] + (buf[i + 1] << 8);
 		if (u_is_unicode(u)) {
-			if (utf16_is_special(u) == 0)
+			if (!utf16_is_special(u))
 				u_set_char(out, &idx, u);
 		} else {
 			free(out);
@@ -290,7 +288,7 @@ static char *utf16be_to_utf8(const unsigned char *buf, int buf_size)
 
 		u = buf[i + 1] + (buf[i] << 8);
 		if (u_is_unicode(u)) {
-		       if (utf16_is_special(u) == 0)
+		       if (!utf16_is_special(u))
 				u_set_char(out, &idx, u);
 		} else {
 			free(out);
