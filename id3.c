@@ -208,11 +208,7 @@ static const char *genres[NR_GENRES] = {
 };
 /* }}} */
 
-#if 1
 #define id3_debug(...) d_print(__VA_ARGS__)
-#else
-#define id3_debug(...) do { } while (0)
-#endif
 
 const char * const id3_key_names[NUM_ID3_KEYS] = {
 	"artist",
