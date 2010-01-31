@@ -5,8 +5,6 @@
 #ifndef _ID3_H
 #define _ID3_H
 
-#include <string.h>
-
 /* flags for id3_read_tags */
 #define ID3_V1	(1 << 0)
 #define ID3_V2	(1 << 1)
@@ -44,12 +42,9 @@ extern const char * const id3_key_names[NUM_ID3_KEYS];
 
 int id3_tag_size(const char *buf, int buf_size);
 
-static inline void id3_init(struct id3tag *id3)
-{
-	memset(id3, 0, sizeof(*id3));
-}
-
+void id3_init(struct id3tag *id3);
 void id3_free(struct id3tag *id3);
+
 int id3_read_tags(struct id3tag *id3, int fd, unsigned int flags);
 char *id3_get_comment(struct id3tag *id3, enum id3_key key);
 

@@ -14,6 +14,7 @@
 #include <inttypes.h>
 #include <errno.h>
 #include <stdio.h>
+#include <string.h>
 
 /*
  * position:
@@ -863,6 +864,11 @@ int id3_tag_size(const char *buf, int buf_size)
 		return 128;
 	}
 	return 0;
+}
+
+void id3_init(struct id3tag *id3)
+{
+	memset(id3, 0, sizeof(*id3));
 }
 
 void id3_free(struct id3tag *id3)
