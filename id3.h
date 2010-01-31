@@ -28,6 +28,7 @@ enum id3_key {
 	ID3_RG_ALBUM_GAIN,
 	ID3_RG_ALBUM_PEAK,
 	ID3_COMMENT,
+
 	NUM_ID3_KEYS
 };
 
