@@ -1107,7 +1107,7 @@ Feature requests and bug reports should go to the cmus-devel mailing list:
 
 @h1 SEE ALSO
 
-*cmus-remote*(1)
+*cmus-tutorial*(7), *cmus-remote*(1)
 
 
 @h1 AUTHORS

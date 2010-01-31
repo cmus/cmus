@@ -171,10 +171,15 @@ waveout.so: $(waveout-objs) $(libcmus-y)
 
 # man {{{
 man1	:= Doc/cmus.1 Doc/cmus-remote.1
+man7	:= Doc/cmus-tutorial.7
 
 $(man1): Doc/ttman
+$(man7): Doc/ttman
 
 %.1: %.txt
+	$(call cmd,ttman)
+
+%.7: %.txt
 	$(call cmd,ttman)
 
 Doc/ttman: Doc/ttman.o
@@ -191,7 +196,7 @@ distclean	+= .version config.mk config/*.h tags
 
 main: cmus cmus-remote
 plugins: $(ip-y) $(op-y)
-man: $(man1)
+man: $(man1) $(man7)
 
 install-main: main
 	$(INSTALL) -m755 $(bindir) cmus cmus-remote
@@ -203,6 +208,7 @@ install-plugins: plugins
 install-data: man
 	$(INSTALL) -m644 $(datadir)/cmus $(data)
 	$(INSTALL) -m644 $(mandir)/man1 $(man1)
+	$(INSTALL) -m644 $(mandir)/man7 $(man7)
 	$(INSTALL) -m755 $(exampledir) cmus-status-display
 
 install: all install-main install-plugins install-data
