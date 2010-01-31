@@ -7,6 +7,8 @@
 
 #include <stdio.h>
 #include <stdarg.h>
+#include <stdlib.h>
+#include <sys/time.h>
 
 #if DEBUG > 1
 static FILE *debug_stream = NULL;
@@ -62,5 +64,27 @@ void __debug_print(const char *function, const char *fmt, ...)
 	vfprintf(debug_stream, fmt, ap);
 	va_end(ap);
 	fflush(debug_stream);
+#endif
+}
+
+uint64_t timer_get(void)
+{
+#if DEBUG > 1
+	struct timeval tv;
+
+	gettimeofday(&tv, NULL);
+	return tv.tv_sec * 1e6L + tv.tv_usec;
+#else
+	return 0;
+#endif
+}
+
+void timer_print(const char *what, uint64_t usec)
+{
+#if DEBUG > 1
+	uint64_t a = usec / 1e6;
+	uint64_t b = usec - a * 1e6;
+
+	__debug_print("TIMER", "%s: %11u.%06u\n", what, (unsigned int)a, (unsigned int)b);
 #endif
 }

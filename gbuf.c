@@ -5,6 +5,7 @@
 #include "gbuf.h"
 #include "xmalloc.h"
 
+#include <stdio.h>
 #include <stdarg.h>
 
 char gbuf_empty_buffer[1];

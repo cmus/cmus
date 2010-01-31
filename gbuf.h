@@ -1,7 +1,9 @@
 #ifndef GBUF_H
 #define GBUF_H
 
-#include "debug.h"
+#include "compiler.h"
+
+#include <string.h>
 
 struct gbuf {
 	char *buffer;
