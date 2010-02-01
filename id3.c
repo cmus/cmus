@@ -9,12 +9,14 @@
 #include "uchar.h"
 #include "options.h"
 #include "debug.h"
+#include "utils.h"
 
 #include <unistd.h>
 #include <inttypes.h>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 
 /*
  * position:
@@ -347,6 +349,19 @@ static void get_u24(const unsigned char *buf, uint32_t *up)
 		u |= b;
 	}
 	*up = u;
+}
+
+static void get_i16(const unsigned char *buf, int16_t *ip)
+{
+	uint16_t b, u = 0;
+	int i;
+
+	for (i = 0; i < 2; i++) {
+		b = buf[i];
+		u <<= 8;
+		u |= b;
+	}
+	*ip = u;
 }
 
 static int v2_header_footer_parse(struct v2_header *header, const char *buf)
@@ -711,11 +726,131 @@ static void decode_comment(struct id3tag *id3, const char *buf, int len, int enc
 	add_v2(id3, ID3_COMMENT, out);
 }
 
+/*
+ * From http://id3.org/id3v2.4.0-frames:
+ *
+ * The volume adjustment is encoded as a fixed point decibel value, 16 bit signed
+ * integer representing (adjustment*512), giving +/- 64 dB with a precision of
+ * 0.001953125 dB. E.g. +2 dB is stored as $04 00 and -2 dB is $FC 00. There may
+ * be more than one "RVA2" frame in each tag, but only one with the same
+ * identification string.
+ *
+ * 	<Header for 'Relative volume adjustment (2)', ID: "RVA2">
+ * 	Identification          <text string> $00
+ *
+ * The 'identification' string is used to identify the situation and/or device
+ * where this adjustment should apply. The following is then repeated for every
+ * channel
+ *
+ * 	Type of channel         $xx
+ * 	Volume adjustment       $xx xx
+ * 	Bits representing peak  $xx
+ * 	Peak volume             $xx (xx ...)
+ *
+ * Type of channel:	$00 Other
+ * 			$01 Master volume
+ * 			$02 Front right
+ * 			$03 Front left
+ * 			$04 Back right
+ * 			$05 Back left
+ * 			$06 Front centre
+ * 			$07 Back centre
+ * 			$08 Subwoofer
+ *
+ * Bits representing peak can be any number between 0 and 255. 0 means that there
+ * is no peak volume field. The peak volume field is always padded to whole
+ * bytes, setting the most significant bits to zero.
+ */
+static void decode_rva2(struct id3tag *id3, const char *buf, int len)
+{
+	const int rva2_min_len	= 6 + 1 + 2 + 1;
+
+	int audiophile_rg	= 0;
+	int channel		= 0;
+	int16_t volume_adj	= 0;
+	int peak_bits		= 0;
+	int peak_bytes		= 0;
+	int peak_shift		= 0;
+	uint32_t peak		= 0;
+
+	char *gain_str		= NULL;
+	char *peak_str		= NULL;
+
+	int i;
+
+	if (len < rva2_min_len) {
+		id3_debug("frame length %d too small\n", len);
+		return;
+	}
+
+	if (!strcasecmp(buf, "album")) {
+		audiophile_rg = 1;
+	} else if (strcasecmp(buf, "track")) {
+		id3_debug("unsupported identifier: %s\n", buf);
+		return;
+	}
+
+	buf += 6;
+
+	channel = *buf++;
+	if (channel != 0x1) {
+		id3_debug("unsupported channel: %d\n", channel);
+		return;
+	}
+
+	get_i16(buf, &volume_adj);
+	buf += 2;
+
+	peak_bits = *buf++;
+
+	if (peak_bits == 0)
+		id3_debug("no peak data\n");
+
+	/*
+	 * This crazy code comes from Mutagen
+	 */
+	peak_bytes = min(4, (peak_bits + 7) >> 3);
+	peak_shift = ((8 - (peak_bits & 7)) & 7) + (4 - peak_bytes) * 8;
+
+	if (len < rva2_min_len + peak_bytes) {
+		id3_debug("peak data %d does not fit frame with length %d\n", peak_bytes, len);
+		return;
+	}
+
+	for (i = 0; i < peak_bytes; ++i) {
+		peak <<= 8;
+		peak |= (unsigned char)*buf++;
+	}
+
+	gain_str = xnew(char, 32);
+	snprintf(gain_str, 32, "%lf dB", volume_adj / 512.0);
+
+	add_v2(id3, audiophile_rg ? ID3_RG_ALBUM_GAIN : ID3_RG_TRACK_GAIN, gain_str);
+
+	if (peak_bytes) {
+		peak_str = xnew(char, 32);
+		snprintf(peak_str, 32, "%lf", ((double)peak * (1 << peak_shift)) / INT_MAX);
+
+		add_v2(id3, audiophile_rg ? ID3_RG_ALBUM_PEAK : ID3_RG_TRACK_PEAK, peak_str);
+	}
+
+	id3_debug("gain %s, peak %s\n", gain_str, peak_str ? peak_str : "none");
+}
+
+
 static void v2_add_frame(struct id3tag *id3, struct v2_frame_header *fh, const char *buf)
 {
-	int encoding = *buf++;
-	int len = fh->size - 1;
+	int encoding;
+	int len;
 	int idx;
+
+	if (!strncmp(fh->id, "RVA2", 4)) {
+		decode_rva2(id3, buf, fh->size);
+		return;
+	}
+
+	encoding = *buf++;
+	len = fh->size - 1;
 
 	if (encoding > 3)
 		return;
