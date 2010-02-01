@@ -727,7 +727,7 @@ static void v2_add_frame(struct id3tag *id3, struct v2_frame_header *fh, const c
 		decode_txxx(id3, buf, len, encoding);
 	} else if (!strncmp(fh->id, "COMM", 4)) {
 		decode_comment(id3, buf, len, encoding);
-	} else if (!strncmp(fh->id, "COM", 4)) {
+	} else if (!strncmp(fh->id, "COM", 3)) {
 		decode_comment(id3, buf, len, encoding);
 	}
 }
