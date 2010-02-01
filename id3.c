@@ -823,6 +823,16 @@ static int v2_read(struct id3tag *id3, int fd, const struct v2_header *header)
 		}
 
 		len = fh.size;
+
+		if (fh.flags & V2_FRAME_LEN_INDICATOR) {
+			/*
+			 * Ignore the frame length 4-byte field
+			 */
+			i	+= 4;
+			len	-= 4;
+			fh.size	-= 4;
+		}
+
 		if (fh.flags & V2_FRAME_UNSYNC) {
 			int tmp = len;
 
@@ -830,6 +840,7 @@ static int v2_read(struct id3tag *id3, int fd, const struct v2_header *header)
 			fh.size = tmp;
 		}
 		v2_add_frame(id3, &fh, buf + i);
+
 		i += len;
 	}
 
