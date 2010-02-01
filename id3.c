@@ -788,13 +788,6 @@ static int v2_read(struct id3tag *id3, int fd, const struct v2_header *header)
 		/* should check if update flag is set */
 	}
 
-	if (header->flags & V2_HEADER_UNSYNC) {
-		int len = buf_size - frame_start;
-
-		unsync((unsigned char *)(buf + frame_start), &len);
-		buf_size = len + frame_start;
-	}
-
 	frame_header_size = 10;
 	if (header->ver_major == 2)
 		frame_header_size = 6;
@@ -833,12 +826,9 @@ static int v2_read(struct id3tag *id3, int fd, const struct v2_header *header)
 			fh.size	-= 4;
 		}
 
-		if (fh.flags & V2_FRAME_UNSYNC) {
-			int tmp = len;
+		if ((fh.flags & V2_FRAME_UNSYNC) || (header->flags & V2_HEADER_UNSYNC))
+			unsync((unsigned char *)(buf + i), &fh.size);
 
-			unsync((unsigned char *)(buf + i), &tmp);
-			fh.size = tmp;
-		}
 		v2_add_frame(id3, &fh, buf + i);
 
 		i += len;
