@@ -795,7 +795,7 @@ static int v2_read(struct id3tag *id3, int fd, const struct v2_header *header)
 	i = frame_start;
 	while (i < buf_size - frame_header_size) {
 		struct v2_frame_header fh;
-		int len;
+		int len_unsync;
 
 		if (header->ver_major == 2) {
 			if (!v2_2_0_frame_header_parse(&fh, buf + i))
@@ -810,28 +810,28 @@ static int v2_read(struct id3tag *id3, int fd, const struct v2_header *header)
 		}
 
 		i += frame_header_size;
+
 		if (fh.size > buf_size - i) {
 			id3_debug("frame too big\n");
 			break;
 		}
-
-		len = fh.size;
 
 		if (fh.flags & V2_FRAME_LEN_INDICATOR) {
 			/*
 			 * Ignore the frame length 4-byte field
 			 */
 			i	+= 4;
-			len	-= 4;
 			fh.size	-= 4;
 		}
+
+		len_unsync = fh.size;
 
 		if ((fh.flags & V2_FRAME_UNSYNC) || (header->flags & V2_HEADER_UNSYNC))
 			unsync((unsigned char *)(buf + i), &fh.size);
 
 		v2_add_frame(id3, &fh, buf + i);
 
-		i += len;
+		i += len_unsync;
 	}
 
 	free(buf);
