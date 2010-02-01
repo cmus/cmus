@@ -651,8 +651,7 @@ static void decode_normal(struct id3tag *id3, const char *buf, int len, int enco
 		tmp = parse_genre(out);
 		free(out);
 		out = tmp;
-	}
-	if (key == ID3_DATE) {
+	} else if (key == ID3_DATE) {
 		id3_debug("date before: '%s'\n", out);
 		fix_date(out);
 		if (!*out) {
@@ -660,7 +659,15 @@ static void decode_normal(struct id3tag *id3, const char *buf, int len, int enco
 			free(out);
 			return;
 		}
+	} else if (key == ID3_ALBUMARTIST) {
+		/*
+		 * This must be TPE2 frame; ignore it if ID3_ALBUMARTIST is
+		 * already present
+		 */
+		if (id3->v2[key])
+			return;
 	}
+
 	add_v2(id3, key, out);
 }
 
