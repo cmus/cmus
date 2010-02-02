@@ -44,7 +44,9 @@ enum player_status {
 enum replaygain {
 	RG_DISABLED,
 	RG_TRACK,
-	RG_ALBUM
+	RG_ALBUM,
+	RG_TRACK_PREFERRED,
+	RG_ALBUM_PREFERRED
 };
 
 struct player_callbacks {

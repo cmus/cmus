@@ -833,8 +833,9 @@ repeat (false)
 repeat_current (false)
 	Repeat current track forever.
 
-replaygain (false)
-	Enable Replay Gain.
+replaygain (disabled)
+	Enable Replay Gain. Default is "disabled".
+	Set to "track", "album", "track-preferred" or "album-preferred".
 
 replaygain_limit (true)
 	Use replay gain limiting when clipping.
