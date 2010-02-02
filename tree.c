@@ -436,6 +436,20 @@ static int special_name_cmp(const char *a, const char *b)
 	return u_strcasecmp(a, b);
 }
 
+static int special_album_cmp(const struct album *a, const struct album *b)
+{
+	/* keep <Stream> etc. top */
+	int cmp = (*a->name != '<') - (*b->name != '<');
+
+	if (cmp)
+		return cmp;
+
+	if (a->date != b->date)
+		return a->date - b->date;
+
+	return u_strcasecmp(a->name, b->name);
+}
+
 static void insert_artist(struct artist *artist)
 {
 	const char *a = artist->name;
@@ -516,11 +530,7 @@ static struct album *artist_add_album(struct artist *artist, const char *name, i
 		list_for_each(item, &artist->album_head) {
 			struct album *a = to_album(item);
 
-			if (date < a->date)
-				break;
-			if (date > a->date)
-				continue;
-			if (special_name_cmp(name, a->name) < 0)
+			if (special_album_cmp(album, a) < 0)
 				break;
 		}
 	}
