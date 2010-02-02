@@ -91,7 +91,7 @@ int track_info_is_compilation(const struct track_info *ti)
 	if (c && is_freeform_true(c))
 		return 1;
 
-	if (aa && a && strcmp(aa, a))
+	if (aa && a && u_strcasecmp(aa, a))
 		return 1;
 
 	return 0;
