@@ -806,6 +806,10 @@ format_trackwin_va [`Format String`]
 	is assumed to be a part of compilation (see `LIBRARY VIEW SORTING`
 	for details).
 
+fuzzy_artist_sort (false)
+	If enabled, makes tree view sorting ignore "The" in front of artist
+	names, preventing artists starting with "The" from clumping together.
+
 id3_default_charset (ISO-8859-1)
 	Default character set to use for ID3v1 and broken ID3v2 tags.
 
@@ -827,6 +831,11 @@ play_library (true)
 play_sorted (false)
 	Play tracks from the library in the sorted view (2) order instead of
 	tree view (1) order.  Used only when play_library is true.
+
+pretty_artist_name (false)
+	If enabled, changes displayed artist name in tree view from
+	"The Artist" to "Artist, The". This can be useful with
+	`fuzzy_artist_sort`.
 
 repeat (false)
 	Repeat after all tracks played.
