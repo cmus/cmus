@@ -86,17 +86,14 @@ void cmus_play_file(const char *filename)
 {
 	struct track_info *ti;
 
-	if (is_url(filename)) {
-		ti = track_info_url_new(filename);
-	} else {
-		cache_lock();
-		ti = cache_get_ti(filename);
-		cache_unlock();
-		if (!ti) {
-			error_msg("Couldn't get file information for %s\n", filename);
-			return;
-		}
+	cache_lock();
+	ti = cache_get_ti(filename);
+	cache_unlock();
+	if (!ti) {
+		error_msg("Couldn't get file information for %s\n", filename);
+		return;
 	}
+
 	player_play_file(ti);
 }
 
@@ -179,9 +176,6 @@ int cmus_save(for_each_ti_cb for_each_ti, const char *filename)
 static int update_cb(void *data, struct track_info *ti)
 {
 	struct update_data *d = data;
-
-	if (is_url(ti->filename))
-		return 0;
 
 	if (d->size == d->used) {
 		if (d->size == 0)

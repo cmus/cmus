@@ -40,15 +40,6 @@ static void add_ti(struct track_info *ti)
 	ti_buffer[ti_buffer_fill++] = ti;
 }
 
-static void add_url(const char *filename)
-{
-	add_ti(track_info_url_new(filename));
-}
-
-/* add file to the playlist
- *
- * @filename: absolute filename with extraneous slashes stripped
- */
 static void add_file(const char *filename)
 {
 	struct track_info *ti;
@@ -59,6 +50,11 @@ static void add_file(const char *filename)
 
 	if (ti)
 		add_ti(ti);
+}
+
+static void add_url(const char *url)
+{
+	add_file(url);
 }
 
 static int dir_entry_cmp(const void *ap, const void *bp)
