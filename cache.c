@@ -236,7 +236,7 @@ int cache_init(void)
 	cache_header[4] = flags & 0xff; flags >>= 8;
 
 	/* assumed version */
-	cache_header[3] = 0x01;
+	cache_header[3] = 0x02;
 
 	cache_filename = xstrjoin(cmus_config_dir, "/cache");
 	return read_cache();
