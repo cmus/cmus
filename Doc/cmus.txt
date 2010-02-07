@@ -806,7 +806,7 @@ format_trackwin_va [`Format String`]
 	is assumed to be a part of compilation (see `LIBRARY VIEW SORTING`
 	for details).
 
-fuzzy_artist_sort (false)
+fuzzy_artist_sort (true)
 	If enabled, makes tree view sorting ignore "The" in front of artist
 	names, preventing artists starting with "The" from clumping together.
 

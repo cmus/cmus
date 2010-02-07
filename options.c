@@ -46,7 +46,7 @@ int play_library = 1;
 int repeat = 0;
 int shuffle = 0;
 int pretty_artist_name;
-int fuzzy_artist_sort;
+int fuzzy_artist_sort = 1;
 
 int colors[NR_COLORS] = {
 	-1,
