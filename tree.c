@@ -11,6 +11,8 @@
 #include "mergesort.h"
 #include "options.h"
 
+#include <ctype.h>
+
 struct searchable *tree_searchable;
 struct window *lib_tree_win;
 struct window *lib_track_win;
@@ -389,12 +391,16 @@ struct track_info *tree_set_selected(void)
 
 static const char *artist_name_skip_the(const char *a)
 {
-	if (!strncasecmp(a, "the ", 4)) {
-		a += 4;
-		while (*a == ' ' || *a == '\t')
-			++a;
-	}
-	return a;
+	const char *a_orig = a;
+
+	if (strncasecmp(a, "the ", 4))
+		return a;
+
+	a += 4;
+	while (isspace(*a))
+		++a;
+
+	return *a != '\0' ? a : a_orig;
 }
 
 static void find_artist_and_album(const char *artist_name,
