@@ -552,6 +552,7 @@ static struct {
 	{ "TPOS", ID3_DISC },
 	{ "TRCK", ID3_TRACK },
 	{ "TPE2", ID3_ALBUMARTIST },
+	{ "TSO2", ID3_ALBUMARTISTSORT },
 	{ "XSOP", ID3_ARTISTSORT }, // obsolete
 	{ "TCMP", ID3_COMPILATION },
 
@@ -563,6 +564,8 @@ static struct {
 	{ "TCO",  ID3_GENRE },
 	{ "TPA",  ID3_DISC },
 	{ "TRK",  ID3_TRACK },
+	{ "TSP",  ID3_ARTISTSORT },
+	{ "TS2",  ID3_ALBUMARTISTSORT },
 
 	{ "", -1 }
 };
