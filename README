@@ -1,11 +1,10 @@
-cmus-unofficial is a fork of cmus for collecting patches from the mailing
-list until Timo comes back online. Below is the original readme.
 
                      cmus - C* Music Player
 
 		    http://cmus.sourceforge.net/
 
 	 Copyright 2004-2008 Timo Hirvonen <tihirvon@gmail.com>
+	 Copyright 2008-2010 Various Authors
 
 
 Configuration
@@ -96,11 +95,11 @@ exists only if you configured cmus with maximum debug level
 (./configure DEBUG=2).
 
 
-GIT Repository
+Git Repository
 --------------
 
-gitweb: http://repo.or.cz/w/cmus.git
-clone:  git://repo.or.cz/cmus.git cmus
+gitweb: http://gitorious.org/cmus
+clone:  git://gitorious.org/cmus/cmus.git
 
 
 Hacking

@@ -1,9 +1,10 @@
-Maintainer
-----------
-Jason Woofenden <jason282@herkamire.com> (cmus-unofficial patch commiter)
+Maintainers
+-----------
+Gregory Petrosyan <gregory.petrosyan@gmail.com>
+Jason Woofenden <jason@jasonwoof.com>
 
-Main Author
-----------
+Original Author
+---------------
 Timo Hirvonen <tihirvon@gmail.com>
 
 NOTE: This list is not complete.  Especially small changes/bug fixes may
@@ -48,4 +49,4 @@ Gregory Petrosyan <gregory.petrosyan@gmail.com>
 
 Jason Woofenden <jason@jasonwoof.com>
   Tutorial
-  patch-commiter
+  cmus-unofficial patch-commiter

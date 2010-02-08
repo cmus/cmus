@@ -1,4 +1,4 @@
-VERSION = 2.2.0-unofficial
+VERSION = 2.2.0
 
 all: main plugins man
 
