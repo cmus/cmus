@@ -684,19 +684,20 @@ static void decode_txxx(struct id3tag *id3, const char *buf, int len, int encodi
 		return;
 
 	id3_debug("TXXX, key = '%s'\n", out);
+
 	if (!strcasecmp(out, "replaygain_track_gain"))
 		key = ID3_RG_TRACK_GAIN;
-	if (!strcasecmp(out, "replaygain_track_peak"))
+	else if (!strcasecmp(out, "replaygain_track_peak"))
 		key = ID3_RG_TRACK_PEAK;
-	if (!strcasecmp(out, "replaygain_album_gain"))
+	else if (!strcasecmp(out, "replaygain_album_gain"))
 		key = ID3_RG_ALBUM_GAIN;
-	if (!strcasecmp(out, "replaygain_album_peak"))
+	else if (!strcasecmp(out, "replaygain_album_peak"))
 		key = ID3_RG_ALBUM_PEAK;
-	if (!strcasecmp(out, "album artist"))
+	else if (!strcasecmp(out, "album artist"))
 		key = ID3_ALBUMARTIST;
-	if (!strcasecmp(out, "albumartistsort"))
+	else if (!strcasecmp(out, "albumartistsort"))
 		key = ID3_ALBUMARTISTSORT;
-	if (!strcasecmp(out, "compilation"))
+	else if (!strcasecmp(out, "compilation"))
 		key = ID3_COMPILATION;
 
 	size = strlen(out) + 1;
