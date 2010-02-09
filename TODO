@@ -1,0 +1,4 @@
+- on the fly library filtering while searching
+- no-wakeups playback
+- conditionals in format strings
+- CDDA support
