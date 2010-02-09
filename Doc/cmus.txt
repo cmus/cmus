@@ -272,6 +272,7 @@ cmus assigns the special name *<No Name>* for the unset tag.
 
 As the first level, cmus sorts alphanumerically by the value of the artist
 tag. (<Stream> and <No Name> will be used as if they where normal names.)
+If a special sorting tag is available, it's value will be used instead.
 
 For album names, alphanumerical sorting is not the primary method, though.
 To decide, how the second level should be sorted, cmus looks at the date of

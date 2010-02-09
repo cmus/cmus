@@ -329,6 +329,7 @@ static inline void tree_win_get_selected(struct artist **artist, struct album **
 static void artist_free(struct artist *artist)
 {
 	free(artist->name);
+	free(artist->sort_name);
 	free(artist);
 }
 
@@ -389,18 +390,29 @@ struct track_info *tree_set_selected(void)
 	return info;
 }
 
-static const char *artist_name_skip_the(const char *a)
+static const char *auto_artist_sort_name(const char *name)
 {
-	const char *a_orig = a;
+	const char *name_orig = name;
 
-	if (strncasecmp(a, "the ", 4))
-		return a;
+	if (strncasecmp(name, "the ", 4))
+		return name;
 
-	a += 4;
-	while (isspace(*a))
-		++a;
+	name += 4;
+	while (isspace(*name))
+		++name;
 
-	return *a != '\0' ? a : a_orig;
+	return *name != '\0' ? name : name_orig;
+}
+
+static const char *artist_sort_name(const char *name, const char *sort_name)
+{
+	if (sort_name)
+		return sort_name;
+
+	if (fuzzy_artist_sort)
+		return auto_artist_sort_name(name);
+
+	return name;
 }
 
 static void find_artist_and_album(const char *artist_name,
@@ -458,17 +470,12 @@ static int special_album_cmp(const struct album *a, const struct album *b)
 
 static void insert_artist(struct artist *artist)
 {
-	const char *a = artist->name;
+	const char *a = artist_sort_name(artist->name, artist->sort_name);
 	struct list_head *item;
 
-	if (fuzzy_artist_sort)
-		a = artist_name_skip_the(a);
-
 	list_for_each(item, &lib_artist_head) {
-		const char *b = to_artist(item)->name;
-
-		if (fuzzy_artist_sort)
-			b = artist_name_skip_the(b);
+		const char *b = artist_sort_name(to_artist(item)->name,
+						 to_artist(item)->sort_name);
 
 		if (special_name_cmp(a, b) < 0)
 			break;
@@ -479,30 +486,27 @@ static void insert_artist(struct artist *artist)
 
 static int artist_cmp(const struct list_head *a, const struct list_head *b)
 {
-	return special_name_cmp(to_artist(a)->name, to_artist(b)->name);
-}
+	const struct artist *aa = to_artist(a);
+	const struct artist *ab = to_artist(b);
 
-static int fuzzy_artist_cmp(const struct list_head *a, const struct list_head *b)
-{
-	return special_name_cmp(artist_name_skip_the(to_artist(a)->name),
-				artist_name_skip_the(to_artist(b)->name));
+	return special_name_cmp(artist_sort_name(aa->name, aa->sort_name),
+				artist_sort_name(ab->name, ab->sort_name));
 }
 
 void tree_sort_artists(void)
 {
-	if (fuzzy_artist_sort)
-		list_mergesort(&lib_artist_head, fuzzy_artist_cmp);
-	else
-		list_mergesort(&lib_artist_head, artist_cmp);
+	list_mergesort(&lib_artist_head, artist_cmp);
+
 	window_changed(lib_tree_win);
 }
 
-static struct artist *add_artist(const char *name)
+static struct artist *add_artist(const char *name, const char *sort_name)
 {
 	struct artist *artist;
 
 	artist = xnew(struct artist, 1);
 	artist->name = xstrdup(name);
+	artist->sort_name = sort_name ? xstrdup(sort_name) : NULL;
 	list_init(&artist->album_head);
 	artist->expanded = 0;
 
@@ -574,58 +578,71 @@ static void album_add_track(struct album *album, struct tree_track *track)
 void tree_add_track(struct tree_track *track)
 {
 	const struct track_info *ti = tree_track_info(track);
-	const char *album_name, *artist_name;
+	const char *album_name, *artist_name, *artistsort_name = NULL;
 	struct artist *artist;
 	struct album *album;
 	int date;
 	int is_compilation = 0;
 
+	date = comments_get_date(ti->comments, "date");
+
 	if (is_url(ti->filename)) {
 		artist_name = "<Stream>";
+		artistsort_name = "<Stream>";
 		album_name = "<Stream>";
 	} else {
 		album_name = keyvals_get_val(ti->comments, "album");
+		if (!album_name || strcmp(album_name, "") == 0)
+			album_name = "<No Name>";
 
-		artist_name = keyvals_get_val(ti->comments, "albumartistsort");
-		if (!artist_name)
-			artist_name= keyvals_get_val(ti->comments, "albumartist");
-		if (!artist_name)
-			artist_name= keyvals_get_val(ti->comments, "artistsort");
+		artist_name = keyvals_get_val(ti->comments, "albumartist");
+
 		if (!artist_name && track_info_is_compilation(ti)) {
 			artist_name = "<Compilations>";
 			is_compilation = 1;
 		}
+
 		if (!artist_name)
 			artist_name = keyvals_get_val(ti->comments, "artist");
 
 		if (!artist_name || strcmp(artist_name, "") == 0)
 			artist_name = "<No Name>";
-		if (!album_name || strcmp(album_name, "") == 0)
-			album_name = "<No Name>";
+
+		artistsort_name = keyvals_get_val(ti->comments, "albumartistsort");
+		if (!artistsort_name)
+			artistsort_name = keyvals_get_val(ti->comments, "artistsort");
 	}
 
 	find_artist_and_album(artist_name, album_name, &artist, &album);
+
+	if (artist) {
+		/* If it makes sense to update sort_name, do it */
+		if (!artist->sort_name && artistsort_name) {
+			artist->sort_name = xstrdup(artistsort_name);
+			window_changed(lib_tree_win);
+		}
+	}
+
 	if (album) {
 		album_add_track(album, track);
 
-		/* is the album where we added the track selected? */
-		if (album_selected(album)) {
-			/* update track window */
-			window_changed(lib_track_win);
+		/* If it makes sense to update album date, do it */
+		if (date != -1 && album->date == -1) {
+			album->date = date;
+			window_changed(lib_tree_win);
 		}
+
+		if (album_selected(album))
+			window_changed(lib_track_win);
 	} else if (artist) {
-		date = comments_get_date(ti->comments, "date");
 		album = artist_add_album(artist, album_name, date, is_compilation);
 		album_add_track(album, track);
 
-		if (artist->expanded) {
-			/* update tree window */
-			window_changed(lib_tree_win);
+		if (artist->expanded)
 			/* album is not selected => no need to update track_win */
-		}
+			window_changed(lib_tree_win);
 	} else {
-		date = comments_get_date(ti->comments, "date");
-		artist = add_artist(artist_name);
+		artist = add_artist(artist_name, artistsort_name);
 		album = artist_add_album(artist, album_name, date, is_compilation);
 		album_add_track(album, track);
 

@@ -48,6 +48,7 @@ struct artist {
 	/* list of albums */
 	struct list_head album_head;
 	char *name;
+	char *sort_name;
 
 	/* albums visible for this artist in the tree_win? */
 	unsigned int expanded : 1;
