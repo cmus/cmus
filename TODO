@@ -1,4 +1,5 @@
 - on the fly library filtering while searching
 - no-wakeups playback
 - conditionals in format strings
+- cuesheet (.flac + .cue) support
 - CDDA support
