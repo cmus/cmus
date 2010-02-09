@@ -695,6 +695,8 @@ static void decode_txxx(struct id3tag *id3, const char *buf, int len, int encodi
 		key = ID3_RG_ALBUM_PEAK;
 	else if (!strcasecmp(out, "album artist"))
 		key = ID3_ALBUMARTIST;
+	else if (!strcasecmp(out, "QuodLibet::albumartist"))
+		key = ID3_ALBUMARTIST;
 	else if (!strcasecmp(out, "albumartistsort"))
 		key = ID3_ALBUMARTISTSORT;
 	else if (!strcasecmp(out, "compilation"))
