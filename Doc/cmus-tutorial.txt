@@ -197,7 +197,7 @@ it should be intelligible. Try *man cmus* in a terminal. If that's not
 installed, try opening up `cmus.txt` from the `Doc` directory, or read the latest
 version online:
 
-`http://gitorious.org/cmus/cmus/blobs/master/Doc/cmus-tutorial.txt`
+`http://gitorious.org/cmus/cmus/blobs/master/Doc/cmus.txt`
 
 Also, from within cmus, press *7* to see a listing of the current keybindings
 and available commands.
