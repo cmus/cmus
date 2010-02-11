@@ -230,10 +230,11 @@ int cache_init(void)
 #endif
 	if (sizeof(long) == 8)
 		flags |= CACHE_64_BIT;
+
 	cache_header[7] = flags & 0xff; flags >>= 8;
 	cache_header[6] = flags & 0xff; flags >>= 8;
 	cache_header[5] = flags & 0xff; flags >>= 8;
-	cache_header[4] = flags & 0xff; flags >>= 8;
+	cache_header[4] = flags & 0xff;
 
 	/* assumed version */
 	cache_header[3] = 0x01;
