@@ -603,12 +603,11 @@ static void fix_date(char *buf)
 static char *decode_str(const char *buf, int len, int encoding)
 {
 	char *in, *out = NULL;
-	int rc = 0;
 
 	switch (encoding) {
 	case 0x00: /* ISO-8859-1 */
 		in = xstrndup(buf, len);
-		rc = utf8_encode(in, id3_default_charset, &out);
+		utf8_encode(in, id3_default_charset, &out);
 		free(in);
 		break;
 	case 0x03: /* UTF-8 */
@@ -616,7 +615,7 @@ static char *decode_str(const char *buf, int len, int encoding)
 		if (u_is_valid(in)) {
 			out = in;
 		} else {
-			rc = utf8_encode(in, id3_default_charset, &out);
+			utf8_encode(in, id3_default_charset, &out);
 			free(in);
 		}
 		break;
