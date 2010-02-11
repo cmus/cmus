@@ -811,9 +811,10 @@ format_trackwin_va [`Format String`]
 	is assumed to be a part of compilation (see `LIBRARY VIEW SORTING`
 	for details).
 
-fuzzy_artist_sort (true)
+smart_artist_sort (true)
 	If enabled, makes tree view sorting ignore "The" in front of artist
 	names, preventing artists starting with "The" from clumping together.
+	Real `artistsort` tags override this option, when present.
 
 id3_default_charset (ISO-8859-1)
 	Default character set to use for ID3v1 and broken ID3v2 tags.

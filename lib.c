@@ -26,7 +26,7 @@ const char *artist_sort_name(const struct artist *a)
 	if (a->sort_name)
 		return a->sort_name;
 
-	if (fuzzy_artist_sort)
+	if (smart_artist_sort)
 		return a->auto_sort_name;
 
 	return a->name;

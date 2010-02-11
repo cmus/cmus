@@ -93,7 +93,7 @@ extern int play_library;
 extern int repeat;
 extern int shuffle;
 extern int display_artist_sort_name;
-extern int fuzzy_artist_sort;
+extern int smart_artist_sort;
 
 extern const char * const aaa_mode_names[];
 extern const char * const view_names[NR_VIEWS + 1];

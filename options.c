@@ -46,7 +46,7 @@ int play_library = 1;
 int repeat = 0;
 int shuffle = 0;
 int display_artist_sort_name;
-int fuzzy_artist_sort = 1;
+int smart_artist_sort = 1;
 
 int colors[NR_COLORS] = {
 	-1,
@@ -504,20 +504,20 @@ static void toggle_play_sorted(unsigned int id)
 	update_statusline();
 }
 
-static void get_fuzzy_artist_sort(unsigned int id, char *buf)
+static void get_smart_artist_sort(unsigned int id, char *buf)
 {
-	strcpy(buf, bool_names[fuzzy_artist_sort]);
+	strcpy(buf, bool_names[smart_artist_sort]);
 }
 
-static void set_fuzzy_artist_sort(unsigned int id, const char *buf)
+static void set_smart_artist_sort(unsigned int id, const char *buf)
 {
-	if (parse_bool(buf, &fuzzy_artist_sort))
+	if (parse_bool(buf, &smart_artist_sort))
 		tree_sort_artists();
 }
 
-static void toggle_fuzzy_artist_sort(unsigned int id)
+static void toggle_smart_artist_sort(unsigned int id)
 {
-	fuzzy_artist_sort ^= 1;
+	smart_artist_sort ^= 1;
 	tree_sort_artists();
 }
 
@@ -828,7 +828,7 @@ static const struct {
 	DN(buffer_seconds)
 	DT(confirm_run)
 	DT(continue)
-	DT(fuzzy_artist_sort)
+	DT(smart_artist_sort)
 	DN(id3_default_charset)
 	DN(lib_sort)
 	DN(output_plugin)
