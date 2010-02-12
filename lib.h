@@ -49,10 +49,13 @@ struct artist {
 	struct list_head album_head;
 	char *name;
 	char *sort_name;
+	char *auto_sort_name;
 
 	/* albums visible for this artist in the tree_win? */
 	unsigned int expanded : 1;
 };
+
+const char *artist_sort_name(const struct artist *);
 
 enum aaa_mode {
 	AAA_MODE_ALL,

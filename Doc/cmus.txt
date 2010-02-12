@@ -787,6 +787,11 @@ confirm_run (true)
 continue (true)
 	Continue playing after current track finishes.
 
+display_artist_sort_name (false)
+	If enabled, always displays artist names used for sorting instead of
+	regular ones in tree view (e.g. "Artist, The" instead of "The Artist"),
+	so that artists column looks alphabetically sorted.
+
 format_current [`Format String`]
 	Format string for the line displaying currently playing track.
 
@@ -831,11 +836,6 @@ play_library (true)
 play_sorted (false)
 	Play tracks from the library in the sorted view (2) order instead of
 	tree view (1) order.  Used only when play_library is true.
-
-pretty_artist_name (false)
-	If enabled, changes displayed artist name in tree view from
-	"The Artist" to "Artist, The". This can be useful with
-	`fuzzy_artist_sort`.
 
 repeat (false)
 	Repeat after all tracks played.

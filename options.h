@@ -92,7 +92,7 @@ extern int set_term_title;
 extern int play_library;
 extern int repeat;
 extern int shuffle;
-extern int pretty_artist_name;
+extern int display_artist_sort_name;
 extern int fuzzy_artist_sort;
 
 extern const char * const aaa_mode_names[];

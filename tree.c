@@ -12,6 +12,7 @@
 #include "options.h"
 
 #include <ctype.h>
+#include <stdio.h>
 
 struct searchable *tree_searchable;
 struct window *lib_tree_win;
@@ -330,6 +331,7 @@ static void artist_free(struct artist *artist)
 {
 	free(artist->name);
 	free(artist->sort_name);
+	free(artist->auto_sort_name);
 	free(artist);
 }
 
@@ -390,31 +392,6 @@ struct track_info *tree_set_selected(void)
 	return info;
 }
 
-static const char *auto_artist_sort_name(const char *name)
-{
-	const char *name_orig = name;
-
-	if (strncasecmp(name, "the ", 4))
-		return name;
-
-	name += 4;
-	while (isspace(*name))
-		++name;
-
-	return *name != '\0' ? name : name_orig;
-}
-
-static const char *artist_sort_name(const char *name, const char *sort_name)
-{
-	if (sort_name)
-		return sort_name;
-
-	if (fuzzy_artist_sort)
-		return auto_artist_sort_name(name);
-
-	return name;
-}
-
 static void find_artist_and_album(const char *artist_name,
 		const char *album_name, struct artist **_artist,
 		struct album **_album)
@@ -470,12 +447,11 @@ static int special_album_cmp(const struct album *a, const struct album *b)
 
 static void insert_artist(struct artist *artist)
 {
-	const char *a = artist_sort_name(artist->name, artist->sort_name);
+	const char *a = artist_sort_name(artist);
 	struct list_head *item;
 
 	list_for_each(item, &lib_artist_head) {
-		const char *b = artist_sort_name(to_artist(item)->name,
-						 to_artist(item)->sort_name);
+		const char *b = artist_sort_name(to_artist(item));
 
 		if (special_name_cmp(a, b) < 0)
 			break;
@@ -486,11 +462,8 @@ static void insert_artist(struct artist *artist)
 
 static int artist_cmp(const struct list_head *a, const struct list_head *b)
 {
-	const struct artist *aa = to_artist(a);
-	const struct artist *ab = to_artist(b);
-
-	return special_name_cmp(artist_sort_name(aa->name, aa->sort_name),
-				artist_sort_name(ab->name, ab->sort_name));
+	return special_name_cmp(artist_sort_name(to_artist(a)),
+				artist_sort_name(to_artist(b)));
 }
 
 void tree_sort_artists(void)
@@ -500,18 +473,41 @@ void tree_sort_artists(void)
 	window_changed(lib_tree_win);
 }
 
+static const char *auto_artist_sort_name(const char *name)
+{
+	const char *name_orig = name;
+	char *buf;
+
+	if (strncasecmp(name, "the ", 4) != 0)
+		return xstrdup(name);
+
+	name += 4;
+	while (isspace(*name))
+		++name;
+
+	if (*name == '\0')
+		return xstrdup(name_orig);
+
+	buf = xnew(char, strlen(name_orig) + 2);
+	sprintf(buf, "%s, %c%c%c", name, name_orig[0],
+					 name_orig[1],
+					 name_orig[2]);
+	return buf;
+}
+
 static struct artist *add_artist(const char *name, const char *sort_name)
 {
-	struct artist *artist;
+	struct artist *a = xnew(struct artist, 1);
 
-	artist = xnew(struct artist, 1);
-	artist->name = xstrdup(name);
-	artist->sort_name = sort_name ? xstrdup(sort_name) : NULL;
-	list_init(&artist->album_head);
-	artist->expanded = 0;
+	a->name = xstrdup(name);
+	a->sort_name = sort_name ? xstrdup(sort_name) : NULL;
+	a->auto_sort_name = auto_artist_sort_name(name);
+	a->expanded = 0;
+	list_init(&a->album_head);
 
-	insert_artist(artist);
-	return artist;
+	insert_artist(a);
+
+	return a;
 }
 
 static struct album *artist_add_album(struct artist *artist, const char *name, int date, int is_compilation)

@@ -21,6 +21,17 @@ static LIST_HEAD(lib_shuffle_head);
 static struct expr *filter = NULL;
 static int remove_from_hash = 1;
 
+const char *artist_sort_name(const struct artist *a)
+{
+	if (a->sort_name)
+		return a->sort_name;
+
+	if (fuzzy_artist_sort)
+		return a->auto_sort_name;
+
+	return a->name;
+}
+
 static inline struct tree_track *to_sorted(const struct list_head *item)
 {
 	return (struct tree_track *)container_of(item, struct simple_track, node);

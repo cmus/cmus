@@ -45,7 +45,7 @@ int set_term_title = 1;
 int play_library = 1;
 int repeat = 0;
 int shuffle = 0;
-int pretty_artist_name;
+int display_artist_sort_name;
 int fuzzy_artist_sort = 1;
 
 int colors[NR_COLORS] = {
@@ -521,20 +521,20 @@ static void toggle_fuzzy_artist_sort(unsigned int id)
 	tree_sort_artists();
 }
 
-static void get_pretty_artist_name(unsigned int id, char *buf)
+static void get_display_artist_sort_name(unsigned int id, char *buf)
 {
-	strcpy(buf, bool_names[pretty_artist_name]);
+	strcpy(buf, bool_names[display_artist_sort_name]);
 }
 
-static void set_pretty_artist_name(unsigned int id, const char *buf)
+static void set_display_artist_sort_name(unsigned int id, const char *buf)
 {
-	parse_bool(buf, &pretty_artist_name);
+	parse_bool(buf, &display_artist_sort_name);
 	lib_tree_win->changed = 1;
 }
 
-static void toggle_pretty_artist_name(unsigned int id)
+static void toggle_display_artist_sort_name(unsigned int id)
 {
-	pretty_artist_name ^= 1;
+	display_artist_sort_name ^= 1;
 	lib_tree_win->changed = 1;
 }
 
@@ -836,7 +836,7 @@ static const struct {
 	DN(pl_sort)
 	DT(play_library)
 	DT(play_sorted)
-	DT(pretty_artist_name)
+	DT(display_artist_sort_name)
 	DT(repeat)
 	DT(repeat_current)
 	DT(replaygain)
