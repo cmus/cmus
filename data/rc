@@ -1,4 +1,5 @@
 bind browser backspace browser-up
+bind browser space win-activate
 bind browser i toggle show_hidden
 bind browser u win-update
 bind common + vol +10%

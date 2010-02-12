@@ -225,12 +225,15 @@ static int xing_parse(struct nomad *nomad)
 	int oldbitlen = nomad->stream.anc_bitlen;
 	int bitlen = nomad->stream.anc_bitlen;
 	int bitsleft;
+	unsigned xing_id;
 
 	nomad->has_xing = 0;
 	nomad->has_lame = 0;
 	if (bitlen < 64)
 		return -1;
-	if (mad_bit_read(&ptr, 32) != (('X' << 24) | ('i' << 16) | ('n' << 8) | 'g'))
+	xing_id = mad_bit_read(&ptr, 32);
+	if (xing_id != (('X' << 24) | ('i' << 16) | ('n' << 8) | 'g') &&
+	    xing_id != (('I' << 24) | ('n' << 16) | ('f' << 8) | 'o'))
 		return -1;
 	nomad->xing.flags = mad_bit_read(&ptr, 32);
 	bitlen -= 64;

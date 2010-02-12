@@ -41,8 +41,6 @@ struct track_info {
 /* initializes only filename and ref */
 extern struct track_info *track_info_new(const char *filename);
 
-extern struct track_info *track_info_url_new(const char *url);
-
 extern void track_info_ref(struct track_info *ti);
 extern void track_info_unref(struct track_info *ti);
 

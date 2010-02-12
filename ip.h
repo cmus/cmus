@@ -60,6 +60,9 @@ struct input_plugin_data {
 	int counter;
 	int metaint;
 	char *metadata;
+	char *icy_name;
+	char *icy_genre;
+	char *icy_url;
 
 	/* filled by plugin */
 	sample_format_t sf;

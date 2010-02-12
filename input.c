@@ -188,13 +188,6 @@ static int do_http_get(struct http_get *hg, const char *uri, int redirections)
 		return -IP_ERROR_HTTP_RESPONSE;
 	}
 
-	/*
-	 * FIXME: Use information from the headers, we read.
-	 *
-	 * especially interesting:
-	 *  + icy-name
-	 *  + icy-url
-	 */
 	d_print("HTTP response: %d %s\n", hg->code, hg->reason);
 	for (i = 0; hg->headers[i].key != NULL; i++)
 		d_print("  %s: %s\n", hg->headers[i].key, hg->headers[i].val);
@@ -266,6 +259,19 @@ static int setup_remote(struct input_plugin *ip, const struct keyval *headers, i
 			d_print("metaint: %d\n", ip->data.metaint);
 		}
 	}
+
+	val = keyvals_get_val(headers, "icy-name");
+	if (val)
+		ip->data.icy_name = xstrdup(val);
+
+	val = keyvals_get_val(headers, "icy-genre");
+	if (val)
+		ip->data.icy_genre = xstrdup(val);
+
+	val = keyvals_get_val(headers, "icy-url");
+	if (val)
+		ip->data.icy_url = xstrdup(val);
+
 	return 0;
 }
 
@@ -514,6 +520,9 @@ int ip_close(struct input_plugin *ip)
 	if (ip->data.fd != -1)
 		close(ip->data.fd);
 	free(ip->data.metadata);
+	free(ip->data.icy_name);
+	free(ip->data.icy_genre);
+	free(ip->data.icy_url);
 	free(ip->http_reason);
 
 	ip_init(ip, ip->data.filename);
@@ -591,7 +600,36 @@ int ip_seek(struct input_plugin *ip, double offset)
 
 int ip_read_comments(struct input_plugin *ip, struct keyval **comments)
 {
-	return ip->ops->read_comments(&ip->data, comments);
+	struct keyval *kv = NULL;
+	int rc;
+
+	rc = ip->ops->read_comments(&ip->data, &kv);
+
+	if (ip->data.remote) {
+		GROWING_KEYVALS(c);
+
+		if (kv) {
+			keyvals_init(&c, kv);
+			keyvals_free(kv);
+		}
+
+		if (ip->data.icy_name && !keyvals_get_val_growing(&c, "title"))
+			keyvals_add(&c, "title", xstrdup(ip->data.icy_name));
+
+		if (ip->data.icy_genre && !keyvals_get_val_growing(&c, "genre"))
+			keyvals_add(&c, "genre", xstrdup(ip->data.icy_genre));
+
+		if (ip->data.icy_url && !keyvals_get_val_growing(&c, "comment"))
+			keyvals_add(&c, "comment", xstrdup(ip->data.icy_url));
+
+		keyvals_terminate(&c);
+
+		kv = c.keyvals;
+	}
+
+	*comments = kv;
+
+	return ip->data.remote ? 0 : rc;
 }
 
 int ip_duration(struct input_plugin *ip)

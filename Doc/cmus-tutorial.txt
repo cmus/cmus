@@ -29,19 +29,19 @@ When you first launch cmus (just type `cmus` in a terminal and press Enter) it
 will open to the album/artist view, which looks something like this:
 
 @pre
-+----------------------------------------------------------------------+
-| Artist / Album             Track                             Library |
-|                          |                                           |
-|                          |                                           |
-|                          |                                           |
-|                          |                                           |
-|                          |                                           |
-|                          |                                           |
-|                          |                                           |
-|                                                                      |
-| . 00:00 - 00:00 vol: 100                      all from library | C   |
-|                                                                      |
-+----------------------------------------------------------------------+
++---------------------------------------------------------------------+
+| Artist / Album             Track                            Library |
+|                          |                                          |
+|                          |                                          |
+|                          |                                          |
+|                          |                                          |
+|                          |                                          |
+|                          |                                          |
+|                          |                                          |
+|                                                                     |
+| . 00:00 - 00:00 vol: 100                     all from library | C   |
+|                                                                     |
++---------------------------------------------------------------------+
 @endpre
 
 This is the view where your artists and albums will be displayed.
@@ -53,19 +53,19 @@ Press *5* to switch to the file-browser view so we can add some music. You
 should see something like this:
 
 @pre
-+----------------------------------------------------------------------+
-| Browser - /home/jasonwoof                                            |
-| ../                                                                  |
-| Desktop/                                                             |
-| MySqueak/                                                            |
-| audio-projects/                                                      |
-| audio/                                                               |
-| bin/                                                                 |
-| config/                                                              |
-|                                                                      |
-| . 00:00 - 00:00 vol: 100                      all from library | C   |
-|                                                                      |
-+----------------------------------------------------------------------+
++---------------------------------------------------------------------+
+| Browser - /home/jasonwoof                                           |
+| ../                                                                 |
+| Desktop/                                                            |
+| MySqueak/                                                           |
+| audio-projects/                                                     |
+| audio/                                                              |
+| bin/                                                                |
+| config/                                                             |
+|                                                                     |
+| . 00:00 - 00:00 vol: 100                     all from library | C   |
+|                                                                     |
++---------------------------------------------------------------------+
 @endpre
 
 Now, use the arrow keys, Enter and Backspace to navigate to where you have
@@ -92,19 +92,19 @@ Press *2* to go to the simple library view. You should see something like
 this:
 
 @pre
-+----------------------------------------------------------------------+
-| Library ~/.cmus/lib.pl - 31 tracks sorted by artist album discnumber |
-| Flying Lizards         . Money (That's What I Want)            02:31 |
-| Jason Woofenden        . VoR Theme                        2009 01:20 |
-| Keali'i Reichel      06. Wanting Memories                 1994 04:28 |
-| Molly Lewis            . Tom Cruise Crazy                      03:13 |
-| NonMemory              . pista1                           2009 03:18 |
-| NonMemory            01. pista1                     2009-04-21 04:13 |
-| Ray Charles          06. Halleluja I Love Her So               02:33 |
-|                                                                      |
-| . 00:00 - 2:16:25 vol: 100                    all from library | C   |
-|                                                                      |
-+----------------------------------------------------------------------+
++---------------------------------------------------------------------+
+| Library ~/.cmus/lib.pl - 31 tracks sorted by artist album discnumbe |
+| Flying Lizards         . Money (That's What I Want)           02:31 |
+| Jason Woofenden        . VoR Theme                       2009 01:20 |
+| Keali'i Reichel      06. Wanting Memories                1994 04:28 |
+| Molly Lewis            . Tom Cruise Crazy                     03:13 |
+| NonMemory              . pista1                          2009 03:18 |
+| NonMemory            01. pista1                    2009-04-21 04:13 |
+| Ray Charles          06. Halleluja I Love Her So              02:33 |
+|                                                                     |
+| . 00:00 - 2:16:25 vol: 100                   all from library | C   |
+|                                                                     |
++---------------------------------------------------------------------+
 @endpre
 
 Use the up and down arrow keys to select a track you'd like to hear, and press

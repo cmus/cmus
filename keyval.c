@@ -1,3 +1,4 @@
+#include "debug.h"
 #include "keyval.h"
 #include "xmalloc.h"
 
@@ -42,6 +43,20 @@ const char *keyvals_get_val(const struct keyval *keyvals, const char *key)
 	return NULL;
 }
 
+void keyvals_init(struct growing_keyvals *c, const struct keyval *keyvals)
+{
+	int i;
+
+	BUG_ON(c->keyvals);
+
+	for (i = 0; keyvals[i].key; i++)
+		; /* nothing */
+
+	c->keyvals = keyvals_dup(keyvals);
+	c->alloc = i;
+	c->count = i;
+}
+
 void keyvals_add(struct growing_keyvals *c, const char *key, char *val)
 {
 	int n = c->count + 1;
@@ -55,6 +70,17 @@ void keyvals_add(struct growing_keyvals *c, const char *key, char *val)
 	c->keyvals[c->count].key = xstrdup(key);
 	c->keyvals[c->count].val = val;
 	c->count++;
+}
+
+const char *keyvals_get_val_growing(const struct growing_keyvals *c, const char *key)
+{
+	int i;
+
+	for (i = 0; i < c->count; ++i)
+		if (strcasecmp(c->keyvals[i].key, key) == 0)
+			return c->keyvals[i].val;
+
+	return NULL;
 }
 
 void keyvals_terminate(struct growing_keyvals *c)

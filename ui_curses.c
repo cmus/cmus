@@ -536,7 +536,7 @@ static void print_track(struct window *win, int row, struct iter *iter)
 	ti = tree_track_info(track);
 	fill_track_fopts_track_info(ti);
 
-	if (track_info_has_tag(ti) && !is_url(ti->filename)) {
+	if (track_info_has_tag(ti)) {
 		if (track_info_is_compilation(ti))
 			format = track_win_format_va;
 		else
@@ -1151,10 +1151,14 @@ static void do_update_titleline(void)
 		fill_track_fopts_track_info(player_info.ti);
 
 		use_alt_format = !track_info_has_tag(player_info.ti);
-		if (use_alt_format && is_url(player_info.ti->filename)) {
+
+		if (is_url(player_info.ti->filename)) {
 			const char *title = get_stream_title();
 
 			if (title != NULL) {
+				/*
+				 * StreamTitle overrides radio station name
+				 */
 				use_alt_format = 0;
 				fopt_set_str(&track_fopts[TF_TITLE], title);
 			}
@@ -1534,7 +1538,7 @@ static void spawn_status_program(void)
 
 	player_info_lock();
 	status = player_info.status;
-	if (status == 1)
+	if (status == 1 && player_info.ti && is_url(player_info.ti->filename))
 		stream_title = get_stream_title();
 
 	i = 0;
@@ -1560,16 +1564,22 @@ static void spawn_status_program(void)
 				const char *key = keys[j];
 				const char *val;
 
-				val = keyvals_get_val(player_info.ti->comments, key);
+				if (strcmp(key, "title") == 0 && stream_title)
+					/*
+					 * StreamTitle overrides radio station name
+					 */
+					val = stream_title;
+				else
+					val = keyvals_get_val(player_info.ti->comments, key);
+
 				if (val) {
 					argv[i++] = xstrdup(key);
 					argv[i++] = xstrdup(val);
 				}
 			}
 			if (player_info.ti->duration > 0) {
-			char buf[32];
-				snprintf(buf, sizeof(buf), "%d",
-					 player_info.ti->duration);
+				char buf[32];
+				snprintf(buf, sizeof(buf), "%d", player_info.ti->duration);
 				argv[i++] = xstrdup("duration");
 				argv[i++] = xstrdup(buf);
 			}

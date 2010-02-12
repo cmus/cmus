@@ -230,13 +230,14 @@ int cache_init(void)
 #endif
 	if (sizeof(long) == 8)
 		flags |= CACHE_64_BIT;
+
 	cache_header[7] = flags & 0xff; flags >>= 8;
 	cache_header[6] = flags & 0xff; flags >>= 8;
 	cache_header[5] = flags & 0xff; flags >>= 8;
-	cache_header[4] = flags & 0xff; flags >>= 8;
+	cache_header[4] = flags & 0xff;
 
 	/* assumed version */
-	cache_header[3] = 0x01;
+	cache_header[3] = 0x02;
 
 	cache_filename = xstrjoin(cmus_config_dir, "/cache");
 	return read_cache();
@@ -366,7 +367,7 @@ static struct track_info *ip_get_ti(const char *filename)
 		ti = track_info_new(filename);
 		ti->comments = comments;
 		ti->duration = ip_duration(ip);
-		ti->mtime = 0;
+		ti->mtime = ip_is_remote(ip) ? -1 : file_get_mtime(filename);
 	}
 	ip_delete(ip);
 	return ti;
@@ -382,7 +383,6 @@ struct track_info *cache_get_ti(const char *filename)
 		ti = ip_get_ti(filename);
 		if (!ti)
 			return NULL;
-		ti->mtime = file_get_mtime(filename);
 		add_ti(ti, hash);
 		new++;
 	}
@@ -399,7 +399,7 @@ struct track_info **cache_refresh(int *count)
 		unsigned int hash;
 		struct track_info *ti = tis[i];
 		struct stat st;
-		int rc;
+		int rc = 0;
 
 		/*
 		 * If no-one else has reference to tis[i] then it is set to NULL
@@ -410,11 +410,13 @@ struct track_info **cache_refresh(int *count)
 		 * changed:   tis[i]->next = new
 		 */
 
-		rc = stat(ti->filename, &st);
-		if (!rc && ti->mtime == st.st_mtime) {
-			// unchanged
-			tis[i] = NULL;
-			continue;
+		if (!is_url(ti->filename)) {
+			rc = stat(ti->filename, &st);
+			if (!rc && ti->mtime == st.st_mtime) {
+				// unchanged
+				tis[i] = NULL;
+				continue;
+			}
 		}
 
 		hash = filename_hash(ti->filename);
@@ -426,7 +428,6 @@ struct track_info **cache_refresh(int *count)
 			struct track_info *new_ti = ip_get_ti(ti->filename);
 
 			if (new_ti) {
-				new_ti->mtime = st.st_mtime;
 				add_ti(new_ti, hash);
 				new++;
 

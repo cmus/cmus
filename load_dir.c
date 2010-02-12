@@ -80,7 +80,7 @@ const char *dir_read(struct directory *dir)
 
 void ptr_array_add(struct ptr_array *array, void *ptr)
 {
-	void **ptrs = ptrs = array->ptrs;
+	void **ptrs = array->ptrs;
 	int alloc = array->alloc;
 
 	if (alloc == array->count) {
