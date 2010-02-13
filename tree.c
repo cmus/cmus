@@ -479,14 +479,14 @@ static const char *auto_artist_sort_name(const char *name)
 	char *buf;
 
 	if (strncasecmp(name, "the ", 4) != 0)
-		return xstrdup(name);
+		return NULL;
 
 	name += 4;
 	while (isspace(*name))
 		++name;
 
 	if (*name == '\0')
-		return xstrdup(name_orig);
+		return NULL;
 
 	buf = xnew(char, strlen(name_orig) + 2);
 	sprintf(buf, "%s, %c%c%c", name, name_orig[0],
