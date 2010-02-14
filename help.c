@@ -207,6 +207,12 @@ void help_select(void)
 		cmdline_set_text(buf);
 		enter_command_mode();
 		break;
+	case HE_UNBOUND:
+		snprintf(buf, sizeof(buf), "bind common <key> %s",
+				ent->command->name);
+		cmdline_set_text(buf);
+		enter_command_mode();
+		break;
 	case HE_OPTION:
 		snprintf(buf, sizeof(buf), "set %s=", ent->option->name);
 		ent->option->get(ent->option->id, buf + strlen(buf));
