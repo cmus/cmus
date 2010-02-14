@@ -473,7 +473,7 @@ void tree_sort_artists(void)
 	window_changed(lib_tree_win);
 }
 
-static const char *auto_artist_sort_name(const char *name)
+static char *auto_artist_sort_name(const char *name)
 {
 	const char *name_orig = name;
 	char *buf;
