@@ -85,14 +85,12 @@ static sample_format_t buffer_sf;
 
 static pthread_t producer_thread;
 static pthread_mutex_t producer_mutex = CMUS_MUTEX_INITIALIZER;
-static pthread_cond_t consumer_playing = CMUS_COND_INITIALIZER;
 static int producer_running = 1;
 static enum producer_status producer_status = PS_UNLOADED;
 static struct input_plugin *ip = NULL;
 
 static pthread_t consumer_thread;
 static pthread_mutex_t consumer_mutex = CMUS_MUTEX_INITIALIZER;
-static pthread_cond_t producer_playing = CMUS_COND_INITIALIZER;
 static int consumer_running = 1;
 static enum consumer_status consumer_status = CS_STOPPED;
 static unsigned int consumer_pos = 0;
@@ -543,7 +541,6 @@ static void __producer_play(void)
 			} else {
 				ip_setup(ip);
 				producer_status = PS_PLAYING;
-				pthread_cond_broadcast(&producer_playing);
 				file_changed(ti);
 			}
 		}
@@ -562,11 +559,9 @@ static void __producer_play(void)
 		} else {
 			ip_setup(ip);
 			producer_status = PS_PLAYING;
-			pthread_cond_broadcast(&producer_playing);
 		}
 	} else if (producer_status == PS_PAUSED) {
 		producer_status = PS_PLAYING;
-		pthread_cond_broadcast(&producer_playing);
 	}
 }
 
@@ -594,7 +589,6 @@ static void __producer_pause(void)
 		producer_status = PS_PAUSED;
 	} else if (producer_status == PS_PAUSED) {
 		producer_status = PS_PLAYING;
-		pthread_cond_broadcast(&producer_playing);
 	}
 }
 
@@ -623,12 +617,10 @@ static void __consumer_play(void)
 			player_op_error(rc, "opening audio device");
 		} else {
 			consumer_status = CS_PLAYING;
-			pthread_cond_broadcast(&consumer_playing);
 		}
 	} else if (consumer_status == CS_PAUSED) {
 		op_unpause();
 		consumer_status = CS_PLAYING;
-		pthread_cond_broadcast(&consumer_playing);
 	}
 }
 
@@ -657,7 +649,6 @@ static void __consumer_pause(void)
 	} else if (consumer_status == CS_PAUSED) {
 		op_unpause();
 		consumer_status = CS_PLAYING;
-		pthread_cond_broadcast(&consumer_playing);
 	}
 }
 
@@ -687,7 +678,6 @@ static int change_sf(sample_format_t sf, int drop)
 		op_unpause();
 	}
 	consumer_status = CS_PLAYING;
-	pthread_cond_broadcast(&consumer_playing);
 	return 0;
 }
 
@@ -755,8 +745,8 @@ static void *consumer_loop(void *arg)
 			break;
 
 		if (consumer_status == CS_PAUSED || consumer_status == CS_STOPPED) {
-			pthread_cond_wait(&consumer_playing, &consumer_mutex);
 			consumer_unlock();
+			ms_sleep(50);
 			continue;
 		}
 		space = op_buffer_space();
@@ -858,8 +848,8 @@ static void *producer_loop(void *arg)
 		if (producer_status == PS_UNLOADED ||
 		    producer_status == PS_PAUSED ||
 		    producer_status == PS_STOPPED || ip_eof(ip)) {
-			pthread_cond_wait(&producer_playing, &producer_mutex);
 			producer_unlock();
+			ms_sleep(50);
 			continue;
 		}
 		for (i = 0; ; i++) {
@@ -963,9 +953,7 @@ void player_exit(void)
 
 	player_lock();
 	consumer_running = 0;
-	pthread_cond_broadcast(&consumer_playing);
 	producer_running = 0;
-	pthread_cond_broadcast(&producer_playing);
 	player_unlock();
 	
 	rc = pthread_join(consumer_thread, NULL);
