@@ -1,4 +1,4 @@
-@title cmus-tutorial 7 31/01/2010 cmus
+@title cmus-tutorial 7 14/02/2010 cmus
 
 
 @h1 NAME
@@ -18,9 +18,13 @@ Step 4: Managing The Queue
 
 Step 5: The Playlist
 
-Step 6: Quit
+Step 6: Find that track
 
-Step 7: Further Reading
+Step 7: Customization
+
+Step 8: Quit
+
+Step 9: Further Reading
 
 
 @h1 Step 1: Starting Cmus
@@ -78,7 +82,7 @@ you will see the second time in the bottom right go up. This is the total
 duration of all the music in the cmus library.
 
 Note: cmus does not move, duplicate or change your files. It just remembers
-where they are and caches the metadata (duration, author, etc.)
+where they are and caches the metadata (duration, artist, etc.)
 
 Just to be on the safe side, lets save. Type *:save* and press Enter.
 
@@ -184,13 +188,47 @@ of the tracks in the playlist. To switch modes without interrupting the
 currently-playing song, you can press *shift-M*.
 
 
-@h1 Step 6: Quit
+@h1 Step 6: Find that track
+
+This step shows various ways you can find track(s) you're looking for.
+
+Search: Press *2* to be sure you're on the simple library view, then press */*
+to start a search. Type a word or two from the track you're looking for. cmus
+will search for tracks that have all those words in them. Press enter to get
+the keyboard out of the search command, and *n* to find the next match.
+
+Tree View: Press *1* to select the tree view. Scroll to the artist, press
+*space* to show their albums, scroll to the album you want, then press tab so
+the keyboard controls the right column. Press tab again to get back to the left
+column.
+
+Filters: See the reference manual (see Further Reading below) for a detailed
+description on how to quickly (and temporarily) hide most of your music.
+
+
+@h1 Step 7: Customization
+
+Cmus has some very cool settings you can tweak, like changing the way tracks
+are displayed (e.g. to display disk numbers), enabling replaygain support or
+changing the keybindings.
+
+Press *7* for a quick overview of the current keybindings and settings.
+
+To change a setting or keybind, just select it (up/down keys) and press enter.
+This will put the command for the current setting in the command now (bottom
+left of your screen), which you can edit to put in a new value/key.
+
+Please see the reference manual (see Further Reading below) for a detailed
+description of all the commands and settings available.
+
+
+@h1 Step 8: Quit
 
 When you're done, type *:q* and press Enter to quit. This will save your
 settings, library, playlist and queue.
 
 
-@h1 Step 7: Further Reading
+@h1 Step 9: Further Reading
 
 Cmus comes with a great reference manual. Now that you've got the basics down
 it should be intelligible. Try *man cmus* in a terminal. If that's not
@@ -199,10 +237,6 @@ version online:
 
 `http://gitorious.org/cmus/cmus/blobs/master/Doc/cmus.txt`
 
-Also, from within cmus, press *7* to see a listing of the current keybindings
-and available commands.
+There are more commands and features not covered hear like loading and saving
+playlists, controlling cmus remotely with `cmus-remote`, etc.
 
-Cmus has some very cool settings you can tweak, like changing the way tracks
-are displayed (e.g. to display disk numbers) or enabling replaygain support.
-And there are more commands and features not covered hear like loading and
-saving playlists, controlling cmus remotely with `cmus-remote`, etc.
