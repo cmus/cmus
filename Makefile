@@ -1,4 +1,11 @@
-VERSION = 2.2.0
+# version from an annotated tag
+_ver0	= $(shell git describe $(REV) 2>/dev/null)
+# version from a plain tag
+_ver1	= $(shell git describe --tags $(REV) 2>/dev/null)
+# SHA1
+_ver2	= $(shell git rev-parse --verify --short $(REV) 2>/dev/null)
+
+VERSION	= $(or $(_ver0),$(_ver1),g$(_ver2))
 
 all: main plugins man
 
@@ -219,14 +226,7 @@ tags:
 # generating tarball using GIT {{{
 REV	= HEAD
 
-# version from an annotated tag
-_ver0	= $(shell git describe $(REV) 2>/dev/null)
-# version from a plain tag
-_ver1	= $(shell git describe --tags $(REV) 2>/dev/null)
-# SHA1
-_ver2	= $(shell git rev-parse --verify --short $(REV) 2>/dev/null)
-
-TARNAME	= cmus-$(or $(_ver0),$(_ver1),g$(_ver2))
+TARNAME	= cmus-$(VERSION)
 
 dist:
 	@tarname=$(TARNAME);						\
