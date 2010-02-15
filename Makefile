@@ -1,11 +1,15 @@
+REV	= HEAD
+
 # version from an annotated tag
 _ver0	= $(shell git describe $(REV) 2>/dev/null)
 # version from a plain tag
 _ver1	= $(shell git describe --tags $(REV) 2>/dev/null)
 # SHA1
 _ver2	= $(shell git rev-parse --verify --short $(REV) 2>/dev/null)
+# hand-made
+_ver3	= v2.3.0-rc0
 
-VERSION	= $(or $(_ver0),$(_ver1),g$(_ver2))
+VERSION	= $(or $(_ver0),$(_ver1),$(_ver2),$(_ver3))
 
 all: main plugins man
 
@@ -224,8 +228,6 @@ tags:
 	exuberant-ctags *.[ch]
 
 # generating tarball using GIT {{{
-REV	= HEAD
-
 TARNAME	= cmus-$(VERSION)
 
 dist:
