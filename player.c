@@ -85,12 +85,14 @@ static sample_format_t buffer_sf;
 
 static pthread_t producer_thread;
 static pthread_mutex_t producer_mutex = CMUS_MUTEX_INITIALIZER;
+static pthread_cond_t producer_playing = CMUS_COND_INITIALIZER;
 static int producer_running = 1;
 static enum producer_status producer_status = PS_UNLOADED;
 static struct input_plugin *ip = NULL;
 
 static pthread_t consumer_thread;
 static pthread_mutex_t consumer_mutex = CMUS_MUTEX_INITIALIZER;
+static pthread_cond_t consumer_playing = CMUS_COND_INITIALIZER;
 static int consumer_running = 1;
 static enum consumer_status consumer_status = CS_STOPPED;
 static unsigned int consumer_pos = 0;
@@ -128,6 +130,7 @@ static void reset_buffer(void)
 	buffer_reset();
 	consumer_pos = 0;
 	scale_pos = 0;
+	pthread_cond_broadcast(&producer_playing);
 }
 
 static void set_buffer_sf(sample_format_t sf)
@@ -523,6 +526,12 @@ static void __prebuffer(void)
 
 /* setting producer status {{{ */
 
+static void __producer_status_update(enum producer_status status)
+{
+	producer_status =  status;
+	pthread_cond_broadcast(&producer_playing);
+}
+
 static void __producer_play(void)
 {
 	if (producer_status == PS_UNLOADED) {
@@ -540,7 +549,7 @@ static void __producer_play(void)
 				file_changed(NULL);
 			} else {
 				ip_setup(ip);
-				producer_status = PS_PLAYING;
+				__producer_status_update(PS_PLAYING);
 				file_changed(ti);
 			}
 		}
@@ -555,13 +564,13 @@ static void __producer_play(void)
 		if (rc) {
 			player_ip_error(rc, "opening file `%s'", ip_get_filename(ip));
 			ip_delete(ip);
-			producer_status = PS_UNLOADED;
+			__producer_status_update(PS_UNLOADED);
 		} else {
 			ip_setup(ip);
-			producer_status = PS_PLAYING;
+			__producer_status_update(PS_PLAYING);
 		}
 	} else if (producer_status == PS_PAUSED) {
-		producer_status = PS_PLAYING;
+		__producer_status_update(PS_PLAYING);
 	}
 }
 
@@ -569,7 +578,7 @@ static void __producer_stop(void)
 {
 	if (producer_status == PS_PLAYING || producer_status == PS_PAUSED) {
 		ip_close(ip);
-		producer_status = PS_STOPPED;
+		__producer_status_update(PS_STOPPED);
 		reset_buffer();
 	}
 }
@@ -579,16 +588,16 @@ static void __producer_unload(void)
 	__producer_stop();
 	if (producer_status == PS_STOPPED) {
 		ip_delete(ip);
-		producer_status = PS_UNLOADED;
+		__producer_status_update(PS_UNLOADED);
 	}
 }
 
 static void __producer_pause(void)
 {
 	if (producer_status == PS_PLAYING) {
-		producer_status = PS_PAUSED;
+		__producer_status_update(PS_PAUSED);
 	} else if (producer_status == PS_PAUSED) {
-		producer_status = PS_PLAYING;
+		__producer_status_update(PS_PLAYING);
 	}
 }
 
@@ -596,13 +605,19 @@ static void __producer_set_file(struct track_info *ti)
 {
 	__producer_unload();
 	ip = ip_new(ti->filename);
-	producer_status = PS_STOPPED;
+	__producer_status_update(PS_STOPPED);
 	file_changed(ti);
 }
 
 /* setting producer status }}} */
 
 /* setting consumer status {{{ */
+
+static void __consumer_status_update(enum consumer_status status)
+{
+	consumer_status = status;
+	pthread_cond_broadcast(&consumer_playing);
+}
 
 static void __consumer_play(void)
 {
@@ -616,11 +631,11 @@ static void __consumer_play(void)
 		if (rc) {
 			player_op_error(rc, "opening audio device");
 		} else {
-			consumer_status = CS_PLAYING;
+			__consumer_status_update(CS_PLAYING);
 		}
 	} else if (consumer_status == CS_PAUSED) {
 		op_unpause();
-		consumer_status = CS_PLAYING;
+		__consumer_status_update(CS_PLAYING);
 	}
 }
 
@@ -628,7 +643,7 @@ static void __consumer_drain_and_stop(void)
 {
 	if (consumer_status == CS_PLAYING || consumer_status == CS_PAUSED) {
 		op_close();
-		consumer_status = CS_STOPPED;
+		__consumer_status_update(CS_STOPPED);
 	}
 }
 
@@ -637,7 +652,7 @@ static void __consumer_stop(void)
 	if (consumer_status == CS_PLAYING || consumer_status == CS_PAUSED) {
 		op_drop();
 		op_close();
-		consumer_status = CS_STOPPED;
+		__consumer_status_update(CS_STOPPED);
 	}
 }
 
@@ -645,10 +660,10 @@ static void __consumer_pause(void)
 {
 	if (consumer_status == CS_PLAYING) {
 		op_pause();
-		consumer_status = CS_PAUSED;
+		__consumer_status_update(CS_PAUSED);
 	} else if (consumer_status == CS_PAUSED) {
 		op_unpause();
-		consumer_status = CS_PLAYING;
+		__consumer_status_update(CS_PLAYING);
 	}
 }
 
@@ -669,7 +684,7 @@ static int change_sf(sample_format_t sf, int drop)
 		rc = op_open(buffer_sf);
 		if (rc) {
 			player_op_error(rc, "opening audio device");
-			consumer_status = CS_STOPPED;
+			__consumer_status_update(CS_STOPPED);
 			__producer_stop();
 			return rc;
 		}
@@ -677,7 +692,7 @@ static int change_sf(sample_format_t sf, int drop)
 		op_drop();
 		op_unpause();
 	}
-	consumer_status = CS_PLAYING;
+	__consumer_status_update(CS_PLAYING);
 	return 0;
 }
 
@@ -707,7 +722,7 @@ static void __consumer_handle_eof(void)
 	if (get_next(&ti) == 0) {
 		__producer_unload();
 		ip = ip_new(ti->filename);
-		producer_status = PS_STOPPED;
+		__producer_status_update(PS_STOPPED);
 		/* PS_STOPPED, CS_PLAYING */
 		if (player_cont) {
 			__producer_play();
@@ -745,8 +760,8 @@ static void *consumer_loop(void *arg)
 			break;
 
 		if (consumer_status == CS_PAUSED || consumer_status == CS_STOPPED) {
+			pthread_cond_wait(&consumer_playing, &consumer_mutex);
 			consumer_unlock();
-			ms_sleep(50);
 			continue;
 		}
 		space = op_buffer_space();
@@ -756,7 +771,7 @@ static void *consumer_loop(void *arg)
 
 			/* try to reopen */
 			op_close();
-			consumer_status = CS_STOPPED;
+			__consumer_status_update(CS_STOPPED);
 			__consumer_play();
 
 			consumer_unlock();
@@ -814,7 +829,7 @@ static void *consumer_loop(void *arg)
 
 				/* try to reopen */
 				op_close();
-				consumer_status = CS_STOPPED;
+				__consumer_status_update(CS_STOPPED);
 				__consumer_play();
 
 				consumer_unlock();
@@ -848,8 +863,8 @@ static void *producer_loop(void *arg)
 		if (producer_status == PS_UNLOADED ||
 		    producer_status == PS_PAUSED ||
 		    producer_status == PS_STOPPED || ip_eof(ip)) {
+			pthread_cond_wait(&producer_playing, &producer_mutex);
 			producer_unlock();
-			ms_sleep(50);
 			continue;
 		}
 		for (i = 0; ; i++) {
@@ -953,7 +968,9 @@ void player_exit(void)
 
 	player_lock();
 	consumer_running = 0;
+	pthread_cond_broadcast(&consumer_playing);
 	producer_running = 0;
+	pthread_cond_broadcast(&producer_playing);
 	player_unlock();
 	
 	rc = pthread_join(consumer_thread, NULL);
@@ -1145,7 +1162,7 @@ void player_seek(double offset, int relative)
 /* 		d_print("seeking %g/%g (%g from eof)\n", new_pos, duration, duration - new_pos); */
 		rc = ip_seek(ip, new_pos);
 		if (rc == 0) {
-/* 			d_print("doing op_drop after seek\n"); */
+			d_print("doing op_drop after seek\n");
 			op_drop();
 			reset_buffer();
 			consumer_pos = new_pos * buffer_second_size();
@@ -1183,7 +1200,7 @@ void player_set_op(const char *name)
 		rc = op_select_any();
 	}
 	if (rc) {
-		consumer_status = CS_STOPPED;
+		__consumer_status_update(CS_STOPPED);
 
 		__producer_stop();
 		player_op_error(rc, "selecting output plugin '%s'", name);
@@ -1195,7 +1212,7 @@ void player_set_op(const char *name)
 		set_buffer_sf(ip_get_sf(ip));
 		rc = op_open(buffer_sf);
 		if (rc) {
-			consumer_status = CS_STOPPED;
+			__consumer_status_update(CS_STOPPED);
 			__producer_stop();
 			player_op_error(rc, "opening audio device");
 			player_unlock();
