@@ -21,8 +21,14 @@
 #include "xmalloc.h"
 #include "debug.h"
 #include "file.h"
+#include "config/mp4.h"
 
+#if MP4_USE_OLD_HEADER
 #include <mp4.h>
+#else
+#include <mp4v2/mp4v2.h>
+#endif
+
 #include <faad.h>
 
 #include <errno.h>
