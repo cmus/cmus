@@ -673,6 +673,27 @@ static void decode_normal(struct id3tag *id3, const char *buf, int len, int enco
 	add_v2(id3, key, out);
 }
 
+static int enc_is_utf16(int encoding)
+{
+	return encoding == 0x01 || encoding == 0x02;
+}
+
+static size_t id3_skiplen(const char *s, int encoding)
+{
+	size_t ret = strlen(s) + 1;
+
+	if (enc_is_utf16(encoding)) {
+		/*
+		 * Assume BOM is always present,
+		 * and every character is 2 bytes long
+		 */
+		ret *= 2;
+		ret += 2;
+	}
+
+	return ret;
+}
+
 static void decode_txxx(struct id3tag *id3, const char *buf, int len, int encoding)
 {
 	enum id3_key key = NUM_ID3_KEYS;
@@ -702,7 +723,7 @@ static void decode_txxx(struct id3tag *id3, const char *buf, int len, int encodi
 	else if (!strcasecmp(out, "compilation"))
 		key = ID3_COMPILATION;
 
-	size = strlen(out) + 1;
+	size = id3_skiplen(out, encoding);
 	free(out);
 
 	if (key == NUM_ID3_KEYS)
