@@ -1224,6 +1224,12 @@ static void cmd_view(char *arg)
 	}
 }
 
+static void cmd_push(char *arg)
+{
+	cmdline_set_text(arg);
+	enter_command_mode();
+}
+
 static void cmd_p_next(char *arg)
 {
 	cmus_next();
@@ -2307,6 +2313,8 @@ static void expand_colorscheme(const char *str)
 	}
 }
 
+static void expand_commands(const char *str);
+
 /* tab exp }}} */
 
 /* sort by name */
@@ -2330,7 +2338,8 @@ struct command commands[] = {
 	{ "player-play",	cmd_p_play,	0, 1, expand_playable,	  0, 0 },
 	{ "player-prev",	cmd_p_prev,	0, 0, NULL,		  0, 0 },
 	{ "player-stop",	cmd_p_stop,	0, 0, NULL,		  0, 0 },
-	{ "prev-view",  	cmd_prev_view,	0, 0, NULL,		  0, 0 },
+	{ "prev-view",		cmd_prev_view,	0, 0, NULL,		  0, 0 },
+	{ "push",		cmd_push,	1,-1, expand_commands,	  0, 0 },
 	{ "quit",		cmd_quit,	0, 0, NULL,		  0, 0 },
 	{ "refresh",		cmd_refresh,	0, 0, NULL,		  0, 0 },
 	{ "run",		cmd_run,	1,-1, NULL,		  0, CMD_UNSAFE },
