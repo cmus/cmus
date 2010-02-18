@@ -50,8 +50,6 @@ extern void track_info_unref(struct track_info *ti);
  */
 extern int track_info_has_tag(const struct track_info *ti);
 
-extern int track_info_is_compilation(const struct track_info *ti);
-
 /*
  * @flags: TI_MATCH_*
  *

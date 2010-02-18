@@ -535,7 +535,7 @@ static void print_track(struct window *win, int row, struct iter *iter)
 	fill_track_fopts_track_info(ti);
 
 	if (track_info_has_tag(ti)) {
-		if (track_info_is_compilation(ti))
+		if (track_is_compilation(ti->comments))
 			format = track_win_format_va;
 		else
 			format = track_win_format;

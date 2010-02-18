@@ -5,14 +5,64 @@
 #include "comment.h"
 #include "xmalloc.h"
 #include "utils.h"
+#include "uchar.h"
 
 #include <string.h>
+
+static int is_freeform_true(const char *c)
+{
+	return	!strcasecmp(c, "1")	||
+		!strcasecmp(c, "y")	||
+		!strcasecmp(c, "yes")	||
+		!strcasecmp(c, "true");
+}
+
+int track_is_compilation(const struct keyval *comments)
+{
+	const char *c	= keyvals_get_val(comments, "compilation");
+	const char *a	= keyvals_get_val(comments, "artist");
+	const char *aa	= keyvals_get_val(comments, "albumartist");
+
+	if (c && is_freeform_true(c))
+		return 1;
+
+	if (aa && a && u_strcasecmp(aa, a))
+		return 1;
+
+	return 0;
+}
+
+const char *comments_get_album(const struct keyval *comments)
+{
+	const char *val = keyvals_get_val(comments, "album");
+
+	if (!val || strcmp(val, "") == 0)
+		val = "<No Name>";
+
+	return val;
+}
 
 const char *comments_get_albumartist(const struct keyval *comments)
 {
 	const char *val = keyvals_get_val(comments, "albumartist");
+
+	if (!val && track_is_compilation(comments))
+		val = "<Compilations>";
 	if (!val)
 		val = keyvals_get_val(comments, "artist");
+	if (!val || strcmp(val, "") == 0)
+		val = "<No Name>";
+
+	return val;
+}
+
+const char *comments_get_artistsort(const struct keyval *comments)
+{
+	const char *val = keyvals_get_val(comments, "albumartistsort");
+
+	if (!val)
+		val = keyvals_get_val(comments, "artistsort");
+
 	return val;
 }
 
