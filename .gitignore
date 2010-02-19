@@ -12,3 +12,9 @@ tags
 /config.mk
 /cmus
 /cmus-remote
+
+# Cygwin stuff
+*.exe
+/cmus.base
+/cmus.def
+/cmus.exp
