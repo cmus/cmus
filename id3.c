@@ -566,6 +566,7 @@ static struct {
 	{ "TRK",  ID3_TRACK },
 	{ "TSP",  ID3_ARTISTSORT },
 	{ "TS2",  ID3_ALBUMARTISTSORT },
+	{ "TCP",  ID3_COMPILATION },
 
 	{ "", -1 }
 };
