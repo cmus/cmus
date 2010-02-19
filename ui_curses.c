@@ -517,7 +517,7 @@ static void print_track(struct window *win, int row, struct iter *iter)
 	struct track_info *ti;
 	struct iter sel;
 	int current, selected, active;
-	char *format;
+	const char *format;
 
 	track = iter_to_tree_track(iter);
 	current = lib_cur_track == track;
