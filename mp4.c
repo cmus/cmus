@@ -43,7 +43,7 @@ struct mp4_private {
 	unsigned char channels;
 	uint32_t sample_rate;
 
-	faacDecHandle decoder;		/* typedef void * */
+	NeAACDecHandle decoder;		/* typedef void * */
 
 	struct {
 		MP4FileHandle handle;	/* typedef void * */
@@ -94,7 +94,7 @@ static MP4TrackId mp4_get_track(MP4FileHandle *handle)
 static int mp4_open(struct input_plugin_data *ip_data)
 {
 	struct mp4_private *priv;
-	faacDecConfigurationPtr neaac_cfg;
+	NeAACDecConfigurationPtr neaac_cfg;
 	unsigned char *buf;
 	unsigned int buf_size;
 
@@ -107,13 +107,13 @@ static int mp4_open(struct input_plugin_data *ip_data)
 	priv = xnew0(struct mp4_private, 1);
 	ip_data->private = priv;
 
-	priv->decoder = faacDecOpen();
+	priv->decoder = NeAACDecOpen();
 
 	/* set decoder config */
-	neaac_cfg = faacDecGetCurrentConfiguration(priv->decoder);
+	neaac_cfg = NeAACDecGetCurrentConfiguration(priv->decoder);
 	neaac_cfg->outputFormat = FAAD_FMT_16BIT;	/* force 16 bit audio */
 	neaac_cfg->downMatrix = 1;			/* 5.1 -> stereo */
-	faacDecSetConfiguration(priv->decoder, neaac_cfg);
+	NeAACDecSetConfiguration(priv->decoder, neaac_cfg);
 
 	/* open mpeg-4 file */
 	priv->mp4.handle = MP4Read(ip_data->filename, 0);
@@ -137,14 +137,14 @@ static int mp4_open(struct input_plugin_data *ip_data)
 	buf_size = 0;
 	if (!MP4GetTrackESConfiguration(priv->mp4.handle, priv->mp4.track, &buf, &buf_size)) {
 		/* failed to get mpeg-4 audio config... this is ok.
-		 * faacDecInit2() will simply use default values instead.
+		 * NeAACDecInit2() will simply use default values instead.
 		 */
 		buf = NULL;
 		buf_size = 0;
 	}
 
 	/* init decoder according to mpeg-4 audio config */
-	if (faacDecInit2(priv->decoder, buf, buf_size, &priv->sample_rate, &priv->channels) < 0) {
+	if (NeAACDecInit2(priv->decoder, buf, buf_size, &priv->sample_rate, &priv->channels) < 0) {
 		free(buf);
 		goto out;
 	}
@@ -164,7 +164,7 @@ out:
 	if (priv->mp4.handle)
 		MP4Close(priv->mp4.handle);
 	if (priv->decoder)
-		faacDecClose(priv->decoder);
+		NeAACDecClose(priv->decoder);
 	free(priv);
 	return -IP_ERROR_FILE_FORMAT;
 }
@@ -179,7 +179,7 @@ static int mp4_close(struct input_plugin_data *ip_data)
 		MP4Close(priv->mp4.handle);
 
 	if (priv->decoder)
-		faacDecClose(priv->decoder);
+		NeAACDecClose(priv->decoder);
 
 	free(priv);
 	ip_data->private = NULL;
@@ -196,7 +196,7 @@ static int decode_one_frame(struct input_plugin_data *ip_data, void *buffer, int
 	struct mp4_private *priv;
 	unsigned char *aac_data = NULL;
 	unsigned int aac_data_len = 0;
-	faacDecFrameInfo frame_info;
+	NeAACDecFrameInfo frame_info;
 	char *sample_buf;
 	int bytes;
 
@@ -222,18 +222,18 @@ static int decode_one_frame(struct input_plugin_data *ip_data, void *buffer, int
 		return -1;
 	}
 
-	sample_buf = faacDecDecode(priv->decoder, &frame_info, aac_data, aac_data_len);
+	sample_buf = NeAACDecDecode(priv->decoder, &frame_info, aac_data, aac_data_len);
 
 	free(aac_data);
 
 	if (!sample_buf || frame_info.bytesconsumed <= 0) {
-		d_print("fatal error: %s\n", faacDecGetErrorMessage(frame_info.error));
+		d_print("fatal error: %s\n", NeAACDecGetErrorMessage(frame_info.error));
 		errno = EINVAL;
 		return -1;
 	}
 
 	if (frame_info.error != 0) {
-		d_print("frame error: %s\n", faacDecGetErrorMessage(frame_info.error));
+		d_print("frame error: %s\n", NeAACDecGetErrorMessage(frame_info.error));
 		return -2;
 	}
 
