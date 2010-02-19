@@ -90,7 +90,7 @@ void buffer_consume(int count)
 {
 	struct chunk *c;
 
-	BUG_ON(count <= 0);
+	BUG_ON(count < 0);
 	cmus_mutex_lock(&buffer_mutex);
 	c = &buffer_chunks[buffer_ridx];
 	BUG_ON(!c->filled);
