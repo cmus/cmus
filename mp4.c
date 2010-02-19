@@ -29,7 +29,7 @@
 #include <mp4v2/mp4v2.h>
 #endif
 
-#include <faad.h>
+#include <neaacdec.h>
 
 #include <errno.h>
 #include <string.h>

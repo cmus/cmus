@@ -24,7 +24,7 @@
 #include "comment.h"
 #include "read_wrapper.h"
 
-#include <faad.h>
+#include <neaacdec.h>
 
 #include <errno.h>
 #include <string.h>

@@ -224,14 +224,14 @@ check_mp4()
 {
 	check_header mp4v2/mp4v2.h
 	MP4_USE_OLD_HEADER=$?
-	check_header faad.h &&
+	check_header neaacdec.h &&
 	check_library MP4 "" "-lmp4v2 -lfaad -lm"
 	return $?
 }
 
 check_aac()
 {
-	check_header faad.h &&
+	check_header neaacdec.h &&
 	check_library AAC "" "-lfaad -lm"
 	return $?
 }
