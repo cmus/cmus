@@ -894,7 +894,7 @@ static const struct {
 	{ "format_trackwin",	" %02n. %t%= %y %d " },
 	{ "format_trackwin_va",	" %02n. %t (%a)%= %y %d " },
 
-	{ "lib_sort"	,	"artist album discnumber tracknumber title filename" },
+	{ "lib_sort"	,	"albumartist date album discnumber tracknumber title filename" },
 	{ "pl_sort",		"" },
 	{ "id3_default_charset","ISO-8859-1" },
 	{ NULL, NULL }
