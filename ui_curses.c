@@ -193,6 +193,7 @@ static unsigned char cursed_to_fg_idx[NR_CURSED] = {
 static int pairs[NR_CURSED];
 
 enum {
+	TF_ALBUMARTIST,
 	TF_ARTIST,
 	TF_ALBUM,
 	TF_DISC,
@@ -208,6 +209,7 @@ enum {
 };
 
 static struct format_option track_fopts[NR_TFS + 1] = {
+	DEF_FO_STR('A'),
 	DEF_FO_STR('a'),
 	DEF_FO_STR('l'),
 	DEF_FO_INT('D'),
@@ -487,6 +489,7 @@ static void fill_track_fopts_track_info(struct track_info *info)
 	disc = comments_get_int(info->comments, "discnumber");
 	num = comments_get_int(info->comments, "tracknumber");
 
+	fopt_set_str(&track_fopts[TF_ALBUMARTIST], comments_get_albumartist(info->comments));
 	fopt_set_str(&track_fopts[TF_ARTIST], keyvals_get_val(info->comments, "artist"));
 	fopt_set_str(&track_fopts[TF_ALBUM], keyvals_get_val(info->comments, "album"));
 	fopt_set_int(&track_fopts[TF_DISC], disc, disc == -1);
