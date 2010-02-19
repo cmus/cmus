@@ -2103,9 +2103,12 @@ static void init_all(void)
 
 	if (error_count) {
 		char buf[16];
+		char *ret;
 
 		warn("Press <enter> to continue.");
-		fgets(buf, sizeof(buf), stdin);
+
+		ret = fgets(buf, sizeof(buf), stdin);
+		BUG_ON(ret == NULL);
 	}
 	help_add_all_unbound();
 
