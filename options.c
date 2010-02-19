@@ -84,6 +84,7 @@ char *track_win_format = NULL;
 char *track_win_format_va = NULL;
 char *track_win_alt_format = NULL;
 char *list_win_format = NULL;
+char *list_win_format_va = NULL;
 char *list_win_alt_format = NULL;
 char *current_format = NULL;
 char *current_alt_format = NULL;
@@ -148,6 +149,7 @@ enum format_id {
 	FMT_TRACKWIN_ALT,
 	FMT_CURRENT,
 	FMT_PLAYLIST,
+	FMT_PLAYLIST_VA,
 	FMT_TITLE,
 	FMT_TRACKWIN,
 	FMT_TRACKWIN_VA,
@@ -779,6 +781,8 @@ static char **id_to_fmt(enum format_id id)
 		return &current_format;
 	case FMT_PLAYLIST:
 		return &list_win_format;
+	case FMT_PLAYLIST_VA:
+		return &list_win_format_va;
 	case FMT_TITLE:
 		return &window_title_format;
 	case FMT_TRACKWIN:
@@ -890,6 +894,7 @@ static const struct {
 	{ "altformat_trackwin",	" %f%= %d " },
 	{ "format_current",	" %a - %l - %02n. %t%= %y " },
 	{ "format_playlist",	" %-20a %02n. %t%= %y %d " },
+	{ "format_playlist_va",	" %-20A %02n. %t (%a)%= %y %d " },
 	{ "format_title",	"%a - %l - %t (%y)" },
 	{ "format_trackwin",	" %02n. %t%= %y %d " },
 	{ "format_trackwin_va",	" %02n. %t (%a)%= %y %d " },

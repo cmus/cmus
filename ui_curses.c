@@ -558,6 +558,7 @@ static void print_editable(struct window *win, int row, struct iter *iter)
 	struct simple_track *track;
 	struct iter sel;
 	int current, selected, active;
+	const char *format;
 
 	track = iter_to_simple_track(iter);
 	current = current_track == track;
@@ -580,7 +581,12 @@ static void print_editable(struct window *win, int row, struct iter *iter)
 	fill_track_fopts_track_info(track->info);
 
 	if (track_info_has_tag(track->info)) {
-		format_print(print_buffer, COLS, list_win_format, track_fopts);
+		if (track_is_compilation(track->info->comments))
+			format = list_win_format_va;
+		else
+			format = list_win_format;
+
+		format_print(print_buffer, COLS, format, track_fopts);
 	} else {
 		format_print(print_buffer, COLS, list_win_alt_format, track_fopts);
 	}
