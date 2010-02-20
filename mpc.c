@@ -10,9 +10,11 @@
 #include "file.h"
 #include "xmalloc.h"
 #include "read_wrapper.h"
-#include "config/mpc.h"
 
-#if !MPC_USE_OLD_HEADER
+#include "config/mpc.h"
+#define MPC_SV8 (!MPC_SV7)
+
+#if MPC_SV8
 #include <mpc/mpcdec.h>
 #define callback_t mpc_reader
 #define get_ip_data(d) (d)->data
@@ -28,7 +30,7 @@
 #include <errno.h>
 
 struct mpc_private {
-#if !MPC_USE_OLD_HEADER
+#if MPC_SV8
 	mpc_demux *decoder;
 #else
 	mpc_decoder decoder;
@@ -128,7 +130,7 @@ static int mpc_open(struct input_plugin_data *ip_data)
 	ip_data->private = priv;
 
 	/* read file's streaminfo data */
-#if !MPC_USE_OLD_HEADER
+#if MPC_SV8
 	priv->decoder = mpc_demux_init(&priv->reader);
 	if (!priv->decoder) {
 		mpc_demux_exit(priv->decoder);
@@ -140,7 +142,7 @@ static int mpc_open(struct input_plugin_data *ip_data)
 		return -IP_ERROR_FILE_FORMAT;
 	}
 
-#if !MPC_USE_OLD_HEADER
+#if MPC_SV8
 	mpc_demux_get_info(priv->decoder, &priv->info);
 #else
 	/* instantiate a decoder with our file reader */
@@ -163,7 +165,7 @@ static int mpc_close(struct input_plugin_data *ip_data)
 {
 	struct mpc_private *priv = ip_data->private;
 
-#if !MPC_USE_OLD_HEADER
+#if MPC_SV8
 	mpc_demux_exit(priv->decoder);
 #endif
 	free(priv);
@@ -214,7 +216,7 @@ static int mpc_read(struct input_plugin_data *ip_data, char *buffer, int count)
 {
 	struct mpc_private *priv = ip_data->private;
 
-#if !MPC_USE_OLD_HEADER
+#if MPC_SV8
 	mpc_status status;
 	mpc_frame_info frame;
 	int samples;
@@ -266,7 +268,7 @@ static int mpc_seek(struct input_plugin_data *ip_data, double offset)
 	priv->samples_pos = 0;
 	priv->samples_avail = 0;
 
-#if !MPC_USE_OLD_HEADER
+#if MPC_SV8
 	if (mpc_demux_seek_second(priv->decoder, offset) == MPC_STATUS_OK)
 #else
 	if (mpc_decoder_seek_seconds(&priv->decoder, offset))
@@ -339,7 +341,7 @@ static int mpc_duration(struct input_plugin_data *ip_data)
 	/* priv->info.pcm_samples seems to be number of frames
 	 * priv->info.frames is _not_ pcm frames
 	 */
-#if !MPC_USE_OLD_HEADER
+#if MPC_SV8
 	return mpc_streaminfo_get_length(&priv->info);
 #else
 	return priv->info.pcm_samples / priv->info.sample_freq;
