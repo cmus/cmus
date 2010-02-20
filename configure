@@ -95,6 +95,8 @@ check_ncurses()
 
 check_mpc()
 {
+	check_header mpc/mpcdec.h
+	MPC_USE_OLD_HEADER=$?
 	check_library MPC "" "-lmpcdec"
 	return $?
 }
@@ -346,6 +348,7 @@ config_header config/datadir.h DATADIR
 config_header config/libdir.h LIBDIR
 config_header config/debug.h DEBUG
 config_header config/tremor.h CONFIG_TREMOR
+config_header config/mpc.h MPC_USE_OLD_HEADER
 config_header config/mp4.h MP4_USE_OLD_HEADER
 
 makefile_vars bindir datadir libdir mandir exampledir
