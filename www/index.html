@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="us_EN">
+<head>
+  <meta name="Author" content="Timo Hirvonen"/>
+  <meta name="Description" content="A curses based music player for Linux and *BSD"/>
+  <meta name="Keywords" content="cmus, console, curses, cursed, music, player, linux, bsd, ogg, mp3, wav, flac, streaming"/>
+  <title>C* Music Player</title>
+  <link rel="stylesheet" type="text/css" href="default.css"/>
+</head>
+
+<body>
+<div id="main">
+<h1>cmus - ncurses based music player</h1>
+
+<p>cmus is a small and fast text mode music player for Linux and many other
+UNIX like operating systems.</p>
+
+<h2>Features</h2>
+<ul>
+  <li>Input Plugins
+  <ul>
+    <li>FLAC</li>
+    <li>Ogg/Vorbis</li>
+    <li>MP3 (libmad)</li>
+    <li>Wav</li>
+    <li>AAC (libfaad)</li>
+    <li>MP4 (libfaad + libmp4v2)</li>
+    <li>.mod, .s3m, ... (libmodplug, mikmod)</li>
+    <li>.mpc, mpp, .mp+ (libmpcdec)</li>
+    <li>.wma (ffmpeg)</li>
+    <li>.wv (wavpack)</li>
+  </ul></li>
+
+  <li>Output Plugins
+  <ul>
+    <li>ALSA</li>
+    <li>libao</li>
+    <li>ARTS</li>
+    <li>OSS</li>
+    <li>Sun</li>
+    <li>WaveOut (Windows)</li>
+  </ul></li>
+
+  <li>Playing
+  <ul>
+    <li>Album/artist modes; playing within one album or artist</li>
+    <li>Play queue</li>
+    <li>MP3 and Ogg streaming (Shoutcast/Icecast)</li>
+    <li>Powerful playlist filters</li>
+  </ul></li>
+
+  <li>Interface
+  <ul>
+    <li>Easy to use directory browser</li>
+    <li>Customizable colors</li>
+    <li>Dynamic keybindings<br/>
+        You can bind a key to any command, <code>:seek +1m</code> for example</li>
+    <li>Vi / less style search mode</li>
+    <li>Vi style command mode with tab completion</li>
+  </ul></li>
+
+  <li>Misc
+  <ul>
+    <li>Can run external commands for the currently selected files (tag-editor for example)</li>
+    <li>UTF-8 support</li>
+    <li>Can be controlled via UNIX socket using <code>cmus-remote</code> command</li>
+    <li>Known to work on Linux, FreeBSD, NetBSD, OpenBSD and Cygwin</li>
+  </ul></li>
+</ul>
+
+<h2>Dependencies</h2>
+<ul>
+  <li><a href="http://www.gnu.org/software/ncurses/ncurses.html">ncurses</a> (ncursesw recommended)</li>
+</ul>
+
+<h2>Optional Dependencies</h2>
+<ul>
+  <li><a href="http://www.alsa-project.org/">alsa-lib</a> [ALSA]</li>
+  <li><a href="http://www.xiph.org/ao/">libao</a> [libao]</li>
+  <li><a href="http://www.arts-project.org/">artsc</a> [ARTS]</li>
+  <li><a href="http://flac.sourceforge.net/">flac</a> [.flac]</li>
+  <li><a href="http://www.vorbis.com/">libvorbis</a> [.ogg]</li>
+  <li><a href="http://www.underbit.com/products/mad/">libmad</a> [.mp3]</li>
+  <li><a href="http://www.musepack.net/">libmpcdec</a> [.mpc, .mpp, .mp+]</li>
+  <li><a href="http://modplug-xmms.sourceforge.net/">libmodplug</a> [.mod, .s3m, ...] </li>
+  <li><a href="http://mikmod.raphnet.net/">libmikmod</a> [.mod, .s3m, ...]</li>
+  <li><a href="http://www.wavpack.com/">wavpack</a> [.wv]</li>
+  <li><a href="http://mpeg4ip.sourceforge.net/">mp4v2, faad</a> [.mp4, m4a, m4b]</li>
+  <li><a href="http://www.audiocoding.com/">faad</a> [.aac]</li>
+  <li><a href="http://ffmpeg.org/">ffmpeg</a> [.wma]</li>
+</ul>
+
+<h2>Files</h2>
+<!-- <p>Download: <a href="files/cmus-2.2.0.tar.bz2">cmus-2.2.0.tar.bz2</a></p> -->
+<p>Download: <a href="http://mirror.greaterscope.net/cmus/cmus-2.2.0.tar.bz2">cmus-2.2.0.tar.bz2</a></p>
+<p>Mirror: <a href="http://mirror.greaterscope.net/cmus/">http://mirror.greaterscope.net/cmus/</a></p>
+<p>Announcements: <a href="files/announcements/">files/announcements/</a></p>
+
+<p>
+<a href="http://www.hci-matters.com/blog/2008/05/06/c-music-player-audioscrobblerlastfm-patch/">
+Audioscrobbler/Last.fm patch</a> written by Frank Terbeck</p>
+
+<h2>Git repository</h2>
+<p>git clone git://gitorious.org/cmus/cmus.git</p>
+<p>See also <a href="http://gitorious.org/cmus">Gitorious page</a> for latest changes.
+
+<h2>Mailing List</h2>
+<dl>
+<dt>
+<a href="http://lists.sourceforge.net/lists/listinfo/cmus-devel">cmus-devel@lists.sourceforge.net</a>
+</dt>
+<dd>Development, bug reports, feature requests, announcements</dd>
+</dl>
+
+<h2>Screenshots</h2>
+<p>Directory browser: <a href="pics/cmus-1.4.0-browser.png">cmus-1.4.0-browser.png</a></p>
+<p>Play queue: <a href="pics/cmus-1.4.0-play-queue.png">cmus-1.4.0-play-queue.png</a></p>
+<p>Sorted view: <a href="pics/cmus-1.4.0-sorted-view.png">cmus-1.4.0-sorted-view.png</a></p>
+<p>Tree view: <a href="pics/cmus-1.4.6-tree-view.png">cmus-1.4.6-tree-view.png</a></p>
+<p>Playlist filters: <a href="pics/cmus-1.6.0-filters.png">cmus-1.6.0-filters.png</a></p>
+</div> <!-- main -->
+</body>
+</html>
