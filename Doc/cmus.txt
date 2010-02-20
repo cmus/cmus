@@ -248,6 +248,7 @@ k, up          win-up
 
 @h2 Browser Context
 @pre
+space          win-activate
 backspace      browser-up
 i              toggle show_hidden
 u              win-update
@@ -594,10 +595,10 @@ vol [+-]NUM[%] [[+-]NUM[%]]
 		common  =  :vol +10%
 		common  +  :vol +10%
 		common  -  :vol -10%
-		common  [  :vol +1 +0
-		common  ]  :vol +0 +1
-		common  {  :vol -1 -0
-		common  }  :vol -0 -1
+		common  [  :vol +1% +0%
+		common  ]  :vol +0% +1%
+		common  {  :vol -1% -0%
+		common  }  :vol -0% -1%
 		@endpre
 
 win-activate (*enter*)
