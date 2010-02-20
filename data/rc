@@ -17,6 +17,7 @@ bind common = vol +10%
 bind common C toggle continue
 bind common D win-remove
 bind common E win-add-Q
+bind common F push filter 
 bind common G win-bottom
 bind common I echo {}
 bind common M toggle play_library

@@ -212,6 +212,7 @@ r              toggle repeat
 ^R             toggle repeat_current
 t              toggle show_remaining_time
 s              toggle shuffle
+F              push filter<space>
 u              update-cache
 1              view tree
 2              view sorted
