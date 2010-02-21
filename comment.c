@@ -46,7 +46,7 @@ const char *comments_get_albumartist(const struct keyval *comments)
 {
 	const char *val = keyvals_get_val(comments, "albumartist");
 
-	if (!val && track_is_compilation(comments))
+	if ((!val || !strcasecmp(val, "Various Artists")) && track_is_compilation(comments))
 		val = "<Compilations>";
 	if (!val)
 		val = keyvals_get_val(comments, "artist");
