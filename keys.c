@@ -77,6 +77,7 @@ const struct key key_table[] = {
 	{ ",",			KEY_IS_CHAR,		44	},
 	{ "-",			KEY_IS_CHAR,		45	},
 	{ ".",			KEY_IS_CHAR,		46	},
+	{ "/",			KEY_IS_CHAR,		47	},
 	{ "0",			KEY_IS_CHAR,		48	},
 	{ "1",			KEY_IS_CHAR,		49	},
 	{ "2",			KEY_IS_CHAR,		50	},
@@ -87,10 +88,12 @@ const struct key key_table[] = {
 	{ "7",			KEY_IS_CHAR,		55	},
 	{ "8",			KEY_IS_CHAR,		56	},
 	{ "9",			KEY_IS_CHAR,		57	},
+	{ ":",			KEY_IS_CHAR,		58	},
 	{ ";",			KEY_IS_CHAR,		59	},
 	{ "<",			KEY_IS_CHAR,		60	},
 	{ "=",			KEY_IS_CHAR,		61	},
 	{ ">",			KEY_IS_CHAR,		62	},
+	{ "?",			KEY_IS_CHAR,		63	},
 	{ "@",			KEY_IS_CHAR,		64	},
 	{ "A",			KEY_IS_CHAR,		65	},
 	{ "B",			KEY_IS_CHAR,		66	},
@@ -608,19 +611,6 @@ void normal_mode_ch(uchar ch)
 	enum key_context c;
 	const struct key *k;
 
-	/* you can't redefine these keys */
-	switch (ch) {
-	case ':':
-		enter_command_mode();
-		return;
-	case '/':
-		enter_search_mode();
-		return;
-	case '?':
-		enter_search_backward_mode();
-		return;
-	}
-
 	c = view_to_context[cur_view];
 	k = ch_to_key(ch);
 
@@ -633,7 +623,21 @@ void normal_mode_ch(uchar ch)
 		return;
 
 	/* common ch */
-	handle_key(key_bindings[CTX_COMMON], k);
+	if (handle_key(key_bindings[CTX_COMMON], k))
+		return;
+
+	/* these can be overridden but have default magic */
+	switch (ch) {
+	case ':':
+		enter_command_mode();
+		return;
+	case '/':
+		enter_search_mode();
+		return;
+	case '?':
+		enter_search_backward_mode();
+		return;
+	}
 }
 
 void normal_mode_key(int key)
