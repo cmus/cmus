@@ -294,8 +294,8 @@ feature various artists, also known as samplers or compilations.
 
 If a track belongs to a compilation is again decided by the existence and
 value of special tagging information. First, it is checked if cmus should use
-a special artist name (e.g.: `'Various Artists'`). If so, that one will be used
-instead of the real artist name.
+a special artist name (e.g.: `'Fatboy Slim'` for a DJ set). If so, that one
+will be used instead of the real artist name.
 
 If that special name tag is not set, cmus checks if another tag is
 set. If that is the case, the album will be given the special artist
