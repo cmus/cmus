@@ -299,7 +299,7 @@ instead of the real artist name.
 
 If that special name tag is not set, cmus checks if another tag is
 set. If that is the case, the album will be given the special artist
-name *<Compilations>*. Albums filed under *<Compilations>* are sorted
+name *<Various Artists>*. Albums filed under *<Various Artists>* are sorted
 alphanumerically by album name instead of by date.
 
 That way, you do not end up with compilation tracks scattered around your

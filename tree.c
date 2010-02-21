@@ -591,7 +591,7 @@ void tree_add_track(struct tree_track *track)
 		artist_name	= comments_get_albumartist(ti->comments);
 		artistsort_name	= comments_get_artistsort(ti->comments);
 
-		if (strcmp(artist_name, "<Compilations>") == 0)
+		if (strcmp(artist_name, "<Various Artists>") == 0)
 			is_compilation = 1;
 	}
 
