@@ -1,6 +1,7 @@
 body {
 	font-family: Verdana, sans-serif;
 	margin: 1em;
+	margin-left: 3em;
 }
 
 h1 {
@@ -30,8 +31,4 @@ ul {
 
 code {
 	color: green;
-}
-
-#main {
-	margin-left: 3em;
 }
