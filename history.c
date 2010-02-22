@@ -77,11 +77,19 @@ void history_save(struct history *history)
 	list_for_each(item, &history->head) {
 		struct history_entry *history_entry;
 		const char nl = '\n';
+		ssize_t rc;
 
 		history_entry = list_entry(item, struct history_entry, node);
-		write(fd, history_entry->text, strlen(history_entry->text));
-		write(fd, &nl, 1);
+
+		rc = write(fd, history_entry->text, strlen(history_entry->text));
+		if (rc == -1)
+			goto out;
+
+		rc = write(fd, &nl, 1);
+		if (rc == -1)
+			goto out;
 	}
+out:
 	close(fd);
 }
 
