@@ -11,12 +11,30 @@
 #include "xmalloc.h"
 #include "read_wrapper.h"
 
+#include "config/mpc.h"
+#define MPC_SV8 (!MPC_SV7)
+
+#if MPC_SV8
+#include <mpc/mpcdec.h>
+#define callback_t mpc_reader
+#define get_ip_data(d) (d)->data
+#else
 #include <mpcdec/mpcdec.h>
+#define MPC_FALSE FALSE
+#define MPC_TRUE TRUE
+#define callback_t void
+#define get_ip_data(d) (d)
+#endif
+
 #include <inttypes.h>
 #include <errno.h>
 
 struct mpc_private {
+#if MPC_SV8
+	mpc_demux *decoder;
+#else
 	mpc_decoder decoder;
+#endif
 	mpc_reader reader;
 	mpc_streaminfo info;
 
@@ -40,9 +58,9 @@ struct mpc_private {
 };
 
 /* callbacks */
-static mpc_int32_t read_impl(void *data, void *ptr, mpc_int32_t size)
+static mpc_int32_t read_impl(callback_t *data, void *ptr, mpc_int32_t size)
 {
-	struct input_plugin_data *ip_data = data;
+	struct input_plugin_data *ip_data = get_ip_data(data);
 	int rc;
 
 	rc = read_wrapper(ip_data, ptr, size);
@@ -55,35 +73,35 @@ static mpc_int32_t read_impl(void *data, void *ptr, mpc_int32_t size)
 	return rc;
 }
 
-static mpc_bool_t seek_impl(void *data, mpc_int32_t offset)
+static mpc_bool_t seek_impl(callback_t *data, mpc_int32_t offset)
 {
-	struct input_plugin_data *ip_data = data;
+	struct input_plugin_data *ip_data = get_ip_data(data);
 	int rc;
 
 	rc = lseek(ip_data->fd, offset, SEEK_SET);
 	if (rc == -1)
-		return FALSE;
-	return TRUE;
+		return MPC_FALSE;
+	return MPC_TRUE;
 }
 
-static mpc_int32_t tell_impl(void *data)
+static mpc_int32_t tell_impl(callback_t *data)
 {
-	struct input_plugin_data *ip_data = data;
+	struct input_plugin_data *ip_data = get_ip_data(data);
 
 	return lseek(ip_data->fd, 0, SEEK_CUR);
 }
 
-static mpc_int32_t get_size_impl(void *data)
+static mpc_int32_t get_size_impl(callback_t *data)
 {
-	struct input_plugin_data *ip_data = data;
+	struct input_plugin_data *ip_data = get_ip_data(data);
 	struct mpc_private *priv = ip_data->private;
 
 	return priv->file_size;
 }
 
-static mpc_bool_t canseek_impl(void *data)
+static mpc_bool_t canseek_impl(callback_t *data)
 {
-	struct input_plugin_data *ip_data = data;
+	struct input_plugin_data *ip_data = get_ip_data(data);
 
 	return !ip_data->remote;
 }
@@ -112,18 +130,28 @@ static int mpc_open(struct input_plugin_data *ip_data)
 	ip_data->private = priv;
 
 	/* read file's streaminfo data */
+#if MPC_SV8
+	priv->decoder = mpc_demux_init(&priv->reader);
+	if (!priv->decoder) {
+		mpc_demux_exit(priv->decoder);
+#else
 	mpc_streaminfo_init(&priv->info);
 	if (mpc_streaminfo_read(&priv->info, &priv->reader) != ERROR_CODE_OK) {
+#endif
 		free(priv);
 		return -IP_ERROR_FILE_FORMAT;
 	}
 
+#if MPC_SV8
+	mpc_demux_get_info(priv->decoder, &priv->info);
+#else
 	/* instantiate a decoder with our file reader */
 	mpc_decoder_setup(&priv->decoder, &priv->reader);
 	if (!mpc_decoder_initialize(&priv->decoder, &priv->info)) {
 		free(priv);
 		return -IP_ERROR_FILE_FORMAT;
 	}
+#endif
 
 	priv->samples_avail = 0;
 	priv->samples_pos = 0;
@@ -137,6 +165,9 @@ static int mpc_close(struct input_plugin_data *ip_data)
 {
 	struct mpc_private *priv = ip_data->private;
 
+#if MPC_SV8
+	mpc_demux_exit(priv->decoder);
+#endif
 	free(priv);
 	ip_data->private = NULL;
 	return 0;
@@ -185,6 +216,29 @@ static int mpc_read(struct input_plugin_data *ip_data, char *buffer, int count)
 {
 	struct mpc_private *priv = ip_data->private;
 
+#if MPC_SV8
+	mpc_status status;
+	mpc_frame_info frame;
+	int samples;
+
+	frame.buffer = priv->samples;
+
+	while (priv->samples_avail == 0) {
+		status = mpc_demux_decode(priv->decoder, &frame);
+
+		if (status != MPC_STATUS_OK) {
+			return -IP_ERROR_ERRNO;
+		}
+		if (frame.bits == -1) {
+			/* EOF */
+			return 0;
+		}
+
+		samples = frame.samples;
+		priv->samples_avail = samples * priv->info.channels;
+	}
+#else
+
 	if (priv->samples_avail == 0) {
 		uint32_t status = mpc_decoder_decode(&priv->decoder, priv->samples, NULL, NULL);
 
@@ -202,6 +256,8 @@ static int mpc_read(struct input_plugin_data *ip_data, char *buffer, int count)
 		 */
 		priv->samples_avail = status * priv->info.channels;
 	}
+#endif
+
 	return scale(ip_data, buffer, count);
 }
 
@@ -212,7 +268,11 @@ static int mpc_seek(struct input_plugin_data *ip_data, double offset)
 	priv->samples_pos = 0;
 	priv->samples_avail = 0;
 
+#if MPC_SV8
+	if (mpc_demux_seek_second(priv->decoder, offset) == MPC_STATUS_OK)
+#else
 	if (mpc_decoder_seek_seconds(&priv->decoder, offset))
+#endif
 		return 0;
 	return -1;
 }
@@ -281,7 +341,11 @@ static int mpc_duration(struct input_plugin_data *ip_data)
 	/* priv->info.pcm_samples seems to be number of frames
 	 * priv->info.frames is _not_ pcm frames
 	 */
+#if MPC_SV8
+	return mpc_streaminfo_get_length(&priv->info);
+#else
 	return priv->info.pcm_samples / priv->info.sample_freq;
+#endif
 }
 
 const struct input_plugin_ops ip_ops = {
