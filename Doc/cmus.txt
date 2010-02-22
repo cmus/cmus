@@ -798,6 +798,10 @@ format_current [`Format String`]
 format_playlist [`Format String`]
 	Format string for the list views (2-4).
 
+format_playlist_va [`Format String`]
+	Format string for the list views (2-4), if a track is assumed to be a
+	part of compilation (see `LIBRARY VIEW SORTING` for details).
+
 format_title [`Format String`]
 	Format string for terminal title.
 
@@ -909,6 +913,8 @@ Special Characters:
 
 	%a
 		artist
+	%A
+		album artist
 	%l
 		album
 	%D

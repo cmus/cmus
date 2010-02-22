@@ -587,26 +587,12 @@ void tree_add_track(struct tree_track *track)
 		artistsort_name = "<Stream>";
 		album_name = "<Stream>";
 	} else {
-		album_name = keyvals_get_val(ti->comments, "album");
-		if (!album_name || strcmp(album_name, "") == 0)
-			album_name = "<No Name>";
+		album_name	= comments_get_album(ti->comments);
+		artist_name	= comments_get_albumartist(ti->comments);
+		artistsort_name	= comments_get_artistsort(ti->comments);
 
-		artist_name = keyvals_get_val(ti->comments, "albumartist");
-
-		if (!artist_name && track_info_is_compilation(ti)) {
-			artist_name = "<Compilations>";
+		if (strcmp(artist_name, "<Compilations>") == 0)
 			is_compilation = 1;
-		}
-
-		if (!artist_name)
-			artist_name = keyvals_get_val(ti->comments, "artist");
-
-		if (!artist_name || strcmp(artist_name, "") == 0)
-			artist_name = "<No Name>";
-
-		artistsort_name = keyvals_get_val(ti->comments, "albumartistsort");
-		if (!artistsort_name)
-			artistsort_name = keyvals_get_val(ti->comments, "artistsort");
 	}
 
 	find_artist_and_album(artist_name, album_name, &artist, &album);

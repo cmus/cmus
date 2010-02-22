@@ -107,6 +107,7 @@ extern char *track_win_alt_format;
 
 /* format string for shuffle, sorted and play queue views */
 extern char *list_win_format;
+extern char *list_win_format_va;
 extern char *list_win_alt_format;
 
 /* format string for currently playing track */

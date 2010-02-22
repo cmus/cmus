@@ -421,6 +421,7 @@ int format_valid(const char *format)
 			while (isdigit(u))
 				u_get_char(format, &s, &u);
 			switch (u) {
+			case 'A':
 			case 'a':
 			case 'l':
 			case 't':
