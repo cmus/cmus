@@ -578,21 +578,19 @@ void tree_add_track(struct tree_track *track)
 	struct artist *artist;
 	struct album *album;
 	int date;
-	int is_compilation = 0;
+	int is_va_compilation = 0;
 
 	date = comments_get_date(ti->comments, "date");
 
 	if (is_url(ti->filename)) {
 		artist_name = "<Stream>";
-		artistsort_name = "<Stream>";
 		album_name = "<Stream>";
 	} else {
 		album_name	= comments_get_album(ti->comments);
 		artist_name	= comments_get_albumartist(ti->comments);
 		artistsort_name	= comments_get_artistsort(ti->comments);
 
-		if (strcmp(artist_name, "<Various Artists>") == 0)
-			is_compilation = 1;
+		is_va_compilation = track_is_va_compilation(ti->comments);
 	}
 
 	find_artist_and_album(artist_name, album_name, &artist, &album);
@@ -617,7 +615,7 @@ void tree_add_track(struct tree_track *track)
 		if (album_selected(album))
 			window_changed(lib_track_win);
 	} else if (artist) {
-		album = artist_add_album(artist, album_name, date, is_compilation);
+		album = artist_add_album(artist, album_name, date, is_va_compilation);
 		album_add_track(album, track);
 
 		if (artist->expanded)
@@ -625,7 +623,7 @@ void tree_add_track(struct tree_track *track)
 			window_changed(lib_tree_win);
 	} else {
 		artist = add_artist(artist_name, artistsort_name);
-		album = artist_add_album(artist, album_name, date, is_compilation);
+		album = artist_add_album(artist, album_name, date, is_va_compilation);
 		album_add_track(album, track);
 
 		window_changed(lib_tree_win);

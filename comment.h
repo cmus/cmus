@@ -4,6 +4,7 @@
 #include "keyval.h"
 
 int track_is_compilation(const struct keyval *comments);
+int track_is_va_compilation(const struct keyval *comments);
 
 const char *comments_get_album(const struct keyval *comments);
 const char *comments_get_albumartist(const struct keyval *comments);
