@@ -534,6 +534,11 @@ static void cmd_fset(char *arg)
 	filters_set_filter(arg);
 }
 
+static void cmd_help(char *arg)
+{
+	info_msg("To get started with cmus, read cmus-tutorial(7) and cmus(1) man pages");
+}
+
 static void cmd_invert(char *arg)
 {
 	editable_lock();
@@ -2329,6 +2334,7 @@ struct command commands[] = {
 	{ "factivate",		cmd_factivate,	0, 1, expand_factivate,	  0, 0 },
 	{ "filter",		cmd_filter,	0, 1, NULL,		  0, 0 },
 	{ "fset",		cmd_fset,	1, 1, NULL,		  0, 0 },
+	{ "help",		cmd_help,	0, 0, NULL,		  0, 0 },
 	{ "invert",		cmd_invert,	0, 0, NULL,		  0, 0 },
 	{ "load",		cmd_load,	1, 1, expand_load_save,	  0, 0 },
 	{ "lqueue",		cmd_lqueue,	0, 1, NULL,		  0, 0 },
