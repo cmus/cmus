@@ -697,15 +697,22 @@ static size_t id3_skiplen(const char *s, int encoding)
 
 static void decode_txxx(struct id3tag *id3, const char *buf, int len, int encoding)
 {
+	const char ql_prefix[] = "QuodLibet::";
 	enum id3_key key = NUM_ID3_KEYS;
 	int size;
-	char *out;
+	char *out, *out_mem;
 
 	out = decode_str(buf, len, encoding);
 	if (!out)
 		return;
 
 	id3_debug("TXXX, key = '%s'\n", out);
+
+	out_mem = out;
+
+	/* skip braindead QuodLibet TXXX frame prefix */
+	if (!strncmp(out, ql_prefix, sizeof(ql_prefix)))
+		out += sizeof(ql_prefix);
 
 	if (!strcasecmp(out, "replaygain_track_gain"))
 		key = ID3_RG_TRACK_GAIN;
@@ -717,15 +724,15 @@ static void decode_txxx(struct id3tag *id3, const char *buf, int len, int encodi
 		key = ID3_RG_ALBUM_PEAK;
 	else if (!strcasecmp(out, "album artist"))
 		key = ID3_ALBUMARTIST;
-	else if (!strcasecmp(out, "QuodLibet::albumartist"))
+	else if (!strcasecmp(out, "albumartist"))
 		key = ID3_ALBUMARTIST;
 	else if (!strcasecmp(out, "albumartistsort"))
 		key = ID3_ALBUMARTISTSORT;
 	else if (!strcasecmp(out, "compilation"))
 		key = ID3_COMPILATION;
 
-	size = id3_skiplen(out, encoding);
-	free(out);
+	size = id3_skiplen(out_mem, encoding);
+	free(out_mem);
 
 	if (key == NUM_ID3_KEYS)
 		return;
