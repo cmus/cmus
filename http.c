@@ -158,7 +158,7 @@ int http_open(struct http_get *hg, int timeout_ms)
 	while (1) {
 		fd_set wfds;
 
-		d_print("connecting. timeout=%ld s %ld us\n", tv.tv_sec, tv.tv_usec);
+		d_print("connecting. timeout=%lld s %lld us\n", (long long)tv.tv_sec, (long long)tv.tv_usec);
 		if (connect(hg->fd, &addr.sa, sizeof(addr.in)) == 0)
 			break;
 		if (errno == EISCONN)
@@ -211,7 +211,7 @@ static int http_write(int fd, const char *buf, int count, int timeout_ms)
 		fd_set wfds;
 		int rc;
 
-		d_print("timeout=%ld s %ld us\n", tv.tv_sec, tv.tv_usec);
+		d_print("timeout=%lld s %lld us\n", (long long)tv.tv_sec, (long long)tv.tv_usec);
 
 		FD_ZERO(&wfds);
 		FD_SET(fd, &wfds);
