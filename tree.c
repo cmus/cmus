@@ -482,7 +482,7 @@ static char *auto_artist_sort_name(const char *name)
 		return NULL;
 
 	name += 4;
-	while (isspace(*name))
+	while (isspace((int)*name))
 		++name;
 
 	if (*name == '\0')
