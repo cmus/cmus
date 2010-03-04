@@ -88,6 +88,7 @@ void lib_clear_store(void);
 void lib_reshuffle(void);
 void lib_set_view(int view);
 int lib_for_each(int (*cb)(void *data, struct track_info *ti), void *data);
+int lib_for_each_filtered(int (*cb)(void *data, struct track_info *ti), void *data);
 
 struct track_info *tree_set_selected(void);
 void tree_sort_artists(void);

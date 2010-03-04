@@ -260,8 +260,10 @@ static void do_save(for_each_ti_cb for_each_ti, const char *arg, char **filename
 	editable_unlock();
 }
 
-void view_save(int view, char *arg)
+void view_save(int view, char *arg, int filtered)
 {
+	for_each_ti_cb lib_for_each_ti = filtered ? lib_for_each_filtered : lib_for_each;
+
 	if (arg) {
 		char *tmp;
 
@@ -275,7 +277,7 @@ void view_save(int view, char *arg)
 	case SORTED_VIEW:
 		if (worker_has_job(JOB_TYPE_LIB))
 			goto worker_running;
-		do_save(lib_for_each, arg, &lib_filename);
+		do_save(lib_for_each_ti, arg, &lib_filename);
 		break;
 	case PLAYLIST_VIEW:
 		if (worker_has_job(JOB_TYPE_PL))
@@ -349,6 +351,7 @@ static int flag_to_view(int flag)
 {
 	switch (flag) {
 	case 'l':
+	case 'L':
 		return TREE_VIEW;
 	case 'p':
 		return PLAYLIST_VIEW;
@@ -401,11 +404,11 @@ static void cmd_load(char *arg)
 
 static void cmd_save(char *arg)
 {
-	int flag = parse_flags((const char **)&arg, "lpq");
+	int flag = parse_flags((const char **)&arg, "Llpq");
 
 	if (flag == -1)
 		return;
-	view_save(flag_to_view(flag), arg);
+	view_save(flag_to_view(flag), arg, flag == 'L');
 }
 
 static void cmd_set(char *arg)
