@@ -246,9 +246,13 @@ static void do_save(for_each_ti_cb for_each_ti, const char *arg, char **filename
 	char *filename = *filenamep;
 
 	if (arg) {
-		free(filename);
-		filename = xstrdup(arg);
-		*filenamep = filename;
+		if (strcmp(arg, "-") == 0) {
+			filename = (char *) arg;
+		} else {
+			free(filename);
+			filename = xstrdup(arg);
+			*filenamep = filename;
+		}
 	} else if (!filename) {
 		error_msg("need a file as argument, no default stored yet");
 		return;
@@ -260,16 +264,18 @@ static void do_save(for_each_ti_cb for_each_ti, const char *arg, char **filename
 	editable_unlock();
 }
 
-void view_save(int view, char *arg, int filtered)
+void view_save(int view, char *arg, int to_stdout, int filtered)
 {
 	for_each_ti_cb lib_for_each_ti = filtered ? lib_for_each_filtered : lib_for_each;
 
 	if (arg) {
-		char *tmp;
-
-		tmp = expand_filename(arg);
-		arg = path_absolute(tmp);
-		free(tmp);
+		if (to_stdout) {
+			arg = xstrdup(arg);
+		} else {
+			char *tmp = expand_filename(arg);
+			arg = path_absolute(tmp);
+			free(tmp);
+		}
 	}
 
 	switch (view) {
@@ -347,6 +353,32 @@ static int parse_flags(const char **strp, const char *flags)
 	return flag;
 }
 
+/* is str == "...-", but not "...-- -" ? */
+static int is_stdout_filename(const char *str)
+{
+	if (!str)
+		return 0;
+
+	while (*str) {
+		if (*str != '-')
+			return 0;
+		// "-"
+		if (str[1] == 0)
+			return 1;
+		// "--" or "-- "
+		if (str[1] == '-' && (str[2] == 0 || str[2] == ' '))
+			return 0;
+		// not "-?" or "-? "
+		if (str[2] && str[2] != ' ')
+			return 0;
+		str += 2;
+		while (*str == ' ')
+			str++;
+	}
+
+	return 0;
+}
+
 static int flag_to_view(int flag)
 {
 	switch (flag) {
@@ -404,11 +436,12 @@ static void cmd_load(char *arg)
 
 static void cmd_save(char *arg)
 {
+	int to_stdout = is_stdout_filename(arg);
 	int flag = parse_flags((const char **)&arg, "Llpq");
 
 	if (flag == -1)
 		return;
-	view_save(flag_to_view(flag), arg, flag == 'L');
+	view_save(flag_to_view(flag), arg, to_stdout, flag == 'L');
 }
 
 static void cmd_set(char *arg)

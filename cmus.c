@@ -165,7 +165,14 @@ int cmus_save(for_each_ti_cb for_each_ti, const char *filename)
 {
 	int fd, rc;
 
-	fd = open(filename, O_CREAT | O_WRONLY | O_TRUNC, 0666);
+	if (strcmp(filename, "-") == 0) {
+		if (get_client_fd() == -1) {
+			error_msg("saving to stdout works only remotely");
+			return 0;
+		}
+		fd = dup(get_client_fd());
+	} else
+		fd = open(filename, O_CREAT | O_WRONLY | O_TRUNC, 0666);
 	if (fd == -1)
 		return -1;
 	rc = for_each_ti(save_playlist_cb, &fd);
