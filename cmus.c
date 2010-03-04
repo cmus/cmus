@@ -18,6 +18,7 @@
 #include "load_dir.h"
 #include "ui_curses.h"
 #include "cache.h"
+#include "gbuf.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -26,6 +27,9 @@
 #include <dirent.h>
 #include <stdlib.h>
 #include <ctype.h>
+
+/* save_playlist_cb, save_ext_playlist_cb */
+typedef int (*save_tracks_cb)(void *data, struct track_info *ti);
 
 static char **playable_exts;
 static const char * const playlist_exts[] = { "m3u", "pl", "pls", NULL };
@@ -146,6 +150,27 @@ void cmus_add(add_ti_cb add, const char *name, enum file_type ft, int jt)
 	worker_add_job(jt, do_add_job, free_add_job, data);
 }
 
+static int save_ext_playlist_cb(void *data, struct track_info *ti)
+{
+	GBUF(buf);
+	int fd = *(int *)data;
+	int i, rc;
+
+	gbuf_addf(&buf, "file %s\n", escape(ti->filename));
+	gbuf_addf(&buf, "duration %d\n", ti->duration);
+	for (i = 0; ti->comments[i].key; i++)
+		gbuf_addf(&buf, "tag %s %s\n",
+				ti->comments[i].key,
+				escape(ti->comments[i].val));
+
+	rc = write_all(fd, buf.buffer, buf.len);
+	gbuf_free(&buf);
+
+	if (rc == -1)
+		return -1;
+	return 0;
+}
+
 static int save_playlist_cb(void *data, struct track_info *ti)
 {
 	int fd = *(int *)data;
@@ -161,7 +186,7 @@ static int save_playlist_cb(void *data, struct track_info *ti)
 	return 0;
 }
 
-int cmus_save(for_each_ti_cb for_each_ti, const char *filename)
+static int do_cmus_save(for_each_ti_cb for_each_ti, const char *filename, save_tracks_cb save_tracks)
 {
 	int fd, rc;
 
@@ -175,9 +200,19 @@ int cmus_save(for_each_ti_cb for_each_ti, const char *filename)
 		fd = open(filename, O_CREAT | O_WRONLY | O_TRUNC, 0666);
 	if (fd == -1)
 		return -1;
-	rc = for_each_ti(save_playlist_cb, &fd);
+	rc = for_each_ti(save_tracks, &fd);
 	close(fd);
 	return rc;
+}
+
+int cmus_save(for_each_ti_cb for_each_ti, const char *filename)
+{
+	return do_cmus_save(for_each_ti, filename, save_playlist_cb);
+}
+
+int cmus_save_ext(for_each_ti_cb for_each_ti, const char *filename)
+{
+	return do_cmus_save(for_each_ti, filename, save_ext_playlist_cb);
 }
 
 static int update_cb(void *data, struct track_info *ti)

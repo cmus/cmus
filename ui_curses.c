@@ -80,8 +80,11 @@ enum ui_input_mode input_mode = NORMAL_MODE;
 int cur_view = TREE_VIEW;
 struct searchable *searchable;
 char *lib_filename = NULL;
+char *lib_ext_filename = NULL;
 char *pl_filename = NULL;
+char *pl_ext_filename = NULL;
 char *play_queue_filename = NULL;
+char *play_queue_ext_filename = NULL;
 
 /* ------------------------------------------------------------------------- */
 

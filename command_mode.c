@@ -241,7 +241,7 @@ void view_load(int view, char *arg)
 	}
 }
 
-static void do_save(for_each_ti_cb for_each_ti, const char *arg, char **filenamep)
+static void do_save(for_each_ti_cb for_each_ti, const char *arg, char **filenamep, save_ti_cb save_ti)
 {
 	char *filename = *filenamep;
 
@@ -259,13 +259,15 @@ static void do_save(for_each_ti_cb for_each_ti, const char *arg, char **filename
 	}
 
 	editable_lock();
-	if (cmus_save(for_each_ti, filename) == -1)
+	if (save_ti(for_each_ti, filename) == -1)
 		error_msg("saving '%s': %s", filename, strerror(errno));
 	editable_unlock();
 }
 
-void view_save(int view, char *arg, int to_stdout, int filtered)
+void view_save(int view, char *arg, int to_stdout, int filtered, int extended)
 {
+	char **dest;
+	save_ti_cb     save_ti         = extended ? cmus_save_ext         : cmus_save;
 	for_each_ti_cb lib_for_each_ti = filtered ? lib_for_each_filtered : lib_for_each;
 
 	if (arg) {
@@ -283,17 +285,20 @@ void view_save(int view, char *arg, int to_stdout, int filtered)
 	case SORTED_VIEW:
 		if (worker_has_job(JOB_TYPE_LIB))
 			goto worker_running;
-		do_save(lib_for_each_ti, arg, &lib_filename);
+		dest = extended ? &lib_ext_filename : &lib_filename;
+		do_save(lib_for_each_ti, arg, dest, save_ti);
 		break;
 	case PLAYLIST_VIEW:
 		if (worker_has_job(JOB_TYPE_PL))
 			goto worker_running;
-		do_save(pl_for_each, arg, &pl_filename);
+		dest = extended ? &pl_ext_filename : &pl_filename;
+		do_save(pl_for_each, arg, &pl_filename, save_ti);
 		break;
 	case QUEUE_VIEW:
 		if (worker_has_job(JOB_TYPE_QUEUE))
 			goto worker_running;
-		do_save(play_queue_for_each, arg, &play_queue_filename);
+		dest = extended ? &play_queue_ext_filename : &play_queue_filename;
+		do_save(play_queue_for_each, arg, dest, save_ti);
 		break;
 	default:
 		info_msg(":save only works in views 1 & 2 (library) and 3 (playlist)");
@@ -307,8 +312,8 @@ worker_running:
 
 /* }}} */
 
-/* only returns the last flag which is enough for it's callers */
-static int parse_flags(const char **strp, const char *flags)
+/* if only_last != 0, only return the last flag */
+static int do_parse_flags(const char **strp, const char *flags, int only_last)
 {
 	const char *str = *strp;
 	int flag = 0;
@@ -316,7 +321,7 @@ static int parse_flags(const char **strp, const char *flags)
 	if (str == NULL)
 		return flag;
 
-	while (*str) {
+	while (*str && (only_last || !flag)) {
 		if (*str != '-')
 			break;
 
@@ -353,7 +358,17 @@ static int parse_flags(const char **strp, const char *flags)
 	return flag;
 }
 
-/* is str == "...-", but not "...-- -" ? */
+static int parse_flags(const char **strp, const char *flags)
+{
+	return do_parse_flags(strp, flags, 1);
+}
+
+static int parse_one_flag(const char **strp, const char *flags)
+{
+	return do_parse_flags(strp, flags, 0);
+}
+
+/* is str == "...-", but not "...-- -" ? copied from do_parse_flags() */
 static int is_stdout_filename(const char *str)
 {
 	if (!str)
@@ -437,11 +452,19 @@ static void cmd_load(char *arg)
 static void cmd_save(char *arg)
 {
 	int to_stdout = is_stdout_filename(arg);
-	int flag = parse_flags((const char **)&arg, "Llpq");
+	int flag = 0, f, extended = 0;
+
+	do {
+		f = parse_one_flag((const char **)&arg, "eLlpq");
+		if (f == 'e')
+			extended = 1;
+		else if (f)
+			flag = f;
+	} while (f > 0);
 
 	if (flag == -1)
 		return;
-	view_save(flag_to_view(flag), arg, to_stdout, flag == 'L');
+	view_save(flag_to_view(flag), arg, to_stdout, flag == 'L', extended);
 }
 
 static void cmd_set(char *arg)
