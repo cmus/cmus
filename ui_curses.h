@@ -37,6 +37,7 @@ extern struct searchable *searchable;
 
 extern char *lib_filename;
 extern char *pl_filename;
+extern char *play_queue_filename;
 
 void update_titleline(void);
 void update_statusline(void);

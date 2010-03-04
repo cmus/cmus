@@ -249,6 +249,9 @@ static void do_save(for_each_ti_cb for_each_ti, const char *arg, char **filename
 		free(filename);
 		filename = xstrdup(arg);
 		*filenamep = filename;
+	} else if (!filename) {
+		error_msg("need a file as argument, no default stored yet");
+		return;
 	}
 
 	editable_lock();
@@ -278,6 +281,11 @@ void view_save(int view, char *arg)
 		if (worker_has_job(JOB_TYPE_PL))
 			goto worker_running;
 		do_save(pl_for_each, arg, &pl_filename);
+		break;
+	case QUEUE_VIEW:
+		if (worker_has_job(JOB_TYPE_QUEUE))
+			goto worker_running;
+		do_save(play_queue_for_each, arg, &play_queue_filename);
 		break;
 	default:
 		info_msg(":save only works in views 1 & 2 (library) and 3 (playlist)");
@@ -393,7 +401,7 @@ static void cmd_load(char *arg)
 
 static void cmd_save(char *arg)
 {
-	int flag = parse_flags((const char **)&arg, "lp");
+	int flag = parse_flags((const char **)&arg, "lpq");
 
 	if (flag == -1)
 		return;

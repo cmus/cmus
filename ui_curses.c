@@ -81,6 +81,7 @@ int cur_view = TREE_VIEW;
 struct searchable *searchable;
 char *lib_filename = NULL;
 char *pl_filename = NULL;
+char *play_queue_filename = NULL;
 
 /* ------------------------------------------------------------------------- */
 
