@@ -488,17 +488,24 @@ run <command>
 	NOTE: In view 1 you can run a command for all files in the selected
 	album or artist.
 
-save [-l] [-p] [file]
+save [-e]  [-l] [-L] [-p] [-q]  [file]
 	Save the specified view's or the current view's contents to a playlist
-	file.
+	file. In extended mode (-e), also save metadata.
 
 	@li -l
 	save library views
 
+	@li -L
+	save filtered library views
+
 	@li -p
 	save playlist view
 
-	If no filename given the old filename is used.
+	@li -q
+	save queue view
+
+	If no filename given the old filename is used. "-" outputs to stdout
+	(works only remotely).
 
 search-next (*n*)
 	If a search pattern has been entered before, search forward for the
