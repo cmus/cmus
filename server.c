@@ -30,6 +30,7 @@
 #include "compiler.h"
 #include "debug.h"
 #include "gbuf.h"
+#include "ui_curses.h"
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -231,7 +232,9 @@ static void read_commands(struct client *client)
 				if (!strcmp(cmd, "status")) {
 					ret = cmd_status(client);
 				} else {
+					set_client_fd(client->fd);
 					run_parsed_command(cmd, arg);
+					set_client_fd(-1);
 					ret = write_all(client->fd, "\n", 1);
 				}
 				free(cmd);

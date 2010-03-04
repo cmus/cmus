@@ -47,6 +47,8 @@ void error_msg(const char *format, ...) __FORMAT(1, 2);
 int yes_no_query(const char *format, ...) __FORMAT(1, 2);
 void search_not_found(void);
 void set_view(int view);
+void set_client_fd(int fd);
+int get_client_fd(void);
 void enter_command_mode(void);
 void enter_search_mode(void);
 void enter_search_backward_mode(void);
