@@ -190,6 +190,7 @@ COMMANDS section.
 
 @h2 Common Context
 @pre
+q              quit -i
 ^C             echo Type :quit<enter> to exit cmus.
 I              echo {}
 b              player-next
@@ -473,8 +474,11 @@ push <text>
 	This command can only be bound to a key but not used in the command
 	line directly.
 
-quit
+quit [-i]
 	Exit cmus.
+
+	@li -i
+	ask before exiting
 
 refresh (*^L*)
 	Redraw the terminal window.

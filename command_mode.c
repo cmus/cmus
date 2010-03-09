@@ -708,8 +708,14 @@ err:
 
 static void cmd_quit(char *arg)
 {
-	if (!worker_has_job(JOB_TYPE_ANY) || yes_no_query("Tracks are being added. Quit and truncate playlist(s)? [y/N]"))
-		cmus_running = 0;
+	int flag = parse_flags((const char **)&arg, "i");
+	if (!worker_has_job(JOB_TYPE_ANY)) {
+		if (flag != 'i' || yes_no_query("Quit cmus? [y/N]"))
+			cmus_running = 0;
+	} else {
+		if (yes_no_query("Tracks are being added. Quit and truncate playlist(s)? [y/N]"))
+			cmus_running = 0;
+	}
 }
 
 static void cmd_reshuffle(char *arg)
@@ -2346,7 +2352,7 @@ struct command commands[] = {
 	{ "player-stop",	cmd_p_stop,	0, 0, NULL,		  0, 0 },
 	{ "prev-view",		cmd_prev_view,	0, 0, NULL,		  0, 0 },
 	{ "push",		cmd_push,	1,-1, expand_commands,	  0, 0 },
-	{ "quit",		cmd_quit,	0, 0, NULL,		  0, 0 },
+	{ "quit",		cmd_quit,	0, 1, NULL,		  0, 0 },
 	{ "refresh",		cmd_refresh,	0, 0, NULL,		  0, 0 },
 	{ "run",		cmd_run,	1,-1, NULL,		  0, CMD_UNSAFE },
 	{ "save",		cmd_save,	0, 1, expand_load_save,	  0, CMD_UNSAFE },

@@ -50,6 +50,7 @@ bind common m toggle aaa_mode
 bind common n search-next
 bind common o toggle play_sorted
 bind common p win-mv-after
+bind common q quit -i
 bind common page_down win-page-down
 bind common page_up win-page-up
 bind common r toggle repeat
