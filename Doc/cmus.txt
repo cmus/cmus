@@ -19,7 +19,7 @@ it can be controlled from the outside via *cmus-remote*(1).
 @h1 OPTIONS
 
 --listen ADDR
-	Listen to ADDR (UNIX socket) instead of `/tmp/cmus-$USER`.
+	Listen to ADDR (UNIX socket) instead of `~/.cmus/socket`.
 	ADDR is either a UNIX socket or host[:port].
 
 	*WARNING*: Using host[:port] is insecure even with password!
@@ -1126,7 +1126,7 @@ found in `/usr/share/doc/cmus/examples`.
 
 @h1 BUGS
 
-After a crash last lines of `/tmp/cmus-debug` (or $TMPDIR/cmus-debug) might
+After a crash last lines of `~/cmus-debug.txt` might
 contain useful information.  The file exists only if you configured cmus with
 maximum debug level (*./configure DEBUG=2*).
 

@@ -18,8 +18,8 @@
 
 output()
 {
-	# write status to /tmp/cmus-status (not very useful though)
-	echo "$*" >> /tmp/cmus-status 2>&1
+	# write status to ~/cmus-status.txt (not very useful though)
+	echo "$*" >> ~/cmus-status.txt 2>&1
 
 	# WMI (http://wmi.modprobe.de/)
 	#wmiremote -t "$*" &> /dev/null

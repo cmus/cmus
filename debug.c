@@ -18,12 +18,15 @@ void debug_init(void)
 {
 #if DEBUG > 1
 	char filename[512];
-	const char *tmp = getenv("TMPDIR");
+	const char *dir = getenv("CMUS_HOME");
 
-	if (!tmp || !tmp[0])
-		tmp = "/tmp";
+	if (!dir || !dir[0]) {
+		dir = getenv("HOME");
+		if (!dir)
+			die("error: environment variable HOME not set\n");
+	}
+	snprintf(filename, sizeof(filename), "%s/cmus-debug.txt", dir);
 
-	snprintf(filename, sizeof(filename), "%s/cmus-debug", tmp);
 	debug_stream = fopen(filename, "w");
 	if (debug_stream == NULL)
 		die_errno("error opening `%s' for writing", filename);
