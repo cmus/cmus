@@ -19,7 +19,7 @@ it can be controlled from the outside via *cmus-remote*(1).
 @h1 OPTIONS
 
 --listen ADDR
-	Listen to ADDR (UNIX socket) instead of `/tmp/cmus-$USER`.
+	Listen to ADDR (UNIX socket) instead of `~/.cmus/socket`.
 	ADDR is either a UNIX socket or host[:port].
 
 	*WARNING*: Using host[:port] is insecure even with password!
@@ -190,6 +190,7 @@ COMMANDS section.
 
 @h2 Common Context
 @pre
+q              quit -i
 ^C             echo Type :quit<enter> to exit cmus.
 I              echo {}
 b              player-next
@@ -451,9 +452,9 @@ player-next (*b*)
 player-pause (*c*)
 	Toggle pause.
 
-player-play (*x*)
-	If stopped, start playing the current song; if already playing seek to
-	beginning of the current song.
+player-play [filename] (*x*)
+	Play the given track, or, if none is specified, [re]play the current
+	track from the begining.
 
 player-prev (*z*)
 	Skip to the previous track.
@@ -473,8 +474,11 @@ push <text>
 	This command can only be bound to a key but not used in the command
 	line directly.
 
-quit
+quit [-i]
 	Exit cmus.
+
+	@li -i
+	ask before exiting
 
 refresh (*^L*)
 	Redraw the terminal window.
@@ -1126,7 +1130,7 @@ found in `/usr/share/doc/cmus/examples`.
 
 @h1 BUGS
 
-After a crash last lines of `/tmp/cmus-debug` (or $TMPDIR/cmus-debug) might
+After a crash last lines of `~/cmus-debug.txt` might
 contain useful information.  The file exists only if you configured cmus with
 maximum debug level (*./configure DEBUG=2*).
 

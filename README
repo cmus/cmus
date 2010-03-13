@@ -57,7 +57,7 @@ Installation
 
 Or to install to a temporary directory:
 
-  $ make install DESTDIR=/tmp/cmus
+  $ make install DESTDIR=~/tmp/cmus
 
 This is useful when creating binary packages.
 
@@ -89,10 +89,9 @@ form non-subscribed users).  Traffic of the list is low.
 Reporting Bugs
 --------------
 
-After a crash send bug report with last lines of /tmp/cmus-debug (or
-$TMPDIR/cmus-debug) to cmus-devel@lists.sourceforge.net.  The file
-exists only if you configured cmus with maximum debug level
-(./configure DEBUG=2).
+After a crash send bug report with last lines of ~/cmus-debug.txt to
+cmus-devel@lists.sourceforge.net.  The file exists only if you
+configured cmus with maximum debug level (./configure DEBUG=2).
 
 
 Git Repository

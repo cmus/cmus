@@ -509,6 +509,7 @@ start:
 static void init_mad(struct nomad *nomad)
 {
 	mad_stream_init(&nomad->stream);
+	nomad->stream.options |= MAD_OPTION_IGNORECRC;
 	mad_frame_init(&nomad->frame);
 	mad_synth_init(&nomad->synth);
 	mad_timer_reset(&nomad->timer);

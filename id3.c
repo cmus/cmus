@@ -711,8 +711,8 @@ static void decode_txxx(struct id3tag *id3, const char *buf, int len, int encodi
 	out_mem = out;
 
 	/* skip braindead QuodLibet TXXX frame prefix */
-	if (!strncmp(out, ql_prefix, sizeof(ql_prefix)))
-		out += sizeof(ql_prefix);
+	if (!strncmp(out, ql_prefix, sizeof(ql_prefix) - 1))
+		out += sizeof(ql_prefix) - 1;
 
 	if (!strcasecmp(out, "replaygain_track_gain"))
 		key = ID3_RG_TRACK_GAIN;
