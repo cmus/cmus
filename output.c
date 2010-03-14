@@ -257,10 +257,7 @@ int op_close(void)
 
 int op_write(const char *buffer, int count)
 {
-	int rc;
-
-	rc = op->pcm_ops->write(buffer, count);
-	return rc;
+	return op->pcm_ops->write(buffer, count);
 }
 
 int op_pause(void)
@@ -279,10 +276,7 @@ int op_unpause(void)
 
 int op_buffer_space(void)
 {
-	int rc;
-	
-	rc = op->pcm_ops->buffer_space();
-	return rc;
+	return op->pcm_ops->buffer_space();
 }
 
 int mixer_set_volume(int left, int right)
