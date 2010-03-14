@@ -1884,8 +1884,7 @@ static void main_loop(void)
 		}
 		if (!soft_vol) {
 			nr_fds = mixer_get_fds(fds);
-			if (nr_fds == -OP_ERROR_NOT_SUPPORTED) {
-				// mixer has no pollable file descriptors
+			if (nr_fds <= 0) {
 				poll_mixer = 1;
 				if (!tv.tv_usec)
 					tv.tv_usec = 500e3;
