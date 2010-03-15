@@ -43,7 +43,7 @@ int simple_track_search_matches(void *data, struct iter *iter, const char *text)
 	struct simple_track *track = iter_to_simple_track(iter);
 
 	if (!search_restricted)
-		flags |= TI_MATCH_ARTIST | TI_MATCH_ALBUM;
+		flags |= TI_MATCH_ARTIST | TI_MATCH_ALBUM | TI_MATCH_ALBUMARTIST;
 
 	if (!track_info_matches(track->info, text, flags))
 		return 0;
