@@ -2370,6 +2370,7 @@ struct command commands[] = {
 	{ "update-cache",	cmd_update_cache,0, 0, NULL,		  0, 0 },
 	{ "view",		cmd_view,	1, 1, NULL,		  0, 0 },
 	{ "vol",		cmd_vol,	1, 2, NULL,		  0, 0 },
+	{ "w",			cmd_save,	0, 1, expand_load_save,	  0, CMD_UNSAFE },
 	{ "win-activate",	cmd_win_activate,0, 0, NULL,		  0, 0 },
 	{ "win-add-l",		cmd_win_add_l,	0, 0, NULL,		  0, 0 },
 	{ "win-add-p",		cmd_win_add_p,	0, 0, NULL,		  0, 0 },
@@ -2388,6 +2389,7 @@ struct command commands[] = {
 	{ "win-top",		cmd_win_top,	0, 0, NULL,		  0, 0 },
 	{ "win-up",		cmd_win_up,	0, 0, NULL,		  0, 0 },
 	{ "win-update",		cmd_win_update,	0, 0, NULL,		  0, 0 },
+	{ "wq",			cmd_quit,	0, 1, NULL,		  0, 0 },
 	{ NULL,			NULL,		0, 0, 0,		  0, 0 }
 };
 

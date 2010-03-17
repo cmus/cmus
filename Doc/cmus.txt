@@ -474,7 +474,7 @@ push <text>
 	This command can only be bound to a key but not used in the command
 	line directly.
 
-quit [-i]
+quit [-i] (*q*, *:wq*)
 	Exit cmus.
 
 	@li -i
@@ -492,7 +492,7 @@ run <command>
 	NOTE: In view 1 you can run a command for all files in the selected
 	album or artist.
 
-save [-l] [-p] [file]
+save [-l] [-p] [file] (*:w*)
 	Save the specified view's or the current view's contents to a playlist
 	file.
 
