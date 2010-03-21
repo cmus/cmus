@@ -5,6 +5,7 @@
 #include "search.h"
 #include "editable.h"
 #include "xmalloc.h"
+#include "ui_curses.h"
 
 struct searchable {
 	void *data;
@@ -25,15 +26,32 @@ static void search_unlock(void)
 /* returns next matching track (can be current!) or NULL if not found */
 static int do_search(struct searchable *s, struct iter *iter, const char *text, int direction)
 {
+	struct iter start = *iter;
+	const char *msg = NULL;
+
 	while (1) {
-		if (s->ops.matches(s->data, iter, text))
+		if (s->ops.matches(s->data, iter, text)) {
+			if (msg)
+				info_msg("%s\n", msg);
 			return 1;
+		}
 		if (direction == SEARCH_FORWARD) {
-			if (!s->ops.get_next(iter))
-				return 0;
+			if (!s->ops.get_next(iter)) {
+				*iter = s->head;
+				if (!s->ops.get_next(iter))
+					return 0;
+				msg = "search hit BOTTOM, continuing at TOP";
+			}
 		} else {
-			if (!s->ops.get_prev(iter))
-				return 0;
+			if (!s->ops.get_prev(iter)) {
+				*iter = s->head;
+				if (!s->ops.get_prev(iter))
+					return 0;
+				msg = "search hit TOP, continuing at BOTTOM";
+			}
+		}
+		if (iters_equal(iter, &start)) {
+			return 0;
 		}
 	}
 }
