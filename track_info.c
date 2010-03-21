@@ -70,6 +70,7 @@ int track_info_matches(struct track_info *ti, const char *text, unsigned int fla
 	const char *artist = keyvals_get_val(ti->comments, "artist");
 	const char *album = keyvals_get_val(ti->comments, "album");
 	const char *title = keyvals_get_val(ti->comments, "title");
+	const char *albumartist = keyvals_get_val(ti->comments, "albumartist");
 	char **words;
 	int i, matched = 1;
 
@@ -81,12 +82,15 @@ int track_info_matches(struct track_info *ti, const char *text, unsigned int fla
 
 		if ((flags & TI_MATCH_ARTIST && artist) ||
 		    (flags & TI_MATCH_ALBUM && album) ||
-		    (flags & TI_MATCH_TITLE && title)) {
+		    (flags & TI_MATCH_TITLE && title) ||
+		    (flags & TI_MATCH_ALBUMARTIST && albumartist)) {
 			if (flags & TI_MATCH_ARTIST && artist && u_strcasestr(artist, word))
 				continue;
 			if (flags & TI_MATCH_ALBUM && album && u_strcasestr(album, word))
 				continue;
 			if (flags & TI_MATCH_TITLE && title && u_strcasestr(title, word))
+				continue;
+			if (flags & TI_MATCH_ALBUMARTIST && albumartist && u_strcasestr(albumartist, word))
 				continue;
 		} else {
 			/* compare with url or filename without path */

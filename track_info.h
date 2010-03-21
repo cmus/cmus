@@ -34,9 +34,10 @@ struct track_info {
 	char filename[0];
 };
 
-#define TI_MATCH_ARTIST	(1 << 0)
-#define TI_MATCH_ALBUM	(1 << 1)
-#define TI_MATCH_TITLE	(1 << 2)
+#define TI_MATCH_ARTIST       (1 << 0)
+#define TI_MATCH_ALBUM        (1 << 1)
+#define TI_MATCH_TITLE        (1 << 2)
+#define TI_MATCH_ALBUMARTIST  (1 << 3)
 
 /* initializes only filename and ref */
 extern struct track_info *track_info_new(const char *filename);
