@@ -483,7 +483,7 @@ static int ti_cmp(const void *a, const void *b)
 	return track_info_cmp(ai, bi, lib_editable.sort_keys);
 }
 
-int lib_for_each(int (*cb)(void *data, struct track_info *ti), void *data)
+static int do_lib_for_each(int (*cb)(void *data, struct track_info *ti), void *data, int filtered)
 {
 	int i, rc = 0, count = 0, size = 1024;
 	struct track_info **tis;
@@ -500,7 +500,8 @@ int lib_for_each(int (*cb)(void *data, struct track_info *ti), void *data)
 				size *= 2;
 				tis = xrenew(struct track_info *, tis, size);
 			}
-			tis[count++] = e->ti;
+			if (!filtered || filter == NULL || expr_eval(filter, e->ti))
+				tis[count++] = e->ti;
 			e = e->next;
 		}
 	}
@@ -515,4 +516,14 @@ int lib_for_each(int (*cb)(void *data, struct track_info *ti), void *data)
 
 	free(tis);
 	return rc;
+}
+
+int lib_for_each(int (*cb)(void *data, struct track_info *ti), void *data)
+{
+	return do_lib_for_each(cb, data, 0);
+}
+
+int lib_for_each_filtered(int (*cb)(void *data, struct track_info *ti), void *data)
+{
+	return do_lib_for_each(cb, data, 1);
 }

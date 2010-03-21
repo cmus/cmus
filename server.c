@@ -30,6 +30,8 @@
 #include "compiler.h"
 #include "debug.h"
 #include "gbuf.h"
+#include "ui_curses.h"
+#include "misc.h"
 
 #include <unistd.h>
 #include <sys/types.h>
@@ -56,37 +58,6 @@ static union {
 } addr;
 
 #define MAX_CLIENTS 10
-
-static const char *escape(const char *str)
-{
-	static char *buf = NULL;
-	static size_t alloc = 0;
-	size_t len = strlen(str);
-	size_t need = len * 2 + 1;
-	int s, d;
-
-	if (need > alloc) {
-		alloc = (need + 16) & ~(16 - 1);
-		buf = xrealloc(buf, alloc);
-	}
-
-	d = 0;
-	for (s = 0; str[s]; s++) {
-		if (str[s] == '\\') {
-			buf[d++] = '\\';
-			buf[d++] = '\\';
-			continue;
-		}
-		if (str[s] == '\n') {
-			buf[d++] = '\\';
-			buf[d++] = 'n';
-			continue;
-		}
-		buf[d++] = str[s];
-	}
-	buf[d] = 0;
-	return buf;
-}
 
 static int cmd_status(struct client *client)
 {
@@ -231,7 +202,9 @@ static void read_commands(struct client *client)
 				if (!strcmp(cmd, "status")) {
 					ret = cmd_status(client);
 				} else {
+					set_client_fd(client->fd);
 					run_parsed_command(cmd, arg);
+					set_client_fd(-1);
 					ret = write_all(client->fd, "\n", 1);
 				}
 				free(cmd);

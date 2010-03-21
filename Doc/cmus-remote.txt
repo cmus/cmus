@@ -106,6 +106,22 @@ Three different ways to toggle repeat:
 	^D
 	@endpre
 
+Query settings or key bindings:
+
+	@pre
+	$ cmus-remote -C "set repeat?"
+	setting: 'repeat=false'
+	$ cmus-remote -C "showbind common a"
+	bind common a win-add-l
+	@endpre
+
+Dump the playlist to stdout:
+
+	@pre
+	$ cmus-remote -C "save -p -"
+	[...]
+	@endpre
+
 Search works too:
 
 	@pre

@@ -45,6 +45,7 @@
 #include "help.h"
 #include "worker.h"
 #include "input.h"
+#include "file.h"
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -79,7 +80,11 @@ enum ui_input_mode input_mode = NORMAL_MODE;
 int cur_view = TREE_VIEW;
 struct searchable *searchable;
 char *lib_filename = NULL;
+char *lib_ext_filename = NULL;
 char *pl_filename = NULL;
+char *pl_ext_filename = NULL;
+char *play_queue_filename = NULL;
+char *play_queue_ext_filename = NULL;
 
 /* ------------------------------------------------------------------------- */
 
@@ -105,6 +110,9 @@ static char conv_buffer[512];
 
 #define print_buffer_size (sizeof(print_buffer) - 1)
 static int using_utf8;
+
+/* used for messages to the client */
+static int client_fd = -1;
 
 static const char *t_ts;
 static const char *t_fs;
@@ -1322,6 +1330,11 @@ void info_msg(const char *format, ...)
 	vsnprintf(error_buf, sizeof(error_buf), format, ap);
 	va_end(ap);
 
+	if (client_fd != -1) {
+		write_all(client_fd, error_buf, strlen(error_buf));
+		write_all(client_fd, "\n", 1);
+	}
+
 	msg_is_error = 0;
 
 	update_commandline();
@@ -1337,6 +1350,10 @@ void error_msg(const char *format, ...)
 	va_end(ap);
 
 	d_print("%s\n", error_buf);
+	if (client_fd != -1) {
+		write_all(client_fd, error_buf, strlen(error_buf));
+		write_all(client_fd, "\n", 1);
+	}
 
 	msg_is_error = 1;
 	error_count++;
@@ -1429,6 +1446,16 @@ void search_not_found(void)
 		}
 	}
 	info_msg("%s not found: %s", what, search_str ? : "");
+}
+
+void set_client_fd(int fd)
+{
+	client_fd = fd;
+}
+
+int get_client_fd(void)
+{
+	return client_fd;
 }
 
 void set_view(int view)

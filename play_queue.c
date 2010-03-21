@@ -64,3 +64,16 @@ struct track_info *play_queue_remove(void)
 	free(t);
 	return info;
 }
+
+int play_queue_for_each(int (*cb)(void *data, struct track_info *ti), void *data)
+{
+	struct simple_track *track;
+	int rc = 0;
+
+	list_for_each_entry(track, &pq_editable.head, node) {
+		rc = cb(data, track->info);
+		if (rc)
+			break;
+	}
+	return rc;
+}
