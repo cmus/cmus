@@ -6,17 +6,20 @@
 #define TRACK_H
 
 #include "list.h"
+#include "rbtree.h"
 #include "iter.h"
 
 struct simple_track {
 	struct list_head node;
+	struct rb_node tree_node;
 	struct track_info *info;
 	unsigned int marked : 1;
 };
 
 struct shuffle_track {
 	struct simple_track simple_track;
-	struct list_head node;
+	struct rb_node tree_node;
+	double rand;
 };
 
 static inline struct track_info *shuffle_track_info(const struct shuffle_track *track)
@@ -29,14 +32,19 @@ static inline struct simple_track *to_simple_track(const struct list_head *item)
 	return container_of(item, struct simple_track, node);
 }
 
-static inline struct shuffle_track *to_shuffle_track(const struct list_head *item)
-{
-	return container_of(item, struct shuffle_track, node);
-}
-
 static inline struct simple_track *iter_to_simple_track(const struct iter *iter)
 {
 	return iter->data1;
+}
+
+static inline struct simple_track *tree_node_to_simple_track(const struct rb_node *node)
+{
+	return container_of(node, struct simple_track, tree_node);
+}
+
+static inline struct shuffle_track *tree_node_to_shuffle_track(const struct rb_node *node)
+{
+	return container_of(node, struct shuffle_track, tree_node);
 }
 
 /* NOTE: does not ref ti */
@@ -52,10 +60,10 @@ int simple_track_get_next(struct iter *);
 int simple_track_search_get_current(void *data, struct iter *iter);
 int simple_track_search_matches(void *data, struct iter *iter, const char *text);
 
-struct shuffle_track *shuffle_list_get_next(struct list_head *head, struct shuffle_track *cur,
+struct shuffle_track *shuffle_list_get_next(struct rb_root *root, struct shuffle_track *cur,
 		int (*filter)(const struct simple_track *));
 
-struct shuffle_track *shuffle_list_get_prev(struct list_head *head, struct shuffle_track *cur,
+struct shuffle_track *shuffle_list_get_prev(struct rb_root *root, struct shuffle_track *cur,
 		int (*filter)(const struct simple_track *));
 
 struct simple_track *simple_list_get_next(struct list_head *head, struct simple_track *cur,
@@ -64,12 +72,15 @@ struct simple_track *simple_list_get_next(struct list_head *head, struct simple_
 struct simple_track *simple_list_get_prev(struct list_head *head, struct simple_track *cur,
 		int (*filter)(const struct simple_track *));
 
-void sorted_list_add_track(struct list_head *head, struct simple_track *track, const char * const *keys);
+void sorted_list_add_track(struct list_head *head, struct rb_root *tree_root, struct simple_track *track, const char * const *keys);
 
 void list_add_rand(struct list_head *head, struct list_head *node, int nr);
 void reshuffle(struct list_head *head);
 
 int simple_list_for_each_marked(struct list_head *head,
 		int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
+
+void shuffle_list_add(struct shuffle_track *track, struct rb_root *tree_root);
+void shuffle_list_reshuffle(struct rb_root *tree_root);
 
 #endif

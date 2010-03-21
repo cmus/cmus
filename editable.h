@@ -7,12 +7,14 @@
 
 #include "window.h"
 #include "list.h"
+#include "rbtree.h"
 #include "track.h"
 #include "locking.h"
 
 struct editable {
 	struct window *win;
 	struct list_head head;
+	struct rb_root tree_root;
 	unsigned int nr_tracks;
 	unsigned int nr_marked;
 	unsigned int total_time;

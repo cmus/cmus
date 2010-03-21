@@ -35,7 +35,7 @@ cmus-y := \
 	format_print.o gbuf.o glob.o help.o history.o http.o id3.o input.o job.o \
 	keys.o keyval.o lib.o load_dir.o locking.o mergesort.o misc.o options.o \
 	output.o pcm.o pl.o play_queue.o player.o \
-	read_wrapper.o server.o search.o \
+	rbtree.o read_wrapper.o server.o search.o \
 	search_mode.o spawn.o tabexp.o tabexp_file.o \
 	track.o track_info.o tree.o uchar.o ui_curses.o \
 	utf8_encode.lo window.o worker.o xstrjoin.o

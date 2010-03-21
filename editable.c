@@ -35,6 +35,7 @@ void editable_init(struct editable *e, void (*free_track)(struct list_head *item
 	struct iter iter;
 
 	list_init(&e->head);
+	e->tree_root.rb_node = NULL;
 	e->nr_tracks = 0;
 	e->nr_marked = 0;
 	e->total_time = 0;
@@ -54,7 +55,7 @@ void editable_init(struct editable *e, void (*free_track)(struct list_head *item
 
 void editable_add(struct editable *e, struct simple_track *track)
 {
-	sorted_list_add_track(&e->head, track, e->sort_keys);
+	sorted_list_add_track(&e->head, &e->tree_root, track, e->sort_keys);
 	e->nr_tracks++;
 	if (track->info->duration != -1)
 		e->total_time += track->info->duration;
@@ -75,6 +76,8 @@ void editable_remove_track(struct editable *e, struct simple_track *track)
 		e->total_time -= ti->duration;
 
 	list_del(&track->node);
+	if (!RB_EMPTY_NODE(&track->tree_node))
+		rb_erase(&track->tree_node, &e->tree_root);
 
 	e->free_track(&track->node);
 }
