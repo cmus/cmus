@@ -11,25 +11,25 @@
 
 static int is_freeform_true(const char *c)
 {
-	return	!strcasecmp(c, "1")	||
-		!strcasecmp(c, "y")	||
-		!strcasecmp(c, "yes")	||
-		!strcasecmp(c, "true");
+	return	c[0] == '1' ||
+		c[0] == 'y' || c[0] == 'Y' ||
+		c[0] == 't' || c[0] == 'T';
 }
 
 int track_is_compilation(const struct keyval *comments)
 {
-	const char *c	= keyvals_get_val(comments, "compilation");
-	const char *a	= keyvals_get_val(comments, "artist");
-	const char *aa	= keyvals_get_val(comments, "albumartist");
+	const char *c, *a, *aa;
 
+	c = keyvals_get_val(comments, "compilation");
 	if (c && is_freeform_true(c))
 		return 1;
 
-	if (aa && !strcasecmp(aa, "Various Artists"))
+	aa = keyvals_get_val(comments, "albumartist");
+	if (aa && strcasecmp(aa, "Various Artists") == 0)
 		return 1;
 
-	if (aa && a && u_strcasecmp(aa, a))
+	a = keyvals_get_val(comments, "artist");
+	if (aa && a && u_strcasecmp(aa, a) != 0)
 		return 1;
 
 	return 0;
@@ -37,16 +37,15 @@ int track_is_compilation(const struct keyval *comments)
 
 int track_is_va_compilation(const struct keyval *comments)
 {
-	const char *aa;
-
-	if (!track_is_compilation(comments))
-		return 0;
+	const char *c, *aa;
 
 	aa = keyvals_get_val(comments, "albumartist");
-	if (!aa || !strcasecmp(aa, "Various Artists"))
-		return 1;
+	if (aa)
+		return strcasecmp(aa, "Various Artists") == 0;
 
-	return 0;
+	c = keyvals_get_val(comments, "compilation");
+
+	return c && is_freeform_true(c);
 }
 
 const char *comments_get_album(const struct keyval *comments)
