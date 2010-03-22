@@ -241,7 +241,7 @@ void shuffle_list_reshuffle(struct rb_root *tree_root)
 	struct rb_node *node, *tmp;
 	struct rb_root tmptree = RB_ROOT;
 
-	rbtree_for_each_safe(node, tmp, tree_root) {
+	rb_for_each_safe(node, tmp, tree_root) {
 		struct shuffle_track *track = tree_node_to_shuffle_track(node);
 		rb_erase(node, tree_root);
 		shuffle_list_add(track, &tmptree);

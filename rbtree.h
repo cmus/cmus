@@ -177,28 +177,28 @@ static inline void rb_link_node(struct rb_node * node, struct rb_node * parent,
 /* Cmus extensions */
 
 /**
- * rbtree_for_each        -       iterate over a rbtree
+ * rb_for_each        -       iterate over a rbtree
  * @pos:        the &struct rb_node to use as a loop counter.
  * @root:       the root for your rbtree.
  */
-#define rbtree_for_each(pos, root) \
+#define rb_for_each(pos, root) \
 	for (pos = rb_first(root); pos; pos = rb_next(pos))
 
 /**
- * rbtree_for_each_prev   -       iterate over a rbtree backwards
+ * rb_for_each_prev   -       iterate over a rbtree backwards
  * @pos:        the &struct rb_node to use as a loop counter.
  * @root:       the root for your rbtree.
  */
-#define rbtree_for_each_prev(pos, root) \
+#define rb_for_each_prev(pos, root) \
 	for (pos = rb_last(root); pos; pos = rb_prev(pos))
 
 /**
- * rbtree_for_each_safe   -       iterate over a rbtree safe against removal of rbtree node
+ * rb_for_each_safe   -       iterate over a rbtree safe against removal of rbtree node
  * @pos:        the &struct rb_node to use as a loop counter.
  * @n:          another &struct rb_node to use as temporary storage
  * @root:       the root for your rbtree.
  */
-#define rbtree_for_each_safe(pos, n, root) \
+#define rb_for_each_safe(pos, n, root) \
 	for (pos = rb_first(root), n = pos ? rb_next(pos) : NULL; pos; \
 		pos = n, n = pos ? rb_next(pos) : NULL)
 
