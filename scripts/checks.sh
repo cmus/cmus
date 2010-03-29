@@ -437,16 +437,16 @@ try_compile_link()
 		__exe=`tmp_file prog`
 		echo "$1" > $__src || exit 1
 		shift
-		__cmd="$CC $CFLAGS $LDFLAGS $@ $__src -o $__exe"
-		$CC $CFLAGS $LDFLAGS "$@" $__src -o $__exe 2>/dev/null
+		__cmd="$CC $__src -o $__exe $CFLAGS $LDFLAGS $@"
+		$CC $__src -o $__exe $CFLAGS $LDFLAGS "$@" 2>/dev/null
 		;;
 	cxx)
 		__src=`tmp_file prog.cc`
 		__exe=`tmp_file prog`
 		echo "$1" > $__src || exit 1
 		shift
-		__cmd="$CXX $CXXFLAGS $CXXLDFLAGS $@ $__src -o $__exe"
-		$CXX $CXXFLAGS $CXXLDFLAGS "$@" $__src -o $__exe 2>/dev/null
+		__cmd="$CXX $__src -o $__exe $CXXFLAGS $CXXLDFLAGS $@"
+		$CXX $__src -o $__exe $CXXFLAGS $CXXLDFLAGS "$@" 2>/dev/null
 		;;
 	esac
 	return $?
