@@ -75,22 +75,60 @@ check_rtsched()
 	return 0
 }
 
+ncurses_code="
+#if defined(__sun__) || defined(__CYGWIN__)
+#include <termios.h>
+#include <ncurses.h>
+#else
+#include <curses.h>
+#endif
+
+int main(void)
+{
+	initscr();
+	endwin();
+	return 0;
+}
+"
+
 check_ncurses()
 {
 	if check_library NCURSES "" -lncursesw
 	then
 		widechars=y
-		return 0
-	fi
-	if check_library NCURSES "" -lncurses || check_library NCURSES "" -lcurses
+	elif check_library NCURSES "" -lncurses || check_library NCURSES "" -lcurses
 	then
 		widechars=n
 		msg_error "Your ncurses does not support wide characters!"
 		msg_error "Install ncursesw if you need wide character support,"
 		msg_error "you can ignore this warning otherwise."
-		return 0
 	fi
-	return 1
+	test -z "$widechars" && return 1
+
+	msg_checking "for working ncurses setup"
+	for flag in "" "-I/usr/include/ncurses"
+	do
+		if try_compile_link "$ncurses_code" $flag $NCURSES_LIBS
+		then
+			NCURSES_CFLAGS="$NCURSES_CFLAGS $flag"
+			msg_result yes
+			working_curses=y
+			break
+		fi
+	done
+	if test -z "$working_curses"
+	then
+		msg_result no
+		return 1
+	fi
+
+	check_function "resizeterm" $NCURSES_CFLAGS $NCURSES_LIBS
+	HAVE_RESIZETERM=`test $? -ne 0 ; echo $?`
+
+	check_function "use_default_colors" $NCURSES_CFLAGS $NCURSES_LIBS
+	HAVE_USE_DEFAULT_COLORS=`test $? -ne 0 ; echo $?`
+
+	return 0
 }
 
 check_mpc()
@@ -350,6 +388,7 @@ config_header config/debug.h DEBUG
 config_header config/tremor.h CONFIG_TREMOR
 config_header config/mpc.h MPC_SV7
 config_header config/mp4.h MP4_USE_OLD_HEADER
+config_header config/curses.h HAVE_RESIZETERM HAVE_USE_DEFAULT_COLORS
 
 makefile_vars bindir datadir libdir mandir exampledir
 makefile_vars CONFIG_FLAC CONFIG_MAD CONFIG_MIKMOD CONFIG_MODPLUG CONFIG_MPC CONFIG_VORBIS CONFIG_WAVPACK CONFIG_WAV CONFIG_MP4 CONFIG_AAC CONFIG_FFMPEG

@@ -45,6 +45,7 @@
 #include "help.h"
 #include "worker.h"
 #include "input.h"
+#include "config/curses.h"
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -1666,7 +1667,9 @@ static void update(void)
 
 		if (get_window_size(&lines, &columns) == 0) {
 			needs_to_resize = 0;
+#if HAVE_RESIZETERM
 			resizeterm(lines, columns);
+#endif
 			w = COLS;
 			h = LINES - 3;
 			if (w < 16)
@@ -2028,7 +2031,9 @@ static void init_curses(void)
 	noecho();
 	if (has_colors()) {
 		start_color();
+#if HAVE_USE_DEFAULT_COLORS
 		use_default_colors();
+#endif
 	}
 	d_print("Number of supported colors: %d\n", COLORS);
 	ui_initialized = 1;

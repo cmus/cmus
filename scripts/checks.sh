@@ -474,6 +474,26 @@ __compile_failed()
 
 # tries to link against a lib
 # 
+# @function:  some function
+# @flags:     extra flags (optional)
+check_function()
+{
+	argc check_function $# 1
+	__func="$1"
+	shift
+	msg_checking "for function $__func"
+	if try_compile_link "char $__func(); char (*f)() = $__func; int main(int argc, char *argv[]) { return f != $__func; }" "$@" && ./$__exe
+	then
+		msg_result yes
+		return 0
+	fi
+
+	msg_result no
+	return 1
+}
+
+# tries to link against a lib
+#
 # @ldadd:  something like -L/usr/X11R6/lib -lX11
 try_link()
 {
