@@ -71,6 +71,8 @@ static int op_ao_open(sample_format_t sf)
 		return -OP_ERROR_ERRNO;
 	}
 
+	memset(&format, 0, sizeof format);
+
 	format.bits = sf_get_bits(sf);
 	format.rate = sf_get_rate(sf);
 	format.channels = sf_get_channels(sf);
