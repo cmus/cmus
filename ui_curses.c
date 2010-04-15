@@ -46,6 +46,7 @@
 #include "worker.h"
 #include "input.h"
 #include "file.h"
+#include "config/curses.h"
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -1693,7 +1694,9 @@ static void update(void)
 
 		if (get_window_size(&lines, &columns) == 0) {
 			needs_to_resize = 0;
+#if HAVE_RESIZETERM
 			resizeterm(lines, columns);
+#endif
 			w = COLS;
 			h = LINES - 3;
 			if (w < 16)
@@ -1911,8 +1914,7 @@ static void main_loop(void)
 		}
 		if (!soft_vol) {
 			nr_fds = mixer_get_fds(fds);
-			if (nr_fds == -OP_ERROR_NOT_SUPPORTED) {
-				// mixer has no pollable file descriptors
+			if (nr_fds <= 0) {
 				poll_mixer = 1;
 				if (!tv.tv_usec)
 					tv.tv_usec = 500e3;
@@ -2056,7 +2058,9 @@ static void init_curses(void)
 	noecho();
 	if (has_colors()) {
 		start_color();
+#if HAVE_USE_DEFAULT_COLORS
 		use_default_colors();
+#endif
 	}
 	d_print("Number of supported colors: %d\n", COLORS);
 	ui_initialized = 1;

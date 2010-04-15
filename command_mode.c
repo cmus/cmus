@@ -1274,6 +1274,7 @@ static void cmd_vol(char *arg)
 		l = calc_vol(l, volume_l, volume_max, lf);
 		r = calc_vol(r, volume_r, volume_max, rf);
 		mixer_set_volume(l, r);
+		mixer_read_volume();
 	}
 	update_statusline();
 	return;

@@ -1203,7 +1203,10 @@ void player_set_op(const char *name)
 		__consumer_status_update(CS_STOPPED);
 
 		__producer_stop();
-		player_op_error(rc, "selecting output plugin '%s'", name);
+		if (name)
+			player_op_error(rc, "selecting output plugin '%s'", name);
+		else
+			player_op_error(rc, "selecting any output plugin");
 		player_unlock();
 		return;
 	}

@@ -437,16 +437,16 @@ try_compile_link()
 		__exe=`tmp_file prog`
 		echo "$1" > $__src || exit 1
 		shift
-		__cmd="$CC $CFLAGS $LDFLAGS $@ $__src -o $__exe"
-		$CC $CFLAGS $LDFLAGS "$@" $__src -o $__exe 2>/dev/null
+		__cmd="$CC $__src -o $__exe $CFLAGS $LDFLAGS $@"
+		$CC $__src -o $__exe $CFLAGS $LDFLAGS "$@" 2>/dev/null
 		;;
 	cxx)
 		__src=`tmp_file prog.cc`
 		__exe=`tmp_file prog`
 		echo "$1" > $__src || exit 1
 		shift
-		__cmd="$CXX $CXXFLAGS $CXXLDFLAGS $@ $__src -o $__exe"
-		$CXX $CXXFLAGS $CXXLDFLAGS "$@" $__src -o $__exe 2>/dev/null
+		__cmd="$CXX $__src -o $__exe $CXXFLAGS $CXXLDFLAGS $@"
+		$CXX $__src -o $__exe $CXXFLAGS $CXXLDFLAGS "$@" 2>/dev/null
 		;;
 	esac
 	return $?
@@ -474,6 +474,26 @@ __compile_failed()
 
 # tries to link against a lib
 # 
+# @function:  some function
+# @flags:     extra flags (optional)
+check_function()
+{
+	argc check_function $# 1
+	__func="$1"
+	shift
+	msg_checking "for function $__func"
+	if try_compile_link "char $__func(); char (*f)() = $__func; int main(int argc, char *argv[]) { return f != $__func; }" "$@" && ./$__exe
+	then
+		msg_result yes
+		return 0
+	fi
+
+	msg_result no
+	return 1
+}
+
+# tries to link against a lib
+#
 # @ldadd:  something like -L/usr/X11R6/lib -lX11
 try_link()
 {
