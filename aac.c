@@ -41,7 +41,7 @@ struct aac_private {
 	int rbuf_pos;
 
 	unsigned char channels;
-	uint32_t sample_rate;
+	unsigned long sample_rate;
 
 	char *overflow_buf;
 	int overflow_buf_len;
@@ -226,7 +226,7 @@ static int aac_open(struct input_plugin_data *ip_data)
 		goto out;
 	}
 
-	d_print("sample rate %uhz, channels %u\n", priv->sample_rate, priv->channels);
+	d_print("sample rate %luhz, channels %u\n", priv->sample_rate, priv->channels);
 	if (!priv->sample_rate || !priv->channels) {
 		ret = -IP_ERROR_FILE_FORMAT;
 		goto out;
