@@ -278,8 +278,9 @@ static int ffmpeg_fill_buffer(AVFormatContext *ic, AVCodecContext *cc, struct ff
 		av_free_packet(&avpkt);
 #endif
 		if (len < 0) {
-			d_print("trouble decoding frame");
-			return -IP_ERROR_INTERNAL;
+			/* this is often reached when seeking, not sure why */
+			input->curr_pkt_size = 0;
+			continue;
 		}
 		input->curr_pkt_size -= len;
 		input->curr_pkt_buf += len;
