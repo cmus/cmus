@@ -31,7 +31,7 @@ struct track_info {
 	time_t mtime;
 	int duration;
 	int ref;
-	char filename[0];
+	char *filename;
 };
 
 #define TI_MATCH_ARTIST       (1 << 0)
