@@ -2839,6 +2839,7 @@ void commands_init(void)
 void commands_exit(void)
 {
 	history_save(&cmd_history);
+	history_free(&cmd_history);
 	free(cmd_history_filename);
 	tabexp_reset();
 }
