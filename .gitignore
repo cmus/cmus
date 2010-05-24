@@ -1,5 +1,6 @@
 # normal ignores
 .*
+*~
 *.[ao]
 *.lo
 *.so
