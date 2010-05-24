@@ -821,7 +821,7 @@ static void *consumer_loop(void *arg)
 			if (size > space)
 				size = space;
 			if (soft_vol || replaygain)
-				scale_samples(rpos, &size);
+				scale_samples(rpos, (unsigned int *)&size);
 			rc = op_write(rpos, size);
 			if (rc < 0) {
 				d_print("op_write returned %d %s\n", rc,

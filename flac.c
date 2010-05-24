@@ -323,7 +323,7 @@ static void metadata_cb(const Dec *dec, const FLAC__StreamMetadata *metadata, vo
 
 			nr = metadata->data.vorbis_comment.num_comments;
 			for (i = 0; i < nr; i++) {
-				const char *str = metadata->data.vorbis_comment.comments[i].entry;
+				const char *str = (const char *)metadata->data.vorbis_comment.comments[i].entry;
 				char *key, *val;
 
 				val = strchr(str, '=');

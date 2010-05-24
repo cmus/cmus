@@ -839,7 +839,7 @@ static void decode_rva2(struct id3tag *id3, const char *buf, int len)
 		return;
 	}
 
-	get_i16(buf, &volume_adj);
+	get_i16((unsigned char *)buf, &volume_adj);
 	buf += 2;
 
 	peak_bits = *buf++;
@@ -1003,7 +1003,7 @@ static int v2_read(struct id3tag *id3, int fd, const struct v2_header *header)
 		len_unsync = fh.size;
 
 		if ((fh.flags & V2_FRAME_UNSYNC) || (header->flags & V2_HEADER_UNSYNC))
-			unsync((unsigned char *)(buf + i), &fh.size);
+			unsync((unsigned char *)(buf + i), (int *)&fh.size);
 
 		v2_add_frame(id3, &fh, buf + i);
 
