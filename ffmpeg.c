@@ -74,6 +74,7 @@ static struct ffmpeg_input *ffmpeg_input_create(void)
 static void ffmpeg_input_free(struct ffmpeg_input *input)
 {
 	av_free_packet(&input->pkt);
+	free(input);
 }
 
 static struct ffmpeg_output *ffmpeg_output_create(void)
