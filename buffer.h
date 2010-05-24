@@ -6,6 +6,7 @@
 extern unsigned int buffer_nr_chunks;
 
 void buffer_init(void);
+void buffer_free(void);
 int buffer_get_rpos(char **pos);
 int buffer_get_wpos(char **pos);
 void buffer_consume(int count);

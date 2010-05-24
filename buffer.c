@@ -39,6 +39,11 @@ void buffer_init(void)
 	buffer_reset();
 }
 
+void buffer_free(void)
+{
+	free(buffer_chunks);
+}
+
 /*
  * @pos: returned pointer to available data
  *
