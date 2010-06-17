@@ -109,7 +109,9 @@ static char print_buffer[512];
 /* destination buffer for utf8_encode and utf8_decode */
 static char conv_buffer[512];
 
-#define print_buffer_size (sizeof(print_buffer) - 1)
+/* one character can take up to 4 bytes in UTF-8 */
+#define print_buffer_max_width (sizeof(print_buffer) / 4 - 1)
+
 static int using_utf8;
 
 /* used for messages to the client */
@@ -1189,10 +1191,10 @@ static void do_update_titleline(void)
 
 		/* set window title */
 		if (use_alt_format) {
-			format_print(print_buffer, sizeof(print_buffer) - 1,
+			format_print(print_buffer, print_buffer_max_width,
 					window_title_alt_format, track_fopts);
 		} else {
-			format_print(print_buffer, sizeof(print_buffer) - 1,
+			format_print(print_buffer,  print_buffer_max_width,
 					window_title_format, track_fopts);
 		}
 

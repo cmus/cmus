@@ -263,7 +263,7 @@ check_waveout()
 check_mp4()
 {
 	check_header mp4v2/mp4v2.h
-	MP4_USE_OLD_HEADER=$?
+	USE_MPEG4IP=$?
 	check_header neaacdec.h &&
 	check_library MP4 "" "-lmp4v2 -lfaad -lm"
 	return $?
@@ -387,7 +387,7 @@ config_header config/libdir.h LIBDIR
 config_header config/debug.h DEBUG
 config_header config/tremor.h CONFIG_TREMOR
 config_header config/mpc.h MPC_SV7
-config_header config/mp4.h MP4_USE_OLD_HEADER
+config_header config/mp4.h USE_MPEG4IP
 config_header config/curses.h HAVE_RESIZETERM HAVE_USE_DEFAULT_COLORS
 
 makefile_vars bindir datadir libdir mandir exampledir

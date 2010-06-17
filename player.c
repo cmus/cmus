@@ -226,9 +226,9 @@ static void scale_samples(char *buffer, unsigned int *countp)
 
 	l = SOFT_VOL_SCALE;
 	r = SOFT_VOL_SCALE;
-	if (soft_vol_l != 100)
+	if (soft_vol && soft_vol_l != 100)
 		l = soft_vol_db[soft_vol_l];
-	if (soft_vol_r != 100)
+	if (soft_vol && soft_vol_r != 100)
 		r = soft_vol_db[soft_vol_r];
 
 	l *= replaygain_scale;

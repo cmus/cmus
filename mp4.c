@@ -23,7 +23,7 @@
 #include "file.h"
 #include "config/mp4.h"
 
-#if MP4_USE_OLD_HEADER
+#if USE_MPEG4IP
 #include <mp4.h>
 #else
 #include <mp4v2/mp4v2.h>
@@ -41,7 +41,7 @@ struct mp4_private {
 	int overflow_buf_len;
 
 	unsigned char channels;
-	uint32_t sample_rate;
+	unsigned long sample_rate;
 
 	NeAACDecHandle decoder;		/* typedef void * */
 
@@ -151,7 +151,7 @@ static int mp4_open(struct input_plugin_data *ip_data)
 
 	free(buf);
 
-	d_print("sample rate %uhz, channels %u\n", priv->sample_rate, priv->channels);
+	d_print("sample rate %luhz, channels %u\n", priv->sample_rate, priv->channels);
 
 	ip_data->sf = sf_rate(priv->sample_rate) | sf_channels(priv->channels) | sf_bits(16) | sf_signed(1);
 #if defined(WORDS_BIGENDIAN)
@@ -317,15 +317,20 @@ static int mp4_read_comments(struct input_plugin_data *ip_data,
 		struct keyval **comments)
 {
 	struct mp4_private *priv;
+#if USE_MPEG4IP
 	uint16_t meta_num, meta_total;
 	uint8_t val;
+	char *str;
 	/*uint8_t *ustr;
 	uint32_t size;*/
-	char *str;
+#else
+	const MP4Tags *tags;
+#endif
 	GROWING_KEYVALS(c);
 
 	priv = ip_data->private;
 
+#if USE_MPEG4IP
 	/* MP4GetMetadata* provides malloced pointers, and the data
 	 * is in UTF-8 (or at least it should be). */
 	if (MP4GetMetadataArtist(priv->mp4.handle, &str))
@@ -373,6 +378,45 @@ static int mp4_read_comments(struct input_plugin_data *ip_data,
 		snprintf(buf, 6, "%u", meta_num);
 		comments_add_const(&c, "discnumber", buf);
 	}
+
+#else /* !USE_MPEG4IP, new interface */
+
+	tags = MP4TagsAlloc();
+
+	MP4TagsFetch(tags, priv->mp4.handle);
+
+	if (tags->artist)
+		comments_add_const(&c, "artist", tags->artist);
+	if (tags->albumArtist)
+		comments_add_const(&c, "albumartist", tags->albumArtist);
+	if (tags->sortArtist)
+		comments_add_const(&c, "artistsort", tags->sortArtist);
+	if (tags->sortAlbumArtist)
+		comments_add_const(&c, "albumartistsort", tags->sortAlbumArtist);
+	if (tags->album)
+		comments_add_const(&c, "album", tags->album);
+	if (tags->name)
+		comments_add_const(&c, "title", tags->name);
+	if (tags->genre)
+		comments_add_const(&c, "genre", tags->genre);
+	if (tags->releaseDate)
+		comments_add_const(&c, "date", tags->releaseDate);
+	if (tags->compilation)
+		comments_add_const(&c, "compilation", *tags->compilation ? "yes" : "no");
+	if (tags->track) {
+		char buf[6];
+		snprintf(buf, 6, "%u", tags->track->index);
+		comments_add_const(&c, "tracknumber", buf);
+	}
+	if (tags->disk) {
+		char buf[6];
+		snprintf(buf, 6, "%u", tags->disk->index);
+		comments_add_const(&c, "discnumber", buf);
+	}
+
+	MP4TagsFree(tags);
+
+#endif
 
 	keyvals_terminate(&c);
 	*comments = c.keyvals;
