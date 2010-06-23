@@ -109,6 +109,7 @@ static char conv_buffer[512];
 
 static int using_utf8;
 
+static char tcap_buffer[64];
 static const char *t_ts;
 static const char *t_fs;
 
@@ -2045,7 +2046,7 @@ static void init_curses(void)
 	 */
 	update_colors();
 
-	ptr = print_buffer;
+	ptr = tcap_buffer;
 	t_ts = tgetstr("ts", &ptr);
 	t_fs = tgetstr("fs", &ptr);
 	d_print("ts: %d fs: %d\n", !!t_ts, !!t_fs);
