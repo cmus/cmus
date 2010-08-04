@@ -141,11 +141,23 @@ int http_open(struct http_get *hg, int timeout_ms)
 	struct timeval tv;
 	int save, flags;
 
-	hostent = gethostbyname(hg->uri.host);
+	char *proxy = getenv("http_proxy");
+	if (proxy) {
+		hg->proxy = xmalloc(sizeof(*hg->proxy));
+		if (http_parse_uri(proxy, hg->proxy)) {
+			d_print("Failed to parse HTTP proxy URI '%s'\n", proxy);
+			return -1;
+		}
+	} else {
+		hg->proxy = NULL;
+	}
+
+	hostent = gethostbyname(hg->proxy ? hg->proxy->host : hg->uri.host);
 	if (hostent == NULL)
 		return -1;
+
 	addr.in.sin_family = AF_INET;
-	addr.in.sin_port = htons(hg->uri.port);
+	addr.in.sin_port = htons(hg->proxy ? hg->proxy->port : hg->uri.port);
 	memcpy(&addr.in.sin_addr, hostent->h_addr_list[0], hostent->h_length);
 
 	hg->fd = socket(PF_INET, SOCK_STREAM, 0);
@@ -370,7 +382,7 @@ int http_get(struct http_get *hg, struct keyval *headers, int timeout_ms)
 	int i, rc, save;
 
 	gbuf_add_str(&buf, "GET ");
-	gbuf_add_str(&buf, hg->uri.path);
+	gbuf_add_str(&buf, hg->proxy ? hg->uri.uri : hg->uri.path);
 	gbuf_add_str(&buf, " HTTP/1.0\r\n");
 	for (i = 0; headers[i].key; i++) {
 		gbuf_add_str(&buf, headers[i].key);
@@ -424,6 +436,10 @@ char *http_read_body(int fd, size_t *size, int timeout_ms)
 void http_get_free(struct http_get *hg)
 {
 	http_free_uri(&hg->uri);
+	if (hg->proxy) {
+		http_free_uri(hg->proxy);
+		free(hg->proxy);
+	}
 	if (hg->headers)
 		keyvals_free(hg->headers);
 	free(hg->reason);

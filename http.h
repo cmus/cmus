@@ -43,6 +43,7 @@ struct http_uri {
 
 struct http_get {
 	struct http_uri uri;
+	struct http_uri *proxy;
 	int fd;
 	struct keyval *headers;
 	char *reason;
