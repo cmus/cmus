@@ -33,6 +33,7 @@
  */
 
 struct http_uri {
+	char *uri;
 	char *user;
 	char *pass;
 	char *host;

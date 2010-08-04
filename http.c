@@ -46,6 +46,7 @@ int http_parse_uri(const char *uri, struct http_uri *u)
 	const char *str, *colon, *at, *slash, *host_start;
 
 	/* initialize all fields */
+	u->uri  = xstrdup(uri);
 	u->user = NULL;
 	u->pass = NULL;
 	u->host = NULL;
@@ -117,11 +118,13 @@ int http_parse_uri(const char *uri, struct http_uri *u)
 
 void http_free_uri(struct http_uri *u)
 {
+	free(u->uri);
 	free(u->user);
 	free(u->pass);
 	free(u->host);
 	free(u->path);
 
+	u->uri  = NULL;
 	u->user = NULL;
 	u->pass = NULL;
 	u->host = NULL;
