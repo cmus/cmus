@@ -141,6 +141,25 @@ static const struct input_plugin_ops *get_ops_by_mime_type(const char *mime_type
 	return NULL;
 }
 
+static void keyvals_add_basic_auth(struct growing_keyvals *c,
+				   const char *user,
+				   const char *pass,
+				   const char *header)
+{
+	char buf[256];
+	char *encoded;
+
+	snprintf(buf, sizeof(buf), "%s:%s", user, pass);
+	encoded = base64_encode(buf);
+	if (encoded == NULL) {
+		d_print("couldn't base64 encode '%s'\n", buf);
+	} else {
+		snprintf(buf, sizeof(buf), "Basic %s", encoded);
+		free(encoded);
+		keyvals_add(c, header, xstrdup(buf));
+	}
+}
+
 static int do_http_get(struct http_get *hg, const char *uri, int redirections)
 {
 	GROWING_KEYVALS(h);
@@ -161,22 +180,12 @@ static int do_http_get(struct http_get *hg, const char *uri, int redirections)
 		return -IP_ERROR_ERRNO;
 
 	keyvals_add(&h, "Host", xstrdup(hg->uri.host));
+	if (hg->proxy && hg->proxy->user && hg->proxy->pass)
+		keyvals_add_basic_auth(&h, hg->proxy->user, hg->proxy->pass, "Proxy-Authorization");
 	keyvals_add(&h, "User-Agent", xstrdup("cmus/" VERSION));
 	keyvals_add(&h, "Icy-MetaData", xstrdup("1"));
-	if (hg->uri.user && hg->uri.pass) {
-		char buf[256];
-		char *encoded;
-
-		snprintf(buf, sizeof(buf), "%s:%s", hg->uri.user, hg->uri.pass);
-		encoded = base64_encode(buf);
-		if (encoded == NULL) {
-			d_print("couldn't base64 encode '%s'\n", buf);
-		} else {
-			snprintf(buf, sizeof(buf), "Basic %s", encoded);
-			free(encoded);
-			keyvals_add(&h, "Authorization", xstrdup(buf));
-		}
-	}
+	if (hg->uri.user && hg->uri.pass)
+		keyvals_add_basic_auth(&h, hg->uri.user, hg->uri.pass, "Authorization");
 	keyvals_terminate(&h);
 
 	rc = http_get(hg, h.keyvals, http_read_timeout);
