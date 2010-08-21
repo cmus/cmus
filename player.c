@@ -977,6 +977,7 @@ void player_exit(void)
 	BUG_ON(rc);
 	rc = pthread_join(producer_thread, NULL);
 	BUG_ON(rc);
+	buffer_free();
 }
 
 void player_stop(void)

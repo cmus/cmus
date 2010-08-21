@@ -274,5 +274,6 @@ void search_mode_init(void)
 void search_mode_exit(void)
 {
 	history_save(&search_history);
+	history_free(&search_history);
 	free(search_history_filename);
 }

@@ -2838,7 +2838,12 @@ void commands_init(void)
 
 void commands_exit(void)
 {
+	view_clear(TREE_VIEW);
+	view_clear(SORTED_VIEW);
+	view_clear(PLAYLIST_VIEW);
+	view_clear(QUEUE_VIEW);
 	history_save(&cmd_history);
+	history_free(&cmd_history);
 	free(cmd_history_filename);
 	tabexp_reset();
 }
