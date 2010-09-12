@@ -135,7 +135,7 @@ check_mpc()
 {
 	check_header mpc/mpcdec.h
 	MPC_SV7=$?
-	check_library MPC "" "-lmpcdec"
+	check_library MPC "" "-lmpcdec -lm"
 	return $?
 }
 
