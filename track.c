@@ -188,7 +188,6 @@ void sorted_list_add_track(struct list_head *head, struct rb_root *tree_root, st
 	} else
 		item = head;
 
-	/* add after item */
 	list_add_tail(&track->node, item);
 }
 
