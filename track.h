@@ -75,7 +75,6 @@ struct simple_track *simple_list_get_prev(struct list_head *head, struct simple_
 void sorted_list_add_track(struct list_head *head, struct rb_root *tree_root, struct simple_track *track, const char * const *keys);
 
 void list_add_rand(struct list_head *head, struct list_head *node, int nr);
-void reshuffle(struct list_head *head);
 
 int simple_list_for_each_marked(struct list_head *head,
 		int (*cb)(void *data, struct track_info *ti), void *data, int reverse);

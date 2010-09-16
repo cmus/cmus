@@ -276,29 +276,6 @@ void list_add_rand(struct list_head *head, struct list_head *node, int nr)
 	}
 }
 
-/* not used anymore */
-void reshuffle(struct list_head *head)
-{
-	struct list_head *item, *last;
-	int i = 0;
-
-	if (list_empty(head))
-		return;
-
-	last = head->prev;
-	item = head->next;
-	list_init(head);
-
-	while (1) {
-		struct list_head *next = item->next;
-
-		list_add_rand(head, item, i++);
-		if (item == last)
-			break;
-		item = next;
-	}
-}
-
 int simple_list_for_each_marked(struct list_head *head,
 		int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
 {
