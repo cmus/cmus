@@ -10,16 +10,17 @@
 struct editable pl_editable;
 struct simple_track *pl_cur_track = NULL;
 
-static LIST_HEAD(pl_shuffle_head);
+static struct rb_root pl_shuffle_root;
 
 static void pl_free_track(struct list_head *item)
 {
 	struct simple_track *track = to_simple_track(item);
+	struct shuffle_track *shuffle_track = (struct shuffle_track *) track;
 
 	if (track == pl_cur_track)
 		pl_cur_track = NULL;
 
-	list_del(&((struct shuffle_track *)track)->node);
+	rb_erase(&shuffle_track->tree_node, &pl_shuffle_root);
 	track_info_unref(track->info);
 	free(track);
 }
@@ -55,7 +56,7 @@ struct track_info *pl_set_next(void)
 		return NULL;
 
 	if (shuffle) {
-		track = (struct simple_track *)shuffle_list_get_next(&pl_shuffle_head,
+		track = (struct simple_track *)shuffle_list_get_next(&pl_shuffle_root,
 				(struct shuffle_track *)pl_cur_track, dummy_filter);
 	} else {
 		track = simple_list_get_next(&pl_editable.head, pl_cur_track, dummy_filter);
@@ -71,7 +72,7 @@ struct track_info *pl_set_prev(void)
 		return NULL;
 
 	if (shuffle) {
-		track = (struct simple_track *)shuffle_list_get_prev(&pl_shuffle_head,
+		track = (struct simple_track *)shuffle_list_get_prev(&pl_shuffle_root,
 				(struct shuffle_track *)pl_cur_track, dummy_filter);
 	} else {
 		track = simple_list_get_prev(&pl_editable.head, pl_cur_track, dummy_filter);
@@ -106,13 +107,13 @@ void pl_add_track(struct track_info *ti)
 
 	track_info_ref(ti);
 	simple_track_init((struct simple_track *)track, ti);
-	list_add_rand(&pl_shuffle_head, &track->node, pl_editable.nr_tracks);
+	shuffle_list_add(track, &pl_shuffle_root);
 	editable_add(&pl_editable, (struct simple_track *)track);
 }
 
 void pl_reshuffle(void)
 {
-	reshuffle(&pl_shuffle_head);
+	shuffle_list_reshuffle(&pl_shuffle_root);
 }
 
 int pl_for_each(int (*cb)(void *data, struct track_info *ti), void *data)

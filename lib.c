@@ -7,6 +7,7 @@
 #include "track_info.h"
 #include "options.h"
 #include "xmalloc.h"
+#include "rbtree.h"
 #include "debug.h"
 
 #include <pthread.h>
@@ -17,7 +18,7 @@ struct tree_track *lib_cur_track = NULL;
 unsigned int play_sorted = 0;
 enum aaa_mode aaa_mode = AAA_MODE_ALL;
 
-static LIST_HEAD(lib_shuffle_head);
+static struct rb_root lib_shuffle_root;
 static struct expr *filter = NULL;
 static int remove_from_hash = 1;
 
@@ -53,7 +54,7 @@ static void all_wins_changed(void)
 
 static void shuffle_add(struct tree_track *track)
 {
-	list_add_rand(&lib_shuffle_head, &track->shuffle_track.node, lib_editable.nr_tracks);
+	shuffle_list_add(&track->shuffle_track, &lib_shuffle_root);
 }
 
 static void views_add_track(struct track_info *ti)
@@ -281,7 +282,7 @@ static struct tree_track *normal_get_prev(void)
 
 void lib_reshuffle(void)
 {
-	reshuffle(&lib_shuffle_head);
+	shuffle_list_reshuffle(&lib_shuffle_root);
 }
 
 static void free_lib_track(struct list_head *item)
@@ -295,7 +296,7 @@ static void free_lib_track(struct list_head *item)
 	if (remove_from_hash)
 		hash_remove(ti);
 
-	list_del(&track->shuffle_track.node);
+	rb_erase(&track->shuffle_track.tree_node, &lib_shuffle_root);
 	tree_remove(track);
 
 	track_info_unref(ti);
@@ -331,7 +332,7 @@ struct track_info *lib_set_next(void)
 		return NULL;
 	}
 	if (shuffle) {
-		track = (struct tree_track *)shuffle_list_get_next(&lib_shuffle_head,
+		track = (struct tree_track *)shuffle_list_get_next(&lib_shuffle_root,
 				(struct shuffle_track *)lib_cur_track, aaa_mode_filter);
 	} else if (play_sorted) {
 		track = (struct tree_track *)simple_list_get_next(&lib_editable.head,
@@ -351,7 +352,7 @@ struct track_info *lib_set_prev(void)
 		return NULL;
 	}
 	if (shuffle) {
-		track = (struct tree_track *)shuffle_list_get_prev(&lib_shuffle_head,
+		track = (struct tree_track *)shuffle_list_get_prev(&lib_shuffle_root,
 				(struct shuffle_track *)lib_cur_track, aaa_mode_filter);
 	} else if (play_sorted) {
 		track = (struct tree_track *)simple_list_get_prev(&lib_editable.head,
