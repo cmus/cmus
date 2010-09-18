@@ -337,10 +337,8 @@ int cache_close(void)
 	gbuf_grow(&buf, 64 * 1024 - 1);
 	gbuf_add_bytes(&buf, cache_header, sizeof(cache_header));
 	offset = sizeof(cache_header);
-	for (i = 0; i < total; i++) {
+	for (i = 0; i < total; i++)
 		write_ti(fd, &buf, tis[i], &offset);
-		cache_remove_ti(tis[i]);
-	}
 	flush_buffer(fd, &buf);
 	gbuf_free(&buf);
 
