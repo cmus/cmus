@@ -117,6 +117,7 @@ static int using_utf8;
 /* used for messages to the client */
 static int client_fd = -1;
 
+static char tcap_buffer[64];
 static const char *t_ts;
 static const char *t_fs;
 
@@ -2072,7 +2073,7 @@ static void init_curses(void)
 	 */
 	update_colors();
 
-	ptr = print_buffer;
+	ptr = tcap_buffer;
 	t_ts = tgetstr("ts", &ptr);
 	t_fs = tgetstr("fs", &ptr);
 	d_print("ts: %d fs: %d\n", !!t_ts, !!t_fs);

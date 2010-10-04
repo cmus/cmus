@@ -397,5 +397,5 @@ const struct input_plugin_ops ip_ops = {
 	.duration = ffmpeg_duration
 };
 
-const char *const ip_extensions[] = { "wma", NULL };
+const char *const ip_extensions[] = { "ape", "wma", NULL };
 const char *const ip_mime_types[] = { NULL };
