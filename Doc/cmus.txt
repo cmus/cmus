@@ -697,7 +697,7 @@ This section describes cmus' options that can be altered with the *set* and
 *toggle* commands. Default values are in parenthesis, possible values in
 brackets.
 
-auto_reshuffle (false)
+auto_reshuffle (true)
 	Reshuffle playlist when end of shuffle list is reached.
 
 aaa_mode (all) [all, artist, album]
