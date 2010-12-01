@@ -141,6 +141,7 @@ oss-objs		:= oss.lo mixer_oss.lo
 sun-objs		:= sun.lo mixer_sun.lo
 ao-objs			:= ao.lo
 waveout-objs		:= waveout.lo
+roar-objs               := roar.lo
 
 op-$(CONFIG_PULSE)	+= pulse.so
 op-$(CONFIG_ALSA)	+= alsa.so
@@ -149,6 +150,7 @@ op-$(CONFIG_OSS)	+= oss.so
 op-$(CONFIG_SUN)	+= sun.so
 op-$(CONFIG_AO)		+= ao.so
 op-$(CONFIG_WAVEOUT)	+= waveout.so
+op-$(CONFIG_ROAR)       += roar.so
 
 $(pulse-objs): CFLAGS	+= $(PULSE_CFLAGS)
 $(alsa-objs): CFLAGS	+= $(ALSA_CFLAGS)
@@ -157,6 +159,7 @@ $(oss-objs):  CFLAGS	+= $(OSS_CFLAGS)
 $(sun-objs):  CFLAGS	+= $(SUN_CFLAGS)
 $(ao-objs):   CFLAGS	+= $(AO_CFLAGS)
 $(waveout-objs): CFLAGS += $(WAVEOUT_CFLAGS)
+$(roar-objs): CFLAGS	+= $(ROAR_CFLAGS)
 
 pulse.so: $(pulse-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(PULSE_LIBS))
@@ -178,6 +181,9 @@ ao.so: $(ao-objs) $(libcmus-y)
 
 waveout.so: $(waveout-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(WAVEOUT_LIBS))
+
+roar.so: $(roar-objs) $(libcmus-y)
+	$(call cmd,ld_dl,$(ROAR_LIBS))
 # }}}
 
 # man {{{

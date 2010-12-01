@@ -850,7 +850,7 @@ id3_default_charset (ISO-8859-1)
 lib_sort (artist album discnumber tracknumber title filename) [`Sort Keys`]
 	Sort keys for the sorted library view (2).
 
-output_plugin [pulse, alsa, arts, oss, sun]
+output_plugin [roar, pulse, alsa, arts, oss, sun]
 	Name of output plugin.
 
 pl_sort () [`Sort Keys`]
@@ -1025,6 +1025,14 @@ mixer.oss.channel
 
 mixer.oss.device
 	Mixer device for OSS plugin, usually /dev/mixer.
+
+dsp.roar.server
+	Address of RoarAudio server. Defaults to internal defaults.
+	Can be UNIX, TCP/IP or DECnet address.
+
+dsp.roar.role [music, background_music, ...]
+	Role for stream. May be used by the server to apply additional
+	defaults.
 
 dsp.sun.device
 	PCM device for Sun plugin, usually /dev/audio.

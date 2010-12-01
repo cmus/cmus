@@ -47,6 +47,9 @@ Johannes Weißl <jargon@molb.org>
 Gregory Petrosyan <gregory.petrosyan@gmail.com>
   PulseAudio output plugin
 
+Philipp 'ph3-der-loewe' Schafft <lion@lion.leolix.org>
+  RoarAudio output plugin
+
 Jason Woofenden <jason@jasonwoof.com>
   Tutorial
   cmus-unofficial patch-commiter

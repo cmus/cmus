@@ -260,6 +260,12 @@ check_waveout()
 	return 1
 }
 
+check_roar()
+{
+	pkg_config ROAR "libroar >= 0.4.2" "" "-lroar"
+	return $?
+}
+
 check_mp4()
 {
 	check_header mp4v2/mp4v2.h
@@ -319,6 +325,7 @@ Optional Features: y/n
   CONFIG_MP4      MPEG-4 AAC (.mp4, .m4a, .m4b)                   [auto]
   CONFIG_AAC      AAC (.aac, audio/aac, audio/aacp)               [auto]
   CONFIG_FFMPEG   FFMPEG (.shn, .wma)                             [auto]
+  CONFIG_ROAR     native RoarAudio output                         [auto]
   CONFIG_PULSE    native PulseAudio output                        [auto]
   CONFIG_ALSA     ALSA                                            [auto]
   CONFIG_AO       Libao cross-platform audio library              [auto]
@@ -376,6 +383,7 @@ check check_arts    CONFIG_ARTS
 check check_oss     CONFIG_OSS
 check check_sun     CONFIG_SUN
 check check_waveout CONFIG_WAVEOUT
+check check_roar    CONFIG_ROAR
 
 test "$WORDS_BIGENDIAN" = y && CFLAGS="${CFLAGS} -DWORDS_BIGENDIAN"
 
@@ -392,6 +400,6 @@ config_header config/curses.h HAVE_RESIZETERM HAVE_USE_DEFAULT_COLORS
 
 makefile_vars bindir datadir libdir mandir exampledir
 makefile_vars CONFIG_FLAC CONFIG_MAD CONFIG_MIKMOD CONFIG_MODPLUG CONFIG_MPC CONFIG_VORBIS CONFIG_WAVPACK CONFIG_WAV CONFIG_MP4 CONFIG_AAC CONFIG_FFMPEG
-makefile_vars CONFIG_PULSE CONFIG_ALSA CONFIG_AO CONFIG_ARTS CONFIG_OSS CONFIG_SUN CONFIG_WAVEOUT
+makefile_vars CONFIG_ROAR CONFIG_PULSE CONFIG_ALSA CONFIG_AO CONFIG_ARTS CONFIG_OSS CONFIG_SUN CONFIG_WAVEOUT
 
 generate_config_mk
