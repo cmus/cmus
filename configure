@@ -327,7 +327,9 @@ Optional Features: y/n
   CONFIG_SUN      Sun Audio                                       [auto]
   CONFIG_WAVEOUT  Windows Wave Out                                [auto]
 
-Also many standard variables like CC are recognized."
+Also many standard variables like CC, LD, CFLAGS, LDFLAGS are recognized.
+Cross compiling is supported via CROSS=target-prefix-
+    optionally set HOSTCC=this-machine-gcc, HOSTLD, HOST_CFLAGS, HOST_LDFLAGS."
 
 parse_command_line "$@"
 
@@ -346,6 +348,7 @@ var_default mandir "${datadir}/man"
 var_default exampledir "${datadir}/doc/cmus/examples"
 
 check check_cc
+check check_host_cc
 check check_cflags
 check check_cc_depgen
 check check_endianness
