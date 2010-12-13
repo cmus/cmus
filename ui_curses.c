@@ -935,13 +935,12 @@ static void do_update_statusline(void)
 	if (player_info.ti)
 		duration = player_info.ti->duration;
 
+	vol_left = vol_right = vol = -1;
 	if (soft_vol) {
 		vol_left = soft_vol_l;
 		vol_right = soft_vol_r;
 		vol = (vol_left + vol_right + 1) / 2;
-	} else if (!volume_max) {
-		vol_left = vol_right = vol = -1;
-	} else {
+	} else if (volume_max && volume_l >= 0 && volume_r >= 0) {
 		vol_left = scale_to_percentage(volume_l, volume_max);
 		vol_right = scale_to_percentage(volume_r, volume_max);
 		vol = (vol_left + vol_right + 1) / 2;
