@@ -26,7 +26,11 @@ void play_queue_append(struct track_info *ti)
 {
 	struct simple_track *t = simple_track_new(ti);
 
-	editable_add(&pq_editable, t);
+	list_add_tail(&t->node, &pq_editable.head);
+	pq_editable.nr_tracks++;
+	if (t->info->duration != -1)
+		pq_editable.total_time += t->info->duration;
+	window_changed(pq_editable.win);
 }
 
 void play_queue_prepend(struct track_info *ti)
