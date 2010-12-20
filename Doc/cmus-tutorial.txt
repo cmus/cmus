@@ -3,7 +3,7 @@
 
 @h1 NAME
 
-C\* Music Player tutorial
+cmus - C\* Music Player tutorial
 
 
 @h1 CONTENTS
