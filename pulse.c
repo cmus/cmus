@@ -15,8 +15,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <sys/types.h>
-#include <unistd.h>
 #include <string.h>
 
 #include <pulse/pulseaudio.h>
@@ -41,10 +39,7 @@ static pa_cvolume		 pa_vol;
 
 static pa_proplist *__create_app_proplist(void)
 {
-	const size_t	 BUFSIZE = 1024;
-
 	pa_proplist	*pl;
-	char		 buf[BUFSIZE];
 	int		 rc;
 
 	pl = pa_proplist_new();
@@ -55,30 +50,6 @@ static pa_proplist *__create_app_proplist(void)
 
 	rc = pa_proplist_sets(pl, PA_PROP_APPLICATION_VERSION, VERSION);
 	BUG_ON(rc);
-
-	rc = pa_proplist_setf(pl, PA_PROP_APPLICATION_PROCESS_ID, "%ld", (long)getpid());
-	BUG_ON(rc);
-
-	rc = gethostname(buf, BUFSIZE);
-	BUG_ON(rc);
-	rc = pa_proplist_sets(pl, PA_PROP_APPLICATION_PROCESS_HOST, buf);
-	BUG_ON(rc);
-
-	if (pa_get_binary_name(buf, BUFSIZE)) {
-		rc = pa_proplist_sets(pl, PA_PROP_APPLICATION_PROCESS_BINARY, buf);
-		BUG_ON(rc);
-	}
-
-	if (pa_get_user_name(buf, BUFSIZE)) {
-		rc = pa_proplist_sets(pl, PA_PROP_APPLICATION_PROCESS_USER, buf);
-		BUG_ON(rc);
-	}
-
-	/*
-	 * Possible todo:
-	 * 	- PA_PROP_APPLICATION_PROCESS_SESSION_ID
-	 * 	- PA_PROP_APPLICATION_PROCESS_MACHINE_ID
-	 */
 
 	return pl;
 }
