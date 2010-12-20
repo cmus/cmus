@@ -462,14 +462,14 @@ int expr_check_leaves(struct expr **exprp, const char *(*get_filter)(const char 
 	}
 	if (expr->type != EXPR_BOOL) {
 		/* unknown key */
-		set_error("unkown key %s", expr->key);
+		set_error("unknown key %s", expr->key);
 		return -1;
 	}
 
 	/* user defined filter */
 	filter = get_filter(expr->key);
 	if (filter == NULL) {
-		set_error("unkown filter or boolean %s", expr->key);
+		set_error("unknown filter or boolean %s", expr->key);
 		return -1;
 	}
 	e = expr_parse(filter);
