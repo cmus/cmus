@@ -42,6 +42,9 @@ extern char *pl_ext_filename;
 extern char *play_queue_filename;
 extern char *play_queue_ext_filename;
 
+extern char *charset;
+extern int using_utf8;
+
 void update_titleline(void);
 void update_statusline(void);
 void update_colors(void);
