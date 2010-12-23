@@ -177,12 +177,31 @@ int u_strcase_equal(const char *str1, const char *str2);
 int u_strncase_equal(const char *str1, const char *str2, size_t len);
 
 /*
+ * @str1    valid, normalized, null-terminated UTF-8 string
+ * @str2    valid, normalized, null-terminated UTF-8 string
+ * @len  number of characters to consider for comparison
+ *
+ * Like u_strncase_equal(), but uses only base characters for comparison
+ * (e.g. "Trentemöller" matches "Trentemøller")
+ */
+int u_strncase_equal_base(const char *str1, const char *str2, size_t len);
+
+/*
  * @haystack  valid, normalized, null-terminated UTF-8 string
  * @needle    valid, normalized, null-terminated UTF-8 string
  *
  * Returns position of @needle in @haystack (case insensitive comparison).
  */
 char *u_strcasestr(const char *haystack, const char *needle);
+
+/*
+ * @haystack  valid, normalized, null-terminated UTF-8 string
+ * @needle    valid, normalized, null-terminated UTF-8 string
+ *
+ * Like u_strcasestr(), but uses only base characters for comparison
+ * (e.g. "Trentemöller" matches "Trentemøller")
+ */
+char *u_strcasestr_base(const char *haystack, const char *needle);
 
 static inline char *u_strcasestr_filename(const char *haystack, const char *needle)
 {

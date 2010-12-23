@@ -87,13 +87,13 @@ int track_info_matches(struct track_info *ti, const char *text, unsigned int fla
 		    (flags & TI_MATCH_ALBUM && album) ||
 		    (flags & TI_MATCH_TITLE && title) ||
 		    (flags & TI_MATCH_ALBUMARTIST && albumartist)) {
-			if (flags & TI_MATCH_ARTIST && artist && u_strcasestr(artist, word))
+			if (flags & TI_MATCH_ARTIST && artist && u_strcasestr_base(artist, word))
 				continue;
-			if (flags & TI_MATCH_ALBUM && album && u_strcasestr(album, word))
+			if (flags & TI_MATCH_ALBUM && album && u_strcasestr_base(album, word))
 				continue;
-			if (flags & TI_MATCH_TITLE && title && u_strcasestr(title, word))
+			if (flags & TI_MATCH_TITLE && title && u_strcasestr_base(title, word))
 				continue;
-			if (flags & TI_MATCH_ALBUMARTIST && albumartist && u_strcasestr(albumartist, word))
+			if (flags & TI_MATCH_ALBUMARTIST && albumartist && u_strcasestr_base(albumartist, word))
 				continue;
 		} else {
 			/* compare with url or filename without path */

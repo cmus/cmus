@@ -179,7 +179,7 @@ static int do_glob_match(struct list_head *head, struct list_head *first, const 
 		if (gitem->type == GLOB_TEXT) {
 			int len = u_strlen(gitem->text);
 
-			if (!u_strncase_equal(gitem->text, text, len))
+			if (!u_strncase_equal_base(gitem->text, text, len))
 				return 0;
 			text += strlen(gitem->text);
 		} else if (gitem->type == GLOB_QMARK) {
@@ -212,7 +212,7 @@ static int do_glob_match(struct list_head *head, struct list_head *first, const 
 			while (1) {
 				const char *pos;
 
-				pos = u_strcasestr(text, t);
+				pos = u_strcasestr_base(text, t);
 				if (pos == NULL)
 					return 0;
 				if (do_glob_match(head, next->next, pos + tlen))

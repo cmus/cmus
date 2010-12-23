@@ -20,12 +20,15 @@
 #include "uchar.h"
 #include "compiler.h"
 #include "gbuf.h"
+#include "utils.h" /* N_ELEMENTS */
 
 #include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
 #include <wctype.h>
 #include <ctype.h>
+
+#include "unidecomp.h"
 
 const char hex_tab[16] = "0123456789abcdef";
 
@@ -514,7 +517,30 @@ int u_strcase_equal(const char *a, const char *b)
 	return b[bi] ? 0 : 1;
 }
 
-int u_strncase_equal(const char *a, const char *b, size_t len)
+static uchar get_base_from_composed(uchar ch)
+{
+	int begin = 0;
+	int end = N_ELEMENTS(unidecomp_map);
+
+	if (ch < unidecomp_map[begin].composed || ch > unidecomp_map[end - 1].composed)
+		return ch;
+
+	/* binary search */
+	while (1) {
+		int half = (begin + end) / 2;
+		if (ch == unidecomp_map[half].composed)
+			return unidecomp_map[half].base;
+		else if (half == begin)
+			break;
+		else if (ch > unidecomp_map[half].composed)
+			begin = half;
+		else
+			end = half;
+	}
+	return ch;
+}
+
+static inline int do_u_strncase_equal(const char *a, const char *b, size_t len, int only_base_chars)
 {
 	int ai = 0, bi = 0;
 
@@ -523,6 +549,11 @@ int u_strncase_equal(const char *a, const char *b, size_t len)
 
 		u_get_char(a, &ai, &au);
 		u_get_char(b, &bi, &bu);
+
+		if (only_base_chars) {
+			au = get_base_from_composed(au);
+			bu = get_base_from_composed(bu);
+		}
 
 		if (u_casefold_char(au) != u_casefold_char(bu))
 			return 0;
@@ -533,7 +564,17 @@ int u_strncase_equal(const char *a, const char *b, size_t len)
 	return 1;
 }
 
-char *u_strcasestr(const char *haystack, const char *needle)
+int u_strncase_equal(const char *a, const char *b, size_t len)
+{
+	return do_u_strncase_equal(a, b, len, 0);
+}
+
+int u_strncase_equal_base(const char *a, const char *b, size_t len)
+{
+	return do_u_strncase_equal(a, b, len, 1);
+}
+
+static inline char *do_u_strcasestr(const char *haystack, const char *needle, int only_base_chars)
 {
 	/* strlen is faster and works here */
 	int haystack_len = strlen(haystack);
@@ -545,7 +586,7 @@ char *u_strcasestr(const char *haystack, const char *needle)
 
 		if (haystack_len < needle_len)
 			return NULL;
-		if (u_strncase_equal(needle, haystack, needle_len))
+		if (do_u_strncase_equal(needle, haystack, needle_len, only_base_chars))
 			return (char *)haystack;
 
 		/* skip one char */
@@ -554,4 +595,14 @@ char *u_strcasestr(const char *haystack, const char *needle)
 		haystack += idx;
 		haystack_len -= idx;
 	} while (1);
+}
+
+char *u_strcasestr(const char *haystack, const char *needle)
+{
+	return do_u_strcasestr(haystack, needle, 0);
+}
+
+char *u_strcasestr_base(const char *haystack, const char *needle)
+{
+	return do_u_strcasestr(haystack, needle, 1);
 }
