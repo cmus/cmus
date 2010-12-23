@@ -153,7 +153,6 @@ again:
 
 void sorted_list_add_track(struct list_head *head, struct rb_root *tree_root, struct simple_track *track, const char * const *keys)
 {
-	struct list_head *item;
 	struct rb_node **new = &(tree_root->rb_node), *parent = NULL, *curr, *prev;
 
 	/* try to locate track in tree */
@@ -184,11 +183,9 @@ void sorted_list_add_track(struct list_head *head, struct rb_root *tree_root, st
 	prev = rb_prev(curr);
 	if (prev) {
 		struct simple_track *prev_track = tree_node_to_simple_track(prev);
-		item = &prev_track->node;
+		list_add(&track->node, &prev_track->node);
 	} else
-		item = head;
-
-	list_add_tail(&track->node, item);
+		list_add_tail(&track->node, head);
 }
 
 static int compare_rand(const struct rb_node *a, const struct rb_node *b)
