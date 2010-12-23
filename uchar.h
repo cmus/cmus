@@ -20,6 +20,8 @@
 #ifndef _UCHAR_H
 #define _UCHAR_H
 
+#include <stddef.h> /* size_t */
+
 typedef unsigned int uchar;
 
 extern const char hex_tab[16];
@@ -73,9 +75,21 @@ int u_is_valid(const char *str);
 /*
  * @str  null-terminated UTF-8 string
  *
+ * Returns position of next unicode character in @str.
+ * (fast and fault-tolerant)
+ */
+extern const char * const utf8_skip;
+static inline char *u_next_char(const char *str)
+{
+	return (char *) (str + utf8_skip[*((const unsigned char *) str)]);
+}
+
+/*
+ * @str  null-terminated UTF-8 string
+ *
  * Retuns length of @str in UTF-8 characters.
  */
-int u_strlen(const char *str);
+size_t u_strlen(const char *str);
 
 /*
  * @str  null-terminated UTF-8 string

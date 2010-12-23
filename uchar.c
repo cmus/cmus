@@ -76,6 +76,19 @@ static const signed char len_tab[256] = {
 	-1, -1, -1, -1, -1, -1, -1, -1
 };
 
+/* fault-tolerant equivalent to len_tab, from glib */
+static const char utf8_skip_data[256] = {
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
+	3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,5,5,5,5,6,6,1,1
+};
+const char * const utf8_skip = utf8_skip_data;
+
 /* index is length of the UTF-8 sequence - 1 */
 static int min_val[4] = { 0x000000, 0x000080, 0x000800, 0x010000 };
 static int max_val[4] = { 0x00007f, 0x0007ff, 0x00ffff, 0x10ffff };
@@ -117,36 +130,11 @@ int u_is_valid(const char *str)
 	return 1;
 }
 
-int u_strlen(const char *str)
+size_t u_strlen(const char *str)
 {
-	const unsigned char *s = (const unsigned char *)str;
-	int len = 0;
-
-	while (*s) {
-		int l = len_tab[*s];
-
-		if (unlikely(l > 1)) {
-			/* next l - 1 bytes must be 0x10xxxxxx */
-			int c = 1;
-			do {
-				if (len_tab[s[c]] != 0) {
-					/* invalid sequence */
-					goto single_char;
-				}
-				c++;
-			} while (c < l);
-
-			/* valid sequence */
-			s += l;
-			len++;
-			continue;
-		}
-single_char:
-		/* l is -1, 0 or 1
-		 * invalid chars counted as single characters */
-		s++;
-		len++;
-	}
+	size_t len;
+	for (len = 0; *str; len++)
+		str = u_next_char(str);
 	return len;
 }
 
