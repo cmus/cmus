@@ -5,7 +5,7 @@
 #include "id3.h"
 #include "comment.h"
 #include "xmalloc.h"
-#include "utf8_encode.h"
+#include "convert.h"
 #include "uchar.h"
 #include "options.h"
 #include "debug.h"
