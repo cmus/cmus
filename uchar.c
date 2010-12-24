@@ -19,6 +19,7 @@
 
 #include "uchar.h"
 #include "compiler.h"
+#include "gbuf.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -455,57 +456,81 @@ int u_skip_chars(const char *str, int *width)
 }
 
 /*
+ * Case-folding functions
+ */
+
+static inline uchar u_casefold_char(uchar ch)
+{
+        /* faster lookup for for A-Z, rest of ASCII unaffected */
+        if (ch < 0x0041)
+                return ch;
+        if (ch <= 0x005A)
+                return ch + 0x20;
+#ifdef __STDC_ISO_10646__
+        if (ch < 128)
+                return ch;
+	ch = towlower(ch);
+#endif
+	return ch;
+}
+
+char *u_casefold(const char *str)
+{
+	GBUF(out);
+	int i = 0;
+
+	while (str[i]) {
+		char buf[4];
+		int buflen = 0;
+		uchar ch;
+
+		u_get_char(str, &i, &ch);
+		ch = u_casefold_char(ch);
+		u_set_char_raw(buf, &buflen, ch);
+		gbuf_add_bytes(&out, buf, buflen);
+	}
+
+	return gbuf_steal(&out);
+}
+
+/*
  * Comparison functions
  */
 
-static inline int chcasecmp(int a, int b)
+int u_strcase_equal(const char *a, const char *b)
 {
-	return towupper(a) - towupper(b);
-}
+	int ai = 0, bi = 0;
 
-int u_strcasecmp(const char *a, const char *b)
-{
-	int ai = 0;
-	int bi = 0;
-	int res;
-
-	do {
+	while (a[ai]) {
 		uchar au, bu;
 
 		u_get_char(a, &ai, &au);
 		u_get_char(b, &bi, &bu);
-		res = chcasecmp(au, bu);
-		if (res)
-			break;
-		if (au == 0) {
-			/* bu is 0 too */
-			break;
-		}
-	} while (1);
-	return res;
-}
 
-int u_strncasecmp(const char *a, const char *b, int len)
-{
-	int ai = 0;
-	int bi = 0;
-
-	while (len > 0) {
-		uchar au, bu;
-		int res;
-
-		u_get_char(a, &ai, &au);
-		u_get_char(b, &bi, &bu);
-		res = chcasecmp(au, bu);
-		if (res)
-			return res;
-		if (au == 0) {
-			/* bu is 0 too */
+		if (u_casefold_char(au) != u_casefold_char(bu))
 			return 0;
-		}
+	}
+
+	return b[bi] ? 0 : 1;
+}
+
+int u_strncase_equal(const char *a, const char *b, size_t len)
+{
+	int ai = 0, bi = 0;
+
+	while (b[bi] && len > 0) {
+		uchar au, bu;
+
+		u_get_char(a, &ai, &au);
+		u_get_char(b, &bi, &bu);
+
+		if (u_casefold_char(au) != u_casefold_char(bu))
+			return 0;
+
 		len--;
 	}
-	return 0;
+
+	return 1;
 }
 
 char *u_strcasestr(const char *haystack, const char *needle)
@@ -520,7 +545,7 @@ char *u_strcasestr(const char *haystack, const char *needle)
 
 		if (haystack_len < needle_len)
 			return NULL;
-		if (u_strncasecmp(needle, haystack, needle_len) == 0)
+		if (u_strncase_equal(needle, haystack, needle_len))
 			return (char *)haystack;
 
 		/* skip one char */

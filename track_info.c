@@ -20,6 +20,7 @@
 #include "track_info.h"
 #include "comment.h"
 #include "uchar.h"
+#include "u_collate.h"
 #include "misc.h"
 #include "xmalloc.h"
 #include "utils.h"
@@ -113,18 +114,6 @@ int track_info_matches(struct track_info *ti, const char *text, unsigned int fla
 	return matched;
 }
 
-static int xstrcasecmp(const char *a, const char *b)
-{
-	if (a == NULL) {
-		if (b == NULL)
-			return 0;
-		return -1;
-	} else if (b == NULL) {
-		return 1;
-	}
-	return u_strcasecmp(a, b);
-}
-
 int track_info_cmp(const struct track_info *a, const struct track_info *b, const char * const *keys)
 {
 	int i, res = 0;
@@ -158,7 +147,7 @@ int track_info_cmp(const struct track_info *a, const struct track_info *b, const
 		if (strcmp(key, "albumartist") == 0) {
 			av = comments_get_albumartist(a->comments);
 			bv = comments_get_albumartist(b->comments);
-			res = xstrcasecmp(av, bv);
+			res = u_strcasecoll0(av, bv);
 			if (res)
 				break;
 			continue;
@@ -172,7 +161,7 @@ int track_info_cmp(const struct track_info *a, const struct track_info *b, const
 
 		av = keyvals_get_val(a->comments, key);
 		bv = keyvals_get_val(b->comments, key);
-		res = xstrcasecmp(av, bv);
+		res = u_strcasecoll0(av, bv);
 		if (res)
 			break;
 	}

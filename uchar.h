@@ -149,8 +149,39 @@ int u_copy_chars(char *dst, const char *src, int *width);
  */
 int u_skip_chars(const char *str, int *width);
 
-int u_strcasecmp(const char *a, const char *b);
-int u_strncasecmp(const char *a, const char *b, int len);
+/*
+ * @str  valid null-terminated UTF-8 string
+ *
+ * Converts a string into a form that is independent of case.
+ *
+ * Returns a newly allocated string
+ */
+char *u_casefold(const char *str);
+
+/*
+ * @str1  valid, normalized, null-terminated UTF-8 string
+ * @str2  valid, normalized, null-terminated UTF-8 string
+ *
+ * Returns 1 if @str1 is equal to @str2, ignoring the case of the characters.
+ */
+int u_strcase_equal(const char *str1, const char *str2);
+
+/*
+ * @str1    valid, normalized, null-terminated UTF-8 string
+ * @str2    valid, normalized, null-terminated UTF-8 string
+ * @len  number of characters to consider for comparison
+ *
+ * Returns 1 if the first @len characters of @str1 and @str2 are equal,
+ * ignoring the case of the characters (0 otherwise).
+ */
+int u_strncase_equal(const char *str1, const char *str2, size_t len);
+
+/*
+ * @haystack  valid, normalized, null-terminated UTF-8 string
+ * @needle    valid, normalized, null-terminated UTF-8 string
+ *
+ * Returns position of @needle in @haystack (case insensitive comparison).
+ */
 char *u_strcasestr(const char *haystack, const char *needle);
 
 static inline char *u_strcasestr_filename(const char *haystack, const char *needle)

@@ -10,6 +10,7 @@
 #include "debug.h"
 #include "mergesort.h"
 #include "options.h"
+#include "u_collate.h"
 
 #include <ctype.h>
 #include <stdio.h>
@@ -400,14 +401,10 @@ static void find_artist_and_album(const char *artist_name,
 	struct album *album;
 
 	list_for_each_entry(artist, &lib_artist_head, node) {
-		int res;
-
-		res = u_strcasecmp(artist->name, artist_name);
-		if (res == 0) {
+		if (u_strcase_equal(artist->name, artist_name)) {
 			*_artist = artist;
 			list_for_each_entry(album, &artist->album_head, node) {
-				res = u_strcasecmp(album->name, album_name);
-				if (res == 0) {
+				if (u_strcase_equal(album->name, album_name)) {
 					*_album = album;
 					return;
 				}
@@ -428,7 +425,7 @@ static int special_name_cmp(const char *a, const char *b)
 
 	if (cmp)
 		return cmp;
-	return u_strcasecmp(a, b);
+	return u_strcasecoll(a, b);
 }
 
 static int special_album_cmp(const struct album *a, const struct album *b)
@@ -442,7 +439,7 @@ static int special_album_cmp(const struct album *a, const struct album *b)
 	if (a->date != b->date)
 		return a->date - b->date;
 
-	return u_strcasecmp(a->name, b->name);
+	return u_strcasecoll(a->name, b->name);
 }
 
 static void insert_artist(struct artist *artist)

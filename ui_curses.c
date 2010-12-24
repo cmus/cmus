@@ -2245,6 +2245,7 @@ int main(int argc, char *argv[])
 	}
 
 	setlocale(LC_CTYPE, "");
+	setlocale(LC_COLLATE, "");
 #ifdef CODESET
 	charset = nl_langinfo(CODESET);
 #else

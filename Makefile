@@ -37,7 +37,7 @@ cmus-y := \
 	output.o pcm.o pl.o play_queue.o player.o \
 	rbtree.o read_wrapper.o server.o search.o \
 	search_mode.o spawn.o tabexp.o tabexp_file.o \
-	track.o track_info.o tree.o uchar.o ui_curses.o \
+	track.o track_info.o tree.o u_collate.o uchar.o ui_curses.o \
 	window.o worker.o xstrjoin.o
 
 $(cmus-y): CFLAGS += $(PTHREAD_CFLAGS) $(NCURSES_CFLAGS) $(ICONV_CFLAGS) $(DL_CFLAGS)

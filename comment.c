@@ -29,7 +29,7 @@ int track_is_compilation(const struct keyval *comments)
 		return 1;
 
 	a = keyvals_get_val(comments, "artist");
-	if (aa && a && u_strcasecmp(aa, a) != 0)
+	if (aa && a && !u_strcase_equal(aa, a))
 		return 1;
 
 	return 0;
