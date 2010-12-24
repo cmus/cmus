@@ -2468,7 +2468,7 @@ static void expand_commands(const char *str)
 	char **tails;
 
 	/* tabexp is resetted */
-	tails = xnew(char *, sizeof(commands) / sizeof(struct command));
+	tails = xnew(char *, N_ELEMENTS(commands));
 	len = strlen(str);
 	pos = 0;
 	for (i = 0; commands[i].name; i++) {

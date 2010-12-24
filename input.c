@@ -360,7 +360,7 @@ static int open_remote(struct input_plugin *ip)
 	if (val) {
 		int i;
 
-		for (i = 0; i < sizeof(pl_mime_types) / sizeof(pl_mime_types[0]); i++) {
+		for (i = 0; i < N_ELEMENTS(pl_mime_types); i++) {
 			if (!strcasecmp(val, pl_mime_types[i])) {
 				d_print("Content-Type: %s\n", val);
 				http_get_free(&hg);

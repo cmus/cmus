@@ -28,6 +28,8 @@
 #include <time.h>
 #include <inttypes.h>
 
+#define N_ELEMENTS(array) (sizeof(array) / sizeof((array)[0]))
+
 static inline int min(int a, int b)
 {
 	return a < b ? a : b;

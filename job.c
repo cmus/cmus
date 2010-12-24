@@ -35,7 +35,7 @@ static void flush_ti_buffer(void)
 
 static void add_ti(struct track_info *ti)
 {
-	if (ti_buffer_fill == sizeof(ti_buffer) / sizeof(ti_buffer[0]))
+	if (ti_buffer_fill == N_ELEMENTS(ti_buffer))
 		flush_ti_buffer();
 	ti_buffer[ti_buffer_fill++] = ti;
 }
