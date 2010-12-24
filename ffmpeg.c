@@ -33,6 +33,7 @@
 #include "xmalloc.h"
 #include "debug.h"
 #include "utils.h"
+#include "config/ffmpeg.h"
 
 #define NUM_FFMPEG_KEYS 8
 
@@ -397,5 +398,9 @@ const struct input_plugin_ops ip_ops = {
 	.duration = ffmpeg_duration
 };
 
+#ifdef USE_FALLBACK_IP
+const char *const ip_extensions[] = { "any", NULL };
+#else
 const char *const ip_extensions[] = { "ape", "wma", NULL };
+#endif
 const char *const ip_mime_types[] = { NULL };

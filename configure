@@ -300,6 +300,7 @@ prefix=/usr/local
 DEBUG=1
 CONFIG_TREMOR=n
 CONFIG_MIKMOD=n
+USE_FALLBACK_IP=n
 # unset CONFIG_* variables: if check succeeds 'y', otherwise 'n'
 
 USAGE="
@@ -313,26 +314,28 @@ Options:
   DEBUG           Debugging level (0-2)  [$DEBUG]
 
 Optional Features: y/n
-  CONFIG_FLAC     Free Lossless Audio Codec (.flac, .fla)         [auto]
-  CONFIG_MAD      MPEG Audio Decoder (.mp3, .mp2, streams)        [auto]
-  CONFIG_MODPLUG  libmodplug (.mod, .x3m, ...)                    [auto]
-  CONFIG_MIKMOD   libmikmod (.mod, .x3m, ...)                     [n]
-  CONFIG_MPC      libmpcdec (Musepack .mpc, .mpp, .mp+)           [auto]
-  CONFIG_VORBIS   Ogg/Vorbis (.ogg, application/ogg, audio/x-ogg) [auto]
-  CONFIG_TREMOR   Use Tremor as Ogg/Vorbis input plugin           [n]
-  CONFIG_WAV      WAV                                             [y]
-  CONFIG_WAVPACK  WavPack (.wv, audio/x-wavpack)                  [auto]
-  CONFIG_MP4      MPEG-4 AAC (.mp4, .m4a, .m4b)                   [auto]
-  CONFIG_AAC      AAC (.aac, audio/aac, audio/aacp)               [auto]
-  CONFIG_FFMPEG   FFMPEG (.shn, .wma)                             [auto]
-  CONFIG_ROAR     native RoarAudio output                         [auto]
-  CONFIG_PULSE    native PulseAudio output                        [auto]
-  CONFIG_ALSA     ALSA                                            [auto]
-  CONFIG_AO       Libao cross-platform audio library              [auto]
-  CONFIG_ARTS     ARTS                                            [auto]
-  CONFIG_OSS      Open Sound System                               [auto]
-  CONFIG_SUN      Sun Audio                                       [auto]
-  CONFIG_WAVEOUT  Windows Wave Out                                [auto]
+  CONFIG_FLAC     	Free Lossless Audio Codec (.flac, .fla)         [auto]
+  CONFIG_MAD      	MPEG Audio Decoder (.mp3, .mp2, streams)        [auto]
+  CONFIG_MODPLUG  	libmodplug (.mod, .x3m, ...)                    [auto]
+  CONFIG_MIKMOD   	libmikmod (.mod, .x3m, ...)                     [n]
+  CONFIG_MPC      	libmpcdec (Musepack .mpc, .mpp, .mp+)           [auto]
+  CONFIG_VORBIS   	Ogg/Vorbis (.ogg, application/ogg, audio/x-ogg) [auto]
+  CONFIG_TREMOR   	Use Tremor as Ogg/Vorbis input plugin           [n]
+  CONFIG_WAV      	WAV                                             [y]
+  CONFIG_WAVPACK  	WavPack (.wv, audio/x-wavpack)                  [auto]
+  CONFIG_MP4      	MPEG-4 AAC (.mp4, .m4a, .m4b)                   [auto]
+  CONFIG_AAC      	AAC (.aac, audio/aac, audio/aacp)               [auto]
+  CONFIG_FFMPEG   	FFMPEG (.shn, .wma)                             [auto]
+  CONFIG_ROAR           native RoarAudio output                         [auto]
+  CONFIG_PULSE    	native PulseAudio output                        [auto]
+  CONFIG_ALSA     	ALSA                                            [auto]
+  CONFIG_AO       	Libao cross-platform audio library              [auto]
+  CONFIG_ARTS     	ARTS                                            [auto]
+  CONFIG_OSS      	Open Sound System                               [auto]
+  CONFIG_SUN      	Sun Audio                                       [auto]
+  CONFIG_WAVEOUT  	Windows Wave Out                                [auto]
+  USE_FALLBACK_IP	Use a specific IP for every unrecognized	[n]
+                        input format. Currently set to FFMPEG.
 
 Also many standard variables like CC are recognized."
 
@@ -397,6 +400,7 @@ config_header config/tremor.h CONFIG_TREMOR
 config_header config/mpc.h MPC_SV7
 config_header config/mp4.h USE_MPEG4IP
 config_header config/curses.h HAVE_RESIZETERM HAVE_USE_DEFAULT_COLORS
+config_header config/ffmpeg.h USE_FALLBACK_IP
 
 makefile_vars bindir datadir libdir mandir exampledir
 makefile_vars CONFIG_FLAC CONFIG_MAD CONFIG_MIKMOD CONFIG_MODPLUG CONFIG_MPC CONFIG_VORBIS CONFIG_WAVPACK CONFIG_WAV CONFIG_MP4 CONFIG_AAC CONFIG_FFMPEG

@@ -109,6 +109,7 @@ static const struct input_plugin_ops *get_ops_by_filename(const char *filename)
 {
 	struct ip *ip;
 	const char *ext;
+	struct ip *fallback_ip = NULL;
 
 	ext = get_extension(filename);
 	if (ext == NULL)
@@ -118,10 +119,16 @@ static const struct input_plugin_ops *get_ops_by_filename(const char *filename)
 		int i;
 
 		for (i = 0; exts[i]; i++) {
-			if (strcasecmp(ext, exts[i]) == 0)
+			if (strcasecmp("any", exts[i]) == 0)
+				fallback_ip = ip;
+			if (strcasecmp(ext, exts[i]) == 0){
 				return ip->ops;
+			}
 		}
 	}
+	if (fallback_ip)
+	    return fallback_ip->ops;
+
 	return NULL;
 }
 
