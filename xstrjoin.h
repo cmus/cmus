@@ -20,6 +20,6 @@
 #ifndef _XSTRJOIN_H
 #define _XSTRJOIN_H
 
-extern char *xstrjoin(const char *a, const char *b);
+char *xstrjoin(const char *a, const char *b);
 
 #endif

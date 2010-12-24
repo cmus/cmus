@@ -61,28 +61,28 @@ static inline int u_char_size(uchar uch)
 /*
  * Returns width of @uch (normally 1 or 2, 4 for invalid chars (<xx>))
  */
-extern int u_char_width(uchar uch);
+int u_char_width(uchar uch);
 
 /*
  * @str  any null-terminated string
  *
  * Returns 1 if @str is valid UTF-8 string, 0 otherwise.
  */
-extern int u_is_valid(const char *str);
+int u_is_valid(const char *str);
 
 /*
  * @str  null-terminated UTF-8 string
  *
  * Retuns length of @str in UTF-8 characters.
  */
-extern int u_strlen(const char *str);
+int u_strlen(const char *str);
 
 /*
  * @str  null-terminated UTF-8 string
  *
  * Retuns width of @str.
  */
-extern int u_str_width(const char *str);
+int u_str_width(const char *str);
 
 /*
  * @str  null-terminated UTF-8 string
@@ -90,24 +90,24 @@ extern int u_str_width(const char *str);
  *
  * Retuns width of the first @len characters in @str.
  */
-extern int u_str_nwidth(const char *str, int len);
+int u_str_nwidth(const char *str, int len);
 
-extern void u_prev_char_pos(const char *str, int *idx);
+void u_prev_char_pos(const char *str, int *idx);
 
 /*
  * @str  null-terminated UTF-8 string
  * @idx  pointer to byte index in @str (not UTF-8 character index!)
  * @uch  pointer to returned unicode character
  */
-extern void u_get_char(const char *str, int *idx, uchar *uch);
+void u_get_char(const char *str, int *idx, uchar *uch);
 
 /*
  * @str  destination buffer
  * @idx  pointer to byte index in @str (not UTF-8 character index!)
  * @uch  unicode character
  */
-extern void u_set_char_raw(char *str, int *idx, uchar uch);
-extern void u_set_char(char *str, int *idx, uchar uch);
+void u_set_char_raw(char *str, int *idx, uchar uch);
+void u_set_char(char *str, int *idx, uchar uch);
 
 /*
  * @dst    destination buffer
@@ -120,7 +120,7 @@ extern void u_set_char(char *str, int *idx, uchar uch);
  *
  * Returns number of _bytes_ copied.
  */
-extern int u_copy_chars(char *dst, const char *src, int *width);
+int u_copy_chars(char *dst, const char *src, int *width);
 
 /*
  * @str    null-terminated UTF-8 string, must be long enough
@@ -133,11 +133,11 @@ extern int u_copy_chars(char *dst, const char *src, int *width);
  *
  * Returns number of _bytes_ skipped.
  */
-extern int u_skip_chars(const char *str, int *width);
+int u_skip_chars(const char *str, int *width);
 
-extern int u_strcasecmp(const char *a, const char *b);
-extern int u_strncasecmp(const char *a, const char *b, int len);
-extern char *u_strcasestr(const char *haystack, const char *needle);
+int u_strcasecmp(const char *a, const char *b);
+int u_strncasecmp(const char *a, const char *b, int len);
+char *u_strcasestr(const char *haystack, const char *needle);
 
 static inline char *u_strcasestr_filename(const char *haystack, const char *needle)
 {

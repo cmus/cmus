@@ -24,6 +24,6 @@
 
 #include <unistd.h>
 
-extern ssize_t read_wrapper(struct input_plugin_data *ip_data, void *buffer, size_t count);
+ssize_t read_wrapper(struct input_plugin_data *ip_data, void *buffer, size_t count);
 
 #endif

@@ -29,10 +29,10 @@ extern enum search_direction search_direction;
 /* //WORDS or ??WORDS search mode */
 extern int search_restricted;
 
-extern void search_mode_ch(uchar ch);
-extern void search_mode_key(int key);
-extern void search_mode_init(void);
-extern void search_mode_exit(void);
+void search_mode_ch(uchar ch);
+void search_mode_key(int key);
+void search_mode_init(void);
+void search_mode_exit(void);
 
 void search_text(const char *text, int restricted, int beginning);
 

@@ -40,16 +40,16 @@ struct track_info {
 #define TI_MATCH_ALBUMARTIST  (1 << 3)
 
 /* initializes only filename and ref */
-extern struct track_info *track_info_new(const char *filename);
+struct track_info *track_info_new(const char *filename);
 
-extern void track_info_ref(struct track_info *ti);
-extern void track_info_unref(struct track_info *ti);
+void track_info_ref(struct track_info *ti);
+void track_info_unref(struct track_info *ti);
 
 /*
  * returns: 1 if @ti has any of the following tags: artist, album, title
  *          0 otherwise
  */
-extern int track_info_has_tag(const struct track_info *ti);
+int track_info_has_tag(const struct track_info *ti);
 
 /*
  * @flags: TI_MATCH_*
@@ -57,7 +57,7 @@ extern int track_info_has_tag(const struct track_info *ti);
  * returns: 1 if all words in @text are found to match defined fields (@flags) in @ti
  *          0 otherwise
  */
-extern int track_info_matches(struct track_info *ti, const char *text, unsigned int flags);
+int track_info_matches(struct track_info *ti, const char *text, unsigned int flags);
 
 int track_info_cmp(const struct track_info *a, const struct track_info *b, const char * const *keys);
 

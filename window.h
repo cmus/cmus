@@ -58,10 +58,10 @@ struct window {
 	void (*sel_changed)(void);
 };
 
-extern struct window *window_new(int (*get_prev)(struct iter *), int (*get_next)(struct iter *));
-extern void window_free(struct window *win);
-extern void window_set_empty(struct window *win);
-extern void window_set_contents(struct window *win, void *head);
+struct window *window_new(int (*get_prev)(struct iter *), int (*get_next)(struct iter *));
+void window_free(struct window *win);
+void window_set_empty(struct window *win);
+void window_set_contents(struct window *win, void *head);
 
 /* call this after rows were added to window or order of rows was changed.
  * top and sel MUST point to valid rows (or window must be empty, but then
@@ -70,27 +70,27 @@ extern void window_set_contents(struct window *win, void *head);
  * if you remove row from window then call window_row_vanishes BEFORE removing
  * the row instead of this function.
  */
-extern void window_changed(struct window *win);
+void window_changed(struct window *win);
 
 /* call this BEFORE row is removed from window */
-extern void window_row_vanishes(struct window *win, struct iter *iter);
+void window_row_vanishes(struct window *win, struct iter *iter);
 
-extern int window_get_top(struct window *win, struct iter *iter);
-extern int window_get_sel(struct window *win, struct iter *iter);
-extern int window_get_prev(struct window *win, struct iter *iter);
-extern int window_get_next(struct window *win, struct iter *iter);
+int window_get_top(struct window *win, struct iter *iter);
+int window_get_sel(struct window *win, struct iter *iter);
+int window_get_prev(struct window *win, struct iter *iter);
+int window_get_next(struct window *win, struct iter *iter);
 
 /* set selected row */
-extern void window_set_sel(struct window *win, struct iter *iter);
+void window_set_sel(struct window *win, struct iter *iter);
 
-extern void window_set_nr_rows(struct window *win, int nr_rows);
-extern void window_up(struct window *win, int rows);
-extern void window_down(struct window *win, int rows);
-extern void window_goto_top(struct window *win);
-extern void window_goto_bottom(struct window *win);
-extern void window_page_up(struct window *win);
-extern void window_page_down(struct window *win);
+void window_set_nr_rows(struct window *win, int nr_rows);
+void window_up(struct window *win, int rows);
+void window_down(struct window *win, int rows);
+void window_goto_top(struct window *win);
+void window_goto_bottom(struct window *win);
+void window_page_up(struct window *win);
+void window_page_down(struct window *win);
 
-extern int window_get_nr_rows(struct window *win);
+int window_get_nr_rows(struct window *win);
 
 #endif

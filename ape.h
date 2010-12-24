@@ -37,8 +37,8 @@ struct apetag {
 
 #define APETAG(name) struct apetag name = { .buf = NULL, .pos = 0, }
 
-extern int ape_read_tags(struct apetag *ape, int fd, int slow);
-extern char *ape_get_comment(struct apetag *ape, char **val);
+int ape_read_tags(struct apetag *ape, int fd, int slow);
+char *ape_get_comment(struct apetag *ape, char **val);
 
 static inline void ape_free(struct apetag *ape)
 {
