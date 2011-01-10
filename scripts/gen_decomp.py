@@ -73,14 +73,15 @@ def unidata_expand_decomp(unidata):
 
 def unidata_add_mapping(unidata, mapping):
     for k, v in mapping.items():
-        if ord(k) not in unidata:
-            unidata[ord(k)] = {'decomp': [ord(v)]}
+        unidata[ord(k)]['decomp'] = [ord(v)]
 
 def is_diacritical_mark(c):
     return c >= 0x0300 and c <= 0x036F
 
-def filter_unidata(unidata):
+def filter_unidata(unidata, include):
     for k, v in unidata.items():
+        if k in include:
+            continue
         if not v['decomp']:
             del unidata[k]
             continue
@@ -144,9 +145,9 @@ from unicode.org or use `--wget' option.''' % unidata_filename)
     unidata = parse_unidata(unidata_file)
     unidata_file.close()
 
-    unidata_expand_decomp(unidata)
-    filter_unidata(unidata)
     unidata_add_mapping(unidata, special_decompositions)
+    unidata_expand_decomp(unidata)
+    filter_unidata(unidata, [ord(x) for x in special_decompositions])
 
     outfile = sys.stdout
     if options.output:
