@@ -1050,27 +1050,57 @@ Filters are used mostly for filtering contents of library views (1 & 2).
 Filters do not change the actual library content, i.e. *:save* command will
 still save all tracks to playlist file whether they are visible or not.
 
-@h2 Syntax
+@h2 Types
 
-Filter expression is list of built-in filters or user defined filters
+There are two types of filter expressions, each offering more
+expressiveness:
+
+	@li *short*
+	`e.g.` ~a beatles (!~y1960-1965 | ~d>600)
+
+	@li *long*
+	`e.g.` artist="\*beatles\*"&album="R\*"
+
+The type is auto-detected, so both short and long expressions can be used
+in filter commands.
+
+Long expressions are lists of built-in filters or user defined filters
 separated with *&* (and) or *|* (or).  Parenthesis can be used group
 subexpressions and *!* negates result of the expression following it.
+Same is true for short expressions, but they can only be made of
+built-in filters. Also (and)-grouping is done implicitly.
 
 @h2 Strings
 
+@li long
 *filename*, *artist*, *album*, *title*, *genre*, *comment*
-
+@br
 Comparators: *=* and *!=* (not equal)
+
+@li short
+*~f*, *~a*, *~l*, *~t*, *~g*, *~c*
+@br
+Comparators: none
 
 @h2 Integers
 
+@li long
 *discnumber*, *tracknumber*, *date* (year), *duration* (seconds)
-
+@br
 Comparators: *<*, *<=*, *=*, *>=*, *>*, *!=*
+
+@li short
+*~D*, *~n*, *~y*, *~d*
+@br
+Comparators: *<*, *>*
+@br
+Ranges: *a-b* (>=a&<=b), *-b* (<=b), *a-* (>=a)
 
 @h2 Booleans
 
 *tag* (true if track has tags), *stream* (true if track is a stream)
+@br
+For short expressions: *~T* and *~s*
 
 @h2 Defining Filters
 
@@ -1105,6 +1135,8 @@ unactivates all filters in the filters view.
 
 Filter all rock (anything with *rock* in genre tag) music from 80s-
 	:filter date>=1980&genre="\*rock\*"
+	@br
+	:filter ~y1980-~grock
 
 @h2 Selecting Tracks Matching a Filter
 
