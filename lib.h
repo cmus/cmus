@@ -9,12 +9,16 @@
 #include "search.h"
 #include "track_info.h"
 #include "expr.h"
+#include "rbtree.h"
 
 #include <sys/time.h>
 
 struct tree_track {
 	struct shuffle_track shuffle_track;
-	struct list_head node;
+
+	/* position in track search tree */
+	struct rb_node tree_node;
+
 	struct album *album;
 };
 
@@ -23,30 +27,34 @@ static inline struct track_info *tree_track_info(const struct tree_track *track)
 	return ((struct simple_track *)track)->info;
 }
 
-static inline struct tree_track *to_tree_track(const struct list_head *item)
+static inline struct tree_track *to_tree_track(const struct rb_node *node)
 {
-	return container_of(item, struct tree_track, node);
+	return container_of(node, struct tree_track, tree_node);
 }
 
-struct album {
-	/* next/prev album */
-	struct list_head node;
 
-	/* list of tracks */
-	struct list_head track_head;
+struct album {
+	/* position in album search tree */
+	struct rb_node tree_node;
+
+	/* root of track tree */
+	struct rb_root track_root;
 
 	struct artist *artist;
 	char *name;
 	/* date of the first track added to this album */
 	int date;
+
+	int is_compilation;
 };
 
 struct artist {
-	/* next/prev artist */
-	struct list_head node;
+	/* position in artist search tree */
+	struct rb_node tree_node;
 
-	/* list of albums */
-	struct list_head album_head;
+	/* root of album tree */
+	struct rb_root album_root;
+
 	char *name;
 	char *sort_name;
 	char *auto_sort_name;
@@ -72,7 +80,7 @@ extern struct searchable *tree_searchable;
 extern struct window *lib_tree_win;
 extern struct window *lib_track_win;
 extern struct window *lib_cur_win;
-extern struct list_head lib_artist_head;
+extern struct rb_root lib_artist_root;
 
 #define CUR_ALBUM	(lib_cur_track->album)
 #define CUR_ARTIST	(lib_cur_track->album->artist)
@@ -124,14 +132,14 @@ static inline struct tree_track *iter_to_tree_track(const struct iter *iter)
 	return iter->data1;
 }
 
-static inline struct artist *to_artist(const struct list_head *item)
+static inline struct artist *to_artist(const struct rb_node *node)
 {
-	return container_of(item, struct artist, node);
+	return container_of(node, struct artist, tree_node);
 }
 
-static inline struct album *to_album(const struct list_head *item)
+static inline struct album *to_album(const struct rb_node *node)
 {
-	return container_of(item, struct album, node);
+	return container_of(node, struct album, tree_node);
 }
 
 #endif

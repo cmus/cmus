@@ -176,6 +176,16 @@ static inline void rb_link_node(struct rb_node * node, struct rb_node * parent,
 
 /* Cmus extensions */
 
+static inline void rb_root_init(struct rb_root *root)
+{
+	root->rb_node = NULL;
+}
+
+static inline int rb_root_empty(struct rb_root *root)
+{
+	return RB_EMPTY_ROOT(root);
+}
+
 /**
  * rb_for_each        -       iterate over a rbtree
  * @pos:        the &struct rb_node to use as a loop counter.
@@ -201,5 +211,27 @@ static inline void rb_link_node(struct rb_node * node, struct rb_node * parent,
 #define rb_for_each_safe(pos, n, root) \
 	for (pos = rb_first(root), n = pos ? rb_next(pos) : NULL; pos; \
 		pos = n, n = pos ? rb_next(pos) : NULL)
+
+/**
+ * rb_for_each_entry        -       iterate over a rbtree of given type
+ * @pos:        the &struct rb_node to use as a loop counter.
+ * @t:          the type * to use as a loop counter.
+ * @root:       the root for your rbtree.
+ * @member:	the name of the rb_node-struct within the struct.
+ */
+#define rb_for_each_entry(t, pos, root, member) \
+	for (pos = rb_first(root), t = pos ? rb_entry(pos, __typeof__(*t), member) : NULL; \
+		pos; pos = rb_next(pos), t = pos ? rb_entry(pos, __typeof__(*t), member) : NULL)
+
+/**
+ * rb_for_each_entry_reverse        -       iterate backwards over a rbtree of given type
+ * @pos:        the &struct rb_node to use as a loop counter.
+ * @t:          the type * to use as a loop counter.
+ * @root:       the root for your rbtree.
+ * @member:	the name of the rb_node-struct within the struct.
+ */
+#define rb_for_each_entry_reverse(t, pos, root, member) \
+	for (pos = rb_last(root), t = pos ? rb_entry(pos, __typeof__(*t), member) : NULL; \
+		pos; pos = rb_prev(pos), t = pos ? rb_entry(pos, __typeof__(*t), member) : NULL)
 
 #endif	/* _LINUX_RBTREE_H */

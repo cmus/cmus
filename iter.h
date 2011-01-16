@@ -120,4 +120,54 @@ int FUNC(struct iter *iter)						\
 	return 1;							\
 }
 
+#define GENERIC_TREE_ITER_PREV(FUNC, TYPE, MEMBER)				\
+int FUNC(struct iter *iter)							\
+{										\
+	struct rb_root *root = iter->data0;					\
+	TYPE *e = iter->data1;							\
+										\
+	if (root == NULL)							\
+		return 0;							\
+	if (e == NULL) {							\
+		/* head, get last */						\
+		if (rb_root_empty(root)) {					\
+			/* empty, iter points to the head already */		\
+			return 0;						\
+		}								\
+		iter->data1 = container_of(rb_last(root), TYPE, MEMBER);	\
+		return 1;							\
+	}									\
+	if (rb_prev(&e->MEMBER) == NULL) {					\
+		iter->data1 = NULL;						\
+		return 0;							\
+	}									\
+	iter->data1 = container_of(rb_prev(&e->MEMBER), TYPE, MEMBER);		\
+	return 1;								\
+}
+
+#define GENERIC_TREE_ITER_NEXT(FUNC, TYPE, MEMBER)				\
+int FUNC(struct iter *iter)							\
+{										\
+	struct rb_root *root = iter->data0;					\
+	TYPE *e = iter->data1;							\
+										\
+	if (root == NULL)							\
+		return 0;							\
+	if (e == NULL) {							\
+		/* head, get first */						\
+		if (rb_root_empty(root)) {					\
+			/* empty, iter points to the head already */		\
+			return 0;						\
+		}								\
+		iter->data1 = container_of(rb_first(root), TYPE, MEMBER);	\
+		return 1;							\
+	}									\
+	if (rb_next(&e->MEMBER) == NULL) {					\
+		iter->data1 = NULL;						\
+		return 0;							\
+	}									\
+	iter->data1 = container_of(rb_next(&e->MEMBER), TYPE, MEMBER);		\
+	return 1;								\
+}
+
 #endif

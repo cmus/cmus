@@ -151,27 +151,27 @@ void lib_add_track(struct track_info *ti)
 
 static struct tree_track *album_first_track(const struct album *album)
 {
-	return to_tree_track(album->track_head.next);
+	return to_tree_track(rb_first(&album->track_root));
 }
 
 static struct tree_track *artist_first_track(const struct artist *artist)
 {
-	return album_first_track(to_album(artist->album_head.next));
+	return album_first_track(to_album(rb_first(&artist->album_root)));
 }
 
 static struct tree_track *normal_get_first(void)
 {
-	return artist_first_track(to_artist(lib_artist_head.next));
+	return artist_first_track(to_artist(rb_first(&lib_artist_root)));
 }
 
 static struct tree_track *album_last_track(const struct album *album)
 {
-	return to_tree_track(album->track_head.prev);
+	return to_tree_track(rb_last(&album->track_root));
 }
 
 static struct tree_track *artist_last_track(const struct artist *artist)
 {
-	return album_last_track(to_album(artist->album_head.prev));
+	return album_last_track(to_album(rb_last(&artist->album_root)));
 }
 
 static int aaa_mode_filter(const struct simple_track *track)
@@ -196,9 +196,9 @@ static struct tree_track *normal_get_next(void)
 		return normal_get_first();
 
 	/* not last track of the album? */
-	if (lib_cur_track->node.next != &CUR_ALBUM->track_head) {
+	if (rb_next(&lib_cur_track->tree_node)) {
 		/* next track of the current album */
-		return to_tree_track(lib_cur_track->node.next);
+		return to_tree_track(rb_next(&lib_cur_track->tree_node));
 	}
 
 	if (aaa_mode == AAA_MODE_ALBUM) {
@@ -209,9 +209,9 @@ static struct tree_track *normal_get_next(void)
 	}
 
 	/* not last album of the artist? */
-	if (CUR_ALBUM->node.next != &CUR_ARTIST->album_head) {
+	if (rb_next(&CUR_ALBUM->tree_node) != NULL) {
 		/* first track of the next album */
-		return album_first_track(to_album(CUR_ALBUM->node.next));
+		return album_first_track(to_album(rb_next(&CUR_ALBUM->tree_node)));
 	}
 
 	if (aaa_mode == AAA_MODE_ARTIST) {
@@ -222,9 +222,9 @@ static struct tree_track *normal_get_next(void)
 	}
 
 	/* not last artist of the library? */
-	if (CUR_ARTIST->node.next != &lib_artist_head) {
+	if (rb_next(&CUR_ARTIST->tree_node) != NULL) {
 		/* first track of the next artist */
-		return artist_first_track(to_artist(CUR_ARTIST->node.next));
+		return artist_first_track(to_artist(rb_next(&CUR_ARTIST->tree_node)));
 	}
 
 	if (!repeat)
@@ -240,42 +240,42 @@ static struct tree_track *normal_get_prev(void)
 		return normal_get_first();
 
 	/* not first track of the album? */
-	if (lib_cur_track->node.prev != &CUR_ALBUM->track_head) {
+	if (rb_prev(&lib_cur_track->tree_node)) {
 		/* prev track of the album */
-		return to_tree_track(lib_cur_track->node.prev);
+		return to_tree_track(rb_prev(&lib_cur_track->tree_node));
 	}
 
 	if (aaa_mode == AAA_MODE_ALBUM) {
 		if (!repeat)
 			return NULL;
 		/* last track of the album */
-		return to_tree_track(CUR_ALBUM->track_head.prev);
+		return to_tree_track(rb_prev(&CUR_ALBUM->tree_node));
 	}
 
 	/* not first album of the artist? */
-	if (CUR_ALBUM->node.prev != &CUR_ARTIST->album_head) {
+	if (rb_prev(&CUR_ALBUM->tree_node) != NULL) {
 		/* last track of the prev album of the artist */
-		return album_last_track(to_album(CUR_ALBUM->node.prev));
+		return album_last_track(to_album(rb_prev(&CUR_ALBUM->tree_node)));
 	}
 
 	if (aaa_mode == AAA_MODE_ARTIST) {
 		if (!repeat)
 			return NULL;
 		/* last track of the last album of the artist */
-		return album_last_track(to_album(CUR_ARTIST->album_head.prev));
+		return album_last_track(to_album(rb_last(&CUR_ARTIST->album_root)));
 	}
 
 	/* not first artist of the library? */
-	if (CUR_ARTIST->node.prev != &lib_artist_head) {
+	if (rb_prev(&CUR_ARTIST->tree_node) != NULL) {
 		/* last track of the last album of the prev artist */
-		return artist_last_track(to_artist(CUR_ARTIST->node.prev));
+		return artist_last_track(to_artist(rb_prev(&CUR_ARTIST->tree_node)));
 	}
 
 	if (!repeat)
 		return NULL;
 
 	/* last track */
-	return artist_last_track(to_artist(lib_artist_head.prev));
+	return artist_last_track(to_artist(rb_last(&lib_artist_root)));
 }
 
 /* set next/prev (tree) }}} */
@@ -327,7 +327,7 @@ struct track_info *lib_set_next(void)
 {
 	struct tree_track *track;
 
-	if (list_empty(&lib_artist_head)) {
+	if (rb_root_empty(&lib_artist_root)) {
 		BUG_ON(lib_cur_track != NULL);
 		return NULL;
 	}
@@ -347,7 +347,7 @@ struct track_info *lib_set_prev(void)
 {
 	struct tree_track *track;
 
-	if (list_empty(&lib_artist_head)) {
+	if (rb_root_empty(&lib_artist_root)) {
 		BUG_ON(lib_cur_track != NULL);
 		return NULL;
 	}

@@ -1807,11 +1807,11 @@ found:
 static int count_albums(void)
 {
 	struct artist *artist;
-	struct list_head *item;
+	struct rb_node *tmp1, *tmp2;
 	int count = 0;
 
-	list_for_each_entry(artist, &lib_artist_head, node) {
-		list_for_each(item, &artist->album_head)
+	rb_for_each_entry(artist, tmp1, &lib_artist_root, tree_node) {
+		rb_for_each(tmp2, &artist->album_root)
 			count++;
 	}
 	return count;
@@ -1847,18 +1847,18 @@ static void cmd_lqueue(char *arg)
 		goto unlock;
 
 	r = rand_array(count, nmax);
-	album = to_album(to_artist(lib_artist_head.next)->album_head.next);
+	album = to_album(rb_first(&to_artist(rb_first(&lib_artist_root))->album_root));
 	pos = 0;
 	for (i = 0; i < count; i++) {
 		struct album_list *a;
 
 		while (pos < r[i]) {
 			struct artist *artist = album->artist;
-			if (album->node.next == &artist->album_head) {
-				artist = to_artist(artist->node.next);
-				album = to_album(artist->album_head.next);
+			if (!rb_next(&album->tree_node)) {
+				artist = to_artist(rb_next(&artist->tree_node));
+				album = to_album(rb_first(&artist->album_root));
 			} else {
-				album = to_album(album->node.next);
+				album = to_album(rb_next(&album->tree_node));
 			}
 			pos++;
 		}
@@ -1873,8 +1873,9 @@ static void cmd_lqueue(char *arg)
 		struct list_head *next = item->next;
 		struct album_list *a = container_of(item, struct album_list, node);
 		struct tree_track *t;
-
-		list_for_each_entry(t, &a->album->track_head, node)
+		struct rb_node *tmp;
+ 
+		rb_for_each_entry(t, tmp, &album->track_root, tree_node)
 			editable_add(&pq_editable, simple_track_new(tree_track_info(t)));
 		free(a);
 		item = next;
