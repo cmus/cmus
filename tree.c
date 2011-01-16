@@ -328,12 +328,59 @@ static inline void tree_win_get_selected(struct artist **artist, struct album **
 	}
 }
 
+static char *auto_artist_sort_name(const char *name)
+{
+	const char *name_orig = name;
+	char *buf;
+
+	if (strncasecmp(name, "the ", 4) != 0)
+		return NULL;
+
+	name += 4;
+	while (isspace((int)*name))
+		++name;
+
+	if (*name == '\0')
+		return NULL;
+
+	buf = xnew(char, strlen(name_orig) + 2);
+	sprintf(buf, "%s, %c%c%c", name, name_orig[0],
+					 name_orig[1],
+					 name_orig[2]);
+	return buf;
+}
+
+static struct artist *artist_new(const char *name, const char *sort_name)
+{
+	struct artist *a = xnew(struct artist, 1);
+
+	a->name = xstrdup(name);
+	a->sort_name = sort_name ? xstrdup(sort_name) : NULL;
+	a->auto_sort_name = auto_artist_sort_name(name);
+	a->expanded = 0;
+	list_init(&a->album_head);
+
+	return a;
+}
+
 static void artist_free(struct artist *artist)
 {
 	free(artist->name);
 	free(artist->sort_name);
 	free(artist->auto_sort_name);
 	free(artist);
+}
+
+static struct album *album_new(struct artist *artist, const char *name, int date)
+{
+	struct album *album = xnew(struct album, 1);
+
+	album->name = xstrdup(name);
+	album->date = date;
+	list_init(&album->track_head);
+	album->artist = artist;
+
+	return album;
 }
 
 static void album_free(struct album *album)
@@ -470,37 +517,9 @@ void tree_sort_artists(void)
 	window_changed(lib_tree_win);
 }
 
-static char *auto_artist_sort_name(const char *name)
-{
-	const char *name_orig = name;
-	char *buf;
-
-	if (strncasecmp(name, "the ", 4) != 0)
-		return NULL;
-
-	name += 4;
-	while (isspace((int)*name))
-		++name;
-
-	if (*name == '\0')
-		return NULL;
-
-	buf = xnew(char, strlen(name_orig) + 2);
-	sprintf(buf, "%s, %c%c%c", name, name_orig[0],
-					 name_orig[1],
-					 name_orig[2]);
-	return buf;
-}
-
 static struct artist *add_artist(const char *name, const char *sort_name)
 {
-	struct artist *a = xnew(struct artist, 1);
-
-	a->name = xstrdup(name);
-	a->sort_name = sort_name ? xstrdup(sort_name) : NULL;
-	a->auto_sort_name = auto_artist_sort_name(name);
-	a->expanded = 0;
-	list_init(&a->album_head);
+	struct artist *a = artist_new(name, sort_name);
 
 	insert_artist(a);
 
@@ -512,11 +531,7 @@ static struct album *artist_add_album(struct artist *artist, const char *name, i
 	struct list_head *item;
 	struct album *album;
 
-	album = xnew(struct album, 1);
-	album->name = xstrdup(name);
-	album->date = date;
-	list_init(&album->track_head);
-	album->artist = artist;
+	album = album_new(artist, name, date);
 
 	/*
 	 * Sort regular albums by date, but sort compilations
