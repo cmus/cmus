@@ -376,9 +376,7 @@ struct track_info *sorted_set_selected(void)
 
 void lib_set_filter(struct expr *expr)
 {
-	static const char *tmp_keys[1] = { NULL };
 	struct track_info *cur_ti = NULL;
-	const char **sort_keys;
 	int i;
 
 	/* try to save cur_track */
@@ -395,10 +393,6 @@ void lib_set_filter(struct expr *expr)
 		expr_free(filter);
 	filter = expr;
 
-	/* disable sorting temporarily */
-	sort_keys = lib_editable.sort_keys;
-	lib_editable.sort_keys = tmp_keys;
-
 	for (i = 0; i < FH_SIZE; i++) {
 		struct fh_entry *e;
 
@@ -412,10 +406,8 @@ void lib_set_filter(struct expr *expr)
 		}
 	}
 
-	/* enable sorting */
-	lib_editable.sort_keys = sort_keys;
-	editable_sort(&lib_editable);
-
+	window_changed(lib_editable.win);
+	window_goto_top(lib_editable.win);
 	lib_cur_win = lib_tree_win;
 	window_goto_top(lib_tree_win);
 

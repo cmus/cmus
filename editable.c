@@ -104,20 +104,19 @@ void editable_remove_sel(struct editable *e)
 	}
 }
 
-static const char **sort_keys;
-
-static int list_cmp(const struct list_head *a_head, const struct list_head *b_head)
-{
-	const struct simple_track *a = to_simple_track(a_head);
-	const struct simple_track *b = to_simple_track(b_head);
-
-	return track_info_cmp(a->info, b->info, sort_keys);
-}
-
 void editable_sort(struct editable *e)
 {
-	sort_keys = e->sort_keys;
-	list_mergesort(&e->head, list_cmp);
+	struct rb_node *node, *tmp;
+	struct rb_root tmptree = RB_ROOT;
+
+	list_init(&e->head);
+	rb_for_each_safe(node, tmp, &e->tree_root) {
+		struct simple_track *track = tree_node_to_simple_track(node);
+		rb_erase(node, &e->tree_root);
+		sorted_list_add_track(&e->head, &tmptree, track, e->sort_keys);
+	}
+	e->tree_root.rb_node = tmptree.rb_node;
+
 	window_changed(e->win);
 	window_goto_top(e->win);
 }
