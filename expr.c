@@ -636,7 +636,6 @@ static char *expand_short_expr(const char *expr_short)
 			if (c == '"') {
 				stack4_replace_top(&state_stack, ST_IN_QUOTE_STR);
 				out[k++] = c;
-				/* out[k++] = '*'; */
 			} else {
 				stack4_replace_top(&state_stack, ST_IN_STR);
 				out[k++] = '"';
@@ -647,16 +646,17 @@ static char *expand_short_expr(const char *expr_short)
 		case ST_IN_QUOTE_STR:
 			if (c == '"' && expr_short[i-1] != '\\') {
 				stack4_pop(&state_stack);
-				/* out[k++] = '*'; */
 			}
 			out[k++] = c;
 			break;
 		case ST_IN_STR:
 			/* isalnum() doesn't work for multi-byte characters */
-			if (c != ' ' && c != ')' && c != '~' && c != '|' &&
-					c != '(' && c != '!' && c != '\0') {
+			if (c != '~' && c != '!' && c != '|' &&
+					c != '(' && c != ')' && c != '\0') {
 				out[k++] = c;
 			} else {
+				while (k > 0 && out[k-1] == ' ')
+					k--;
 				out[k++] = '*';
 				out[k++] = '"';
 				i--;
