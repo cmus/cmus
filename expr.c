@@ -553,7 +553,7 @@ static char *expand_short_expr(const char *expr_short)
 				out[k++] = '(';
 			} else if (etype == EXPR_STR) {
 				stack4_push(&state_stack, ST_EXPECT_STR);
-			} else {
+			} else if (etype != EXPR_BOOL) {
 				BUG("wrong etype: %d\n", etype);
 			}
 			strcpy(out+k, key);
