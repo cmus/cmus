@@ -153,39 +153,40 @@ again:
 
 void sorted_list_add_track(struct list_head *head, struct rb_root *tree_root, struct simple_track *track, const char * const *keys)
 {
-	struct rb_node **new = &(tree_root->rb_node), *parent = NULL, *curr, *prev;
+	struct rb_node **new = &(tree_root->rb_node), *parent = NULL, *curr, *prev, *next;
 
 	/* try to locate track in tree */
 	while (*new) {
-		// why not move this outside of loop?
-		const struct simple_track *a = to_simple_track(&track->node);
-		const struct simple_track *b = tree_node_to_simple_track(*new);
-		int result = track_info_cmp(a->info, b->info, keys);
+		const struct simple_track *t = tree_node_to_simple_track(*new);
+		int result = track_info_cmp(track->info, t->info, keys);
 
 		parent = *new;
 		if (result < 0)
 			new = &((*new)->rb_left);
-		else if (result > 0)
-			new = &((*new)->rb_right);
 		else
-			break;
+			new = &((*new)->rb_right);
 	}
 
-	/* only add to tree if not there already */
-	if (!(*new)) {
-		rb_link_node(&track->tree_node, parent, new);
-		curr = *new;
-		rb_insert_color(&track->tree_node, tree_root);
-	} else
-		curr = *new;
+	rb_link_node(&track->tree_node, parent, new);
+	curr = *new;
+	rb_insert_color(&track->tree_node, tree_root);
 
-	/* locate previous list item or use list head */
+	next = rb_next(curr);
+	if (next) {
+		struct simple_track *next_track = tree_node_to_simple_track(next);
+		list_add_tail(&track->node, &next_track->node);
+		return;
+	}
+
 	prev = rb_prev(curr);
 	if (prev) {
 		struct simple_track *prev_track = tree_node_to_simple_track(prev);
 		list_add(&track->node, &prev_track->node);
-	} else
-		list_add_tail(&track->node, head);
+		return;
+	}
+
+	/* rbtree was empty, just add after list head */
+	list_add(&track->node, head);
 }
 
 static int compare_rand(const struct rb_node *a, const struct rb_node *b)
