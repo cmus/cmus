@@ -156,6 +156,9 @@ static struct {
 	{ "album artist", "albumartist" },
 	{ "disc", "discnumber" },
 	{ "track", "tracknumber" },
+	{ "WM/Year", "date" },
+	{ "WM/ArtistSortOrder", "artistsort" },
+	{ "WM/AlbumArtistSortOrder", "albumartistsort" },
 	{ NULL, NULL }
 };
 

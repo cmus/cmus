@@ -35,7 +35,9 @@
 #include "utils.h"
 #include "config/ffmpeg.h"
 
-#define NUM_FFMPEG_KEYS 8
+#if (LIBAVFORMAT_VERSION_INT < ((52<<16)+(31<<8)+0))
+# define NUM_FFMPEG_KEYS 8
+#endif
 
 struct ffmpeg_input {
 	AVPacket pkt;
@@ -347,6 +349,7 @@ static int ffmpeg_seek(struct input_plugin_data *ip_data, double offset)
 	}
 }
 
+#if (LIBAVFORMAT_VERSION_INT < ((52<<16)+(31<<8)+0))
 /* Return new i. */
 static int set_comment(struct keyval *comment, int i, const char *key, const char *val)
 {
@@ -357,12 +360,15 @@ static int set_comment(struct keyval *comment, int i, const char *key, const cha
 	comment[i].val = xstrdup(val);
 	return i + 1;
 }
+#endif
 
 static int ffmpeg_read_comments(struct input_plugin_data *ip_data, struct keyval **comments)
 {
-	char buff[16];
 	struct ffmpeg_private *priv = ip_data->private;
 	AVFormatContext *ic = priv->input_context;
+
+#if (LIBAVFORMAT_VERSION_INT < ((52<<16)+(31<<8)+0))
+	char buff[16];
 	int i = 0;
 
 	*comments = xnew0(struct keyval, NUM_FFMPEG_KEYS + 1);
@@ -381,6 +387,18 @@ static int ffmpeg_read_comments(struct input_plugin_data *ip_data, struct keyval
 		snprintf(buff, sizeof(buff), "%d", ic->track);
 		i = set_comment(*comments, i, "tracknumber", buff);
 	}
+#else
+	GROWING_KEYVALS(c);
+	AVMetadataTag *tag = NULL;
+ 
+	while ((tag = av_metadata_get(ic->metadata, "", tag, AV_METADATA_IGNORE_SUFFIX))) {
+		if (tag && tag->value[0])
+			comments_add_const(&c, tag->key, tag->value);
+	}
+
+	keyvals_terminate(&c);
+	*comments = c.keyvals;
+#endif
 
 	return 0;
 }
