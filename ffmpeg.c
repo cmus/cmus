@@ -272,12 +272,14 @@ static int ffmpeg_fill_buffer(AVFormatContext *ic, AVCodecContext *cc, struct ff
 		len = avcodec_decode_audio2(cc, (int16_t *) output->buffer, &frame_size,
 				input->curr_pkt_buf, input->curr_pkt_size);
 #else
-		AVPacket avpkt;
-		av_init_packet(&avpkt);
-		avpkt.data = input->curr_pkt_buf;
-		avpkt.size = input->curr_pkt_size;
-		len = avcodec_decode_audio3(cc, (int16_t *) output->buffer, &frame_size, &avpkt);
-		av_free_packet(&avpkt);
+		{
+			AVPacket avpkt;
+			av_init_packet(&avpkt);
+			avpkt.data = input->curr_pkt_buf;
+			avpkt.size = input->curr_pkt_size;
+			len = avcodec_decode_audio3(cc, (int16_t *) output->buffer, &frame_size, &avpkt);
+			av_free_packet(&avpkt);
+		}
 #endif
 		if (len < 0) {
 			/* this is often reached when seeking, not sure why */
