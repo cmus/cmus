@@ -543,8 +543,9 @@ static uchar get_base_from_composed(uchar ch)
 static inline int do_u_strncase_equal(const char *a, const char *b, size_t len, int only_base_chars)
 {
 	int ai = 0, bi = 0;
+	size_t i;
 
-	while (b[bi] && len > 0) {
+	for (i = 0; i < len; i++) {
 		uchar au, bu;
 
 		u_get_char(a, &ai, &au);
@@ -557,8 +558,6 @@ static inline int do_u_strncase_equal(const char *a, const char *b, size_t len, 
 
 		if (u_casefold_char(au) != u_casefold_char(bu))
 			return 0;
-
-		len--;
 	}
 
 	return 1;
