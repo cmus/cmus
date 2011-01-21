@@ -113,6 +113,14 @@ int u_str_width(const char *str);
  */
 int u_str_nwidth(const char *str, int len);
 
+/*
+ * @str  null-terminated UTF-8 string
+ * @uch  unicode character
+ *
+ * Returns a pointer to the first occurrence of @uch in the @str.
+ */
+char *u_strchr(const char *str, uchar uch);
+
 void u_prev_char_pos(const char *str, int *idx);
 
 /*

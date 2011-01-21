@@ -1819,6 +1819,20 @@ static void handle_ch(uchar ch)
 	}
 }
 
+static void handle_escape(int c)
+{
+	clear_error();
+	if (input_mode == NORMAL_MODE) {
+		normal_mode_ch(c + 128);
+	} else if (input_mode == COMMAND_MODE) {
+		command_mode_escape(c);
+		update_commandline();
+	} else if (input_mode == SEARCH_MODE) {
+		search_mode_escape(c);
+		update_commandline();
+	}
+}
+
 static void handle_key(int key)
 {
 	clear_error();
@@ -1847,6 +1861,15 @@ static void u_getch(void)
 	if (key > 255) {
 		handle_key(key);
 		return;
+	}
+
+	/* escape sequence */
+	if (key == 0x1B) {
+		int e_key = getch();
+		if (e_key != ERR && e_key != 0) {
+			handle_escape(e_key);
+			return;
+		}
 	}
 
 	ch = (unsigned char)key;

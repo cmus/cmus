@@ -46,6 +46,7 @@ extern struct command commands[];
 extern int run_only_safe_commands;
 
 void command_mode_ch(uchar ch);
+void command_mode_escape(int c);
 void command_mode_key(int key);
 void commands_init(void);
 void commands_exit(void);

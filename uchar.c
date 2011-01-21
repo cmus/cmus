@@ -284,6 +284,19 @@ int u_str_nwidth(const char *str, int len)
 	return w;
 }
 
+char *u_strchr(const char *str, uchar uch)
+{
+	int idx = 0;
+
+	while (str[idx]) {
+		uchar u;
+		u_get_char(str, &idx, &u);
+		if (uch == u)
+			return (char *) (str + idx);
+	}
+	return NULL;
+}
+
 void u_prev_char_pos(const char *str, int *idx)
 {
 	const unsigned char *s = (const unsigned char *)str;

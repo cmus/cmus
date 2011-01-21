@@ -28,6 +28,9 @@ struct cmdline {
 
 extern struct cmdline cmdline;
 
+extern const char cmdline_word_delimiters[];
+extern const char cmdline_filename_delimiters[];
+
 void cmdline_init(void);
 void cmdline_insert_ch(uchar ch);
 void cmdline_backspace(void);
@@ -40,5 +43,10 @@ void cmdline_move_left(void);
 void cmdline_move_right(void);
 void cmdline_move_home(void);
 void cmdline_move_end(void);
+
+void cmdline_forward_word(const char *delim);
+void cmdline_backward_word(const char *delim);
+void cmdline_delete_word(const char *delim);
+void cmdline_backward_delete_word(const char *delim);
 
 #endif

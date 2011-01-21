@@ -186,6 +186,9 @@ void search_mode_ch(uchar ch)
 	case 0x15:
 		cmdline_backspace_to_bol();
 		break;
+	case 0x17: // ^W
+		cmdline_backward_delete_word(cmdline_word_delimiters);
+		break;
 	case 0x08: // ^H
 	case 127:
 		backspace();
@@ -211,6 +214,26 @@ void search_mode_ch(uchar ch)
 			/* restore old value */
 			search_restricted = restricted;
 		}
+		break;
+	}
+	reset_history_search();
+}
+
+void search_mode_escape(int c)
+{
+	switch (c) {
+	case 98:
+		cmdline_backward_word(cmdline_filename_delimiters);
+		break;
+	case 100:
+		cmdline_delete_word(cmdline_filename_delimiters);
+		break;
+	case 102:
+		cmdline_forward_word(cmdline_filename_delimiters);
+		break;
+	case 127:
+	case KEY_BACKSPACE:
+		cmdline_backward_delete_word(cmdline_filename_delimiters);
 		break;
 	}
 	reset_history_search();
