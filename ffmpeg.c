@@ -433,13 +433,21 @@ static int ffmpeg_duration(struct input_plugin_data *ip_data)
 	return priv->input_context->duration / AV_TIME_BASE;
 }
 
+static long ffmpeg_bitrate(struct input_plugin_data *ip_data)
+{
+	struct ffmpeg_private *priv = ip_data->private;
+	long bitrate = priv->input_context->bit_rate;
+	return bitrate ? bitrate : -IP_ERROR_FUNCTION_NOT_SUPPORTED;
+}
+
 const struct input_plugin_ops ip_ops = {
 	.open = ffmpeg_open,
 	.close = ffmpeg_close,
 	.read = ffmpeg_read,
 	.seek = ffmpeg_seek,
 	.read_comments = ffmpeg_read_comments,
-	.duration = ffmpeg_duration
+	.duration = ffmpeg_duration,
+	.bitrate = ffmpeg_bitrate
 };
 
 #ifdef USE_FALLBACK_IP

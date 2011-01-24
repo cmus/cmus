@@ -459,13 +459,21 @@ static int mp4_duration(struct input_plugin_data *ip_data)
 	return duration / scale;
 }
 
+static long mp4_bitrate(struct input_plugin_data *ip_data)
+{
+	struct mp4_private *priv = ip_data->private;
+	long bitrate = MP4GetTrackBitRate(priv->mp4.handle, priv->mp4.track);
+	return bitrate ? bitrate : -IP_ERROR_FUNCTION_NOT_SUPPORTED;
+}
+
 const struct input_plugin_ops ip_ops = {
 	.open = mp4_open,
 	.close = mp4_close,
 	.read = mp4_read,
 	.seek = mp4_seek,
 	.read_comments = mp4_read_comments,
-	.duration = mp4_duration
+	.duration = mp4_duration,
+	.bitrate = mp4_bitrate
 };
 
 const char * const ip_extensions[] = { "mp4", "m4a", "m4b", NULL };

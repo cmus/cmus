@@ -82,6 +82,7 @@ struct input_plugin_ops {
 	int (*read_comments)(struct input_plugin_data *ip_data,
 			struct keyval **comments);
 	int (*duration)(struct input_plugin_data *ip_data);
+	long (*bitrate)(struct input_plugin_data *ip_data);
 };
 
 /* symbols exported by plugin */

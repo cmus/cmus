@@ -372,13 +372,20 @@ static int wav_duration(struct input_plugin_data *ip_data)
 	return duration;
 }
 
+static long wav_bitrate(struct input_plugin_data *ip_data)
+{
+	sample_format_t sf = ip_data->sf;
+	return sf_get_bits(sf) * sf_get_rate(sf) * sf_get_channels(sf);
+}
+
 const struct input_plugin_ops ip_ops = {
 	.open = wav_open,
 	.close = wav_close,
 	.read = wav_read,
 	.seek = wav_seek,
 	.read_comments = wav_read_comments,
-	.duration = wav_duration
+	.duration = wav_duration,
+	.bitrate = wav_bitrate
 };
 
 const char * const ip_extensions[] = { "wav", NULL };

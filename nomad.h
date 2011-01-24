@@ -79,5 +79,6 @@ int nomad_time_seek(struct nomad *nomad, double pos);
 
 double nomad_time_tell(struct nomad *nomad);
 double nomad_time_total(struct nomad *nomad);
+int nomad_bitrate(struct nomad *nomad);
 
 #endif

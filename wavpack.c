@@ -309,13 +309,23 @@ static int wavpack_duration(struct input_plugin_data *ip_data)
 	return duration;
 }
 
+static long wavpack_bitrate(struct input_plugin_data *ip_data)
+{
+	struct wavpack_private *priv = ip_data->private;
+	double bitrate = WavpackGetAverageBitrate(priv->wpc, 1);
+	if (!bitrate)
+		return -IP_ERROR_FUNCTION_NOT_SUPPORTED;
+	return (long) (bitrate + 0.5);
+}
+
 const struct input_plugin_ops ip_ops = {
 	.open = wavpack_open,
 	.close = wavpack_close,
 	.read = wavpack_read,
 	.seek = wavpack_seek,
 	.read_comments = wavpack_read_comments,
-	.duration = wavpack_duration
+	.duration = wavpack_duration,
+	.bitrate = wavpack_bitrate
 };
 
 const char * const ip_extensions[] = { "wv", NULL };

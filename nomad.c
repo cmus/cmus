@@ -67,6 +67,7 @@ struct nomad {
 	int end_drop_frames;
 
 	struct {
+		unsigned int is_info : 1;
 		unsigned int flags;
 		unsigned int nr_frames;
 		unsigned int bytes;
@@ -232,9 +233,16 @@ static int xing_parse(struct nomad *nomad)
 	if (bitlen < 64)
 		return -1;
 	xing_id = mad_bit_read(&ptr, 32);
-	if (xing_id != (('X' << 24) | ('i' << 16) | ('n' << 8) | 'g') &&
-	    xing_id != (('I' << 24) | ('n' << 16) | ('f' << 8) | 'o'))
+	switch (xing_id) {
+	case (('X' << 24) | ('i' << 16) | ('n' << 8) | 'g'):
+		nomad->xing.is_info = 0;
+		break;
+	case (('I' << 24) | ('n' << 16) | ('f' << 8) | 'o'):
+		nomad->xing.is_info = 1;
+		break;
+	default:
 		return -1;
+	}
 	nomad->xing.flags = mad_bit_read(&ptr, 32);
 	bitlen -= 64;
 	if (nomad->xing.flags & XING_FRAMES) {
@@ -388,10 +396,8 @@ static void build_seek_index(struct nomad *nomad)
 	nomad->seek_idx.size++;
 }
 
-static void calc_fast(struct nomad *nomad)
+static void calc_frames_fast(struct nomad *nomad)
 {
-	nomad->info.avg_bitrate = -1;
-	nomad->info.vbr = -1;
 	if (nomad->has_xing && (nomad->xing.flags & XING_FRAMES) && nomad->xing.nr_frames) {
 		nomad->info.nr_frames = nomad->xing.nr_frames;
 		mad_timer_multiply(&nomad->timer, nomad->info.nr_frames);
@@ -402,11 +408,30 @@ static void calc_fast(struct nomad *nomad)
 	}
 }
 
+static void calc_bitrate_fast(struct nomad *nomad)
+{
+	if (nomad->has_xing && (nomad->xing.flags & XING_BYTES) && !nomad->xing.is_info) {
+		nomad->info.avg_bitrate = (nomad->xing.bytes * 8.0) / nomad->info.duration;
+		nomad->info.vbr = 1;
+#if defined(DEBUG_XING)
+		d_print("seems to be VBR, bitrate from Xing Header: %d\n", nomad->info.avg_bitrate);
+#endif
+	} else {
+		nomad->info.avg_bitrate = nomad->frame.header.bitrate;
+		nomad->info.vbr = 0;
+#if defined(DEBUG_XING)
+		if (nomad->xing.is_info)
+			d_print("Xing header == Info, ");
+		d_print("taking bitrate from first frame: %d\n", nomad->info.avg_bitrate);
+#endif
+	}
+}
+
 /*
  * fields
  *     nomad->info.avg_bitrate and
  *     nomad->info.vbr
- * are filled only if fast = 0
+ * are only estimated if fast = 1
  */
 static int scan(struct nomad *nomad)
 {
@@ -452,7 +477,7 @@ static int scan(struct nomad *nomad)
 			xing_parse(nomad);
 
 			if (nomad->fast) {
-				calc_fast(nomad);
+				calc_frames_fast(nomad);
 				break;
 			}
 		} else {
@@ -468,6 +493,9 @@ static int scan(struct nomad *nomad)
 	nomad->info.duration = timer_to_seconds(nomad->timer);
 	if (!nomad->fast)
 		nomad->info.avg_bitrate = bitrate_sum / nomad->info.nr_frames;
+	else {
+		calc_bitrate_fast(nomad);
+	}
 	nomad->cur_frame = 0;
 	nomad->cbs.lseek(nomad->datasource, 0, SEEK_SET);
 	nomad->input_offset = 0;
@@ -859,4 +887,9 @@ double nomad_time_tell(struct nomad *nomad)
 double nomad_time_total(struct nomad *nomad)
 {
 	return nomad->info.duration;
+}
+
+int nomad_bitrate(struct nomad *nomad)
+{
+	return nomad->info.avg_bitrate;
 }

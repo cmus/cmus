@@ -356,13 +356,24 @@ static int mpc_duration(struct input_plugin_data *ip_data)
 #endif
 }
 
+static long mpc_bitrate(struct input_plugin_data *ip_data)
+{
+	struct mpc_private *priv = ip_data->private;
+	if (priv->info.average_bitrate)
+		return (long) (priv->info.average_bitrate + 0.5);
+	if (priv->info.bitrate)
+		return priv->info.bitrate;
+	return -IP_ERROR_FUNCTION_NOT_SUPPORTED;
+}
+
 const struct input_plugin_ops ip_ops = {
 	.open = mpc_open,
 	.close = mpc_close,
 	.read = mpc_read,
 	.seek = mpc_seek,
 	.read_comments = mpc_read_comments,
-	.duration = mpc_duration
+	.duration = mpc_duration,
+	.bitrate = mpc_bitrate
 };
 
 const char *const ip_extensions[] = { "mpc", "mpp", "mp+", NULL };

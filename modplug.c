@@ -150,13 +150,19 @@ static int mod_duration(struct input_plugin_data *ip_data)
 	return (ModPlug_GetLength(priv->file) + 500) / 1000;
 }
 
+static long mod_bitrate(struct input_plugin_data *ip_data)
+{
+	return -IP_ERROR_FUNCTION_NOT_SUPPORTED;
+}
+
 const struct input_plugin_ops ip_ops = {
 	.open = mod_open,
 	.close = mod_close,
 	.read = mod_read,
 	.seek = mod_seek,
 	.read_comments = mod_read_comments,
-	.duration = mod_duration
+	.duration = mod_duration,
+	.bitrate = mod_bitrate
 };
 
 const char * const ip_extensions[] = {

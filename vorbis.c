@@ -279,13 +279,23 @@ static int vorbis_duration(struct input_plugin_data *ip_data)
 	return duration;
 }
 
+static long vorbis_bitrate(struct input_plugin_data *ip_data)
+{
+	struct vorbis_private *priv = ip_data->private;
+	long bitrate = ov_bitrate(&priv->vf, -1);
+	if (bitrate == OV_EINVAL || bitrate == OV_FALSE)
+		return -IP_ERROR_FUNCTION_NOT_SUPPORTED;
+	return bitrate;
+}
+
 const struct input_plugin_ops ip_ops = {
 	.open = vorbis_open,
 	.close = vorbis_close,
 	.read = vorbis_read,
 	.seek = vorbis_seek,
 	.read_comments = vorbis_read_comments,
-	.duration = vorbis_duration
+	.duration = vorbis_duration,
+	.bitrate = vorbis_bitrate
 };
 
 const char * const ip_extensions[] = { "ogg", NULL };

@@ -29,6 +29,7 @@ struct cache_entry {
 	// NOTE: size does not include padding bytes
 	unsigned int size;
 	int duration;
+	long bitrate;
 	time_t mtime;
 
 	// filename and N * (key, val)
@@ -100,6 +101,7 @@ static struct track_info *cache_entry_to_ti(struct cache_entry *e)
 	int pos, i, count;
 
 	ti->duration = e->duration;
+	ti->bitrate = e->bitrate;
 	ti->mtime = e->mtime;
 
 	// count strings (filename + key/val pairs)
@@ -237,7 +239,7 @@ int cache_init(void)
 	cache_header[4] = flags & 0xff;
 
 	/* assumed version */
-	cache_header[3] = 0x02;
+	cache_header[3] = 0x03;
 
 	cache_filename = xstrjoin(cmus_config_dir, "/cache");
 	return read_cache();
@@ -290,6 +292,7 @@ static void write_ti(int fd, struct gbuf *buf, struct track_info *ti, unsigned i
 	len = xnew(int, alloc);
 	e.size = sizeof(e);
 	e.duration = ti->duration;
+	e.bitrate = ti->bitrate;
 	e.mtime = ti->mtime;
 	len[count] = strlen(ti->filename) + 1;
 	e.size += len[count++];
@@ -373,6 +376,7 @@ static struct track_info *ip_get_ti(const char *filename)
 		ti = track_info_new(filename);
 		track_info_set_comments(ti, comments);
 		ti->duration = ip_duration(ip);
+		ti->bitrate = ip_bitrate(ip);
 		ti->mtime = ip_is_remote(ip) ? -1 : file_get_mtime(filename);
 	}
 	ip_delete(ip);

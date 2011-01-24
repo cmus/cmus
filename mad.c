@@ -181,13 +181,21 @@ static int mad_duration(struct input_plugin_data *ip_data)
 	return nomad_time_total(nomad);
 }
 
+static long mad_bitrate(struct input_plugin_data *ip_data)
+{
+	struct nomad *nomad = ip_data->private;
+	long bitrate = nomad_bitrate(nomad);
+	return bitrate != -1 ? bitrate : -IP_ERROR_FUNCTION_NOT_SUPPORTED;
+}
+
 const struct input_plugin_ops ip_ops = {
 	.open = mad_open,
 	.close = mad_close,
 	.read = mad_read,
 	.seek = mad_seek,
 	.read_comments = mad_read_comments,
-	.duration = mad_duration
+	.duration = mad_duration,
+	.bitrate = mad_bitrate
 };
 
 const char * const ip_extensions[] = { "mp3", "mp2", NULL };

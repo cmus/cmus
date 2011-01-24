@@ -42,6 +42,7 @@ struct aac_private {
 
 	unsigned char channels;
 	unsigned long sample_rate;
+	long bitrate;
 
 	char *overflow_buf;
 	int overflow_buf_len;
@@ -193,6 +194,7 @@ static int aac_open(struct input_plugin_data *ip_data)
 	/* init private struct */
 	priv = xnew0(struct aac_private, 1);
 	priv->decoder = NeAACDecOpen();
+	priv->bitrate = -1;
 	ip_data->private = priv;
 
 	/* set decoder config */
@@ -391,6 +393,14 @@ static int aac_duration(struct input_plugin_data *ip_data)
 	if (file_size == -1)
 		return -IP_ERROR_FUNCTION_NOT_SUPPORTED;
 
+	/* Seek to the middle of the file. There is almost always silence at
+	 * the beginning, which gives wrong results. */
+	if (lseek(ip_data->fd, file_size/2, SEEK_SET) == -1)
+		return -IP_ERROR_FUNCTION_NOT_SUPPORTED;
+
+	priv->rbuf_pos = 0;
+	priv->rbuf_len = 0;
+
 	/* guess track length by decoding the first 10 frames */
 	while (frames < 10) {
 		if (buffer_fill_frame(ip_data) <= 0)
@@ -416,7 +426,16 @@ static int aac_duration(struct input_plugin_data *ip_data)
 	samples /= priv->channels;
 	bytes /= frames;
 
+	/*  8 * file_size / duration */
+	priv->bitrate = (8 * bytes * priv->sample_rate) / samples;
+
 	return ((file_size / bytes) * samples) / priv->sample_rate;
+}
+
+static long aac_bitrate(struct input_plugin_data *ip_data)
+{
+	struct aac_private *priv = ip_data->private;
+	return priv->bitrate != -1 ? priv->bitrate : -IP_ERROR_FUNCTION_NOT_SUPPORTED;
 }
 
 const struct input_plugin_ops ip_ops = {
@@ -425,7 +444,8 @@ const struct input_plugin_ops ip_ops = {
 	.read = aac_read,
 	.seek = aac_seek,
 	.read_comments = aac_read_comments,
-	.duration = aac_duration
+	.duration = aac_duration,
+	.bitrate = aac_bitrate
 };
 
 const char * const ip_extensions[] = { "aac", NULL };

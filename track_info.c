@@ -193,6 +193,9 @@ int track_info_cmp(const struct track_info *a, const struct track_info *b, const
 		case SORT_RG_ALBUM_PEAK:
 			res = doublecmp0(getentry(a, key, double), getentry(b, key, double));
 			break;
+		case SORT_BITRATE:
+			res = getentry(a, key, long) - getentry(b, key, long);
+			break;
 		default:
 			av = getentry(a, key, const char *);
 			bv = getentry(b, key, const char *);

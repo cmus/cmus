@@ -205,6 +205,7 @@ static const struct {
 	{ "rg_track_peak",	SORT_RG_TRACK_PEAK	},
 	{ "rg_album_gain",	SORT_RG_ALBUM_GAIN	},
 	{ "rg_album_peak",	SORT_RG_ALBUM_PEAK	},
+	{ "bitrate",		SORT_BITRATE		},
 	{ NULL,                 SORT_INVALID            }
 };
 
