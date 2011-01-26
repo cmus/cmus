@@ -1850,7 +1850,7 @@ static void u_getch(void)
 	if (bit == 7) {
 		/* ascii */
 		u = ch;
-	} else {
+	} else if (using_utf8) {
 		int count;
 
 		u = ch & ((1 << bit) - 1);
@@ -1864,7 +1864,8 @@ static void u_getch(void)
 			u = (u << 6) | (ch & 63);
 			count--;
 		}
-	}
+	} else
+		u = ch | U_INVALID_MASK;
 	handle_ch(u);
 }
 
@@ -1973,25 +1974,8 @@ static void main_loop(void)
 			item = next;
 		}
 
-		if (FD_ISSET(0, &set)) {
-			if (using_utf8) {
-				u_getch();
-			} else {
-				int key = getch();
-
-				if (key != ERR && key != 0) {
-					if (key > 255) {
-						handle_key(key);
-					} else {
-						uchar ch = key;
-
-						if (ch > 0x7f)
-							ch |= U_INVALID_MASK;
-						handle_ch(ch);
-					}
-				}
-			}
-		}
+		if (FD_ISSET(0, &set))
+			u_getch();
 	}
 }
 
