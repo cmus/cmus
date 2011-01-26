@@ -6,6 +6,7 @@
 #include "editable.h"
 #include "xmalloc.h"
 #include "ui_curses.h"
+#include "convert.h"
 
 struct searchable {
 	void *data;
@@ -24,7 +25,7 @@ static void search_unlock(void)
 }
 
 /* returns next matching track (can be current!) or NULL if not found */
-static int do_search(struct searchable *s, struct iter *iter, const char *text, int direction)
+static int do_u_search(struct searchable *s, struct iter *iter, const char *text, int direction)
 {
 	struct iter start = *iter;
 	const char *msg = NULL;
@@ -54,6 +55,21 @@ static int do_search(struct searchable *s, struct iter *iter, const char *text, 
 			return 0;
 		}
 	}
+}
+
+static int do_search(struct searchable *s, struct iter *iter, const char *text, int direction)
+{
+	char *u_text = NULL;
+	int r;
+
+	/* search text is always in locale encoding (because cmdline is) */
+	if (!using_utf8 && utf8_encode(text, charset, &u_text) == 0)
+		text = u_text;
+
+	r = do_u_search(s, iter, text, direction);
+
+	free(u_text);
+	return r;
 }
 
 struct searchable *searchable_new(void *data, const struct iter *head, const struct searchable_ops *ops)
