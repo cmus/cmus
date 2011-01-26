@@ -136,7 +136,7 @@ int track_info_cmp(const struct track_info *a, const struct track_info *b, const
 		}
 		if (strcmp(key, "filename") == 0) {
 			/* NOTE: filenames are not necessarily UTF-8 */
-			res = strcasecmp(a->filename, b->filename);
+			res = strcoll(a->filename, b->filename);
 			if (res)
 				break;
 			continue;
