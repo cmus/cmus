@@ -21,6 +21,8 @@
 #include "compiler.h"
 #include "gbuf.h"
 #include "utils.h" /* N_ELEMENTS */
+#include "ui_curses.h" /* using_utf8, charset */
+#include "convert.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -637,4 +639,14 @@ char *u_strcasestr(const char *haystack, const char *needle)
 char *u_strcasestr_base(const char *haystack, const char *needle)
 {
 	return do_u_strcasestr(haystack, needle, 1);
+}
+
+char *u_strcasestr_filename(const char *haystack, const char *needle)
+{
+	char *r = NULL, *ustr = NULL;
+	if (!using_utf8 && utf8_encode(haystack, charset, &ustr) == 0)
+		haystack = ustr;
+	r = u_strcasestr_base(haystack, needle);
+	free(ustr);
+	return r;
 }
