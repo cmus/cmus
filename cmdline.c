@@ -74,7 +74,7 @@ void cmdline_delete_ch(void)
 	if (cmdline.bpos == cmdline.blen)
 		return;
 	bpos = cmdline.bpos;
-	u_get_char(cmdline.line, &bpos, &ch);
+	ch = u_get_char(cmdline.line, &bpos);
 	size = u_char_size(ch);
 	cmdline.blen -= size;
 	cmdline.clen--;
@@ -127,9 +127,7 @@ void cmdline_move_left(void)
 void cmdline_move_right(void)
 {
 	if (cmdline.bpos < cmdline.blen) {
-		uchar ch;
-
-		u_get_char(cmdline.line, &cmdline.bpos, &ch);
+		u_get_char(cmdline.line, &cmdline.bpos);
 		cmdline.cpos++;
 	}
 }
@@ -154,11 +152,11 @@ static int next_word(const char *str, int bpos, int *cdiff, const char *delim, i
 		int oldp = bpos;
 
 		if (direction > 0) {
-			u_get_char(str, &bpos, &ch);
+			ch = u_get_char(str, &bpos);
 		} else {
 			u_prev_char_pos(str, &bpos);
 			oldp = bpos;
-			u_get_char(str, &oldp, &ch);
+			ch = u_get_char(str, &oldp);
 		}
 
 		if (u_strchr(delim, ch)) {

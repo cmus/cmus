@@ -186,7 +186,7 @@ static int do_glob_match(struct list_head *head, struct list_head *first, const 
 			uchar u;
 			int idx = 0;
 
-			u_get_char(text, &idx, &u);
+			u = u_get_char(text, &idx);
 			if (u == 0)
 				return 0;
 			text += idx;

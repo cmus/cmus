@@ -140,7 +140,7 @@ static void print_str(char *buf, int *idx, const char *str)
 				uchar u;
 
 				while (c > 0) {
-					u_get_char(str, &s, &u);
+					u = u_get_char(str, &s);
 					w = u_char_width(u);
 					c -= w;
 				}
@@ -171,7 +171,7 @@ static void print_str(char *buf, int *idx, const char *str)
 		uchar u;
 
 		while (1) {
-			u_get_char(str, &s, &u);
+			u = u_get_char(str, &s);
 			if (u == 0)
 				break;
 			u_set_char(buf, &d, u);
@@ -189,12 +189,12 @@ static void print(char *str, const char *format, const struct format_option *fop
 		const struct format_option *fo;
 		uchar u;
 
-		u_get_char(format, &s, &u);
+		u = u_get_char(format, &s);
 		if (u != '%') {
 			u_set_char(str, &d, u);
 			continue;
 		}
-		u_get_char(format, &s, &u);
+		u = u_get_char(format, &s);
 		if (u == '%') {
 			u_set_char(str, &d, u);
 			continue;
@@ -207,18 +207,18 @@ static void print(char *str, const char *format, const struct format_option *fop
 		align_left = 0;
 		if (u == '-') {
 			align_left = 1;
-			u_get_char(format, &s, &u);
+			u = u_get_char(format, &s);
 		}
 		pad = ' ';
 		if (u == '0') {
 			pad = '0';
-			u_get_char(format, &s, &u);
+			u = u_get_char(format, &s);
 		}
 		width = 0;
 		while (isdigit(u)) {
 			width *= 10;
 			width += u - '0';
-			u_get_char(format, &s, &u);
+			u = u_get_char(format, &s);
 		}
 		for (fo = fopts; fo->ch; fo++) {
 			if (fo->ch == u) {
@@ -262,12 +262,12 @@ int format_print(char *str, int str_width, const char *format, const struct form
 		int nlen;
 		uchar u;
 
-		u_get_char(format, &s, &u);
+		u = u_get_char(format, &s);
 		if (u != '%') {
 			(*len) += u_char_width(u);
 			continue;
 		}
-		u_get_char(format, &s, &u);
+		u = u_get_char(format, &s);
 		if (u == '%') {
 			(*len)++;
 			continue;
@@ -279,13 +279,13 @@ int format_print(char *str, int str_width, const char *format, const struct form
 			continue;
 		}
 		if (u == '-')
-			u_get_char(format, &s, &u);
+			u = u_get_char(format, &s);
 		nlen = 0;
 		while (isdigit(u)) {
 			/* minimum length of this field */
 			nlen *= 10;
 			nlen += u - '0';
-			u_get_char(format, &s, &u);
+			u = u_get_char(format, &s);
 		}
 		for (fo = fopts; ; fo++) {
 			BUG_ON(fo->ch == 0);
@@ -405,21 +405,21 @@ int format_valid(const char *format)
 	while (format[s]) {
 		uchar u;
 
-		u_get_char(format, &s, &u);
+		u = u_get_char(format, &s);
 		if (u == '%') {
 			int pad_zero = 0;
 
-			u_get_char(format, &s, &u);
+			u = u_get_char(format, &s);
 			if (u == '%' || u == '=')
 				continue;
 			if (u == '-')
-				u_get_char(format, &s, &u);
+				u = u_get_char(format, &s);
 			if (u == '0') {
 				pad_zero = 1;
-				u_get_char(format, &s, &u);
+				u = u_get_char(format, &s);
 			}
 			while (isdigit(u))
-				u_get_char(format, &s, &u);
+				u = u_get_char(format, &s);
 			switch (u) {
 			case 'A':
 			case 'a':

@@ -349,7 +349,7 @@ static int format_str(char *buf, const char *str, int width)
 		uchar u;
 		int w;
 
-		u_get_char(str, &s, &u);
+		u = u_get_char(str, &s);
 		if (u == 0) {
 			memset(buf + d, ' ', width);
 			d += width;

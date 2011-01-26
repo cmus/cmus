@@ -260,9 +260,7 @@ int u_str_width(const char *str)
 	int idx = 0, w = 0;
 
 	while (str[idx]) {
-		uchar u;
-
-		u_get_char(str, &idx, &u);
+		uchar u = u_get_char(str, &idx);
 		w += u_char_width(u);
 	}
 	return w;
@@ -272,10 +270,9 @@ int u_str_nwidth(const char *str, int len)
 {
 	int idx = 0;
 	int w = 0;
-	uchar u;
 
 	while (len > 0) {
-		u_get_char(str, &idx, &u);
+		uchar u = u_get_char(str, &idx);
 		if (u == 0)
 			break;
 		w += u_char_width(u);
@@ -289,8 +286,7 @@ char *u_strchr(const char *str, uchar uch)
 	int idx = 0;
 
 	while (str[idx]) {
-		uchar u;
-		u_get_char(str, &idx, &u);
+		uchar u = u_get_char(str, &idx);
 		if (uch == u)
 			return (char *) (str + idx);
 	}
@@ -342,34 +338,41 @@ one:
 	return;
 }
 
-void u_get_char(const char *str, int *idx, uchar *uch)
+uchar u_get_char(const char *str, int *idx)
 {
 	const unsigned char *s = (const unsigned char *)str;
-	int len, i = *idx;
+	int len, i, x = 0;
 	uchar ch, u;
 
-	ch = s[i++];
+	if (idx)
+		s += *idx;
+	else
+		idx = &x;
+	ch = s[0];
+
+	/* ASCII optimization */
+	if (ch < 128) {
+		*idx += 1;
+		return ch;
+	}
+
 	len = len_tab[ch];
 	if (unlikely(len < 1))
 		goto invalid;
 
-	len--;
-	u = ch & first_byte_mask[len];
-	while (len > 0) {
-		ch = s[i++];
+	u = ch & first_byte_mask[len - 1];
+	for (i = 1; i < len; i++) {
+		ch = s[i];
 		if (unlikely(len_tab[ch] != 0))
 			goto invalid;
 		u = (u << 6) | (ch & 0x3f);
-		len--;
 	}
-	*idx = i;
-	*uch = u;
-	return;
+	*idx += len;
+	return u;
 invalid:
-	i = *idx;
-	u = s[i++];
-	*uch = u | U_INVALID_MASK;
-	*idx = i;
+	*idx += 1;
+	u = s[0];
+	return u | U_INVALID_MASK;
 }
 
 void u_set_char_raw(char *str, int *idx, uchar uch)
@@ -464,7 +467,7 @@ int u_copy_chars(char *dst, const char *src, int *width)
 	uchar u;
 
 	while (w > 0) {
-		u_get_char(src, &si, &u);
+		u = u_get_char(src, &si);
 		if (u == 0)
 			break;
 
@@ -496,9 +499,7 @@ int u_skip_chars(const char *str, int *width)
 	int idx = 0;
 
 	while (w > 0) {
-		uchar u;
-
-		u_get_char(str, &idx, &u);
+		uchar u = u_get_char(str, &idx);
 		w -= u_char_width(u);
 	}
 	/* add 1..3 if skipped 'too much' (the last char was double width or invalid (<xx>)) */
@@ -533,9 +534,8 @@ char *u_casefold(const char *str)
 	while (str[i]) {
 		char buf[4];
 		int buflen = 0;
-		uchar ch;
+		uchar ch = u_get_char(str, &i);
 
-		u_get_char(str, &i, &ch);
 		ch = u_casefold_char(ch);
 		u_set_char_raw(buf, &buflen, ch);
 		gbuf_add_bytes(&out, buf, buflen);
@@ -555,8 +555,8 @@ int u_strcase_equal(const char *a, const char *b)
 	while (a[ai]) {
 		uchar au, bu;
 
-		u_get_char(a, &ai, &au);
-		u_get_char(b, &bi, &bu);
+		au = u_get_char(a, &ai);
+		bu = u_get_char(b, &bi);
 
 		if (u_casefold_char(au) != u_casefold_char(bu))
 			return 0;
@@ -596,8 +596,8 @@ static inline int do_u_strncase_equal(const char *a, const char *b, size_t len, 
 	for (i = 0; i < len; i++) {
 		uchar au, bu;
 
-		u_get_char(a, &ai, &au);
-		u_get_char(b, &bi, &bu);
+		au = u_get_char(a, &ai);
+		bu = u_get_char(b, &bi);
 
 		if (only_base_chars) {
 			au = get_base_from_composed(au);
@@ -628,7 +628,6 @@ static inline char *do_u_strcasestr(const char *haystack, const char *needle, in
 	int needle_len = u_strlen(needle);
 
 	do {
-		uchar u;
 		int idx;
 
 		if (haystack_len < needle_len)
@@ -638,7 +637,7 @@ static inline char *do_u_strcasestr(const char *haystack, const char *needle, in
 
 		/* skip one char */
 		idx = 0;
-		u_get_char(haystack, &idx, &u);
+		u_get_char(haystack, &idx);
 		haystack += idx;
 		haystack_len -= idx;
 	} while (1);

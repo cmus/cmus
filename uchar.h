@@ -125,10 +125,12 @@ void u_prev_char_pos(const char *str, int *idx);
 
 /*
  * @str  null-terminated UTF-8 string
- * @idx  pointer to byte index in @str (not UTF-8 character index!)
- * @uch  pointer to returned unicode character
+ * @idx  pointer to byte index in @str (not UTF-8 character index!) or NULL
+ *
+ * Returns unicode character at @str[*@idx] or @str[0] if @idx is NULL.
+ * Stores byte index of the next char back to @idx if set.
  */
-void u_get_char(const char *str, int *idx, uchar *uch);
+uchar u_get_char(const char *str, int *idx);
 
 /*
  * @str  destination buffer
