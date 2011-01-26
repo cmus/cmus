@@ -38,11 +38,8 @@ static void track_info_free(struct track_info *ti)
 struct track_info *track_info_new(const char *filename)
 {
 	struct track_info *ti;
-	int size = strlen(filename) + 1;
-
-	ti = xmalloc(sizeof(struct track_info));
-	ti->filename = xmalloc(size);
-	memcpy(ti->filename, filename, size);
+	ti = xnew(struct track_info, 1);
+	ti->filename = xstrdup(filename);
 	ti->ref = 1;
 	return ti;
 }
