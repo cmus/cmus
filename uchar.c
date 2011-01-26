@@ -142,6 +142,39 @@ size_t u_strlen(const char *str)
 	return len;
 }
 
+size_t u_strlen_safe(const char *str)
+{
+	const unsigned char *s = (const unsigned char *)str;
+	size_t len = 0;
+
+	while (*s) {
+		int l = len_tab[*s];
+
+		if (unlikely(l > 1)) {
+			/* next l - 1 bytes must be 0x10xxxxxx */
+			int c = 1;
+			do {
+				if (len_tab[s[c]] != 0) {
+					/* invalid sequence */
+					goto single_char;
+				}
+				c++;
+			} while (c < l);
+
+			/* valid sequence */
+			s += l;
+			len++;
+			continue;
+		}
+single_char:
+		/* l is -1, 0 or 1
+		 * invalid chars counted as single characters */
+		s++;
+		len++;
+	}
+	return len;
+}
+
 int u_char_width(uchar u)
 {
 	if (unlikely(u < 0x20))

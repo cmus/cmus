@@ -73,10 +73,9 @@ int u_char_width(uchar uch);
 int u_is_valid(const char *str);
 
 /*
- * @str  null-terminated UTF-8 string
+ * @str  valid, null-terminated UTF-8 string
  *
  * Returns position of next unicode character in @str.
- * (fast and fault-tolerant)
  */
 extern const char * const utf8_skip;
 static inline char *u_next_char(const char *str)
@@ -85,11 +84,19 @@ static inline char *u_next_char(const char *str)
 }
 
 /*
- * @str  null-terminated UTF-8 string
+ * @str  valid, null-terminated UTF-8 string
  *
  * Retuns length of @str in UTF-8 characters.
  */
 size_t u_strlen(const char *str);
+
+/*
+ * @str  null-terminated UTF-8 string
+ *
+ * Retuns length of @str in UTF-8 characters.
+ * Invalid chars are counted as single characters.
+ */
+size_t u_strlen_safe(const char *str);
 
 /*
  * @str  null-terminated UTF-8 string

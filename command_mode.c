@@ -2603,8 +2603,8 @@ static void tab_expand(void)
 		}
 		sprintf(cmdline.line, "%s%s", tmp, s2);
 		cmdline.bpos = l1;
-		cmdline.cpos = u_strlen(tmp);
-		cmdline.clen = u_strlen(cmdline.line);
+		cmdline.cpos = u_strlen_safe(tmp);
+		cmdline.clen = u_strlen_safe(cmdline.line);
 		free(tmp);
 	}
 	free(s1);

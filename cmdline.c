@@ -90,7 +90,7 @@ void cmdline_set_text(const char *text)
 		cmdline.line = xrenew(char, cmdline.line, cmdline.size);
 	}
 	memcpy(cmdline.line, text, len + 1);
-	cmdline.cpos = u_strlen(cmdline.line);
+	cmdline.cpos = u_strlen_safe(cmdline.line);
 	cmdline.bpos = len;
 	cmdline.clen = cmdline.cpos;
 	cmdline.blen = len;
@@ -109,7 +109,7 @@ void cmdline_clear_end(void)
 {
 	cmdline.line[cmdline.bpos] = 0;
 
-	cmdline.clen = u_strlen(cmdline.line);
+	cmdline.clen = u_strlen_safe(cmdline.line);
 	cmdline.blen = strlen(cmdline.line);
 }
 
