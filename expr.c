@@ -11,6 +11,8 @@
 #include "utils.h"
 #include "debug.h"
 #include "list.h"
+#include "ui_curses.h" /* using_utf8, charset */
+#include "utf8_encode.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -387,27 +389,34 @@ struct expr *expr_parse(const char *str)
 	LIST_HEAD(head);
 	struct expr *root = NULL;
 	struct list_head *item;
+	char *u_str = NULL;
 	int i;
 
 	for (i = 0; str[i]; i++) {
 		unsigned char c = str[i];
 		if (c < 0x20) {
 			set_error("filter contains control characters");
-			return NULL;
+			goto out;
 		}
+	}
+	if (!using_utf8 && utf8_encode(str, charset, &u_str) == 0) {
+		str = u_str;
 	}
 	if (!u_is_valid(str)) {
 		set_error("invalid UTF-8");
-		return NULL;
+		goto out;
 	}
 
 	if (tokenize(&head, str))
-		return NULL;
+		goto out;
 
 	item = head.next;
 	if (parse(&root, &head, &item, 0))
 		root = NULL;
 	free_tokens(&head);
+
+out:
+	free(u_str);
 	return root;
 }
 

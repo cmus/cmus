@@ -645,6 +645,7 @@ static void print_filter(struct window *win, int row, struct iter *iter)
 	int current = !!e->act_stat;
 	const char stat_chars[3] = " *!";
 	int ch1, ch2, ch3, pos;
+	const char *e_filter;
 
 	window_get_sel(win, &sel);
 	selected = iters_equal(iter, &sel);
@@ -662,7 +663,14 @@ static void print_filter(struct window *win, int row, struct iter *iter)
 		ch3 = ']';
 	}
 	ch2 = stat_chars[e->sel_stat];
-	snprintf(buf, sizeof(buf), "%c%c%c%-15s  %s", ch1, ch2, ch3, e->name, e->filter);
+
+	e_filter = e->filter;
+	if (!using_utf8) {
+		utf8_encode(e_filter);
+		e_filter = conv_buffer;
+	}
+
+	snprintf(buf, sizeof(buf), "%c%c%c%-15s  %s", ch1, ch2, ch3, e->name, e_filter);
 	pos = format_str(print_buffer, buf, COLS - 1);
 	print_buffer[pos++] = ' ';
 	print_buffer[pos] = 0;
