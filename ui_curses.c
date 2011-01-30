@@ -81,6 +81,9 @@ int cur_view = TREE_VIEW;
 struct searchable *searchable;
 char *lib_filename = NULL;
 char *pl_filename = NULL;
+char *charset = NULL;
+int using_utf8 = 0;
+
 
 /* ------------------------------------------------------------------------- */
 
@@ -98,7 +101,6 @@ static int error_count = 0;
 
 static char *server_address = NULL;
 
-static char *charset = NULL;
 static char print_buffer[512];
 
 /* destination buffer for utf8_encode and utf8_decode */
@@ -106,8 +108,6 @@ static char conv_buffer[512];
 
 /* one character can take up to 4 bytes in UTF-8 */
 #define print_buffer_max_width (sizeof(print_buffer) / 4 - 1)
-
-static int using_utf8;
 
 static char tcap_buffer[64];
 static const char *t_ts;
@@ -2222,11 +2222,9 @@ int main(int argc, char *argv[])
 #else
 	charset = "ISO-8859-1";
 #endif
-	if (strcmp(charset, "UTF-8") == 0) {
+	if (strcmp(charset, "UTF-8") == 0)
 		using_utf8 = 1;
-	} else {
-		using_utf8 = 0;
-	}
+
 	misc_init();
 	if (server_address == NULL)
 		server_address = xstrjoin(cmus_config_dir, "/socket");
