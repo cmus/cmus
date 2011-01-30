@@ -139,9 +139,12 @@ extern int u_strcasecmp(const char *a, const char *b);
 extern int u_strncasecmp(const char *a, const char *b, int len);
 extern char *u_strcasestr(const char *haystack, const char *needle);
 
-static inline char *u_strcasestr_filename(const char *haystack, const char *needle)
-{
-	return u_strcasestr(haystack, needle);
-}
+/*
+ * @haystack  null-terminated string in local encoding
+ * @needle    valid, normalized, null-terminated UTF-8 string
+ *
+ * Like u_strcasestr_base(), but converts @haystack to UTF-8 if necessary.
+ */
+char *u_strcasestr_filename(const char *haystack, const char *needle);
 
 #endif

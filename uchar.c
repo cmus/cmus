@@ -19,6 +19,8 @@
 
 #include "uchar.h"
 #include "compiler.h"
+#include "ui_curses.h" /* using_utf8, charset */
+#include "utf8_encode.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -541,4 +543,14 @@ char *u_strcasestr(const char *haystack, const char *needle)
 		haystack += idx;
 		haystack_len -= idx;
 	} while (1);
+}
+
+char *u_strcasestr_filename(const char *haystack, const char *needle)
+{
+	char *r = NULL, *ustr = NULL;
+	if (!using_utf8 && utf8_encode(haystack, charset, &ustr) == 0)
+		haystack = ustr;
+	r = u_strcasestr(haystack, needle);
+	free(ustr);
+	return r;
 }
