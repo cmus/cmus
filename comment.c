@@ -9,14 +9,6 @@
 
 #include <string.h>
 
-static int is_freeform_true(const char *c)
-{
-	return	!strcasecmp(c, "1")	||
-		!strcasecmp(c, "y")	||
-		!strcasecmp(c, "yes")	||
-		!strcasecmp(c, "true");
-}
-
 int track_is_compilation(const struct keyval *comments)
 {
 	const char *c	= keyvals_get_val(comments, "compilation");

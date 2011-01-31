@@ -110,6 +110,13 @@ static inline int is_url(const char *name)
 	return strncmp(name, "http://", 7) == 0;
 }
 
+static inline int is_freeform_true(const char *c)
+{
+	return	c[0] == '1' ||
+		c[0] == 'y' || c[0] == 'Y' ||
+		c[0] == 't' || c[0] == 'T';
+}
+
 static inline uint32_t read_le32(const char *buf)
 {
 	const unsigned char *b = (const unsigned char *)buf;
