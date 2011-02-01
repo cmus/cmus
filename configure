@@ -106,7 +106,7 @@ check_ncurses()
 	test -z "$widechars" && return 1
 
 	msg_checking "for working ncurses setup"
-	for flag in "" "-I/usr/include/ncurses"
+	for flag in "" "-I/usr/include/ncurses" "-I/usr/include/ncursesw"
 	do
 		if try_compile_link "$ncurses_code" $flag $NCURSES_LIBS
 		then
