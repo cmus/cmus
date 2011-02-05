@@ -133,7 +133,6 @@ static int mpc_open(struct input_plugin_data *ip_data)
 #if MPC_SV8
 	priv->decoder = mpc_demux_init(&priv->reader);
 	if (!priv->decoder) {
-		mpc_demux_exit(priv->decoder);
 #else
 	mpc_streaminfo_init(&priv->info);
 	if (mpc_streaminfo_read(&priv->info, &priv->reader) != ERROR_CODE_OK) {
