@@ -57,7 +57,7 @@ const char *comments_get_albumartist(const struct keyval *comments)
 
 	if (track_is_va_compilation(comments))
 		val = "<Various Artists>";
-	if (!val)
+	if (!val || strcmp(val, "") == 0)
 		val = keyvals_get_val(comments, "artist");
 	if (!val || strcmp(val, "") == 0)
 		val = "<No Name>";
@@ -74,7 +74,7 @@ const char *comments_get_artistsort(const struct keyval *comments)
 
 	val = keyvals_get_val(comments, "albumartistsort");
 
-	if (!val)
+	if (!val || strcmp(val, "") == 0)
 		val = keyvals_get_val(comments, "artistsort");
 
 	return val;
