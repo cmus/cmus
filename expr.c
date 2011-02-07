@@ -519,10 +519,13 @@ int expr_eval(struct expr *expr, struct track_info *ti)
 	key = expr->key;
 	if (type == EXPR_STR) {
 		const char *val;
+		char *uval = NULL;
 		int res;
 
 		if (strcmp(key, "filename") == 0) {
 			val = ti->filename;
+			if (!using_utf8 && utf8_encode(val, charset, &uval) == 0)
+				val = uval;
 		} else {
 			val = keyvals_get_val(ti->comments, key);
 			/* non-existing string tag equals to "" */
@@ -530,6 +533,7 @@ int expr_eval(struct expr *expr, struct track_info *ti)
 				val = "";
 		}
 		res = glob_match(&expr->estr.glob_head, val);
+		free(uval);
 		if (expr->estr.op == SOP_EQ)
 			return res;
 		return !res;
