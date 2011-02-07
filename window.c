@@ -75,12 +75,9 @@ void window_set_contents(struct window *win, void *head)
 
 void window_set_nr_rows(struct window *win, int nr_rows)
 {
-	struct iter old_sel;
-
 	if (nr_rows < 1)
 		return;
 	win->nr_rows = nr_rows;
-	old_sel = win->sel;
 	window_changed(win);
 	win->changed = 1;
 }

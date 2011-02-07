@@ -386,7 +386,6 @@ static int aac_duration(struct input_plugin_data *ip_data)
 	NeAACDecFrameInfo frame_info;
 	int samples = 0, bytes = 0, frames = 0;
 	off_t file_size;
-	char *sample_buf;
 
 	file_size = lseek(ip_data->fd, 0, SEEK_END);
 	if (file_size == -1)
@@ -397,7 +396,7 @@ static int aac_duration(struct input_plugin_data *ip_data)
 		if (buffer_fill_frame(ip_data) <= 0)
 			break;
 
-		sample_buf = NeAACDecDecode(priv->decoder, &frame_info,
+		NeAACDecDecode(priv->decoder, &frame_info,
 			buffer_data(ip_data), buffer_length(ip_data));
 		if (frame_info.error == 0 && frame_info.samples > 0) {
 			samples += frame_info.samples;

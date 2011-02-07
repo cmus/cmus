@@ -81,6 +81,8 @@ static char *alsa_dsp_device = NULL;
 
 static int alsa_error_to_op_error(int err)
 {
+	if (!err)
+		return OP_ERROR_SUCCESS;
 	err = -err;
 	if (err < SND_ERROR_BEGIN) {
 		errno = err;
@@ -109,7 +111,7 @@ static int op_alsa_init(void)
 		errno = ENOMEM;
 		return -OP_ERROR_ERRNO;
 	}
-	return 0;
+	return OP_ERROR_SUCCESS;
 }
 
 static int op_alsa_exit(void)
@@ -117,7 +119,7 @@ static int op_alsa_exit(void)
 	snd_pcm_status_free(status);
 	free(alsa_dsp_device);
 	alsa_dsp_device = NULL;
-	return 0;
+	return OP_ERROR_SUCCESS;
 }
 
 /* randomize hw params */
@@ -193,7 +195,7 @@ static int op_alsa_open(sample_format_t sf)
 	rc = snd_pcm_prepare(alsa_handle);
 	if (rc < 0)
 		goto close_error;
-	return 0;
+	return OP_ERROR_SUCCESS;
 close_error:
 	snd_pcm_close(alsa_handle);
 error:
@@ -211,7 +213,7 @@ static int op_alsa_close(void)
 
 	rc = snd_pcm_close(alsa_handle);
 	debug_ret("snd_pcm_close", rc);
-	return 0;
+	return alsa_error_to_op_error(rc);
 }
 
 static int op_alsa_drop(void)
@@ -229,7 +231,7 @@ static int op_alsa_drop(void)
 	 *
 	 * so if old state was PAUSED we can't UNPAUSE (see op_alsa_unpause)
 	 */
-	return 0;
+	return alsa_error_to_op_error(rc);
 }
 
 static int op_alsa_write(const char *buffer, int count)
@@ -283,11 +285,9 @@ static int op_alsa_buffer_space(void)
 
 static int op_alsa_pause(void)
 {
+	int rc = 0;
 	if (alsa_can_pause) {
-		snd_pcm_state_t state;
-		int rc;
-
-		state = snd_pcm_state(alsa_handle);
+		snd_pcm_state_t state = snd_pcm_state(alsa_handle);
 		if (state == SND_PCM_STATE_PREPARED) {
 			// state is PREPARED -> no need to pause
 		} else if (state == SND_PCM_STATE_RUNNING) {
@@ -301,23 +301,20 @@ static int op_alsa_pause(void)
 			debug_ret("snd_pcm_pause", rc);
 		} else {
 			d_print("error: state is not RUNNING or PREPARED\n");
+			rc = -OP_ERROR_INTERNAL;
 		}
 	} else {
-		int rc;
-
 		rc = snd_pcm_drop(alsa_handle);
 		debug_ret("snd_pcm_drop", rc);
 	}
-	return 0;
+	return alsa_error_to_op_error(rc);
 }
 
 static int op_alsa_unpause(void)
 {
+	int rc = 0;
 	if (alsa_can_pause) {
-		snd_pcm_state_t state;
-		int rc;
-
-		state = snd_pcm_state(alsa_handle);
+		snd_pcm_state_t state = snd_pcm_state(alsa_handle);
 		if (state == SND_PCM_STATE_PREPARED) {
 			// state is PREPARED -> no need to unpause
 		} else if (state == SND_PCM_STATE_PAUSED) {
@@ -331,14 +328,13 @@ static int op_alsa_unpause(void)
 			debug_ret("snd_pcm_pause", rc);
 		} else {
 			d_print("error: state is not PAUSED nor PREPARED\n");
+			rc = -OP_ERROR_INTERNAL;
 		}
 	} else {
-		int rc;
-
 		rc = snd_pcm_prepare(alsa_handle);
 		debug_ret("snd_pcm_prepare", rc);
 	}
-	return 0;
+	return alsa_error_to_op_error(rc);
 }
 
 static int op_alsa_set_option(int key, const char *val)
@@ -351,7 +347,7 @@ static int op_alsa_set_option(int key, const char *val)
 	default:
 		return -OP_ERROR_NOT_OPTION;
 	}
-	return 0;
+	return OP_ERROR_SUCCESS;
 }
 
 static int op_alsa_get_option(int key, char **val)
@@ -364,7 +360,7 @@ static int op_alsa_get_option(int key, char **val)
 	default:
 		return -OP_ERROR_NOT_OPTION;
 	}
-	return 0;
+	return OP_ERROR_SUCCESS;
 }
 
 const struct output_plugin_ops op_pcm_ops = {
