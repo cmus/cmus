@@ -772,14 +772,14 @@ int expr_check_leaves(struct expr **exprp, const char *(*get_filter)(const char 
 	}
 	if (expr->type != EXPR_BOOL) {
 		/* unknown key */
-		set_error("unkown key %s", expr->key);
+		set_error("unknown key %s", expr->key);
 		return -1;
 	}
 
 	/* user defined filter */
 	filter = get_filter(expr->key);
 	if (filter == NULL) {
-		set_error("unkown filter or boolean %s", expr->key);
+		set_error("unknown filter or boolean %s", expr->key);
 		return -1;
 	}
 	e = expr_parse(filter);
@@ -820,10 +820,13 @@ int expr_eval(struct expr *expr, struct track_info *ti)
 	key = expr->key;
 	if (type == EXPR_STR) {
 		const char *val;
+		char *uval = NULL;
 		int res;
 
 		if (strcmp(key, "filename") == 0) {
 			val = ti->filename;
+			if (!using_utf8 && utf8_encode(val, charset, &uval) == 0)
+				val = uval;
 		} else {
 			val = keyvals_get_val(ti->comments, key);
 			/* non-existing string tag equals to "" */
@@ -831,6 +834,7 @@ int expr_eval(struct expr *expr, struct track_info *ti)
 				val = "";
 		}
 		res = glob_match(&expr->estr.glob_head, val);
+		free(uval);
 		if (expr->estr.op == SOP_EQ)
 			return res;
 		return !res;

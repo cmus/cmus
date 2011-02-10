@@ -199,8 +199,11 @@ $(man7): Doc/ttman
 %.7: %.txt
 	$(call cmd,ttman)
 
+Doc/ttman.o: Doc/ttman.c
+	$(call cmd,hostcc,)
+
 Doc/ttman: Doc/ttman.o
-	$(call cmd,ld,)
+	$(call cmd,hostld,)
 
 quiet_cmd_ttman = MAN    $@
       cmd_ttman = Doc/ttman $< $@

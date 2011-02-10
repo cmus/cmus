@@ -106,7 +106,7 @@ check_ncurses()
 	test -z "$widechars" && return 1
 
 	msg_checking "for working ncurses setup"
-	for flag in "" "-I/usr/include/ncurses"
+	for flag in "" "-I/usr/include/ncurses" "-I/usr/include/ncursesw"
 	do
 		if try_compile_link "$ncurses_code" $flag $NCURSES_LIBS
 		then
@@ -337,7 +337,9 @@ Optional Features: y/n
   USE_FALLBACK_IP	Use a specific IP for every unrecognized	[n]
                         input format. Currently set to FFMPEG.
 
-Also many standard variables like CC are recognized."
+Also many standard variables like CC, LD, CFLAGS, LDFLAGS are recognized.
+Cross compiling is supported via CROSS=target-prefix-
+    optionally set HOSTCC=this-machine-gcc, HOSTLD, HOST_CFLAGS, HOST_LDFLAGS."
 
 parse_command_line "$@"
 
@@ -356,6 +358,7 @@ var_default mandir "${datadir}/man"
 var_default exampledir "${datadir}/doc/cmus/examples"
 
 check check_cc
+check check_host_cc
 check check_cflags
 check check_cc_depgen
 check check_endianness

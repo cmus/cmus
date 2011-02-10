@@ -22,12 +22,17 @@
 #include "op.h"
 #include "mixer.h"
 #include "debug.h"
+#include "utils.h"
+#include "xmalloc.h"
 
 static pa_threaded_mainloop	*pa_ml;
 static pa_context		*pa_ctx;
 static pa_stream		*pa_s;
 static pa_channel_map		 pa_cmap;
 static pa_cvolume		 pa_vol;
+
+/* configuration */
+static int pa_restore_volume = 1;
 
 #define ret_pa_error(err)						\
 	do {								\
@@ -333,7 +338,7 @@ static int op_pulse_open(sample_format_t sf)
 					NULL,
 					NULL,
 					PA_STREAM_NOFLAGS,
-					&pa_vol,
+					pa_restore_volume ? NULL : &pa_vol,
 					NULL);
 	if (rc)
 		goto out_fail;
@@ -469,6 +474,9 @@ static int op_pulse_mixer_get_fds(int *fds)
 
 static int op_pulse_mixer_set_volume(int l, int r)
 {
+	if (!pa_s && pa_restore_volume)
+		return -OP_ERROR_NOT_OPEN;
+
 	pa_cvolume_set_position(&pa_vol,
 				&pa_cmap,
 				PA_CHANNEL_POSITION_FRONT_LEFT,
@@ -496,6 +504,9 @@ static int op_pulse_mixer_get_volume(int *l, int *r)
 {
 	int rc = OP_ERROR_SUCCESS;
 
+	if (!pa_s && pa_restore_volume)
+		return -OP_ERROR_NOT_OPEN;
+
 	if (pa_s) {
 		pa_threaded_mainloop_lock(pa_ml);
 
@@ -513,12 +524,26 @@ static int op_pulse_mixer_get_volume(int *l, int *r)
 
 static int op_pulse_mixer_set_option(int key, const char *val)
 {
-	return -OP_ERROR_NOT_OPTION;
+	switch (key) {
+	case 0:
+		pa_restore_volume = is_freeform_true(val);
+		break;
+	default:
+		return -OP_ERROR_NOT_OPTION;
+	}
+	return 0;
 }
 
 static int op_pulse_mixer_get_option(int key, char **val)
 {
-	return -OP_ERROR_NOT_OPTION;
+	switch (key) {
+	case 0:
+		*val = xstrdup(pa_restore_volume ? "1" : "0");
+		break;
+	default:
+		return -OP_ERROR_NOT_OPTION;
+	}
+	return 0;
 }
 
 const struct output_plugin_ops op_pcm_ops = {
@@ -552,6 +577,7 @@ const char * const op_pcm_options[] = {
 };
 
 const char * const op_mixer_options[] = {
+	"restore_volume",
 	NULL
 };
 

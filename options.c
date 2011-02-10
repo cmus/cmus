@@ -37,7 +37,7 @@
 char *output_plugin = NULL;
 char *status_display_program = NULL;
 char *server_password;
-int auto_reshuffle = 0;
+int auto_reshuffle = 1;
 int confirm_run = 1;
 int show_hidden = 0;
 int show_remaining_time = 0;

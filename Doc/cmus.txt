@@ -454,7 +454,7 @@ player-pause (*c*)
 
 player-play [filename] (*x*)
 	Play the given track, or, if none is specified, [re]play the current
-	track from the begining.
+	track from the beginning.
 
 player-prev (*z*)
 	Skip to the previous track.
@@ -704,7 +704,7 @@ This section describes cmus' options that can be altered with the *set* and
 *toggle* commands. Default values are in parenthesis, possible values in
 brackets.
 
-auto_reshuffle (false)
+auto_reshuffle (true)
 	Reshuffle playlist when end of shuffle list is reached.
 
 aaa_mode (all) [all, artist, album]
@@ -991,6 +991,11 @@ mixer.alsa.channel
 
 mixer.alsa.device
 	Mixer device for ALSA plugin, usually "default".
+
+mixer.pulse.restore_volume
+	Restore the volume at startup using PulseAudio. Otherwise, cmus sets
+	the volume to 100%, which does not mix well with "flat volumes"
+	feature of PA. Defaults to "1"; set to "0" to turn off.
 
 dsp.ao.buffer_size
 	Buffer size, default is 16kB (but you may want to try bigger values if

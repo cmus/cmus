@@ -1270,10 +1270,16 @@ static void cmd_vol(char *arg)
 		r = calc_vol(r, soft_vol_r, 100, rf);
 		player_set_soft_volume(l, r);
 	} else {
+		int rc;
 		mixer_read_volume();
 		l = calc_vol(l, volume_l, volume_max, lf);
 		r = calc_vol(r, volume_r, volume_max, rf);
-		mixer_set_volume(l, r);
+		rc = mixer_set_volume(l, r);
+		if (rc != OP_ERROR_SUCCESS) {
+			char *msg = op_get_error_msg(rc, "can't change volume");
+			error_msg("%s", msg);
+			free(msg);
+		}
 		mixer_read_volume();
 	}
 	update_statusline();

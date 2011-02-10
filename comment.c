@@ -9,13 +9,6 @@
 
 #include <string.h>
 
-static int is_freeform_true(const char *c)
-{
-	return	c[0] == '1' ||
-		c[0] == 'y' || c[0] == 'Y' ||
-		c[0] == 't' || c[0] == 'T';
-}
-
 int track_is_compilation(const struct keyval *comments)
 {
 	const char *c, *a, *aa;
@@ -64,7 +57,7 @@ const char *comments_get_albumartist(const struct keyval *comments)
 
 	if (track_is_va_compilation(comments))
 		val = "<Various Artists>";
-	if (!val)
+	if (!val || strcmp(val, "") == 0)
 		val = keyvals_get_val(comments, "artist");
 	if (!val || strcmp(val, "") == 0)
 		val = "<No Name>";
@@ -81,7 +74,7 @@ const char *comments_get_artistsort(const struct keyval *comments)
 
 	val = keyvals_get_val(comments, "albumartistsort");
 
-	if (!val)
+	if (!val || strcmp(val, "") == 0)
 		val = keyvals_get_val(comments, "artistsort");
 
 	return val;

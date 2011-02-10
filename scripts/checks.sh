@@ -180,6 +180,19 @@ check_cc()
 	return 0
 }
 
+# HOSTCC, HOSTLD, HOST_CFLAGS, HOST_LDFLAGS
+check_host_cc()
+{
+	var_default HOSTCC gcc
+	var_default HOSTLD $HOSTCC
+	var_default HOST_CFLAGS "-g -O2 -Wall"
+	var_default HOST_LDFLAGS ""
+	check_program $HOSTCC || return 1
+	makefile_vars HOSTCC HOSTLD HOST_CFLAGS HOST_LDFLAGS
+	__check_lang=c
+	return 0
+}
+
 # CXX, CXXLD, CXXFLAGS, CXXLDFLAGS, SOFLAGS, LDSOFLAGS, LDDLFLAGS
 check_cxx()
 {
