@@ -988,7 +988,7 @@ mixer.alsa.device
 mixer.pulse.restore_volume
 	Restore the volume at startup using PulseAudio. Otherwise, cmus sets
 	the volume to 100%, which does not mix well with "flat volumes"
-	feature of PA. Defaults to "true".
+	feature of PA. Defaults to "1"; set to "0" to turn off.
 
 dsp.ao.buffer_size
 	Buffer size, default is 16kB (but you may want to try bigger values if

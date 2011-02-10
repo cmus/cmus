@@ -567,7 +567,7 @@ static int op_pulse_mixer_get_option(int key, char **val)
 {
 	switch (key) {
 	case 0:
-		*val = xstrdup(pa_restore_volume ? "true" : "false");
+		*val = xstrdup(pa_restore_volume ? "1" : "0");
 		break;
 	default:
 		return -OP_ERROR_NOT_OPTION;
