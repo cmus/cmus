@@ -611,6 +611,30 @@ static void album_add_track(struct album *album, struct tree_track *track)
 	rb_insert_color(&track->tree_node, &album->track_root);
 }
 
+static const char *tree_artist_name(const struct keyval *comments)
+{
+	const char *val = keyvals_get_val(comments, "albumartist");
+
+	if (track_is_va_compilation(comments))
+		val = "<Various Artists>";
+	if (!val || strcmp(val, "") == 0)
+		val = keyvals_get_val(comments, "artist");
+	if (!val || strcmp(val, "") == 0)
+		val = "<No Name>";
+
+	return val;
+}
+
+static const char *tree_album_name(const struct keyval *comments)
+{
+	const char *val = keyvals_get_val(comments, "album");
+
+	if (!val || strcmp(val, "") == 0)
+		val = "<No Name>";
+
+	return val;
+}
+
 void tree_add_track(struct tree_track *track)
 {
 	const struct track_info *ti = tree_track_info(track);
@@ -626,8 +650,8 @@ void tree_add_track(struct tree_track *track)
 		artist_name = "<Stream>";
 		album_name = "<Stream>";
 	} else {
-		album_name	= comments_get_album(ti->comments);
-		artist_name	= comments_get_albumartist(ti->comments);
+		album_name	= tree_album_name(ti->comments);
+		artist_name	= tree_artist_name(ti->comments);
 		artistsort_name	= comments_get_artistsort(ti->comments);
 
 		is_va_compilation = track_is_va_compilation(ti->comments);

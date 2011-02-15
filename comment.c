@@ -41,26 +41,12 @@ int track_is_va_compilation(const struct keyval *comments)
 	return c && is_freeform_true(c);
 }
 
-const char *comments_get_album(const struct keyval *comments)
-{
-	const char *val = keyvals_get_val(comments, "album");
-
-	if (!val || strcmp(val, "") == 0)
-		val = "<No Name>";
-
-	return val;
-}
-
 const char *comments_get_albumartist(const struct keyval *comments)
 {
 	const char *val = keyvals_get_val(comments, "albumartist");
 
-	if (track_is_va_compilation(comments))
-		val = "<Various Artists>";
 	if (!val || strcmp(val, "") == 0)
 		val = keyvals_get_val(comments, "artist");
-	if (!val || strcmp(val, "") == 0)
-		val = "<No Name>";
 
 	return val;
 }
