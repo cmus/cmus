@@ -18,7 +18,7 @@ struct editable {
 	unsigned int nr_tracks;
 	unsigned int nr_marked;
 	unsigned int total_time;
-	const char **sort_keys;
+	sort_key_t *sort_keys;
 	char sort_str[128];
 	struct searchable *searchable;
 
@@ -32,7 +32,7 @@ void editable_add(struct editable *e, struct simple_track *track);
 void editable_remove_track(struct editable *e, struct simple_track *track);
 void editable_remove_sel(struct editable *e);
 void editable_sort(struct editable *e);
-void editable_set_sort_keys(struct editable *e, const char **keys);
+void editable_set_sort_keys(struct editable *e, sort_key_t *keys);
 void editable_toggle_mark(struct editable *e);
 void editable_move_after(struct editable *e);
 void editable_move_before(struct editable *e);

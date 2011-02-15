@@ -112,8 +112,7 @@ static struct track_info *cache_entry_to_ti(struct cache_entry *e)
 
 	// NOTE: filename already copied by track_info_new()
 	pos = strlen(strings) + 1;
-	ti->comments = xnew(struct keyval, count + 1);
-	kv = ti->comments;
+	kv = xnew(struct keyval, count + 1);
 	for (i = 0; i < count; i++) {
 		int size;
 
@@ -127,6 +126,7 @@ static struct track_info *cache_entry_to_ti(struct cache_entry *e)
 	}
 	kv[i].key = NULL;
 	kv[i].val = NULL;
+	track_info_set_comments(ti, kv);
 	return ti;
 }
 
@@ -365,7 +365,7 @@ static struct track_info *ip_get_ti(const char *filename)
 	rc = ip_read_comments(ip, &comments);
 	if (!rc) {
 		ti = track_info_new(filename);
-		ti->comments = comments;
+		track_info_set_comments(ti, comments);
 		ti->duration = ip_duration(ip);
 		ti->mtime = ip_is_remote(ip) ? -1 : file_get_mtime(filename);
 	}

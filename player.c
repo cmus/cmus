@@ -355,7 +355,7 @@ static inline void metadata_changed(void)
 	if (!rc) {
 		if (player_info.ti->comments)
 			keyvals_free(player_info.ti->comments);
-		player_info.ti->comments = comments;
+		track_info_set_comments(player_info.ti, comments);
 	}
 
 	player_info.metadata_changed = 1;

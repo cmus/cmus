@@ -41,7 +41,23 @@ struct track_info *track_info_new(const char *filename)
 	ti = xnew(struct track_info, 1);
 	ti->filename = xstrdup(filename);
 	ti->ref = 1;
+	ti->comments = NULL;
 	return ti;
+}
+
+void track_info_set_comments(struct track_info *ti, struct keyval *comments) {
+	ti->comments = comments;
+	ti->artist = keyvals_get_val(comments, "artist");
+	ti->album = keyvals_get_val(comments, "album");
+	ti->title = keyvals_get_val(comments, "title");
+	ti->tracknumber = comments_get_int(comments, "tracknumber");
+	ti->discnumber = comments_get_int(comments, "discnumber");
+	ti->date = comments_get_date(comments, "date");
+	ti->genre = keyvals_get_val(comments, "genre");
+	ti->comment = keyvals_get_val(comments, "comment");
+	ti->albumartist = comments_get_albumartist(comments);
+	ti->artistsort = comments_get_artistsort(comments);
+	ti->is_va_compilation = track_is_va_compilation(comments);
 }
 
 void track_info_ref(struct track_info *ti)
@@ -60,17 +76,15 @@ void track_info_unref(struct track_info *ti)
 
 int track_info_has_tag(const struct track_info *ti)
 {
-	return keyvals_get_val(ti->comments, "artist") ||
-		keyvals_get_val(ti->comments, "album") ||
-		keyvals_get_val(ti->comments, "title");
+	return ti->artist || ti->album || ti->title;
 }
 
 int track_info_matches(struct track_info *ti, const char *text, unsigned int flags)
 {
-	const char *artist = keyvals_get_val(ti->comments, "artist");
-	const char *album = keyvals_get_val(ti->comments, "album");
-	const char *title = keyvals_get_val(ti->comments, "title");
-	const char *albumartist = keyvals_get_val(ti->comments, "albumartist");
+	const char *artist = ti->artist;
+	const char *album = ti->album;
+	const char *title = ti->title;
+	const char *albumartist = ti->albumartist;
 	char **words;
 	int i, matched = 1;
 
@@ -111,54 +125,35 @@ int track_info_matches(struct track_info *ti, const char *text, unsigned int fla
 	return matched;
 }
 
-int track_info_cmp(const struct track_info *a, const struct track_info *b, const char * const *keys)
+/* this function gets called *alot*, it must be very fast */
+int track_info_cmp(const struct track_info *a, const struct track_info *b, const sort_key_t *keys)
 {
 	int i, res = 0;
 
-	for (i = 0; keys[i]; i++) {
-		const char *key = keys[i];
+	for (i = 0; keys[i] != SORT_INVALID; i++) {
+		sort_key_t key = keys[i];
 		const char *av, *bv;
 
-		/* numeric compare for tracknumber and discnumber */
-		if (strcmp(key, "tracknumber") == 0) {
-			res = comments_get_int(a->comments, key) -
-				comments_get_int(b->comments, key);
-			if (res)
-				break;
-			continue;
-		}
-		if (strcmp(key, "discnumber") == 0) {
-			res = comments_get_int(a->comments, key) -
-				comments_get_int(b->comments, key);
-			if (res)
-				break;
-			continue;
-		}
-		if (strcmp(key, "filename") == 0) {
+		switch (key) {
+		case SORT_TRACKNUMBER:
+		case SORT_DISCNUMBER:
+		case SORT_DATE:
+			res = getentry(a, key, int) - getentry(b, key, int);
+			break;
+		case SORT_FILEMTIME:
+			res = a->mtime - b->mtime;
+			break;
+		case SORT_FILENAME:
 			/* NOTE: filenames are not necessarily UTF-8 */
 			res = strcoll(a->filename, b->filename);
-			if (res)
-				break;
-			continue;
-		}
-		if (strcmp(key, "albumartist") == 0) {
-			av = comments_get_albumartist(a->comments);
-			bv = comments_get_albumartist(b->comments);
+			break;
+		default:
+			av = getentry(a, key, const char *);
+			bv = getentry(b, key, const char *);
 			res = u_strcasecoll0(av, bv);
-			if (res)
-				break;
-			continue;
-		}
-		if (strcmp(key, "filemtime") == 0) {
-			res = a->mtime - b->mtime;
-			if (res)
-				break;
-			continue;
+			break;
 		}
 
-		av = keyvals_get_val(a->comments, key);
-		bv = keyvals_get_val(b->comments, key);
-		res = u_strcasecoll0(av, bv);
 		if (res)
 			break;
 	}

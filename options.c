@@ -22,6 +22,7 @@
 #include "prog.h"
 #include "output.h"
 #include "config/datadir.h"
+#include "track_info.h"
 
 #include <stdio.h>
 #include <errno.h>
@@ -184,30 +185,33 @@ static void set_id3_default_charset(unsigned int id, const char *buf)
 	id3_default_charset = xstrdup(buf);
 }
 
-static const char * const valid_sort_keys[] = {
-	"artist",
-	"album",
-	"title",
-	"tracknumber",
-	"discnumber",
-	"date",
-	"genre",
-	"comment",
-	"filename",
-	"albumartist",
-	"filemtime",
-	NULL
+static const struct {
+	const char *str;
+	sort_key_t key;
+} sort_key_map[] = {
+	{ "artist",		SORT_ARTIST		},
+	{ "album",		SORT_ALBUM		},
+	{ "title",		SORT_TITLE		},
+	{ "tracknumber",	SORT_TRACKNUMBER	},
+	{ "discnumber",		SORT_DISCNUMBER		},
+	{ "date",		SORT_DATE		},
+	{ "genre",		SORT_GENRE		},
+	{ "comment",		SORT_COMMENT		},
+	{ "albumartist",	SORT_ALBUMARTIST	},
+	{ "filename",		SORT_FILENAME		},
+	{ "filemtime",		SORT_FILEMTIME		},
+	{ NULL,                 SORT_INVALID            }
 };
 
-static const char **parse_sort_keys(const char *value)
+static sort_key_t *parse_sort_keys(const char *value)
 {
-	const char **keys;
+	sort_key_t *keys;
 	const char *s, *e;
 	int size = 4;
 	int pos = 0;
 
 	size = 4;
-	keys = xnew(const char *, size);
+	keys = xnew(sort_key_t, size);
 
 	s = value;
 	while (1) {
@@ -232,24 +236,53 @@ static const char **parse_sort_keys(const char *value)
 		s = e;
 
 		for (i = 0; ; i++) {
-			if (valid_sort_keys[i] == NULL) {
+			if (sort_key_map[i].str == NULL) {
 				error_msg("invalid sort key '%s'", buf);
 				free(keys);
 				return NULL;
 			}
 
-			if (strcmp(buf, valid_sort_keys[i]) == 0)
+			if (strcmp(buf, sort_key_map[i].str) == 0)
 				break;
 		}
-
 		if (pos == size - 1) {
 			size *= 2;
-			keys = xrenew(const char *, keys, size);
+			keys = xrenew(sort_key_t, keys, size);
 		}
-		keys[pos++] = valid_sort_keys[i];
+		keys[pos++] = sort_key_map[i].key;
 	}
-	keys[pos] = NULL;
+	keys[pos] = SORT_INVALID;
 	return keys;
+}
+
+static const char *sort_key_to_str(sort_key_t key)
+{
+	int i;
+	for (i = 0; sort_key_map[i].str; i++) {
+		if (sort_key_map[i].key == key)
+			return sort_key_map[i].str;
+	}
+	return NULL;
+}
+
+static void sort_keys_to_str(const sort_key_t *keys, char *buf, size_t bufsize)
+{
+	int i, pos = 0;
+
+	for (i = 0; keys[i] != SORT_INVALID; i++) {
+		const char *key = sort_key_to_str(keys[i]);
+		int len = strlen(key);
+
+		if ((int)bufsize - pos - len - 2 < 0)
+			break;
+
+		memcpy(buf + pos, key, len);
+		pos += len;
+		buf[pos++] = ' ';
+	}
+	if (pos > 0)
+		pos--;
+	buf[pos] = 0;
 }
 
 static void get_lib_sort(unsigned int id, char *buf)
@@ -259,10 +292,12 @@ static void get_lib_sort(unsigned int id, char *buf)
 
 static void set_lib_sort(unsigned int id, const char *buf)
 {
-	const char **keys = parse_sort_keys(buf);
+	sort_key_t *keys = parse_sort_keys(buf);
 
-	if (keys)
+	if (keys) {
 		editable_set_sort_keys(&lib_editable, keys);
+		sort_keys_to_str(keys, lib_editable.sort_str, sizeof(lib_editable.sort_str));
+	}
 }
 
 static void get_pl_sort(unsigned int id, char *buf)
@@ -272,10 +307,12 @@ static void get_pl_sort(unsigned int id, char *buf)
 
 static void set_pl_sort(unsigned int id, const char *buf)
 {
-	const char **keys = parse_sort_keys(buf);
+	sort_key_t *keys = parse_sort_keys(buf);
 
-	if (keys)
+	if (keys) {
 		editable_set_sort_keys(&pl_editable, keys);
+		sort_keys_to_str(keys, pl_editable.sort_str, sizeof(pl_editable.sort_str));
+	}
 }
 
 static void get_output_plugin(unsigned int id, char *buf)

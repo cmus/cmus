@@ -30,6 +30,8 @@
 
 #define N_ELEMENTS(array) (sizeof(array) / sizeof((array)[0]))
 
+#define getentry(ptr, offset, type) (*((type *) ((char *) (ptr) + (offset))))
+
 static inline int min(int a, int b)
 {
 	return a < b ? a : b;

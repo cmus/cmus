@@ -39,8 +39,8 @@ void editable_init(struct editable *e, void (*free_track)(struct list_head *item
 	e->nr_tracks = 0;
 	e->nr_marked = 0;
 	e->total_time = 0;
-	e->sort_keys = xnew(const char *, 1);
-	e->sort_keys[0] = NULL;
+	e->sort_keys = xnew(sort_key_t, 1);
+	e->sort_keys[0] = SORT_INVALID;
 	e->sort_str[0] = 0;
 	e->free_track = free_track;
 
@@ -121,32 +121,11 @@ void editable_sort(struct editable *e)
 	window_goto_top(e->win);
 }
 
-static void keys_to_str(const char **keys, char *buf, size_t bufsize)
-{
-	int i, pos = 0;
-
-	for (i = 0; keys[i]; i++) {
-		const char *key = keys[i];
-		int len = strlen(key);
-
-		if ((int)bufsize - pos - len - 2 < 0)
-			break;
-
-		memcpy(buf + pos, key, len);
-		pos += len;
-		buf[pos++] = ' ';
-	}
-	if (pos > 0)
-		pos--;
-	buf[pos] = 0;
-}
-
-void editable_set_sort_keys(struct editable *e, const char **keys)
+void editable_set_sort_keys(struct editable *e, sort_key_t *keys)
 {
 	free(e->sort_keys);
 	e->sort_keys = keys;
 	editable_sort(e);
-	keys_to_str(keys, e->sort_str, sizeof(e->sort_str));
 }
 
 void editable_toggle_mark(struct editable *e)
@@ -261,7 +240,7 @@ void editable_move_after(struct editable *e)
 {
 	struct simple_track *sel;
 
-	if (e->nr_tracks <= 1 || e->sort_keys[0])
+	if (e->nr_tracks <= 1 || e->sort_keys[0] != SORT_INVALID)
 		return;
 
 	sel = get_selected(e);
@@ -273,7 +252,7 @@ void editable_move_before(struct editable *e)
 {
 	struct simple_track *sel;
 
-	if (e->nr_tracks <= 1 || e->sort_keys[0])
+	if (e->nr_tracks <= 1 || e->sort_keys[0] != SORT_INVALID)
 		return;
 
 	sel = get_selected(e);

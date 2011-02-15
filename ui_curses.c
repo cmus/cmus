@@ -490,7 +490,6 @@ static inline void fopt_set_time(struct format_option *fopt, int value, int empt
 static void fill_track_fopts_track_info(struct track_info *info)
 {
 	char *filename;
-	int num, disc;
 
 	if (using_utf8) {
 		filename = info->filename;
@@ -498,18 +497,16 @@ static void fill_track_fopts_track_info(struct track_info *info)
 		utf8_encode(info->filename);
 		filename = conv_buffer;
 	}
-	disc = comments_get_int(info->comments, "discnumber");
-	num = comments_get_int(info->comments, "tracknumber");
 
-	fopt_set_str(&track_fopts[TF_ALBUMARTIST], comments_get_albumartist(info->comments));
-	fopt_set_str(&track_fopts[TF_ARTIST], keyvals_get_val(info->comments, "artist"));
-	fopt_set_str(&track_fopts[TF_ALBUM], keyvals_get_val(info->comments, "album"));
-	fopt_set_int(&track_fopts[TF_DISC], disc, disc == -1);
-	fopt_set_int(&track_fopts[TF_TRACK], num, num == -1);
-	fopt_set_str(&track_fopts[TF_TITLE], keyvals_get_val(info->comments, "title"));
+	fopt_set_str(&track_fopts[TF_ALBUMARTIST], info->albumartist);
+	fopt_set_str(&track_fopts[TF_ARTIST], info->artist);
+	fopt_set_str(&track_fopts[TF_ALBUM], info->album);
+	fopt_set_int(&track_fopts[TF_DISC], info->discnumber, info->discnumber == -1);
+	fopt_set_int(&track_fopts[TF_TRACK], info->tracknumber, info->tracknumber == -1);
+	fopt_set_str(&track_fopts[TF_TITLE], info->title);
 	fopt_set_str(&track_fopts[TF_YEAR], keyvals_get_val(info->comments, "date"));
-	fopt_set_str(&track_fopts[TF_GENRE], keyvals_get_val(info->comments, "genre"));
-	fopt_set_str(&track_fopts[TF_COMMENT], keyvals_get_val(info->comments, "comment"));
+	fopt_set_str(&track_fopts[TF_GENRE], info->genre);
+	fopt_set_str(&track_fopts[TF_COMMENT], info->comment);
 	fopt_set_time(&track_fopts[TF_DURATION], info->duration, info->duration == -1);
 	fopt_set_str(&track_fopts[TF_PATHFILE], filename);
 	if (is_url(info->filename)) {

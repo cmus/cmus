@@ -4,7 +4,6 @@
 
 #include "track.h"
 #include "iter.h"
-#include "track_info.h"
 #include "search_mode.h"
 #include "window.h"
 #include "options.h"
@@ -151,7 +150,7 @@ again:
 	return NULL;
 }
 
-void sorted_list_add_track(struct list_head *head, struct rb_root *tree_root, struct simple_track *track, const char * const *keys)
+void sorted_list_add_track(struct list_head *head, struct rb_root *tree_root, struct simple_track *track, const sort_key_t *keys)
 {
 	struct rb_node **new = &(tree_root->rb_node), *parent = NULL, *curr, *prev, *next;
 

@@ -8,6 +8,7 @@
 #include "list.h"
 #include "rbtree.h"
 #include "iter.h"
+#include "track_info.h"
 
 struct simple_track {
 	struct list_head node;
@@ -72,7 +73,7 @@ struct simple_track *simple_list_get_next(struct list_head *head, struct simple_
 struct simple_track *simple_list_get_prev(struct list_head *head, struct simple_track *cur,
 		int (*filter)(const struct simple_track *));
 
-void sorted_list_add_track(struct list_head *head, struct rb_root *tree_root, struct simple_track *track, const char * const *keys);
+void sorted_list_add_track(struct list_head *head, struct rb_root *tree_root, struct simple_track *track, const sort_key_t *keys);
 
 void list_add_rand(struct list_head *head, struct list_head *node, int nr);
 

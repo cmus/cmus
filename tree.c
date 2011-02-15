@@ -586,8 +586,8 @@ static void album_add_track(struct album *album, struct tree_track *track)
 	 *       have all track numbers set or all unset (within one album
 	 *       of course).
 	 */
-	static const char * const album_track_sort_keys[] = {
-		"discnumber", "tracknumber", "filename", NULL
+	static const sort_key_t album_track_sort_keys[] = {
+		SORT_DISCNUMBER, SORT_TRACKNUMBER, SORT_FILENAME, SORT_INVALID
 	};
 	struct rb_node **new = &(album->track_root.rb_node), *parent = NULL;
 
@@ -611,23 +611,21 @@ static void album_add_track(struct album *album, struct tree_track *track)
 	rb_insert_color(&track->tree_node, &album->track_root);
 }
 
-static const char *tree_artist_name(const struct keyval *comments)
+static const char *tree_artist_name(const struct track_info* ti)
 {
-	const char *val = keyvals_get_val(comments, "albumartist");
+	const char *val = ti->albumartist;
 
-	if (track_is_va_compilation(comments))
+	if (ti->is_va_compilation)
 		val = "<Various Artists>";
-	if (!val || strcmp(val, "") == 0)
-		val = keyvals_get_val(comments, "artist");
 	if (!val || strcmp(val, "") == 0)
 		val = "<No Name>";
 
 	return val;
 }
 
-static const char *tree_album_name(const struct keyval *comments)
+static const char *tree_album_name(const struct track_info* ti)
 {
-	const char *val = keyvals_get_val(comments, "album");
+	const char *val = ti->album;
 
 	if (!val || strcmp(val, "") == 0)
 		val = "<No Name>";
@@ -644,17 +642,17 @@ void tree_add_track(struct tree_track *track)
 	int date;
 	int is_va_compilation = 0;
 
-	date = comments_get_date(ti->comments, "date");
+	date = ti->date;
 
 	if (is_url(ti->filename)) {
 		artist_name = "<Stream>";
 		album_name = "<Stream>";
 	} else {
-		album_name	= tree_album_name(ti->comments);
-		artist_name	= tree_artist_name(ti->comments);
-		artistsort_name	= comments_get_artistsort(ti->comments);
+		album_name	= tree_album_name(ti);
+		artist_name	= tree_artist_name(ti);
+		artistsort_name	= ti->artistsort;
 
-		is_va_compilation = track_is_va_compilation(ti->comments);
+		is_va_compilation = ti->is_va_compilation;
 	}
 
 	new_artist = artist_new(artist_name, artistsort_name);

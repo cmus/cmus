@@ -21,6 +21,7 @@
 #define _TRACK_INFO_H
 
 #include <time.h>
+#include <stddef.h>
 
 struct track_info {
 	struct keyval *comments;
@@ -32,7 +33,35 @@ struct track_info {
 	int duration;
 	int ref;
 	char *filename;
+
+	int tracknumber;
+	int discnumber;
+	int date;
+	const char *artist;
+	const char *album;
+	const char *title;
+	const char *genre;
+	const char *comment;
+	const char *albumartist;
+	const char *artistsort;
+
+	int is_va_compilation : 1;
 };
+
+typedef size_t sort_key_t;
+
+#define SORT_ARTIST       offsetof(struct track_info, artist)
+#define SORT_ALBUM        offsetof(struct track_info, album)
+#define SORT_TITLE        offsetof(struct track_info, title)
+#define SORT_TRACKNUMBER  offsetof(struct track_info, tracknumber)
+#define SORT_DISCNUMBER   offsetof(struct track_info, discnumber)
+#define SORT_DATE         offsetof(struct track_info, date)
+#define SORT_GENRE        offsetof(struct track_info, genre)
+#define SORT_COMMENT      offsetof(struct track_info, comment)
+#define SORT_ALBUMARTIST  offsetof(struct track_info, albumartist)
+#define SORT_FILENAME     offsetof(struct track_info, filename)
+#define SORT_FILEMTIME    offsetof(struct track_info, mtime)
+#define SORT_INVALID      ((sort_key_t) (-1))
 
 #define TI_MATCH_ARTIST       (1 << 0)
 #define TI_MATCH_ALBUM        (1 << 1)
@@ -41,6 +70,7 @@ struct track_info {
 
 /* initializes only filename and ref */
 struct track_info *track_info_new(const char *filename);
+void track_info_set_comments(struct track_info *ti, struct keyval *comments);
 
 void track_info_ref(struct track_info *ti);
 void track_info_unref(struct track_info *ti);
@@ -59,6 +89,6 @@ int track_info_has_tag(const struct track_info *ti);
  */
 int track_info_matches(struct track_info *ti, const char *text, unsigned int flags);
 
-int track_info_cmp(const struct track_info *a, const struct track_info *b, const char * const *keys);
+int track_info_cmp(const struct track_info *a, const struct track_info *b, const sort_key_t *keys);
 
 #endif
