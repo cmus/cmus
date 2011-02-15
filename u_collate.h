@@ -48,4 +48,31 @@ int u_strcasecoll(const char *str1, const char *str2);
  */
 int u_strcasecoll0(const char *str1, const char *str2);
 
+/*
+ * @str  valid, normalized, null-terminated UTF-8 string
+ *
+ * Converts a string into a collation key that can be compared
+ * with other collation keys produced by the same function using
+ * strcmp().
+ *
+ * Returns a newly allocated string.
+ */
+char *u_strcoll_key(const char *str);
+
+/*
+ * @str  valid, normalized, null-terminated UTF-8 string
+ *
+ * Like u_strcoll_key(), but do casefolding before generating key.
+ *
+ * Returns a newly allocated string.
+ */
+char *u_strcasecoll_key(const char *str);
+
+/*
+ * @str  valid, normalized, null-terminated UTF-8 string or NULL
+ *
+ * Like u_strcasecoll_key(), but handle NULL pointers gracefully.
+ */
+char *u_strcasecoll_key0(const char *str);
+
 #endif

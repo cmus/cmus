@@ -25,6 +25,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 int u_strcoll(const char *str1, const char *str2)
 {
@@ -76,4 +77,66 @@ int u_strcasecoll0(const char *str1, const char *str2)
 		return 1;
 
 	return u_strcasecoll(str1, str2);
+}
+
+char *u_strcoll_key(const char *str)
+{
+	char *result = NULL;
+
+	if (using_utf8) {
+		size_t xfrm_len = strxfrm(NULL, str, 0);
+		if ((ssize_t) xfrm_len >= 0 && xfrm_len < INT_MAX - 2) {
+			result = xnew(char, xfrm_len + 1);
+			strxfrm(result, str, xfrm_len + 1);
+		}
+	}
+
+	if (!result) {
+		char *str_locale;
+		size_t xfrm_len;
+
+		convert(str, -1, &str_locale, -1, charset, "UTF-8");
+
+		if (str_locale) {
+			xfrm_len = strxfrm(NULL, str_locale, 0);
+			if ((ssize_t) xfrm_len < 0 || xfrm_len >= INT_MAX - 2) {
+				free(str_locale);
+				str_locale = NULL;
+			}
+		}
+		if (str_locale) {
+			result = xnew(char, xfrm_len + 2);
+			result[0] = 'A';
+			strxfrm(result + 1, str_locale, xfrm_len + 1);
+			free(str_locale);
+		}
+	}
+
+	if (!result) {
+		size_t xfrm_len = strlen(str);
+		result = xmalloc(xfrm_len + 2);
+		result[0] = 'B';
+		memcpy(result + 1, str, xfrm_len);
+		result[xfrm_len+1] = '\0';
+	}
+
+	return result;
+}
+
+char *u_strcasecoll_key(const char *str)
+{
+	char *key, *cf_str;
+
+	cf_str = u_casefold(str);
+
+	key = u_strcoll_key(cf_str);
+
+	free(cf_str);
+
+	return key;
+}
+
+char *u_strcasecoll_key0(const char *str)
+{
+	return str ? u_strcasecoll_key(str) : NULL;
 }

@@ -80,6 +80,16 @@ static inline int str_to_int(const char *str, long int *val)
 	return 0;
 }
 
+static inline int strcmp0(const char *str1, const char *str2)
+{
+	if (!str1)
+		return str2 ? -1 : 0;
+	if (!str2)
+		return 1;
+
+	return strcmp(str1, str2);
+}
+
 static inline time_t file_get_mtime(const char *filename)
 {
 	struct stat s;

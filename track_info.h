@@ -45,20 +45,27 @@ struct track_info {
 	const char *albumartist;
 	const char *artistsort;
 
+	char *collkey_artist;
+	char *collkey_album;
+	char *collkey_title;
+	char *collkey_genre;
+	char *collkey_comment;
+	char *collkey_albumartist;
+
 	int is_va_compilation : 1;
 };
 
 typedef size_t sort_key_t;
 
-#define SORT_ARTIST       offsetof(struct track_info, artist)
-#define SORT_ALBUM        offsetof(struct track_info, album)
-#define SORT_TITLE        offsetof(struct track_info, title)
+#define SORT_ARTIST       offsetof(struct track_info, collkey_artist)
+#define SORT_ALBUM        offsetof(struct track_info, collkey_album)
+#define SORT_TITLE        offsetof(struct track_info, collkey_title)
 #define SORT_TRACKNUMBER  offsetof(struct track_info, tracknumber)
 #define SORT_DISCNUMBER   offsetof(struct track_info, discnumber)
 #define SORT_DATE         offsetof(struct track_info, date)
-#define SORT_GENRE        offsetof(struct track_info, genre)
-#define SORT_COMMENT      offsetof(struct track_info, comment)
-#define SORT_ALBUMARTIST  offsetof(struct track_info, albumartist)
+#define SORT_GENRE        offsetof(struct track_info, collkey_genre)
+#define SORT_COMMENT      offsetof(struct track_info, collkey_comment)
+#define SORT_ALBUMARTIST  offsetof(struct track_info, collkey_albumartist)
 #define SORT_FILENAME     offsetof(struct track_info, filename)
 #define SORT_FILEMTIME    offsetof(struct track_info, mtime)
 #define SORT_INVALID      ((sort_key_t) (-1))

@@ -32,6 +32,12 @@ static void track_info_free(struct track_info *ti)
 {
 	keyvals_free(ti->comments);
 	free(ti->filename);
+	free(ti->collkey_artist);
+	free(ti->collkey_album);
+	free(ti->collkey_title);
+	free(ti->collkey_genre);
+	free(ti->collkey_comment);
+	free(ti->collkey_albumartist);
 	free(ti);
 }
 
@@ -58,6 +64,13 @@ void track_info_set_comments(struct track_info *ti, struct keyval *comments) {
 	ti->albumartist = comments_get_albumartist(comments);
 	ti->artistsort = comments_get_artistsort(comments);
 	ti->is_va_compilation = track_is_va_compilation(comments);
+
+	ti->collkey_artist = u_strcasecoll_key0(ti->artist);
+	ti->collkey_album = u_strcasecoll_key0(ti->album);
+	ti->collkey_title = u_strcasecoll_key0(ti->title);
+	ti->collkey_genre = u_strcasecoll_key0(ti->genre);
+	ti->collkey_comment = u_strcasecoll_key0(ti->comment);
+	ti->collkey_albumartist = u_strcasecoll_key0(ti->albumartist);
 }
 
 void track_info_ref(struct track_info *ti)
@@ -150,7 +163,7 @@ int track_info_cmp(const struct track_info *a, const struct track_info *b, const
 		default:
 			av = getentry(a, key, const char *);
 			bv = getentry(b, key, const char *);
-			res = u_strcasecoll0(av, bv);
+			res = strcmp0(av, bv);
 			break;
 		}
 
