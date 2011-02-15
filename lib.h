@@ -42,6 +42,7 @@ struct album {
 
 	struct artist *artist;
 	char *name;
+	char *collkey_name;
 	/* date of the first track added to this album */
 	int date;
 
@@ -58,6 +59,9 @@ struct artist {
 	char *name;
 	char *sort_name;
 	char *auto_sort_name;
+	char *collkey_name;
+	char *collkey_sort_name;
+	char *collkey_auto_sort_name;
 
 	/* albums visible for this artist in the tree_win? */
 	unsigned int expanded : 1;
