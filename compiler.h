@@ -8,12 +8,20 @@
 /*
  * GCC 2.96 or compatible required
  */
+#if defined(__GNUC__)
 
 /* Optimization: Condition @x is likely */
 #define likely(x)	__builtin_expect(!!(x), 1)
 
 /* Optimization: Condition @x is unlikely */
 #define unlikely(x)	__builtin_expect(!!(x), 0)
+
+#else
+
+#define likely(x)	(x)
+#define unlikely(x)	(x)
+
+#endif
 
 /* Optimization: Function never returns */
 #define __NORETURN	__attribute__((__noreturn__))
