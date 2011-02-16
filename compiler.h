@@ -56,7 +56,7 @@
  *
  */
 #define container_of_portable(ptr, type, member) \
-	((type *)( (char *)(ptr) - offsetof(type,member) ))
+	((type *)(void *)( (char *)(ptr) - offsetof(type,member) ))
 #undef container_of
 #if defined(__GNUC__)
 #define container_of(ptr, type, member) ({			\
