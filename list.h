@@ -2,7 +2,7 @@
 #ifndef _LINUX_LIST_H
 #define _LINUX_LIST_H
 
-#include <stdlib.h>
+#include "compiler.h" /* container_of */
 
 static inline void prefetch(const void *x)
 {
@@ -191,22 +191,6 @@ static inline void list_splice_init(struct list_head *list,
 		list_init(list);
 	}
 }
-
-#undef offsetof
-#define offsetof(TYPE, MEMBER) ((size_t) &((TYPE *)0)->MEMBER)
-
-/**
- * container_of - cast a member of a structure out to the containing structure
- *
- * @ptr:	the pointer to the member.
- * @type:	the type of the container struct this is embedded in.
- * @member:	the name of the member within the struct.
- *
- */
-#undef container_of
-#define container_of(ptr, type, member) ({			\
-	const __typeof__( ((type *)0)->member ) *__mptr = (ptr);	\
-	(type *)( (char *)__mptr - offsetof(type,member) );})
 
 /**
  * list_entry - get the struct for this entry
