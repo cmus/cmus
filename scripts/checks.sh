@@ -598,7 +598,7 @@ check_pthread()
 # adds DL_LIBS to config.mk
 check_dl()
 {
-	for DL_LIBS in "-ldl -Wl,--export-dynamic" "-Wl,--export-dynamic" "-ldl"
+	for DL_LIBS in "-ldl -Wl,--export-dynamic" "-ldl -rdynamic" "-Wl,--export-dynamic" "-rdynamic" "-ldl"
 	do
 		check_library DL "" "$DL_LIBS" && return 0
 	done
