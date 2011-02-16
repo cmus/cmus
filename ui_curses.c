@@ -2071,8 +2071,8 @@ static void init_curses(void)
 
 	noecho();
 	if (has_colors()) {
-		start_color();
 #if HAVE_USE_DEFAULT_COLORS
+		start_color();
 		use_default_colors();
 #endif
 	}
