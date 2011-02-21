@@ -361,7 +361,7 @@ static int mp4_read_comments(struct input_plugin_data *ip_data,
 			ustr += 16;
 			size -= 16;
 		}
-		xstr = xmalloc(size + 1);
+		xstr = xnew(char, size + 1);
 		memcpy(xstr, ustr, size);
 		xstr[size] = 0;
 		comments_add(&c, "albumartist", xstr);

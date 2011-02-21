@@ -35,11 +35,8 @@ struct history_entry {
 static struct history_entry *history_entry_new(const char *text)
 {
 	struct history_entry *new;
-	int size = strlen(text) + 1;
-
-	new = xmalloc(sizeof(struct history_entry));
-	new->text = xmalloc(size);
-	memcpy(new->text, text, size);
+	new = xnew(struct history_entry, 1);
+	new->text = xstrdup(text);
 	return new;
 }
 

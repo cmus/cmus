@@ -264,7 +264,7 @@ static int setup_remote(struct input_plugin *ip, const struct keyval *headers, i
 	}
 
 	ip->data.fd = sock;
-	ip->data.metadata = xmalloc(16 * 255 + 1);
+	ip->data.metadata = xnew(char, 16 * 255 + 1);
 
 	val = keyvals_get_val(headers, "icy-metaint");
 	if (val) {
