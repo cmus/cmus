@@ -87,7 +87,7 @@ void op_load_plugins(void)
 		error_msg("couldn't open directory `%s': %s", plugin_dir, strerror(errno));
 		return;
 	}
-	while ((d = readdir(dir)) != NULL) {
+	while ((d = (struct dirent *) readdir(dir)) != NULL) {
 		char filename[256];
 		struct output_plugin *plug;
 		void *so, *symptr;

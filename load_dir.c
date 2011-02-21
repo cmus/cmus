@@ -51,7 +51,7 @@ const char *dir_read(struct directory *dir)
 		full++;
 #endif
 
-	while ((de = readdir(d))) {
+	while ((de = (struct dirent *) readdir(d))) {
 		const char *name = de->d_name;
 		int nlen = strlen(name);
 
