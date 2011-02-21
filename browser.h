@@ -29,7 +29,7 @@ struct browser_entry {
 	struct list_head node;
 
 	enum { BROWSER_ENTRY_DIR, BROWSER_ENTRY_FILE, BROWSER_ENTRY_PLLINE } type;
-	char name[0];
+	char name[];
 };
 
 static inline struct browser_entry *iter_to_browser_entry(struct iter *iter)

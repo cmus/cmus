@@ -34,7 +34,7 @@ struct ptr_array {
 /* ptr_array.ptrs is either char ** or struct dir_entry ** */
 struct dir_entry {
 	mode_t mode;
-	char name[0];
+	char name[];
 };
 
 #define PTR_ARRAY(name) struct ptr_array name = { NULL, 0, 0 }

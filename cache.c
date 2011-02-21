@@ -32,7 +32,7 @@ struct cache_entry {
 	time_t mtime;
 
 	// filename and N * (key, val)
-	char strings[0];
+	char strings[];
 };
 
 #define ALIGN(size) (((size) + sizeof(long) - 1) & ~(sizeof(long) - 1))

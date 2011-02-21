@@ -53,7 +53,7 @@ struct token {
 	struct list_head node;
 	enum token_type type;
 	/* for TOK_KEY, TOK_INT_OR_KEY and TOK_STR */
-	char str[0];
+	char str[];
 };
 
 /* same order as TOK_* */

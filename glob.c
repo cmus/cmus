@@ -17,7 +17,7 @@ struct glob_item {
 		GLOB_QMARK,
 		GLOB_TEXT
 	} type;
-	char text[0];
+	char text[];
 };
 
 /* simplification:

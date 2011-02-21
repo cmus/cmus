@@ -45,7 +45,7 @@ struct binding {
 	struct binding *next;
 	const struct key *key;
 	enum key_context ctx;
-	char cmd[0];
+	char cmd[];
 };
 
 extern const char * const key_context_names[NR_CTXS + 1];
