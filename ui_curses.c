@@ -1453,7 +1453,7 @@ void search_not_found(void)
 			break;
 		}
 	}
-	info_msg("%s not found: %s", what, search_str ? : "");
+	info_msg("%s not found: %s", what, search_str ? search_str : "");
 }
 
 void set_client_fd(int fd)
