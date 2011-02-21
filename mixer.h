@@ -20,6 +20,10 @@
 #ifndef _MIXER_H
 #define _MIXER_H
 
+#ifndef __GNUC__
+#include <fcntl.h>
+#endif
+
 #define NR_MIXER_FDS 4
 
 struct mixer_plugin_ops {

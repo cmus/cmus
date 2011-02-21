@@ -23,6 +23,11 @@
 #include "comment.h"
 #include "sf.h"
 
+#ifndef __GNUC__
+#include <fcntl.h>
+#include <unistd.h>
+#endif
+
 enum {
 	/* no error */
 	IP_ERROR_SUCCESS,

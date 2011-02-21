@@ -22,6 +22,10 @@
 
 #include "sf.h"
 
+#ifndef __GNUC__
+#include <fcntl.h>
+#endif
+
 enum {
 	/* no error */
 	OP_ERROR_SUCCESS,
