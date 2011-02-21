@@ -1382,12 +1382,17 @@ static for_each_sel_ti_cb view_for_each_sel[4] = {
 	pq_for_each_sel
 };
 
+/* wrapper for add_ti_cb, (void *) can't store function pointers */
+struct wrapper_cb_data {
+	add_ti_cb cb;
+};
+
 /* wrapper for void lib_add_track(struct track_info *) etc. */
 static int wrapper_cb(void *data, struct track_info *ti)
 {
-	add_ti_cb add = data;
+	struct wrapper_cb_data *add = data;
 
-	add(ti);
+	add->cb(ti);
 	return 0;
 }
 
@@ -1415,8 +1420,9 @@ static void cmd_win_add_l(char *arg)
 		return;
 
 	if (cur_view <= QUEUE_VIEW) {
+		struct wrapper_cb_data add = { lib_add_track };
 		editable_lock();
-		view_for_each_sel[cur_view](wrapper_cb, lib_add_track, 0);
+		view_for_each_sel[cur_view](wrapper_cb, &add, 0);
 		editable_unlock();
 	} else if (cur_view == BROWSER_VIEW) {
 		add_from_browser(lib_add_track, JOB_TYPE_LIB);
@@ -1430,8 +1436,9 @@ static void cmd_win_add_p(char *arg)
 		return;
 
 	if (cur_view <= QUEUE_VIEW) {
+		struct wrapper_cb_data add = { pl_add_track };
 		editable_lock();
-		view_for_each_sel[cur_view](wrapper_cb, pl_add_track, 0);
+		view_for_each_sel[cur_view](wrapper_cb, &add, 0);
 		editable_unlock();
 	} else if (cur_view == BROWSER_VIEW) {
 		add_from_browser(pl_add_track, JOB_TYPE_PL);
@@ -1444,8 +1451,9 @@ static void cmd_win_add_Q(char *arg)
 		return;
 
 	if (cur_view <= QUEUE_VIEW) {
+		struct wrapper_cb_data add = { play_queue_prepend };
 		editable_lock();
-		view_for_each_sel[cur_view](wrapper_cb, play_queue_prepend, 1);
+		view_for_each_sel[cur_view](wrapper_cb, &add, 1);
 		editable_unlock();
 	} else if (cur_view == BROWSER_VIEW) {
 		add_from_browser(play_queue_prepend, JOB_TYPE_QUEUE);
@@ -1458,8 +1466,9 @@ static void cmd_win_add_q(char *arg)
 		return;
 
 	if (cur_view <= QUEUE_VIEW) {
+		struct wrapper_cb_data add = { play_queue_append };
 		editable_lock();
-		view_for_each_sel[cur_view](wrapper_cb, play_queue_append, 0);
+		view_for_each_sel[cur_view](wrapper_cb, &add, 0);
 		editable_unlock();
 	} else if (cur_view == BROWSER_VIEW) {
 		add_from_browser(play_queue_append, JOB_TYPE_QUEUE);
