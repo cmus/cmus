@@ -26,6 +26,7 @@
 
 #include <stdio.h>
 #include <errno.h>
+#include <strings.h>
 
 #if defined(__sun__)
 #include <ncurses.h>

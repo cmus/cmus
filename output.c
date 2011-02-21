@@ -30,6 +30,7 @@
 #include "config/libdir.h"
 
 #include <string.h>
+#include <strings.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>

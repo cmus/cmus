@@ -15,6 +15,7 @@
 
 #include <ctype.h>
 #include <stdio.h>
+#include <strings.h>
 
 struct searchable *tree_searchable;
 struct window *lib_tree_win;

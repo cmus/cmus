@@ -27,6 +27,7 @@
 #include <dirent.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <strings.h>
 
 /* save_playlist_cb, save_ext_playlist_cb */
 typedef int (*save_tracks_cb)(void *data, struct track_info *ti);

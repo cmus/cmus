@@ -35,6 +35,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <strings.h>
 
 struct mp4_private {
 	char *overflow_buf;

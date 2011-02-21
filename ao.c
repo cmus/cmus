@@ -27,6 +27,7 @@
  * Also we use snprintf().
  */
 #include <stdio.h>
+#include <strings.h>
 #include <ao/ao.h>
 
 static ao_device *libao_device;

@@ -2,7 +2,7 @@
 #include "keyval.h"
 #include "xmalloc.h"
 
-#include <string.h>
+#include <strings.h>
 
 struct keyval *keyvals_dup(const struct keyval *keyvals)
 {

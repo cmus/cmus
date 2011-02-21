@@ -14,6 +14,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <strings.h>
 
 /* http://www.personal.uni-jena.de/~pfk/mpp/sv8/apetag.html */
 

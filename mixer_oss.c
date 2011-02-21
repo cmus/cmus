@@ -23,6 +23,7 @@
 #include "xmalloc.h"
 #include "debug.h"
 
+#include <strings.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>

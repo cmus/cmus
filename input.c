@@ -36,11 +36,14 @@
 #include <errno.h>
 #include <stdio.h>
 #include <stdarg.h>
+#include <sys/select.h>
+#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <dirent.h>
 #include <dlfcn.h>
+#include <strings.h>
 
 struct input_plugin {
 	const struct input_plugin_ops *ops;

@@ -8,6 +8,7 @@
 #include "uchar.h"
 
 #include <string.h>
+#include <strings.h>
 
 int track_is_compilation(const struct keyval *comments)
 {
