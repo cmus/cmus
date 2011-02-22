@@ -79,6 +79,7 @@ extern struct editable lib_editable;
 extern struct tree_track *lib_cur_track;
 extern enum aaa_mode aaa_mode;
 extern unsigned int play_sorted;
+extern char *lib_live_filter;
 
 extern struct searchable *tree_searchable;
 extern struct window *lib_tree_win;

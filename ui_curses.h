@@ -47,6 +47,7 @@ extern int using_utf8;
 
 void update_titleline(void);
 void update_statusline(void);
+void update_filterline(void);
 void update_colors(void);
 void update_full(void);
 void info_msg(const char *format, ...) __FORMAT(1, 2);

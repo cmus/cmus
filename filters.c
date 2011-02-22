@@ -424,4 +424,5 @@ void filters_set_anonymous(const char *val)
 void filters_set_live(const char *val)
 {
 	lib_set_live_filter(val);
+	update_filterline();
 }

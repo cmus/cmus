@@ -895,11 +895,13 @@ static void do_update_view(int full)
 			update_track_window();
 		editable_unlock();
 		draw_separator();
+		update_filterline();
 		break;
 	case SORTED_VIEW:
 		editable_lock();
 		update_sorted_window();
 		editable_unlock();
+		update_filterline();
 		break;
 	case PLAYLIST_VIEW:
 		editable_lock();
@@ -1328,6 +1330,20 @@ void update_statusline(void)
 	curs_set(0);
 	do_update_statusline();
 	post_update();
+}
+
+void update_filterline(void)
+{
+	if (cur_view != TREE_VIEW && cur_view != SORTED_VIEW)
+		return;
+	if (lib_live_filter) {
+		char buf[512];
+		int w;
+		bkgdset(pairs[CURSED_STATUSLINE]);
+		snprintf(buf, sizeof(buf), "filtered: %s", lib_live_filter);
+		w = clamp(strlen(buf) + 2, COLS/4, COLS/2);
+		sprint(LINES-4, COLS-w, buf, w);
+	}
 }
 
 void info_msg(const char *format, ...)
