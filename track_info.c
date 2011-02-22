@@ -92,33 +92,35 @@ int track_info_has_tag(const struct track_info *ti)
 	return ti->artist || ti->album || ti->title;
 }
 
-int track_info_matches(struct track_info *ti, const char *text, unsigned int flags)
+static inline int match_word(const struct track_info *ti, const char *word, unsigned int flags)
 {
-	const char *artist = ti->artist;
-	const char *album = ti->album;
-	const char *title = ti->title;
-	const char *albumartist = ti->albumartist;
+	return ((flags & TI_MATCH_ARTIST) && ti->artist && u_strcasestr_base(ti->artist, word)) ||
+	       ((flags & TI_MATCH_ALBUM) && ti->album && u_strcasestr_base(ti->album, word)) ||
+	       ((flags & TI_MATCH_TITLE) && ti->title && u_strcasestr_base(ti->title, word)) ||
+	       ((flags & TI_MATCH_ALBUMARTIST) && ti->albumartist && u_strcasestr_base(ti->albumartist, word));
+}
+
+static inline int flags_set(const struct track_info *ti, unsigned int flags)
+{
+	return ((flags & TI_MATCH_ARTIST) && ti->artist) ||
+	       ((flags & TI_MATCH_ALBUM) && ti->album) ||
+	       ((flags & TI_MATCH_TITLE) && ti->title) ||
+	       ((flags & TI_MATCH_ALBUMARTIST) && ti->albumartist);
+}
+
+int track_info_matches_full(const struct track_info *ti, const char *text,
+		unsigned int flags, unsigned int exclude_flags, int match_all_words)
+{
 	char **words;
-	int i, matched = 1;
+	int i, matched = 0;
 
 	words = get_words(text);
-	if (words[0] == NULL)
-		matched = 0;
 	for (i = 0; words[i]; i++) {
 		const char *word = words[i];
 
-		if ((flags & TI_MATCH_ARTIST && artist) ||
-		    (flags & TI_MATCH_ALBUM && album) ||
-		    (flags & TI_MATCH_TITLE && title) ||
-		    (flags & TI_MATCH_ALBUMARTIST && albumartist)) {
-			if (flags & TI_MATCH_ARTIST && artist && u_strcasestr_base(artist, word))
-				continue;
-			if (flags & TI_MATCH_ALBUM && album && u_strcasestr_base(album, word))
-				continue;
-			if (flags & TI_MATCH_TITLE && title && u_strcasestr_base(title, word))
-				continue;
-			if (flags & TI_MATCH_ALBUMARTIST && albumartist && u_strcasestr_base(albumartist, word))
-				continue;
+		matched = 0;
+		if (flags_set(ti, flags) && match_word(ti, word, flags)) {
+			matched = 1;
 		} else {
 			/* compare with url or filename without path */
 			char *filename = ti->filename;
@@ -129,13 +131,23 @@ int track_info_matches(struct track_info *ti, const char *text, unsigned int fla
 					filename = slash + 1;
 			}
 			if (u_strcasestr_filename(filename, word))
-				continue;
+				matched = 1;
 		}
-		matched = 0;
-		break;
+
+		if (flags_set(ti, exclude_flags) && match_word(ti, word, exclude_flags))
+			matched = 0;
+
+		if (match_all_words ? !matched : matched)
+			break;
+
 	}
 	free_str_array(words);
 	return matched;
+}
+
+int track_info_matches(const struct track_info *ti, const char *text, unsigned int flags)
+{
+	return track_info_matches_full(ti, text, flags, 0, 1);
 }
 
 /* this function gets called *alot*, it must be very fast */

@@ -9,6 +9,8 @@
 #include "xmalloc.h"
 #include "rbtree.h"
 #include "debug.h"
+#include "utils.h"
+#include "ui_curses.h" /* cur_view */
 
 #include <pthread.h>
 #include <string.h>
@@ -21,6 +23,11 @@ enum aaa_mode aaa_mode = AAA_MODE_ALL;
 static struct rb_root lib_shuffle_root;
 static struct expr *filter = NULL;
 static int remove_from_hash = 1;
+
+static char *lib_live_filter = NULL;
+static struct expr *live_filter_expr = NULL;
+static struct track_info *cur_track_ti = NULL;
+static struct track_info *sel_track_ti = NULL;
 
 const char *artist_sort_name(const struct artist *a)
 {
@@ -139,13 +146,24 @@ static void hash_remove(struct track_info *ti)
 	}
 }
 
+static int is_filtered(struct track_info *ti)
+{
+	if (live_filter_expr && !expr_eval(live_filter_expr, ti))
+		return 1;
+	if (!live_filter_expr && lib_live_filter && !track_info_matches(ti, lib_live_filter, TI_MATCH_ALL))
+		return 1;
+	if (filter && !expr_eval(filter, ti))
+		return 1;
+	return 0;
+}
+
 void lib_add_track(struct track_info *ti)
 {
 	if (!hash_insert(ti)) {
 		/* duplicate files not allowed */
 		return;
 	}
-	if (filter == NULL || expr_eval(filter, ti))
+	if (!is_filtered(ti))
 		views_add_track(ti);
 }
 
@@ -363,7 +381,7 @@ struct track_info *lib_set_prev(void)
 	return lib_set_track(track);
 }
 
-struct track_info *sorted_set_selected(void)
+static struct tree_track *sorted_get_selected(void)
 {
 	struct iter sel;
 
@@ -371,28 +389,17 @@ struct track_info *sorted_set_selected(void)
 		return NULL;
 
 	window_get_sel(lib_editable.win, &sel);
-	return lib_set_track(iter_to_sorted_track(&sel));
+	return iter_to_sorted_track(&sel);
 }
 
-void lib_set_filter(struct expr *expr)
+struct track_info *sorted_set_selected(void)
 {
-	struct track_info *cur_ti = NULL;
+	return lib_set_track(sorted_get_selected());
+}
+
+static void hash_add_to_views(void)
+{
 	int i;
-
-	/* try to save cur_track */
-	if (lib_cur_track) {
-		cur_ti = tree_track_info(lib_cur_track);
-		track_info_ref(cur_ti);
-	}
-
-	remove_from_hash = 0;
-	editable_clear(&lib_editable);
-	remove_from_hash = 1;
-
-	if (filter)
-		expr_free(filter);
-	filter = expr;
-
 	for (i = 0; i < FH_SIZE; i++) {
 		struct fh_entry *e;
 
@@ -400,11 +407,58 @@ void lib_set_filter(struct expr *expr)
 		while (e) {
 			struct track_info *ti = e->ti;
 
-			if (filter == NULL || expr_eval(filter, ti))
+			if (!is_filtered(ti))
 				views_add_track(ti);
 			e = e->next;
 		}
 	}
+}
+
+static struct tree_track *find_tree_track(struct track_info *ti)
+{
+	struct simple_track *track;
+
+	list_for_each_entry(track, &lib_editable.head, node) {
+		if (strcmp(track->info->filename, ti->filename) == 0) {
+			struct tree_track *tt = (struct tree_track *)track;
+			return tt;
+		}
+	}
+	return NULL;
+}
+
+static void restore_cur_track(struct track_info *ti)
+{
+	struct tree_track *tt = find_tree_track(ti);
+	if (tt)
+		lib_cur_track = tt;
+}
+
+static int is_filtered_cb(void *data, struct track_info *ti)
+{
+	return is_filtered(ti);
+}
+
+static void do_lib_filter(int clear_before)
+{
+	/* try to save cur_track */
+	if (lib_cur_track) {
+		if (cur_track_ti)
+			track_info_unref(cur_track_ti);
+		cur_track_ti = tree_track_info(lib_cur_track);
+		track_info_ref(cur_track_ti);
+	}
+
+	if (clear_before)
+		d_print("filter results could grow, clear tracks and re-add (slow)\n");
+
+	remove_from_hash = 0;
+	if (clear_before) {
+		editable_clear(&lib_editable);
+		hash_add_to_views();
+	} else
+		editable_remove_matching_tracks(&lib_editable, is_filtered_cb, NULL);
+	remove_from_hash = 1;
 
 	window_changed(lib_editable.win);
 	window_goto_top(lib_editable.win);
@@ -412,19 +466,135 @@ void lib_set_filter(struct expr *expr)
 	window_goto_top(lib_tree_win);
 
 	/* restore cur_track */
-	if (cur_ti) {
-		struct simple_track *track;
+	if (cur_track_ti && !lib_cur_track)
+		restore_cur_track(cur_track_ti);
+}
 
-		list_for_each_entry(track, &lib_editable.head, node) {
-			if (strcmp(track->info->filename, cur_ti->filename) == 0) {
-				struct tree_track *tt = (struct tree_track *)track;
+static void unset_live_filter(void)
+{
+	free(lib_live_filter);
+	lib_live_filter = NULL;
+	free(live_filter_expr);
+	live_filter_expr = NULL;
+}
 
-				lib_cur_track = tt;
-				break;
-			}
-		}
-		track_info_unref(cur_ti);
+void lib_set_filter(struct expr *expr)
+{
+	unset_live_filter();
+	if (filter)
+		expr_free(filter);
+	filter = expr;
+	do_lib_filter(1);
+}
+
+static struct tree_track *get_sel_track(void)
+{
+	switch (cur_view) {
+	case TREE_VIEW:
+		return tree_get_selected();
+	case SORTED_VIEW:
+		return sorted_get_selected();
 	}
+	return NULL;
+}
+
+static void set_sel_track(struct tree_track *tt)
+{
+	struct iter iter;
+
+	switch (cur_view) {
+	case TREE_VIEW:
+		tree_sel_track(tt);
+		break;
+	case SORTED_VIEW:
+		sorted_track_to_iter(tt, &iter);
+		window_set_sel(lib_editable.win, &iter);
+		break;
+	}
+}
+
+static void store_sel_track(void)
+{
+	struct tree_track *tt = get_sel_track();
+	if (tt) {
+		sel_track_ti = tree_track_info(tt);
+		track_info_ref(sel_track_ti);
+	}
+}
+
+static void restore_sel_track(void)
+{
+	if (sel_track_ti) {
+		struct tree_track *tt = find_tree_track(sel_track_ti);
+		if (tt) {
+			set_sel_track(tt);
+			track_info_unref(sel_track_ti);
+			sel_track_ti = NULL;
+		}
+	}
+}
+
+/* "harmless" expressions will reduce filter results when adding characters at the beginning/end */
+static int is_harmless_expr(const char *str)
+{
+	int i;
+	const char *s = "!|-<";
+	for (i = 0; s[i]; i++) {
+		if (strchr(str, s[i]))
+			return 0;
+	}
+	return 1;
+}
+
+/* determine if filter results could grow, in which case all tracks must be cleared and re-added */
+static int do_clear_before(const char *str, struct expr *expr)
+{
+	if (!lib_live_filter)
+		return 0;
+	if (!str)
+		return 1;
+	if ((!expr && live_filter_expr) || (expr && !live_filter_expr))
+		return 1;
+	if (!expr || (is_harmless_expr(str) && is_harmless_expr(lib_live_filter)))
+		return !strstr(str, lib_live_filter);
+	return 1;
+}
+
+void lib_set_live_filter(const char *str)
+{
+	int clear_before;
+	struct expr *expr = NULL;
+
+	if (strcmp0(str, lib_live_filter) == 0)
+		return;
+
+	if (str && expr_is_short(str)) {
+		expr = expr_parse(str);
+		if (!expr)
+			return;
+	}
+
+	clear_before = do_clear_before(str, expr);
+
+	if (!str)
+		store_sel_track();
+
+	unset_live_filter();
+	lib_live_filter = str ? xstrdup(str) : NULL;
+	live_filter_expr = expr;
+	do_lib_filter(clear_before);
+
+	if (expr) {
+		unsigned int match_type = expr_get_match_type(expr);
+		if (match_type & TI_MATCH_ALBUM)
+			tree_expand_all();
+		if (match_type & TI_MATCH_TITLE)
+			tree_sel_first();
+	} else if (str)
+		tree_expand_matching(str);
+
+	if (!str)
+		restore_sel_track();
 }
 
 int lib_remove(struct track_info *ti)
@@ -493,7 +663,7 @@ static int do_lib_for_each(int (*cb)(void *data, struct track_info *ti), void *d
 				size *= 2;
 				tis = xrenew(struct track_info *, tis, size);
 			}
-			if (!filtered || filter == NULL || expr_eval(filter, e->ti))
+			if (!filtered || !is_filtered(e->ti))
 				tis[count++] = e->ti;
 			e = e->next;
 		}

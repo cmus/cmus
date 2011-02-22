@@ -20,6 +20,7 @@ bind common E win-add-Q
 bind common F push filter 
 bind common G win-bottom
 bind common I echo {}
+bind common L push live-filter 
 bind common M toggle play_library
 bind common N search-prev
 bind common P win-mv-before

@@ -74,6 +74,7 @@ typedef size_t sort_key_t;
 #define TI_MATCH_ALBUM        (1 << 1)
 #define TI_MATCH_TITLE        (1 << 2)
 #define TI_MATCH_ALBUMARTIST  (1 << 3)
+#define TI_MATCH_ALL          (~0)
 
 /* initializes only filename and ref */
 struct track_info *track_info_new(const char *filename);
@@ -89,12 +90,23 @@ void track_info_unref(struct track_info *ti);
 int track_info_has_tag(const struct track_info *ti);
 
 /*
- * @flags: TI_MATCH_*
+ * @flags  fields to search in (TI_MATCH_*)
  *
  * returns: 1 if all words in @text are found to match defined fields (@flags) in @ti
  *          0 otherwise
  */
-int track_info_matches(struct track_info *ti, const char *text, unsigned int flags);
+int track_info_matches(const struct track_info *ti, const char *text, unsigned int flags);
+
+/*
+ * @flags            fields to search in (TI_MATCH_*)
+ * @exclude_flags    fields which must not match (TI_MATCH_*)
+ * @match_all_words  if true, all words must be found in @ti
+ *
+ * returns: 1 if all/any words in @text are found to match defined fields (@flags) in @ti
+ *          0 otherwise
+ */
+int track_info_matches_full(const struct track_info *ti, const char *text, unsigned int flags,
+		unsigned int exclude_flags, int match_all_words);
 
 int track_info_cmp(const struct track_info *a, const struct track_info *b, const sort_key_t *keys);
 

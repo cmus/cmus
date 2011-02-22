@@ -685,7 +685,7 @@ error_exit:
 	return NULL;
 }
 
-static int is_short_filter(const char *str)
+int expr_is_short(const char *str)
 {
 	int i;
 	for (i = 0; str[i]; i++) {
@@ -720,7 +720,7 @@ struct expr *expr_parse(const char *str)
 		goto out;
 	}
 
-	if (is_short_filter(str)) {
+	if (expr_is_short(str)) {
 		str = long_str = expand_short_expr(str);
 		if (!str)
 			goto out;
@@ -798,6 +798,28 @@ int expr_check_leaves(struct expr **exprp, const char *(*get_filter)(const char 
 
 	/* this sets parents left pointer */
 	*exprp = e;
+	return 0;
+}
+
+unsigned int expr_get_match_type(struct expr *expr)
+{
+	const char *key;
+
+	if (expr->left) {
+		unsigned int left = expr_get_match_type(expr->left);
+		if (expr->type == EXPR_AND || expr->type == EXPR_OR)
+			return left | expr_get_match_type(expr->right);
+		return left;
+	}
+
+	key = expr->key;
+	if (strcmp(key, "artist") == 0)
+		return TI_MATCH_ARTIST;
+	if (strcmp(key, "album") == 0 || strcmp(key, "discnumber") == 0)
+		return TI_MATCH_ALBUM;
+	if (strcmp(key, "title") == 0 || strcmp(key, "tracknumber") == 0)
+		return TI_MATCH_TITLE;
+
 	return 0;
 }
 

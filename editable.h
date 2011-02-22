@@ -37,6 +37,8 @@ void editable_toggle_mark(struct editable *e);
 void editable_move_after(struct editable *e);
 void editable_move_before(struct editable *e);
 void editable_clear(struct editable *e);
+void editable_remove_matching_tracks(struct editable *e,
+		int (*cb)(void *data, struct track_info *ti), void *data);
 void editable_mark(struct editable *e, const char *filter);
 void editable_unmark(struct editable *e);
 void editable_invert_marks(struct editable *e);

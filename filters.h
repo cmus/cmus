@@ -64,6 +64,12 @@ void filters_set_filter(const char *keyval);
  */
 void filters_set_anonymous(const char *val);
 
+/* set live filter (not saved to the filter list)
+ *
+ * @val   filter or NULL to disable filtering
+ */
+void filters_set_live(const char *val);
+
 void filters_activate_names(const char *str);
 
 void filters_activate(void);

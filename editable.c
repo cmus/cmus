@@ -272,6 +272,18 @@ void editable_clear(struct editable *e)
 	}
 }
 
+void editable_remove_matching_tracks(struct editable *e,
+		int (*cb)(void *data, struct track_info *ti), void *data)
+{
+	struct list_head *item, *tmp;
+
+	list_for_each_safe(item, tmp, &e->head) {
+		struct simple_track *t = to_simple_track(item);
+		if (cb(data, t->info))
+			editable_remove_track(e, t);
+	}
+}
+
 void editable_mark(struct editable *e, const char *filter)
 {
 	struct expr *expr = NULL;

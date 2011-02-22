@@ -95,6 +95,7 @@ struct track_info *lib_set_next(void);
 struct track_info *lib_set_prev(void);
 void lib_add_track(struct track_info *track_info);
 void lib_set_filter(struct expr *expr);
+void lib_set_live_filter(const char *str);
 int lib_remove(struct track_info *ti);
 void lib_clear_store(void);
 void lib_reshuffle(void);
@@ -102,6 +103,7 @@ void lib_set_view(int view);
 int lib_for_each(int (*cb)(void *data, struct track_info *ti), void *data);
 int lib_for_each_filtered(int (*cb)(void *data, struct track_info *ti), void *data);
 
+struct tree_track *tree_get_selected(void);
 struct track_info *tree_set_selected(void);
 void tree_sort_artists(void);
 void tree_add_track(struct tree_track *track);
@@ -109,7 +111,11 @@ void tree_remove(struct tree_track *track);
 void tree_remove_sel(void);
 void tree_toggle_active_window(void);
 void tree_toggle_expand_artist(void);
+void tree_expand_matching(const char *text);
+void tree_expand_all(void);
 void tree_sel_current(void);
+void tree_sel_first(void);
+void tree_sel_track(struct tree_track *t);
 int tree_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
 int __tree_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
 

@@ -420,3 +420,8 @@ void filters_set_anonymous(const char *val)
 
 	filters_win->changed = 1;
 }
+
+void filters_set_live(const char *val)
+{
+	lib_set_live_filter(val);
+}

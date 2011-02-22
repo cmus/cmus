@@ -589,6 +589,13 @@ static void cmd_factivate(char *arg)
 	editable_unlock();
 }
 
+static void cmd_live_filter(char *arg)
+{
+	editable_lock();
+	filters_set_live(arg);
+	editable_unlock();
+}
+
 static void cmd_filter(char *arg)
 {
 	editable_lock();
@@ -2426,6 +2433,7 @@ struct command commands[] = {
 	{ "fset",		cmd_fset,	1, 1, NULL,		  0, 0 },
 	{ "help",		cmd_help,	0, 0, NULL,		  0, 0 },
 	{ "invert",		cmd_invert,	0, 0, NULL,		  0, 0 },
+	{ "live-filter",	cmd_live_filter,0, 1, NULL,		  0, CMD_LIVE },
 	{ "load",		cmd_load,	1, 1, expand_load_save,	  0, 0 },
 	{ "lqueue",		cmd_lqueue,	0, 1, NULL,		  0, 0 },
 	{ "mark",		cmd_mark,	0, 1, NULL,		  0, 0 },
@@ -2633,6 +2641,26 @@ static void reset_tab_expansion(void)
 	arg_expand_cmd = -1;
 }
 
+static void cmdline_modified(void)
+{
+	char *cmd, *arg;
+	struct command *c;
+
+	if (!parse_command(cmdline.line, &cmd, &arg))
+		return;
+
+	c = get_command(cmd);
+	if (!c)
+		goto end;
+
+	if (c->flags & CMD_LIVE)
+		run_parsed_command(cmd, arg);
+
+end:
+	free(cmd);
+	free(arg);
+}
+
 int parse_command(const char *buf, char **cmdp, char **argp)
 {
 	int cmd_start, cmd_end, cmd_len;
@@ -2750,6 +2778,7 @@ void command_mode_ch(uchar ch)
 		break;
 	case 0x04: // ^D
 		cmdline_delete_ch();
+		cmdline_modified();
 		break;
 	case 0x05: // ^E
 		cmdline_move_end();
@@ -2776,22 +2805,27 @@ void command_mode_ch(uchar ch)
 		break;
 	case 0x0B:
 		cmdline_clear_end();
+		cmdline_modified();
 		break;
 	case 0x09:
 		tab_expand();
 		break;
 	case 0x15:
 		cmdline_backspace_to_bol();
+		cmdline_modified();
 		break;
 	case 0x17: // ^W
 		cmdline_backward_delete_word(cmdline_word_delimiters);
+		cmdline_modified();
 		break;
 	case 0x08: // ^H
 	case 127:
 		backspace();
+		cmdline_modified();
 		break;
 	default:
 		cmdline_insert_ch(ch);
+		cmdline_modified();
 	}
 	reset_history_search();
 	if (ch != 0x09)
@@ -2806,6 +2840,7 @@ void command_mode_escape(int c)
 		break;
 	case 100:
 		cmdline_delete_word(cmdline_filename_delimiters);
+		cmdline_modified();
 		break;
 	case 102:
 		cmdline_forward_word(cmdline_filename_delimiters);
@@ -2813,6 +2848,7 @@ void command_mode_escape(int c)
 	case 127:
 	case KEY_BACKSPACE:
 		cmdline_backward_delete_word(cmdline_filename_delimiters);
+		cmdline_modified();
 		break;
 	}
 	reset_history_search();
@@ -2824,9 +2860,11 @@ void command_mode_key(int key)
 	switch (key) {
 	case KEY_DC:
 		cmdline_delete_ch();
+		cmdline_modified();
 		break;
 	case KEY_BACKSPACE:
 		backspace();
+		cmdline_modified();
 		break;
 	case KEY_LEFT:
 		cmdline_move_left();

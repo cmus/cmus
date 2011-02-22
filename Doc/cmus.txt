@@ -214,6 +214,7 @@ r              toggle repeat
 t              toggle show_remaining_time
 s              toggle shuffle
 F              push filter<space>
+L              push live-filter<space>
 u              update-cache
 1              view tree
 2              view sorted
@@ -429,6 +430,11 @@ fset <name>=<filter-expression>
 invert
 	Invert the marking of tracks in playlist and queue views. See *mark*
 	and *unmark*.
+
+live-filter <simple-filter-expression|short-filter-expression>
+	Use this command when you want to temporarily filter contents of the
+	library views without having separately define (fset) and activate the
+	filter.  The filter is not saved.
 
 load [-l] [-p] <playlist>
 	Load a playlist to the specified view or to the current view.
@@ -1057,8 +1063,11 @@ still save all tracks to playlist file whether they are visible or not.
 
 @h2 Types
 
-There are two types of filter expressions, each offering more
+There are three types of filter expressions, each offering more
 expressiveness:
+
+	@li *simple*
+	`e.g.` beatles
 
 	@li *short*
 	`e.g.` ~a beatles (!~y1960-1965 | ~d>600)
@@ -1066,8 +1075,9 @@ expressiveness:
 	@li *long*
 	`e.g.` artist="\*beatles\*"&album="R\*"
 
-The type is auto-detected, so both short and long expressions can be used
-in filter commands.
+Simple expressions are only available using *live-filter*. For other
+filter commands the type is auto-detected, so both short and long
+expressions can be used.
 
 Long expressions are lists of built-in filters or user defined filters
 separated with *&* (and) or *|* (or).  Parenthesis can be used group
@@ -1134,14 +1144,18 @@ then activate the selected filters by pressing *enter*.
 
 @h2 Throw-away Filters
 
-*filter* command is useful when you want to use a filter only once and not
-save it.  It changes visible contents of the library (views 1-2) and
-unactivates all filters in the filters view.
+*live-filter* and *filter* commands are useful when you want to use a filter only
+once and not save it.  It changes visible contents of the library (views 1-2).
+*filter* unactivates all filters in the filters view, while *live-filter* is
+applied in addition to all currently activated filters.
 
 Filter all rock (anything with *rock* in genre tag) music from 80s-
 	:filter date>=1980&genre="\*rock\*"
 	@br
 	:filter ~y1980-~grock
+
+Filter all artists/albums/titles containing "sleepwalking"
+	:live-filter sleepwalking
 
 @h2 Selecting Tracks Matching a Filter
 

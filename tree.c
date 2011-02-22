@@ -421,11 +421,11 @@ void tree_init(void)
 	tree_searchable = searchable_new(NULL, &iter, &tree_search_ops);
 }
 
-struct track_info *tree_set_selected(void)
+struct tree_track *tree_get_selected(void)
 {
 	struct artist *artist;
 	struct album *album;
-	struct track_info *info;
+	struct tree_track *track;
 	struct iter sel;
 
 	if (rb_root_empty(&lib_artist_root))
@@ -437,11 +437,20 @@ struct track_info *tree_set_selected(void)
 		 * => get first album of the selected artist and first track of that album
 		 */
 		album = to_album(rb_first(&artist->album_root));
-		lib_cur_track = to_tree_track(rb_first(&album->track_root));
+		track = to_tree_track(rb_first(&album->track_root));
 	} else {
 		window_get_sel(lib_track_win, &sel);
-		lib_cur_track = iter_to_tree_track(&sel);
+		track = iter_to_tree_track(&sel);
 	}
+
+	return track;
+}
+
+struct track_info *tree_set_selected(void)
+{
+	struct track_info *info;
+
+	lib_cur_track = tree_get_selected();
 
 	lib_tree_win->changed = 1;
 	lib_track_win->changed = 1;
@@ -824,6 +833,60 @@ void tree_toggle_expand_artist(void)
 	}
 }
 
+void tree_expand_matching(const char *text)
+{
+	struct artist *artist;
+	struct rb_node *tmp1;
+	int have_track_selected = 0;
+
+	rb_for_each_entry(artist, tmp1, &lib_artist_root, tree_node) {
+		struct album *album = NULL;
+		struct rb_node *tmp2;
+		int album_matched = 0;
+
+		rb_for_each_entry(album, tmp2, &artist->album_root, tree_node) {
+			struct tree_track *tree_track = to_tree_track(rb_first(&album->track_root));
+			struct track_info *ti = ((struct simple_track *) tree_track)->info;
+			album_matched = track_info_matches_full(ti, text, TI_MATCH_ALBUM, TI_MATCH_ARTIST | TI_MATCH_ALBUMARTIST, 0);
+			if (album_matched)
+				break;
+		}
+		artist->expanded = album_matched;
+		if (!have_track_selected) {
+			struct tree_track *tree_track;
+			int track_matched = 0;
+
+			if (!album)
+				album = to_album(rb_first(&artist->album_root));
+
+			rb_for_each_entry(tree_track, tmp2, &album->track_root, tree_node) {
+				struct track_info *ti = ((struct simple_track *) tree_track)->info;
+				track_matched = track_info_matches_full(ti, text, TI_MATCH_TITLE, 0, 0);
+				if (track_matched)
+					break;
+			}
+			if (album_matched || track_matched) {
+				if (!tree_track)
+					tree_track = to_tree_track(rb_first(&album->track_root));
+				tree_sel_track(tree_track);
+				have_track_selected = 1;
+			}
+		}
+	}
+	window_changed(lib_tree_win);
+}
+
+void tree_expand_all(void)
+{
+	struct artist *artist;
+	struct rb_node *tmp;
+
+	rb_for_each_entry(artist, tmp, &lib_artist_root, tree_node) {
+		artist->expanded = 1;
+	}
+	window_changed(lib_tree_win);
+}
+
 static void remove_track(struct tree_track *track)
 {
 	if (album_selected(track->album)) {
@@ -894,10 +957,25 @@ void tree_remove_sel(void)
 
 void tree_sel_current(void)
 {
-	if (lib_cur_track) {
+	tree_sel_track(lib_cur_track);
+}
+
+void tree_sel_first(void)
+{
+	if (!rb_root_empty(&lib_artist_root)) {
+		struct artist *artist = to_artist(rb_first(&lib_artist_root));
+		struct album *album = to_album(rb_first(&artist->album_root));
+		struct tree_track *tree_track = to_tree_track(rb_first(&album->track_root));
+		tree_sel_track(tree_track);
+	}
+}
+
+void tree_sel_track(struct tree_track *t)
+{
+	if (t) {
 		struct iter iter;
 
-		CUR_ARTIST->expanded = 1;
+		t->album->artist->expanded = 1;
 
 		if (lib_cur_win == lib_tree_win) {
 			lib_cur_win = lib_track_win;
@@ -905,10 +983,10 @@ void tree_sel_current(void)
 			lib_track_win->changed = 1;
 		}
 
-		album_to_iter(CUR_ALBUM, &iter);
+		album_to_iter(t->album, &iter);
 		window_set_sel(lib_tree_win, &iter);
 
-		tree_track_to_iter(lib_cur_track, &iter);
+		tree_track_to_iter(t, &iter);
 		window_set_sel(lib_track_win, &iter);
 	}
 }

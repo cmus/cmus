@@ -22,8 +22,12 @@
 
 #include "uchar.h"
 
-/* executing command is disabled over net */
-#define CMD_UNSAFE 0x01
+enum {
+	/* executing command is disabled over net */
+	CMD_UNSAFE	= 1 << 0,
+	/* execute command after every typed/deleted character */
+	CMD_LIVE	= 1 << 1,
+};
 
 struct command {
 	const char *name;
