@@ -691,7 +691,7 @@ static int is_short_filter(const char *str)
 	for (i = 0; str[i]; i++) {
 		if (str[i] == '~')
 			return 1;
-		if (str[i] == '=')
+		if (str[i] != '!' && str[i] != '(' && str[i] != ' ')
 			return 0;
 	}
 	return 0;
