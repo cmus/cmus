@@ -279,6 +279,10 @@ static int mpc_seek(struct input_plugin_data *ip_data, double offset)
 static const char *gain_to_str(int gain)
 {
 	static char buf[16];
+#if MPC_SV8
+	float g = MPC_OLD_GAIN_REF - gain / 256.f;
+	sprintf(buf, "%.2f", g);
+#else
 	int b, a = gain / 100;
 
 	if (gain < 0) {
@@ -287,13 +291,18 @@ static const char *gain_to_str(int gain)
 		b = gain % 100;
 	}
 	sprintf(buf, "%d.%02d", a, b);
+#endif
 	return buf;
 }
 
 static const char *peak_to_str(unsigned int peak)
 {
 	static char buf[16];
+#if MPC_SV8
+	sprintf(buf, "%.5f", peak / 256.f / 100.f);
+#else
 	sprintf(buf, "%d.%05d", peak / 32767, peak % 32767);
+#endif
 	return buf;
 }
 
