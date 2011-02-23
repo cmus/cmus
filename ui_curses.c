@@ -329,10 +329,10 @@ static void utf8_decode(const char *buffer)
 static void dump_print_buffer(int row, int col)
 {
 	if (using_utf8) {
-		mvaddstr(row, col, print_buffer);
+		(void) mvaddstr(row, col, print_buffer);
 	} else {
 		utf8_decode(print_buffer);
-		mvaddstr(row, col, conv_buffer);
+		(void) mvaddstr(row, col, conv_buffer);
 	}
 }
 
@@ -413,7 +413,7 @@ static void sprint_ascii(int row, int col, const char *str, int len)
 	}
 	print_buffer[len + 1] = ' ';
 	print_buffer[len + 2] = 0;
-	mvaddstr(row, col, print_buffer);
+	(void) mvaddstr(row, col, print_buffer);
 }
 
 static void print_tree(struct window *win, int row, struct iter *iter)
@@ -875,10 +875,10 @@ static void draw_separator(void)
 	int row;
 
 	bkgdset(pairs[CURSED_WIN_TITLE]);
-	mvaddch(0, tree_win_w, ' ');
+	(void) mvaddch(0, tree_win_w, ' ');
 	bkgdset(pairs[CURSED_SEPARATOR]);
 	for (row = 1; row < LINES - 3; row++)
-		mvaddch(row, tree_win_w, ACS_VLINE);
+		(void) mvaddch(row, tree_win_w, ACS_VLINE);
 }
 
 static void do_update_view(int full)
