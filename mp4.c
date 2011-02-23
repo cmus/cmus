@@ -326,6 +326,7 @@ static int mp4_read_comments(struct input_plugin_data *ip_data,
 	uint32_t size;*/
 #else
 	const MP4Tags *tags;
+	MP4ItmfItemList* itmf_list;
 #endif
 	GROWING_KEYVALS(c);
 
@@ -417,6 +418,23 @@ static int mp4_read_comments(struct input_plugin_data *ip_data,
 
 	MP4TagsFree(tags);
 
+	itmf_list = MP4ItmfGetItemsByMeaning(priv->mp4.handle, "com.apple.iTunes", NULL);
+	if (itmf_list) {
+		int i;
+		for (i = 0; i < itmf_list->size; i++) {
+			MP4ItmfItem* item = &itmf_list->elements[i];
+			if (item->dataList.size < 1)
+				continue;
+			if (item->dataList.size > 1)
+				d_print("ignore multiple values for tag %s\n", item->name);
+			else {
+				MP4ItmfData* data = &item->dataList.elements[0];
+				char *val = xstrndup(data->value, data->valueSize);
+				comments_add(&c, item->name, val);
+			}
+		}
+		MP4ItmfItemListFree(itmf_list);
+	}
 #endif
 
 	keyvals_terminate(&c);
