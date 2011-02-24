@@ -38,7 +38,7 @@ struct wav_private {
 	unsigned int sec_size;
 };
 
-static int read_chunk_header(int fd, const char *name, unsigned int *size)
+static int read_chunk_header(int fd, char *name, unsigned int *size)
 {
 	int rc;
 	char buf[8];
@@ -49,6 +49,18 @@ static int read_chunk_header(int fd, const char *name, unsigned int *size)
 	if (rc != 8)
 		return -IP_ERROR_FILE_FORMAT;
 	*size = read_le32(buf + 4);
+	memmove(name, buf, 4);
+	return 0;
+}
+
+static int read_named_chunk_header(int fd, const char *name, unsigned int *size)
+{
+	int rc;
+	char buf[4];
+
+	rc = read_chunk_header(fd, buf, size);
+	if (rc)
+		return rc;
 	if (memcmp(buf, name, 4))
 		return -IP_ERROR_FILE_FORMAT;
 	return 0;
@@ -59,7 +71,7 @@ static int find_chunk(int fd, const char *name, unsigned int *size)
 	int rc;
 
 	do {
-		rc = read_chunk_header(fd, name, size);
+		rc = read_named_chunk_header(fd, name, size);
 		if (rc == 0)
 			return 0;
 		if (rc != -IP_ERROR_FILE_FORMAT)
@@ -84,7 +96,7 @@ static int wav_open(struct input_plugin_data *ip_data)
 	d_print("file: %s\n", ip_data->filename);
 	priv = xnew(struct wav_private, 1);
 	ip_data->private = priv;
-	rc = read_chunk_header(ip_data->fd, "RIFF", &riff_size);
+	rc = read_named_chunk_header(ip_data->fd, "RIFF", &riff_size);
 	if (rc)
 		goto error_exit;
 	rc = read_all(ip_data->fd, buf, 4);
@@ -226,10 +238,94 @@ static int wav_seek(struct input_plugin_data *ip_data, double _offset)
 	return 0;
 }
 
+static struct {
+	const char *old;
+	const char *new;
+} key_map[] = {
+	{ "IART", "artist" },
+	{ "ICMT", "comment" },
+	{ "ICOP", "copyright" },
+	{ "ICRD", "date" },
+	{ "IGNR", "genre" },
+	{ "INAM", "title" },
+	{ "IPRD", "album" },
+	{ "IPRT", "tracknumber" },
+	{ "ISFT", "software" },
+	{ NULL, NULL }
+};
+
+static const char *lookup_key(const char *key)
+{
+	int i;
+	for (i = 0; key_map[i].old; i++) {
+		if (!strcasecmp(key, key_map[i].old))
+			return key_map[i].new;
+	}
+	return NULL;
+}
+
 static int wav_read_comments(struct input_plugin_data *ip_data,
 		struct keyval **comments)
 {
-	*comments = xnew0(struct keyval, 1);
+	GROWING_KEYVALS(c);
+	struct wav_private *priv;
+	unsigned int size;
+	char id[4+1];
+	int rc = 0;
+
+	priv = ip_data->private;
+	id[4] = '\0';
+
+	rc = lseek(ip_data->fd, 12, SEEK_SET);
+	if (rc == -1)
+		goto out;
+
+	while (1) {
+		rc = read_chunk_header(ip_data->fd, id, &size);
+		if (rc)
+			break;
+		if (strcmp(id, "data") == 0) {
+			rc = 0;
+			break;
+		} else if (strcmp(id, "LIST") == 0) {
+			char buf[4];
+			rc = read_all(ip_data->fd, buf, 4);
+			if (rc == -1)
+				break;
+			if (memcmp(buf, "INFO", 4) == 0)
+				continue;
+			size -= 4;
+		} else {
+			const char *key = lookup_key(id);
+			if (key) {
+				char *val = xnew(char, size + 1);
+				rc = read_all(ip_data->fd, val, size);
+				if (rc == -1) {
+					free(val);
+					break;
+				}
+				val[rc] = '\0';
+				comments_add(&c, key, val);
+				continue;
+			}
+		}
+
+		rc = lseek(ip_data->fd, size, SEEK_CUR);
+		if (rc == -1)
+			break;
+	}
+
+out:
+	lseek(ip_data->fd, priv->pcm_start, SEEK_SET);
+
+	keyvals_terminate(&c);
+
+	if (rc && c.count == 0) {
+		keyvals_free(c.keyvals);
+		return -1;
+	}
+
+	*comments = c.keyvals;
 	return 0;
 }
 
