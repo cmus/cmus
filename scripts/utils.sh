@@ -53,7 +53,7 @@ trap '__abort' 1 2 3 13 15
 makefile_variables=""
 
 # cross compilation, prefix for CC, LD etc.
-CROSS=
+# CROSS=
 
 # argc function_name $# min [max]
 argc()
