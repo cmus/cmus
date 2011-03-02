@@ -141,7 +141,7 @@ check_mpc()
 
 check_flac()
 {
-	check_library FLAC "" "-lFLAC -lm" && return 0
+	pkg_config FLAC "flac" "" "-lFLAC -lm" && return 0
 	check_library FLAC "" "-lFLAC -lvorbisfile -lm"
 	return $?
 }
