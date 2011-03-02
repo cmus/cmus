@@ -714,7 +714,7 @@ void tree_add_track(struct tree_track *track)
 		album_add_track(album, track);
 
 		/* If it makes sense to update album date, do it */
-		if (date != -1 && album->date == -1) {
+		if (album->date < date) {
 			album->date = date;
 			window_changed(lib_tree_win);
 		}
