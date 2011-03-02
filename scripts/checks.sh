@@ -519,29 +519,86 @@ try_link()
 # @code:  simple program code to run
 run_code()
 {
+	if test $CROSS
+	then
+		msg_error "cannot run code when cross compiling"
+		exit 1
+	fi
 	try_compile_link "$1" || __compile_failed
 	./$__exe
 	return $?
 }
 
 # check if the architecture is big-endian
+# parts are from autoconf 2.67
 #
 # defines WORDS_BIGENDIAN=y/n
 check_endianness()
 {
 	msg_checking "byte order"
-	if run_code "
+	WORDS_BIGENDIAN=n
+	# See if sys/param.h defines the BYTE_ORDER macro.
+	if try_compile_link "
+#include <sys/types.h>
+#include <sys/param.h>
+int main() {
+#if ! (defined BYTE_ORDER && defined BIG_ENDIAN \
+		&& defined LITTLE_ENDIAN && BYTE_ORDER && BIG_ENDIAN \
+		&& LITTLE_ENDIAN)
+	bogus endian macros
+#endif
+	return 0;
+}"
+	then
+		# It does; now see whether it defined to BIG_ENDIAN or not.
+		if try_compile_link "
+#include <sys/types.h>
+#include <sys/param.h>
+int main() {
+#if BYTE_ORDER != BIG_ENDIAN
+	not big endian
+#endif
+	return 0;
+}"
+		then
+			WORDS_BIGENDIAN=y
+		fi
+	# See if <limits.h> defines _LITTLE_ENDIAN or _BIG_ENDIAN (e.g., Solaris).
+	elif try_compile_link "
+#include <limits.h>
+int main() {
+#if ! (defined _LITTLE_ENDIAN || defined _BIG_ENDIAN)
+	bogus endian macros
+#endif
+	return 0;
+}"
+	then
+		# It does; now see whether it defined to _BIG_ENDIAN or not.
+		if try_compile_link "
+#include <limits.h>
+int main() {
+#ifndef _BIG_ENDIAN
+	not big endian
+#endif
+	return 0;
+}"
+		then
+			WORDS_BIGENDIAN=y
+		fi
+	elif run_code "
 int main(int argc, char *argv[])
 {
 	unsigned int i = 1;
 	return *(char *)&i;
 }"
 	then
-		msg_result "big-endian"
 		WORDS_BIGENDIAN=y
+	fi
+	if test "$WORDS_BIGENDIAN" = y
+	then
+		msg_result "big-endian"
 	else
 		msg_result "little-endian"
-		WORDS_BIGENDIAN=n
 	fi
 	return 0
 }
