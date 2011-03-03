@@ -666,6 +666,26 @@ static const char *tree_album_name(const struct track_info* ti)
 	return val;
 }
 
+static void remove_album(struct album *album)
+{
+	if (album->artist->expanded) {
+		struct iter iter;
+
+		album_to_iter(album, &iter);
+		window_row_vanishes(lib_tree_win, &iter);
+	}
+	rb_erase(&album->tree_node, &album->artist->album_root);
+}
+
+static void remove_artist(struct artist *artist)
+{
+	struct iter iter;
+
+	artist_to_iter(artist, &iter);
+	window_row_vanishes(lib_tree_win, &iter);
+	rb_erase(&artist->tree_node, &lib_artist_root);
+}
+
 void tree_add_track(struct tree_track *track)
 {
 	const struct track_info *ti = tree_track_info(track);
@@ -706,6 +726,9 @@ void tree_add_track(struct tree_track *track)
 		if (!artist->sort_name && artistsort_name) {
 			artist->sort_name = xstrdup(artistsort_name);
 			artist->collkey_sort_name = u_strcasecoll_key(artistsort_name);
+
+			remove_artist(artist);
+			add_artist(artist);
 			window_changed(lib_tree_win);
 		}
 	}
@@ -716,7 +739,11 @@ void tree_add_track(struct tree_track *track)
 		/* If it makes sense to update album date, do it */
 		if (album->date < date) {
 			album->date = date;
-			window_changed(lib_tree_win);
+
+			remove_album(album);
+			add_album(album);
+			if (artist->expanded)
+				window_changed(lib_tree_win);
 		}
 
 		if (album_selected(album))
@@ -726,7 +753,6 @@ void tree_add_track(struct tree_track *track)
 		album_add_track(new_album, track);
 
 		if (artist->expanded)
-			/* album is not selected => no need to update track_win */
 			window_changed(lib_tree_win);
 	} else {
 		add_artist(new_artist);
@@ -896,26 +922,6 @@ static void remove_track(struct tree_track *track)
 		window_row_vanishes(lib_track_win, &iter);
 	}
 	rb_erase(&track->tree_node, &track->album->track_root);
-}
-
-static void remove_album(struct album *album)
-{
-	if (album->artist->expanded) {
-		struct iter iter;
-
-		album_to_iter(album, &iter);
-		window_row_vanishes(lib_tree_win, &iter);
-	}
-	rb_erase(&album->tree_node, &album->artist->album_root);
-}
-
-static void remove_artist(struct artist *artist)
-{
-	struct iter iter;
-
-	artist_to_iter(artist, &iter);
-	window_row_vanishes(lib_tree_win, &iter);
-	rb_erase(&artist->tree_node, &lib_artist_root);
 }
 
 void tree_remove(struct tree_track *track)
