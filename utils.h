@@ -20,6 +20,8 @@
 #ifndef _UTILS_H
 #define _UTILS_H
 
+#include "config/utils.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
@@ -27,6 +29,9 @@
 #include <unistd.h>
 #include <time.h>
 #include <inttypes.h>
+#ifdef HAVE_BYTESWAP_H
+#include <byteswap.h>
+#endif
 
 #define N_ELEMENTS(array) (sizeof(array) / sizeof((array)[0]))
 
@@ -129,6 +134,32 @@ static inline int is_freeform_true(const char *c)
 	return	c[0] == '1' ||
 		c[0] == 'y' || c[0] == 'Y' ||
 		c[0] == 't' || c[0] == 'T';
+}
+
+static inline uint16_t bswap16(uint16_t u)
+{
+#if defined(bswap_16)
+	/* GNU libc */
+	return bswap_16(u);
+#elif defined(swap16)
+	/* e.g. OpenBSD */
+	return swap16(u);
+#else
+	return (u << 8) | (u >> 8);
+#endif
+}
+
+static inline uint32_t bswap32(uint32_t u)
+{
+#if defined(bswap_32)
+	/* GNU libc */
+	return bswap_32(u);
+#elif defined(swap32)
+	/* e.g. OpenBSD */
+	return swap32(u);
+#else
+	return (u >> 24) | ((u & 0xff0000) >> 8) | ((u & 0xff00) << 8) | (u << 24);
+#endif
 }
 
 static inline uint32_t read_le32(const char *buf)

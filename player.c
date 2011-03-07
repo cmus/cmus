@@ -165,18 +165,10 @@ static const unsigned short soft_vol_db[100] = {
 	0xcdf1, 0xd71a, 0xe59c, 0xefd3
 };
 
-#ifdef swap16   /* e.g. OpenBSD */
-#undef swap16
-#endif
-static inline unsigned short swap16(unsigned short u)
-{
-	return (u << 8) | (u >> 8);
-}
-
 static inline void scale_sample(signed short *buf, int i, int vol)
 {
 #ifdef WORDS_BIGENDIAN
-	int sample = (short)swap16(buf[i]);
+	int sample = (short)bswap16(buf[i]);
 #else
 	int sample = buf[i];
 #endif
@@ -191,7 +183,7 @@ static inline void scale_sample(signed short *buf, int i, int vol)
 			sample = 32767;
 	}
 #ifdef WORDS_BIGENDIAN
-	buf[i] = swap16(sample);
+	buf[i] = bswap16(sample);
 #else
 	buf[i] = sample;
 #endif
