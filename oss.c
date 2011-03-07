@@ -20,6 +20,7 @@
 #include "op.h"
 #include "sf.h"
 #include "xmalloc.h"
+#include "debug.h"
 
 #if defined(__OpenBSD__)
 #include <soundcard.h>
@@ -47,6 +48,14 @@ static int oss_reset(void)
 	}
 	return 0;
 }
+
+/* defined only in OSSv4, but seem to work in OSSv3 */
+#ifndef AFMT_S32_LE
+#define AFMT_S32_LE	0x00001000
+#endif
+#ifndef AFMT_S32_BE
+#define AFMT_S32_BE	0x00002000
+#endif
 
 static int oss_set_sf(sample_format_t sf)
 {
@@ -78,7 +87,16 @@ static int oss_set_sf(sample_format_t sf)
 		} else {
 			tmp = AFMT_U8;
 		}
+	} else if (sf_get_bits(oss_sf) == 32 && sf_get_signed(oss_sf)) {
+		if (sf_get_bigendian(oss_sf)) {
+			tmp = AFMT_S32_BE;
+		} else {
+			tmp = AFMT_S32_LE;
+		}
 	} else {
+		d_print("unsupported sample format: %c%u_%s\n",
+			sf_get_signed(oss_sf) ? 'S' : 'U', sf_get_bits(oss_sf),
+			sf_get_bigendian(oss_sf) ? "BE" : "LE");
 		return -1;
 	}
 	if (ioctl(oss_fd, SNDCTL_DSP_SAMPLESIZE, &tmp) == -1)
@@ -143,9 +161,12 @@ static int oss_exit(void)
 
 static int oss_open(sample_format_t sf)
 {
+	int oss_version = 0;
 	oss_fd = open(oss_dsp_device, O_WRONLY);
 	if (oss_fd == -1)
 		return -1;
+	ioctl(oss_fd, OSS_GETVERSION, &oss_version);
+	d_print("oss version: %#08x\n", oss_version);
 	if (oss_set_sf(sf) == -1) {
 		oss_close();
 		return -1;
