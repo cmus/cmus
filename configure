@@ -294,6 +294,7 @@ prefix=/usr/local
 DEBUG=1
 CONFIG_TREMOR=n
 CONFIG_MIKMOD=n
+HAVE_BYTESWAP_H=n
 # unset CONFIG_* variables: if check succeeds 'y', otherwise 'n'
 
 USAGE="
@@ -358,6 +359,7 @@ check check_pthread
 check check_rtsched
 check check_ncurses
 check check_iconv
+check_header byteswap.h && HAVE_BYTESWAP_H=y
 
 check check_flac    CONFIG_FLAC
 check check_mad     CONFIG_MAD
@@ -392,6 +394,7 @@ config_header config/tremor.h CONFIG_TREMOR
 config_header config/mpc.h MPC_SV7
 config_header config/mp4.h USE_MPEG4IP
 config_header config/curses.h HAVE_RESIZETERM HAVE_USE_DEFAULT_COLORS
+config_header config/utils.h HAVE_BYTESWAP_H
 
 makefile_vars bindir datadir libdir mandir exampledir
 makefile_vars CONFIG_FLAC CONFIG_MAD CONFIG_MIKMOD CONFIG_MODPLUG CONFIG_MPC CONFIG_VORBIS CONFIG_WAVPACK CONFIG_WAV CONFIG_MP4 CONFIG_AAC CONFIG_FFMPEG
