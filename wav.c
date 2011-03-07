@@ -179,7 +179,7 @@ static int wav_open(struct input_plugin_data *ip_data)
 			rc = -IP_ERROR_FILE_FORMAT;
 			goto error_exit;
 		}
-		if ((bits != 8 && bits != 16) || channels < 1 || channels > 2) {
+		if ((bits != 8 && bits != 16 && bits != 32) || channels < 1 || channels > 2) {
 			rc = -IP_ERROR_SAMPLE_FORMAT;
 			goto error_exit;
 		}
