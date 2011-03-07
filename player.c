@@ -165,35 +165,71 @@ static const unsigned short soft_vol_db[100] = {
 	0xcdf1, 0xd71a, 0xe59c, 0xefd3
 };
 
-static inline void scale_sample(signed short *buf, int i, int vol)
+static inline void scale_sample_int16_t(int16_t *buf, int i, int vol, int swap)
 {
-#ifdef WORDS_BIGENDIAN
-	int sample = (short)bswap16(buf[i]);
-#else
-	int sample = buf[i];
-#endif
+	int32_t sample = swap ? (int16_t)bswap16(buf[i]) : buf[i];
 
 	if (sample < 0) {
 		sample = (sample * vol - SOFT_VOL_SCALE / 2) / SOFT_VOL_SCALE;
-		if (sample < -32768)
-			sample = -32768;
+		if (sample < INT16_MIN)
+			sample = INT16_MIN;
 	} else {
 		sample = (sample * vol + SOFT_VOL_SCALE / 2) / SOFT_VOL_SCALE;
-		if (sample > 32767)
-			sample = 32767;
+		if (sample > INT16_MAX)
+			sample = INT16_MAX;
 	}
+	buf[i] = swap ? bswap16(sample) : sample;
+}
+
+static inline void scale_sample_int32_t(int32_t *buf, int i, int vol, int swap)
+{
+	int64_t sample = swap ? (int32_t)bswap32(buf[i]) : buf[i];
+
+	if (sample < 0) {
+		sample = (sample * vol - SOFT_VOL_SCALE / 2) / SOFT_VOL_SCALE;
+		if (sample < INT32_MIN)
+			sample = INT32_MIN;
+	} else {
+		sample = (sample * vol + SOFT_VOL_SCALE / 2) / SOFT_VOL_SCALE;
+		if (sample > INT32_MAX)
+			sample = INT32_MAX;
+	}
+	buf[i] = swap ? bswap32(sample) : sample;
+}
+
+static inline int sf_need_swap(sample_format_t sf)
+{
 #ifdef WORDS_BIGENDIAN
-	buf[i] = bswap16(sample);
+	return !sf_get_bigendian(sf);
 #else
-	buf[i] = sample;
+	return sf_get_bigendian(sf);
 #endif
+}
+
+#define SCALE_SAMPLES(TYPE, buffer, count, l, r, swap)				\
+{										\
+	const int frames = count / sizeof(TYPE) / 2;				\
+	TYPE *buf = (TYPE *) buffer;						\
+	int i;									\
+	/* avoid underflowing -32768 to 32767 when scale is 65536 */		\
+	if (l != SOFT_VOL_SCALE && r != SOFT_VOL_SCALE) {			\
+		for (i = 0; i < frames; i++) {					\
+			scale_sample_##TYPE(buf, i * 2, l, swap);		\
+			scale_sample_##TYPE(buf, i * 2 + 1, r, swap);		\
+		}								\
+	} else if (l != SOFT_VOL_SCALE) {					\
+		for (i = 0; i < frames; i++)					\
+			scale_sample_##TYPE(buf, i * 2, l, swap);		\
+	} else if (r != SOFT_VOL_SCALE) {					\
+		for (i = 0; i < frames; i++)					\
+			scale_sample_##TYPE(buf, i * 2 + 1, r, swap);		\
+	}									\
 }
 
 static void scale_samples(char *buffer, unsigned int *countp)
 {
-	signed short *buf;
 	unsigned int count = *countp;
-	int ch, bits, l, r, i;
+	int ch, bits, l, r;
 
 	BUG_ON(scale_pos < consumer_pos);
 
@@ -206,15 +242,16 @@ static void scale_samples(char *buffer, unsigned int *countp)
 		count -= offs;
 	}
 	scale_pos += count;
-	buf = (signed short *)buffer;
 
 	if (replaygain_scale == 1.0 && soft_vol_l == 100 && soft_vol_r == 100)
 		return;
 
 	ch = sf_get_channels(buffer_sf);
 	bits = sf_get_bits(buffer_sf);
-	if (ch != 2 || bits != 16)
+	if (ch != 2 || (bits != 16 && bits != 32)) {
+		d_print("scaling not supported for %u bits %u channel audio\n", bits, ch);
 		return;
+	}
 
 	l = SOFT_VOL_SCALE;
 	r = SOFT_VOL_SCALE;
@@ -226,18 +263,13 @@ static void scale_samples(char *buffer, unsigned int *countp)
 	l *= replaygain_scale;
 	r *= replaygain_scale;
 
-	/* avoid underflowing -32768 to 32767 when scale is 65536 */
-	if (l != SOFT_VOL_SCALE && r != SOFT_VOL_SCALE) {
-		for (i = 0; i < count / 4; i++) {
-			scale_sample(buf, i * 2, l);
-			scale_sample(buf, i * 2 + 1, r);
-		}
-	} else if (l != SOFT_VOL_SCALE) {
-		for (i = 0; i < count / 4; i++)
-			scale_sample(buf, i * 2, l);
-	} else if (r != SOFT_VOL_SCALE) {
-		for (i = 0; i < count / 4; i++)
-			scale_sample(buf, i * 2 + 1, r);
+	switch (bits) {
+	case 16:
+		SCALE_SAMPLES(int16_t, buffer, count, l, r, sf_need_swap(buffer_sf));
+		break;
+	case 32:
+		SCALE_SAMPLES(int32_t, buffer, count, l, r, sf_need_swap(buffer_sf));
+		break;
 	}
 }
 
