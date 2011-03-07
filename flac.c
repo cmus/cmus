@@ -2,6 +2,7 @@
 #include "comment.h"
 #include "xmalloc.h"
 #include "debug.h"
+#include "utils.h"
 
 #include <FLAC/export.h>
 
@@ -170,19 +171,8 @@ static int eof_cb(const Dec *dec, void *data)
 
 #if defined(WORDS_BIGENDIAN)
 
-static inline uint16_t LE16(uint16_t x)
-{
-	return (x >> 8) | (x << 8);
-}
-
-static inline uint32_t LE32(uint32_t x)
-{
-	uint32_t x3 = x << 24;
-	uint32_t x0 = x >> 24;
-	uint32_t x2 = (x & 0xff00) << 8;
-	uint32_t x1 = (x >> 8) & 0xff00;
-	return x3 | x2 | x1 | x0;
-}
+#define LE16(x) bswap16(x)
+#define LE32(x) bswap32(x)
 
 #else
 
