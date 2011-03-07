@@ -29,6 +29,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#define WAVE_FORMAT_PCM        0x0001U
+#define WAVE_FORMAT_EXTENSIBLE 0xfffeU
+
 struct wav_private {
 	unsigned int pcm_start;
 	unsigned int pcm_size;
@@ -113,7 +116,7 @@ static int wav_open(struct input_plugin_data *ip_data)
 	if (rc)
 		goto error_exit;
 	if (fmt_size < 16) {
-		d_print("size of \"fmt \" chunk is invalid (%d)\n", fmt_size);
+		d_print("size of \"fmt \" chunk is invalid (%u)\n", fmt_size);
 		rc = -IP_ERROR_FILE_FORMAT;
 		goto error_exit;
 	}
@@ -134,7 +137,7 @@ static int wav_open(struct input_plugin_data *ip_data)
 		goto error_exit;
 	}
 	{
-		int format_tag, channels, rate, bits;
+		unsigned int format_tag, channels, rate, bits;
 
 		format_tag = read_le16(fmt + 0);
 		channels = read_le16(fmt + 2);
@@ -142,10 +145,37 @@ static int wav_open(struct input_plugin_data *ip_data)
 		/* 4 bytes, bytes per second */
 		/* 2 bytes, bytes per sample */
 		bits = read_le16(fmt + 14);
+		if (format_tag == WAVE_FORMAT_EXTENSIBLE) {
+			unsigned int ext_size, valid_bits;
+			if (fmt_size < 18) {
+				free(fmt);
+				d_print("size of \"fmt \" chunk is invalid (%u)\n", fmt_size);
+				rc = -IP_ERROR_FILE_FORMAT;
+				goto error_exit;
+			}
+			ext_size = read_le16(fmt + 16);
+			if (ext_size < 22) {
+				free(fmt);
+				d_print("size of \"fmt \" chunk extension is invalid (%u)\n", ext_size);
+				rc = -IP_ERROR_FILE_FORMAT;
+				goto error_exit;
+			}
+			valid_bits = read_le16(fmt + 18);
+			if (valid_bits != bits) {
+				free(fmt);
+				d_print("padded samples are not supported (%u != %u)\n", bits, valid_bits);
+				rc = -IP_ERROR_FILE_FORMAT;
+				goto error_exit;
+			}
+			/* speaker position mask */
+			read_le32(fmt + 20);
+			format_tag = read_le16(fmt + 24);
+			/* ignore rest of extension tag */
+		}
 		free(fmt);
 
-		if (format_tag != 1) {
-			d_print("invalid format tag %d, should be 1\n", format_tag);
+		if (format_tag != WAVE_FORMAT_PCM) {
+			d_print("invalid format tag %u, should be 1\n", format_tag);
 			rc = -IP_ERROR_FILE_FORMAT;
 			goto error_exit;
 		}
