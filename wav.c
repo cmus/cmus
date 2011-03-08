@@ -39,6 +39,8 @@ struct wav_private {
 
 	/* size of one second of data */
 	unsigned int sec_size;
+
+	unsigned int frame_size;
 };
 
 static int read_chunk_header(int fd, char *name, unsigned int *size)
@@ -179,7 +181,7 @@ static int wav_open(struct input_plugin_data *ip_data)
 			rc = -IP_ERROR_FILE_FORMAT;
 			goto error_exit;
 		}
-		if ((bits != 8 && bits != 16 && bits != 32) || channels < 1 || channels > 2) {
+		if ((bits != 8 && bits != 16 && bits != 24 && bits != 32) || channels < 1 || channels > 2) {
 			rc = -IP_ERROR_SAMPLE_FORMAT;
 			goto error_exit;
 		}
@@ -198,6 +200,7 @@ static int wav_open(struct input_plugin_data *ip_data)
 	priv->pcm_start = rc;
 
 	priv->sec_size = sf_get_second_size(ip_data->sf);
+	priv->frame_size = sf_get_frame_size(ip_data->sf);
 	priv->pos = 0;
 
 	d_print("pcm start: %u\n", priv->pcm_start);
@@ -259,8 +262,8 @@ static int wav_seek(struct input_plugin_data *ip_data, double _offset)
 	off_t rc;
 
 	offset = (unsigned int)(_offset * (double)priv->sec_size + 0.5);
-	/* align to 4 bytes (2 * 16 / 8) */
-	offset &= ~3U;
+	/* align to frame size */
+	offset -= offset % priv->frame_size;
 	priv->pos = offset;
 	rc = lseek(ip_data->fd, priv->pcm_start + offset, SEEK_SET);
 	if (rc == (off_t)-1)
