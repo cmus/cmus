@@ -937,32 +937,24 @@ views.
 
 NOTE: *altformat_\** options are used when there are no tags available.
 
-Special Characters:
+Special Keys:
 
-	%a
-		artist
-	%A
-		album artist
-	%l
-		album
-	%D
-		disc number
-	%n
-		track number
-	%t
-		title
-	%g
-		genre
-	%c
-		comment
-	%y
-		year
-	%d
-		duration
-	%f
-		path and filename
-	%F
-		filename
+	%a  %{artist}		@br
+	%A  %{albumartist}	@br
+	%l  %{album}		@br
+	%D  %{discnumber}	@br
+	%n  %{tracknumber}	@br
+	%t  %{title}		@br
+	%g  %{genre}		@br
+	%c  %{comment}		@br
+	%y  %{date}		@br
+	%d  %{duration}		@br
+	%f  %{path}		@br
+	%F  %{filename}		@br
+	    %{rg_track_gain}	@br
+	    %{rg_track_peak}	@br
+	    %{rg_album_gain}	@br
+	    %{rg_album_peak}	@br
 	%=
 		start align right (use at most once)
 	%%
@@ -976,6 +968,7 @@ Examples:
 	@pre
 	:set format_trackwin= %02n. %t (%y)%= %d
 	:set format_current= %n. %-30t %40F (%y)%= %d
+	:set format_playlist= %f%= %6{rg_track_gain} dB  %8{rg_track_peak}
 	@endpre
 
 @h2 Sort Keys
@@ -983,7 +976,9 @@ Examples:
 Sort option (lib_sort, pl_sort) value is space separated list of the following
 sort keys:
 
-	artist, album, title, tracknumber, discnumber, date, genre, comment, filename, filemtime
+	artist, album, title, tracknumber, discnumber, date, genre, comment,
+	albumartist, filename, filemtime, rg_track_gain, rg_track_peak,
+	rg_album_gain, rg_album_peak
 
 
 @h1 PLUGIN OPTIONS
