@@ -844,7 +844,7 @@ static void set_format(unsigned int id, const char *buf)
 {
 	char **fmtp = id_to_fmt(id);
 
-	if (!format_valid(buf)) {
+	if (!track_format_valid(buf)) {
 		error_msg("invalid format string");
 		return;
 	}

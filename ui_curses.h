@@ -61,4 +61,6 @@ void enter_command_mode(void);
 void enter_search_mode(void);
 void enter_search_backward_mode(void);
 
+int track_format_valid(const char *format);
+
 #endif

@@ -221,18 +221,18 @@ enum {
 };
 
 static struct format_option track_fopts[NR_TFS + 1] = {
-	DEF_FO_STR('A'),
-	DEF_FO_STR('a'),
-	DEF_FO_STR('l'),
-	DEF_FO_INT('D'),
-	DEF_FO_INT('n'),
-	DEF_FO_STR('t'),
-	DEF_FO_STR('y'),
-	DEF_FO_STR('g'),
-	DEF_FO_STR('c'),
-	DEF_FO_TIME('d'),
-	DEF_FO_STR('f'),
-	DEF_FO_STR('F'),
+	DEF_FO_STR('A', "albumartist", 0),
+	DEF_FO_STR('a', "artist", 0),
+	DEF_FO_STR('l', "album", 0),
+	DEF_FO_INT('D', "discnumber", 1),
+	DEF_FO_INT('n', "tracknumber", 1),
+	DEF_FO_STR('t', "title", 0),
+	DEF_FO_STR('y', "date", 1),
+	DEF_FO_STR('g', "genre", 0),
+	DEF_FO_STR('c', "comment", 0),
+	DEF_FO_TIME('d', "duration", 0),
+	DEF_FO_STR('f', "path", 0),
+	DEF_FO_STR('F', "filename", 0),
 	DEF_FO_END
 };
 
@@ -253,20 +253,25 @@ enum {
 };
 
 static struct format_option status_fopts[NR_SFS + 1] = {
-	DEF_FO_STR('s'),
-	DEF_FO_TIME('p'),
-	DEF_FO_TIME('d'),
-	DEF_FO_TIME('t'),
-	DEF_FO_INT('v'),
-	DEF_FO_INT('l'),
-	DEF_FO_INT('r'),
-	DEF_FO_INT('b'),
-	DEF_FO_STR('R'),
-	DEF_FO_STR('C'),
-	DEF_FO_STR('S'),
-	DEF_FO_STR('L'),
+	DEF_FO_STR('s', NULL, 0),
+	DEF_FO_TIME('p', NULL, 0),
+	DEF_FO_TIME('d', NULL, 0),
+	DEF_FO_TIME('t', NULL, 0),
+	DEF_FO_INT('v', NULL, 0),
+	DEF_FO_INT('l', NULL, 0),
+	DEF_FO_INT('r', NULL, 0),
+	DEF_FO_INT('b', NULL, 0),
+	DEF_FO_STR('R', NULL, 0),
+	DEF_FO_STR('C', NULL, 0),
+	DEF_FO_STR('S', NULL, 0),
+	DEF_FO_STR('L', NULL, 0),
 	DEF_FO_END
 };
+
+int track_format_valid(const char *format)
+{
+	return format_valid(format, track_fopts);
+}
 
 static void utf8_encode(const char *buffer)
 {

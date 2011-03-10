@@ -180,6 +180,11 @@ static void print_str(char *buf, int *idx, const char *str)
 	*idx = d;
 }
 
+static inline int strnequal(const char *a, const char *b, size_t b_len)
+{
+	return a && (strlen(a) == b_len) && (memcmp(a, b, b_len) == 0);
+}
+
 static void print(char *str, const char *format, const struct format_option *fopts)
 {
 	/* format and str indices */
@@ -187,6 +192,8 @@ static void print(char *str, const char *format, const struct format_option *fop
 
 	while (format[s]) {
 		const struct format_option *fo;
+		int long_len = 0;
+		const char *long_begin = NULL;
 		uchar u;
 
 		u = u_get_char(format, &s);
@@ -220,8 +227,19 @@ static void print(char *str, const char *format, const struct format_option *fop
 			width += u - '0';
 			u = u_get_char(format, &s);
 		}
-		for (fo = fopts; fo->ch; fo++) {
-			if (fo->ch == u) {
+		if (u == '{') {
+			long_begin = format + s;
+			while (1) {
+				u = u_get_char(format, &s);
+				BUG_ON(u == 0);
+				if (u == '}')
+					break;
+				long_len++;
+			}
+		}
+		for (fo = fopts; fo->type; fo++) {
+			if (long_len ? strnequal(fo->str, long_begin, long_len)
+				     : (fo->ch == u)) {
 				int type = fo->type;
 
 				if (fo->empty) {
@@ -259,7 +277,8 @@ int format_print(char *str, int str_width, const char *format, const struct form
 
 	while (format[s]) {
 		const struct format_option *fo;
-		int nlen;
+		int nlen, long_len = 0;
+		const char *long_begin = NULL;
 		uchar u;
 
 		u = u_get_char(format, &s);
@@ -287,9 +306,20 @@ int format_print(char *str, int str_width, const char *format, const struct form
 			nlen += u - '0';
 			u = u_get_char(format, &s);
 		}
+		if (u == '{') {
+			long_begin = format + s;
+			while (1) {
+				u = u_get_char(format, &s);
+				BUG_ON(u == 0);
+				if (u == '}')
+					break;
+				long_len++;
+			}
+		}
 		for (fo = fopts; ; fo++) {
-			BUG_ON(fo->ch == 0);
-			if (fo->ch == u) {
+			BUG_ON(fo->type == 0);
+			if (long_len ? strnequal(fo->str, long_begin, long_len)
+				     : (fo->ch == u)) {
 				int type = fo->type;
 				int l = 0;
 
@@ -397,8 +427,7 @@ int format_print(char *str, int str_width, const char *format, const struct form
 	return 0;
 }
 
-/* FIXME: compare with struct format_option[] */
-int format_valid(const char *format)
+int format_valid(const char *format, const struct format_option *fopts)
 {
 	int s = 0;
 
@@ -407,7 +436,9 @@ int format_valid(const char *format)
 
 		u = u_get_char(format, &s);
 		if (u == '%') {
-			int pad_zero = 0;
+			int pad_zero = 0, long_len = 0;
+			const struct format_option *fo;
+			const char *long_begin = NULL;
 
 			u = u_get_char(format, &s);
 			if (u == '%' || u == '=')
@@ -420,26 +451,27 @@ int format_valid(const char *format)
 			}
 			while (isdigit(u))
 				u = u_get_char(format, &s);
-			switch (u) {
-			case 'A':
-			case 'a':
-			case 'l':
-			case 't':
-			case 'd':
-			case 'g':
-			case 'c':
-			case 'f':
-			case 'F':
-				if (pad_zero)
-					return 0;
-				break;
-			case 'D':
-			case 'n':
-			case 'y':
-				break;
-			default:
-				return 0;
+			if (u == '{') {
+				long_begin = format + s;
+				while (1) {
+					u = u_get_char(format, &s);
+					if (!u)
+						return 0;
+					if (u == '}')
+						break;
+					long_len++;
+				}
 			}
+			for (fo = fopts; fo->type; fo++) {
+				if (long_len ? strnequal(fo->str, long_begin, long_len)
+					     : (fo->ch == u)) {
+					if (pad_zero && !fo->pad_zero)
+						return 0;
+					break;
+				}
+			}
+			if (! fo->type)
+				return 0;
 		}
 	}
 	return 1;
