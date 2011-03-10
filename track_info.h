@@ -37,6 +37,10 @@ struct track_info {
 	int tracknumber;
 	int discnumber;
 	int date;
+	double rg_track_gain;
+	double rg_track_peak;
+	double rg_album_gain;
+	double rg_album_peak;
 	const char *artist;
 	const char *album;
 	const char *title;
@@ -57,18 +61,22 @@ struct track_info {
 
 typedef size_t sort_key_t;
 
-#define SORT_ARTIST       offsetof(struct track_info, collkey_artist)
-#define SORT_ALBUM        offsetof(struct track_info, collkey_album)
-#define SORT_TITLE        offsetof(struct track_info, collkey_title)
-#define SORT_TRACKNUMBER  offsetof(struct track_info, tracknumber)
-#define SORT_DISCNUMBER   offsetof(struct track_info, discnumber)
-#define SORT_DATE         offsetof(struct track_info, date)
-#define SORT_GENRE        offsetof(struct track_info, collkey_genre)
-#define SORT_COMMENT      offsetof(struct track_info, collkey_comment)
-#define SORT_ALBUMARTIST  offsetof(struct track_info, collkey_albumartist)
-#define SORT_FILENAME     offsetof(struct track_info, filename)
-#define SORT_FILEMTIME    offsetof(struct track_info, mtime)
-#define SORT_INVALID      ((sort_key_t) (-1))
+#define SORT_ARTIST        offsetof(struct track_info, collkey_artist)
+#define SORT_ALBUM         offsetof(struct track_info, collkey_album)
+#define SORT_TITLE         offsetof(struct track_info, collkey_title)
+#define SORT_TRACKNUMBER   offsetof(struct track_info, tracknumber)
+#define SORT_DISCNUMBER    offsetof(struct track_info, discnumber)
+#define SORT_DATE          offsetof(struct track_info, date)
+#define SORT_RG_TRACK_GAIN offsetof(struct track_info, rg_track_gain)
+#define SORT_RG_TRACK_PEAK offsetof(struct track_info, rg_track_peak)
+#define SORT_RG_ALBUM_GAIN offsetof(struct track_info, rg_album_gain)
+#define SORT_RG_ALBUM_PEAK offsetof(struct track_info, rg_album_peak)
+#define SORT_GENRE         offsetof(struct track_info, collkey_genre)
+#define SORT_COMMENT       offsetof(struct track_info, collkey_comment)
+#define SORT_ALBUMARTIST   offsetof(struct track_info, collkey_albumartist)
+#define SORT_FILENAME      offsetof(struct track_info, filename)
+#define SORT_FILEMTIME     offsetof(struct track_info, mtime)
+#define SORT_INVALID       ((sort_key_t) (-1))
 
 #define TI_MATCH_ARTIST       (1 << 0)
 #define TI_MATCH_ALBUM        (1 << 1)

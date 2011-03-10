@@ -27,6 +27,7 @@
 #include "debug.h"
 
 #include <string.h>
+#include <math.h>
 
 static void track_info_free(struct track_info *ti)
 {
@@ -64,6 +65,11 @@ void track_info_set_comments(struct track_info *ti, struct keyval *comments) {
 	ti->albumartist = comments_get_albumartist(comments);
 	ti->artistsort = comments_get_artistsort(comments);
 	ti->is_va_compilation = track_is_va_compilation(comments);
+
+	ti->rg_track_gain = comments_get_double(comments, "replaygain_track_gain");
+	ti->rg_track_peak = comments_get_double(comments, "replaygain_track_peak");
+	ti->rg_album_gain = comments_get_double(comments, "replaygain_album_gain");
+	ti->rg_album_peak = comments_get_double(comments, "replaygain_album_peak");
 
 	ti->collkey_artist = u_strcasecoll_key0(ti->artist);
 	ti->collkey_album = u_strcasecoll_key0(ti->album);
@@ -150,6 +156,15 @@ int track_info_matches(const struct track_info *ti, const char *text, unsigned i
 	return track_info_matches_full(ti, text, flags, 0, 1);
 }
 
+static int doublecmp0(double a, double b)
+{
+	if (isnan(a))
+		return isnan(b) ? 0 : -1;
+	if (isnan(b))
+		return 1;
+	return (int) (a - b);
+}
+
 /* this function gets called *alot*, it must be very fast */
 int track_info_cmp(const struct track_info *a, const struct track_info *b, const sort_key_t *keys)
 {
@@ -171,6 +186,12 @@ int track_info_cmp(const struct track_info *a, const struct track_info *b, const
 		case SORT_FILENAME:
 			/* NOTE: filenames are not necessarily UTF-8 */
 			res = strcoll(a->filename, b->filename);
+			break;
+		case SORT_RG_TRACK_GAIN:
+		case SORT_RG_TRACK_PEAK:
+		case SORT_RG_ALBUM_GAIN:
+		case SORT_RG_ALBUM_PEAK:
+			res = doublecmp0(getentry(a, key, double), getentry(b, key, double));
 			break;
 		default:
 			av = getentry(a, key, const char *);

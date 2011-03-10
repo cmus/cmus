@@ -201,6 +201,10 @@ static const struct {
 	{ "albumartist",	SORT_ALBUMARTIST	},
 	{ "filename",		SORT_FILENAME		},
 	{ "filemtime",		SORT_FILEMTIME		},
+	{ "rg_track_gain",	SORT_RG_TRACK_GAIN	},
+	{ "rg_track_peak",	SORT_RG_TRACK_PEAK	},
+	{ "rg_album_gain",	SORT_RG_ALBUM_GAIN	},
+	{ "rg_album_peak",	SORT_RG_ALBUM_PEAK	},
 	{ NULL,                 SORT_INVALID            }
 };
 

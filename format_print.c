@@ -3,6 +3,7 @@
 #include "xmalloc.h"
 #include "debug.h"
 
+#include <stdio.h>
 #include <string.h>
 #include <ctype.h>
 
@@ -70,6 +71,36 @@ static int print_num(char *buf, int num)
 		num /= 10;
 	} while (num);
 
+	return stack_print(buf, stack, p);
+}
+
+#define DBL_MAX_LEN (20)
+
+static int format_double(char *buf, int buflen, double num)
+{
+	int len = snprintf(buf, buflen, "%f", num);
+	/* skip trailing zeros */
+	while (len > 0 && buf[len-1] == '0')
+		len--;
+	return len;
+}
+
+static int double_len(double num)
+{
+	char buf[DBL_MAX_LEN];
+	return format_double(buf, DBL_MAX_LEN, num);
+}
+
+static int print_double(char *buf, double num)
+{
+	char stack[DBL_MAX_LEN], b[DBL_MAX_LEN];
+	int i, p = 0;
+
+	i = format_double(b, DBL_MAX_LEN, num) - 1;
+	while (i >= 0) {
+		stack[p++] = b[i];
+		i--;
+	}
 	return stack_print(buf, stack, p);
 }
 
@@ -251,6 +282,8 @@ static void print(char *str, const char *format, const struct format_option *fop
 					d += print_num(str + d, fo->fo_int);
 				} else if (type == FO_TIME) {
 					d += print_time(str + d, fo->fo_time);
+				} else if (type == FO_DOUBLE) {
+					d += print_double(str + d, fo->fo_double);
 				}
 				break;
 			}
@@ -341,6 +374,8 @@ int format_print(char *str, int str_width, const char *format, const struct form
 					} else {
 						l += 5;
 					}
+				} else if (type == FO_DOUBLE) {
+					l = double_len(fo->fo_double);
 				}
 				if (nlen) {
 					*len += nlen;

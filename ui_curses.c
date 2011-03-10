@@ -60,6 +60,7 @@
 #include <iconv.h>
 #include <signal.h>
 #include <stdarg.h>
+#include <math.h>
 
 #if defined(__sun__) || defined(__CYGWIN__)
 /* TIOCGWINSZ */
@@ -217,6 +218,10 @@ enum {
 	TF_DURATION,
 	TF_PATHFILE,
 	TF_FILE,
+	TF_RG_TRACK_GAIN,
+	TF_RG_TRACK_PEAK,
+	TF_RG_ALBUM_GAIN,
+	TF_RG_ALBUM_PEAK,
 	NR_TFS
 };
 
@@ -233,6 +238,10 @@ static struct format_option track_fopts[NR_TFS + 1] = {
 	DEF_FO_TIME('d', "duration", 0),
 	DEF_FO_STR('f', "path", 0),
 	DEF_FO_STR('F', "filename", 0),
+	DEF_FO_DOUBLE('\0', "rg_track_gain", 0),
+	DEF_FO_DOUBLE('\0', "rg_track_peak", 0),
+	DEF_FO_DOUBLE('\0', "rg_album_gain", 0),
+	DEF_FO_DOUBLE('\0', "rg_album_peak", 0),
 	DEF_FO_END
 };
 
@@ -485,6 +494,13 @@ static inline void fopt_set_int(struct format_option *fopt, int value, int empty
 	fopt->empty = empty;
 }
 
+static inline void fopt_set_double(struct format_option *fopt, double value, int empty)
+{
+	BUG_ON(fopt->type != FO_DOUBLE);
+	fopt->fo_double = value;
+	fopt->empty = empty;
+}
+
 static inline void fopt_set_time(struct format_option *fopt, int value, int empty)
 {
 	BUG_ON(fopt->type != FO_TIME);
@@ -513,6 +529,10 @@ static void fill_track_fopts_track_info(struct track_info *info)
 	fopt_set_str(&track_fopts[TF_GENRE], info->genre);
 	fopt_set_str(&track_fopts[TF_COMMENT], info->comment);
 	fopt_set_time(&track_fopts[TF_DURATION], info->duration, info->duration == -1);
+	fopt_set_double(&track_fopts[TF_RG_TRACK_GAIN], info->rg_track_gain, isnan(info->rg_track_gain));
+	fopt_set_double(&track_fopts[TF_RG_TRACK_PEAK], info->rg_track_peak, isnan(info->rg_track_peak));
+	fopt_set_double(&track_fopts[TF_RG_ALBUM_GAIN], info->rg_album_gain, isnan(info->rg_album_gain));
+	fopt_set_double(&track_fopts[TF_RG_ALBUM_PEAK], info->rg_album_peak, isnan(info->rg_album_peak));
 	fopt_set_str(&track_fopts[TF_PATHFILE], filename);
 	if (is_url(info->filename)) {
 		fopt_set_str(&track_fopts[TF_FILE], filename);

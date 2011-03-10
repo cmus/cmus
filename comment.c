@@ -80,6 +80,26 @@ int comments_get_int(const struct keyval *comments, const char *key)
 	return ival;
 }
 
+double comments_get_double(const struct keyval *comments, const char *key)
+{
+	const char *val;
+	char *end;
+	double d;
+
+	val = keyvals_get_val(comments, key);
+	if (!val || strcmp(val, "") == 0)
+		goto error;
+
+	d = strtod(val, &end);
+	if (val == end)
+		goto error;
+
+	return d;
+
+error:
+	return strtod("NAN", NULL);
+}
+
 /* Return date as an integer in the form YYYYMMDD, for sorting purposes.
  * This function is not year 10000 compliant. */
 int comments_get_date(const struct keyval *comments, const char *key)

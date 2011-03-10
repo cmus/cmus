@@ -328,17 +328,8 @@ static void scale_samples(char *buffer, unsigned int *countp)
 	}
 }
 
-static int parse_double(const char *str, double *val)
-{
-	char *end;
-
-	*val = strtod(str, &end);
-	return str == end;
-}
-
 static void update_rg_scale(void)
 {
-	const char *g, *p;
 	double gain, peak, db, scale, limit;
 
 	replaygain_scale = 1.0;
@@ -346,29 +337,25 @@ static void update_rg_scale(void)
 		return;
 
 	if (replaygain == RG_TRACK || replaygain == RG_TRACK_PREFERRED) {
-		g = keyvals_get_val(player_info.ti->comments, "replaygain_track_gain");
-		p = keyvals_get_val(player_info.ti->comments, "replaygain_track_peak");
+		gain = player_info.ti->rg_track_gain;
+		peak = player_info.ti->rg_track_peak;
 	} else {
-		g = keyvals_get_val(player_info.ti->comments, "replaygain_album_gain");
-		p = keyvals_get_val(player_info.ti->comments, "replaygain_album_peak");
+		gain = player_info.ti->rg_album_gain;
+		peak = player_info.ti->rg_album_peak;
 	}
 
-	if (!g || !p) {
+	if (isnan(gain) || isnan(peak)) {
 		if (replaygain == RG_TRACK_PREFERRED) {
-			g = keyvals_get_val(player_info.ti->comments, "replaygain_album_gain");
-			p = keyvals_get_val(player_info.ti->comments, "replaygain_album_peak");
+			gain = player_info.ti->rg_album_gain;
+			peak = player_info.ti->rg_album_peak;
 		} else if (replaygain == RG_ALBUM_PREFERRED) {
-			g = keyvals_get_val(player_info.ti->comments, "replaygain_track_gain");
-			p = keyvals_get_val(player_info.ti->comments, "replaygain_track_peak");
+			gain = player_info.ti->rg_track_gain;
+			peak = player_info.ti->rg_track_peak;
 		}
 	}
 
-	if (!g || !p) {
+	if (isnan(gain) || isnan(peak)) {
 		d_print("gain or peak not available\n");
-		return;
-	}
-	if (parse_double(g, &gain) || parse_double(p, &peak)) {
-		d_print("could not parse gain (%s) or peak (%s)\n", g, p);
 		return;
 	}
 	if (peak < 0.05) {
