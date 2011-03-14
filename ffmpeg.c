@@ -420,6 +420,6 @@ const struct input_plugin_ops ip_ops = {
 #ifdef USE_FALLBACK_IP
 const char *const ip_extensions[] = { "any", NULL };
 #else
-const char *const ip_extensions[] = { "ape", "wma", NULL };
+const char *const ip_extensions[] = { "ape", "wma", "mka", NULL };
 #endif
 const char *const ip_mime_types[] = { NULL };
