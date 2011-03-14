@@ -481,11 +481,12 @@ static void unset_live_filter(void)
 
 void lib_set_filter(struct expr *expr)
 {
+	int clear_before = lib_live_filter || filter;
 	unset_live_filter();
 	if (filter)
 		expr_free(filter);
 	filter = expr;
-	do_lib_filter(1);
+	do_lib_filter(clear_before);
 }
 
 static struct tree_track *get_sel_track(void)
