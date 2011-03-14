@@ -392,7 +392,7 @@ static void calc_fast(struct nomad *nomad)
 {
 	nomad->info.avg_bitrate = -1;
 	nomad->info.vbr = -1;
-	if (nomad->has_xing && (nomad->xing.flags & XING_FRAMES)) {
+	if (nomad->has_xing && (nomad->xing.flags & XING_FRAMES) && nomad->xing.nr_frames) {
 		nomad->info.nr_frames = nomad->xing.nr_frames;
 		mad_timer_multiply(&nomad->timer, nomad->info.nr_frames);
 	} else {
