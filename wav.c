@@ -178,8 +178,8 @@ static int wav_open(struct input_plugin_data *ip_data)
 		free(fmt);
 
 		if (format_tag != WAVE_FORMAT_PCM) {
-			d_print("invalid format tag %u, should be 1\n", format_tag);
-			rc = -IP_ERROR_FILE_FORMAT;
+			d_print("unsupported format tag %u, should be 1\n", format_tag);
+			rc = -IP_ERROR_UNSUPPORTED_FILE_TYPE;
 			goto error_exit;
 		}
 		if ((bits != 8 && bits != 16 && bits != 24 && bits != 32) || channels < 1 || channels > 2) {
@@ -401,5 +401,6 @@ const struct input_plugin_ops ip_ops = {
 	.codec = wav_codec
 };
 
+const int ip_priority = 50;
 const char * const ip_extensions[] = { "wav", NULL };
 const char * const ip_mime_types[] = { NULL };

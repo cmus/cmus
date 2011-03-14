@@ -213,6 +213,7 @@ const struct input_plugin_ops ip_ops = {
 	.codec = mad_codec
 };
 
+const int ip_priority = 55;
 const char * const ip_extensions[] = { "mp3", "mp2", NULL };
 const char * const ip_mime_types[] = {
 	"audio/mpeg", "audio/x-mp3", "audio/x-mpeg", NULL

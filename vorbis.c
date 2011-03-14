@@ -304,5 +304,6 @@ const struct input_plugin_ops ip_ops = {
 	.codec = vorbis_codec
 };
 
+const int ip_priority = 50;
 const char * const ip_extensions[] = { "ogg", NULL };
 const char * const ip_mime_types[] = { "application/ogg", "audio/x-ogg", NULL };

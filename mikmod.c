@@ -163,10 +163,10 @@ const struct input_plugin_ops ip_ops = {
 	.codec = mik_codec
 };
 
+const int ip_priority = 40;
 const char * const ip_extensions[] = {
 	"mod", "s3m", "xm", "it", "669", "amf", "dsm",
 	"far", "med", "mtm", "stm", "ult",
 	NULL
 };
-
 const char * const ip_mime_types[] = { NULL };

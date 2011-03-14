@@ -196,7 +196,7 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 		codec = avcodec_find_decoder(cc->codec_id);
 		if (!codec) {
 			d_print("codec not found: %d, %s\n", cc->codec_id, cc->codec_name);
-			err = -IP_ERROR_FILE_FORMAT;
+			err = -IP_ERROR_UNSUPPORTED_FILE_TYPE;
 			break;
 		}
 
@@ -205,7 +205,7 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 
 		if (avcodec_open(cc, codec) < 0) {
 			d_print("could not open codec: %d, %s\n", cc->codec_id, cc->codec_name);
-			err = -IP_ERROR_FILE_FORMAT;
+			err = -IP_ERROR_UNSUPPORTED_FILE_TYPE;
 			break;
 		}
 
@@ -459,9 +459,15 @@ const struct input_plugin_ops ip_ops = {
 	.codec = ffmpeg_codec
 };
 
+const int ip_priority = 30;
 #ifdef USE_FALLBACK_IP
 const char *const ip_extensions[] = { "any", NULL };
 #else
-const char *const ip_extensions[] = { "ape", "wma", "mka", NULL };
+const char *const ip_extensions[] = { "ape", "wma", "mka",
+	/* also supported by other plugins */
+	"aac", "fla", "flac", "m4a", "m4b", "mp+", "mp2", "mp3", "mp4", "mpc",
+	"mpp", "ogg", "wav", "wv",
+	NULL
+};
 #endif
 const char *const ip_mime_types[] = { NULL };

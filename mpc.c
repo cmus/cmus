@@ -389,5 +389,6 @@ const struct input_plugin_ops ip_ops = {
 	.codec = mpc_codec
 };
 
+const int ip_priority = 50;
 const char *const ip_extensions[] = { "mpc", "mpp", "mp+", NULL };
 const char *const ip_mime_types[] = { "audio/x-musepack", NULL };

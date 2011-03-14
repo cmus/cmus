@@ -454,5 +454,6 @@ const struct input_plugin_ops ip_ops = {
 	.codec = aac_codec
 };
 
+const int ip_priority = 50;
 const char * const ip_extensions[] = { "aac", NULL };
 const char * const ip_mime_types[] = { "audio/aac", "audio/aacp", NULL };

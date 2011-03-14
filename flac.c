@@ -543,5 +543,6 @@ const struct input_plugin_ops ip_ops = {
 	.codec = flac_codec
 };
 
+const int ip_priority = 50;
 const char * const ip_extensions[] = { "flac", "fla", NULL };
 const char * const ip_mime_types[] = { NULL };

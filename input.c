@@ -26,6 +26,7 @@
 #include "utils.h"
 #include "cmus.h"
 #include "list.h"
+#include "mergesort.h"
 #include "misc.h"
 #include "debug.h"
 #include "ui_curses.h"
@@ -79,6 +80,7 @@ struct ip {
 	char *name;
 	void *handle;
 
+	int priority;
 	const char * const *extensions;
 	const char * const *mime_types;
 	const struct input_plugin_ops *ops;
@@ -112,30 +114,22 @@ static const char *get_extension(const char *filename)
 	return NULL;
 }
 
-static const struct input_plugin_ops *get_ops_by_filename(const char *filename)
+static const struct input_plugin_ops *get_ops_by_extension(const char *ext, struct list_head **headp)
 {
-	struct ip *ip;
-	const char *ext;
-	struct ip *fallback_ip = NULL;
+	struct list_head *node = *headp;
 
-	ext = get_extension(filename);
-	if (ext == NULL)
-		return NULL;
-	list_for_each_entry(ip, &ip_head, node) {
+	for (node = node->next; node != &ip_head; node = node->next) {
+		struct ip *ip = list_entry(node, struct ip, node);
 		const char * const *exts = ip->extensions;
 		int i;
 
 		for (i = 0; exts[i]; i++) {
-			if (strcasecmp("any", exts[i]) == 0)
-				fallback_ip = ip;
-			if (strcasecmp(ext, exts[i]) == 0){
+			if (strcasecmp(ext, exts[i]) == 0 || strcmp("any", exts[i]) == 0) {
+				*headp = node;
 				return ip->ops;
 			}
 		}
 	}
-	if (fallback_ip)
-	    return fallback_ip->ops;
-
 	return NULL;
 }
 
@@ -381,17 +375,75 @@ static int open_remote(struct input_plugin *ip)
 	return rc;
 }
 
+static void ip_init(struct input_plugin *ip, char *filename)
+{
+	memset(ip, 0, sizeof(*ip));
+	ip->http_code = -1;
+	ip->pcm_convert_scale = -1;
+	ip->duration = -1;
+	ip->bitrate = -1;
+	ip->codec = NULL;
+	ip->data.fd = -1;
+	ip->data.filename = filename;
+	ip->data.remote = is_url(filename);
+}
+
+static void ip_reset(struct input_plugin *ip, int close_fd)
+{
+	int fd = ip->data.fd;
+	free(ip->data.metadata);
+	ip_init(ip, ip->data.filename);
+	if (fd != -1) {
+		if (close_fd)
+			close(fd);
+		else {
+			lseek(fd, 0, SEEK_SET);
+			ip->data.fd = fd;
+		}
+	}
+}
+
 static int open_file(struct input_plugin *ip)
 {
-	ip->ops = get_ops_by_filename(ip->data.filename);
-	if (ip->ops == NULL)
+	const struct input_plugin_ops *ops;
+	struct list_head *head = &ip_head;
+	const char *ext;
+	int rc = 0;
+
+	ext = get_extension(ip->data.filename);
+	if (!ext)
 		return -IP_ERROR_UNRECOGNIZED_FILE_TYPE;
+
+	ops = get_ops_by_extension(ext, &head);
+	if (!ops)
+		return -IP_ERROR_UNRECOGNIZED_FILE_TYPE;
+
 	ip->data.fd = open(ip->data.filename, O_RDONLY);
-	if (ip->data.fd == -1) {
-		ip->ops = NULL;
+	if (ip->data.fd == -1)
 		return -IP_ERROR_ERRNO;
+
+	while (1) {
+		ip->ops = ops;
+		rc = ip->ops->open(&ip->data);
+		if (rc != -IP_ERROR_UNSUPPORTED_FILE_TYPE)
+			break;
+
+		ops = get_ops_by_extension(ext, &head);
+		if (!ops)
+			break;
+
+		ip_reset(ip, 0);
+		d_print("fallback: try next plugin for `%s'\n", ip->data.filename);
 	}
-	return 0;
+
+	return rc;
+}
+
+static int sort_ip(const struct list_head *a_, const struct list_head *b_)
+{
+	const struct ip *a = list_entry(a_, struct ip, node);
+	const struct ip *b = list_entry(b_, struct ip, node);
+	return b->priority - a->priority;
 }
 
 void ip_load_plugins(void)
@@ -409,6 +461,7 @@ void ip_load_plugins(void)
 		struct ip *ip;
 		void *so;
 		char *ext;
+		const int *priority_ptr;
 
 		if (d->d_name[0] == '.')
 			continue;
@@ -428,35 +481,25 @@ void ip_load_plugins(void)
 
 		ip = xnew(struct ip, 1);
 
+		priority_ptr = dlsym(so, "ip_priority");
 		ip->extensions = dlsym(so, "ip_extensions");
 		ip->mime_types = dlsym(so, "ip_mime_types");
 		ip->ops = dlsym(so, "ip_ops");
-		if (!ip->extensions || !ip->mime_types || !ip->ops) {
+		if (!priority_ptr || !ip->extensions || !ip->mime_types || !ip->ops) {
 			error_msg("%s: missing symbol", filename);
 			free(ip);
 			dlclose(so);
 			continue;
 		}
+		ip->priority = *priority_ptr;
 
 		ip->name = xstrndup(d->d_name, ext - d->d_name);
 		ip->handle = so;
 
 		list_add_tail(&ip->node, &ip_head);
 	}
+	list_mergesort(&ip_head, sort_ip);
 	closedir(dir);
-}
-
-static void ip_init(struct input_plugin *ip, char *filename)
-{
-	memset(ip, 0, sizeof(*ip));
-	ip->http_code = -1;
-	ip->pcm_convert_scale = -1;
-	ip->duration = -1;
-	ip->bitrate = -1;
-	ip->codec = NULL;
-	ip->data.fd = -1;
-	ip->data.filename = filename;
-	ip->data.remote = is_url(filename);
 }
 
 struct input_plugin *ip_new(const char *filename)
@@ -481,9 +524,11 @@ int ip_open(struct input_plugin *ip)
 
 	BUG_ON(ip->open);
 
-	/* set fd and ops */
+	/* set fd and ops, call ops->open */
 	if (ip->data.remote) {
 		rc = open_remote(ip);
+		if (rc == 0)
+			rc = ip->ops->open(&ip->data);
 	} else {
 		rc = open_file(ip);
 	}
@@ -491,17 +536,7 @@ int ip_open(struct input_plugin *ip)
 	if (rc) {
 		d_print("opening `%s' failed: %d %s\n", ip->data.filename, rc,
 				rc == -1 ? strerror(errno) : "");
-		return rc;
-	}
-
-	rc = ip->ops->open(&ip->data);
-	if (rc) {
-		d_print("opening file `%s' failed: %d %s\n", ip->data.filename, rc,
-				rc == -1 ? strerror(errno) : "");
-		if (ip->data.fd != -1)
-			close(ip->data.fd);
-		free(ip->data.metadata);
-		ip_init(ip, ip->data.filename);
+		ip_reset(ip, 1);
 		return rc;
 	}
 	ip->open = 1;
@@ -737,6 +772,10 @@ char *ip_get_error_msg(struct input_plugin *ip, int rc, const char *arg)
 		snprintf(buffer, sizeof(buffer),
 				"%s: unrecognized filename extension", arg);
 		break;
+	case IP_ERROR_UNSUPPORTED_FILE_TYPE:
+		snprintf(buffer, sizeof(buffer),
+				"%s: unsupported file format", arg);
+		break;
 	case IP_ERROR_FUNCTION_NOT_SUPPORTED:
 		snprintf(buffer, sizeof(buffer),
 				"%s: function not supported", arg);
@@ -811,7 +850,7 @@ void ip_dump_plugins(void)
 
 	printf("Input Plugins: %s\n", plugin_dir);
 	list_for_each_entry(ip, &ip_head, node) {
-		printf("  %s:\n    File Types:", ip->name);
+		printf("  %s:\n    Priority: %d\n    File Types:", ip->name, ip->priority);
 		for (i = 0; ip->extensions[i]; i++)
 			printf(" %s", ip->extensions[i]);
 		printf("\n    MIME Types:");

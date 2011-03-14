@@ -171,6 +171,7 @@ const struct input_plugin_ops ip_ops = {
 	.codec = mod_codec
 };
 
+const int ip_priority = 50;
 const char * const ip_extensions[] = {
 	"mod", "s3m", "xm", "it", "669", "amf", "ams", "dbm", "dmf", "dsm",
 	"far", "mdl", "med", "mtm", "okt", "ptm", "stm", "ult", "umx", "mt2",

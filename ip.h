@@ -33,8 +33,10 @@ enum {
 	IP_ERROR_SUCCESS,
 	/* system error (error code in errno) */
 	IP_ERROR_ERRNO,
-	/* file type not supported */
+	/* file type not recognized */
 	IP_ERROR_UNRECOGNIZED_FILE_TYPE,
+	/* file type recognized, but not supported */
+	IP_ERROR_UNSUPPORTED_FILE_TYPE,
 	/* function not supported (usually seek) */
 	IP_ERROR_FUNCTION_NOT_SUPPORTED,
 	/* input plugin detected corrupted file */
@@ -88,6 +90,7 @@ struct input_plugin_ops {
 
 /* symbols exported by plugin */
 extern const struct input_plugin_ops ip_ops;
+extern const int ip_priority;
 extern const char * const ip_extensions[];
 extern const char * const ip_mime_types[];
 

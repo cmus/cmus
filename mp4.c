@@ -98,6 +98,7 @@ static int mp4_open(struct input_plugin_data *ip_data)
 	NeAACDecConfigurationPtr neaac_cfg;
 	unsigned char *buf;
 	unsigned int buf_size;
+	int rc = -IP_ERROR_FILE_FORMAT;
 
 
 	/* http://sourceforge.net/forum/message.php?msg_id=3578887 */
@@ -127,6 +128,8 @@ static int mp4_open(struct input_plugin_data *ip_data)
 	priv->mp4.track = mp4_get_track(priv->mp4.handle);
 	if (priv->mp4.track == MP4_INVALID_TRACK_ID) {
 		d_print("MP4FindTrackId failed\n");
+		if (MP4GetNumberOfTracks(priv->mp4.handle, MP4_AUDIO_TRACK_TYPE, 0) > 0)
+			rc = -IP_ERROR_UNSUPPORTED_FILE_TYPE;
 		goto out;
 	}
 
@@ -167,7 +170,7 @@ out:
 	if (priv->decoder)
 		NeAACDecClose(priv->decoder);
 	free(priv);
-	return -IP_ERROR_FILE_FORMAT;
+	return rc;
 }
 
 static int mp4_close(struct input_plugin_data *ip_data)
@@ -482,5 +485,6 @@ const struct input_plugin_ops ip_ops = {
 	.codec = mp4_codec
 };
 
+const int ip_priority = 50;
 const char * const ip_extensions[] = { "mp4", "m4a", "m4b", NULL };
 const char * const ip_mime_types[] = { /*"audio/mp4", "audio/mp4a-latm",*/ NULL };
