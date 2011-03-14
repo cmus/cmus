@@ -36,6 +36,14 @@
 
 #define NUM_FFMPEG_KEYS 8
 
+#if (LIBAVCODEC_VERSION_INT < ((52<<16)+(94<<8)+1))
+#define AV_SAMPLE_FMT_U8   SAMPLE_FMT_U8
+#define AV_SAMPLE_FMT_S16  SAMPLE_FMT_S16
+#define AV_SAMPLE_FMT_S32  SAMPLE_FMT_S32
+#define AV_SAMPLE_FMT_FLT  SAMPLE_FMT_FLT
+#define AV_SAMPLE_FMT_DBL  SAMPLE_FMT_DBL
+#endif
+
 struct ffmpeg_input {
 	AVPacket pkt;
 	int curr_pkt_size;
@@ -195,6 +203,11 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 			err = -IP_ERROR_FILE_FORMAT;
 			break;
 		}
+
+		if (cc->sample_fmt == AV_SAMPLE_FMT_FLT || cc->sample_fmt == AV_SAMPLE_FMT_DBL) {
+			err = -IP_ERROR_SAMPLE_FORMAT;
+			break;
+		}
 		/* We assume below that no more errors follow. */
 	} while (0);
 
@@ -218,7 +231,19 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 	priv->output = ffmpeg_output_create();
 
 	ip_data->private = priv;
-	ip_data->sf = sf_rate(cc->sample_rate) | sf_channels(cc->channels) | sf_bits(16) | sf_signed(1);
+	ip_data->sf = sf_rate(cc->sample_rate) | sf_channels(cc->channels);
+	switch (cc->sample_fmt) {
+	case AV_SAMPLE_FMT_U8:
+		ip_data->sf |= sf_bits(8) | sf_signed(0);
+		break;
+	case AV_SAMPLE_FMT_S32:
+		ip_data->sf |= sf_bits(32) | sf_signed(1);
+		break;
+	/* AV_SAMPLE_FMT_S16 */
+	default:
+		ip_data->sf |= sf_bits(16) | sf_signed(1);
+		break;
+	}
 	return 0;
 }
 
