@@ -335,8 +335,7 @@ static int ffmpeg_seek(struct input_plugin_data *ip_data, double offset)
 #if (LIBAVFORMAT_VERSION_INT < ((50<<16)+(3<<8)+0))
 	int64_t pts = (int64_t) offset;
 #else
-	/* time base is 1/framerate */
-	int64_t pts = (int64_t) offset * st->time_base.den;
+	int64_t pts = av_rescale_q(offset * AV_TIME_BASE, AV_TIME_BASE_Q, st->time_base);
 #endif
 
 	ret = av_seek_frame(priv->input_context, priv->stream_index, pts, 0);
@@ -406,7 +405,7 @@ static int ffmpeg_read_comments(struct input_plugin_data *ip_data, struct keyval
 static int ffmpeg_duration(struct input_plugin_data *ip_data)
 {
 	struct ffmpeg_private *priv = ip_data->private;
-	return priv->input_context->duration / 1000000L;
+	return priv->input_context->duration / AV_TIME_BASE;
 }
 
 const struct input_plugin_ops ip_ops = {
