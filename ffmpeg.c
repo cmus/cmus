@@ -246,12 +246,12 @@ static int ffmpeg_close(struct input_plugin_data *ip_data)
 static int ffmpeg_fill_buffer(AVFormatContext *ic, AVCodecContext *cc, struct ffmpeg_input *input,
 			      struct ffmpeg_output *output)
 {
-	/* frame_size specifies the size of output->buffer for
-	 * avcodec_decode_audio2. */
-	int frame_size = AVCODEC_MAX_AUDIO_FRAME_SIZE;
-	int len;
-
 	while (1) {
+		/* frame_size specifies the size of output->buffer for
+		 * avcodec_decode_audio2. */
+		int frame_size = AVCODEC_MAX_AUDIO_FRAME_SIZE;
+		int len;
+
 		if (input->curr_pkt_size <= 0) {
 			av_free_packet(&input->pkt);
 			if (av_read_frame(ic, &input->pkt) < 0) {
