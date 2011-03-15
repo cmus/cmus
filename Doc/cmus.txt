@@ -960,8 +960,10 @@ Special Keys:
 	%%
 		literal *%*
 
-You can use printf style formatting (width, alignment, padding). To see
-current value of an option type *:set option=<TAB>*.
+You can use printf style formatting (width, alignment, padding). As an
+extension, the width can have a %-suffix, to specify a percentage of the
+terminal width. @br
+To see current value of an option type *:set option=<TAB>*.
 
 Examples:
 
@@ -969,6 +971,7 @@ Examples:
 	:set format_trackwin= %02n. %t (%y)%= %d
 	:set format_current= %n. %-30t %40F (%y)%= %d
 	:set format_playlist= %f%= %6{rg_track_gain} dB  %8{rg_track_peak}
+	:set format_playlist= %-25%a %-15%l %3n. %t%= %y %d
 	@endpre
 
 @h2 Sort Keys

@@ -216,7 +216,7 @@ static inline int strnequal(const char *a, const char *b, size_t b_len)
 	return a && (strlen(a) == b_len) && (memcmp(a, b, b_len) == 0);
 }
 
-static void print(char *str, const char *format, const struct format_option *fopts)
+static void print(char *str, int str_width, const char *format, const struct format_option *fopts)
 {
 	/* format and str indices */
 	int s = 0, d = 0;
@@ -256,6 +256,10 @@ static void print(char *str, const char *format, const struct format_option *fop
 		while (isdigit(u)) {
 			width *= 10;
 			width += u - '0';
+			u = u_get_char(format, &s);
+		}
+		if (u == '%') {
+			width = (width * str_width) / 100.0 + 0.5;
 			u = u_get_char(format, &s);
 		}
 		if (u == '{') {
@@ -339,6 +343,10 @@ int format_print(char *str, int str_width, const char *format, const struct form
 			nlen += u - '0';
 			u = u_get_char(format, &s);
 		}
+		if (u == '%') {
+			nlen = (nlen * str_width) / 100.0 + 0.5;
+			u = u_get_char(format, &s);
+		}
 		if (u == '{') {
 			long_begin = format + s;
 			while (1) {
@@ -407,7 +415,7 @@ int format_print(char *str, int str_width, const char *format, const struct form
 	r_str[0] = 0;
 
 	if (lsize > 0) {
-		print(l_str, format, fopts);
+		print(l_str, str_width, format, fopts);
 #if DEBUG > 1
 		{
 			int ul = u_str_width(l_str);
@@ -417,7 +425,7 @@ int format_print(char *str, int str_width, const char *format, const struct form
 #endif
 	}
 	if (rsize > 0) {
-		print(r_str, format + eq_pos + 1, fopts);
+		print(r_str, str_width, format + eq_pos + 1, fopts);
 #if DEBUG > 1
 		{
 			int ul = u_str_width(r_str);
@@ -485,6 +493,8 @@ int format_valid(const char *format, const struct format_option *fopts)
 				u = u_get_char(format, &s);
 			}
 			while (isdigit(u))
+				u = u_get_char(format, &s);
+			if (u == '%')
 				u = u_get_char(format, &s);
 			if (u == '{') {
 				long_begin = format + s;
