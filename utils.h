@@ -122,30 +122,41 @@ static inline int is_freeform_true(const char *c)
 		c[0] == 't' || c[0] == 'T';
 }
 
-static inline uint16_t bswap16(uint16_t u)
-{
-#if defined(bswap_16)
-	/* GNU libc */
-	return bswap_16(u);
+/* e.g. NetBSD */
+#if defined(bswap16)
+/* GNU libc */
+#elif defined(bswap_16)
+# define bswap16 bswap_16
+/* e.g. OpenBSD */
 #elif defined(swap16)
-	/* e.g. OpenBSD */
-	return swap16(u);
+# define bswap16 swap16
 #else
-	return (u << 8) | (u >> 8);
+# define bswap16(x) \
+	((((x) >> 8) & 0xff) | (((x) & 0xff) << 8))
 #endif
+
+static inline uint16_t swap_uint16(uint16_t x)
+{
+	return bswap16(x);
 }
 
-static inline uint32_t bswap32(uint32_t u)
-{
-#if defined(bswap_32)
-	/* GNU libc */
-	return bswap_32(u);
+/* e.g. NetBSD */
+#if defined(bswap32)
+/* GNU libc */
+#elif defined(bswap_32)
+# define bswap32 bswap_32
+/* e.g. OpenBSD */
 #elif defined(swap32)
-	/* e.g. OpenBSD */
-	return swap32(u);
+# define bswap32 swap32
 #else
-	return (u >> 24) | ((u & 0xff0000) >> 8) | ((u & 0xff00) << 8) | (u << 24);
+# define bswap32(x) \
+	((((x) & 0xff000000) >> 24) | (((x) & 0x00ff0000) >>  8) |	\
+	 (((x) & 0x0000ff00) <<  8) | (((x) & 0x000000ff) << 24))
 #endif
+
+static inline uint32_t swap_uint32(uint32_t x)
+{
+	return bswap32(x);
 }
 
 static inline uint32_t read_le32(const char *buf)

@@ -171,8 +171,8 @@ static int eof_cb(const Dec *dec, void *data)
 
 #if defined(WORDS_BIGENDIAN)
 
-#define LE16(x) bswap16(x)
-#define LE32(x) bswap32(x)
+#define LE16(x) swap_uint16(x)
+#define LE32(x) swap_uint32(x)
 
 #else
 

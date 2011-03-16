@@ -165,7 +165,7 @@ static const unsigned short soft_vol_db[100] = {
 static inline void scale_sample(signed short *buf, int i, int vol)
 {
 #ifdef WORDS_BIGENDIAN
-	int sample = (short)bswap16(buf[i]);
+	int sample = (short)swap_uint16(buf[i]);
 #else
 	int sample = buf[i];
 #endif
@@ -180,7 +180,7 @@ static inline void scale_sample(signed short *buf, int i, int vol)
 			sample = 32767;
 	}
 #ifdef WORDS_BIGENDIAN
-	buf[i] = bswap16(sample);
+	buf[i] = swap_uint16(sample);
 #else
 	buf[i] = sample;
 #endif
