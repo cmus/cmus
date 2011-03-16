@@ -893,3 +893,8 @@ int nomad_bitrate(struct nomad *nomad)
 {
 	return nomad->info.avg_bitrate;
 }
+
+int nomad_layer(struct nomad *nomad)
+{
+	return nomad->info.layer;
+}

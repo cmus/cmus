@@ -438,6 +438,11 @@ static long aac_bitrate(struct input_plugin_data *ip_data)
 	return priv->bitrate != -1 ? priv->bitrate : -IP_ERROR_FUNCTION_NOT_SUPPORTED;
 }
 
+static char *aac_codec(struct input_plugin_data *ip_data)
+{
+	return xstrdup("aac");
+}
+
 const struct input_plugin_ops ip_ops = {
 	.open = aac_open,
 	.close = aac_close,
@@ -445,7 +450,8 @@ const struct input_plugin_ops ip_ops = {
 	.seek = aac_seek,
 	.read_comments = aac_read_comments,
 	.duration = aac_duration,
-	.bitrate = aac_bitrate
+	.bitrate = aac_bitrate,
+	.codec = aac_codec
 };
 
 const char * const ip_extensions[] = { "aac", NULL };

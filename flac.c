@@ -527,6 +527,11 @@ static long flac_bitrate(struct input_plugin_data *ip_data)
 	return file_size * 8 / priv->duration;
 }
 
+static char *flac_codec(struct input_plugin_data *ip_data)
+{
+	return xstrdup("flac");
+}
+
 const struct input_plugin_ops ip_ops = {
 	.open = flac_open,
 	.close = flac_close,
@@ -534,7 +539,8 @@ const struct input_plugin_ops ip_ops = {
 	.seek = flac_seek,
 	.read_comments = flac_read_comments,
 	.duration = flac_duration,
-	.bitrate = flac_bitrate
+	.bitrate = flac_bitrate,
+	.codec = flac_codec
 };
 
 const char * const ip_extensions[] = { "flac", "fla", NULL };

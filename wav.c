@@ -23,6 +23,7 @@
 #include "debug.h"
 #include "utils.h"
 
+#include <stdio.h>
 #include <string.h>
 #include <errno.h>
 
@@ -378,6 +379,17 @@ static long wav_bitrate(struct input_plugin_data *ip_data)
 	return sf_get_bits(sf) * sf_get_rate(sf) * sf_get_channels(sf);
 }
 
+static char *wav_codec(struct input_plugin_data *ip_data)
+{
+	char buf[16];
+	snprintf(buf, 16, "pcm_%c%u%s",
+			sf_get_signed(ip_data->sf) ? 's' : 'u',
+			sf_get_bits(ip_data->sf),
+			sf_get_bigendian(ip_data->sf) ? "be" : "le");
+
+	return xstrdup(buf);
+}
+
 const struct input_plugin_ops ip_ops = {
 	.open = wav_open,
 	.close = wav_close,
@@ -385,7 +397,8 @@ const struct input_plugin_ops ip_ops = {
 	.seek = wav_seek,
 	.read_comments = wav_read_comments,
 	.duration = wav_duration,
-	.bitrate = wav_bitrate
+	.bitrate = wav_bitrate,
+	.codec = wav_codec
 };
 
 const char * const ip_extensions[] = { "wav", NULL };

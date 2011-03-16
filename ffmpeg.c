@@ -63,6 +63,7 @@ struct ffmpeg_output {
 struct ffmpeg_private {
 	AVCodecContext *codec_context;
 	AVFormatContext *input_context;
+	AVCodec *codec;
 	int stream_index;
 
 	struct ffmpeg_input *input;
@@ -224,6 +225,7 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 	priv = xnew(struct ffmpeg_private, 1);
 	priv->codec_context = cc;
 	priv->input_context = ic;
+	priv->codec = codec;
 	priv->stream_index = stream_index;
 	priv->input = ffmpeg_input_create();
 	if (priv->input == NULL) {
@@ -440,6 +442,12 @@ static long ffmpeg_bitrate(struct input_plugin_data *ip_data)
 	return bitrate ? bitrate : -IP_ERROR_FUNCTION_NOT_SUPPORTED;
 }
 
+static char *ffmpeg_codec(struct input_plugin_data *ip_data)
+{
+	struct ffmpeg_private *priv = ip_data->private;
+	return xstrdup(priv->codec->name);
+}
+
 const struct input_plugin_ops ip_ops = {
 	.open = ffmpeg_open,
 	.close = ffmpeg_close,
@@ -447,7 +455,8 @@ const struct input_plugin_ops ip_ops = {
 	.seek = ffmpeg_seek,
 	.read_comments = ffmpeg_read_comments,
 	.duration = ffmpeg_duration,
-	.bitrate = ffmpeg_bitrate
+	.bitrate = ffmpeg_bitrate,
+	.codec = ffmpeg_codec
 };
 
 #ifdef USE_FALLBACK_IP

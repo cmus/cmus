@@ -32,6 +32,7 @@ struct track_info {
 	time_t mtime;
 	int duration;
 	long bitrate;
+	char *codec;
 	int ref;
 	char *filename;
 
@@ -78,6 +79,7 @@ typedef size_t sort_key_t;
 #define SORT_FILENAME      offsetof(struct track_info, filename)
 #define SORT_FILEMTIME     offsetof(struct track_info, mtime)
 #define SORT_BITRATE       offsetof(struct track_info, bitrate)
+#define SORT_CODEC         offsetof(struct track_info, codec)
 #define SORT_INVALID       ((sort_key_t) (-1))
 
 #define TI_MATCH_ARTIST       (1 << 0)

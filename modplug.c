@@ -155,6 +155,11 @@ static long mod_bitrate(struct input_plugin_data *ip_data)
 	return -IP_ERROR_FUNCTION_NOT_SUPPORTED;
 }
 
+static char *mod_codec(struct input_plugin_data *ip_data)
+{
+	return NULL;
+}
+
 const struct input_plugin_ops ip_ops = {
 	.open = mod_open,
 	.close = mod_close,
@@ -162,7 +167,8 @@ const struct input_plugin_ops ip_ops = {
 	.seek = mod_seek,
 	.read_comments = mod_read_comments,
 	.duration = mod_duration,
-	.bitrate = mod_bitrate
+	.bitrate = mod_bitrate,
+	.codec = mod_codec
 };
 
 const char * const ip_extensions[] = {

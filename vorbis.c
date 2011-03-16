@@ -288,6 +288,11 @@ static long vorbis_bitrate(struct input_plugin_data *ip_data)
 	return bitrate;
 }
 
+static char *vorbis_codec(struct input_plugin_data *ip_data)
+{
+	return xstrdup("vorbis");
+}
+
 const struct input_plugin_ops ip_ops = {
 	.open = vorbis_open,
 	.close = vorbis_close,
@@ -295,7 +300,8 @@ const struct input_plugin_ops ip_ops = {
 	.seek = vorbis_seek,
 	.read_comments = vorbis_read_comments,
 	.duration = vorbis_duration,
-	.bitrate = vorbis_bitrate
+	.bitrate = vorbis_bitrate,
+	.codec = vorbis_codec
 };
 
 const char * const ip_extensions[] = { "ogg", NULL };

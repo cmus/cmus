@@ -318,6 +318,11 @@ static long wavpack_bitrate(struct input_plugin_data *ip_data)
 	return (long) (bitrate + 0.5);
 }
 
+static char *wavpack_codec(struct input_plugin_data *ip_data)
+{
+	return xstrdup("wavpack");
+}
+
 const struct input_plugin_ops ip_ops = {
 	.open = wavpack_open,
 	.close = wavpack_close,
@@ -325,7 +330,8 @@ const struct input_plugin_ops ip_ops = {
 	.seek = wavpack_seek,
 	.read_comments = wavpack_read_comments,
 	.duration = wavpack_duration,
-	.bitrate = wavpack_bitrate
+	.bitrate = wavpack_bitrate,
+	.codec = wavpack_codec
 };
 
 const char * const ip_extensions[] = { "wv", NULL };

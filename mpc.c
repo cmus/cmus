@@ -366,6 +366,18 @@ static long mpc_bitrate(struct input_plugin_data *ip_data)
 	return -IP_ERROR_FUNCTION_NOT_SUPPORTED;
 }
 
+static char *mpc_codec(struct input_plugin_data *ip_data)
+{
+	struct mpc_private *priv = ip_data->private;
+	switch (priv->info.stream_version) {
+	case 7:
+		return xstrdup("mpc7");
+	case 8:
+		return xstrdup("mpc8");
+	}
+	return NULL;
+}
+
 const struct input_plugin_ops ip_ops = {
 	.open = mpc_open,
 	.close = mpc_close,
@@ -373,7 +385,8 @@ const struct input_plugin_ops ip_ops = {
 	.seek = mpc_seek,
 	.read_comments = mpc_read_comments,
 	.duration = mpc_duration,
-	.bitrate = mpc_bitrate
+	.bitrate = mpc_bitrate,
+	.codec = mpc_codec
 };
 
 const char *const ip_extensions[] = { "mpc", "mpp", "mp+", NULL };

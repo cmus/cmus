@@ -188,6 +188,20 @@ static long mad_bitrate(struct input_plugin_data *ip_data)
 	return bitrate != -1 ? bitrate : -IP_ERROR_FUNCTION_NOT_SUPPORTED;
 }
 
+static char *mad_codec(struct input_plugin_data *ip_data)
+{
+	struct nomad *nomad = ip_data->private;
+	switch (nomad_layer(nomad)) {
+	case 3:
+		return xstrdup("mp3");
+	case 2:
+		return xstrdup("mp2");
+	case 1:
+		return xstrdup("mp1");
+	}
+	return NULL;
+}
+
 const struct input_plugin_ops ip_ops = {
 	.open = mad_open,
 	.close = mad_close,
@@ -195,7 +209,8 @@ const struct input_plugin_ops ip_ops = {
 	.seek = mad_seek,
 	.read_comments = mad_read_comments,
 	.duration = mad_duration,
-	.bitrate = mad_bitrate
+	.bitrate = mad_bitrate,
+	.codec = mad_codec
 };
 
 const char * const ip_extensions[] = { "mp3", "mp2", NULL };

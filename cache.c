@@ -32,7 +32,7 @@ struct cache_entry {
 	long bitrate;
 	time_t mtime;
 
-	// filename and N * (key, val)
+	// filename, codec and N * (key, val)
 	char strings[];
 };
 
@@ -85,7 +85,7 @@ static int valid_cache_entry(const struct cache_entry *e, unsigned int avail)
 		if (!e->strings[i])
 			count++;
 	}
-	if (count % 2 == 0)
+	if (count % 2 == 1)
 		return 0;
 	if (e->strings[str_size - 1])
 		return 0;
@@ -104,16 +104,18 @@ static struct track_info *cache_entry_to_ti(struct cache_entry *e)
 	ti->bitrate = e->bitrate;
 	ti->mtime = e->mtime;
 
-	// count strings (filename + key/val pairs)
+	// count strings (filename + codec + key/val pairs)
 	count = 0;
 	for (i = 0; i < str_size; i++) {
 		if (!strings[i])
 			count++;
 	}
-	count = (count - 1) / 2;
+	count = (count - 2) / 2;
 
 	// NOTE: filename already copied by track_info_new()
 	pos = strlen(strings) + 1;
+	ti->codec = strings[pos] ? xstrdup(strings + pos) : NULL;
+	pos += strlen(strings + pos) + 1;
 	kv = xnew(struct keyval, count + 1);
 	for (i = 0; i < count; i++) {
 		int size;
@@ -239,7 +241,7 @@ int cache_init(void)
 	cache_header[4] = flags & 0xff;
 
 	/* assumed version */
-	cache_header[3] = 0x03;
+	cache_header[3] = 0x04;
 
 	cache_filename = xstrjoin(cmus_config_dir, "/cache");
 	return read_cache();
@@ -296,6 +298,8 @@ static void write_ti(int fd, struct gbuf *buf, struct track_info *ti, unsigned i
 	e.mtime = ti->mtime;
 	len[count] = strlen(ti->filename) + 1;
 	e.size += len[count++];
+	len[count] = (ti->codec ? strlen(ti->codec) : 0) + 1;
+	e.size += len[count++];
 	for (i = 0; kv[i].key; i++) {
 		if (count + 2 > alloc) {
 			alloc *= 2;
@@ -316,6 +320,7 @@ static void write_ti(int fd, struct gbuf *buf, struct track_info *ti, unsigned i
 		gbuf_set(buf, 0, pad);
 	gbuf_add_bytes(buf, &e, sizeof(e));
 	gbuf_add_bytes(buf, ti->filename, len[count++]);
+	gbuf_add_bytes(buf, ti->codec ? ti->codec : "", len[count++]);
 	for (i = 0; kv[i].key; i++) {
 		gbuf_add_bytes(buf, kv[i].key, len[count++]);
 		gbuf_add_bytes(buf, kv[i].val, len[count++]);
@@ -377,6 +382,7 @@ static struct track_info *ip_get_ti(const char *filename)
 		track_info_set_comments(ti, comments);
 		ti->duration = ip_duration(ip);
 		ti->bitrate = ip_bitrate(ip);
+		ti->codec = ip_codec(ip);
 		ti->mtime = ip_is_remote(ip) ? -1 : file_get_mtime(filename);
 	}
 	ip_delete(ip);

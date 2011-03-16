@@ -147,6 +147,11 @@ static long mik_bitrate(struct input_plugin_data *ip_data)
 	return -IP_ERROR_FUNCTION_NOT_SUPPORTED;
 }
 
+static char *mik_codec(struct input_plugin_data *ip_data)
+{
+	return NULL;
+}
+
 const struct input_plugin_ops ip_ops = {
 	.open = mik_open,
 	.close = mik_close,
@@ -154,7 +159,8 @@ const struct input_plugin_ops ip_ops = {
 	.seek = mik_seek,
 	.read_comments = mik_read_comments,
 	.duration = mik_duration,
-	.bitrate = mik_bitrate
+	.bitrate = mik_bitrate,
+	.codec = mik_codec
 };
 
 const char * const ip_extensions[] = {

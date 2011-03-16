@@ -159,6 +159,7 @@ static int save_ext_playlist_cb(void *data, struct track_info *ti)
 
 	gbuf_addf(&buf, "file %s\n", escape(ti->filename));
 	gbuf_addf(&buf, "duration %d\n", ti->duration);
+	gbuf_addf(&buf, "codec %s\n", ti->codec);
 	gbuf_addf(&buf, "bitrate %ld\n", ti->bitrate);
 	for (i = 0; ti->comments[i].key; i++)
 		gbuf_addf(&buf, "tag %s %s\n",
