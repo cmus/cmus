@@ -167,7 +167,7 @@ static const unsigned short soft_vol_db[100] = {
 
 static inline void scale_sample_int16_t(int16_t *buf, int i, int vol, int swap)
 {
-	int32_t sample = swap ? (int16_t)bswap16(buf[i]) : buf[i];
+	int32_t sample = swap ? (int16_t)swap_uint16(buf[i]) : buf[i];
 
 	if (sample < 0) {
 		sample = (sample * vol - SOFT_VOL_SCALE / 2) / SOFT_VOL_SCALE;
@@ -178,12 +178,12 @@ static inline void scale_sample_int16_t(int16_t *buf, int i, int vol, int swap)
 		if (sample > INT16_MAX)
 			sample = INT16_MAX;
 	}
-	buf[i] = swap ? bswap16(sample) : sample;
+	buf[i] = swap ? swap_uint16(sample) : sample;
 }
 
 static inline void scale_sample_int32_t(int32_t *buf, int i, int vol, int swap)
 {
-	int64_t sample = swap ? (int32_t)bswap32(buf[i]) : buf[i];
+	int64_t sample = swap ? (int32_t)swap_uint32(buf[i]) : buf[i];
 
 	if (sample < 0) {
 		sample = (sample * vol - SOFT_VOL_SCALE / 2) / SOFT_VOL_SCALE;
@@ -194,7 +194,7 @@ static inline void scale_sample_int32_t(int32_t *buf, int i, int vol, int swap)
 		if (sample > INT32_MAX)
 			sample = INT32_MAX;
 	}
-	buf[i] = swap ? bswap32(sample) : sample;
+	buf[i] = swap ? swap_uint32(sample) : sample;
 }
 
 static inline int sf_need_swap(sample_format_t sf)
