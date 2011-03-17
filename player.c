@@ -181,6 +181,21 @@ static inline void scale_sample_int16_t(int16_t *buf, int i, int vol, int swap)
 	buf[i] = swap ? swap_uint16(sample) : sample;
 }
 
+static inline int32_t scale_sample_s24le(int32_t s, int vol)
+{
+	int64_t sample = s;
+	if (sample < 0) {
+		sample = (sample * vol - SOFT_VOL_SCALE / 2) / SOFT_VOL_SCALE;
+		if (sample < -0x800000)
+			sample = -0x800000;
+	} else {
+		sample = (sample * vol + SOFT_VOL_SCALE / 2) / SOFT_VOL_SCALE;
+		if (sample > 0x7fffff)
+			sample = 0x7fffff;
+	}
+	return sample;
+}
+
 static inline void scale_sample_int32_t(int32_t *buf, int i, int vol, int swap)
 {
 	int64_t sample = swap ? (int32_t)swap_uint32(buf[i]) : buf[i];
@@ -226,6 +241,44 @@ static inline int sf_need_swap(sample_format_t sf)
 	}									\
 }
 
+static inline int32_t read_s24le(const char *buf)
+{
+	const unsigned char *b = (const unsigned char *) buf;
+	return b[0] | (b[1] << 8) | (((const signed char *) buf)[2] << 16);
+}
+
+static inline void write_s24le(char *buf, int32_t x)
+{
+	unsigned char *b = (unsigned char *) buf;
+	b[0] = x;
+	b[1] = x >> 8;
+	b[2] = x >> 16;
+}
+
+static void scale_samples_s24le(char *buf, unsigned int count, int l, int r)
+{
+	int frames = count / 3 / 2;
+	if (l != SOFT_VOL_SCALE && r != SOFT_VOL_SCALE) {
+		while (frames--) {
+			write_s24le(buf, scale_sample_s24le(read_s24le(buf), l));
+			buf += 3;
+			write_s24le(buf, scale_sample_s24le(read_s24le(buf), r));
+			buf += 3;
+		}
+	} else if (l != SOFT_VOL_SCALE) {
+		while (frames--) {
+			write_s24le(buf, scale_sample_s24le(read_s24le(buf), l));
+			buf += 3 * 2;
+		}
+	} else if (r != SOFT_VOL_SCALE) {
+		buf += 3;
+		while (frames--) {
+			write_s24le(buf, scale_sample_s24le(read_s24le(buf), r));
+			buf += 3 * 2;
+		}
+	}
+}
+
 static void scale_samples(char *buffer, unsigned int *countp)
 {
 	unsigned int count = *countp;
@@ -248,10 +301,8 @@ static void scale_samples(char *buffer, unsigned int *countp)
 
 	ch = sf_get_channels(buffer_sf);
 	bits = sf_get_bits(buffer_sf);
-	if (ch != 2 || (bits != 16 && bits != 32)) {
-		d_print("scaling not supported for %u bits %u channel audio\n", bits, ch);
+	if (ch != 2 || (bits != 16 && bits != 24 && bits != 32))
 		return;
-	}
 
 	l = SOFT_VOL_SCALE;
 	r = SOFT_VOL_SCALE;
@@ -266,6 +317,10 @@ static void scale_samples(char *buffer, unsigned int *countp)
 	switch (bits) {
 	case 16:
 		SCALE_SAMPLES(int16_t, buffer, count, l, r, sf_need_swap(buffer_sf));
+		break;
+	case 24:
+		if (likely(!sf_get_bigendian(buffer_sf)))
+			scale_samples_s24le(buffer, count, l, r);
 		break;
 	case 32:
 		SCALE_SAMPLES(int32_t, buffer, count, l, r, sf_need_swap(buffer_sf));

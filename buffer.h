@@ -1,7 +1,8 @@
 #ifndef _BUFFER_H
 #define _BUFFER_H
 
-#define CHUNK_SIZE (64 * 1024)
+/* must be a multiple of any supported frame size */
+#define CHUNK_SIZE (60 * 1024)
 
 extern unsigned int buffer_nr_chunks;
 
