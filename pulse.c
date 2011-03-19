@@ -252,14 +252,19 @@ static int __pa_create_context(void)
 
 	pa_context_set_state_callback(pa_ctx, __pa_context_running_cb, NULL);
 
-	rc = pa_context_connect(pa_ctx, NULL, PA_CONTEXT_NOFLAGS, NULL);
+	rc = pa_context_connect(pa_ctx, NULL, PA_CONTEXT_NOFAIL, NULL);
 	if (rc)
 		goto out_fail;
 
-	pa_threaded_mainloop_wait(pa_ml);
-
-	if (pa_context_get_state(pa_ctx) != PA_CONTEXT_READY)
-		goto out_fail_connected;
+	for (;;) {
+		pa_context_state_t state;
+		state = pa_context_get_state(pa_ctx);
+		if (state == PA_CONTEXT_READY)
+			break;
+		if (!PA_CONTEXT_IS_GOOD(state))
+			goto out_fail_connected;
+		pa_threaded_mainloop_wait(pa_ml);
+	}
 
 	pa_threaded_mainloop_unlock(pa_ml);
 
