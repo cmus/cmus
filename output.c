@@ -228,11 +228,17 @@ int op_select_any(void)
 {
 	struct output_plugin *o;
 	int rc = -OP_ERROR_NO_PLUGIN;
+	sample_format_t sf = sf_channels(2) | sf_rate(44100) | sf_bits(16) | sf_signed(1);
 
 	list_for_each_entry(o, &op_head, node) {
 		rc = select_plugin(o);
-		if (rc == 0)
+		if (rc != 0)
+			continue;
+		rc = o->pcm_ops->open(sf);
+		if (rc == 0) {
+			o->pcm_ops->close();
 			break;
+		}
 	}
 	return rc;
 }
