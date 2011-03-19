@@ -594,5 +594,5 @@ const char * const op_mixer_options[] = {
 	NULL
 };
 
-const int op_priority = -1;
+const int op_priority = -2;
 
