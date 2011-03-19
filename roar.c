@@ -18,13 +18,14 @@
  * 02111-1307, USA.
  */
 
+#include <roaraudio.h>
+
 #include "op.h"
 #include "mixer.h"
 #include "xmalloc.h"
 #include "utils.h"
 #include "misc.h"
-
-#include <roaraudio.h>
+#include "debug.h"
 
 // we do not use native 2^16-1 here as they use signed ints with 16 bit
 // so we use 2^(16-1)-1 here.
@@ -46,6 +47,32 @@ static inline void _err_to_errno(void)
 
 static int op_roar_dummy(void)
 {
+	return 0;
+}
+
+static ssize_t op_roar_debug_write(struct roar_vio_calls *vio, void *buf_, size_t count)
+{
+	char *buf = (char *) buf_;
+	int len = count;
+	if (len > 0 && buf[len-1] == '\n')
+		len--;
+	if (len > 0)
+		d_print("%*s\n", len, buf);
+	return count;
+}
+
+static struct roar_vio_calls op_roar_debug_cbs = {
+	.write = op_roar_debug_write
+};
+
+static int op_roar_init(void)
+{
+#if DEBUG > 1
+	roar_debug_set_stderr_mode(ROAR_DEBUG_MODE_VIO);
+	roar_debug_set_stderr_vio(&op_roar_debug_cbs);
+#else
+	roar_debug_set_stderr_mode(ROAR_DEBUG_MODE_SYSLOG);
+#endif
 	return 0;
 }
 
@@ -284,7 +311,7 @@ static int op_roar_mixer_get_option(int key, char **val)
 }
 
 const struct output_plugin_ops op_pcm_ops = {
-	.init = op_roar_dummy,
+	.init = op_roar_init,
 	.exit = op_roar_exit,
 	.open = op_roar_open,
 	.close = op_roar_close,
