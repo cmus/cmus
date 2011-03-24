@@ -84,7 +84,7 @@ static int tree_search_get_next(struct iter *iter)
 		}
 		artist = to_artist(rb_first(root));
 		album = to_album(rb_first(&artist->album_root));
-		iter->data1 = to_tree_track(rb_last(&album->track_root));
+		iter->data1 = to_tree_track(rb_first(&album->track_root));
 		return 1;
 	}
 	/* next track */
