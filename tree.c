@@ -23,11 +23,56 @@ struct window *lib_track_win;
 struct window *lib_cur_win;
 struct rb_root lib_artist_root;
 
+static inline void tree_search_track_to_iter(struct tree_track *track, struct iter *iter)
+{
+	iter->data0 = &lib_artist_root;
+	iter->data1 = track;
+	iter->data2 = NULL;
+}
+
+static inline void album_to_iter(struct album *album, struct iter *iter)
+{
+	iter->data0 = &lib_artist_root;
+	iter->data1 = album->artist;
+	iter->data2 = album;
+}
+
+static inline void artist_to_iter(struct artist *artist, struct iter *iter)
+{
+	iter->data0 = &lib_artist_root;
+	iter->data1 = artist;
+	iter->data2 = NULL;
+}
+
+static inline void tree_track_to_iter(struct tree_track *track, struct iter *iter)
+{
+	iter->data0 = &track->album->track_root;
+	iter->data1 = track;
+	iter->data2 = NULL;
+}
+
+static void tree_set_expand_artist(struct artist *artist, int expand)
+{
+	struct iter sel;
+
+	if (expand) {
+		artist->expanded = 1;
+	} else {
+		/* deselect album, select artist */
+		artist_to_iter(artist, &sel);
+		window_set_sel(lib_tree_win, &sel);
+
+		artist->expanded = 0;
+		lib_cur_win = lib_tree_win;
+	}
+	window_changed(lib_tree_win);
+}
+
 /* tree (search) iterators {{{ */
 static int tree_search_get_prev(struct iter *iter)
 {
 	struct rb_root *root = iter->data0;
-	struct tree_track *track = iter->data1;
+	struct tree_track *track = iter->data1, *old = track;
 	struct artist *artist;
 	struct album *album;
 
@@ -63,13 +108,17 @@ static int tree_search_get_prev(struct iter *iter)
 		track = to_tree_track(rb_prev(&track->tree_node));
 	}
 	iter->data1 = track;
+	/* collapse old search result */
+	artist = old->album->artist;
+	if (artist != track->album->artist && artist->expanded)
+		tree_set_expand_artist(artist, 0);
 	return 1;
 }
 
 static int tree_search_get_next(struct iter *iter)
 {
 	struct rb_root *root = iter->data0;
-	struct tree_track *track = iter->data1;
+	struct tree_track *track = iter->data1, *old = track;
 	struct artist *artist;
 	struct album *album;
 
@@ -105,6 +154,10 @@ static int tree_search_get_next(struct iter *iter)
 		track = to_tree_track(rb_next(&track->tree_node));
 	}
 	iter->data1 = track;
+	/* collapse old search result */
+	artist = old->album->artist;
+	if (artist != track->album->artist && artist->expanded)
+		tree_set_expand_artist(artist, 0);
 	return 1;
 }
 /* }}} */
@@ -206,34 +259,6 @@ static int tree_get_next(struct iter *iter)
 
 static GENERIC_TREE_ITER_PREV(tree_track_get_prev, struct tree_track, tree_node)
 static GENERIC_TREE_ITER_NEXT(tree_track_get_next, struct tree_track, tree_node)
-
-static inline void tree_search_track_to_iter(struct tree_track *track, struct iter *iter)
-{
-	iter->data0 = &lib_artist_root;
-	iter->data1 = track;
-	iter->data2 = NULL;
-}
-
-static inline void album_to_iter(struct album *album, struct iter *iter)
-{
-	iter->data0 = &lib_artist_root;
-	iter->data1 = album->artist;
-	iter->data2 = album;
-}
-
-static inline void artist_to_iter(struct artist *artist, struct iter *iter)
-{
-	iter->data0 = &lib_artist_root;
-	iter->data1 = artist;
-	iter->data2 = NULL;
-}
-
-static inline void tree_track_to_iter(struct tree_track *track, struct iter *iter)
-{
-	iter->data0 = &track->album->track_root;
-	iter->data1 = track;
-	iter->data2 = NULL;
-}
 
 /* search (tree) {{{ */
 static int tree_search_get_current(void *data, struct iter *iter)
@@ -844,19 +869,8 @@ void tree_toggle_expand_artist(void)
 
 	window_get_sel(lib_tree_win, &sel);
 	artist = iter_to_artist(&sel);
-	if (artist) {
-		if (artist->expanded) {
-			/* deselect album, select artist */
-			artist_to_iter(artist, &sel);
-			window_set_sel(lib_tree_win, &sel);
-
-			artist->expanded = 0;
-			lib_cur_win = lib_tree_win;
-		} else {
-			artist->expanded = 1;
-		}
-		window_changed(lib_tree_win);
-	}
+	if (artist)
+		tree_set_expand_artist(artist, !artist->expanded);
 }
 
 void tree_expand_matching(const char *text)
