@@ -418,7 +418,7 @@ void ip_load_plugins(void)
 
 		so = dlopen(filename, RTLD_NOW);
 		if (so == NULL) {
-			error_msg("%s", dlerror());
+			d_print("%s: %s\n", filename, dlerror());
 			continue;
 		}
 
