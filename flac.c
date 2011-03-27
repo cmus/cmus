@@ -197,7 +197,7 @@ static FLAC__StreamDecoderWriteStatus write_cb(const Dec *dec, const FLAC__Frame
 	struct input_plugin_data *ip_data = data;
 	struct flac_private *priv = ip_data->private;
 	int frames, bytes, size, channels, bits, depth;
-	int ch, i, j = 0;
+	int ch, nch, i, j = 0;
 
 	if (ip_data->sf == 0) {
 		return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
@@ -223,47 +223,50 @@ static FLAC__StreamDecoderWriteStatus write_cb(const Dec *dec, const FLAC__Frame
 	}
 
 	depth = frame->header.bits_per_sample;
+	if (!depth)
+		depth = bits;
+	nch = frame->header.channels;
 	if (depth == 8) {
 		char *b = priv->buf + priv->buf_wpos;
 
 		for (i = 0; i < frames; i++) {
 			for (ch = 0; ch < channels; ch++)
-				b[j++] = buf[ch][i];
+				b[j++] = buf[ch % nch][i];
 		}
 	} else if (depth == 16) {
 		int16_t *b = (int16_t *)(priv->buf + priv->buf_wpos);
 
 		for (i = 0; i < frames; i++) {
 			for (ch = 0; ch < channels; ch++)
-				b[j++] = LE16(buf[ch][i]);
+				b[j++] = LE16(buf[ch % nch][i]);
 		}
 	} else if (depth == 32) {
 		int32_t *b = (int32_t *)(priv->buf + priv->buf_wpos);
 
 		for (i = 0; i < frames; i++) {
 			for (ch = 0; ch < channels; ch++)
-				b[j++] = LE32(buf[ch][i]);
+				b[j++] = LE32(buf[ch % nch][i]);
 		}
 	} else if (depth == 12) { /* -> 16 */
 		int16_t *b = (int16_t *)(priv->buf + priv->buf_wpos);
 
 		for (i = 0; i < frames; i++) {
 			for (ch = 0; ch < channels; ch++)
-				b[j++] = LE16(buf[ch][i] << 4);
+				b[j++] = LE16(buf[ch % nch][i] << 4);
 		}
 	} else if (depth == 20) { /* -> 32 */
 		int32_t *b = (int32_t *)(priv->buf + priv->buf_wpos);
 
 		for (i = 0; i < frames; i++) {
 			for (ch = 0; ch < channels; ch++)
-				b[j++] = LE32(buf[ch][i] << 12);
+				b[j++] = LE32(buf[ch % nch][i] << 12);
 		}
 	} else if (depth == 24) { /* -> 32 */
 		int32_t *b = (int32_t *)(priv->buf + priv->buf_wpos);
 
 		for (i = 0; i < frames; i++) {
 			for (ch = 0; ch < channels; ch++)
-				b[j++] = LE32(buf[ch][i] << 8);
+				b[j++] = LE32(buf[ch % nch][i] << 8);
 		}
 	} else {
 		d_print("bits per sample changed to %d\n", depth);
