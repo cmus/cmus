@@ -7,12 +7,13 @@
 
 struct tabexp tabexp = {
 	.head = NULL,
-	.tails = NULL
+	.tails = NULL,
+	.count = 0
 };
 
-char *tabexp_expand(const char *src, void (*load_matches)(const char *src))
+char *tabexp_expand(const char *src, void (*load_matches)(const char *src), int direction)
 {
-	static int idx = 0;
+	static int idx = -1;
 	char *expanded;
 
 	if (tabexp.tails == NULL) {
@@ -22,21 +23,29 @@ char *tabexp_expand(const char *src, void (*load_matches)(const char *src))
 			return NULL;
 		}
 		BUG_ON(tabexp.head == NULL);
-		idx = 0;
+		idx = -1;
 	}
+	idx += direction;
 
-	expanded = xstrjoin(tabexp.head, tabexp.tails[idx++]);
-	if (!tabexp.tails[idx])
+	if (idx >= tabexp.count)
 		idx = 0;
-	if (!tabexp.tails[1])
+	else if (idx < 0)
+		idx = tabexp.count - 1;
+
+	expanded = xstrjoin(tabexp.head, tabexp.tails[idx]);
+	if (tabexp.count == 1)
 		tabexp_reset();
 	return expanded;
 }
 
 void tabexp_reset(void)
 {
-	free_str_array(tabexp.tails);
+	int i;
+	for (i = 0; i < tabexp.count; i++)
+		free(tabexp.tails[i]);
+	free(tabexp.tails);
 	free(tabexp.head);
 	tabexp.tails = NULL;
 	tabexp.head = NULL;
+	tabexp.count = 0;
 }

@@ -2045,7 +2045,7 @@ static void expand_key_context(const char *str, const char *force)
 	int pos, i, len = strlen(str);
 	char **tails;
 
-	tails = xnew(char *, NR_CTXS + 1);
+	tails = xnew(char *, NR_CTXS);
 	pos = 0;
 	for (i = 0; key_context_names[i]; i++) {
 		int cmp = strncmp(str, key_context_names[i], len);
@@ -2065,10 +2065,10 @@ static void expand_key_context(const char *str, const char *force)
 		free(tails[0]);
 		tails[0] = tmp;
 	}
-	tails[pos] = NULL;
 	snprintf(expbuf, sizeof(expbuf), "%s%s", force, str);
 	tabexp.head = xstrdup(expbuf);
 	tabexp.tails = tails;
+	tabexp.count = pos;
 }
 
 static int get_context(const char *str, int len)
@@ -2161,9 +2161,9 @@ static void expand_bind_args(const char *str)
 
 		snprintf(expbuf, sizeof(expbuf), "%s%s %s", force, key_context_names[c], ks);
 
-		ptr_array_plug(&array);
 		tabexp.head = xstrdup(expbuf);
 		tabexp.tails = array.ptrs;
+		tabexp.count = array.count;
 		return;
 	}
 
@@ -2254,9 +2254,9 @@ static void expand_unbind_args(const char *str)
 
 	snprintf(expbuf, sizeof(expbuf), "%s %s", key_context_names[c], ks);
 
-	ptr_array_plug(&array);
 	tabexp.head = xstrdup(expbuf);
 	tabexp.tails = array.ptrs;
+	tabexp.count = array.count;
 }
 
 static void expand_factivate(const char *str)
@@ -2284,9 +2284,9 @@ static void expand_factivate(const char *str)
 	if (!array.count)
 		return;
 
-	ptr_array_plug(&array);
 	tabexp.head = xstrdup(str);
 	tabexp.tails = array.ptrs;
+	tabexp.count = array.count;
 }
 
 static void expand_options(const char *str)
@@ -2305,15 +2305,15 @@ static void expand_options(const char *str)
 			if (strcmp(var, opt->name) == 0) {
 				char buf[OPTION_MAX_SIZE];
 
-				tails = xnew(char *, 2);
+				tails = xnew(char *, 1);
 
 				buf[0] = 0;
 				opt->get(opt->id, buf);
 				tails[0] = xstrdup(buf);
-				tails[1] = NULL;
 
 				tabexp.head = xstrdup(str);
 				tabexp.tails = tails;
+				tabexp.count = 1;
 				free(var);
 				return;
 			}
@@ -2323,7 +2323,7 @@ static void expand_options(const char *str)
 		/* expand variable */
 		int pos;
 
-		tails = xnew(char *, nr_options + 1);
+		tails = xnew(char *, nr_options);
 		pos = 0;
 		list_for_each_entry(opt, &option_head, node) {
 			if (strncmp(str, opt->name, len) == 0)
@@ -2338,9 +2338,9 @@ static void expand_options(const char *str)
 				tails[0] = tmp;
 			}
 
-			tails[pos] = NULL;
 			tabexp.head = xstrdup(str);
 			tabexp.tails = tails;
+			tabexp.count = pos;
 		} else {
 			free(tails);
 		}
@@ -2353,7 +2353,7 @@ static void expand_toptions(const char *str)
 	int len, pos;
 	char **tails;
 
-	tails = xnew(char *, nr_options + 1);
+	tails = xnew(char *, nr_options);
 	len = strlen(str);
 	pos = 0;
 	list_for_each_entry(opt, &option_head, node) {
@@ -2363,9 +2363,9 @@ static void expand_toptions(const char *str)
 			tails[pos++] = xstrdup(opt->name + len);
 	}
 	if (pos > 0) {
-		tails[pos] = NULL;
 		tabexp.head = xstrdup(str);
 		tabexp.tails = tails;
+		tabexp.count = pos;
 	} else {
 		free(tails);
 	}
@@ -2409,9 +2409,9 @@ static void expand_colorscheme(const char *str)
 	if (array.count) {
 		ptr_array_sort(&array, strptrcmp);
 
-		ptr_array_plug(&array);
 		tabexp.head = xstrdup(str);
 		tabexp.tails = array.ptrs;
+		tabexp.count = array.count;
 	}
 }
 
@@ -2492,7 +2492,7 @@ static void expand_commands(const char *str)
 	char **tails;
 
 	/* tabexp is resetted */
-	tails = xnew(char *, N_ELEMENTS(commands));
+	tails = xnew(char *, N_ELEMENTS(commands) - 1);
 	len = strlen(str);
 	pos = 0;
 	for (i = 0; commands[i].name; i++) {
@@ -2507,9 +2507,9 @@ static void expand_commands(const char *str)
 			free(tails[0]);
 			tails[0] = tmp;
 		}
-		tails[pos] = NULL;
 		tabexp.head = xstrdup(str);
 		tabexp.tails = tails;
+		tabexp.count = pos;
 	} else {
 		free(tails);
 	}
@@ -2596,7 +2596,7 @@ static void expand_command_line(const char *str)
 	tabexp.head = xstrdup(expbuf);
 }
 
-static void tab_expand(void)
+static void tab_expand(int direction)
 {
 	char *s1, *s2, *tmp;
 	int pos;
@@ -2612,7 +2612,7 @@ static void tab_expand(void)
 	/* tail */
 	s2 = xstrdup(cmdline.line + cmdline.bpos);
 
-	tmp = tabexp_expand(s1, expand_command_line);
+	tmp = tabexp_expand(s1, expand_command_line, direction);
 	if (tmp) {
 		/* tmp.s2 */
 		int l1, l2;
@@ -2808,7 +2808,7 @@ void command_mode_ch(uchar ch)
 		cmdline_modified();
 		break;
 	case 0x09:
-		tab_expand();
+		tab_expand(1);
 		break;
 	case 0x15:
 		cmdline_backspace_to_bol();
@@ -2856,7 +2856,8 @@ void command_mode_escape(int c)
 
 void command_mode_key(int key)
 {
-	reset_tab_expansion();
+	if (key != KEY_BTAB)
+		reset_tab_expansion();
 	switch (key) {
 	case KEY_DC:
 		cmdline_delete_ch();
@@ -2901,6 +2902,9 @@ void command_mode_key(int key)
 			}
 		}
 		return;
+	case KEY_BTAB:
+		tab_expand(-1);
+		break;
 	default:
 		d_print("key = %c (%d)\n", key, key);
 	}

@@ -124,10 +124,10 @@ static void tabexp_load_dir(const char *dirname, const char *start,
 	dir_close(&dir);
 	if (array.count) {
 		ptr_array_sort(&array, strptrcmp);
-		ptr_array_plug(&array);
 
 		tabexp.head = xstrdup(dirname);
 		tabexp.tails = array.ptrs;
+		tabexp.count = array.count;
 	}
 out:
 	free(full_dir_name);
@@ -156,9 +156,9 @@ void expand_files_and_dirs(const char *src,
 
 			if (home) {
 				tabexp.head = xstrdup("");
-				tabexp.tails = xnew(char *, 2);
+				tabexp.tails = xnew(char *, 1);
 				tabexp.tails[0] = home;
-				tabexp.tails[1] = NULL;
+				tabexp.count = 1;
 			}
 		} else {
 			tabexp_load_dir("", src, filter);
