@@ -32,6 +32,7 @@ static pa_context		*pa_ctx;
 static pa_stream		*pa_s;
 static pa_channel_map		 pa_cmap;
 static pa_cvolume		 pa_vol;
+static pa_sample_spec		 pa_ss;
 
 /* configuration */
 static int pa_restore_volume = 1;
@@ -346,6 +347,12 @@ static int op_pulse_open(sample_format_t sf)
 	if (!pa_sample_spec_valid(&ss))
 		return -OP_ERROR_SAMPLE_FORMAT;
 
+	pa_ss = ss;
+	/* can't be done in op_pulse_mixer_open() since channels is not known
+	 * TODO: use correct channel map once sample_format_t is updated */
+	if (!pa_channel_map_init_auto(&pa_cmap, ss.channels, PA_CHANNEL_MAP_ALSA))
+		ret_pa_last_error();
+
 	rc = __pa_create_context();
 	if (rc)
 		return rc;
@@ -506,6 +513,7 @@ static int op_pulse_mixer_set_volume(int l, int r)
 	if (!pa_s && pa_restore_volume)
 		return -OP_ERROR_NOT_OPEN;
 
+	pa_cvolume_set(&pa_vol, pa_ss.channels, (pa_volume_t) ((l + r) / 2));
 	pa_cvolume_set_position(&pa_vol,
 				&pa_cmap,
 				PA_CHANNEL_POSITION_FRONT_LEFT,
