@@ -50,6 +50,7 @@ static int op_roar_dummy(void)
 	return 0;
 }
 
+#if DEBUG > 1
 static ssize_t op_roar_debug_write(struct roar_vio_calls *vio, void *buf_, size_t count)
 {
 	char *buf = (char *) buf_;
@@ -64,6 +65,7 @@ static ssize_t op_roar_debug_write(struct roar_vio_calls *vio, void *buf_, size_
 static struct roar_vio_calls op_roar_debug_cbs = {
 	.write = op_roar_debug_write
 };
+#endif
 
 static int op_roar_init(void)
 {
