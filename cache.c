@@ -284,15 +284,20 @@ static void write_ti(int fd, struct gbuf *buf, struct track_info *ti, unsigned i
 	unsigned int offset = *offsetp;
 	unsigned int pad;
 	struct cache_entry e;
-	int len[65], count, i;
+	int *len, alloc = 64, count, i;
 
 	count = 0;
+	len = xnew(int, alloc);
 	e.size = sizeof(e);
 	e.duration = ti->duration;
 	e.mtime = ti->mtime;
 	len[count] = strlen(ti->filename) + 1;
 	e.size += len[count++];
 	for (i = 0; kv[i].key; i++) {
+		if (count + 2 > alloc) {
+			alloc *= 2;
+			len = xrenew(int, len, alloc);
+		}
 		len[count] = strlen(kv[i].key) + 1;
 		e.size += len[count++];
 		len[count] = strlen(kv[i].val) + 1;
@@ -313,6 +318,7 @@ static void write_ti(int fd, struct gbuf *buf, struct track_info *ti, unsigned i
 		gbuf_add_bytes(buf, kv[i].val, len[count++]);
 	}
 
+	free(len);
 	*offsetp = offset + pad + e.size;
 }
 
