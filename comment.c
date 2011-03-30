@@ -60,9 +60,13 @@ const char *comments_get_artistsort(const struct keyval *comments)
 		return NULL;
 
 	val = keyvals_get_val(comments, "albumartistsort");
+	if (!track_is_compilation(comments)) {
+		if (!val || strcmp(val, "") == 0)
+			val = keyvals_get_val(comments, "artistsort");
+	}
 
 	if (!val || strcmp(val, "") == 0)
-		val = keyvals_get_val(comments, "artistsort");
+		return NULL;
 
 	return val;
 }
