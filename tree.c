@@ -377,7 +377,7 @@ static char *auto_artist_sort_name(const char *name)
 	return buf;
 }
 
-static struct artist *artist_new(const char *name, const char *sort_name)
+static struct artist *artist_new(const char *name, const char *sort_name, int is_compilation)
 {
 	struct artist *a = xnew(struct artist, 1);
 
@@ -388,6 +388,7 @@ static struct artist *artist_new(const char *name, const char *sort_name)
 	a->collkey_sort_name = u_strcasecoll_key0(a->sort_name);
 	a->collkey_auto_sort_name = u_strcasecoll_key0(a->auto_sort_name);
 	a->expanded = 0;
+	a->is_compilation = is_compilation;
 	rb_root_init(&a->album_root);
 
 	return a;
@@ -404,7 +405,7 @@ static void artist_free(struct artist *artist)
 	free(artist);
 }
 
-static struct album *album_new(struct artist *artist, const char *name, int date, int is_compilation)
+static struct album *album_new(struct artist *artist, const char *name, int date)
 {
 	struct album *album = xnew(struct album, 1);
 
@@ -413,7 +414,6 @@ static struct album *album_new(struct artist *artist, const char *name, int date
 	album->date = date;
 	rb_root_init(&album->track_root);
 	album->artist = artist;
-	album->is_compilation = is_compilation;
 
 	return album;
 }
@@ -498,18 +498,19 @@ static int special_name_cmp(const char *a, const char *collkey_a,
 
 static int special_album_cmp(const struct album *a, const struct album *b)
 {
+	return special_name_cmp(a->name, a->collkey_name, b->name, b->collkey_name);
+}
+
+static int special_album_cmp_date(const struct album *a, const struct album *b)
+{
 	/* keep <Stream> etc. top */
 	int cmp = (*a->name != '<') - (*b->name != '<');
-
 	if (cmp)
 		return cmp;
 
-	/*
-	 * Sort regular albums by date, but sort compilations
-	 * alphabetically.
-	 */
-	if (a->date != b->date && !a->is_compilation && !b->is_compilation)
-		return a->date - b->date;
+	cmp = a->date - b->date;
+	if (cmp)
+		return cmp;
 
 	return strcmp(a->collkey_name, b->collkey_name);
 }
@@ -579,6 +580,7 @@ static struct artist *find_artist(const struct artist *artist)
 }
 
 static struct album *do_find_album(const struct album *album,
+				   int (*cmp)(const struct album *, const struct album *),
 				   struct rb_node ***p_new,
 				   struct rb_node **p_parent)
 {
@@ -587,7 +589,7 @@ static struct album *do_find_album(const struct album *album,
 	while (*new) {
 		struct album *a = to_album(*new);
 
-		int result = special_album_cmp(album, a);
+		int result = cmp(album, a);
 
 		parent = *new;
 		if (result < 0)
@@ -606,7 +608,15 @@ static struct album *do_find_album(const struct album *album,
 
 static struct album *find_album(const struct album *album)
 {
-	return do_find_album(album, NULL, NULL);
+	struct album *a;
+	struct rb_node *tmp;
+
+	/* do a linear search because we want find albums with different date */
+	rb_for_each_entry(a, tmp, &album->artist->album_root, tree_node) {
+		if (special_album_cmp(album, a) == 0)
+			return a;
+	}
+	return NULL;
 }
 
 static void add_album(struct album *album)
@@ -614,7 +624,14 @@ static void add_album(struct album *album)
 	struct rb_node **new = &(album->artist->album_root.rb_node), *parent = NULL;
 	struct album *found;
 
-	found = do_find_album(album, &new, &parent);
+	/*
+	 * Sort regular albums by date, but sort compilations
+	 * alphabetically.
+	 */
+	found = do_find_album(album,
+			      album->artist->is_compilation ? special_album_cmp
+							    : special_album_cmp_date,
+			      &new, &parent);
 	if (!found) {
 		rb_link_node(&album->tree_node, parent, new);
 		rb_insert_color(&album->tree_node, &album->artist->album_root);
@@ -718,18 +735,18 @@ void tree_add_track(struct tree_track *track)
 		is_va_compilation = ti->is_va_compilation;
 	}
 
-	new_artist = artist_new(artist_name, artistsort_name);
+	new_artist = artist_new(artist_name, artistsort_name, is_va_compilation);
 	new_album = album = NULL;
 
 	artist = find_artist(new_artist);
 	if (artist) {
 		artist_free(new_artist);
-		new_album = album_new(artist, album_name, date, is_va_compilation);
+		new_album = album_new(artist, album_name, date);
 		album = find_album(new_album);
 		if (album)
 			album_free(new_album);
 	} else
-		new_album = album_new(new_artist, album_name, date, is_va_compilation);
+		new_album = album_new(new_artist, album_name, date);
 
 	if (artist) {
 		int changed = 0;
