@@ -568,21 +568,6 @@ static void insert_artist(struct artist *artist, struct rb_root *root)
 	}
 }
 
-void tree_sort_artists(void)
-{
-	struct rb_node *node, *tmp;
-	struct rb_root tmptree = RB_ROOT;
-
-	rb_for_each_safe(node, tmp, &lib_artist_root) {
-		struct artist *a = to_artist(node);
-		rb_erase(node, &lib_artist_root);
-		insert_artist(a, &tmptree);
-	}
-
-	lib_artist_root.rb_node = tmptree.rb_node;
-	window_changed(lib_tree_win);
-}
-
 static void add_artist(struct artist *artist)
 {
 	insert_artist(artist, &lib_artist_root);
@@ -747,11 +732,27 @@ void tree_add_track(struct tree_track *track)
 		new_album = album_new(new_artist, album_name, date, is_va_compilation);
 
 	if (artist) {
+		int changed = 0;
 		/* If it makes sense to update sort_name, do it */
 		if (!artist->sort_name && artistsort_name) {
 			artist->sort_name = xstrdup(artistsort_name);
 			artist->collkey_sort_name = u_strcasecoll_key(artistsort_name);
-
+			changed = 1;
+		}
+		/* If names differ, update */
+		if (!artist->auto_sort_name) {
+			char *auto_sort_name = auto_artist_sort_name(artist_name);
+			if (auto_sort_name) {
+				free(artist->name);
+				free(artist->collkey_name);
+				artist->name = xstrdup(artist_name);
+				artist->collkey_name = u_strcasecoll_key(artist_name);
+				artist->auto_sort_name = auto_sort_name;
+				artist->collkey_auto_sort_name = u_strcasecoll_key(auto_sort_name);
+				changed = 1;
+			}
+		}
+		if (changed) {
 			remove_artist(artist);
 			add_artist(artist);
 			window_changed(lib_tree_win);
@@ -972,6 +973,28 @@ void tree_remove_sel(void)
 		tree_win_remove_sel();
 	} else {
 		track_win_remove_sel();
+	}
+}
+
+void tree_sort_artists(void)
+{
+	struct rb_node *a_node, *a_tmp;
+
+	rb_for_each_safe(a_node, a_tmp, &lib_artist_root) {
+		struct rb_node *l_node, *l_tmp;
+		struct artist *artist = to_artist(a_node);
+
+		rb_for_each_safe(l_node, l_tmp, &artist->album_root) {
+			struct rb_node *t_node, *t_tmp;
+			struct album *album = to_album(l_node);
+
+			rb_for_each_safe(t_node, t_tmp, &album->track_root) {
+				struct tree_track *track = to_tree_track(t_node);
+
+				tree_remove(track);
+				tree_add_track(track);
+			}
+		}
 	}
 }
 
