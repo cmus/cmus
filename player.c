@@ -347,7 +347,7 @@ static void update_rg_scale(void)
 		peak = player_info.ti->rg_album_peak;
 	}
 
-	if (isnan(gain) || isnan(peak)) {
+	if (isnan(gain)) {
 		if (replaygain == RG_TRACK_PREFERRED) {
 			gain = player_info.ti->rg_album_gain;
 			peak = player_info.ti->rg_album_peak;
@@ -357,11 +357,11 @@ static void update_rg_scale(void)
 		}
 	}
 
-	if (isnan(gain) || isnan(peak)) {
-		d_print("gain or peak not available\n");
+	if (isnan(gain)) {
+		d_print("gain not available\n");
 		return;
 	}
-	if (peak < 0.05) {
+	if (!isnan(peak) && peak < 0.05) {
 		d_print("peak (%g) is too small\n", peak);
 		return;
 	}
@@ -371,8 +371,10 @@ static void update_rg_scale(void)
 	scale = pow(10.0, db / 20.0);
 	replaygain_scale = scale;
 	limit = 1.0 / peak;
-	if (replaygain_limit && replaygain_scale > limit)
-		replaygain_scale = limit;
+	if (replaygain_limit && !isnan(peak)) {
+		if (replaygain_scale > limit)
+			replaygain_scale = limit;
+	}
 
 	d_print("gain = %f, peak = %f, db = %f, scale = %f, limit = %f, replaygain_scale = %f\n",
 			gain, peak, db, scale, limit, replaygain_scale);
