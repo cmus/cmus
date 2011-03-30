@@ -583,6 +583,46 @@ static int frame_tab_index(const char *id)
 	return -1;
 }
 
+static int check_date_format(const char *buf)
+{
+	int i, ch;
+
+	/* year */
+	for (i = 0; i < 4; i++) {
+		ch = *buf++;
+		if (ch < '0' || ch > '9')
+			return 0;
+	}
+	ch = *buf++;
+	if (!ch)
+		return 4;
+	if (ch != '-')
+		return 0;
+
+	/* month */
+	for (i = 0; i < 2; i++) {
+		ch = *buf++;
+		if (ch < '0' || ch > '9')
+			return 0;
+	}
+	ch = *buf++;
+	if (!ch)
+		return 7;
+	if (ch != '-')
+		return 0;
+
+	/* day */
+	for (i = 0; i < 2; i++) {
+		ch = *buf++;
+		if (ch < '0' || ch > '9')
+			return 0;
+	}
+	ch = *buf;
+	if (!ch || (ch >= '0' && ch <= '9'))
+		return 10;
+	return 0;
+}
+
 static void fix_date(char *buf)
 {
 	const char *ptr = buf;
@@ -656,8 +696,12 @@ static void decode_normal(struct id3tag *id3, const char *buf, int len, int enco
 		free(out);
 		out = tmp;
 	} else if (key == ID3_DATE) {
+		int date_len = check_date_format(out);
 		id3_debug("date before: '%s'\n", out);
-		fix_date(out);
+		if (date_len)
+			out[date_len] = '\0';
+		else
+			fix_date(out);
 		if (!*out) {
 			id3_debug("date parsing failed\n");
 			free(out);
