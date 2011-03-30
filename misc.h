@@ -29,4 +29,16 @@ int strptrcmp(const void *a, const void *b);
 int misc_init(void);
 const char *escape(const char *str);
 
+/*
+ * @field   contains Replay Gain data format in bit representation
+ * @gain    pointer where to store gain value * 10
+ *
+ * Returns 0 if @field doesn't contain a valid gain value,
+ *         1 for track (= radio) adjustment
+ *         2 for album (= audiophile) adjustment
+ *
+ * http://replaygain.hydrogenaudio.org/rg_data_format.html
+ */
+int replaygain_decode(unsigned int field, int *gain);
+
 #endif

@@ -25,6 +25,8 @@
 #include "read_wrapper.h"
 #include "debug.h"
 
+#include <stdio.h>
+#include <math.h>
 #include <errno.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -121,6 +123,7 @@ static int mad_read_comments(struct input_plugin_data *ip_data,
 	int fd, rc, save, i;
 	APETAG(ape);
 	GROWING_KEYVALS(c);
+	float rg_track_peak, rg_track_gain;
 
 	fd = open(ip_data->filename, O_RDONLY);
 	if (fd == -1) {
@@ -167,6 +170,18 @@ next:
 
 out:
 	ape_free(&ape);
+
+	/* add last so the other tags get preference */
+	if (nomad_lame_replaygain(ip_data->private, &rg_track_peak, &rg_track_gain) == 0) {
+		char buf[64];
+
+		if (!isnan(rg_track_peak)) {
+			sprintf(buf, "%f", rg_track_peak);
+			comments_add_const(&c, "replaygain_track_peak", buf);
+		}
+		sprintf(buf, "%+.1f dB", rg_track_gain);
+		comments_add_const(&c, "replaygain_track_gain", buf);
+	}
 
 	keyvals_terminate(&c);
 	*comments = c.keyvals;

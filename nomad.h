@@ -77,6 +77,7 @@ int nomad_read(struct nomad *nomad, char *buffer, int count);
 /* -NOMAD_ERROR_ERRNO */
 int nomad_time_seek(struct nomad *nomad, double pos);
 
+int nomad_lame_replaygain(struct nomad *nomad, float *peak, float *trackGain);
 double nomad_time_tell(struct nomad *nomad);
 double nomad_time_total(struct nomad *nomad);
 int nomad_bitrate(struct nomad *nomad);

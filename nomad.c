@@ -30,8 +30,12 @@
 #include "id3.h"
 #include "xmalloc.h"
 #include "debug.h"
+#include "misc.h"
 
 #include <mad.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
@@ -77,12 +81,9 @@ struct nomad {
 
 	struct {
 		char encoder[10];   /* 9 byte encoder name/version ("LAME3.97b") */
-#if 0
-		/* See related comment in parse_lame() */
 		float peak;         /* replaygain peak */
 		float trackGain;    /* replaygain track gain */
 		float albumGain;    /* replaygain album gain */
-#endif
 		int encoderDelay;   /* # of added samples at start of mp3 */
 		int encoderPadding; /* # of added samples at end of mp3 */
 	} lame;
@@ -144,7 +145,9 @@ static inline double timer_to_seconds(mad_timer_t timer)
 
 static int parse_lame(struct nomad *nomad, struct mad_bitptr ptr, int bitlen)
 {
-	int i;
+	int i, adj = 0;
+	unsigned int version_major, version_minor;
+	float val;
 
 	/* Unlike the xing header, the lame tag has a fixed length.  Fail if
 	 * not all 36 bytes (288 bits) are there. */
@@ -158,35 +161,59 @@ static int parse_lame(struct nomad *nomad, struct mad_bitptr ptr, int bitlen)
 	 * wouldn't want to go reading a tag that's not there. */
 	if (strncmp(nomad->lame.encoder, "LAME", 4) != 0) return 0;
 
-#if 0
-	/* Apparently lame versions <3.97b1 do not calculate replaygain.  I'm
-	 * using lame 3.97b2, and while it does calculate replaygain, it's
-	 * setting the values to 0.  Using --replaygain-(fast|accurate) doesn't
-	 * make any difference.  Leaving this code unused until we have a way
-	 * of testing it. -- jat */
+	if (sscanf(nomad->lame.encoder + 4, "%u.%u", &version_major, &version_minor) != 2)
+		return 0;
 
-	mad_bit_read(&ptr, 16);
-
-	mad_bit_read(&ptr, 32); /* peak */
-
-	mad_bit_read(&ptr, 6); /* header */
-	bits = mad_bit_read(&ptr, 1); /* sign bit */
-	nomad->lame.trackGain = mad_bit_read(&ptr, 9); /* gain*10 */
-	nomad->lame.trackGain = (&bits ? -nomad->lame.trackGain : nomad->lame.trackGain) / 10;
-
-	mad_bit_read(&ptr, 6); /* header */
-	bits = mad_bit_read(&ptr, 1); /* sign bit */
-	nomad->lame.albumGain = mad_bit_read(&ptr, 9); /* gain*10 */
-	nomad->lame.albumGain = (bits ? -nomad->lame.albumGain : nomad->lame.albumGain) / 10;
-
-	mad_bit_read(&ptr, 16);
-#else
-	mad_bit_read(&ptr, 96);
+#if defined(DEBUG_LAME)
+	d_print("detected LAME version %s\n", nomad->lame.encoder + 4);
 #endif
+
+	/* ReplayGain in LAME tag was added in 3.94 */
+	if (version_major > 3 || (version_major == 3 && version_minor >= 94)) {
+		mad_bit_read(&ptr, 16);
+
+		/* The reference volume was changed from the 83dB used in the
+		 * ReplayGain spec to 89dB in lame 3.95.1.  Bump the gain for older
+		 * versions, since everyone else uses 89dB instead of 83dB.
+		 * Unfortunately, lame didn't differentiate between 3.95 and 3.95.1, so
+		 * it's impossible to make the proper adjustment for 3.95.
+		 * Fortunately, 3.95 was only out for about a day before 3.95.1 was
+		 * released. -- tmz */
+		if (version_major < 3 || (version_major == 3 && version_minor < 95))
+			adj = 6;
+
+		val = mad_bit_read(&ptr, 32) / (float) (1 << 23);
+		/* peak value of 0.0 means lame didn't calculate the peak at all
+		 * (--replaygain-fast), even silence has a value > 0.0 */
+		if (val)
+			nomad->lame.peak = val;
+		for (i = 0; i < 2; i++) {
+			int gain, gain_type;
+			gain_type = replaygain_decode(mad_bit_read(&ptr, 16), &gain);
+			val = gain / 10.f + adj;
+			if (gain_type == 1)
+				nomad->lame.trackGain = val;
+			/* LAME currently doesn't store any album gain!
+			else if (gain_type == 2)
+				nomad->lame.albumGain = val;
+			*/
+		}
+
+		mad_bit_read(&ptr, 16);
+	} else
+		mad_bit_read(&ptr, 96);
 
 	nomad->lame.encoderDelay = mad_bit_read(&ptr, 12);
 	nomad->lame.encoderPadding = mad_bit_read(&ptr, 12);
 #if defined(DEBUG_LAME)
+	if (adj > 0)
+		d_print("adjusted gains by %+d dB (old LAME)\n", adj);
+	if (!isnan(nomad->lame.peak))
+		d_print("peak: %f\n", nomad->lame.peak);
+	if (!isnan(nomad->lame.trackGain))
+		d_print("trackGain: %+.1f dB\n", nomad->lame.trackGain);
+	if (!isnan(nomad->lame.albumGain))
+		d_print("albumGain: %+.1f dB\n", nomad->lame.albumGain);
 	d_print("encoderDelay: %d, encoderPadding: %d\n", nomad->lame.encoderDelay, nomad->lame.encoderPadding);
 #endif
 
@@ -630,6 +657,7 @@ int nomad_open(struct nomad **nomadp, int fd, int fast)
 	nomad->cbs.close = default_close;
 	nomad->start_drop_samples = 0;
 	nomad->end_drop_samples = 0;
+	nomad->lame.peak = nomad->lame.trackGain = nomad->lame.albumGain = strtof("NAN", NULL);
 	*nomadp = nomad;
 	/* on error do_open calls nomad_close */
 	return do_open(nomad, fast);
@@ -642,6 +670,7 @@ int nomad_open_callbacks(struct nomad **nomadp, void *datasource, int fast, stru
 	nomad = xnew0(struct nomad, 1);
 	nomad->datasource = datasource;
 	nomad->cbs = *cbs;
+	nomad->lame.peak = nomad->lame.trackGain = nomad->lame.albumGain = strtof("NAN", NULL);
 	*nomadp = nomad;
 	/* on error do_open calls nomad_close */
 	return do_open(nomad, fast);
@@ -876,6 +905,15 @@ int nomad_time_seek(struct nomad *nomad, double pos)
 	if (nomad->has_xing)
 		d_print("seeked to %g = %g\n", pos, timer_to_seconds(nomad->timer));
 #endif
+	return 0;
+}
+
+int nomad_lame_replaygain(struct nomad *nomad, float *peak, float *trackGain)
+{
+	if (isnan(nomad->lame.trackGain))
+		return -1;
+	*peak = nomad->lame.peak;
+	*trackGain = nomad->lame.trackGain;
 	return 0;
 }
 

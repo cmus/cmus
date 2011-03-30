@@ -166,3 +166,21 @@ int misc_init(void)
 	make_dir(cmus_config_dir);
 	return 0;
 }
+
+int replaygain_decode(unsigned int field, int *gain)
+{
+	unsigned int name_code, originator_code, sign_bit, val;
+
+	name_code = (field >> 13) & 0x7;
+	if (!name_code || name_code > 2)
+		return 0;
+	originator_code = (field >> 10) & 0x7;
+	if (!originator_code)
+		return 0;
+	sign_bit = (field >> 9) & 0x1;
+	val = field & 0x1ff;
+	if (sign_bit && !val)
+		return 0;
+	*gain = (sign_bit ? -1 : 1) * val;
+	return name_code;
+}
