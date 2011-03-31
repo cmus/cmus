@@ -152,11 +152,20 @@ check_mad()
 	return $?
 }
 
+mikmod_code="
+#include <mikmod.h>
+int main() {
+	MikMod_RegisterAllDrivers();
+	return 0;
+}
+"
 check_mikmod()
 {
-	app_config MIKMOD libmikmod-config && return 0
 	# mikmod is linked against pthread
-	check_library MIKMOD "$PTHREAD_CFLAGS" "-lmikmod $PTHREAD_LIBS"
+	app_config MIKMOD libmikmod-config || \
+		check_library MIKMOD "$PTHREAD_CFLAGS" "-lmikmod $PTHREAD_LIBS" || \
+		return 1
+	try_compile_link "$mikmod_code" $MIKMOD_CFLAGS $MIKMOD_LIBS
 	return $?
 }
 
@@ -203,9 +212,16 @@ check_ao()
 	return $?
 }
 
+arts_code="
+#include <artsc.h>
+int main() {
+	return arts_init();
+}
+"
 check_arts()
 {
-	app_config ARTS artsc-config
+	app_config ARTS artsc-config || return 1
+	try_compile_link "$arts_code" $ARTS_CFLAGS $ARTS_LIBS
 	return $?
 }
 
