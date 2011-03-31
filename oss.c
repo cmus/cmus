@@ -63,9 +63,16 @@ static int oss_set_sf(sample_format_t sf)
 
 	oss_reset();
 	oss_sf = sf;
+
+#ifdef SNDCTL_DSP_CHANNELS
+	tmp = sf_get_channels(oss_sf);
+	if (ioctl(oss_fd, SNDCTL_DSP_CHANNELS, &tmp) == -1)
+		return -1;
+#else
 	tmp = sf_get_channels(oss_sf) - 1;
 	if (ioctl(oss_fd, SNDCTL_DSP_STEREO, &tmp) == -1)
 		return -1;
+#endif
 
 	if (sf_get_bits(oss_sf) == 16) {
 		if (sf_get_signed(oss_sf)) {
@@ -185,8 +192,7 @@ static int oss_write(const char *buffer, int count)
 {
 	int rc;
 
-	count /= 4;
-	count *= 4;
+	count -= count % sf_get_frame_size(oss_sf);
 	rc = write(oss_fd, buffer, count);
 	return rc;
 }
