@@ -1,4 +1,5 @@
 #include "pcm.h"
+#include "utils.h"
 
 #include <inttypes.h>
 #include <stdlib.h>
@@ -100,21 +101,19 @@ static void convert_u16_be_to_s16_le(char *buf, int count)
 		uint16_t u = b[i];
 		int sample;
 
-		u = (u << 8) | (u >> 8);
+		u = swap_uint16(u);
 		sample = (int)u - 32768;
 		b[i] = sample;
 	}
 }
 
-static void convert_s16_be_to_s16_le(char *buf, int count)
+static void swap_s16_byte_order(char *buf, int count)
 {
 	int16_t *b = (int16_t *)buf;
 	int i;
 
-	for (i = 0; i < count; i++) {
-		uint16_t sample = b[i];
-		b[i] = (sample << 8) | (sample >> 8);
-	}
+	for (i = 0; i < count; i++)
+		b[i] = swap_uint16(b[i]);
 }
 
 static void convert_16_1ch_to_16_2ch(char *dst, const char *src, int count)
@@ -151,6 +150,12 @@ pcm_conv_in_place_func pcm_conv_in_place[8] = {
 
 	convert_u16_le_to_s16_le,
 	convert_u16_be_to_s16_le,
+
+#ifdef WORDS_BIGENDIAN
+	swap_s16_byte_order,
 	NULL,
-	convert_s16_be_to_s16_le
+#else
+	NULL,
+	swap_s16_byte_order,
+#endif
 };
