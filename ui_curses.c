@@ -46,6 +46,7 @@
 #include "worker.h"
 #include "input.h"
 #include "config/curses.h"
+#include "config/iconv.h"
 
 #include <unistd.h>
 #include <stdlib.h>
@@ -56,7 +57,9 @@
 #include <dirent.h>
 #include <locale.h>
 #include <langinfo.h>
+#ifdef HAVE_ICONV
 #include <iconv.h>
+#endif
 #include <signal.h>
 #include <stdarg.h>
 
@@ -262,6 +265,7 @@ static struct format_option status_fopts[NR_SFS + 1] = {
 
 static void utf8_encode(const char *buffer)
 {
+#ifdef HAVE_ICONV
 	static iconv_t cd = (iconv_t)-1;
 	size_t is, os;
 	const char *i;
@@ -286,10 +290,14 @@ static void utf8_encode(const char *buffer)
 		d_print("iconv failed: %s\n", strerror(errno));
 		return;
 	}
+#else
+	strcpy(conv_buffer, buffer);
+#endif
 }
 
 static void utf8_decode(const char *buffer)
 {
+#ifdef HAVE_ICONV
 	static iconv_t cd = (iconv_t)-1;
 	size_t is, os;
 	const char *i;
@@ -314,6 +322,9 @@ static void utf8_decode(const char *buffer)
 		d_print("iconv failed: %s\n", strerror(errno));
 		return;
 	}
+#else
+	strcpy(conv_buffer, buffer);
+#endif
 }
 
 /* screen updates {{{ */

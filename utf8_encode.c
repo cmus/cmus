@@ -19,13 +19,17 @@
 
 #include "utf8_encode.h"
 #include "xmalloc.h"
+#include "config/iconv.h"
 
+#ifdef HAVE_ICONV
 #include <iconv.h>
+#endif
 #include <string.h>
 #include <errno.h>
 
 int utf8_encode(const char *inbuf, const char *encoding, char **outbuf)
 {
+#ifdef HAVE_ICONV
 	const char *in;
 	char *out;
 	size_t inbuf_size, outbuf_size, i;
@@ -66,4 +70,13 @@ int utf8_encode(const char *inbuf, const char *encoding, char **outbuf)
 		return -1;
 	}
 	return 0;
+
+#else
+	if (inbuf_size < 0)
+		inbuf_size = strlen(inbuf);
+	*outbuf = xnew(char, inbuf_size + 1);
+	memcpy(*outbuf, inbuf, inbuf_size);
+	(*outbuf)[inbuf_size] = '\0';
+	return inbuf_size;
+#endif
 }
