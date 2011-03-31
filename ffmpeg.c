@@ -244,6 +244,9 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 		ip_data->sf |= sf_bits(16) | sf_signed(1);
 		break;
 	}
+#ifdef WORDS_BIGENDIAN
+	ip_data->sf |= sf_bigendian(1);
+#endif
 	return 0;
 }
 
