@@ -195,7 +195,7 @@ static int oss_buffer_space(void)
 
 	if (ioctl(oss_fd, SNDCTL_DSP_GETOSPACE, &info) == -1)
 		return -1;
-	space = info.bytes;
+	space = (info.fragments - 1) * info.fragsize;
 	return space;
 }
 
