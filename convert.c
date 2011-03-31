@@ -19,8 +19,11 @@
 
 #include "convert.h"
 #include "xmalloc.h"
+#include "config/iconv.h"
 
+#ifdef HAVE_ICONV
 #include <iconv.h>
+#endif
 #include <string.h>
 #include <errno.h>
 
@@ -28,6 +31,7 @@ ssize_t convert(const char *inbuf, ssize_t inbuf_size,
 		char **outbuf, ssize_t outbuf_estimate,
 		const char *tocode, const char *fromcode)
 {
+#ifdef HAVE_ICONV
 	const char *in;
 	char *out;
 	size_t outbuf_size, inbytesleft, outbytesleft;
@@ -78,6 +82,15 @@ error:
 	iconv_close(cd);
 	errno = err_save;
 	return -1;
+
+#else
+	if (inbuf_size < 0)
+		inbuf_size = strlen(inbuf);
+	*outbuf = xnew(char, inbuf_size + 1);
+	memcpy(*outbuf, inbuf, inbuf_size);
+	(*outbuf)[inbuf_size] = '\0';
+	return inbuf_size;
+#endif
 }
 
 int utf8_encode(const char *inbuf, const char *encoding, char **outbuf)

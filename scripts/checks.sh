@@ -670,10 +670,39 @@ check_dl()
 # adds ICONV_CFLAGS and ICONV_LIBS to config.mk
 check_iconv()
 {
-	check_library ICONV "" "-liconv" && return 0
+	HAVE_ICONV=n
+	if check_library ICONV "" "-liconv"
+	then
+		echo "taking iconv from libiconv"
+	else
+		echo "assuming libc contains iconv"
+		makefile_var ICONV_CFLAGS ""
+		makefile_var ICONV_LIBS ""
+	fi
+	msg_checking "for working iconv"
+	if try_compile_link '
+#include <stdio.h>
+#include <string.h>
+#include <iconv.h>
+int main(int argc, char *argv[]) {
+	char buf[128], *out = buf, *in = argv[1];
+	size_t outleft = 127, inleft = strlen(in);
+	iconv_t cd = iconv_open("UTF-8", "ISO-8859-1");
+	iconv(cd, &in, &inleft, &out, &outleft);
+	*out = 0;
+	printf("%s", buf);
+	iconv_close(cd);
+	return 0;
+}' $ICONV_CFLAGS $ICONV_LIBS
+	then
+		msg_result "yes"
+		HAVE_ICONV=y
+	else
+		msg_result "no"
+		msg_error "Your system doesn't have iconv!"
+		msg_error "This means that no charset conversion can be done, so all"
+		msg_error "your tracks need to be encoded in your system charset!"
+	fi
 
-	echo "assuming libc contains iconv"
-	makefile_var ICONV_CFLAGS ""
-	makefile_var ICONV_LIBS ""
 	return 0
 }
