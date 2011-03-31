@@ -123,6 +123,9 @@ static int vorbis_open(struct input_plugin_data *ip_data)
 
 	vi = ov_info(&priv->vf, -1);
 	ip_data->sf = sf_rate(vi->rate) | sf_channels(vi->channels) | sf_bits(16) | sf_signed(1);
+#ifdef WORDS_BIGENDIAN
+	ip_data->sf |= sf_bigendian(1);
+#endif
 	return 0;
 }
 
@@ -140,6 +143,15 @@ static int vorbis_close(struct input_plugin_data *ip_data)
 	free(priv);
 	ip_data->private = NULL;
 	return 0;
+}
+
+static inline int vorbis_endian(void)
+{
+#ifdef WORDS_BIGENDIAN
+	return 1;
+#else
+	return 0;
+#endif
 }
 
 /*
@@ -168,7 +180,7 @@ static int vorbis_read(struct input_plugin_data *ip_data, char *buffer, int coun
 	/* Tremor can only handle signed 16 bit data */
 	rc = ov_read(&priv->vf, buffer, count, &current_section);
 #else
-	rc = ov_read(&priv->vf, buffer, count, 0, 2, 1, &current_section);
+	rc = ov_read(&priv->vf, buffer, count, vorbis_endian(), 2, 1, &current_section);
 #endif
 
 	if (ip_data->remote && current_section != priv->current_section) {
