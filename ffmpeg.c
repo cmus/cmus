@@ -41,7 +41,9 @@
 #define AV_SAMPLE_FMT_S16  SAMPLE_FMT_S16
 #define AV_SAMPLE_FMT_S32  SAMPLE_FMT_S32
 #define AV_SAMPLE_FMT_FLT  SAMPLE_FMT_FLT
+#if (LIBAVCODEC_VERSION_INT > ((51<<16)+(64<<8)+0))
 #define AV_SAMPLE_FMT_DBL  SAMPLE_FMT_DBL
+#endif
 #endif
 
 struct ffmpeg_input {
@@ -204,7 +206,11 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 			break;
 		}
 
+#if (LIBAVCODEC_VERSION_INT > ((51<<16)+(64<<8)+0))
 		if (cc->sample_fmt == AV_SAMPLE_FMT_FLT || cc->sample_fmt == AV_SAMPLE_FMT_DBL) {
+#else
+		if (cc->sample_fmt == AV_SAMPLE_FMT_FLT) {
+#endif
 			err = -IP_ERROR_SAMPLE_FORMAT;
 			break;
 		}
