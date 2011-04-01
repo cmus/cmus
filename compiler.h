@@ -12,8 +12,10 @@
  */
 #if defined(__GNUC__)
 
+#if __GNUC__ > 3
 #undef offsetof
 #define offsetof(type, member) __builtin_offsetof(type, member)
+#endif
 
 /* Optimization: Condition @x is likely */
 #define likely(x)	__builtin_expect(!!(x), 1)
