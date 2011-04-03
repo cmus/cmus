@@ -49,12 +49,15 @@ static int oss_reset(void)
 	return 0;
 }
 
-/* defined only in OSSv4, but seem to work in OSSv3 */
+/* defined only in OSSv4, but seem to work in OSSv3 (Linux) */
 #ifndef AFMT_S32_LE
 #define AFMT_S32_LE	0x00001000
 #endif
 #ifndef AFMT_S32_BE
 #define AFMT_S32_BE	0x00002000
+#endif
+#ifndef AFMT_S24_PACKED
+#define AFMT_S24_PACKED	0x00040000
 #endif
 
 static int oss_set_sf(sample_format_t sf)
@@ -100,6 +103,8 @@ static int oss_set_sf(sample_format_t sf)
 		} else {
 			tmp = AFMT_S32_LE;
 		}
+	} else if (sf_get_bits(oss_sf) == 24 && sf_get_signed(oss_sf) && !sf_get_bigendian(oss_sf)) {
+		tmp = AFMT_S24_PACKED;
 	} else {
 		d_print("unsupported sample format: %c%u_%s\n",
 			sf_get_signed(oss_sf) ? 'S' : 'U', sf_get_bits(oss_sf),
