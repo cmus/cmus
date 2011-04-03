@@ -57,5 +57,7 @@ const char *expr_error(void);
 int expr_is_short(const char *str);
 
 unsigned int expr_get_match_type(struct expr *expr);
+/* "harmless" expressions will reduce filter results when adding characters at the beginning/end */
+int expr_is_harmless(const struct expr *expr);
 
 #endif

@@ -536,18 +536,6 @@ static void restore_sel_track(void)
 	}
 }
 
-/* "harmless" expressions will reduce filter results when adding characters at the beginning/end */
-static int is_harmless_expr(const char *str)
-{
-	int i;
-	const char *s = "!|-<";
-	for (i = 0; s[i]; i++) {
-		if (strchr(str, s[i]))
-			return 0;
-	}
-	return 1;
-}
-
 /* determine if filter results could grow, in which case all tracks must be cleared and re-added */
 static int do_clear_before(const char *str, struct expr *expr)
 {
@@ -557,7 +545,7 @@ static int do_clear_before(const char *str, struct expr *expr)
 		return 1;
 	if ((!expr && live_filter_expr) || (expr && !live_filter_expr))
 		return 1;
-	if (!expr || (is_harmless_expr(str) && is_harmless_expr(lib_live_filter)))
+	if (!expr || expr_is_harmless(expr))
 		return !strstr(str, lib_live_filter);
 	return 1;
 }

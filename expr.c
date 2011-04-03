@@ -823,6 +823,30 @@ unsigned int expr_get_match_type(struct expr *expr)
 	return 0;
 }
 
+int expr_is_harmless(const struct expr *expr)
+{
+	switch (expr->type) {
+	case EXPR_OR:
+	case EXPR_NOT:
+		return 0;
+	case EXPR_AND:
+		expr = expr->right;
+	default:
+		break;
+	}
+	if (expr->type == EXPR_INT) {
+		switch (expr->eint.op) {
+		case IOP_LT:
+		case IOP_EQ:
+		case IOP_LE:
+			return 0;
+		default:
+			return 1;
+		}
+	}
+	return 1;
+}
+
 int expr_eval(struct expr *expr, struct track_info *ti)
 {
 	enum expr_type type = expr->type;
