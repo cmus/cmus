@@ -302,7 +302,9 @@ static void set_lib_sort(unsigned int id, const char *buf)
 	sort_key_t *keys = parse_sort_keys(buf);
 
 	if (keys) {
+		editable_lock();
 		editable_set_sort_keys(&lib_editable, keys);
+		editable_unlock();
 		sort_keys_to_str(keys, lib_editable.sort_str, sizeof(lib_editable.sort_str));
 	}
 }
@@ -317,7 +319,9 @@ static void set_pl_sort(unsigned int id, const char *buf)
 	sort_key_t *keys = parse_sort_keys(buf);
 
 	if (keys) {
+		editable_lock();
 		editable_set_sort_keys(&pl_editable, keys);
+		editable_unlock();
 		sort_keys_to_str(keys, pl_editable.sort_str, sizeof(pl_editable.sort_str));
 	}
 }
