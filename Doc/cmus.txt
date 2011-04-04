@@ -951,6 +951,8 @@ Special Keys:
 	%d  %{duration}		@br
 	%f  %{path}		@br
 	%F  %{filename}		@br
+	    %{bitrate}		@br
+	    %{codec}		@br
 	    %{rg_track_gain}	@br
 	    %{rg_track_peak}	@br
 	    %{rg_album_gain}	@br
@@ -980,8 +982,8 @@ Sort option (lib_sort, pl_sort) value is space separated list of the following
 sort keys:
 
 	artist, album, title, tracknumber, discnumber, date, genre, comment,
-	albumartist, filename, filemtime, rg_track_gain, rg_track_peak,
-	rg_album_gain, rg_album_peak
+	albumartist, filename, filemtime, bitrate, codec, rg_track_gain,
+	rg_track_peak, rg_album_gain, rg_album_peak
 
 
 @h1 PLUGIN OPTIONS
