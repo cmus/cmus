@@ -409,6 +409,8 @@ static const struct {
 } builtin[] = {
 	{ "album",	EXPR_STR	},
 	{ "artist",	EXPR_STR	},
+	{ "bitrate",	EXPR_INT	},
+	{ "codec",	EXPR_STR	},
 	{ "comment",	EXPR_STR	},
 	{ "date",	EXPR_INT	},
 	{ "discnumber",	EXPR_INT	},
@@ -873,12 +875,14 @@ int expr_eval(struct expr *expr, struct track_info *ti)
 			val = ti->filename;
 			if (!using_utf8 && utf8_encode(val, charset, &uval) == 0)
 				val = uval;
+		} else if (strcmp(key, "codec") == 0) {
+			val = ti->codec;
 		} else {
 			val = keyvals_get_val(ti->comments, key);
-			/* non-existing string tag equals to "" */
-			if (!val)
-				val = "";
 		}
+		/* non-existing string tag equals to "" */
+		if (!val)
+			val = "";
 		res = glob_match(&expr->estr.glob_head, val);
 		free(uval);
 		if (expr->estr.op == SOP_EQ)
@@ -894,6 +898,8 @@ int expr_eval(struct expr *expr, struct track_info *ti)
 				val = INT_MAX;
 		} else if (strcmp(key, "date") == 0) {
 			val = comments_get_date(ti->comments, key) / 10000;
+		} else if (strcmp(key, "bitrate") == 0) {
+			val = (ti->bitrate >= 0) ? (int) (ti->bitrate / 1000. + 0.5) : -1;
 		} else {
 			val = comments_get_int(ti->comments, key);
 		}
