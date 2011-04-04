@@ -261,8 +261,11 @@ static void set_lib_sort(unsigned int id, const char *buf)
 {
 	const char **keys = parse_sort_keys(buf);
 
-	if (keys)
+	if (keys) {
+		editable_lock();
 		editable_set_sort_keys(&lib_editable, keys);
+		editable_unlock();
+	}
 }
 
 static void get_pl_sort(unsigned int id, char *buf)
@@ -274,8 +277,11 @@ static void set_pl_sort(unsigned int id, const char *buf)
 {
 	const char **keys = parse_sort_keys(buf);
 
-	if (keys)
+	if (keys) {
+		editable_lock();
 		editable_set_sort_keys(&pl_editable, keys);
+		editable_unlock();
+	}
 }
 
 static void get_output_plugin(unsigned int id, char *buf)
