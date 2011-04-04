@@ -653,7 +653,7 @@ static int do_lib_for_each(int (*cb)(void *data, struct track_info *ti), void *d
 				size *= 2;
 				tis = xrenew(struct track_info *, tis, size);
 			}
-			if (!filtered || !is_filtered(e->ti))
+			if (!filtered || !filter || expr_eval(filter, e->ti))
 				tis[count++] = e->ti;
 			e = e->next;
 		}
