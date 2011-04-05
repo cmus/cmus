@@ -897,7 +897,7 @@ int expr_eval(struct expr *expr, struct track_info *ti)
 			if (is_url(ti->filename))
 				val = INT_MAX;
 		} else if (strcmp(key, "date") == 0) {
-			val = comments_get_date(ti->comments, key) / 10000;
+			val = (ti->date >= 0) ? (ti->date / 10000) : -1;
 		} else if (strcmp(key, "bitrate") == 0) {
 			val = (ti->bitrate >= 0) ? (int) (ti->bitrate / 1000. + 0.5) : -1;
 		} else {
