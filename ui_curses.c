@@ -98,6 +98,7 @@ int using_utf8 = 0;
 
 static char *lib_autosave_filename;
 static char *pl_autosave_filename;
+static char *play_queue_autosave_filename;
 
 /* shown error message and time stamp
  * error is cleared if it is older than 3s and key was pressed
@@ -2210,9 +2211,12 @@ static void init_all(void)
 
 	lib_autosave_filename = xstrjoin(cmus_config_dir, "/lib.pl");
 	pl_autosave_filename = xstrjoin(cmus_config_dir, "/playlist.pl");
+	play_queue_autosave_filename = xstrjoin(cmus_config_dir, "/queue.pl");
 	pl_filename = xstrdup(pl_autosave_filename);
 	lib_filename = xstrdup(lib_autosave_filename);
 
+	if (resume_cmus)
+		cmus_add(play_queue_append, play_queue_autosave_filename, FILE_TYPE_PL, JOB_TYPE_QUEUE);
 	cmus_add(lib_add_track, lib_autosave_filename, FILE_TYPE_PL, JOB_TYPE_LIB);
 	cmus_add(pl_add_track, pl_autosave_filename, FILE_TYPE_PL, JOB_TYPE_PL);
 
@@ -2240,6 +2244,8 @@ static void exit_all(void)
 
 	server_exit();
 	cmus_exit();
+	if (resume_cmus)
+		cmus_save(play_queue_for_each, play_queue_autosave_filename);
 	cmus_save(lib_for_each, lib_autosave_filename);
 	cmus_save(pl_for_each, pl_autosave_filename);
 
