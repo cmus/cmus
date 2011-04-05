@@ -575,7 +575,7 @@ inside:
 	}
 
 	if (!*arg) {
-		player_seek(seek, relative);
+		player_seek(seek, relative, 1);
 		return;
 	}
 err:

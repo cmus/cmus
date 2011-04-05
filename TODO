@@ -3,6 +3,5 @@
 - cuesheet (.flac + .cue) support
 - CDDA support
 - Last.FM support
-- option to resume playback on startup
 - different random modes (albums/artist/etc.)
 - playlist tracks grouping (a la foobar2000)

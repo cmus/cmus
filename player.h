@@ -35,10 +35,12 @@ enum {
 	PLAYER_ERROR_NOT_SUPPORTED
 };
 
+extern const char * const player_status_names[];
 enum player_status {
 	PLAYER_STATUS_STOPPED,
 	PLAYER_STATUS_PLAYING,
-	PLAYER_STATUS_PAUSED
+	PLAYER_STATUS_PAUSED,
+	NR_PLAYER_STATUS
 };
 
 enum replaygain {
@@ -101,7 +103,7 @@ void player_play_file(struct track_info *ti);
 void player_play(void);
 void player_stop(void);
 void player_pause(void);
-void player_seek(double offset, int relative);
+void player_seek(double offset, int relative, int start_playing);
 void player_set_op(const char *name);
 void player_set_buffer_chunks(unsigned int nr_chunks);
 int player_get_buffer_chunks(void);

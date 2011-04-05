@@ -28,6 +28,7 @@ char **get_words(const char *text);
 int strptrcmp(const void *a, const void *b);
 int misc_init(void);
 const char *escape(const char *str);
+const char *unescape(const char *str);
 
 /*
  * @field   contains Replay Gain data format in bit representation

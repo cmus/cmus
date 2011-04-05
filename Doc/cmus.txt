@@ -886,6 +886,9 @@ replaygain_limit (true)
 replaygain_preamp (6.0)
 	Replay gain preamplification in decibels.
 
+resume (false)
+	Resume playback on startup.
+
 show_hidden (false)
 	Display hidden files in browser.
 

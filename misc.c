@@ -109,6 +109,32 @@ const char *escape(const char *str)
 	return buf;
 }
 
+const char *unescape(const char *str)
+{
+	static char *buf = NULL;
+	static size_t alloc = 0;
+	size_t need = strlen(str) + 1;
+	int do_escape = 0;
+	int s, d;
+
+	if (need > alloc) {
+		alloc = (need + 16) & ~(16 - 1);
+		buf = xrealloc(buf, alloc);
+	}
+
+	d = 0;
+	for (s = 0; str[s]; s++) {
+		if (!do_escape && str[s] == '\\')
+			do_escape = 1;
+		else {
+			buf[d++] = (do_escape && str[s] == 'n') ? '\n' : str[s];
+			do_escape = 0;
+		}
+	}
+	buf[d] = 0;
+	return buf;
+}
+
 static int dir_exists(const char *dirname)
 {
 	DIR *dir;

@@ -86,6 +86,7 @@ extern char *status_display_program;
 extern char *server_password;
 extern int auto_reshuffle;
 extern int confirm_run;
+extern int resume_cmus;
 extern int show_hidden;
 extern int show_remaining_time;
 extern int set_term_title;
@@ -130,6 +131,11 @@ int source_file(const char *filename);
 
 /* save options */
 void options_exit(void);
+
+/* load resume file */
+void resume_load(void);
+/* save resume file */
+void resume_exit(void);
 
 void option_add(const char *name, unsigned int id, opt_get_cb get,
 		opt_set_cb set, opt_toggle_cb toggle);

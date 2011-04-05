@@ -61,7 +61,6 @@ static union {
 
 static int cmd_status(struct client *client)
 {
-	const char *status[] = { "stopped", "playing", "paused" };
 	const char *export_options[] = {
 		"aaa_mode",
 		"continue",
@@ -84,7 +83,7 @@ static int cmd_status(struct client *client)
 	int i, ret;
 
 	player_info_lock();
-	gbuf_addf(&buf, "status %s\n", status[player_info.status]);
+	gbuf_addf(&buf, "status %s\n", player_status_names[player_info.status]);
 	ti = player_info.ti;
 	if (ti) {
 		gbuf_addf(&buf, "file %s\n", escape(ti->filename));

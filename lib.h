@@ -103,6 +103,9 @@ void lib_set_view(int view);
 int lib_for_each(int (*cb)(void *data, struct track_info *ti), void *data);
 int lib_for_each_filtered(int (*cb)(void *data, struct track_info *ti), void *data);
 
+struct tree_track *lib_find_track(struct track_info *ti);
+struct track_info *lib_set_track(struct tree_track *track);
+
 struct tree_track *tree_get_selected(void);
 struct track_info *tree_set_selected(void);
 void tree_sort_artists(void);

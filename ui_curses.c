@@ -2205,6 +2205,9 @@ static void init_all(void)
 	if (!soft_vol)
 		mixer_open();
 
+	if (resume_cmus)
+		resume_load();
+
 	lib_autosave_filename = xstrjoin(cmus_config_dir, "/lib.pl");
 	pl_autosave_filename = xstrjoin(cmus_config_dir, "/playlist.pl");
 	pl_filename = xstrdup(pl_autosave_filename);
@@ -2231,6 +2234,8 @@ static void exit_all(void)
 {
 	endwin();
 
+	if (resume_cmus)
+		resume_exit();
 	options_exit();
 
 	server_exit();

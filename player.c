@@ -36,6 +36,8 @@
 #include <stdarg.h>
 #include <math.h>
 
+const char * const player_status_names[] = { "stopped", "playing", "paused", NULL };
+
 enum producer_status {
 	PS_UNLOADED,
 	PS_STOPPED,
@@ -1174,10 +1176,12 @@ out:
 	player_unlock();
 }
 
-void player_seek(double offset, int relative)
+void player_seek(double offset, int relative, int start_playing)
 {
+	int stopped = 0;
 	player_lock();
 	if (consumer_status == CS_STOPPED) {
+		stopped = 1;
 		__producer_play();
 		if (producer_status == PS_PLAYING) {
 			__consumer_play();
@@ -1240,6 +1244,11 @@ void player_seek(double offset, int relative)
 			consumer_pos = new_pos * buffer_second_size();
 			scale_pos = consumer_pos;
 			__consumer_position_update();
+			if (stopped && !start_playing) {
+				__producer_pause();
+				__consumer_pause();
+				__player_status_changed();
+			}
 		} else {
 			d_print("error: ip_seek returned %d\n", rc);
 		}

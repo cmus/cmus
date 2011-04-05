@@ -329,7 +329,7 @@ void lib_init(void)
 	srand(time(NULL));
 }
 
-static struct track_info *lib_set_track(struct tree_track *track)
+struct track_info *lib_set_track(struct tree_track *track)
 {
 	struct track_info *ti = NULL;
 
@@ -415,7 +415,7 @@ static void hash_add_to_views(void)
 	}
 }
 
-static struct tree_track *find_tree_track(struct track_info *ti)
+struct tree_track *lib_find_track(struct track_info *ti)
 {
 	struct simple_track *track;
 
@@ -430,7 +430,7 @@ static struct tree_track *find_tree_track(struct track_info *ti)
 
 static void restore_cur_track(struct track_info *ti)
 {
-	struct tree_track *tt = find_tree_track(ti);
+	struct tree_track *tt = lib_find_track(ti);
 	if (tt)
 		lib_cur_track = tt;
 }
@@ -527,7 +527,7 @@ static void store_sel_track(void)
 static void restore_sel_track(void)
 {
 	if (sel_track_ti) {
-		struct tree_track *tt = find_tree_track(sel_track_ti);
+		struct tree_track *tt = lib_find_track(sel_track_ti);
 		if (tt) {
 			set_sel_track(tt);
 			track_info_unref(sel_track_ti);

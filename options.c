@@ -23,6 +23,8 @@
 #include "output.h"
 #include "config/datadir.h"
 #include "track_info.h"
+#include "cache.h"
+#include "debug.h"
 
 #include <stdio.h>
 #include <errno.h>
@@ -41,6 +43,7 @@ char *status_display_program = NULL;
 char *server_password;
 int auto_reshuffle = 1;
 int confirm_run = 1;
+int resume_cmus = 0;
 int show_hidden = 0;
 int show_remaining_time = 0;
 int set_term_title = 1;
@@ -681,6 +684,21 @@ static void toggle_replaygain_limit(unsigned int id)
 	player_set_rg_limit(replaygain_limit ^ 1);
 }
 
+static void get_resume(unsigned int id, char *buf)
+{
+	strcpy(buf, bool_names[resume_cmus]);
+}
+
+static void set_resume(unsigned int id, const char *buf)
+{
+	parse_bool(buf, &resume_cmus);
+}
+
+static void toggle_resume(unsigned int id)
+{
+	resume_cmus ^= 1;
+}
+
 static void get_show_hidden(unsigned int id, char *buf)
 {
 	strcpy(buf, bool_names[show_hidden]);
@@ -894,6 +912,7 @@ static const struct {
 	DT(replaygain)
 	DT(replaygain_limit)
 	DN(replaygain_preamp)
+	DT(resume)
 	DT(show_hidden)
 	DT(show_remaining_time)
 	DT(set_term_title)
@@ -1108,6 +1127,118 @@ void options_exit(void)
 		}
 	}
 	fprintf(f, "\n");
+
+	fclose(f);
+}
+
+struct resume {
+	enum player_status status;
+	char *filename;
+	long int position;
+	char *lib_filename;
+	int view;
+};
+
+static int handle_resume_line(void *data, const char *line)
+{
+	struct resume *resume = data;
+	char *cmd, *arg;
+
+	if (!parse_command(line, &cmd, &arg))
+		return 0;
+	if (!arg)
+		goto out;
+
+	if (strcmp(cmd, "status") == 0) {
+		parse_enum(arg, 0, NR_PLAYER_STATUS, player_status_names, (int *) &resume->status);
+	} else if (strcmp(cmd, "file") == 0) {
+		free(resume->filename);
+		resume->filename = xstrdup(unescape(arg));
+	} else if (strcmp(cmd, "position") == 0) {
+		str_to_int(arg, &resume->position);
+	} else if (strcmp(cmd, "lib_file") == 0) {
+		free(resume->lib_filename);
+		resume->lib_filename = xstrdup(unescape(arg));
+	} else if (strcmp(cmd, "view") == 0) {
+		parse_enum(arg, 0, NR_VIEWS, view_names, &resume->view);
+	}
+
+	free(arg);
+out:
+	free(cmd);
+	return 0;
+}
+
+void resume_load(void)
+{
+	char filename[512];
+	struct track_info *ti, *old;
+	struct resume resume = { .status = PLAYER_STATUS_STOPPED, .view = -1 };
+
+	snprintf(filename, sizeof(filename), "%s/resume", cmus_config_dir);
+	if (file_for_each_line(filename, handle_resume_line, &resume) == -1) {
+		if (errno != ENOENT)
+			error_msg("loading %s: %s", filename, strerror(errno));
+		return;
+	}
+	if (resume.view >= 0 && resume.view != cur_view)
+		set_view(resume.view);
+	if (resume.lib_filename) {
+		cache_lock();
+		ti = old = cache_get_ti(resume.lib_filename);
+		cache_unlock();
+		if (ti) {
+			editable_lock();
+			lib_add_track(ti);
+			track_info_unref(ti);
+			ti = lib_set_track(lib_find_track(ti));
+			BUG_ON(ti != old);
+			track_info_unref(ti);
+			tree_sel_current();
+			sorted_sel_current();
+			editable_unlock();
+		}
+		free(resume.lib_filename);
+	}
+	if (resume.filename) {
+		cache_lock();
+		ti = cache_get_ti(resume.filename);
+		cache_unlock();
+		if (ti) {
+			player_set_file(ti);
+			if (resume.status != PLAYER_STATUS_STOPPED)
+				player_seek(resume.position, 0, resume.status == PLAYER_STATUS_PLAYING);
+		}
+		free(resume.filename);
+	}
+}
+
+void resume_exit(void)
+{
+	char filename[512];
+	struct track_info *ti;
+	FILE *f;
+
+	snprintf(filename, sizeof(filename), "%s/resume", cmus_config_dir);
+	f = fopen(filename, "w");
+	if (!f) {
+		warn_errno("creating %s", filename);
+		return;
+	}
+
+	player_info_lock();
+	fprintf(f, "status %s\n", player_status_names[player_info.status]);
+	ti = player_info.ti;
+	if (ti) {
+		fprintf(f, "file %s\n", escape(ti->filename));
+		fprintf(f, "position %d\n", player_info.pos);
+	}
+	player_info_unlock();
+	if (lib_cur_track) {
+		ti = tree_track_info(lib_cur_track);
+		fprintf(f, "lib_file %s\n", escape(ti->filename));
+	}
+	fprintf(f, "view %s\n", view_names[cur_view]);
 
 	fclose(f);
 }
