@@ -428,6 +428,21 @@ struct tree_track *lib_find_track(struct track_info *ti)
 	return NULL;
 }
 
+void lib_store_cur_track(struct track_info *ti)
+{
+	if (cur_track_ti)
+		track_info_unref(cur_track_ti);
+	cur_track_ti = ti;
+	track_info_ref(cur_track_ti);
+}
+
+struct track_info *lib_get_cur_stored_track(void)
+{
+	if (cur_track_ti && lib_find_track(cur_track_ti))
+		return cur_track_ti;
+	return NULL;
+}
+
 static void restore_cur_track(struct track_info *ti)
 {
 	struct tree_track *tt = lib_find_track(ti);
@@ -443,12 +458,8 @@ static int is_filtered_cb(void *data, struct track_info *ti)
 static void do_lib_filter(int clear_before)
 {
 	/* try to save cur_track */
-	if (lib_cur_track) {
-		if (cur_track_ti)
-			track_info_unref(cur_track_ti);
-		cur_track_ti = tree_track_info(lib_cur_track);
-		track_info_ref(cur_track_ti);
-	}
+	if (lib_cur_track)
+		lib_store_cur_track(tree_track_info(lib_cur_track));
 
 	if (clear_before)
 		d_print("filter results could grow, clear tracks and re-add (slow)\n");

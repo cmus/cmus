@@ -1137,6 +1137,7 @@ struct resume {
 	long int position;
 	char *lib_filename;
 	int view;
+	char *live_filter;
 };
 
 static int handle_resume_line(void *data, const char *line)
@@ -1161,6 +1162,9 @@ static int handle_resume_line(void *data, const char *line)
 		resume->lib_filename = xstrdup(unescape(arg));
 	} else if (strcmp(cmd, "view") == 0) {
 		parse_enum(arg, 0, NR_VIEWS, view_names, &resume->view);
+	} else if (strcmp(cmd, "live-filter") == 0) {
+		free(resume->live_filter);
+		resume->live_filter = xstrdup(unescape(arg));
 	}
 
 	free(arg);
@@ -1191,11 +1195,15 @@ void resume_load(void)
 			editable_lock();
 			lib_add_track(ti);
 			track_info_unref(ti);
-			ti = lib_set_track(lib_find_track(ti));
-			BUG_ON(ti != old);
+			lib_store_cur_track(ti);
 			track_info_unref(ti);
-			tree_sel_current();
-			sorted_sel_current();
+			ti = lib_set_track(lib_find_track(ti));
+			if (ti) {
+				BUG_ON(ti != old);
+				track_info_unref(ti);
+				tree_sel_current();
+				sorted_sel_current();
+			}
 			editable_unlock();
 		}
 		free(resume.lib_filename);
@@ -1210,6 +1218,12 @@ void resume_load(void)
 				player_seek(resume.position, 0, resume.status == PLAYER_STATUS_PLAYING);
 		}
 		free(resume.filename);
+	}
+	if (resume.live_filter) {
+		editable_lock();
+		filters_set_live(resume.live_filter);
+		editable_unlock();
+		free(resume.live_filter);
 	}
 }
 
@@ -1234,11 +1248,15 @@ void resume_exit(void)
 		fprintf(f, "position %d\n", player_info.pos);
 	}
 	player_info_unlock();
-	if (lib_cur_track) {
+	if (lib_cur_track)
 		ti = tree_track_info(lib_cur_track);
+	else
+		ti = lib_get_cur_stored_track();
+	if (ti)
 		fprintf(f, "lib_file %s\n", escape(ti->filename));
-	}
 	fprintf(f, "view %s\n", view_names[cur_view]);
+	if (lib_live_filter)
+		fprintf(f, "live-filter %s\n", escape(lib_live_filter));
 
 	fclose(f);
 }

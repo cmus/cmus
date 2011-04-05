@@ -105,6 +105,8 @@ int lib_for_each_filtered(int (*cb)(void *data, struct track_info *ti), void *da
 
 struct tree_track *lib_find_track(struct track_info *ti);
 struct track_info *lib_set_track(struct tree_track *track);
+void lib_store_cur_track(struct track_info *ti);
+struct track_info *lib_get_cur_stored_track(void);
 
 struct tree_track *tree_get_selected(void);
 struct track_info *tree_set_selected(void);
