@@ -158,9 +158,47 @@ static long mod_bitrate(struct input_plugin_data *ip_data)
 	return -IP_ERROR_FUNCTION_NOT_SUPPORTED;
 }
 
+static const char *mod_type_to_string(int type)
+{
+	/* from <libmodplug/sndfile.h>, which is C++ */
+	switch (type) {
+	case 0x01:	return "mod";
+	case 0x02:	return "s3m";
+	case 0x04:	return "xm";
+	case 0x08:	return "med";
+	case 0x10:	return "mtm";
+	case 0x20:	return "it";
+	case 0x40:	return "699";
+	case 0x80:	return "ult";
+	case 0x100:	return "stm";
+	case 0x200:	return "far";
+	case 0x800:	return "amf";
+	case 0x1000:	return "ams";
+	case 0x2000:	return "dsm";
+	case 0x4000:	return "mdl";
+	case 0x8000:	return "okt";
+	case 0x10000:	return "midi";
+	case 0x20000:	return "dmf";
+	case 0x40000:	return "ptm";
+	case 0x80000:	return "dbm";
+	case 0x100000:	return "mt2";
+	case 0x200000:	return "amf0";
+	case 0x400000:	return "psm";
+	case 0x80000000:return "umx";
+	}
+	return NULL;
+}
+
 static char *mod_codec(struct input_plugin_data *ip_data)
 {
-	return NULL;
+	struct mod_private *priv = ip_data->private;
+	const char *codec;
+	int type;
+
+	type = ModPlug_GetModuleType(priv->file);
+	codec = mod_type_to_string(type);
+
+	return codec ? xstrdup(codec) : NULL;
 }
 
 const struct input_plugin_ops ip_ops = {
