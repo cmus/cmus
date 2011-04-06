@@ -1629,24 +1629,24 @@ static void clear_error(void)
 
 static void spawn_status_program(void)
 {
-	static const char *status_strs[] = { "stopped", "playing", "paused" };
+	enum player_status status;
 	const char *stream_title = NULL;
 	char *argv[32];
-	int i, status;
+	int i;
 
 	if (status_display_program == NULL || status_display_program[0] == 0)
 		return;
 
 	player_info_lock();
 	status = player_info.status;
-	if (status == 1 && player_info.ti && is_url(player_info.ti->filename))
+	if (status == PLAYER_STATUS_PLAYING && player_info.ti && is_url(player_info.ti->filename))
 		stream_title = get_stream_title();
 
 	i = 0;
 	argv[i++] = xstrdup(status_display_program);
 
 	argv[i++] = xstrdup("status");
-	argv[i++] = xstrdup(status_strs[status]);
+	argv[i++] = xstrdup(player_status_names[status]);
 	if (player_info.ti) {
 		static const char *keys[] = {
 			"artist", "album", "discnumber", "tracknumber", "title", "date", NULL
