@@ -216,7 +216,6 @@ const int ip_priority = 50;
 const char * const ip_extensions[] = {
 	"mod", "s3m", "xm", "it", "669", "amf", "ams", "dbm", "dmf", "dsm",
 	"far", "mdl", "med", "mtm", "okt", "ptm", "stm", "ult", "umx", "mt2",
-	"psm", "mdz", "s3z", "xmz", "itz", "mdr", "s3r", "xmr", "itr", "mdgz",
-	"s3gz", "xmgz", "itgz", NULL
+	"psm", NULL
 };
 const char * const ip_mime_types[] = { NULL };
