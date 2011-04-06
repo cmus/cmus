@@ -115,28 +115,20 @@ static int mik_seek(struct input_plugin_data *ip_data, double offset)
 
 static int mik_read_comments(struct input_plugin_data *ip_data, struct keyval **comments)
 {
-	/* Player_LoadTitle segfaults when we are playing a mod file.
-	 * This is a bug in libmikmod.
-	 */
-#if 0
-	struct keyval *c;
-	const char *name;
+	struct mik_private *priv = ip_data->private;
+	GROWING_KEYVALS(c);
+	const char *val;
 
-	/* FIXME */
-	name = Player_LoadTitle(ip_data->filename);
-	c = xnew0(struct keyval, 2);
+	val = priv->file->songname;
+	if (val && val[0])
+		comments_add_const(&c, "title", val);
 
-	if (name != NULL && *name != 0) {
-		c[0].key = xstrdup("title");
-		c[0].val = xstrdup(name);
-	} else {
-		c[0].key = xstrdup("title");
-		c[0].val = xstrdup(ip_data->filename);
-	}
-	*comments = c;
-#else
-	*comments = xnew0(struct keyval, 1);
-#endif
+	val = priv->file->comment;
+	if (val && val[0])
+		comments_add_const(&c, "comment", val);
+
+	keyvals_terminate(&c);
+	*comments = c.keyvals;
 	return 0;
 }
 
