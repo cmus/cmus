@@ -144,7 +144,9 @@ static long mik_bitrate(struct input_plugin_data *ip_data)
 
 static char *mik_codec(struct input_plugin_data *ip_data)
 {
-	return NULL;
+	struct mik_private *priv = ip_data->private;
+	const char *codec = priv->file->modtype;
+	return (codec && codec[0]) ? xstrdup(codec) : NULL;
 }
 
 const struct input_plugin_ops ip_ops = {
