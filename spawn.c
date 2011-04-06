@@ -27,7 +27,7 @@
 #include <fcntl.h>
 #include <errno.h>
 
-int spawn(char *argv[], int *status)
+int spawn(char *argv[], int *status, int do_wait)
 {
 	pid_t pid;
 	int err_pipe[2];
@@ -75,7 +75,8 @@ int spawn(char *argv[], int *status)
 		errno_save = errno;
 		close(err_pipe[0]);
 
-		waitpid(pid, status, 0);
+		if (do_wait)
+			waitpid(pid, status, 0);
 
 		if (rc == -1) {
 			errno = errno_save;

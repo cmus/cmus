@@ -1692,7 +1692,7 @@ static void spawn_status_program(void)
 	argv[i++] = NULL;
 	player_info_unlock();
 
-	if (spawn(argv, &status) == -1)
+	if (spawn(argv, &status, 1) == -1)
 		error_msg("couldn't run `%s': %s", status_display_program, strerror(errno));
 	for (i = 0; argv[i]; i++)
 		free(argv[i]);

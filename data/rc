@@ -2,6 +2,7 @@ bind browser backspace browser-up
 bind browser space win-activate
 bind browser i toggle show_hidden
 bind browser u win-update
+bind common ! push shell 
 bind common + vol +10%
 bind common , seek -1m
 bind common - vol -10%

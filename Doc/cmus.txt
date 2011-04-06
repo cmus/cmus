@@ -223,6 +223,7 @@ u              update-cache
 5              view browser
 6              view filters
 7              view settings
+!              push shell<space>
 ]              vol +0 +1
 [              vol +1 +0
 +, =           vol +10%

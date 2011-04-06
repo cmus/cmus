@@ -20,6 +20,6 @@
 #ifndef _SPAWN_H
 #define _SPAWN_H
 
-int spawn(char *argv[], int *status);
+int spawn(char *argv[], int *status, int do_wait);
 
 #endif

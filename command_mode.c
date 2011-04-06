@@ -1096,7 +1096,7 @@ static void cmd_run(char *arg)
 	if (run) {
 		int status;
 
-		if (spawn(argv, &status)) {
+		if (spawn(argv, &status, 1)) {
 			error_msg("executing %s: %s", argv[0], strerror(errno));
 		} else {
 			if (WIFEXITED(status)) {
@@ -1128,6 +1128,14 @@ static void cmd_run(char *arg)
 	for (i = 0; sel_tis[i]; i++)
 		track_info_unref(sel_tis[i]);
 	free(sel_tis);
+}
+
+static void cmd_shell(char *arg)
+{
+	const char * const argv[] = { "sh", "-c", arg, NULL };
+
+	if (spawn((char **) argv, NULL, 0))
+		error_msg("executing '%s': %s", arg, strerror(errno));
 }
 
 static int get_one_ti(void *data, struct track_info *ti)
@@ -2452,6 +2460,7 @@ struct command commands[] = {
 	{ "search-prev",	cmd_search_prev,0, 0, NULL,		  0, 0 },
 	{ "seek",		cmd_seek,	1, 1, NULL,		  0, 0 },
 	{ "set",		cmd_set,	1, 1, expand_options,	  0, 0 },
+	{ "shell",		cmd_shell,	1,-1, NULL,		  0, CMD_UNSAFE },
 	{ "showbind",		cmd_showbind,	1, 1, expand_unbind_args, 0, 0 },
 	{ "shuffle",		cmd_reshuffle,	0, 0, NULL,		  0, 0 },
 	{ "source",		cmd_source,	1, 1, expand_files,	  0, CMD_UNSAFE },
