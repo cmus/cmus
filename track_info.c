@@ -160,11 +160,13 @@ int track_info_matches(const struct track_info *ti, const char *text, unsigned i
 
 static int doublecmp0(double a, double b)
 {
-	if (isnan(a))
-		return isnan(b) ? 0 : -1;
-	if (isnan(b))
-		return 1;
-	return (int) (a - b);
+	double x;
+	/* fast check for NaN */
+	int r = (b != b) - (a != a);
+	if (r)
+		return r;
+	x = a - b;
+	return (x > 0) - (x < 0);
 }
 
 /* this function gets called *alot*, it must be very fast */
