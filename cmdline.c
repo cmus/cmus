@@ -9,7 +9,7 @@
 struct cmdline cmdline;
 
 const char cmdline_word_delimiters[]     = " ";
-const char cmdline_filename_delimiters[] = " /";
+const char cmdline_filename_delimiters[] = "/";
 
 void cmdline_init(void)
 {
