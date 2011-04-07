@@ -123,6 +123,18 @@ extern void u_set_char(char *str, int *idx, uchar uch);
 extern int u_copy_chars(char *dst, const char *src, int *width);
 
 /*
+ * @dst    destination buffer
+ * @src    null-terminated UTF-8 string
+ * @len    how many bytes are available in @dst
+ *
+ * Copies at most @len bytes, less if null byte was hit. Replaces every
+ * non-ascii character by '?'. Null byte is _never_ copied.
+ *
+ * Returns number of bytes written to @dst.
+ */
+int u_to_ascii(char *dst, const char *src, int len);
+
+/*
  * @str    null-terminated UTF-8 string, must be long enough
  * @width  how much to skip
  *

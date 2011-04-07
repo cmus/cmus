@@ -265,6 +265,7 @@ static struct format_option status_fopts[NR_SFS + 1] = {
 
 static void utf8_encode(const char *buffer)
 {
+	int n;
 #ifdef HAVE_ICONV
 	static iconv_t cd = (iconv_t)-1;
 	size_t is, os;
@@ -277,7 +278,7 @@ static void utf8_encode(const char *buffer)
 		cd = iconv_open("UTF-8", charset);
 		if (cd == (iconv_t)-1) {
 			d_print("iconv_open failed: %s\n", strerror(errno));
-			return;
+			goto fallback;
 		}
 	}
 	i = buffer;
@@ -288,15 +289,19 @@ static void utf8_encode(const char *buffer)
 	*o = 0;
 	if (rc == -1) {
 		d_print("iconv failed: %s\n", strerror(errno));
-		return;
+		goto fallback;
 	}
-#else
-	strcpy(conv_buffer, buffer);
+	return;
+fallback:
 #endif
+	n = min(sizeof(conv_buffer) - 1, strlen(buffer));
+	memmove(conv_buffer, buffer, n);
+	conv_buffer[n] = '\0';
 }
 
 static void utf8_decode(const char *buffer)
 {
+	int n;
 #ifdef HAVE_ICONV
 	static iconv_t cd = (iconv_t)-1;
 	size_t is, os;
@@ -309,7 +314,7 @@ static void utf8_decode(const char *buffer)
 		cd = iconv_open(charset, "UTF-8");
 		if (cd == (iconv_t)-1) {
 			d_print("iconv_open failed: %s\n", strerror(errno));
-			return;
+			goto fallback;
 		}
 	}
 	i = buffer;
@@ -320,11 +325,13 @@ static void utf8_decode(const char *buffer)
 	*o = 0;
 	if (rc == -1) {
 		d_print("iconv failed: %s\n", strerror(errno));
-		return;
+		goto fallback;
 	}
-#else
-	strcpy(conv_buffer, buffer);
+	return;
+fallback:
 #endif
+	n = u_to_ascii(conv_buffer, buffer, sizeof(conv_buffer) - 1);
+	conv_buffer[n] = '\0';
 }
 
 /* screen updates {{{ */

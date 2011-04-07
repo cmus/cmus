@@ -452,6 +452,17 @@ int u_copy_chars(char *dst, const char *src, int *width)
 	return di;
 }
 
+int u_to_ascii(char *dst, const char *src, int len)
+{
+	uchar u;
+	int i, idx = 0;
+	for (i = 0; i < len && src[idx]; i++) {
+		u_get_char(src, &idx, &u);
+		dst[i] = (u < 128) ? u : '?';
+	}
+	return i;
+}
+
 int u_skip_chars(const char *str, int *width)
 {
 	int w = *width;
