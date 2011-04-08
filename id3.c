@@ -255,13 +255,25 @@ static char *utf16_to_utf8(const unsigned char *buf, int buf_size)
 {
 	char *out;
 	int i, idx;
+	int little_endian = 0;
+
+	if (buf_size < 2)
+		return NULL;
+
+	if (buf[0] == 0xff && buf[1] == 0xfe)
+		little_endian = 1;
 
 	out = xnew(char, (buf_size / 2) * 4 + 1);
 	i = idx = 0;
+
 	while (buf_size - i >= 2) {
 		uchar u;
 
-		u = buf[i] + (buf[i + 1] << 8);
+		if (little_endian)
+			u = buf[i] + (buf[i + 1] << 8);
+		else
+			u = buf[i + 1] + (buf[i] << 8);
+
 		if (u_is_unicode(u)) {
 			if (!utf16_is_special(u))
 				u_set_char(out, &idx, u);
@@ -269,37 +281,13 @@ static char *utf16_to_utf8(const unsigned char *buf, int buf_size)
 			free(out);
 			return NULL;
 		}
+
 		if (u == 0)
 			return out;
+
 		i += 2;
 	}
-	u_set_char(out, &idx, 0);
-	return out;
-}
 
-static char *utf16be_to_utf8(const unsigned char *buf, int buf_size)
-{
-	char *out;
-	int i, idx;
-
-	out = xnew(char, (buf_size / 2) * 4 + 1);
-	i = 0;
-	idx = 0;
-	while (buf_size - i >= 2) {
-		uchar u;
-
-		u = buf[i + 1] + (buf[i] << 8);
-		if (u_is_unicode(u)) {
-		       if (!utf16_is_special(u))
-				u_set_char(out, &idx, u);
-		} else {
-			free(out);
-			return NULL;
-		}
-		if (u == 0)
-			return out;
-		i += 2;
-	}
 	u_set_char(out, &idx, 0);
 	return out;
 }
@@ -624,10 +612,8 @@ static char *decode_str(const char *buf, int len, int encoding)
 		}
 		break;
 	case 0x01: /* UTF-16 */
-		out = utf16_to_utf8((const unsigned char *)buf, len);
-		break;
 	case 0x02: /* UTF-16BE */
-		out = utf16be_to_utf8((const unsigned char *)buf, len);
+		out = utf16_to_utf8((const unsigned char *)buf, len);
 		break;
 	}
 	return out;
