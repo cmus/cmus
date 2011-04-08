@@ -528,7 +528,7 @@ static inline uchar u_casefold_char(uchar ch)
                 return ch;
         if (ch <= 0x005A)
                 return ch + 0x20;
-#ifdef __STDC_ISO_10646__
+#if defined(_WIN32) || defined(__STDC_ISO_10646__) || defined(__APPLE__)
         if (ch < 128)
                 return ch;
 	ch = towlower(ch);
