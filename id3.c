@@ -743,14 +743,35 @@ static void decode_txxx(struct id3tag *id3, const char *buf, int len, int encodi
 
 static void decode_comment(struct id3tag *id3, const char *buf, int len, int encoding)
 {
+	int slen;
+	char out0;
 	char *out;
 
-	if (len <= 4)
+	if (len <= 3)
 		return;
 
 	/* skip language */
-	buf += 4;
-	len -= 4;
+	buf += 3;
+	len -= 3;
+
+	/* "Short content description" part of COMM frame */
+	out = decode_str(buf, len, encoding);
+	if (!out)
+		return;
+
+	out0 = *out;
+	free(out);
+
+	/* we are interested only in comments with empty description */
+	if (out0 != '\0')
+		return;
+
+	slen = id3_skiplen(buf, len, encoding);
+	if (slen >= len)
+		return;
+
+	buf += slen;
+	len -= slen;
 
 	out = decode_str(buf, len, encoding);
 	if (!out)
