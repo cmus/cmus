@@ -19,6 +19,15 @@
 #include <strings.h>
 #include <limits.h>
 
+enum {
+	ID3_ENCODING_ISO_8859_1 = 0x00,
+	ID3_ENCODING_UTF_16     = 0x01,
+	ID3_ENCODING_UTF_16_BE  = 0x02,
+	ID3_ENCODING_UTF_8      = 0x03,
+
+	ID3_ENCODING_MAX        = 0x03
+};
+
 /*
  * position:
  *
@@ -638,12 +647,12 @@ static char *decode_str(const char *buf, int len, int encoding)
 	char *in, *out = NULL;
 
 	switch (encoding) {
-	case 0x00: /* ISO-8859-1 */
+	case ID3_ENCODING_ISO_8859_1:
 		in = xstrndup(buf, len);
 		utf8_encode(in, id3_default_charset, &out);
 		free(in);
 		break;
-	case 0x03: /* UTF-8 */
+	case ID3_ENCODING_UTF_8:
 		in = xstrndup(buf, len);
 		if (u_is_valid(in)) {
 			out = in;
@@ -652,8 +661,8 @@ static char *decode_str(const char *buf, int len, int encoding)
 			free(in);
 		}
 		break;
-	case 0x01: /* UTF-16 */
-	case 0x02: /* UTF-16BE */
+	case ID3_ENCODING_UTF_16:
+	case ID3_ENCODING_UTF_16_BE:
 		out = utf16_to_utf8((const unsigned char *)buf, len);
 		break;
 	}
@@ -705,25 +714,22 @@ static void decode_normal(struct id3tag *id3, const char *buf, int len, int enco
 	add_v2(id3, key, out);
 }
 
-static int enc_is_utf16(int encoding)
+static size_t id3_skiplen(const char *buf, size_t len, int encoding)
 {
-	return encoding == 0x01 || encoding == 0x02;
-}
+	if (encoding == ID3_ENCODING_ISO_8859_1 || encoding == ID3_ENCODING_UTF_8) {
+		return strlen(buf) + 1;
+	} else {
+		int i = 0;
+		while (i + 1 < len) {
+			if (buf[i] == '\0' && buf[i + 1] == '\0')
+				return i + 2;
 
-static size_t id3_skiplen(const char *s, int encoding)
-{
-	size_t ret = strlen(s) + 1;
+			/* Assume every character is exactly 2 bytes */
+			i += 2;
+		}
 
-	if (enc_is_utf16(encoding)) {
-		/*
-		 * Assume BOM is always present,
-		 * and every character is 2 bytes long
-		 */
-		ret *= 2;
-		ret += 2;
+		BUG_ON(1);
 	}
-
-	return ret;
 }
 
 static void decode_txxx(struct id3tag *id3, const char *buf, int len, int encoding)
@@ -762,7 +768,7 @@ static void decode_txxx(struct id3tag *id3, const char *buf, int len, int encodi
 	else if (!strcasecmp(out, "compilation"))
 		key = ID3_COMPILATION;
 
-	size = id3_skiplen(out_mem, encoding);
+	size = id3_skiplen(buf, len, encoding);
 	free(out_mem);
 
 	if (key == NUM_ID3_KEYS)
@@ -924,7 +930,7 @@ static void v2_add_frame(struct id3tag *id3, struct v2_frame_header *fh, const c
 	encoding = *buf++;
 	len = fh->size - 1;
 
-	if (encoding > 3)
+	if (encoding > ID3_ENCODING_MAX)
 		return;
 
 	idx = frame_tab_index(fh->id);
