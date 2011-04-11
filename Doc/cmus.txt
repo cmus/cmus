@@ -1133,6 +1133,24 @@ Example status display script (See *status_display_program* option) can be
 found in `/usr/share/doc/cmus/examples`.
 
 
+@h1 ENVIRONMENT
+
+CMUS_CHARSET
+	Override cmus character set (default: \`locale charmap\`).
+
+CMUS_HOME
+	Override cmus config directory (default: *$HOME*/.cmus).
+
+HOME
+	Full path of the user's home directory.
+
+USER
+	Name of the user running cmus.
+
+USERNAME
+	Fallback for *USER*.
+
+
 @h1 BUGS
 
 After a crash last lines of `~/cmus-debug.txt` might
