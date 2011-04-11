@@ -2333,11 +2333,14 @@ int main(int argc, char *argv[])
 
 	setlocale(LC_CTYPE, "");
 	setlocale(LC_COLLATE, "");
+	charset = getenv("CMUS_CHARSET");
+	if (!charset || !charset[0]) {
 #ifdef CODESET
-	charset = nl_langinfo(CODESET);
+		charset = nl_langinfo(CODESET);
 #else
-	charset = "ISO-8859-1";
+		charset = "ISO-8859-1";
 #endif
+	}
 	if (strcmp(charset, "UTF-8") == 0)
 		using_utf8 = 1;
 
