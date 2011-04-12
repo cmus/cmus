@@ -971,11 +971,15 @@ extension, the width can have a %-suffix, to specify a percentage of the
 terminal width. @br
 To see current value of an option type *:set option=<TAB>*.
 
+Note: With %{bitrate}, you'll have to append the unit yourself, as mentioned
+in the example below.
+
 Examples:
 
 	@pre
 	:set format_trackwin= %02n. %t (%y)%= %d
 	:set format_current= %n. %-30t %40F (%y)%= %d
+	:set format_current= %a - %l - %02n. %t%= %{bitrate}Kbps %g %y
 	:set format_playlist= %f%= %6{rg_track_gain} dB  %8{rg_track_peak}
 	:set format_playlist= %-25%a %-15%l %3n. %t%= %y %d
 	@endpre
