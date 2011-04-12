@@ -45,9 +45,9 @@ struct nomad_info {
 	int channels;
 	int nr_frames;
 	int layer;
-	/* -1 if fast = 1 */
+	/* guessed */
 	int vbr;
-	/* -1 if fast = 1 */
+	/* guessed */
 	int avg_bitrate;
 	/* -1 if file not seekable */
 	int filesize;
@@ -64,7 +64,7 @@ enum {
 struct nomad;
 
 /* -NOMAD_ERROR_ERRNO -NOMAD_ERROR_FILE_FORMAT */
-int nomad_open_callbacks(struct nomad **nomadp, void *datasource, int fast,
+int nomad_open_callbacks(struct nomad **nomadp, void *datasource,
 		struct nomad_callbacks *cbs);
 
 void nomad_close(struct nomad *nomad);

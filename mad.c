@@ -69,10 +69,9 @@ static int mad_open(struct input_plugin_data *ip_data)
 {
 	struct nomad *nomad;
 	struct nomad_info info;
-	int rc, fast;
+	int rc;
 
-	fast = 1;
-	rc = nomad_open_callbacks(&nomad, ip_data, fast, &callbacks);
+	rc = nomad_open_callbacks(&nomad, ip_data, &callbacks);
 	switch (rc) {
 	case -NOMAD_ERROR_ERRNO:
 		return -1;

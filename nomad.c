@@ -60,7 +60,6 @@ struct nomad {
 	   ref: http://www.mars.org/mailman/public/mad-dev/2001-May/000262.html */
 	unsigned char input_buffer[INPUT_BUFFER_SIZE + MAD_BUFFER_GUARD];
 	int i;
-	unsigned int fast : 1;
 	unsigned int has_xing : 1;
 	unsigned int has_lame : 1;
 	unsigned int seen_first_frame : 1;
@@ -433,16 +432,12 @@ static void calc_bitrate_fast(struct nomad *nomad)
  * fields
  *     nomad->info.avg_bitrate and
  *     nomad->info.vbr
- * are only estimated if fast = 1
+ * are only estimated
  */
 static int scan(struct nomad *nomad)
 {
 	struct mad_header *header = &nomad->frame.header;
-	int old_bitrate = 0;
-	unsigned long long int bitrate_sum = 0;
 
-	nomad->info.nr_frames = 0;
-	nomad->info.vbr = 0;
 	while (1) {
 		int rc;
 
@@ -465,39 +460,24 @@ static int scan(struct nomad *nomad)
 		}
 
 		build_seek_index(nomad);
-		bitrate_sum += header->bitrate;
-		nomad->info.nr_frames++;
 
-		if (nomad->info.nr_frames == 1) {
-			// first valid frame
-			nomad->info.sample_rate = header->samplerate;
-			nomad->info.channels = MAD_NCHANNELS(header);
-			nomad->info.layer = header->layer;
-			nomad->info.dual_channel = header->mode == MAD_MODE_DUAL_CHANNEL;
-			nomad->info.joint_stereo = header->mode == MAD_MODE_JOINT_STEREO;
+		// first valid frame
+		nomad->info.sample_rate = header->samplerate;
+		nomad->info.channels = MAD_NCHANNELS(header);
+		nomad->info.layer = header->layer;
+		nomad->info.dual_channel = header->mode == MAD_MODE_DUAL_CHANNEL;
+		nomad->info.joint_stereo = header->mode == MAD_MODE_JOINT_STEREO;
 
-			xing_parse(nomad);
-
-			if (nomad->fast) {
-				calc_frames_fast(nomad);
-				break;
-			}
-		} else {
-			if (old_bitrate != header->bitrate)
-				nomad->info.vbr = 1;
-		}
-		old_bitrate = header->bitrate;
+		xing_parse(nomad);
+		calc_frames_fast(nomad);
+		break;
 	}
 	if (nomad->info.nr_frames == 0) {
 		d_print("error: not an mp3 file!\n");
 		return -NOMAD_ERROR_FILE_FORMAT;
 	}
 	nomad->info.duration = timer_to_seconds(nomad->timer);
-	if (!nomad->fast)
-		nomad->info.avg_bitrate = bitrate_sum / nomad->info.nr_frames;
-	else {
-		calc_bitrate_fast(nomad);
-	}
+	calc_bitrate_fast(nomad);
 	nomad->cur_frame = 0;
 	nomad->cbs.lseek(nomad->datasource, 0, SEEK_SET);
 	nomad->input_offset = 0;
@@ -557,18 +537,14 @@ static void free_mad(struct nomad *nomad)
 	mad_synth_finish(nomad->synth);
 }
 
-static int do_open(struct nomad *nomad, int fast)
+static int do_open(struct nomad *nomad)
 {
 	int rc;
 
 	init_mad(nomad);
 	nomad->info.filesize = nomad->cbs.lseek(nomad->datasource, 0, SEEK_END);
-	if (nomad->info.filesize == -1) {
-		nomad->fast = 1;
-	} else {
-		nomad->fast = fast != 0;
+	if (nomad->info.filesize != -1)
 		nomad->cbs.lseek(nomad->datasource, 0, SEEK_SET);
-	}
 	if (nomad->info.filesize == -1) {
 		rc = decode(nomad);
 		if (rc < 0)
@@ -620,7 +596,7 @@ eof:
 	return -NOMAD_ERROR_FILE_FORMAT;
 }
 
-int nomad_open_callbacks(struct nomad **nomadp, void *datasource, int fast, struct nomad_callbacks *cbs)
+int nomad_open_callbacks(struct nomad **nomadp, void *datasource, struct nomad_callbacks *cbs)
 {
 	struct nomad *nomad;
 
@@ -630,7 +606,7 @@ int nomad_open_callbacks(struct nomad **nomadp, void *datasource, int fast, stru
 	nomad->lame.peak = nomad->lame.trackGain = nomad->lame.albumGain = strtof("NAN", NULL);
 	*nomadp = nomad;
 	/* on error do_open calls nomad_close */
-	return do_open(nomad, fast);
+	return do_open(nomad);
 }
 
 void nomad_close(struct nomad *nomad)
