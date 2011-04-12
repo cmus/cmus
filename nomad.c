@@ -40,9 +40,11 @@
 #include <string.h>
 #include <errno.h>
 
-/* the number of samples of silence the decoder inserts at start */
-#define DECODERDELAY 529
+#define INPUT_BUFFER_SIZE	(5 * 8192)
+#define SEEK_IDX_INTERVAL	15
 
+/* the number of samples of silence the decoder inserts at start */
+#define DECODERDELAY		529
 
 struct seek_idx_entry {
 	off_t offset;

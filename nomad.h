@@ -20,16 +20,11 @@
 #ifndef _NOMAD_H
 #define _NOMAD_H
 
-#include <mad.h>
 #include <sys/types.h>
 
 #ifndef __GNUC__
 #include <unistd.h>
 #endif
-
-#define INPUT_BUFFER_SIZE	(5 * 8192)
-
-#define SEEK_IDX_INTERVAL  15
 
 /* default callbacks use read, lseek, close */
 struct nomad_callbacks {
