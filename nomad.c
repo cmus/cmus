@@ -78,14 +78,7 @@ struct nomad {
 		unsigned char toc[100];
 	} xing;
 
-	struct {
-		char encoder[10];   /* 9 byte encoder name/version ("LAME3.97b") */
-		float peak;         /* replaygain peak */
-		float trackGain;    /* replaygain track gain */
-		float albumGain;    /* replaygain album gain */
-		int encoderDelay;   /* # of added samples at start of mp3 */
-		int encoderPadding; /* # of added samples at end of mp3 */
-	} lame;
+	struct nomad_lame lame;
 
 	struct {
 		int size;
@@ -617,11 +610,6 @@ void nomad_close(struct nomad *nomad)
 	free(nomad);
 }
 
-void nomad_info(struct nomad *nomad, struct nomad_info *info)
-{
-	*info = nomad->info;
-}
-
 int nomad_read(struct nomad *nomad, char *buffer, int count)
 {
 	int i, j, size, psize, to;
@@ -841,26 +829,12 @@ int nomad_time_seek(struct nomad *nomad, double pos)
 	return 0;
 }
 
-int nomad_lame_replaygain(struct nomad *nomad, float *peak, float *trackGain)
+const struct nomad_lame *nomad_lame(struct nomad *nomad)
 {
-	if (isnan(nomad->lame.trackGain))
-		return -1;
-	*peak = nomad->lame.peak;
-	*trackGain = nomad->lame.trackGain;
-	return 0;
+	return &nomad->lame;
 }
 
-double nomad_time_total(struct nomad *nomad)
+const struct nomad_info *nomad_info(struct nomad *nomad)
 {
-	return nomad->info.duration;
-}
-
-int nomad_bitrate(struct nomad *nomad)
-{
-	return nomad->info.avg_bitrate;
-}
-
-int nomad_layer(struct nomad *nomad)
-{
-	return nomad->info.layer;
+	return &nomad->info;
 }

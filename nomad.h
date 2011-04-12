@@ -38,6 +38,15 @@ struct nomad_callbacks {
 	int (*close)(void *datasource);
 };
 
+struct nomad_lame {
+	char encoder[10];   /* 9 byte encoder name/version ("LAME3.97b") */
+	float peak;         /* replaygain peak */
+	float trackGain;    /* replaygain track gain */
+	float albumGain;    /* replaygain album gain */
+	int encoderDelay;   /* # of added samples at start of mp3 */
+	int encoderPadding; /* # of added samples at end of mp3 */
+};
+
 /* always 16-bit signed little-endian */
 struct nomad_info {
 	double duration;
@@ -68,7 +77,6 @@ int nomad_open_callbacks(struct nomad **nomadp, void *datasource,
 		struct nomad_callbacks *cbs);
 
 void nomad_close(struct nomad *nomad);
-void nomad_info(struct nomad *nomad, struct nomad_info *info);
 
 /* -NOMAD_ERROR_ERRNO */
 int nomad_read(struct nomad *nomad, char *buffer, int count);
@@ -76,9 +84,7 @@ int nomad_read(struct nomad *nomad, char *buffer, int count);
 /* -NOMAD_ERROR_ERRNO */
 int nomad_time_seek(struct nomad *nomad, double pos);
 
-int nomad_lame_replaygain(struct nomad *nomad, float *peak, float *trackGain);
-double nomad_time_total(struct nomad *nomad);
-int nomad_bitrate(struct nomad *nomad);
-int nomad_layer(struct nomad *nomad);
+const struct nomad_lame *nomad_lame(struct nomad *nomad);
+const struct nomad_info *nomad_info(struct nomad *nomad);
 
 #endif

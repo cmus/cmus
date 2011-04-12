@@ -68,7 +68,7 @@ static struct nomad_callbacks callbacks = {
 static int mad_open(struct input_plugin_data *ip_data)
 {
 	struct nomad *nomad;
-	struct nomad_info info;
+	const struct nomad_info *info;
 	int rc;
 
 	rc = nomad_open_callbacks(&nomad, ip_data, &callbacks);
@@ -80,10 +80,10 @@ static int mad_open(struct input_plugin_data *ip_data)
 	}
 	ip_data->private = nomad;
 
-	nomad_info(nomad, &info);
+	info = nomad_info(nomad);
 
 	/* always 16-bit signed little-endian */
-	ip_data->sf = sf_rate(info.sample_rate) | sf_channels(info.channels) |
+	ip_data->sf = sf_rate(info->sample_rate) | sf_channels(info->channels) |
 		sf_bits(16) | sf_signed(1);
 	return 0;
 }
@@ -118,11 +118,12 @@ static int mad_seek(struct input_plugin_data *ip_data, double offset)
 static int mad_read_comments(struct input_plugin_data *ip_data,
 		struct keyval **comments)
 {
+	struct nomad *nomad = ip_data->private;
+	const struct nomad_lame *lame = nomad_lame(nomad);
 	struct id3tag id3;
 	int fd, rc, save, i;
 	APETAG(ape);
 	GROWING_KEYVALS(c);
-	float rg_track_peak, rg_track_gain;
 
 	fd = open(ip_data->filename, O_RDONLY);
 	if (fd == -1) {
@@ -171,14 +172,14 @@ out:
 	ape_free(&ape);
 
 	/* add last so the other tags get preference */
-	if (nomad_lame_replaygain(ip_data->private, &rg_track_peak, &rg_track_gain) == 0) {
+	if (!isnan(lame->trackGain)) {
 		char buf[64];
 
-		if (!isnan(rg_track_peak)) {
-			sprintf(buf, "%f", rg_track_peak);
+		if (!isnan(lame->peak)) {
+			sprintf(buf, "%f", lame->peak);
 			comments_add_const(&c, "replaygain_track_peak", buf);
 		}
-		sprintf(buf, "%+.1f dB", rg_track_gain);
+		sprintf(buf, "%+.1f dB", lame->trackGain);
 		comments_add_const(&c, "replaygain_track_gain", buf);
 	}
 
@@ -189,23 +190,24 @@ out:
 
 static int mad_duration(struct input_plugin_data *ip_data)
 {
-	struct nomad *nomad;
+	struct nomad *nomad = ip_data->private;
 
-	nomad = ip_data->private;
-	return nomad_time_total(nomad);
+	return nomad_info(nomad)->duration;
 }
 
 static long mad_bitrate(struct input_plugin_data *ip_data)
 {
 	struct nomad *nomad = ip_data->private;
-	long bitrate = nomad_bitrate(nomad);
+	long bitrate = nomad_info(nomad)->avg_bitrate;
+
 	return bitrate != -1 ? bitrate : -IP_ERROR_FUNCTION_NOT_SUPPORTED;
 }
 
 static char *mad_codec(struct input_plugin_data *ip_data)
 {
 	struct nomad *nomad = ip_data->private;
-	switch (nomad_layer(nomad)) {
+
+	switch (nomad_info(nomad)->layer) {
 	case 3:
 		return xstrdup("mp3");
 	case 2:
