@@ -64,7 +64,6 @@ enum {
 struct nomad;
 
 /* -NOMAD_ERROR_ERRNO -NOMAD_ERROR_FILE_FORMAT */
-int nomad_open(struct nomad **nomadp, int fd, int fast);
 int nomad_open_callbacks(struct nomad **nomadp, void *datasource, int fast,
 		struct nomad_callbacks *cbs);
 
@@ -78,7 +77,6 @@ int nomad_read(struct nomad *nomad, char *buffer, int count);
 int nomad_time_seek(struct nomad *nomad, double pos);
 
 int nomad_lame_replaygain(struct nomad *nomad, float *peak, float *trackGain);
-double nomad_time_tell(struct nomad *nomad);
 double nomad_time_total(struct nomad *nomad);
 int nomad_bitrate(struct nomad *nomad);
 int nomad_layer(struct nomad *nomad);

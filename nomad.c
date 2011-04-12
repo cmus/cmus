@@ -99,31 +99,6 @@ struct nomad {
 	struct nomad_callbacks cbs;
 };
 
-/* ------------------------------------------------------------------------- */
-
-static ssize_t default_read(void *datasource, void *buffer, size_t count)
-{
-	int fd = *(int *)datasource;
-
-	return read(fd, buffer, count);
-}
-
-static off_t default_lseek(void *datasource, off_t offset, int whence)
-{
-	int fd = *(int *)datasource;
-
-	return lseek(fd, offset, whence);
-}
-
-static int default_close(void *datasource)
-{
-	int fd = *(int *)datasource;
-
-	return close(fd);
-}
-
-/* ------------------------------------------------------------------------- */
-
 static inline int scale(mad_fixed_t sample)
 {
 	sample += 1L << (MAD_F_FRACBITS - 16);
@@ -645,24 +620,6 @@ eof:
 	return -NOMAD_ERROR_FILE_FORMAT;
 }
 
-int nomad_open(struct nomad **nomadp, int fd, int fast)
-{
-	struct nomad *nomad;
-
-	nomad = xnew0(struct nomad, 1);
-	nomad->datasource = &nomad->datasource_fd;
-	nomad->datasource_fd = fd;
-	nomad->cbs.read = default_read;
-	nomad->cbs.lseek = default_lseek;
-	nomad->cbs.close = default_close;
-	nomad->start_drop_samples = 0;
-	nomad->end_drop_samples = 0;
-	nomad->lame.peak = nomad->lame.trackGain = nomad->lame.albumGain = strtof("NAN", NULL);
-	*nomadp = nomad;
-	/* on error do_open calls nomad_close */
-	return do_open(nomad, fast);
-}
-
 int nomad_open_callbacks(struct nomad **nomadp, void *datasource, int fast, struct nomad_callbacks *cbs)
 {
 	struct nomad *nomad;
@@ -915,11 +872,6 @@ int nomad_lame_replaygain(struct nomad *nomad, float *peak, float *trackGain)
 	*peak = nomad->lame.peak;
 	*trackGain = nomad->lame.trackGain;
 	return 0;
-}
-
-double nomad_time_tell(struct nomad *nomad)
-{
-	return timer_to_seconds(nomad->timer);
 }
 
 double nomad_time_total(struct nomad *nomad)
