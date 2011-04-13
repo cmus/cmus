@@ -201,6 +201,11 @@ static char *mod_codec(struct input_plugin_data *ip_data)
 	return codec ? xstrdup(codec) : NULL;
 }
 
+static char *mod_codec_profile(struct input_plugin_data *ip_data)
+{
+	return NULL;
+}
+
 const struct input_plugin_ops ip_ops = {
 	.open = mod_open,
 	.close = mod_close,
@@ -209,7 +214,8 @@ const struct input_plugin_ops ip_ops = {
 	.read_comments = mod_read_comments,
 	.duration = mod_duration,
 	.bitrate = mod_bitrate,
-	.codec = mod_codec
+	.codec = mod_codec,
+	.codec_profile = mod_codec_profile
 };
 
 const int ip_priority = 50;

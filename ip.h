@@ -86,6 +86,7 @@ struct input_plugin_ops {
 	int (*duration)(struct input_plugin_data *ip_data);
 	long (*bitrate)(struct input_plugin_data *ip_data);
 	char *(*codec)(struct input_plugin_data *ip_data);
+	char *(*codec_profile)(struct input_plugin_data *ip_data);
 };
 
 /* symbols exported by plugin */

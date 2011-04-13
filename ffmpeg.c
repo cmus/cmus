@@ -457,6 +457,33 @@ static char *ffmpeg_codec(struct input_plugin_data *ip_data)
 	return xstrdup(priv->codec->name);
 }
 
+#if (LIBAVCODEC_VERSION_INT < ((52<<16)+(104<<8)+0))
+static const char *codec_profile_to_str(int profile)
+{
+	switch (profile) {
+	case FF_PROFILE_AAC_MAIN:	return "Main";
+	case FF_PROFILE_AAC_LOW:	return "LC";
+	case FF_PROFILE_AAC_SSR:	return "SSR";
+	case FF_PROFILE_AAC_LTP:	return "LTP";
+	}
+	return NULL;
+}
+#endif
+
+static char *ffmpeg_codec_profile(struct input_plugin_data *ip_data)
+{
+	struct ffmpeg_private *priv = ip_data->private;
+	const char *profile;
+
+#if (LIBAVCODEC_VERSION_INT < ((52<<16)+(104<<8)+0))
+	profile = codec_profile_to_str(priv->codec_context->profile);
+#else
+	profile = av_get_profile_name(priv->codec, priv->codec_context->profile);
+#endif
+
+	return profile ? xstrdup(profile) : NULL;
+}
+
 const struct input_plugin_ops ip_ops = {
 	.open = ffmpeg_open,
 	.close = ffmpeg_close,
@@ -465,7 +492,8 @@ const struct input_plugin_ops ip_ops = {
 	.read_comments = ffmpeg_read_comments,
 	.duration = ffmpeg_duration,
 	.bitrate = ffmpeg_bitrate,
-	.codec = ffmpeg_codec
+	.codec = ffmpeg_codec,
+	.codec_profile = ffmpeg_codec_profile
 };
 
 const int ip_priority = 30;

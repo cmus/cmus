@@ -33,8 +33,25 @@ struct nomad_callbacks {
 	int (*close)(void *datasource);
 };
 
+enum {
+	XING_FRAMES = 0x00000001L,
+	XING_BYTES  = 0x00000002L,
+	XING_TOC    = 0x00000004L,
+	XING_SCALE  = 0x00000008L
+};
+
+struct nomad_xing {
+	unsigned int is_info : 1;
+	unsigned int flags;
+	unsigned int nr_frames;
+	unsigned int bytes;
+	unsigned int scale;
+	unsigned char toc[100];
+};
+
 struct nomad_lame {
 	char encoder[10];   /* 9 byte encoder name/version ("LAME3.97b") */
+	int vbr_method;     /* VBR method */
 	float peak;         /* replaygain peak */
 	float trackGain;    /* replaygain track gain */
 	float albumGain;    /* replaygain album gain */
@@ -79,6 +96,7 @@ int nomad_read(struct nomad *nomad, char *buffer, int count);
 /* -NOMAD_ERROR_ERRNO */
 int nomad_time_seek(struct nomad *nomad, double pos);
 
+const struct nomad_xing *nomad_xing(struct nomad *nomad);
 const struct nomad_lame *nomad_lame(struct nomad *nomad);
 const struct nomad_info *nomad_info(struct nomad *nomad);
 

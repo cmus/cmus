@@ -24,6 +24,7 @@
 #include "xmalloc.h"
 #include "read_wrapper.h"
 #include "debug.h"
+#include "utils.h"
 
 #include <stdio.h>
 #include <math.h>
@@ -172,7 +173,7 @@ out:
 	ape_free(&ape);
 
 	/* add last so the other tags get preference */
-	if (!isnan(lame->trackGain)) {
+	if (lame && !isnan(lame->trackGain)) {
 		char buf[64];
 
 		if (!isnan(lame->peak)) {
@@ -218,6 +219,42 @@ static char *mad_codec(struct input_plugin_data *ip_data)
 	return NULL;
 }
 
+static char *mad_codec_profile(struct input_plugin_data *ip_data)
+{
+	struct nomad *nomad = ip_data->private;
+	const struct nomad_lame *lame = nomad_lame(nomad);
+	const char *mode = nomad_info(nomad)->vbr ? "VBR" : "CBR";
+
+	if (lame) {
+		/* LAME:
+		 * 0: unknown
+		 * 1: cbr
+		 * 2: abr
+		 * 3: vbr rh (--vbr-old)
+		 * 4: vbr mtrh (--vbr-new)
+		 * 5: vbr mt (obsolete)
+		 */
+		int method = lame->vbr_method;
+		if (method == 2)
+			mode = "ABR";
+		else if (method >= 3 && method <= 5) {
+			const struct nomad_xing *xing = nomad_xing(nomad);
+
+			if (xing && xing->flags & XING_SCALE && xing->scale && xing->scale <= 100) {
+				char buf[16];
+				int v = 10 - (xing->scale + 9) / 10;
+				/* quality (-q): 10 - (xing->scale - ((9 - v) * 10)) */
+
+				sprintf(buf, "VBR V%d", v);
+				return xstrdup(buf);
+
+			}
+		}
+	}
+
+	return xstrdup(mode);
+}
+
 const struct input_plugin_ops ip_ops = {
 	.open = mad_open,
 	.close = mad_close,
@@ -226,7 +263,8 @@ const struct input_plugin_ops ip_ops = {
 	.read_comments = mad_read_comments,
 	.duration = mad_duration,
 	.bitrate = mad_bitrate,
-	.codec = mad_codec
+	.codec = mad_codec,
+	.codec_profile = mad_codec_profile
 };
 
 const int ip_priority = 55;

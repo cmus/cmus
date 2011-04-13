@@ -377,6 +377,26 @@ static char *mpc_codec(struct input_plugin_data *ip_data)
 	return NULL;
 }
 
+static char *mpc_codec_profile(struct input_plugin_data *ip_data)
+{
+	struct mpc_private *priv = ip_data->private;
+	const char *profile = priv->info.profile_name;
+	char *s = NULL;
+
+	if (profile && profile[0]) {
+		int i;
+
+		/* remove single quotes */
+		while (*profile == '\'')
+			profile++;
+		s = xstrdup(profile);
+		for (i = strlen(s) - 1; s[i] == '\'' && i >= 0; i--)
+			s[i] = '\0';
+	}
+
+	return s;
+}
+
 const struct input_plugin_ops ip_ops = {
 	.open = mpc_open,
 	.close = mpc_close,
@@ -385,7 +405,8 @@ const struct input_plugin_ops ip_ops = {
 	.read_comments = mpc_read_comments,
 	.duration = mpc_duration,
 	.bitrate = mpc_bitrate,
-	.codec = mpc_codec
+	.codec = mpc_codec,
+	.codec_profile = mpc_codec_profile
 };
 
 const int ip_priority = 50;

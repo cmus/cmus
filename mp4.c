@@ -474,6 +474,34 @@ static char *mp4_codec(struct input_plugin_data *ip_data)
 	return xstrdup("aac");
 }
 
+static const char *object_type_to_str(uint8_t obj_type)
+{
+	switch (obj_type) {
+	case MP4_MPEG4_AAC_MAIN_AUDIO_TYPE:	return "Main";
+	case MP4_MPEG4_AAC_LC_AUDIO_TYPE:	return "LC";
+	case MP4_MPEG4_AAC_SSR_AUDIO_TYPE:	return "SSR";
+	case MP4_MPEG4_AAC_LTP_AUDIO_TYPE:	return "LTP";
+	case MP4_MPEG4_AAC_HE_AUDIO_TYPE:	return "HE";
+	case MP4_MPEG4_AAC_SCALABLE_AUDIO_TYPE:	return "Scalable";
+	}
+	return NULL;
+}
+
+static char *mp4_codec_profile(struct input_plugin_data *ip_data)
+{
+	struct mp4_private *priv = ip_data->private;
+	const char *profile;
+	uint8_t obj_type;
+
+	obj_type = MP4GetTrackEsdsObjectTypeId(priv->mp4.handle, priv->mp4.track);
+	if (obj_type == MP4_MPEG4_AUDIO_TYPE)
+		obj_type = MP4GetTrackAudioMpeg4Type(priv->mp4.handle, priv->mp4.track);
+
+	profile = object_type_to_str(obj_type);
+
+	return profile ? xstrdup(profile) : NULL;
+}
+
 const struct input_plugin_ops ip_ops = {
 	.open = mp4_open,
 	.close = mp4_close,
@@ -482,7 +510,8 @@ const struct input_plugin_ops ip_ops = {
 	.read_comments = mp4_read_comments,
 	.duration = mp4_duration,
 	.bitrate = mp4_bitrate,
-	.codec = mp4_codec
+	.codec = mp4_codec,
+	.codec_profile = mp4_codec_profile
 };
 
 const int ip_priority = 50;

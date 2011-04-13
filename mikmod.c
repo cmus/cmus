@@ -149,6 +149,11 @@ static char *mik_codec(struct input_plugin_data *ip_data)
 	return (codec && codec[0]) ? xstrdup(codec) : NULL;
 }
 
+static char *mik_codec_profile(struct input_plugin_data *ip_data)
+{
+	return NULL;
+}
+
 const struct input_plugin_ops ip_ops = {
 	.open = mik_open,
 	.close = mik_close,
@@ -157,7 +162,8 @@ const struct input_plugin_ops ip_ops = {
 	.read_comments = mik_read_comments,
 	.duration = mik_duration,
 	.bitrate = mik_bitrate,
-	.codec = mik_codec
+	.codec = mik_codec,
+	.codec_profile = mik_codec_profile
 };
 
 const int ip_priority = 40;

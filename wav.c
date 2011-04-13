@@ -390,6 +390,11 @@ static char *wav_codec(struct input_plugin_data *ip_data)
 	return xstrdup(buf);
 }
 
+static char *wav_codec_profile(struct input_plugin_data *ip_data)
+{
+	return NULL;
+}
+
 const struct input_plugin_ops ip_ops = {
 	.open = wav_open,
 	.close = wav_close,
@@ -398,7 +403,8 @@ const struct input_plugin_ops ip_ops = {
 	.read_comments = wav_read_comments,
 	.duration = wav_duration,
 	.bitrate = wav_bitrate,
-	.codec = wav_codec
+	.codec = wav_codec,
+	.codec_profile = wav_codec_profile
 };
 
 const int ip_priority = 50;

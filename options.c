@@ -210,6 +210,7 @@ static const struct {
 	{ "rg_album_peak",	SORT_RG_ALBUM_PEAK	},
 	{ "bitrate",		SORT_BITRATE		},
 	{ "codec",		SORT_CODEC		},
+	{ "codec_profile",	SORT_CODEC_PROFILE	},
 	{ NULL,                 SORT_INVALID            }
 };
 

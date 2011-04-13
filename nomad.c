@@ -71,15 +71,7 @@ struct nomad {
 	int end_drop_samples;
 	int end_drop_frames;
 
-	struct {
-		unsigned int is_info : 1;
-		unsigned int flags;
-		unsigned int nr_frames;
-		unsigned int bytes;
-		unsigned int scale;
-		unsigned char toc[100];
-	} xing;
-
+	struct nomad_xing xing;
 	struct nomad_lame lame;
 
 	struct {
@@ -137,9 +129,16 @@ static int parse_lame(struct nomad *nomad, struct mad_bitptr ptr, int bitlen)
 	d_print("detected LAME version %s\n", nomad->lame.encoder + 4);
 #endif
 
+	i = mad_bit_read(&ptr, 4);
+#if defined(DEBUG_LAME)
+	d_print("LAME tag revision: %d\n", i);
+#endif
+	nomad->lame.vbr_method = mad_bit_read(&ptr, 4);
+
 	/* ReplayGain in LAME tag was added in 3.94 */
 	if (version_major > 3 || (version_major == 3 && version_minor >= 94)) {
-		mad_bit_read(&ptr, 16);
+		/* lowpass */
+		mad_bit_read(&ptr, 8);
 
 		/* The reference volume was changed from the 83dB used in the
 		 * ReplayGain spec to 89dB in lame 3.95.1.  Bump the gain for older
@@ -168,9 +167,14 @@ static int parse_lame(struct nomad *nomad, struct mad_bitptr ptr, int bitlen)
 			*/
 		}
 
+		/*
+		 * 4 encoding flags
+		 * 4 ATH type
+		 * 8 minimal bitrate (if ABR -> specified bitrate)
+		 */
 		mad_bit_read(&ptr, 16);
 	} else
-		mad_bit_read(&ptr, 96);
+		mad_bit_read(&ptr, 88);
 
 	nomad->lame.encoderDelay = mad_bit_read(&ptr, 12);
 	nomad->lame.encoderPadding = mad_bit_read(&ptr, 12);
@@ -198,13 +202,6 @@ static int parse_lame(struct nomad *nomad, struct mad_bitptr ptr, int bitlen)
 
 	return 1;
 }
-
-enum {
-	XING_FRAMES = 0x00000001L,
-	XING_BYTES  = 0x00000002L,
-	XING_TOC    = 0x00000004L,
-	XING_SCALE  = 0x00000008L
-};
 
 /*
  * format:
@@ -406,21 +403,15 @@ static void calc_frames_fast(struct nomad *nomad)
 
 static void calc_bitrate_fast(struct nomad *nomad)
 {
-	if (nomad->has_xing && (nomad->xing.flags & XING_BYTES) && !nomad->xing.is_info) {
-		nomad->info.avg_bitrate = (nomad->xing.bytes * 8.0) / nomad->info.duration;
-		nomad->info.vbr = 1;
-#if defined(DEBUG_XING)
-		d_print("seems to be VBR, bitrate from Xing Header: %d\n", nomad->info.avg_bitrate);
-#endif
-	} else {
-		nomad->info.avg_bitrate = nomad->frame.header.bitrate;
+	nomad->info.vbr = nomad->has_xing ? !nomad->xing.is_info : 0;
+
+	if (nomad->has_lame && nomad->lame.vbr_method == 1)
 		nomad->info.vbr = 0;
-#if defined(DEBUG_XING)
-		if (nomad->xing.is_info)
-			d_print("Xing header == Info, ");
-		d_print("taking bitrate from first frame: %d\n", nomad->info.avg_bitrate);
-#endif
-	}
+
+	if (nomad->has_xing && (nomad->xing.flags & XING_BYTES) && nomad->xing.bytes)
+		nomad->info.avg_bitrate = (nomad->xing.bytes * 8.0) / nomad->info.duration;
+	else
+		nomad->info.avg_bitrate = nomad->frame.header.bitrate;
 }
 
 /*
@@ -831,9 +822,14 @@ int nomad_time_seek(struct nomad *nomad, double pos)
 	return 0;
 }
 
+const struct nomad_xing *nomad_xing(struct nomad *nomad)
+{
+	return nomad->has_xing ? &nomad->xing : NULL;
+}
+
 const struct nomad_lame *nomad_lame(struct nomad *nomad)
 {
-	return &nomad->lame;
+	return nomad->has_lame ? &nomad->lame : NULL;
 }
 
 const struct nomad_info *nomad_info(struct nomad *nomad)

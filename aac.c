@@ -26,6 +26,7 @@
 
 #include <neaacdec.h>
 
+#include <stdio.h>
 #include <errno.h>
 #include <string.h>
 #include <sys/types.h>
@@ -43,6 +44,7 @@ struct aac_private {
 	unsigned char channels;
 	unsigned long sample_rate;
 	long bitrate;
+	int object_type;
 
 	char *overflow_buf;
 	int overflow_buf_len;
@@ -195,6 +197,7 @@ static int aac_open(struct input_plugin_data *ip_data)
 	priv = xnew0(struct aac_private, 1);
 	priv->decoder = NeAACDecOpen();
 	priv->bitrate = -1;
+	priv->object_type = -1;
 	ip_data->private = priv;
 
 	/* set decoder config */
@@ -429,6 +432,8 @@ static int aac_duration(struct input_plugin_data *ip_data)
 	/*  8 * file_size / duration */
 	priv->bitrate = (8 * bytes * priv->sample_rate) / samples;
 
+	priv->object_type = frame_info.object_type;
+
 	return ((file_size / bytes) * samples) / priv->sample_rate;
 }
 
@@ -443,6 +448,30 @@ static char *aac_codec(struct input_plugin_data *ip_data)
 	return xstrdup("aac");
 }
 
+static const char *object_type_to_str(int object_type)
+{
+	switch (object_type) {
+	case MAIN:	return "Main";
+	case LC:	return "LC";
+	case SSR:	return "SSR";
+	case LTP:	return "LTP";
+	case HE_AAC:	return "HE";
+	case ER_LC:	return "ER-LD";
+	case ER_LTP:	return "ER-LTP";
+	case LD:	return "LD";
+	case DRM_ER_LC:	return "DRM-ER-LC";
+	}
+	return NULL;
+}
+
+static char *aac_codec_profile(struct input_plugin_data *ip_data)
+{
+	struct aac_private *priv = ip_data->private;
+	const char *profile = object_type_to_str(priv->object_type);
+
+	return profile ? xstrdup(profile) : NULL;
+}
+
 const struct input_plugin_ops ip_ops = {
 	.open = aac_open,
 	.close = aac_close,
@@ -451,7 +480,8 @@ const struct input_plugin_ops ip_ops = {
 	.read_comments = aac_read_comments,
 	.duration = aac_duration,
 	.bitrate = aac_bitrate,
-	.codec = aac_codec
+	.codec = aac_codec,
+	.codec_profile = aac_codec_profile
 };
 
 const int ip_priority = 50;

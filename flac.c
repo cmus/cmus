@@ -532,6 +532,12 @@ static char *flac_codec(struct input_plugin_data *ip_data)
 	return xstrdup("flac");
 }
 
+static char *flac_codec_profile(struct input_plugin_data *ip_data)
+{
+	/* maybe identify compression-level over min/max blocksize/framesize */
+	return NULL;
+}
+
 const struct input_plugin_ops ip_ops = {
 	.open = flac_open,
 	.close = flac_close,
@@ -540,7 +546,8 @@ const struct input_plugin_ops ip_ops = {
 	.read_comments = flac_read_comments,
 	.duration = flac_duration,
 	.bitrate = flac_bitrate,
-	.codec = flac_codec
+	.codec = flac_codec,
+	.codec_profile = flac_codec_profile
 };
 
 const int ip_priority = 50;

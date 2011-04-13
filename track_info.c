@@ -34,6 +34,7 @@ static void track_info_free(struct track_info *ti)
 	keyvals_free(ti->comments);
 	free(ti->filename);
 	free(ti->codec);
+	free(ti->codec_profile);
 	free(ti->collkey_artist);
 	free(ti->collkey_album);
 	free(ti->collkey_title);
@@ -51,6 +52,7 @@ struct track_info *track_info_new(const char *filename)
 	ti->ref = 1;
 	ti->comments = NULL;
 	ti->codec = NULL;
+	ti->codec_profile = NULL;
 	return ti;
 }
 

@@ -411,6 +411,7 @@ static const struct {
 	{ "artist",	EXPR_STR	},
 	{ "bitrate",	EXPR_INT	},
 	{ "codec",	EXPR_STR	},
+	{ "codec_profile",EXPR_STR	},
 	{ "comment",	EXPR_STR	},
 	{ "date",	EXPR_INT	},
 	{ "discnumber",	EXPR_INT	},
@@ -877,6 +878,8 @@ int expr_eval(struct expr *expr, struct track_info *ti)
 				val = uval;
 		} else if (strcmp(key, "codec") == 0) {
 			val = ti->codec;
+		} else if (strcmp(key, "codec_profile") == 0) {
+			val = ti->codec_profile;
 		} else {
 			val = keyvals_get_val(ti->comments, key);
 		}

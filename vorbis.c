@@ -33,6 +33,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <math.h>
 
 struct vorbis_private {
 	OggVorbis_File vf;
@@ -307,6 +308,41 @@ static char *vorbis_codec(struct input_plugin_data *ip_data)
 	return xstrdup("vorbis");
 }
 
+static const long rate_mapping_44[2][12] = {
+	{ 32000, 48000, 60000, 70000,  80000,  86000,  96000, 110000, 120000, 140000, 160000, 239920 },
+	{ 45000, 64000, 80000, 96000, 112000, 128000, 160000, 192000, 224000, 256000, 320000, 499821 }
+};
+
+static char *vorbis_codec_profile(struct input_plugin_data *ip_data)
+{
+	struct vorbis_private *priv = ip_data->private;
+	vorbis_info *vi = ov_info(&priv->vf, -1);
+	long b = vi->bitrate_nominal;
+	char buf[64];
+
+	if (b <= 0)
+		return NULL;
+
+	if (vi->channels > 2 || vi->rate < 44100) {
+		sprintf(buf, "%ldkbps", b / 1000);
+	} else {
+		const long *map = rate_mapping_44[vi->channels - 1];
+		float q;
+		int i;
+
+		for (i = 0; i < 12-1; i++) {
+			if (b >= map[i] && b < map[i+1])
+				break;
+		}
+		/* This is used even if upper / lower bitrate are set
+		 * because it gives a good approximation. */
+		q = (i - 1) + (float) (b - map[i]) / (map[i+1] - map[i]);
+		sprintf(buf, "q%g", roundf(q * 100.f) / 100.f);
+	}
+
+	return xstrdup(buf);
+}
+
 const struct input_plugin_ops ip_ops = {
 	.open = vorbis_open,
 	.close = vorbis_close,
@@ -315,7 +351,8 @@ const struct input_plugin_ops ip_ops = {
 	.read_comments = vorbis_read_comments,
 	.duration = vorbis_duration,
 	.bitrate = vorbis_bitrate,
-	.codec = vorbis_codec
+	.codec = vorbis_codec,
+	.codec_profile = vorbis_codec_profile
 };
 
 const int ip_priority = 50;

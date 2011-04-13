@@ -53,6 +53,7 @@ int ip_read_comments(struct input_plugin *ip, struct keyval **comments);
 int ip_duration(struct input_plugin *ip);
 int ip_bitrate(struct input_plugin *ip);
 char *ip_codec(struct input_plugin *ip);
+char *ip_codec_profile(struct input_plugin *ip);
 
 sample_format_t ip_get_sf(struct input_plugin *ip);
 const char *ip_get_filename(struct input_plugin *ip);

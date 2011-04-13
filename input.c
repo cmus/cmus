@@ -60,6 +60,8 @@ struct input_plugin {
 	long bitrate;
 	/* cached codec, NULL = unset */
 	char *codec;
+	/* cached codec_profile, NULL = unset */
+	char *codec_profile;
 
 	/*
 	 * pcm is converted to 16-bit signed little-endian stereo
@@ -383,6 +385,7 @@ static void ip_init(struct input_plugin *ip, char *filename)
 	ip->duration = -1;
 	ip->bitrate = -1;
 	ip->codec = NULL;
+	ip->codec_profile = NULL;
 	ip->data.fd = -1;
 	ip->data.filename = filename;
 	ip->data.remote = is_url(filename);
@@ -721,6 +724,15 @@ char *ip_codec(struct input_plugin *ip)
 	if (!ip->codec)
 		ip->codec = ip->ops->codec(&ip->data);
 	return ip->codec;
+}
+
+char *ip_codec_profile(struct input_plugin *ip)
+{
+	if (ip->data.remote)
+		return NULL;
+	if (!ip->codec_profile)
+		ip->codec_profile = ip->ops->codec_profile(&ip->data);
+	return ip->codec_profile;
 }
 
 sample_format_t ip_get_sf(struct input_plugin *ip)

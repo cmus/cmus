@@ -366,6 +366,35 @@ static char *wavpack_codec(struct input_plugin_data *ip_data)
 	return xstrdup("wavpack");
 }
 
+static char *wavpack_codec_profile(struct input_plugin_data *ip_data)
+{
+	struct wavpack_private *priv = ip_data->private;
+	int m = WavpackGetMode(priv->wpc);
+	char buf[32];
+
+	buf[0] = '\0';
+
+	if (m & MODE_FAST)
+		strcat(buf, "fast");
+	else if (m & MODE_VERY_HIGH)
+		strcat(buf, "very high");
+	else if (m & MODE_HIGH)
+		strcat(buf, "high");
+	else
+		strcat(buf, "normal");
+
+	if (m & MODE_HYBRID)
+		strcat(buf, " hybrid");
+
+	if ((m & MODE_EXTRA) && (m & MODE_XMODE)) {
+		char xmode[] = " x0";
+		xmode[2] = ((m & MODE_XMODE) >> 12) + '0';
+		strcat(buf, xmode);
+	}
+
+	return xstrdup(buf);
+}
+
 const struct input_plugin_ops ip_ops = {
 	.open = wavpack_open,
 	.close = wavpack_close,
@@ -374,7 +403,8 @@ const struct input_plugin_ops ip_ops = {
 	.read_comments = wavpack_read_comments,
 	.duration = wavpack_duration,
 	.bitrate = wavpack_bitrate,
-	.codec = wavpack_codec
+	.codec = wavpack_codec,
+	.codec_profile = wavpack_codec_profile
 };
 
 const int ip_priority = 50;

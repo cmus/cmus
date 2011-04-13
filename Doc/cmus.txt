@@ -957,6 +957,7 @@ Special Keys:
 	%F  %{filename}		@br
 	    %{bitrate}		@br
 	    %{codec}		@br
+	    %{codec_profile}	@br
 	    %{rg_track_gain}	@br
 	    %{rg_track_peak}	@br
 	    %{rg_album_gain}	@br
@@ -990,8 +991,8 @@ Sort option (lib_sort, pl_sort) value is space separated list of the following
 sort keys:
 
 	artist, album, title, tracknumber, discnumber, date, genre, comment,
-	albumartist, filename, filemtime, bitrate, codec, rg_track_gain,
-	rg_track_peak, rg_album_gain, rg_album_peak
+	albumartist, filename, filemtime, bitrate, codec, codec_profile,
+	rg_track_gain, rg_track_peak, rg_album_gain, rg_album_peak
 
 
 @h1 PLUGIN OPTIONS
@@ -1096,7 +1097,8 @@ built-in filters. Also (and)-grouping is done implicitly.
 @h2 Strings
 
 @li long
-*filename*, *artist*, *album*, *title*, *genre*, *comment*, *codec*
+*filename*, *artist*, *album*, *title*, *genre*, *comment*, *codec*,
+*codec_profile*
 @br
 Comparators: *=* and *!=* (not equal)
 
