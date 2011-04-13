@@ -37,20 +37,27 @@
 
 #define WV_CHANNEL_MAX 2
 
+struct wavpack_file {
+	int fd;
+	off_t len;
+};
+
 struct wavpack_private {
 	WavpackContext *wpc;
-	off_t len;
 	int32_t samples[CHUNK_SIZE * WV_CHANNEL_MAX];
+	struct wavpack_file wv_file;
+	struct wavpack_file wvc_file;
+	unsigned int has_wvc : 1;
 };
 
 /* http://www.wavpack.com/lib_use.txt */
 
 static int32_t read_bytes(void *data, void *ptr, int32_t count)
 {
-	struct input_plugin_data *ip_data = data;
+	struct wavpack_file *file = data;
 	int rc;
 
-	rc = read_wrapper(ip_data, ptr, count);
+	rc = read(file->fd, ptr, count);
 	if (rc == -1) {
 		d_print("error: %s\n", strerror(errno));
 		return 0;
@@ -64,25 +71,23 @@ static int32_t read_bytes(void *data, void *ptr, int32_t count)
 
 static uint32_t get_pos(void *data)
 {
-	struct input_plugin_data *ip_data = data;
+	struct wavpack_file *file = data;
 
-	return lseek(ip_data->fd, 0, SEEK_CUR);
+	return lseek(file->fd, 0, SEEK_CUR);
 }
 
 static int set_pos_abs(void *data, uint32_t pos)
 {
-	struct input_plugin_data *ip_data = data;
+	struct wavpack_file *file = data;
 
-	lseek(ip_data->fd, pos, SEEK_SET);
-	return errno;
+	return (lseek(file->fd, pos, SEEK_SET) == -1) ? -1 : 0;
 }
 
 static int set_pos_rel(void *data, int32_t delta, int mode)
 {
-	struct input_plugin_data *ip_data = data;
+	struct wavpack_file *file = data;
 
-	lseek(ip_data->fd, delta, mode);
-	return errno;
+	return (lseek(file->fd, delta, mode) == -1) ? -1 : 0;
 }
 
 static int push_back_byte(void *data, int c)
@@ -94,15 +99,14 @@ static int push_back_byte(void *data, int c)
 
 static uint32_t get_length(void *data)
 {
-	struct input_plugin_data *ip_data = data;
-	struct wavpack_private *priv = ip_data->private;
-	return priv->len;
+	struct wavpack_file *file = data;
+	return file->len;
 }
 
 static int can_seek(void *data)
 {
-	struct input_plugin_data *ip_data = data;
-	return !ip_data->remote;
+	struct wavpack_file *file = data;
+	return file->len != (off_t) -1;
 }
 
 static int32_t write_bytes(void *data, void *ptr, int32_t count)
@@ -143,16 +147,32 @@ static int wavpack_open(struct input_plugin_data *ip_data)
 	struct stat st;
 	char msg[80];
 
-	priv = xnew(struct wavpack_private, 1);
-	priv->wpc = NULL;
-	priv->len = 0;
-	if (!ip_data->remote && !fstat(ip_data->fd, &st))
-		priv->len = st.st_size;
+	priv = xnew0(struct wavpack_private, 1);
+	priv->wv_file.fd = ip_data->fd;
+	if (!ip_data->remote && fstat(ip_data->fd, &st) == 0) {
+		char *filename_wvc;
+
+		priv->wv_file.len = st.st_size;
+
+		filename_wvc = xnew(char, strlen(ip_data->filename) + 2);
+		sprintf(filename_wvc, "%sc", ip_data->filename);
+		if (stat(filename_wvc, &st) == 0) {
+			priv->wvc_file.fd = open(filename_wvc, O_RDONLY);
+			if (priv->wvc_file.fd != -1) {
+				priv->wvc_file.len = st.st_size;
+				priv->has_wvc = 1;
+				d_print("use correction file: %s\n", filename_wvc);
+			}
+		}
+		free(filename_wvc);
+	} else
+		priv->wv_file.len = (off_t) -1;
 	ip_data->private = priv;
 
 	*msg = '\0';
 
-	priv->wpc = WavpackOpenFileInputEx(&callbacks, ip_data, NULL, msg,
+	priv->wpc = WavpackOpenFileInputEx(&callbacks, &priv->wv_file,
+			priv->has_wvc ? &priv->wvc_file : NULL, msg,
 			OPEN_2CH_MAX | OPEN_NORMALIZE, 0);
 
 	if (!priv->wpc) {
@@ -174,6 +194,8 @@ static int wavpack_close(struct input_plugin_data *ip_data)
 
 	priv = ip_data->private;
 	priv->wpc = WavpackCloseFile(priv->wpc);
+	if (priv->has_wvc)
+		close(priv->wvc_file.fd);
 	free(priv);
 	ip_data->private = NULL;
 	return 0;
