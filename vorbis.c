@@ -117,7 +117,9 @@ static int vorbis_open(struct input_plugin_data *ip_data)
 	if (rc != 0) {
 		d_print("ov_open failed: %d\n", rc);
 		free(priv);
-		return -IP_ERROR_FILE_FORMAT;
+		/* ogg is a container format, so it is likely to contain
+		 * something else if it isn't vorbis */
+		return -IP_ERROR_UNSUPPORTED_FILE_TYPE;
 	}
 	ip_data->private = priv;
 
