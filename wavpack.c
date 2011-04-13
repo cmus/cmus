@@ -40,6 +40,7 @@
 struct wavpack_file {
 	int fd;
 	off_t len;
+	int push_back_byte;
 };
 
 struct wavpack_private {
@@ -55,7 +56,16 @@ struct wavpack_private {
 static int32_t read_bytes(void *data, void *ptr, int32_t count)
 {
 	struct wavpack_file *file = data;
-	int rc;
+	int32_t rc, n = 0;
+
+	if (file->push_back_byte != EOF) {
+		char *p = ptr;
+		*p = (char) file->push_back_byte;
+		ptr = p + 1;
+		file->push_back_byte = EOF;
+		count--;
+		n++;
+	}
 
 	rc = read(file->fd, ptr, count);
 	if (rc == -1) {
@@ -66,7 +76,7 @@ static int32_t read_bytes(void *data, void *ptr, int32_t count)
 		errno = 0;
 		return 0;
 	}
-	return rc;
+	return rc + n;
 }
 
 static uint32_t get_pos(void *data)
@@ -76,25 +86,34 @@ static uint32_t get_pos(void *data)
 	return lseek(file->fd, 0, SEEK_CUR);
 }
 
-static int set_pos_abs(void *data, uint32_t pos)
-{
-	struct wavpack_file *file = data;
-
-	return (lseek(file->fd, pos, SEEK_SET) == -1) ? -1 : 0;
-}
-
 static int set_pos_rel(void *data, int32_t delta, int mode)
 {
 	struct wavpack_file *file = data;
+	int rc;
 
-	return (lseek(file->fd, delta, mode) == -1) ? -1 : 0;
+	rc = lseek(file->fd, delta, mode);
+	if (rc == -1)
+		return -1;
+
+	file->push_back_byte = EOF;
+	return 0;
+}
+
+static int set_pos_abs(void *data, uint32_t pos)
+{
+	return set_pos_rel(data, pos, SEEK_SET);
 }
 
 static int push_back_byte(void *data, int c)
 {
-	/* not possible? */
-	d_print("NOT POSSIBLE\n");
-	return EOF;
+	struct wavpack_file *file = data;
+
+	if (file->push_back_byte != EOF) {
+		d_print("error: only one byte push back possible!\n");
+		return EOF;
+	}
+	file->push_back_byte = c;
+	return c;
 }
 
 static uint32_t get_length(void *data)
@@ -149,6 +168,7 @@ static int wavpack_open(struct input_plugin_data *ip_data)
 
 	priv = xnew0(struct wavpack_private, 1);
 	priv->wv_file.fd = ip_data->fd;
+	priv->wv_file.push_back_byte = EOF;
 	if (!ip_data->remote && fstat(ip_data->fd, &st) == 0) {
 		char *filename_wvc;
 
@@ -160,6 +180,7 @@ static int wavpack_open(struct input_plugin_data *ip_data)
 			priv->wvc_file.fd = open(filename_wvc, O_RDONLY);
 			if (priv->wvc_file.fd != -1) {
 				priv->wvc_file.len = st.st_size;
+				priv->wvc_file.push_back_byte = EOF;
 				priv->has_wvc = 1;
 				d_print("use correction file: %s\n", filename_wvc);
 			}
