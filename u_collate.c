@@ -92,22 +92,17 @@ char *u_strcoll_key(const char *str)
 	}
 
 	if (!result) {
-		char *str_locale;
-		size_t xfrm_len;
+		char *str_locale = NULL;
 
 		convert(str, -1, &str_locale, -1, charset, "UTF-8");
 
 		if (str_locale) {
-			xfrm_len = strxfrm(NULL, str_locale, 0);
-			if ((ssize_t) xfrm_len < 0 || xfrm_len >= INT_MAX - 2) {
-				free(str_locale);
-				str_locale = NULL;
+			size_t xfrm_len = strxfrm(NULL, str_locale, 0);
+			if ((ssize_t) xfrm_len >= 0 && xfrm_len < INT_MAX - 2) {
+				result = xnew(char, xfrm_len + 2);
+				result[0] = 'A';
+				strxfrm(result + 1, str_locale, xfrm_len + 1);
 			}
-		}
-		if (str_locale) {
-			result = xnew(char, xfrm_len + 2);
-			result[0] = 'A';
-			strxfrm(result + 1, str_locale, xfrm_len + 1);
 			free(str_locale);
 		}
 	}
