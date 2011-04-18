@@ -310,15 +310,15 @@ check_aac()
 
 check_ffmpeg()
 {
-	if pkg_config FFMPEG "libavformat"
+	HAVE_FFMPEG_AVCODEC_H=y
+	pkg_config FFMPEG "libavformat" || return $?
+	if check_header "libavcodec/avcodec.h"
 	then
-		if check_header 'ffmpeg/avcodec.h'
-		then
-			FFMPEG_CFLAGS="$FFMPEG_CFLAGS -DHAVE_FFMPEG_AVCODEC_H"
-		fi
-		return 0
+		HAVE_FFMPEG_AVCODEC_H=n
+	else
+		check_header "ffmpeg/avcodec.h" || return $?
 	fi
-	return 1
+	return 0
 }
 
 # defaults
@@ -431,7 +431,7 @@ config_header config/tremor.h CONFIG_TREMOR
 config_header config/mpc.h MPC_SV8
 config_header config/mp4.h USE_MPEG4IP
 config_header config/curses.h HAVE_RESIZETERM HAVE_USE_DEFAULT_COLORS
-config_header config/ffmpeg.h USE_FALLBACK_IP
+config_header config/ffmpeg.h HAVE_FFMPEG_AVCODEC_H USE_FALLBACK_IP
 config_header config/utils.h HAVE_BYTESWAP_H
 config_header config/iconv.h HAVE_ICONV
 
