@@ -133,8 +133,13 @@ check_ncurses()
 
 check_mpc()
 {
-	check_header mpc/mpcdec.h
-	MPC_SV7=$?
+	MPC_SV8=0
+	if check_header mpc/mpcdec.h
+	then
+		MPC_SV8=1
+	else
+		check_header mpcdec/mpcdec.h || return $?
+	fi
 	check_library MPC "" "-lmpcdec -lm"
 	return $?
 }
@@ -423,7 +428,7 @@ config_header config/datadir.h DATADIR
 config_header config/libdir.h LIBDIR
 config_header config/debug.h DEBUG
 config_header config/tremor.h CONFIG_TREMOR
-config_header config/mpc.h MPC_SV7
+config_header config/mpc.h MPC_SV8
 config_header config/mp4.h USE_MPEG4IP
 config_header config/curses.h HAVE_RESIZETERM HAVE_USE_DEFAULT_COLORS
 config_header config/ffmpeg.h USE_FALLBACK_IP

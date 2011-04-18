@@ -12,7 +12,6 @@
 #include "read_wrapper.h"
 
 #include "config/mpc.h"
-#define MPC_SV8 (!MPC_SV7)
 
 #if MPC_SV8
 #include <mpc/mpcdec.h>
