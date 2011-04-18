@@ -278,8 +278,13 @@ check_waveout()
 
 check_mp4()
 {
-	check_header mp4v2/mp4v2.h
-	USE_MPEG4IP=$?
+	USE_MPEG4IP=1
+	if check_header mp4v2/mp4v2.h
+	then
+		USE_MPEG4IP=0
+	else
+		check_header mp4.h || return $?
+	fi
 	check_header neaacdec.h &&
 	check_library MP4 "" "-lmp4v2 -lfaad -lm"
 	return $?
