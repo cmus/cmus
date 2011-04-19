@@ -43,6 +43,21 @@ int spawn(char *argv[], int *status, int do_wait)
 		/* child */
 		int dev_null, err, i;
 
+		/* create grandchild and exit child to avoid zombie processes */
+		if (!do_wait) {
+			switch (fork()) {
+			case 0:
+				/* grandchild */
+				break;
+			case -1:
+				/* error */
+				_exit(127);
+			default:
+				/* parent of grandchild */
+				_exit(0);
+			}
+		}
+
 		close(err_pipe[0]);
 		fcntl(err_pipe[1], F_SETFD, FD_CLOEXEC);
 
@@ -68,15 +83,16 @@ int spawn(char *argv[], int *status, int do_wait)
 		exit(1);
 	} else {
 		/* parent */
-		int rc, errno_save, child_errno;
+		int rc, errno_save, child_errno, tmp;
 
 		close(err_pipe[1]);
 		rc = read_all(err_pipe[0], &child_errno, sizeof(int));
 		errno_save = errno;
 		close(err_pipe[0]);
 
-		if (do_wait)
-			waitpid(pid, status, 0);
+		if (!do_wait)
+			status = &tmp;
+		waitpid(pid, status, 0);
 
 		if (rc == -1) {
 			errno = errno_save;
