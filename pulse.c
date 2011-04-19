@@ -71,6 +71,9 @@ static pa_proplist *__create_stream_proplist(void)
 	rc = pa_proplist_sets(pl, PA_PROP_MEDIA_ROLE, "music");
 	BUG_ON(rc);
 
+	rc = pa_proplist_sets(pl, PA_PROP_MEDIA_ICON_NAME, "audio-x-generic");
+	BUG_ON(rc);
+
 	return pl;
 }
 
