@@ -1,7 +1,0 @@
-- no-wakeups playback
-- conditionals in format strings
-- cuesheet (.flac + .cue) support
-- CDDA support
-- Last.FM support
-- different random modes (albums/artist/etc.)
-- playlist tracks grouping (a la foobar2000)
