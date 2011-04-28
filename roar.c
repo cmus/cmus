@@ -1,6 +1,7 @@
 /*
- * Copyright 2006 Johannes Weißl
+ * Copyright 2008-2011 Various Authors
  * Copyright 2010 Philipp 'ph3-der-loewe' Schafft
+ * Copyright 2006 Johannes Weißl
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -13,9 +14,7 @@
  * General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
- * 02111-1307, USA.
+ * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <roaraudio.h>

@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2008-2011 Various Authors
  * Copyright (C) 2009 Gregory Petrosyan
  *
  * This program is free software: you can redistribute it and/or modify
