@@ -34,10 +34,12 @@
 #include "file.h"
 #include "prog.h"
 #include "output.h"
+#include "input.h"
 #include "config/datadir.h"
 #include "track_info.h"
 #include "cache.h"
 #include "debug.h"
+#include "discid.h"
 
 #include <stdio.h>
 #include <errno.h>
@@ -51,6 +53,7 @@
 
 /* initialized option variables */
 
+char *cdda_device = NULL;
 char *output_plugin = NULL;
 char *status_display_program = NULL;
 char *server_password;
@@ -177,6 +180,17 @@ enum format_id {
 };
 
 /* callbacks for normal options {{{ */
+
+static void get_device(unsigned int id, char *buf)
+{
+	strcpy(buf, cdda_device);
+}
+
+static void set_device(unsigned int id, const char *buf)
+{
+	free(cdda_device);
+	cdda_device = expand_filename(buf);
+}
 
 #define SECOND_SIZE (44100 * 16 / 8 * 2)
 static void get_buffer_seconds(unsigned int id, char *buf)
@@ -929,6 +943,7 @@ static const struct {
 } simple_options[] = {
 	DT(aaa_mode)
 	DT(auto_reshuffle)
+	DN_FLAGS(device, OPT_PROGRAM_PATH)
 	DN(buffer_seconds)
 	DT(confirm_run)
 	DT(continue)
@@ -1071,6 +1086,7 @@ void options_add(void)
 	for (i = 0; i < NR_COLORS; i++)
 		option_add(color_names[i], i, get_color, set_color, NULL, 0);
 
+	ip_add_options();
 	op_add_options();
 }
 
@@ -1091,6 +1107,7 @@ void options_load(void)
 	int i;
 
 	/* initialize those that can't be statically initialized */
+	cdda_device = get_default_cdda_device();
 	for (i = 0; str_defaults[i].name; i++)
 		option_set(str_defaults[i].name, str_defaults[i].value);
 

@@ -38,7 +38,8 @@ enum file_type {
 	FILE_TYPE_URL,
 	FILE_TYPE_PL,
 	FILE_TYPE_DIR,
-	FILE_TYPE_FILE
+	FILE_TYPE_FILE,
+	FILE_TYPE_CDDA
 };
 
 typedef int (*track_info_cb)(void *data, struct track_info *ti);

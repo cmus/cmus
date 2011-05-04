@@ -139,9 +139,19 @@ static inline void ms_sleep(int ms)
 	ns_sleep(ms * 1e6);
 }
 
-static inline int is_url(const char *name)
+static inline int is_http_url(const char *name)
 {
 	return strncmp(name, "http://", 7) == 0;
+}
+
+static inline int is_cdda_url(const char *name)
+{
+	return strncmp(name, "cdda://", 7) == 0;
+}
+
+static inline int is_url(const char *name)
+{
+	return is_http_url(name) || is_cdda_url(name);
 }
 
 static inline int is_freeform_true(const char *c)

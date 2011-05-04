@@ -36,6 +36,7 @@
 #include "ui_curses.h"
 #include "cache.h"
 #include "gbuf.h"
+#include "discid.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -124,9 +125,14 @@ enum file_type cmus_detect_ft(const char *name, char **ret)
 	char *absolute;
 	struct stat st;
 
-	if (is_url(name)) {
+	if (is_http_url(name)) {
 		*ret = xstrdup(name);
 		return FILE_TYPE_URL;
+	}
+
+	if (is_cdda_url(name)) {
+		*ret = complete_cdda_url(cdda_device, name);
+		return FILE_TYPE_CDDA;
 	}
 
 	*ret = NULL;

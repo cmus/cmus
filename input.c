@@ -24,6 +24,7 @@
 #include "file.h"
 #include "utils.h"
 #include "cmus.h"
+#include "options.h"
 #include "list.h"
 #include "mergesort.h"
 #include "misc.h"
@@ -85,6 +86,7 @@ struct ip {
 	const char * const *extensions;
 	const char * const *mime_types;
 	const struct input_plugin_ops *ops;
+	const char * const *options;
 };
 
 static const char * const plugin_dir = LIBDIR "/cmus/ip";
@@ -386,7 +388,7 @@ static void ip_init(struct input_plugin *ip, char *filename)
 		.data = {
 			.fd         = -1,
 			.filename   = filename,
-			.remote     = is_url(filename),
+			.remote     = is_http_url(filename),
 			.channel_map = CHANNEL_MAP_INIT
 		}
 	};
@@ -490,7 +492,8 @@ void ip_load_plugins(void)
 		ip->extensions = dlsym(so, "ip_extensions");
 		ip->mime_types = dlsym(so, "ip_mime_types");
 		ip->ops = dlsym(so, "ip_ops");
-		if (!priority_ptr || !ip->extensions || !ip->mime_types || !ip->ops) {
+		ip->options = dlsym(so, "ip_options");
+		if (!priority_ptr || !ip->extensions || !ip->mime_types || !ip->ops || !ip->options) {
 			error_msg("%s: missing symbol", filename);
 			free(ip);
 			dlclose(so);
@@ -535,7 +538,11 @@ int ip_open(struct input_plugin *ip)
 		if (rc == 0)
 			rc = ip->ops->open(&ip->data);
 	} else {
-		rc = open_file(ip);
+		if (is_cdda_url(ip->data.filename)) {
+			ip->ops = get_ops_by_mime_type("x-content/audio-cdda");
+			rc = ip->ops ? ip->ops->open(&ip->data) : 1;
+		} else
+			rc = open_file(ip);
 	}
 
 	if (rc) {
@@ -785,6 +792,64 @@ int ip_eof(struct input_plugin *ip)
 	return ip->eof;
 }
 
+static struct ip *find_plugin(int idx)
+{
+	struct ip *ip;
+
+	list_for_each_entry(ip, &ip_head, node) {
+		if (idx == 0)
+			return ip;
+		idx--;
+	}
+	return NULL;
+}
+
+static void option_error(int rc)
+{
+	char *msg = ip_get_error_msg(NULL, rc, "setting option");
+	error_msg("%s", msg);
+	free(msg);
+}
+
+static void set_ip_option(unsigned int id, const char *val)
+{
+	const struct ip *ip = find_plugin(id >> 16);
+	int rc;
+
+	rc = ip->ops->set_option(id & 0xffff, val);
+	if (rc)
+		option_error(rc);
+}
+
+static void get_ip_option(unsigned int id, char *buf)
+{
+	const struct ip *ip = find_plugin(id >> 16);
+	char *val = NULL;
+
+	ip->ops->get_option(id & 0xffff, &val);
+	if (val) {
+		strcpy(buf, val);
+		free(val);
+	}
+}
+
+void ip_add_options(void)
+{
+	struct ip *ip;
+	unsigned int iid, pid = 0;
+	char key[64];
+
+	list_for_each_entry(ip, &ip_head, node) {
+		for (iid = 0; ip->options[iid]; iid++) {
+			snprintf(key, sizeof(key), "input.%s.%s",
+					ip->name,
+					ip->options[iid]);
+			option_add(xstrdup(key), (pid << 16) | iid, get_ip_option, set_ip_option, NULL, 0);
+		}
+		pid++;
+	}
+}
+
 char *ip_get_error_msg(struct input_plugin *ip, int rc, const char *arg)
 {
 	char buffer[1024];
@@ -818,6 +883,12 @@ char *ip_get_error_msg(struct input_plugin *ip, int rc, const char *arg)
 				"%s: input plugin doesn't support the sample format",
 				arg);
 		break;
+	case IP_ERROR_WRONG_DISC:
+		snprintf(buffer, sizeof(buffer), "%s: wrong disc inserted, aborting!", arg);
+		break;
+	case IP_ERROR_NO_DISC:
+		snprintf(buffer, sizeof(buffer), "%s: could not read disc", arg);
+		break;
 	case IP_ERROR_HTTP_RESPONSE:
 		snprintf(buffer, sizeof(buffer), "%s: invalid HTTP response", arg);
 		break;
@@ -829,6 +900,10 @@ char *ip_get_error_msg(struct input_plugin *ip, int rc, const char *arg)
 		break;
 	case IP_ERROR_HTTP_REDIRECT_LIMIT:
 		snprintf(buffer, sizeof(buffer), "%s: too many HTTP redirections", arg);
+		break;
+	case IP_ERROR_NOT_OPTION:
+		snprintf(buffer, sizeof(buffer),
+				"%s: no such option", arg);
 		break;
 	case IP_ERROR_INTERNAL:
 		snprintf(buffer, sizeof(buffer), "%s: internal error", arg);

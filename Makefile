@@ -18,11 +18,12 @@ include scripts/lib.mk
 
 CFLAGS += -D_FILE_OFFSET_BITS=64
 
-CMUS_LIBS = $(PTHREAD_LIBS) $(NCURSES_LIBS) $(ICONV_LIBS) $(DL_LIBS) -lm $(COMPAT_LIBS)
+CMUS_LIBS = $(PTHREAD_LIBS) $(NCURSES_LIBS) $(ICONV_LIBS) $(DL_LIBS) $(DISCID_LIBS) -lm $(COMPAT_LIBS)
 
 input.o main.o ui_curses.o pulse.lo: .version
 input.o main.o ui_curses.o pulse.lo: CFLAGS += -DVERSION=\"$(VERSION)\"
 main.o server.o: CFLAGS += -DDEFAULT_PORT=3000
+discid.o: CFLAGS += $(DISCID_CFLAGS)
 
 .version: Makefile
 	@test "`cat $@ 2> /dev/null`" = "$(VERSION)" && exit 0; \
@@ -31,7 +32,7 @@ main.o server.o: CFLAGS += -DDEFAULT_PORT=3000
 # programs {{{
 cmus-y := \
 	ape.o browser.o buffer.o cache.o cmdline.o cmus.o command_mode.o comment.o \
-	channelmap.o convert.lo debug.o editable.o expr.o filters.o \
+	channelmap.o convert.lo debug.o discid.o editable.o expr.o filters.o \
 	format_print.o gbuf.o glob.o help.o history.o http.o id3.o input.o job.o \
 	keys.o keyval.o lib.o load_dir.o locking.o mergesort.o misc.o options.o \
 	output.o pcm.o pl.o play_queue.o player.o \
@@ -63,6 +64,7 @@ libcmus.a: $(cmus-y) file.o path.o prog.o xmalloc.o
 # }}}
 
 # input plugins {{{
+cdio-objs		:= cdio.lo
 flac-objs		:= flac.lo
 mad-objs		:= mad.lo nomad.lo
 mikmod-objs		:= mikmod.lo
@@ -75,6 +77,7 @@ mp4-objs		:= mp4.lo
 aac-objs		:= aac.lo
 ffmpeg-objs		:= ffmpeg.lo
 
+ip-$(CONFIG_CDIO)	+= cdio.so
 ip-$(CONFIG_FLAC)	+= flac.so
 ip-$(CONFIG_MAD)	+= mad.so
 ip-$(CONFIG_MIKMOD)	+= mikmod.so
@@ -87,6 +90,7 @@ ip-$(CONFIG_MP4)	+= mp4.so
 ip-$(CONFIG_AAC)	+= aac.so
 ip-$(CONFIG_FFMPEG)	+= ffmpeg.so
 
+$(cdio-objs):		CFLAGS += $(CDIO_CFLAGS) $(CDDB_CFLAGS)
 $(flac-objs):		CFLAGS += $(FLAC_CFLAGS)
 $(mad-objs):		CFLAGS += $(MAD_CFLAGS)
 $(mikmod-objs):		CFLAGS += $(MIKMOD_CFLAGS)
@@ -97,6 +101,9 @@ $(wavpack-objs):	CFLAGS += $(WAVPACK_CFLAGS)
 $(mp4-objs):		CFLAGS += $(MP4_CFLAGS)
 $(aac-objs):		CFLAGS += $(AAC_CFLAGS)
 $(ffmpeg-objs):		CFLAGS += $(FFMPEG_CFLAGS)
+
+cdio.so: $(cdio-objs) $(libcmus-y)
+	$(call cmd,ld_dl,$(CDIO_LIBS) $(CDDB_LIBS))
 
 flac.so: $(flac-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(FLAC_LIBS))

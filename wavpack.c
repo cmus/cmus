@@ -430,3 +430,4 @@ const struct input_plugin_ops ip_ops = {
 const int ip_priority = 50;
 const char * const ip_extensions[] = { "wv", NULL };
 const char * const ip_mime_types[] = { "audio/x-wavpack", NULL };
+const char * const ip_options[] = { NULL };

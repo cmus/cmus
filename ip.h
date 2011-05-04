@@ -45,12 +45,18 @@ enum {
 	IP_ERROR_INVALID_URI,
 	/* sample format not supported */
 	IP_ERROR_SAMPLE_FORMAT,
+	/* wrong disc inserted */
+	IP_ERROR_WRONG_DISC,
+	/* could not read disc */
+	IP_ERROR_NO_DISC,
 	/* error parsing response line / headers */
 	IP_ERROR_HTTP_RESPONSE,
 	/* usually 404 */
 	IP_ERROR_HTTP_STATUS,
 	/* too many redirections */
 	IP_ERROR_HTTP_REDIRECT_LIMIT,
+	/* plugin does not have this option */
+	IP_ERROR_NOT_OPTION,
 	/*  */
 	IP_ERROR_INTERNAL
 };
@@ -89,6 +95,8 @@ struct input_plugin_ops {
 	long (*bitrate_current)(struct input_plugin_data *ip_data);
 	char *(*codec)(struct input_plugin_data *ip_data);
 	char *(*codec_profile)(struct input_plugin_data *ip_data);
+	int (*set_option)(int key, const char *val);
+	int (*get_option)(int key, char **val);
 };
 
 /* symbols exported by plugin */
@@ -96,5 +104,6 @@ extern const struct input_plugin_ops ip_ops;
 extern const int ip_priority;
 extern const char * const ip_extensions[];
 extern const char * const ip_mime_types[];
+extern const char * const ip_options[];
 
 #endif

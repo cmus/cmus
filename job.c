@@ -31,6 +31,7 @@
 #include "file.h"
 #include "cache.h"
 #include "player.h"
+#include "discid.h"
 
 #include <string.h>
 #include <unistd.h>
@@ -76,6 +77,25 @@ static void add_file(const char *filename)
 static void add_url(const char *url)
 {
 	add_file(url);
+}
+
+static void add_cdda(const char *url)
+{
+	char *disc_id = NULL;
+	int start_track = 1, end_track = -1;
+
+	parse_cdda_url(url, &disc_id, &start_track, &end_track);
+
+	if (end_track != -1) {
+		int i;
+		for (i = start_track; i <= end_track; i++) {
+			char *new_url = gen_cdda_url(disc_id, i, -1);
+			add_file(new_url);
+			free(new_url);
+		}
+	} else
+		add_file(url);
+	free(disc_id);
 }
 
 static int dir_entry_cmp(const void *ap, const void *bp)
@@ -183,7 +203,7 @@ static int handle_line(void *data, const char *line)
 	if (worker_cancelling())
 		return 1;
 
-	if (is_url(line)) {
+	if (is_http_url(line)) {
 		add_url(line);
 	} else {
 		add_file(line);
@@ -215,6 +235,9 @@ void do_add_job(void *data)
 	switch (jd->type) {
 	case FILE_TYPE_URL:
 		add_url(jd->name);
+		break;
+	case FILE_TYPE_CDDA:
+		add_cdda(jd->name);
 		break;
 	case FILE_TYPE_PL:
 		add_pl(jd->name);

@@ -240,3 +240,4 @@ const char * const ip_extensions[] = {
 	"psm", NULL
 };
 const char * const ip_mime_types[] = { NULL };
+const char * const ip_options[] = { NULL };

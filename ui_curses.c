@@ -566,7 +566,7 @@ static void fill_track_fopts_track_info(struct track_info *info)
 	fopt_set_str(&track_fopts[TF_CODEC], info->codec);
 	fopt_set_str(&track_fopts[TF_CODEC_PROFILE], info->codec_profile);
 	fopt_set_str(&track_fopts[TF_PATHFILE], filename);
-	if (is_url(info->filename)) {
+	if (is_http_url(info->filename)) {
 		fopt_set_str(&track_fopts[TF_FILE], filename);
 	} else {
 		const char *f;
@@ -1047,7 +1047,7 @@ static void do_update_statusline(void)
 		}
 	}
 	if (player_info.ti) {
-		if (is_url(player_info.ti->filename))
+		if (is_http_url(player_info.ti->filename))
 			strcat(format, "buf: %b ");
 		if (show_current_bitrate && player_info.current_bitrate >= 0)
 			strcat(format, " %B kbps ");
@@ -1239,7 +1239,7 @@ static void do_update_titleline(void)
 
 		use_alt_format = !track_info_has_tag(player_info.ti);
 
-		if (is_url(player_info.ti->filename)) {
+		if (is_http_url(player_info.ti->filename)) {
 			const char *title = get_stream_title();
 
 			if (title != NULL) {
@@ -1658,7 +1658,7 @@ static void spawn_status_program(void)
 
 	player_info_lock();
 	status = player_info.status;
-	if (status == PLAYER_STATUS_PLAYING && player_info.ti && is_url(player_info.ti->filename))
+	if (status == PLAYER_STATUS_PLAYING && player_info.ti && is_http_url(player_info.ti->filename))
 		stream_title = get_stream_title();
 
 	i = 0;
@@ -1672,7 +1672,7 @@ static void spawn_status_program(void)
 		};
 		int j;
 
-		if (is_url(player_info.ti->filename)) {
+		if (is_http_url(player_info.ti->filename)) {
 			argv[i++] = xstrdup("url");
 		} else {
 			argv[i++] = xstrdup("file");
