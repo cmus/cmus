@@ -30,6 +30,7 @@
 #include <sys/types.h>
 #include <dirent.h>
 #include <stdarg.h>
+#include <pwd.h>
 
 const char *cmus_config_dir = NULL;
 const char *home_dir = NULL;
@@ -216,4 +217,61 @@ int replaygain_decode(unsigned int field, int *gain)
 		return 0;
 	*gain = (sign_bit ? -1 : 1) * val;
 	return name_code;
+}
+
+static char *get_home_dir(const char *username)
+{
+	struct passwd *passwd;
+
+	if (username == NULL)
+		return xstrdup(home_dir);
+	passwd = getpwnam(username);
+	if (passwd == NULL)
+		return NULL;
+	/* don't free passwd */
+	return xstrdup(passwd->pw_dir);
+}
+
+char *expand_filename(const char *name)
+{
+	if (name[0] == '~') {
+		char *slash;
+
+		slash = strchr(name, '/');
+		if (slash) {
+			char *username, *home;
+
+			if (slash - name - 1 > 0) {
+				/* ~user/... */
+				username = xstrndup(name + 1, slash - name - 1);
+			} else {
+				/* ~/... */
+				username = NULL;
+			}
+			home = get_home_dir(username);
+			free(username);
+			if (home) {
+				char *expanded;
+
+				expanded = xstrjoin(home, slash);
+				free(home);
+				return expanded;
+			} else {
+				return xstrdup(name);
+			}
+		} else {
+			if (name[1] == 0) {
+				return xstrdup(home_dir);
+			} else {
+				char *home;
+
+				home = get_home_dir(name + 1);
+				if (home)
+					return home;
+				return xstrdup(name);
+			}
+		}
+	} else {
+		return xstrdup(name);
+	}
 }

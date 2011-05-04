@@ -53,7 +53,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <dirent.h>
-#include <pwd.h>
 
 #if defined(__sun__)
 #include <ncurses.h>
@@ -66,63 +65,6 @@ static char *cmd_history_filename;
 static char *history_search_text = NULL;
 static int arg_expand_cmd = -1;
 static int prev_view = -1;
-
-static char *get_home_dir(const char *username)
-{
-	struct passwd *passwd;
-
-	if (username == NULL)
-		return xstrdup(home_dir);
-	passwd = getpwnam(username);
-	if (passwd == NULL)
-		return NULL;
-	/* don't free passwd */
-	return xstrdup(passwd->pw_dir);
-}
-
-static char *expand_filename(const char *name)
-{
-	if (name[0] == '~') {
-		char *slash;
-
-		slash = strchr(name, '/');
-		if (slash) {
-			char *username, *home;
-
-			if (slash - name - 1 > 0) {
-				/* ~user/... */
-				username = xstrndup(name + 1, slash - name - 1);
-			} else {
-				/* ~/... */
-				username = NULL;
-			}
-			home = get_home_dir(username);
-			free(username);
-			if (home) {
-				char *expanded;
-
-				expanded = xstrjoin(home, slash);
-				free(home);
-				return expanded;
-			} else {
-				return xstrdup(name);
-			}
-		} else {
-			if (name[1] == 0) {
-				return xstrdup(home_dir);
-			} else {
-				char *home;
-
-				home = get_home_dir(name + 1);
-				if (home)
-					return home;
-				return xstrdup(name);
-			}
-		}
-	} else {
-		return xstrdup(name);
-	}
-}
 
 /* view {{{ */
 

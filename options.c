@@ -445,7 +445,7 @@ static void set_status_display_program(unsigned int id, const char *buf)
 	free(status_display_program);
 	status_display_program = NULL;
 	if (buf[0])
-		status_display_program = xstrdup(buf);
+		status_display_program = expand_filename(buf);
 }
 
 /* }}} */

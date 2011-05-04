@@ -189,7 +189,7 @@ static int op_ao_get_option(int key, char **val)
 	case 3:
 		if (wav_dir == NULL)
 			wav_dir = xstrdup(home_dir);
-		*val = xstrdup(wav_dir);
+		*val = expand_filename(wav_dir);
 		break;
 	default:
 		return -OP_ERROR_NOT_OPTION;

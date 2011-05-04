@@ -42,4 +42,6 @@ const char *unescape(const char *str);
  */
 int replaygain_decode(unsigned int field, int *gain);
 
+char *expand_filename(const char *name);
+
 #endif
