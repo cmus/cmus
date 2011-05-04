@@ -561,6 +561,9 @@ set <option>
 	Display option value.  Vim compatible *set <option>?* is also
 	supported.
 
+shell <command>
+	Execute a command via /bin/sh.
+
 showbind <context> <key>
 	Show key binding.
 
