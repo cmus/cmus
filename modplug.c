@@ -132,16 +132,19 @@ static int mod_seek(struct input_plugin_data *ip_data, double offset)
 static int mod_read_comments(struct input_plugin_data *ip_data, struct keyval **comments)
 {
 	struct mod_private *priv = ip_data->private;
-	struct keyval *c;
-	const char *name;
+	GROWING_KEYVALS(c);
+	const char *val;
 
-	c = xnew0(struct keyval, 2);
-	name = ModPlug_GetName(priv->file);
-	if (name != NULL && *name != 0) {
-		c[0].key = xstrdup("title");
-		c[0].val = xstrdup(name);
-	}
-	*comments = c;
+	val = ModPlug_GetName(priv->file);
+	if (val && val[0])
+		comments_add_const(&c, "title", val);
+
+	val = ModPlug_GetMessage(priv->file);
+	if (val && val[0])
+		comments_add_const(&c, "comment", val);
+
+	keyvals_terminate(&c);
+	*comments = c.keyvals;
 	return 0;
 }
 
