@@ -458,12 +458,14 @@ static char *ffmpeg_codec(struct input_plugin_data *ip_data)
 #if (LIBAVCODEC_VERSION_INT < ((52<<16)+(104<<8)+0))
 static const char *codec_profile_to_str(int profile)
 {
+#if (LIBAVCODEC_VERSION_INT >= ((51<<16)+(41<<8)+0))
 	switch (profile) {
 	case FF_PROFILE_AAC_MAIN:	return "Main";
 	case FF_PROFILE_AAC_LOW:	return "LC";
 	case FF_PROFILE_AAC_SSR:	return "SSR";
 	case FF_PROFILE_AAC_LTP:	return "LTP";
 	}
+#endif
 	return NULL;
 }
 #endif
