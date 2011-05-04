@@ -69,4 +69,17 @@ static inline void ptr_array_sort(struct ptr_array *array,
 		qsort(array->ptrs, count, sizeof(void *), cmp);
 }
 
+static inline void ptr_array_unique(struct ptr_array *array,
+		int (*cmp)(const void *a, const void *b))
+{
+	void **ptrs = array->ptrs;
+	int i, j = 0;
+
+	for (i = 1; i < array->count; i++) {
+		if (cmp(&ptrs[i-1], &ptrs[i]) != 0)
+			ptrs[j++] = ptrs[i];
+	}
+	array->count = j;
+}
+
 #endif

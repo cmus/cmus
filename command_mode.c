@@ -1968,6 +1968,11 @@ static int filter_directories(const char *name, const struct stat *s)
 	return S_ISDIR(s->st_mode);
 }
 
+static int filter_executable_files(const char *name, const struct stat *s)
+{
+	return S_ISREG(s->st_mode) && (s->st_mode & 0111);
+}
+
 static int filter_any(const char *name, const struct stat *s)
 {
 	return 1;
@@ -2028,6 +2033,16 @@ static void expand_add(const char *str)
 		free(tabexp.head);
 		tabexp.head = xstrdup(expbuf);
 	}
+}
+
+static void expand_program_paths(const char *str)
+{
+	if (str == NULL)
+		str = "";
+	if (str[0] == '~' || strchr(str, '/'))
+		expand_files(str);
+	else
+		expand_env_path(str, filter_executable_files);
 }
 
 static void expand_load_save(const char *str)
@@ -2453,13 +2468,13 @@ struct command commands[] = {
 	{ "push",		cmd_push,	1,-1, expand_commands,	  0, 0 },
 	{ "quit",		cmd_quit,	0, 1, NULL,		  0, 0 },
 	{ "refresh",		cmd_refresh,	0, 0, NULL,		  0, 0 },
-	{ "run",		cmd_run,	1,-1, NULL,		  0, CMD_UNSAFE },
+	{ "run",		cmd_run,	1,-1, expand_program_paths, 0, CMD_UNSAFE },
 	{ "save",		cmd_save,	0, 1, expand_load_save,	  0, CMD_UNSAFE },
 	{ "search-next",	cmd_search_next,0, 0, NULL,		  0, 0 },
 	{ "search-prev",	cmd_search_prev,0, 0, NULL,		  0, 0 },
 	{ "seek",		cmd_seek,	1, 1, NULL,		  0, 0 },
 	{ "set",		cmd_set,	1, 1, expand_options,	  0, 0 },
-	{ "shell",		cmd_shell,	1,-1, NULL,		  0, CMD_UNSAFE },
+	{ "shell",		cmd_shell,	1,-1, expand_program_paths, 0, CMD_UNSAFE },
 	{ "showbind",		cmd_showbind,	1, 1, expand_unbind_args, 0, 0 },
 	{ "shuffle",		cmd_reshuffle,	0, 0, NULL,		  0, 0 },
 	{ "source",		cmd_source,	1, 1, expand_files,	  0, CMD_UNSAFE },

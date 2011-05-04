@@ -73,20 +73,15 @@ static char *get_full_dir_name(const char *dir)
 	return full;
 }
 
-/*
- * load all directory entries from directory 'dir' starting with 'start' and
- * filtered with 'filter'
- */
-static void tabexp_load_dir(const char *dirname, const char *start,
+static void load_dir(struct ptr_array *array,
+		const char *dirname, const char *start,
 		int (*filter)(const char *, const struct stat *))
 {
 	int start_len = strlen(start);
 	struct directory dir;
-	PTR_ARRAY(array);
-	const char *name;
 	char *full_dir_name;
+	const char *name;
 
-	/* tabexp is reseted */
 	full_dir_name = get_full_dir_name(dirname);
 	if (!full_dir_name)
 		return;
@@ -118,9 +113,25 @@ static void tabexp_load_dir(const char *dirname, const char *start,
 		} else {
 			str = xstrdup(name);
 		}
-		ptr_array_add(&array, str);
+		ptr_array_add(array, str);
 	}
 	dir_close(&dir);
+out:
+	free(full_dir_name);
+}
+
+/*
+ * load all directory entries from directory 'dir' starting with 'start' and
+ * filtered with 'filter'
+ */
+static void tabexp_load_dir(const char *dirname, const char *start,
+		int (*filter)(const char *, const struct stat *))
+{
+	PTR_ARRAY(array);
+
+	/* tabexp is reseted */
+	load_dir(&array, dirname, start, filter);
+
 	if (array.count) {
 		ptr_array_sort(&array, strptrcmp);
 
@@ -128,8 +139,37 @@ static void tabexp_load_dir(const char *dirname, const char *start,
 		tabexp.tails = array.ptrs;
 		tabexp.count = array.count;
 	}
-out:
-	free(full_dir_name);
+}
+
+static void tabexp_load_env_path(const char *env_path, const char *start,
+		int (*filter)(const char *, const struct stat *))
+{
+	char *path = xstrdup(env_path);
+	PTR_ARRAY(array);
+	char cwd[1024];
+	char *p = path, *n;
+
+	/* tabexp is reseted */
+	do {
+		n = strchr(p, ':');
+		if (n)
+			*n = '\0';
+		if (strcmp(p, "") == 0 && getcwd(cwd, sizeof(cwd)))
+			p = cwd;
+		load_dir(&array, p, start, filter);
+		p = n + 1;
+	} while (n);
+
+	if (array.count) {
+		ptr_array_sort(&array, strptrcoll);
+		ptr_array_unique(&array, strptrcmp);
+
+		tabexp.head = xstrdup("");
+		tabexp.tails = array.ptrs;
+		tabexp.count = array.count;
+	}
+
+	free(path);
 }
 
 void expand_files_and_dirs(const char *src,
@@ -163,4 +203,15 @@ void expand_files_and_dirs(const char *src,
 			tabexp_load_dir("", src, filter);
 		}
 	}
+}
+
+void expand_env_path(const char *src,
+		int (*filter)(const char *name, const struct stat *s))
+{
+	const char *env_path = getenv("PATH");
+
+	if (!env_path || strcmp(env_path, "") == 0)
+		return;
+
+	tabexp_load_env_path(env_path, src, filter);
 }

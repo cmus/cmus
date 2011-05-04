@@ -77,6 +77,14 @@ int strptrcmp(const void *a, const void *b)
 	return strcmp(as, bs);
 }
 
+int strptrcoll(const void *a, const void *b)
+{
+	const char *as = *(char **)a;
+	const char *bs = *(char **)b;
+
+	return strcoll(as, bs);
+}
+
 const char *escape(const char *str)
 {
 	static char *buf = NULL;
