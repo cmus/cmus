@@ -176,8 +176,13 @@ check_mikmod()
 
 check_modplug()
 {
-	pkg_config MODPLUG "libmodplug" "-I/usr/include/libmodplug" "-lmodplug -lstdc++ -lm"
-	return $?
+	pkg_config MODPLUG "libmodplug" "-I/usr/include/libmodplug" "-lmodplug -lstdc++ -lm" || return $?
+	MODPLUG_API_8=0
+	if check_function "ModPlug_GetModuleType" $MODPLUG_CFLAGS $MODPLUG_LIBS
+	then
+		MODPLUG_API_8=1
+	fi
+	return 0
 }
 
 check_vorbis()
@@ -428,6 +433,7 @@ config_header config/datadir.h DATADIR
 config_header config/libdir.h LIBDIR
 config_header config/debug.h DEBUG
 config_header config/tremor.h CONFIG_TREMOR
+config_header config/modplug.h MODPLUG_API_8
 config_header config/mpc.h MPC_SV8
 config_header config/mp4.h USE_MPEG4IP
 config_header config/curses.h HAVE_RESIZETERM HAVE_USE_DEFAULT_COLORS

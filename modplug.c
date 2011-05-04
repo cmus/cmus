@@ -19,6 +19,7 @@
 #include "ip.h"
 #include "file.h"
 #include "xmalloc.h"
+#include "config/modplug.h"
 
 #include <modplug.h>
 #include <sys/types.h>
@@ -139,9 +140,11 @@ static int mod_read_comments(struct input_plugin_data *ip_data, struct keyval **
 	if (val && val[0])
 		comments_add_const(&c, "title", val);
 
+#if MODPLUG_API_8
 	val = ModPlug_GetMessage(priv->file);
 	if (val && val[0])
 		comments_add_const(&c, "comment", val);
+#endif
 
 	keyvals_terminate(&c);
 	*comments = c.keyvals;
@@ -160,6 +163,7 @@ static long mod_bitrate(struct input_plugin_data *ip_data)
 	return -IP_ERROR_FUNCTION_NOT_SUPPORTED;
 }
 
+#if MODPLUG_API_8
 static const char *mod_type_to_string(int type)
 {
 	/* from <libmodplug/sndfile.h>, which is C++ */
@@ -190,9 +194,11 @@ static const char *mod_type_to_string(int type)
 	}
 	return NULL;
 }
+#endif
 
 static char *mod_codec(struct input_plugin_data *ip_data)
 {
+#if MODPLUG_API_8
 	struct mod_private *priv = ip_data->private;
 	const char *codec;
 	int type;
@@ -201,6 +207,9 @@ static char *mod_codec(struct input_plugin_data *ip_data)
 	codec = mod_type_to_string(type);
 
 	return codec ? xstrdup(codec) : NULL;
+#else
+	return NULL;
+#endif
 }
 
 static char *mod_codec_profile(struct input_plugin_data *ip_data)
