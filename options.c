@@ -899,14 +899,16 @@ static void set_format(unsigned int id, const char *buf)
 
 /* }}} */
 
-#define DN(name) { #name, get_ ## name, set_ ## name, NULL },
-#define DT(name) { #name, get_ ## name, set_ ## name, toggle_ ## name },
+#define DN(name) { #name, get_ ## name, set_ ## name, NULL, 0 },
+#define DN_FLAGS(name, flags) { #name, get_ ## name, set_ ## name, NULL, flags },
+#define DT(name) { #name, get_ ## name, set_ ## name, toggle_ ## name, 0 },
 
 static const struct {
 	const char *name;
 	opt_get_cb get;
 	opt_set_cb set;
 	opt_toggle_cb toggle;
+	unsigned int flags;
 } simple_options[] = {
 	DT(aaa_mode)
 	DT(auto_reshuffle)
@@ -934,8 +936,8 @@ static const struct {
 	DT(shuffle)
 	DT(softvol)
 	DN(softvol_state)
-	DN(status_display_program)
-	{ NULL, NULL, NULL, NULL }
+	DN_FLAGS(status_display_program, OPT_PROGRAM_PATH)
+	{ NULL, NULL, NULL, NULL, 0 }
 };
 
 static const char * const color_names[NR_COLORS] = {
@@ -991,7 +993,7 @@ LIST_HEAD(option_head);
 int nr_options = 0;
 
 void option_add(const char *name, unsigned int id, opt_get_cb get,
-		opt_set_cb set, opt_toggle_cb toggle)
+		opt_set_cb set, opt_toggle_cb toggle, unsigned int flags)
 {
 	struct cmus_opt *opt = xnew(struct cmus_opt, 1);
 	struct list_head *item;
@@ -1001,6 +1003,7 @@ void option_add(const char *name, unsigned int id, opt_get_cb get,
 	opt->get = get;
 	opt->set = set;
 	opt->toggle = toggle;
+	opt->flags = flags;
 
 	item = option_head.next;
 	while (item != &option_head) {
@@ -1041,13 +1044,14 @@ void options_add(void)
 
 	for (i = 0; simple_options[i].name; i++)
 		option_add(simple_options[i].name, 0, simple_options[i].get,
-				simple_options[i].set, simple_options[i].toggle);
+				simple_options[i].set, simple_options[i].toggle,
+				simple_options[i].flags);
 
 	for (i = 0; i < NR_FMTS; i++)
-		option_add(str_defaults[i].name, i, get_format, set_format, NULL);
+		option_add(str_defaults[i].name, i, get_format, set_format, NULL, 0);
 
 	for (i = 0; i < NR_COLORS; i++)
-		option_add(color_names[i], i, get_color, set_color, NULL);
+		option_add(color_names[i], i, get_color, set_color, NULL, 0);
 
 	op_add_options();
 }

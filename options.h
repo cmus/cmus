@@ -27,6 +27,10 @@ typedef void (*opt_get_cb)(unsigned int id, char *buf);
 typedef void (*opt_set_cb)(unsigned int id, const char *buf);
 typedef void (*opt_toggle_cb)(unsigned int id);
 
+enum {
+	OPT_PROGRAM_PATH = 1 << 0,
+};
+
 struct cmus_opt {
 	struct list_head node;
 
@@ -45,6 +49,8 @@ struct cmus_opt {
 
 	/* NULL if not toggle-able */
 	opt_toggle_cb toggle;
+
+	unsigned int flags;
 };
 
 extern struct list_head option_head;
@@ -152,7 +158,7 @@ void resume_load(void);
 void resume_exit(void);
 
 void option_add(const char *name, unsigned int id, opt_get_cb get,
-		opt_set_cb set, opt_toggle_cb toggle);
+		opt_set_cb set, opt_toggle_cb toggle, unsigned int flags);
 struct cmus_opt *option_find(const char *name);
 void option_set(const char *name, const char *value);
 int parse_enum(const char *buf, int minval, int maxval, const char * const names[], int *val);

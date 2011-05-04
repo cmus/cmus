@@ -399,13 +399,13 @@ void op_add_options(void)
 			snprintf(key, sizeof(key), "dsp.%s.%s",
 					o->name,
 					o->pcm_options[oid]);
-			option_add(xstrdup(key), (pid << 16) | oid, get_dsp_option, set_dsp_option, NULL);
+			option_add(xstrdup(key), (pid << 16) | oid, get_dsp_option, set_dsp_option, NULL, 0);
 		}
 		for (oid = 0; o->mixer_ops && o->mixer_options[oid]; oid++) {
 			snprintf(key, sizeof(key), "mixer.%s.%s",
 					o->name,
 					o->mixer_options[oid]);
-			option_add(xstrdup(key), (pid << 16) | oid, get_mixer_option, set_mixer_option, NULL);
+			option_add(xstrdup(key), (pid << 16) | oid, get_mixer_option, set_mixer_option, NULL, 0);
 		}
 		pid++;
 	}

@@ -1987,6 +1987,17 @@ static void expand_program_paths(const char *str)
 		expand_env_path(str, filter_executable_files);
 }
 
+static void expand_program_paths_option(const char *str, const char *opt)
+{
+	expand_program_paths(str);
+
+	if (tabexp.head && opt) {
+		snprintf(expbuf, sizeof(expbuf), "%s=%s", opt, tabexp.head);
+		free(tabexp.head);
+		tabexp.head = xstrdup(expbuf);
+	}
+}
+
 static void expand_load_save(const char *str)
 {
 	int flag = parse_flags(&str, "lp");
@@ -2257,29 +2268,33 @@ static void expand_options(const char *str)
 {
 	struct cmus_opt *opt;
 	int len;
-	char **tails;
+	char **tails, *sep;
 
 	/* tabexp is resetted */
 	len = strlen(str);
-	if (len > 1 && str[len - 1] == '=') {
+	sep = strchr(str, '=');
+	if (len > 1 && sep) {
 		/* expand value */
-		char *var = xstrndup(str, len - 1);
+		char *var = xstrndup(str, sep - str);
 
 		list_for_each_entry(opt, &option_head, node) {
 			if (strcmp(var, opt->name) == 0) {
-				char buf[OPTION_MAX_SIZE];
+				if (str[len - 1] == '=') {
+					char buf[OPTION_MAX_SIZE];
 
-				tails = xnew(char *, 1);
+					tails = xnew(char *, 1);
 
-				buf[0] = 0;
-				opt->get(opt->id, buf);
-				tails[0] = xstrdup(buf);
+					buf[0] = 0;
+					opt->get(opt->id, buf);
+					tails[0] = xstrdup(buf);
 
-				tabexp.head = xstrdup(str);
-				tabexp.tails = tails;
-				tabexp.count = 1;
-				free(var);
-				return;
+					tabexp.head = xstrdup(str);
+					tabexp.tails = tails;
+					tabexp.count = 1;
+				} else if (opt->flags & OPT_PROGRAM_PATH) {
+					expand_program_paths_option(sep + 1, var);
+				}
+				break;
 			}
 		}
 		free(var);
