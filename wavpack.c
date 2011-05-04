@@ -375,8 +375,10 @@ static char *wavpack_codec_profile(struct input_plugin_data *ip_data)
 
 	if (m & MODE_FAST)
 		strcat(buf, "fast");
+#ifdef MODE_VERY_HIGH
 	else if (m & MODE_VERY_HIGH)
 		strcat(buf, "very high");
+#endif
 	else if (m & MODE_HIGH)
 		strcat(buf, "high");
 	else
@@ -385,11 +387,13 @@ static char *wavpack_codec_profile(struct input_plugin_data *ip_data)
 	if (m & MODE_HYBRID)
 		strcat(buf, " hybrid");
 
+#ifdef MODE_XMODE
 	if ((m & MODE_EXTRA) && (m & MODE_XMODE)) {
 		char xmode[] = " x0";
 		xmode[2] = ((m & MODE_XMODE) >> 12) + '0';
 		strcat(buf, xmode);
 	}
+#endif
 
 	return xstrdup(buf);
 }
