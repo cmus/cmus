@@ -39,7 +39,6 @@
 #include "xstrjoin.h"
 #include "misc.h"
 #include "path.h"
-#include "format_print.h"
 #include "spawn.h"
 #include "utils.h"
 #include "list.h"

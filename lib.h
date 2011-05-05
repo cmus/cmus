@@ -25,8 +25,6 @@
 #include "expr.h"
 #include "rbtree.h"
 
-#include <sys/time.h>
-
 struct tree_track {
 	struct shuffle_track shuffle_track;
 

@@ -21,7 +21,6 @@
 #include "search_mode.h"
 #include "window.h"
 #include "options.h"
-#include "comment.h"
 #include "uchar.h"
 #include "xmalloc.h"
 

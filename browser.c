@@ -20,7 +20,6 @@
 #include "load_dir.h"
 #include "cmus.h"
 #include "xmalloc.h"
-#include "xstrjoin.h"
 #include "ui_curses.h"
 #include "file.h"
 #include "misc.h"

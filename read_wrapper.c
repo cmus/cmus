@@ -20,8 +20,6 @@
 #include "ip.h"
 #include "file.h"
 
-#include <errno.h>
-#include <string.h>
 
 ssize_t read_wrapper(struct input_plugin_data *ip_data, void *buffer, size_t count)
 {

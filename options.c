@@ -23,7 +23,6 @@
 #include "player.h"
 #include "buffer.h"
 #include "ui_curses.h"
-#include "format_print.h"
 #include "cmus.h"
 #include "misc.h"
 #include "lib.h"

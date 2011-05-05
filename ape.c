@@ -18,7 +18,6 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ip.h"
 #include "ape.h"
 #include "file.h"
 #include "xmalloc.h"

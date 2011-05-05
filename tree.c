@@ -19,7 +19,6 @@
 #include "lib.h"
 #include "search_mode.h"
 #include "xmalloc.h"
-#include "comment.h"
 #include "utils.h"
 #include "debug.h"
 #include "mergesort.h"

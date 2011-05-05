@@ -31,7 +31,6 @@
 #include "path.h"
 #include "options.h"
 #include "xmalloc.h"
-#include "xstrjoin.h"
 #include "debug.h"
 #include "load_dir.h"
 #include "ui_curses.h"

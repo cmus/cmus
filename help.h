@@ -24,7 +24,6 @@
 #include "list.h"
 #include "window.h"
 #include "search.h"
-#include "uchar.h"
 #include "keys.h"
 
 struct help_entry {

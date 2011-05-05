@@ -17,7 +17,6 @@
  */
 
 #include "id3.h"
-#include "comment.h"
 #include "xmalloc.h"
 #include "convert.h"
 #include "uchar.h"
