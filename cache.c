@@ -335,7 +335,7 @@ int cache_close(void)
 	GBUF(buf);
 	struct track_info **tis;
 	unsigned int offset;
-	int i, fd;
+	int i, fd, rc;
 	char *tmp;
 
 	if (!new && !removed)
@@ -343,8 +343,10 @@ int cache_close(void)
 
 	tmp = xstrjoin(cmus_config_dir, "/cache.tmp");
 	fd = open(tmp, O_WRONLY | O_CREAT | O_TRUNC, 0666);
-	if (fd < 0)
+	if (fd < 0) {
+		free(tmp);
 		return -1;
+	}
 
 	tis = get_track_infos();
 
@@ -355,11 +357,12 @@ int cache_close(void)
 		write_ti(fd, &buf, tis[i], &offset);
 	flush_buffer(fd, &buf);
 	gbuf_free(&buf);
+	free(tis);
 
 	close(fd);
-	if (rename(tmp, cache_filename))
-		return -1;
-	return 0;
+	rc = rename(tmp, cache_filename);
+	free(tmp);
+	return rc;
 }
 
 static struct track_info *ip_get_ti(const char *filename)
