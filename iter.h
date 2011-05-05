@@ -19,7 +19,7 @@
 #ifndef _ITER_H
 #define _ITER_H
 
-#include <stdlib.h>
+#include <stddef.h> /* NULL */
 
 struct iter {
 	/* this usually points to the list head */

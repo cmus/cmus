@@ -23,7 +23,7 @@
 
 #include "compiler.h"
 
-#include <string.h>
+#include <stddef.h> /* size_t */
 
 struct gbuf {
 	char *buffer;

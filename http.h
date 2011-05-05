@@ -21,7 +21,7 @@
 
 #include "keyval.h"
 
-#include <unistd.h>
+#include <stddef.h> /* size_t */
 
 /*
  * 1xx indicates an informational message only
