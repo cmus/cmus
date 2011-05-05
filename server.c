@@ -258,7 +258,7 @@ static void gethostbyname_failed(void)
 
 	switch (h_errno) {
 	case HOST_NOT_FOUND:
-	case NO_ADDRESS:
+	case NO_DATA:
 		error = "Host not found.";
 		break;
 	case NO_RECOVERY:
