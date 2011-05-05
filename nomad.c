@@ -585,9 +585,17 @@ int nomad_open_callbacks(struct nomad **nomadp, void *datasource, struct nomad_c
 {
 	struct nomad *nomad;
 
-	nomad = xnew0(struct nomad, 1);
-	nomad->datasource = datasource;
-	nomad->cbs = *cbs;
+	const struct nomad nomad_init = {
+		.datasource = datasource,
+		.cbs = {
+			.read  = cbs->read,
+			.lseek = cbs->lseek,
+			.close = cbs->close
+		}
+	};
+
+	nomad = xnew(struct nomad, 1);
+	*nomad = nomad_init;
 	nomad->lame.peak = nomad->lame.trackGain = nomad->lame.albumGain = strtof("NAN", NULL);
 	*nomadp = nomad;
 	/* on error do_open calls nomad_close */

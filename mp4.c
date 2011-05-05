@@ -99,13 +99,17 @@ static int mp4_open(struct input_plugin_data *ip_data)
 	unsigned int buf_size;
 	int rc = -IP_ERROR_FILE_FORMAT;
 
+	const struct mp4_private priv_init = {
+		.decoder = NULL
+	};
 
 	/* http://sourceforge.net/forum/message.php?msg_id=3578887 */
 	if (ip_data->remote)
 		return -IP_ERROR_FUNCTION_NOT_SUPPORTED;
 
 	/* init private struct */
-	priv = xnew0(struct mp4_private, 1);
+	priv = xnew(struct mp4_private, 1);
+	*priv = priv_init;
 	ip_data->private = priv;
 
 	priv->decoder = NeAACDecOpen();

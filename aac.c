@@ -193,10 +193,13 @@ static int aac_open(struct input_plugin_data *ip_data)
 	int ret, n;
 
 	/* init private struct */
-	priv = xnew0(struct aac_private, 1);
-	priv->decoder = NeAACDecOpen();
-	priv->bitrate = -1;
-	priv->object_type = -1;
+	const struct aac_private priv_init = {
+		.decoder = NeAACDecOpen(),
+		.bitrate = -1,
+		.object_type = -1
+	};
+	priv = xnew(struct aac_private, 1);
+	*priv = priv_init;
 	ip_data->private = priv;
 
 	/* set decoder config */

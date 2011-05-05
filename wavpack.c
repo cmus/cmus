@@ -165,9 +165,15 @@ static int wavpack_open(struct input_plugin_data *ip_data)
 	struct stat st;
 	char msg[80];
 
-	priv = xnew0(struct wavpack_private, 1);
-	priv->wv_file.fd = ip_data->fd;
-	priv->wv_file.push_back_byte = EOF;
+	const struct wavpack_private priv_init = {
+		.wv_file = {
+			.fd = ip_data->fd,
+			.push_back_byte = EOF
+		}
+	};
+
+	priv = xnew(struct wavpack_private, 1);
+	*priv = priv_init;
 	if (!ip_data->remote && fstat(ip_data->fd, &st) == 0) {
 		char *filename_wvc;
 

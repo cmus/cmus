@@ -378,15 +378,19 @@ static void free_priv(struct input_plugin_data *ip_data)
 static int flac_open(struct input_plugin_data *ip_data)
 {
 	struct flac_private *priv;
-	Dec *dec;
 
-	dec = F(new)();
-	if (dec == NULL)
+	Dec *dec = F(new)();
+
+	const struct flac_private priv_init = {
+		.dec      = dec,
+		.duration = -1
+	};
+
+	if (!dec)
 		return -IP_ERROR_INTERNAL;
 
-	priv = xnew0(struct flac_private, 1);
-	priv->dec = dec;
-	priv->duration = -1;
+	priv = xnew(struct flac_private, 1);
+	*priv = priv_init;
 	if (ip_data->remote) {
 		priv->len = UINT64_MAX;
 	} else {

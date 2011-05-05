@@ -123,21 +123,26 @@ static int mpc_open(struct input_plugin_data *ip_data)
 {
 	struct mpc_private *priv;
 
-	priv = xnew0(struct mpc_private, 1);
+	const struct mpc_private priv_init = {
+		.file_size = -1,
+		/* set up an mpc_reader linked to our function implementations */
+		.reader = {
+			.read     = read_impl,
+			.seek     = seek_impl,
+			.tell     = tell_impl,
+			.get_size = get_size_impl,
+			.canseek  = canseek_impl,
+			.data     = ip_data
+		}
+	};
 
-	priv->file_size = -1;
+	priv = xnew(struct mpc_private, 1);
+	*priv = priv_init;
+
 	if (!ip_data->remote) {
 		priv->file_size = lseek(ip_data->fd, 0, SEEK_END);
 		lseek(ip_data->fd, 0, SEEK_SET);
 	}
-
-	/* set up an mpc_reader linked to our function implementations */
-	priv->reader.read = read_impl;
-	priv->reader.seek = seek_impl;
-	priv->reader.tell = tell_impl;
-	priv->reader.get_size = get_size_impl;
-	priv->reader.canseek = canseek_impl;
-	priv->reader.data = ip_data;
 
 	/* must be before mpc_streaminfo_read() */
 	ip_data->private = priv;
