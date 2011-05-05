@@ -378,16 +378,18 @@ static int open_remote(struct input_plugin *ip)
 
 static void ip_init(struct input_plugin *ip, char *filename)
 {
-	memset(ip, 0, sizeof(*ip));
-	ip->http_code = -1;
-	ip->pcm_convert_scale = -1;
-	ip->duration = -1;
-	ip->bitrate = -1;
-	ip->codec = NULL;
-	ip->codec_profile = NULL;
-	ip->data.fd = -1;
-	ip->data.filename = filename;
-	ip->data.remote = is_url(filename);
+	const struct input_plugin t = {
+		.http_code          = -1,
+		.pcm_convert_scale  = -1,
+		.duration           = -1,
+		.bitrate            = -1,
+		.data = {
+			.fd         = -1,
+			.filename   = filename,
+			.remote     = is_url(filename)
+		}
+	};
+	*ip = t;
 }
 
 static void ip_reset(struct input_plugin *ip, int close_fd)

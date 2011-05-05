@@ -57,7 +57,12 @@ static int op_ao_exit(void)
 
 static int op_ao_open(sample_format_t sf)
 {
-	ao_sample_format format;
+	ao_sample_format format = {
+		.bits        = sf_get_bits(sf),
+		.rate        = sf_get_rate(sf),
+		.channels    = sf_get_channels(sf),
+		.byte_format = sf_get_bigendian(sf) ? AO_FMT_BIG : AO_FMT_LITTLE
+	};
 	int driver;
 
 	if (libao_driver == NULL) {
@@ -70,13 +75,6 @@ static int op_ao_open(sample_format_t sf)
 		errno = ENODEV;
 		return -OP_ERROR_ERRNO;
 	}
-
-	memset(&format, 0, sizeof format);
-
-	format.bits = sf_get_bits(sf);
-	format.rate = sf_get_rate(sf);
-	format.channels = sf_get_channels(sf);
-	format.byte_format = sf_get_bigendian(sf) ? AO_FMT_BIG : AO_FMT_LITTLE;
 
 	if (is_wav) {
 		char file[512];

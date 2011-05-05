@@ -77,22 +77,21 @@ static void clean_buffers(void)
 
 static int waveout_open(sample_format_t sf)
 {
-	WAVEFORMATEX  format;
+	WAVEFORMATEX format = {
+		.cbSize          = sizeof(format),
+		.wFormatTag      = WAVE_FORMAT_PCM,
+		.nChannels       = sf_get_channels(sf),
+		.nSamplesPerSec  = sf_get_rate(sf),
+		.wBitsPerSample  = sf_get_bits(sf),
+		.nAvgBytesPerSec = sf_get_second_size(sf),
+		.nBlockAlign     = sf_get_frame_size(sf)
+	};
 	int rc, i;
 
 	/* WAVEFORMATEX does not support channels > 2, waveOutWrite() wants little endian signed PCM */
 	if (sf_get_bigendian(sf) || !sf_get_signed(sf) || sf_get_channels(sf) > 2) {
 		return -OP_ERROR_SAMPLE_FORMAT;
 	}
-
-	memset(&format, 0, sizeof(format));
-	format.cbSize = sizeof(format);
-	format.wFormatTag = WAVE_FORMAT_PCM;
-	format.nChannels = sf_get_channels(sf);
-	format.nSamplesPerSec = sf_get_rate(sf);
-	format.wBitsPerSample = sf_get_bits(sf);
-	format.nAvgBytesPerSec = sf_get_second_size(sf);
-	format.nBlockAlign = sf_get_frame_size(sf);
 
 	rc = waveOutOpen(&wave_out, WAVE_MAPPER, &format, 0, 0, CALLBACK_NULL);
 	if (rc != MMSYSERR_NOERROR) {
