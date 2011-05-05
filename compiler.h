@@ -75,7 +75,7 @@
 	((type *)(void *)( (char *)(ptr) - offsetof(type,member) ))
 #undef container_of
 #if defined(__GNUC__)
-#define container_of(ptr, type, member) ({			\
+#define container_of(ptr, type, member) __extension__ ({		\
 	const __typeof__( ((type *)0)->member ) *__mptr = (ptr);	\
 	container_of_portable(__mptr, type, member);})
 #else
