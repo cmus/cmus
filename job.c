@@ -33,6 +33,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
+#include <sys/mman.h>
 
 static struct track_info *ti_buffer[32];
 static int ti_buffer_fill;

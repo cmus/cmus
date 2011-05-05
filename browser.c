@@ -24,6 +24,7 @@
 #include "file.h"
 #include "misc.h"
 #include "options.h"
+#include "uchar.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -31,6 +32,7 @@
 #include <dirent.h>
 #include <string.h>
 #include <errno.h>
+#include <sys/mman.h>
 
 struct window *browser_win;
 struct searchable *browser_searchable;

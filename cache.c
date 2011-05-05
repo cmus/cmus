@@ -33,6 +33,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <sys/mman.h>
 
 #define CACHE_64_BIT	0x01
 #define CACHE_BE	0x02

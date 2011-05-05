@@ -22,7 +22,6 @@
 #include "list.h"
 #include "window.h"
 #include "search.h"
-#include "uchar.h"
 
 struct browser_entry {
 	struct list_head node;

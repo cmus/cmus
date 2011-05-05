@@ -19,8 +19,8 @@
 #ifndef _FILE_H
 #define _FILE_H
 
-#include <unistd.h>
-#include <sys/mman.h>
+#include <stddef.h> /* size_t */
+#include <sys/types.h> /* ssize_t */
 
 ssize_t read_all(int fd, void *buf, size_t count);
 ssize_t write_all(int fd, const void *buf, size_t count);
