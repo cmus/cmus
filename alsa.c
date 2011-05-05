@@ -124,12 +124,12 @@ static int op_alsa_exit(void)
 /* randomize hw params */
 static int alsa_set_hw_params(void)
 {
-	snd_pcm_hw_params_t *hwparams;
+	snd_pcm_hw_params_t *hwparams = NULL;
 	const char *cmd;
 	unsigned int rate;
 	int rc, dir;
 
-	snd_pcm_hw_params_alloca(&hwparams);
+	snd_pcm_hw_params_malloc(&hwparams);
 
 	cmd = "snd_pcm_hw_params_any";
 	rc = snd_pcm_hw_params_any(alsa_handle, hwparams);
@@ -170,9 +170,11 @@ static int alsa_set_hw_params(void)
 	rc = snd_pcm_hw_params(alsa_handle, hwparams);
 	if (rc < 0)
 		goto error;
-	return 0;
+	goto out;
 error:
 	d_print("%s: error: %s\n", cmd, snd_strerror(rc));
+out:
+	snd_pcm_hw_params_free(hwparams);
 	return rc;
 }
 

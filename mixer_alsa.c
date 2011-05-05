@@ -58,9 +58,9 @@ static int alsa_mixer_exit(void)
 static snd_mixer_elem_t *find_mixer_elem_by_name(const char *goal_name)
 {
 	snd_mixer_elem_t *elem;
-	snd_mixer_selem_id_t *sid;
+	snd_mixer_selem_id_t *sid = NULL;
 
-	snd_mixer_selem_id_alloca(&sid);
+	snd_mixer_selem_id_malloc(&sid);
 
 	for (elem = snd_mixer_first_elem(alsa_mixer_handle); elem;
 		 elem = snd_mixer_elem_next(elem)) {
@@ -74,16 +74,16 @@ static snd_mixer_elem_t *find_mixer_elem_by_name(const char *goal_name)
 		d_print("has playback switch = %d\n", snd_mixer_selem_has_playback_switch(elem));
 
 		if (strcasecmp(name, goal_name) == 0) {
-			if (snd_mixer_selem_has_playback_volume(elem)) {
-				return elem;
-			} else {
+			if (!snd_mixer_selem_has_playback_volume(elem)) {
 				d_print("mixer element `%s' does not have playback volume\n", name);
-				return NULL;
+				elem = NULL;
 			}
+			break;
 		}
 	}
 
-	return NULL;
+	snd_mixer_selem_id_free(sid);
+	return elem;
 }
 
 static int alsa_mixer_open(int *volume_max)
