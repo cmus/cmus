@@ -404,7 +404,7 @@ static int ffmpeg_read_comments(struct input_plugin_data *ip_data, struct keyval
 	char buff[16];
 	int i = 0;
 
-	*comments = xnew0(struct keyval, NUM_FFMPEG_KEYS + 1);
+	*comments = keyvals_new(NUM_FFMPEG_KEYS);
 
 	i = set_comment(*comments, i, "artist", ic->author);
 	i = set_comment(*comments, i, "album", ic->album);

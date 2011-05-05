@@ -522,7 +522,7 @@ static int flac_read_comments(struct input_plugin_data *ip_data, struct keyval *
 	if (priv->comments) {
 		*comments = keyvals_dup(priv->comments);
 	} else {
-		*comments = xnew0(struct keyval, 1);
+		*comments = keyvals_new(0);
 	}
 	return 0;
 }

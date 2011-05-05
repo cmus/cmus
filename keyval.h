@@ -32,6 +32,7 @@ struct growing_keyvals {
 
 #define GROWING_KEYVALS(name) struct growing_keyvals name = { NULL, 0, 0 }
 
+struct keyval *keyvals_new(int num);
 void keyvals_init(struct growing_keyvals *c, const struct keyval *keyvals);
 void keyvals_add(struct growing_keyvals *c, const char *key, char *val);
 const char *keyvals_get_val_growing(const struct growing_keyvals *c, const char *key);

@@ -22,6 +22,18 @@
 
 #include <strings.h>
 
+struct keyval *keyvals_new(int num)
+{
+	struct keyval *c = xnew(struct keyval, num + 1);
+	int i;
+
+	for (i = 0; i <= num; i++) {
+		c[i].key = NULL;
+		c[i].val = NULL;
+	}
+	return c;
+}
+
 struct keyval *keyvals_dup(const struct keyval *keyvals)
 {
 	struct keyval *c;
