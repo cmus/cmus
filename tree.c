@@ -29,6 +29,7 @@
 
 #include <ctype.h>
 #include <stdio.h>
+#include <string.h>
 #include <strings.h>
 
 struct searchable *tree_searchable;
