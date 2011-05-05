@@ -2322,7 +2322,9 @@ int main(int argc, char *argv[])
 			printf(usage, program_name);
 			return 0;
 		case FLAG_VERSION:
-			printf("cmus " VERSION "\nCopyright 2004-2006 Timo Hirvonen\n");
+			printf("cmus " VERSION
+			       "\nCopyright 2004-2006 Timo Hirvonen"
+			       "\nCopyright 2008-2011 Various Authors\n");
 			return 0;
 		case FLAG_PLUGINS:
 			list_plugins = 1;
