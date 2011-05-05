@@ -25,7 +25,7 @@
 #include "utils.h"
 
 #include <unistd.h>
-#include <inttypes.h>
+#include <stdint.h>
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>

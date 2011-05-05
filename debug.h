@@ -23,7 +23,7 @@
 #include "config/debug.h"
 
 #include <errno.h>
-#include <inttypes.h>
+#include <stdint.h>
 
 void debug_init(void);
 void __debug_bug(const char *function, const char *fmt, ...) __FORMAT(2, 3) __NORETURN;

@@ -36,7 +36,7 @@
 #endif
 
 #include <FLAC/metadata.h>
-#include <inttypes.h>
+#include <stdint.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <errno.h>

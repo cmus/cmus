@@ -27,7 +27,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <time.h>
-#include <inttypes.h>
+#include <stdint.h>
 #ifdef HAVE_BYTESWAP_H
 #include <byteswap.h>
 #endif

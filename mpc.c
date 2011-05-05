@@ -39,7 +39,7 @@
 #define get_ip_data(d) (d)
 #endif
 
-#include <inttypes.h>
+#include <stdint.h>
 #include <errno.h>
 
 struct mpc_private {

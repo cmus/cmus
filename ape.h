@@ -19,7 +19,7 @@
 #ifndef _APE_H
 #define _APE_H
 
-#include <inttypes.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 struct ape_header {

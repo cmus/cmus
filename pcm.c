@@ -19,7 +19,7 @@
 #include "pcm.h"
 #include "utils.h"
 
-#include <inttypes.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 /*
