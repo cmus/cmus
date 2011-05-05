@@ -40,6 +40,8 @@
 #endif
 
 #include <stdint.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include <errno.h>
 
 struct mpc_private {
