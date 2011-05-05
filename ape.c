@@ -203,7 +203,7 @@ static off_t get_size(int fd)
 {
 	struct stat statbuf;
 
-	if (fstat(fd, &statbuf) || !(statbuf.st_mode & S_IFREG))
+	if (fstat(fd, &statbuf) || !S_ISREG(statbuf.st_mode))
 		return 0;
 	return statbuf.st_size;
 }
