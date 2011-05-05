@@ -46,6 +46,7 @@
 #include "load_dir.h"
 #include "config/datadir.h"
 #include "help.h"
+#include "op.h"
 
 #include <stdlib.h>
 #include <ctype.h>

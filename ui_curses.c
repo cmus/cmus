@@ -45,6 +45,7 @@
 #include "worker.h"
 #include "input.h"
 #include "file.h"
+#include "mixer.h"
 #include "config/curses.h"
 #include "config/iconv.h"
 
