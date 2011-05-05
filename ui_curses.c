@@ -34,6 +34,7 @@
 #include "xstrjoin.h"
 #include "window.h"
 #include "format_print.h"
+#include "comment.h"
 #include "misc.h"
 #include "prog.h"
 #include "uchar.h"

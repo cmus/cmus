@@ -31,6 +31,7 @@
 #include "gbuf.h"
 #include "ui_curses.h"
 #include "misc.h"
+#include "keyval.h"
 
 #include <unistd.h>
 #include <sys/types.h>

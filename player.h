@@ -20,7 +20,6 @@
 #define _PLAYER_H
 
 #include "locking.h"
-#include "comment.h"
 #include "track_info.h"
 
 #include <pthread.h>
