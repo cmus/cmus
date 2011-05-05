@@ -21,6 +21,7 @@
 #include "xmalloc.h"
 #include "debug.h"
 #include "utils.h"
+#include "comment.h"
 
 #include <stdio.h>
 #include <string.h>

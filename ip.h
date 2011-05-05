@@ -19,7 +19,7 @@
 #ifndef _IP_H
 #define _IP_H
 
-#include "comment.h"
+#include "keyval.h"
 #include "sf.h"
 
 #ifndef __GNUC__

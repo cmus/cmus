@@ -23,6 +23,7 @@
 #include "read_wrapper.h"
 #include "debug.h"
 #include "buffer.h"
+#include "comment.h"
 
 #include <wavpack/wavpack.h>
 

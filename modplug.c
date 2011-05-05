@@ -19,6 +19,7 @@
 #include "ip.h"
 #include "file.h"
 #include "xmalloc.h"
+#include "comment.h"
 #include "config/modplug.h"
 
 #include <modplug.h>

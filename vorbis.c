@@ -21,6 +21,7 @@
 #include "read_wrapper.h"
 #include "debug.h"
 #include "config/tremor.h"
+#include "comment.h"
 
 #ifdef CONFIG_TREMOR
 #include <tremor/ivorbisfile.h>

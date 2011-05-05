@@ -23,6 +23,7 @@
 #include "xmalloc.h"
 #include <mikmod.h>
 #include "debug.h"
+#include "comment.h"
 
 struct mik_private {
 	MODULE *file;

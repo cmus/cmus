@@ -24,6 +24,7 @@
 #include "read_wrapper.h"
 #include "debug.h"
 #include "utils.h"
+#include "comment.h"
 
 #include <stdio.h>
 #include <math.h>

@@ -20,6 +20,7 @@
 #include "xmalloc.h"
 #include "debug.h"
 #include "utils.h"
+#include "comment.h"
 #include "config/ffmpeg.h"
 
 #include <stdio.h>

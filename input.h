@@ -19,7 +19,7 @@
 #ifndef _INPUT_H
 #define _INPUT_H
 
-#include "comment.h"
+#include "keyval.h"
 #include "sf.h"
 
 struct input_plugin;

@@ -21,6 +21,7 @@
 #include "debug.h"
 #include "file.h"
 #include "config/mp4.h"
+#include "comment.h"
 
 #if USE_MPEG4IP
 #include <mp4.h>
