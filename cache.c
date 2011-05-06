@@ -66,16 +66,6 @@ static int new;
 
 pthread_mutex_t cache_mutex = CMUS_MUTEX_INITIALIZER;
 
-static unsigned int filename_hash(const char *filename)
-{
-	unsigned int hash = 0;
-	int i;
-
-	for (i = 0; filename[i]; i++)
-		hash = (hash << 5) - hash + filename[i];
-	return hash;
-}
-
 static void add_ti(struct track_info *ti, unsigned int hash)
 {
 	unsigned int pos = hash % HASH_SIZE;
@@ -193,7 +183,7 @@ static void do_cache_remove_ti(struct track_info *ti, unsigned int hash)
 
 void cache_remove_ti(struct track_info *ti)
 {
-	do_cache_remove_ti(ti, filename_hash(ti->filename));
+	do_cache_remove_ti(ti, hash_str(ti->filename));
 }
 
 static int read_cache(void)
@@ -232,7 +222,7 @@ static int read_cache(void)
 			goto corrupt;
 
 		ti = cache_entry_to_ti(e);
-		add_ti(ti, filename_hash(ti->filename));
+		add_ti(ti, hash_str(ti->filename));
 		offset += ALIGN(e->size);
 	}
 	munmap(buf, size);
@@ -419,7 +409,7 @@ static struct track_info *ip_get_ti(const char *filename)
 
 struct track_info *cache_get_ti(const char *filename)
 {
-	unsigned int hash = filename_hash(filename);
+	unsigned int hash = hash_str(filename);
 	struct track_info *ti;
 
 	ti = lookup_cache_entry(filename, hash);
@@ -463,7 +453,7 @@ struct track_info **cache_refresh(int *count)
 			}
 		}
 
-		hash = filename_hash(ti->filename);
+		hash = hash_str(ti->filename);
 		track_info_ref(ti);
 		do_cache_remove_ti(ti, hash);
 

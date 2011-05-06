@@ -104,21 +104,10 @@ struct fh_entry {
 #define FH_SIZE (1024)
 static struct fh_entry *ti_hash[FH_SIZE] = { NULL, };
 
-/* this is from glib */
-static unsigned int str_hash(const char *str)
-{
-	unsigned int hash = 0;
-	int i;
-
-	for (i = 0; str[i]; i++)
-		hash = (hash << 5) - hash + str[i];
-	return hash;
-}
-
 static int hash_insert(struct track_info *ti)
 {
 	const char *filename = ti->filename;
-	unsigned int pos = str_hash(filename) % FH_SIZE;
+	unsigned int pos = hash_str(filename) % FH_SIZE;
 	struct fh_entry **entryp;
 	struct fh_entry *e;
 
@@ -143,7 +132,7 @@ static int hash_insert(struct track_info *ti)
 static void hash_remove(struct track_info *ti)
 {
 	const char *filename = ti->filename;
-	unsigned int pos = str_hash(filename) % FH_SIZE;
+	unsigned int pos = hash_str(filename) % FH_SIZE;
 	struct fh_entry **entryp;
 
 	entryp = &ti_hash[pos];

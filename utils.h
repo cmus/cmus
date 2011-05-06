@@ -94,6 +94,19 @@ static inline int strcmp0(const char *str1, const char *str2)
 	return strcmp(str1, str2);
 }
 
+static inline uint32_t hash_str(const char *s)
+{
+	const unsigned char *p = (const unsigned char *)s;
+	uint32_t h = 5381;
+
+	while (*p) {
+		h *= 33;
+		h ^= *p++;
+	}
+
+	return h ^ (h >> 16);
+}
+
 static inline time_t file_get_mtime(const char *filename)
 {
 	struct stat s;
