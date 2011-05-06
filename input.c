@@ -125,7 +125,7 @@ static const struct input_plugin_ops *get_ops_by_extension(const char *ext, stru
 		int i;
 
 		for (i = 0; exts[i]; i++) {
-			if (strcasecmp(ext, exts[i]) == 0 || strcmp("any", exts[i]) == 0) {
+			if (strcasecmp(ext, exts[i]) == 0 || strcmp("*", exts[i]) == 0) {
 				*headp = node;
 				return ip->ops;
 			}

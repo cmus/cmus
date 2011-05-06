@@ -498,15 +498,14 @@ const struct input_plugin_ops ip_ops = {
 };
 
 const int ip_priority = 30;
-#ifdef USE_FALLBACK_IP
-const char *const ip_extensions[] = { "any", NULL };
-#else
 const char *const ip_extensions[] = {
 	"ac3", "aif", "aifc", "aiff", "ape", "au", "mka", "shn", "tta", "wma",
 	/* also supported by other plugins */
 	"aac", "fla", "flac", "m4a", "m4b", "mp+", "mp2", "mp3", "mp4", "mpc",
 	"mpp", "ogg", "wav", "wv",
+#ifdef USE_FALLBACK_IP
+	"*",
+#endif
 	NULL
 };
-#endif
 const char *const ip_mime_types[] = { NULL };
