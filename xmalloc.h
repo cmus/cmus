@@ -20,6 +20,7 @@
 #define _XMALLOC_H
 
 #include "compiler.h"
+#include "config/xmalloc.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -58,14 +59,29 @@ static inline void * __MALLOC xrealloc(void *ptr, size_t size)
 
 static inline char * __MALLOC xstrdup(const char *str)
 {
+#ifdef HAVE_STRDUP
 	char *s = strdup(str);
+	if (unlikely(s == NULL))
+		malloc_fail();
+	return s;
+#else
+	size_t size = strlen(str) + 1;
+	void *ptr = xmalloc(size);
+	return (char *) memcpy(ptr, str, size);
+#endif
+}
 
+#ifdef HAVE_STRNDUP
+static inline char * __MALLOC xstrndup(const char *str, size_t n)
+{
+	char *s = strndup(str, n);
 	if (unlikely(s == NULL))
 		malloc_fail();
 	return s;
 }
-
+#else
 char * __MALLOC xstrndup(const char *str, size_t n);
+#endif
 
 static inline void free_str_array(char **array)
 {

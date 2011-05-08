@@ -31,17 +31,17 @@ void malloc_fail(void)
 	exit(42);
 }
 
+#ifndef HAVE_STRNDUP
 char *xstrndup(const char *str, size_t n)
 {
-	int len;
+	size_t len;
 	char *s;
 
 	for (len = 0; len < n && str[len]; len++)
 		;
-	s = malloc(len + 1);
-	if (unlikely(s == NULL))
-		malloc_fail();
+	s = xmalloc(len + 1);
 	memcpy(s, str, len);
 	s[len] = 0;
 	return s;
 }
+#endif
