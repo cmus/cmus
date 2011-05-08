@@ -711,6 +711,10 @@ win-update (*u*)
 
 	Only works in views 1-2 and 5, does nothing in other views.
 
+win-update-cache [-f]
+	Same as *update-cache*, but only for marked / selected tracks.
+	Only works in views 1-2, does nothing in other views.
+
 
 @h1 CONFIGURATION OPTIONS
 

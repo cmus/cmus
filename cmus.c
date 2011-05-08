@@ -276,7 +276,7 @@ void cmus_update_lib(void)
 	worker_add_job(JOB_TYPE_LIB, do_update_job, free_update_job, data);
 }
 
-void cmus_update_tis(struct track_info **tis, int nr)
+void cmus_update_tis(struct track_info **tis, int nr, int force)
 {
 	struct update_data *data;
 
@@ -284,6 +284,7 @@ void cmus_update_tis(struct track_info **tis, int nr)
 	data->size = nr;
 	data->used = nr;
 	data->ti = tis;
+	data->force = force;
 	worker_add_job(JOB_TYPE_LIB, do_update_job, free_update_job, data);
 }
 

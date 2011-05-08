@@ -78,7 +78,7 @@ int cmus_save_ext(for_each_ti_cb for_each_ti, const char *filename);
 
 void cmus_update_cache(int force);
 void cmus_update_lib(void);
-void cmus_update_tis(struct track_info **tis, int nr);
+void cmus_update_tis(struct track_info **tis, int nr, int force);
 
 int cmus_is_playlist(const char *filename);
 int cmus_is_playable(const char *filename);

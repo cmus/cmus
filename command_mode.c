@@ -1058,7 +1058,7 @@ static void cmd_run(char *arg)
 				free(argv);
 
 				/* remove non-existed files, update tags for changed files */
-				cmus_update_tis(sel.tis, sel.tis_nr);
+				cmus_update_tis(sel.tis, sel.tis_nr, 0);
 
 				/* we don't own sel.tis anymore! */
 				return;
@@ -1666,6 +1666,23 @@ static void cmd_win_pg_up(char *arg)
 	editable_lock();
 	window_page_up(current_win());
 	editable_unlock();
+}
+
+static void cmd_win_update_cache(char *arg)
+{
+	struct track_info_selection sel = { .tis = NULL };
+	int flag = parse_flags((const char **)&arg, "f");
+
+	if (cur_view != TREE_VIEW && cur_view != SORTED_VIEW)
+		return;
+
+	editable_lock();
+	view_for_each_sel[cur_view](add_ti, &sel, 0);
+	editable_unlock();
+	if (sel.tis_nr == 0)
+		return;
+	sel.tis[sel.tis_nr] = NULL;
+	cmus_update_tis(sel.tis, sel.tis_nr, flag == 'f');
 }
 
 static void cmd_win_top(char *arg)
@@ -2462,6 +2479,7 @@ struct command commands[] = {
 	{ "win-top",		cmd_win_top,	0, 0, NULL,		  0, 0 },
 	{ "win-up",		cmd_win_up,	0, 0, NULL,		  0, 0 },
 	{ "win-update",		cmd_win_update,	0, 0, NULL,		  0, 0 },
+	{ "win-update-cache",	cmd_win_update_cache,0, 1, NULL,	  0, 0 },
 	{ "wq",			cmd_quit,	0, 1, NULL,		  0, 0 },
 	{ NULL,			NULL,		0, 0, 0,		  0, 0 }
 };

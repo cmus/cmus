@@ -31,6 +31,7 @@ struct update_data {
 	size_t size;
 	size_t used;
 	struct track_info **ti;
+	unsigned int force : 1;
 };
 
 struct update_cache_data {

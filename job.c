@@ -250,7 +250,7 @@ void do_update_job(void *data)
 
 		/* stat follows symlinks, lstat does not */
 		rc = stat(ti->filename, &s);
-		if (rc || ti->mtime != s.st_mtime) {
+		if (rc || d->force || ti->mtime != s.st_mtime) {
 			editable_lock();
 			lib_remove(ti);
 			editable_unlock();
@@ -262,7 +262,8 @@ void do_update_job(void *data)
 			if (rc) {
 				d_print("removing dead file %s\n", ti->filename);
 			} else {
-				d_print("mtime changed: %s\n", ti->filename);
+				if (ti->mtime != s.st_mtime)
+					d_print("mtime changed: %s\n", ti->filename);
 				cmus_add(lib_add_track, ti->filename, FILE_TYPE_FILE, JOB_TYPE_LIB);
 			}
 		}
