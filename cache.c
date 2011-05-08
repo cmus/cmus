@@ -427,9 +427,9 @@ struct track_info *cache_get_ti(const char *filename)
 struct track_info **cache_refresh(int *count)
 {
 	struct track_info **tis = get_track_infos();
-	int i;
+	int i, n = total;
 
-	for (i = 0; i < total; i++) {
+	for (i = 0; i < n; i++) {
 		unsigned int hash;
 		struct track_info *ti = tis[i];
 		struct stat st;
