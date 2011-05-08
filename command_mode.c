@@ -947,18 +947,21 @@ error:
 	return NULL;
 }
 
-static struct track_info **sel_tis;
-static int sel_tis_alloc;
-static int sel_tis_nr;
+struct track_info_selection {
+	struct track_info **tis;
+	int tis_alloc;
+	int tis_nr;
+};
 
 static int add_ti(void *data, struct track_info *ti)
 {
-	if (sel_tis_nr == sel_tis_alloc) {
-		sel_tis_alloc = sel_tis_alloc ? sel_tis_alloc * 2 : 8;
-		sel_tis = xrenew(struct track_info *, sel_tis, sel_tis_alloc);
+	struct track_info_selection *sel = data;
+	if (sel->tis_nr == sel->tis_alloc) {
+		sel->tis_alloc = sel->tis_alloc ? sel->tis_alloc * 2 : 8;
+		sel->tis = xrenew(struct track_info *, sel->tis, sel->tis_alloc);
 	}
 	track_info_ref(ti);
-	sel_tis[sel_tis_nr++] = ti;
+	sel->tis[sel->tis_nr++] = ti;
 	return 0;
 }
 
@@ -966,6 +969,7 @@ static void cmd_run(char *arg)
 {
 	char **av, **argv;
 	int ac, argc, i, run, files_idx = -1;
+	struct track_info_selection sel = { .tis = NULL };
 
 	if (cur_view > QUEUE_VIEW) {
 		info_msg("Command execution is supported only in views 1-4");
@@ -978,48 +982,44 @@ static void cmd_run(char *arg)
 	}
 
 	/* collect selected files (struct track_info) */
-	sel_tis = NULL;
-	sel_tis_alloc = 0;
-	sel_tis_nr = 0;
-
 	editable_lock();
 	switch (cur_view) {
 	case TREE_VIEW:
 		__tree_for_each_sel(add_ti, NULL, 0);
 		break;
 	case SORTED_VIEW:
-		__editable_for_each_sel(&lib_editable, add_ti, NULL, 0);
+		__editable_for_each_sel(&lib_editable, add_ti, &sel, 0);
 		break;
 	case PLAYLIST_VIEW:
-		__editable_for_each_sel(&pl_editable, add_ti, NULL, 0);
+		__editable_for_each_sel(&pl_editable, add_ti, &sel, 0);
 		break;
 	case QUEUE_VIEW:
-		__editable_for_each_sel(&pq_editable, add_ti, NULL, 0);
+		__editable_for_each_sel(&pq_editable, add_ti, &sel, 0);
 		break;
 	}
 	editable_unlock();
 
-	if (sel_tis_nr == 0) {
+	if (sel.tis_nr == 0) {
 		/* no files selected, do nothing */
 		free_str_array(av);
 		return;
 	}
-	sel_tis[sel_tis_nr] = NULL;
+	sel.tis[sel.tis_nr] = NULL;
 
 	/* build argv */
-	argv = xnew(char *, ac + sel_tis_nr + 1);
+	argv = xnew(char *, ac + sel.tis_nr + 1);
 	argc = 0;
 	if (files_idx == -1) {
 		/* add selected files after rest of the args */
 		for (i = 0; i < ac; i++)
 			argv[argc++] = av[i];
-		for (i = 0; i < sel_tis_nr; i++)
-			argv[argc++] = sel_tis[i]->filename;
+		for (i = 0; i < sel.tis_nr; i++)
+			argv[argc++] = sel.tis[i]->filename;
 	} else {
 		for (i = 0; i < files_idx; i++)
 			argv[argc++] = av[i];
-		for (i = 0; i < sel_tis_nr; i++)
-			argv[argc++] = sel_tis[i]->filename;
+		for (i = 0; i < sel.tis_nr; i++)
+			argv[argc++] = sel.tis[i]->filename;
 		for (i = files_idx; i < ac; i++)
 			argv[argc++] = av[i];
 	}
@@ -1029,8 +1029,8 @@ static void cmd_run(char *arg)
 		d_print("ARG: '%s'\n", argv[i]);
 
 	run = 1;
-	if (confirm_run && (sel_tis_nr > 1 || strcmp(argv[0], "rm") == 0)) {
-		if (!yes_no_query("Execute %s for the %d selected files? [y/N]", arg, sel_tis_nr)) {
+	if (confirm_run && (sel.tis_nr > 1 || strcmp(argv[0], "rm") == 0)) {
+		if (!yes_no_query("Execute %s for the %d selected files? [y/N]", arg, sel.tis_nr)) {
 			info_msg("Aborted");
 			run = 0;
 		}
@@ -1053,23 +1053,23 @@ static void cmd_run(char *arg)
 			switch (cur_view) {
 			case TREE_VIEW:
 			case SORTED_VIEW:
-				/* this must be done before sel_tis are unreffed */
+				/* this must be done before sel.tis are unreffed */
 				free_str_array(av);
 				free(argv);
 
 				/* remove non-existed files, update tags for changed files */
-				cmus_update_tis(sel_tis, sel_tis_nr);
+				cmus_update_tis(sel.tis, sel.tis_nr);
 
-				/* we don't own sel_tis anymore! */
+				/* we don't own sel.tis anymore! */
 				return;
 			}
 		}
 	}
 	free_str_array(av);
 	free(argv);
-	for (i = 0; sel_tis[i]; i++)
-		track_info_unref(sel_tis[i]);
-	free(sel_tis);
+	for (i = 0; sel.tis[i]; i++)
+		track_info_unref(sel.tis[i]);
+	free(sel.tis);
 }
 
 static void cmd_shell(char *arg)
