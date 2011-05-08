@@ -280,11 +280,12 @@ void free_update_job(void *data)
 
 void do_update_cache_job(void *data)
 {
+	struct update_cache_data *d = data;
 	struct track_info **tis;
 	int i, count;
 
 	cache_lock();
-	tis = cache_refresh(&count);
+	tis = cache_refresh(&count, d->force);
 	editable_lock();
 	for (i = 0; i < count; i++) {
 		struct track_info *new, *old = tis[i];
@@ -308,4 +309,5 @@ void do_update_cache_job(void *data)
 
 void free_update_cache_job(void *data)
 {
+	free(data);
 }

@@ -424,7 +424,7 @@ struct track_info *cache_get_ti(const char *filename)
 	return ti;
 }
 
-struct track_info **cache_refresh(int *count)
+struct track_info **cache_refresh(int *count, int force)
 {
 	struct track_info **tis = get_track_infos();
 	int i, n = total;
@@ -446,7 +446,7 @@ struct track_info **cache_refresh(int *count)
 
 		if (!is_url(ti->filename)) {
 			rc = stat(ti->filename, &st);
-			if (!rc && ti->mtime == st.st_mtime) {
+			if (!rc && !force && ti->mtime == st.st_mtime) {
 				// unchanged
 				tis[i] = NULL;
 				continue;
@@ -459,8 +459,16 @@ struct track_info **cache_refresh(int *count)
 
 		if (!rc) {
 			// changed
-			struct track_info *new_ti = ip_get_ti(ti->filename);
+			struct track_info *new_ti;
 
+			// clear cache-only entries
+			if (force && ti->ref == 1) {
+				track_info_unref(ti);
+				tis[i] = NULL;
+				continue;
+			}
+
+			new_ti = ip_get_ti(ti->filename);
 			if (new_ti) {
 				add_ti(new_ti, hash);
 				new++;

@@ -613,7 +613,8 @@ static void cmd_unmark(char *arg)
 
 static void cmd_update_cache(char *arg)
 {
-	cmus_update_cache();
+	int flag = parse_flags((const char **)&arg, "f");
+	cmus_update_cache(flag == 'f');
 }
 
 static void cmd_cd(char *arg)
@@ -2439,7 +2440,7 @@ struct command commands[] = {
 	{ "tqueue",		cmd_tqueue,	0, 1, NULL,		  0, 0 },
 	{ "unbind",		cmd_unbind,	1, 1, expand_unbind_args, 0, 0 },
 	{ "unmark",		cmd_unmark,	0, 0, NULL,		  0, 0 },
-	{ "update-cache",	cmd_update_cache,0, 0, NULL,		  0, 0 },
+	{ "update-cache",	cmd_update_cache,0, 1, NULL,		  0, 0 },
 	{ "view",		cmd_view,	1, 1, NULL,		  0, 0 },
 	{ "vol",		cmd_vol,	1, 2, NULL,		  0, 0 },
 	{ "w",			cmd_save,	0, 1, expand_load_save,	  0, CMD_UNSAFE },

@@ -33,6 +33,10 @@ struct update_data {
 	struct track_info **ti;
 };
 
+struct update_cache_data {
+	unsigned int force : 1;
+};
+
 void do_add_job(void *data);
 void free_add_job(void *data);
 void do_update_job(void *data);

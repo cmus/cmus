@@ -250,9 +250,14 @@ static int update_cb(void *data, struct track_info *ti)
 	return 0;
 }
 
-void cmus_update_cache(void)
+void cmus_update_cache(int force)
 {
-	worker_add_job(JOB_TYPE_LIB, do_update_cache_job, free_update_cache_job, NULL);
+	struct update_cache_data *data;
+
+	data = xnew(struct update_cache_data, 1);
+	data->force = force;
+
+	worker_add_job(JOB_TYPE_LIB, do_update_cache_job, free_update_cache_job, data);
 }
 
 void cmus_update_lib(void)

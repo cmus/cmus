@@ -590,8 +590,12 @@ unbind [-f] <context> <key>
 unmark
 	Unmark all tracks (see *mark*).
 
-update-cache
-	Update track metadata cache (~/.cmus/cache).
+update-cache [-f]
+	Update track metadata cache (~/.cmus/cache). Only files with changed
+	modification time or removed files are considered.
+
+	-f
+		Update all files. Same as quit, rm -f ~/.cmus/cache, start cmus.
 
 view <name or 1-7>
 	Switches active view.
