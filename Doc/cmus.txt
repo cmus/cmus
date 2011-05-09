@@ -745,7 +745,7 @@ altformat_title [`Format String`]
 altformat_trackwin [`Format String`]
 	Alternative format string for the tree view's (1) track window.
 
-buffer_seconds (10) [1-20]
+buffer_seconds (10) [1-300]
 	Size of player buffer in seconds.
 
 color_cmdline_bg (default) [`Color`]

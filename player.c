@@ -1310,11 +1310,6 @@ void player_set_op(const char *name)
 
 void player_set_buffer_chunks(unsigned int nr_chunks)
 {
-	if (nr_chunks < 3)
-		nr_chunks = 3;
-	if (nr_chunks > 30)
-		nr_chunks = 30;
-
 	player_lock();
 	__producer_stop();
 	__consumer_stop();

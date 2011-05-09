@@ -187,7 +187,7 @@ static void set_buffer_seconds(unsigned int id, const char *buf)
 {
 	int sec;
 
-	if (parse_int(buf, 1, 20, &sec))
+	if (parse_int(buf, 1, 300, &sec))
 		player_set_buffer_chunks((sec * SECOND_SIZE + CHUNK_SIZE / 2) / CHUNK_SIZE);
 }
 
