@@ -58,14 +58,12 @@ void play_queue_prepend(struct track_info *ti)
 	window_changed(pq_editable.win);
 }
 
-struct track_info *play_queue_remove(void)
+static struct track_info *pq_remove_track(struct list_head *item)
 {
-	struct list_head *item;
 	struct simple_track *t;
 	struct track_info *info;
 	struct iter iter;
 
-	item = pq_editable.head.next;
 	if (item == &pq_editable.head)
 		return NULL;
 
@@ -83,6 +81,11 @@ struct track_info *play_queue_remove(void)
 	return info;
 }
 
+struct track_info *play_queue_remove(void)
+{
+	return pq_remove_track(pq_editable.head.next);
+}
+
 int play_queue_for_each(int (*cb)(void *data, struct track_info *ti), void *data)
 {
 	struct simple_track *track;
@@ -94,4 +97,26 @@ int play_queue_for_each(int (*cb)(void *data, struct track_info *ti), void *data
 			break;
 	}
 	return rc;
+}
+
+void play_queue_update_track(struct track_info *old, struct track_info *new)
+{
+	struct list_head *item, *tmp;
+	int changed = 0;
+
+	list_for_each_safe(item, tmp, &pq_editable.head) {
+		struct simple_track *track = to_simple_track(item);
+		if (track->info == old) {
+			if (new) {
+				track_info_unref(old);
+				track_info_ref(new);
+				track->info = new;
+			} else {
+				pq_remove_track(item);
+			}
+			changed = 1;
+		}
+	}
+	if (changed)
+		window_changed(pq_editable.win);
 }

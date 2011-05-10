@@ -60,6 +60,7 @@ int __editable_for_each_sel(struct editable *e, int (*cb)(void *data, struct tra
 		void *data, int reverse);
 int editable_for_each_sel(struct editable *e, int (*cb)(void *data, struct track_info *ti),
 		void *data, int reverse);
+void editable_update_track(struct editable *e, struct track_info *old, struct track_info *new);
 
 static inline void editable_track_to_iter(struct editable *e, struct simple_track *track, struct iter *iter)
 {

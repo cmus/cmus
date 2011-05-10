@@ -24,6 +24,7 @@
 #include "load_dir.h"
 #include "path.h"
 #include "editable.h"
+#include "pl.h"
 #include "play_queue.h"
 #include "lib.h"
 #include "utils.h"
@@ -297,7 +298,8 @@ void do_update_cache_job(void *data)
 		new = old->next;
 		if (lib_remove(old) && new)
 			lib_add_track(new);
-		// FIXME: other views
+		editable_update_track(&pl_editable, old, new);
+		play_queue_update_track(old, new);
 
 		track_info_unref(old);
 		if (new)
