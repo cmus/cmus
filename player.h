@@ -98,6 +98,9 @@ void player_set_file(struct track_info *ti);
 /* set current file and start playing */
 void player_play_file(struct track_info *ti);
 
+/* update track info */
+void player_file_changed(struct track_info *ti);
+
 void player_play(void);
 void player_stop(void);
 void player_pause(void);

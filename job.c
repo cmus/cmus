@@ -30,6 +30,7 @@
 #include "utils.h"
 #include "file.h"
 #include "cache.h"
+#include "player.h"
 
 #include <string.h>
 #include <unistd.h>
@@ -289,6 +290,7 @@ void do_update_cache_job(void *data)
 	cache_lock();
 	tis = cache_refresh(&count, d->force);
 	editable_lock();
+	player_info_lock();
 	for (i = 0; i < count; i++) {
 		struct track_info *new, *old = tis[i];
 
@@ -300,11 +302,16 @@ void do_update_cache_job(void *data)
 			lib_add_track(new);
 		editable_update_track(&pl_editable, old, new);
 		play_queue_update_track(old, new);
+		if (player_info.ti == old && new) {
+			track_info_ref(new);
+			player_file_changed(new);
+		}
 
 		track_info_unref(old);
 		if (new)
 			track_info_unref(new);
 	}
+	player_info_unlock();
 	editable_unlock();
 	cache_unlock();
 	free(tis);

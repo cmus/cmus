@@ -393,21 +393,26 @@ static inline int get_next(struct track_info **ti)
 
 /* updating player status {{{ */
 
-static inline void file_changed(struct track_info *ti)
+static inline void __file_changed(struct track_info *ti)
 {
-	player_info_lock();
 	if (player_info.ti)
 		track_info_unref(player_info.ti);
 
 	player_info.ti = ti;
+	update_rg_scale();
+	player_info.metadata[0] = 0;
+	player_info.file_changed = 1;
+}
+
+static inline void file_changed(struct track_info *ti)
+{
+	player_info_lock();
 	if (ti) {
 		d_print("file: %s\n", ti->filename);
 	} else {
 		d_print("unloaded\n");
 	}
-	update_rg_scale();
-	player_info.metadata[0] = 0;
-	player_info.file_changed = 1;
+	__file_changed(ti);
 	player_info_unlock();
 }
 
@@ -1173,6 +1178,11 @@ out:
 	if (producer_status == PS_PLAYING)
 		__prebuffer();
 	player_unlock();
+}
+
+void player_file_changed(struct track_info *ti)
+{
+	__file_changed(ti);
 }
 
 void player_seek(double offset, int relative, int start_playing)
