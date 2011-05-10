@@ -470,6 +470,6 @@ struct track_info **cache_refresh(int *count)
 			ti->next = NULL;
 		}
 	}
-	*count = total;
+	*count = n;
 	return tis;
 }
