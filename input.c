@@ -718,6 +718,11 @@ int ip_bitrate(struct input_plugin *ip)
 	return ip->bitrate;
 }
 
+int ip_current_bitrate(struct input_plugin *ip)
+{
+	return ip->ops->bitrate_current(&ip->data);
+}
+
 char *ip_codec(struct input_plugin *ip)
 {
 	if (ip->data.remote)

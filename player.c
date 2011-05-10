@@ -25,6 +25,7 @@
 #include "xmalloc.h"
 #include "debug.h"
 #include "compiler.h"
+#include "options.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -56,6 +57,7 @@ struct player_info player_info = {
 	.metadata = { 0, },
 	.status = PLAYER_STATUS_STOPPED,
 	.pos = 0,
+	.current_bitrate = -1,
 	.buffer_fill = 0,
 	.buffer_size = 0,
 	.error_msg = NULL,
@@ -444,6 +446,7 @@ static void player_error(const char *msg)
 	player_info_lock();
 	player_info.status = consumer_status;
 	player_info.pos = 0;
+	player_info.current_bitrate = -1;
 	player_info.buffer_fill = buffer_get_filled_chunks();
 	player_info.buffer_size = buffer_nr_chunks;
 	player_info.status_changed = 1;
@@ -513,15 +516,21 @@ static void __consumer_position_update(void)
 {
 	static unsigned int old_pos = -1;
 	unsigned int pos = 0;
-	
+	long bitrate;
+
 	if (consumer_status == CS_PLAYING || consumer_status == CS_PAUSED)
 		pos = consumer_pos / buffer_second_size();
 	if (pos != old_pos) {
-/* 		d_print("\n"); */
 		old_pos = pos;
 
 		player_info_lock();
 		player_info.pos = pos;
+
+		if (show_current_bitrate) {
+			bitrate = ip_current_bitrate(ip);
+			if (bitrate != -1)
+				player_info.current_bitrate = bitrate;
+		}
 		player_info.position_changed = 1;
 		player_info_unlock();
 	}
@@ -541,6 +550,7 @@ static void __player_status_changed(void)
 	player_info_lock();
 	player_info.status = consumer_status;
 	player_info.pos = pos;
+	player_info.current_bitrate = -1;
 	player_info.buffer_fill = buffer_get_filled_chunks();
 	player_info.buffer_size = buffer_nr_chunks;
 	player_info.status_changed = 1;

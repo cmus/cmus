@@ -303,6 +303,12 @@ static long vorbis_bitrate(struct input_plugin_data *ip_data)
 	return bitrate;
 }
 
+static long vorbis_current_bitrate(struct input_plugin_data *ip_data)
+{
+	struct vorbis_private *priv = ip_data->private;
+	return ov_bitrate_instant(&priv->vf);
+}
+
 static char *vorbis_codec(struct input_plugin_data *ip_data)
 {
 	return xstrdup("vorbis");
@@ -351,6 +357,7 @@ const struct input_plugin_ops ip_ops = {
 	.read_comments = vorbis_read_comments,
 	.duration = vorbis_duration,
 	.bitrate = vorbis_bitrate,
+	.bitrate_current = vorbis_current_bitrate,
 	.codec = vorbis_codec,
 	.codec_profile = vorbis_codec_profile
 };

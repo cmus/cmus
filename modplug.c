@@ -226,6 +226,7 @@ const struct input_plugin_ops ip_ops = {
 	.read_comments = mod_read_comments,
 	.duration = mod_duration,
 	.bitrate = mod_bitrate,
+	.bitrate_current = mod_bitrate,
 	.codec = mod_codec,
 	.codec_profile = mod_codec_profile
 };

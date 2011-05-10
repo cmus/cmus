@@ -98,5 +98,6 @@ int nomad_time_seek(struct nomad *nomad, double pos);
 const struct nomad_xing *nomad_xing(struct nomad *nomad);
 const struct nomad_lame *nomad_lame(struct nomad *nomad);
 const struct nomad_info *nomad_info(struct nomad *nomad);
+long nomad_current_bitrate(struct nomad *nomad);
 
 #endif

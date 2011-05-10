@@ -161,6 +161,7 @@ const struct input_plugin_ops ip_ops = {
 	.read_comments = mik_read_comments,
 	.duration = mik_duration,
 	.bitrate = mik_bitrate,
+	.bitrate_current = mik_bitrate,
 	.codec = mik_codec,
 	.codec_profile = mik_codec_profile
 };

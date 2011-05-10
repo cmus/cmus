@@ -70,6 +70,11 @@ struct mpc_private {
 	 * use MPC_DECODER_BUFFER_LENGTH just to be sure it works
 	 */
 	MPC_SAMPLE_FORMAT samples[MPC_DECODER_BUFFER_LENGTH];
+
+	struct {
+		unsigned long samples;
+		unsigned long bits;
+	} current;
 };
 
 /* callbacks */
@@ -255,11 +260,15 @@ static int mpc_read(struct input_plugin_data *ip_data, char *buffer, int count)
 
 		samples = frame.samples;
 		priv->samples_avail = samples * priv->info.channels;
+
+		priv->current.samples += frame.samples;
+		priv->current.bits += frame.bits;
 	}
 #else
 
 	if (priv->samples_avail == 0) {
-		uint32_t status = mpc_decoder_decode(&priv->decoder, priv->samples, NULL, NULL);
+		uint32_t acc = 0, bits = 0;
+		uint32_t status = mpc_decoder_decode(&priv->decoder, priv->samples, &acc, &bits);
 
 		if (status == (uint32_t)(-1)) {
 			/* right ret val? */
@@ -274,6 +283,9 @@ static int mpc_read(struct input_plugin_data *ip_data, char *buffer, int count)
 		 * the api documentation is wrong
 		 */
 		priv->samples_avail = status * priv->info.channels;
+
+		priv->current.samples += status;
+		priv->current.bits += bits;
 	}
 #endif
 
@@ -386,6 +398,19 @@ static long mpc_bitrate(struct input_plugin_data *ip_data)
 	return -IP_ERROR_FUNCTION_NOT_SUPPORTED;
 }
 
+static long mpc_current_bitrate(struct input_plugin_data *ip_data)
+{
+	struct mpc_private *priv = ip_data->private;
+	long bitrate = -1;
+	if (priv->current.samples > 0) {
+		bitrate = (priv->info.sample_freq * priv->current.bits) / priv->current.samples;
+		priv->current.samples = 0;
+		priv->current.bits = 0;
+	}
+	return bitrate;
+
+}
+
 static char *mpc_codec(struct input_plugin_data *ip_data)
 {
 	struct mpc_private *priv = ip_data->private;
@@ -426,6 +451,7 @@ const struct input_plugin_ops ip_ops = {
 	.read_comments = mpc_read_comments,
 	.duration = mpc_duration,
 	.bitrate = mpc_bitrate,
+	.bitrate_current = mpc_current_bitrate,
 	.codec = mpc_codec,
 	.codec_profile = mpc_codec_profile
 };

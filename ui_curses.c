@@ -270,6 +270,7 @@ enum {
 	SF_CONTINUE,
 	SF_SHUFFLE,
 	SF_PLAYLISTMODE,
+	SF_BITRATE,
 	NR_SFS
 };
 
@@ -286,6 +287,7 @@ static struct format_option status_fopts[NR_SFS + 1] = {
 	DEF_FO_STR('C', NULL, 0),
 	DEF_FO_STR('S', NULL, 0),
 	DEF_FO_STR('L', NULL, 0),
+	DEF_FO_INT('B', NULL, 0),
 	DEF_FO_END
 };
 
@@ -1031,6 +1033,7 @@ static void do_update_statusline(void)
 	fopt_set_int(&status_fopts[SF_RVOLUME], vol_right, 0);
 	fopt_set_int(&status_fopts[SF_BUFFER], buffer_fill, 0);
 	fopt_set_str(&status_fopts[SF_CONTINUE], cont_strs[player_cont]);
+	fopt_set_int(&status_fopts[SF_BITRATE], player_info.current_bitrate / 1000. + 0.5, 0);
 
 	strcpy(format, " %s %p ");
 	if (duration != -1)
@@ -1043,8 +1046,12 @@ static void do_update_statusline(void)
 			strcat(format, "vol: %v ");
 		}
 	}
-	if (player_info.ti && is_url(player_info.ti->filename))
-		strcat(format, "buf: %b ");
+	if (player_info.ti) {
+		if (is_url(player_info.ti->filename))
+			strcat(format, "buf: %b ");
+		if (show_current_bitrate && player_info.current_bitrate >= 0)
+			strcat(format, " %B kbps ");
+	}
 	strcat(format, "%=");
 	if (player_repeat_current) {
 		strcat(format, "repeat current");

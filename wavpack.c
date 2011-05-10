@@ -367,6 +367,12 @@ static long wavpack_bitrate(struct input_plugin_data *ip_data)
 	return (long) (bitrate + 0.5);
 }
 
+static long wavpack_current_bitrate(struct input_plugin_data *ip_data)
+{
+	struct wavpack_private *priv = ip_data->private;
+	return WavpackGetInstantBitrate(priv->wpc);
+}
+
 static char *wavpack_codec(struct input_plugin_data *ip_data)
 {
 	return xstrdup("wavpack");
@@ -413,6 +419,7 @@ const struct input_plugin_ops ip_ops = {
 	.read_comments = wavpack_read_comments,
 	.duration = wavpack_duration,
 	.bitrate = wavpack_bitrate,
+	.bitrate_current = wavpack_current_bitrate,
 	.codec = wavpack_codec,
 	.codec_profile = wavpack_codec_profile
 };

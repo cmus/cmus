@@ -52,6 +52,9 @@ struct ffmpeg_input {
 	AVPacket pkt;
 	int curr_pkt_size;
 	uint8_t *curr_pkt_buf;
+
+	unsigned long curr_size;
+	unsigned long curr_duration;
 };
 
 struct ffmpeg_output {
@@ -295,6 +298,8 @@ static int ffmpeg_fill_buffer(AVFormatContext *ic, AVCodecContext *cc, struct ff
 			}
 			input->curr_pkt_size = input->pkt.size;
 			input->curr_pkt_buf = input->pkt.data;
+			input->curr_size += input->pkt.size;
+			input->curr_duration += input->pkt.duration;
 			continue;
 		}
 
@@ -450,6 +455,25 @@ static long ffmpeg_bitrate(struct input_plugin_data *ip_data)
 	return bitrate ? bitrate : -IP_ERROR_FUNCTION_NOT_SUPPORTED;
 }
 
+static long ffmpeg_current_bitrate(struct input_plugin_data *ip_data)
+{
+	struct ffmpeg_private *priv = ip_data->private;
+	AVStream *st = priv->input_context->streams[priv->stream_index];
+	long bitrate = -1;
+#if (LIBAVFORMAT_VERSION_INT > ((51<<16)+(43<<8)+0))
+	/* ape codec returns silly numbers */
+	if (priv->codec->id == CODEC_ID_APE)
+		return -1;
+#endif
+	if (priv->input->curr_duration > 0) {
+		double seconds = priv->input->curr_duration * av_q2d(st->time_base);
+		bitrate = (8 * priv->input->curr_size) / seconds;
+		priv->input->curr_size = 0;
+		priv->input->curr_duration = 0;
+	}
+	return bitrate;
+}
+
 static char *ffmpeg_codec(struct input_plugin_data *ip_data)
 {
 	struct ffmpeg_private *priv = ip_data->private;
@@ -493,6 +517,7 @@ const struct input_plugin_ops ip_ops = {
 	.read_comments = ffmpeg_read_comments,
 	.duration = ffmpeg_duration,
 	.bitrate = ffmpeg_bitrate,
+	.bitrate_current = ffmpeg_current_bitrate,
 	.codec = ffmpeg_codec,
 	.codec_profile = ffmpeg_codec_profile
 };

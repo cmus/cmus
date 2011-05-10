@@ -45,6 +45,11 @@ struct aac_private {
 	long bitrate;
 	int object_type;
 
+	struct {
+		unsigned long samples;
+		unsigned long bytes;
+	} current;
+
 	char *overflow_buf;
 	int overflow_buf_len;
 
@@ -289,6 +294,10 @@ static int decode_one_frame(struct input_plugin_data *ip_data, void *buffer, int
 
 	/* aac data -> raw pcm */
 	sample_buf = NeAACDecDecode(priv->decoder, &frame_info, aac_data, aac_data_size);
+	if (frame_info.error == 0 && frame_info.samples > 0) {
+		priv->current.samples += frame_info.samples;
+		priv->current.bytes += frame_info.bytesconsumed;
+	}
 
 	buffer_consume(ip_data, frame_info.bytesconsumed);
 
@@ -445,6 +454,19 @@ static long aac_bitrate(struct input_plugin_data *ip_data)
 	return priv->bitrate != -1 ? priv->bitrate : -IP_ERROR_FUNCTION_NOT_SUPPORTED;
 }
 
+static long aac_current_bitrate(struct input_plugin_data *ip_data)
+{
+	struct aac_private *priv = ip_data->private;
+	long bitrate = -1;
+	if (priv->current.samples > 0) {
+		priv->current.samples /= priv->channels;
+		bitrate = (8 * priv->current.bytes * priv->sample_rate) / priv->current.samples;
+		priv->current.samples = 0;
+		priv->current.bytes = 0;
+	}
+	return bitrate;
+}
+
 static char *aac_codec(struct input_plugin_data *ip_data)
 {
 	return xstrdup("aac");
@@ -482,6 +504,7 @@ const struct input_plugin_ops ip_ops = {
 	.read_comments = aac_read_comments,
 	.duration = aac_duration,
 	.bitrate = aac_bitrate,
+	.bitrate_current = aac_current_bitrate,
 	.codec = aac_codec,
 	.codec_profile = aac_codec_profile
 };

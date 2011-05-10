@@ -65,6 +65,7 @@ struct player_info {
 	/* status */
 	enum player_status status;
 	int pos;
+	int current_bitrate;
 
 	int buffer_fill;
 	int buffer_size;

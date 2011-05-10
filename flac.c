@@ -75,6 +75,7 @@ struct flac_private {
 
 	struct keyval *comments;
 	double duration;
+	long bitrate;
 
 	unsigned int ignore_next_write : 1;
 };
@@ -320,8 +321,11 @@ static void metadata_cb(const Dec *dec, const FLAC__StreamMetadata *metadata, vo
 				sf_bits(bits) |
 				sf_signed(1) |
 				sf_channels(si->channels);
-			if (!ip_data->remote && si->total_samples)
+			if (!ip_data->remote && si->total_samples) {
 				priv->duration = (double) si->total_samples / si->sample_rate;
+				if (priv->duration >= 1 && priv->len >= 1)
+					priv->bitrate = priv->len * 8 / priv->duration;
+			}
 		}
 		break;
 	case FLAC__METADATA_TYPE_VORBIS_COMMENT:
@@ -383,7 +387,8 @@ static int flac_open(struct input_plugin_data *ip_data)
 
 	const struct flac_private priv_init = {
 		.dec      = dec,
-		.duration = -1
+		.duration = -1,
+		.bitrate  = -1
 	};
 
 	if (!dec)
@@ -541,12 +546,7 @@ static int flac_duration(struct input_plugin_data *ip_data)
 static long flac_bitrate(struct input_plugin_data *ip_data)
 {
 	struct flac_private *priv = ip_data->private;
-	off_t file_size = lseek(ip_data->fd, 0, SEEK_END);
-	if (file_size == -1)
-		return -IP_ERROR_FUNCTION_NOT_SUPPORTED;
-	if (priv->duration < 1)
-		return -1;
-	return file_size * 8 / priv->duration;
+	return priv->bitrate;
 }
 
 static char *flac_codec(struct input_plugin_data *ip_data)
@@ -568,6 +568,7 @@ const struct input_plugin_ops ip_ops = {
 	.read_comments = flac_read_comments,
 	.duration = flac_duration,
 	.bitrate = flac_bitrate,
+	.bitrate_current = flac_bitrate,
 	.codec = flac_codec,
 	.codec_profile = flac_codec_profile
 };

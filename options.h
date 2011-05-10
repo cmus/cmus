@@ -108,6 +108,7 @@ extern int auto_reshuffle;
 extern int confirm_run;
 extern int resume_cmus;
 extern int show_hidden;
+extern int show_current_bitrate;
 extern int show_remaining_time;
 extern int set_term_title;
 extern int play_library;

@@ -404,6 +404,7 @@ const struct input_plugin_ops ip_ops = {
 	.read_comments = wav_read_comments,
 	.duration = wav_duration,
 	.bitrate = wav_bitrate,
+	.bitrate_current = wav_bitrate,
 	.codec = wav_codec,
 	.codec_profile = wav_codec_profile
 };

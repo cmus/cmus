@@ -53,6 +53,11 @@ struct mp4_private {
 		MP4SampleId sample;
 		MP4SampleId num_samples;
 	} mp4;
+
+	struct {
+		unsigned long samples;
+		unsigned long bytes;
+	} current;
 };
 
 
@@ -231,6 +236,10 @@ static int decode_one_frame(struct input_plugin_data *ip_data, void *buffer, int
 	}
 
 	sample_buf = NeAACDecDecode(priv->decoder, &frame_info, aac_data, aac_data_len);
+	if (frame_info.error == 0 && frame_info.samples > 0) {
+		priv->current.samples += frame_info.samples;
+		priv->current.bytes += frame_info.bytesconsumed;
+	}
 
 	free(aac_data);
 
@@ -473,6 +482,19 @@ static long mp4_bitrate(struct input_plugin_data *ip_data)
 	return bitrate ? bitrate : -IP_ERROR_FUNCTION_NOT_SUPPORTED;
 }
 
+static long mp4_current_bitrate(struct input_plugin_data *ip_data)
+{
+	struct mp4_private *priv = ip_data->private;
+	long bitrate = -1;
+	if (priv->current.samples > 0) {
+		priv->current.samples /= priv->channels;
+		bitrate = (8 * priv->current.bytes * priv->sample_rate) / priv->current.samples;
+		priv->current.samples = 0;
+		priv->current.bytes = 0;
+	}
+	return bitrate;
+}
+
 static char *mp4_codec(struct input_plugin_data *ip_data)
 {
 	return xstrdup("aac");
@@ -514,6 +536,7 @@ const struct input_plugin_ops ip_ops = {
 	.read_comments = mp4_read_comments,
 	.duration = mp4_duration,
 	.bitrate = mp4_bitrate,
+	.bitrate_current = mp4_current_bitrate,
 	.codec = mp4_codec,
 	.codec_profile = mp4_codec_profile
 };

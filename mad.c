@@ -204,6 +204,12 @@ static long mad_bitrate(struct input_plugin_data *ip_data)
 	return bitrate != -1 ? bitrate : -IP_ERROR_FUNCTION_NOT_SUPPORTED;
 }
 
+static long mad_current_bitrate(struct input_plugin_data *ip_data)
+{
+	struct nomad *nomad = ip_data->private;
+	return nomad_current_bitrate(nomad);
+}
+
 static char *mad_codec(struct input_plugin_data *ip_data)
 {
 	struct nomad *nomad = ip_data->private;
@@ -263,6 +269,7 @@ const struct input_plugin_ops ip_ops = {
 	.read_comments = mad_read_comments,
 	.duration = mad_duration,
 	.bitrate = mad_bitrate,
+	.bitrate_current = mad_current_bitrate,
 	.codec = mad_codec,
 	.codec_profile = mad_codec_profile
 };

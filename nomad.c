@@ -78,6 +78,11 @@ struct nomad {
 		struct seek_idx_entry *table;
 	} seek_idx;
 
+	struct {
+		unsigned long long int bitrate_sum;
+		unsigned long nr_frames;
+	} current;
+
 	struct nomad_info info;
 	void *datasource;
 	int datasource_fd;
@@ -492,6 +497,8 @@ start:
 		goto start;
 	}
 	nomad->cur_frame++;
+	nomad->current.bitrate_sum += nomad->frame.header.bitrate;
+	nomad->current.nr_frames++;
 	if (nomad->info.filesize > 0) {
 		build_seek_index(nomad);
 	} else {
@@ -842,4 +849,15 @@ const struct nomad_lame *nomad_lame(struct nomad *nomad)
 const struct nomad_info *nomad_info(struct nomad *nomad)
 {
 	return &nomad->info;
+}
+
+long nomad_current_bitrate(struct nomad *nomad)
+{
+	long bitrate = -1;
+	if (nomad->current.nr_frames > 0) {
+		bitrate = nomad->current.bitrate_sum / nomad->current.nr_frames;
+		nomad->current.bitrate_sum = 0;
+		nomad->current.nr_frames = 0;
+	}
+	return bitrate;
 }

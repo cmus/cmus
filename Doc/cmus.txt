@@ -904,6 +904,9 @@ resume (false)
 show_hidden (false)
 	Display hidden files in browser.
 
+show_current_bitrate (false)
+	Display current bitrate in the status lines.
+
 show_remaining_time (false)
 	Display remaining time instead of elapsed time.
 
