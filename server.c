@@ -33,6 +33,7 @@
 #include "misc.h"
 #include "keyval.h"
 
+#include <stdarg.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -127,11 +128,24 @@ static int cmd_status(struct client *client)
 	return ret;
 }
 
+static ssize_t send_answer(int fd, const char *format, ...)
+{
+	char buf[512];
+	va_list ap;
+
+	va_start(ap, format);
+	vsnprintf(buf, sizeof(buf), format, ap);
+	va_end(ap);
+
+	return write_all(fd, buf, strlen(buf));
+}
+
 static void read_commands(struct client *client)
 {
 	char buf[1024];
 	int pos = 0;
-	int authenticated = addr.sa.sa_family == AF_UNIX;
+	if (!client->authenticated)
+		client->authenticated = addr.sa.sa_family == AF_UNIX;
 
 	while (1) {
 		int rc, s, i;
@@ -150,7 +164,7 @@ static void read_commands(struct client *client)
 
 		s = 0;
 		for (i = 0; i < pos; i++) {
-			const char *line;
+			const char *line, *msg;
 			char *cmd, *arg;
 			int ret;
 
@@ -161,16 +175,23 @@ static void read_commands(struct client *client)
 			line = buf + s;
 			s = i + 1;
 
-			if (!authenticated) {
+			if (!client->authenticated) {
 				if (!server_password) {
-					d_print("password is unset, tcp/ip disabled\n");
+					msg = "password is unset, tcp/ip disabled";
+					d_print("%s\n", msg);
+					ret = send_answer(client->fd, "%s\n\n", msg);
 					goto close;
 				}
-				authenticated = !strcmp(line, server_password);
-				if (!authenticated) {
-					d_print("authentication failed\n");
+				if (strncmp(line, "passwd ", 7) == 0)
+					line += 7;
+				client->authenticated = !strcmp(line, server_password);
+				if (!client->authenticated) {
+					msg = "authentication failed";
+					d_print("%s\n", msg);
+					ret = send_answer(client->fd, "%s\n\n", msg);
 					goto close;
 				}
+				ret = write_all(client->fd, "\n", 1);
 				continue;
 			}
 
@@ -201,9 +222,11 @@ static void read_commands(struct client *client)
 				if (!strcmp(cmd, "status")) {
 					ret = cmd_status(client);
 				} else {
-					set_client_fd(client->fd);
-					run_parsed_command(cmd, arg);
-					set_client_fd(-1);
+					if (strcmp(cmd, "passwd") != 0) {
+						set_client_fd(client->fd);
+						run_parsed_command(cmd, arg);
+						set_client_fd(-1);
+					}
 					ret = write_all(client->fd, "\n", 1);
 				}
 				free(cmd);
@@ -242,6 +265,7 @@ void server_accept(void)
 
 	client = xnew(struct client, 1);
 	client->fd = fd;
+	client->authenticated = 0;
 	list_add_tail(&client->node, &client_head);
 }
 
