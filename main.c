@@ -43,7 +43,7 @@ static void gethostbyname_failed(void)
 	die("gethostbyname: %s\n", error);
 }
 
-static void read_answer(void)
+static int read_answer(void)
 {
 	char buf[8192];
 	int got_nl = 0;
@@ -54,7 +54,7 @@ static void read_answer(void)
 
 		if (rc < 0) {
 			warn_errno("read");
-			return;
+			break;
 		}
 		if (!rc)
 			die("unexpected EOF\n");
@@ -64,27 +64,28 @@ static void read_answer(void)
 		// Last line should be empty (i.e. read "\n" or "...\n\n").
 		// Write everything but the last \n to stdout.
 		if (got_nl && buf[0] == '\n')
-			return;
+			break;
 		if (len == 1 && buf[0] == '\n')
-			return;
+			break;
 		if (rc > 1 && buf[rc - 1] == '\n' && buf[rc - 2] == '\n') {
 			write_all(1, buf, rc - 1);
-			return;
+			break;
 		}
 		got_nl = buf[rc - 1] == '\n';
 		write_all(1, buf, rc);
 	}
+	return len;
 }
 
-static void write_line(const char *line)
+static int write_line(const char *line)
 {
 	if (write_all(sock, line, strlen(line)) == -1)
 		die_errno("write");
 
-	read_answer();
+	return read_answer();
 }
 
-static void send_cmd(const char *format, ...)
+static int send_cmd(const char *format, ...)
 {
 	char buf[512];
 	va_list ap;
@@ -93,10 +94,10 @@ static void send_cmd(const char *format, ...)
 	vsnprintf(buf, sizeof(buf), format, ap);
 	va_end(ap);
 
-	write_line(buf);
+	return write_line(buf);
 }
 
-static void remote_connect(const char *address)
+static int remote_connect(const char *address)
 {
 	union {
 		struct sockaddr sa;
@@ -158,7 +159,8 @@ static void remote_connect(const char *address)
 	}
 
 	if (passwd)
-		send_cmd("%s\n", passwd);
+		return send_cmd("passwd %s\n", passwd) == 1;
+	return 1;
 }
 
 static char *file_url_absolute(const char *str)
@@ -366,7 +368,8 @@ int main(int argc, char *argv[])
 		server = server_buf;
 	}
 
-	remote_connect(server);
+	if (!remote_connect(server))
+		return 1;
 
 	if (raw_args) {
 		while (*argv)

@@ -10,6 +10,7 @@
 struct client {
 	struct list_head node;
 	int fd;
+	unsigned int authenticated : 1;
 };
 
 extern int server_socket;
