@@ -322,11 +322,11 @@ check_ffmpeg()
 {
 	HAVE_FFMPEG_AVCODEC_H=y
 	pkg_config FFMPEG "libavformat" || return $?
-	if check_header "libavcodec/avcodec.h"
+	if check_header "libavcodec/avcodec.h" $FFMPEG_CFLAGS
 	then
 		HAVE_FFMPEG_AVCODEC_H=n
 	else
-		check_header "ffmpeg/avcodec.h" || return $?
+		check_header "ffmpeg/avcodec.h" $FFMPEG_CFLAGS || return $?
 	fi
 	return 0
 }
