@@ -20,6 +20,7 @@
 #include "file.h"
 #include "path.h"
 #include "xmalloc.h"
+#include "utils.h"
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -37,25 +38,6 @@
 static int sock;
 static int raw_args = 0;
 static char *passwd;
-
-static void gethostbyname_failed(void)
-{
-	const char *error = "Unknown error.";
-
-	switch (h_errno) {
-	case HOST_NOT_FOUND:
-	case NO_DATA:
-		error = "Host not found.";
-		break;
-	case NO_RECOVERY:
-		error = "A non-recoverable name server error.";
-		break;
-	case TRY_AGAIN:
-		error = "A temporary error occurred on an authoritative name server.";
-		break;
-	}
-	die("gethostbyname: %s\n", error);
-}
 
 static int read_answer(void)
 {
@@ -116,9 +98,9 @@ static int remote_connect(const char *address)
 	union {
 		struct sockaddr sa;
 		struct sockaddr_un un;
-		struct sockaddr_in in;
+		struct sockaddr_storage sas;
 	} addr;
-	int addrlen;
+	size_t addrlen;
 
 	if (strchr(address, '/')) {
 		if (passwd)
@@ -130,32 +112,28 @@ static int remote_connect(const char *address)
 
 		addrlen = sizeof(addr.un);
 	} else {
-		char *s = strchr(address, ':');
-		int port = DEFAULT_PORT;
-		struct hostent *hent;
+		const struct addrinfo hints = {
+			.ai_socktype = SOCK_STREAM
+		};
+		const char *port = STRINGIZE(DEFAULT_PORT);
+		struct addrinfo *result;
+		char *s = strrchr(address, ':');
+		int rc;
 
 		if (!passwd)
 			die("password required for tcp/ip connection\n");
 
 		if (s) {
 			*s++ = 0;
-			port = atoi(s);
+			port = s;
 		}
-		hent = gethostbyname(address);
-		if (!hent)
-			gethostbyname_failed();
 
-		addr.sa.sa_family = hent->h_addrtype;
-		switch (addr.sa.sa_family) {
-		case AF_INET:
-			memcpy(&addr.in.sin_addr, hent->h_addr_list[0], hent->h_length);
-			addr.in.sin_port = htons(port);
-
-			addrlen = sizeof(addr.in);
-			break;
-		default:
-			die("unsupported address type\n");
-		}
+		rc = getaddrinfo(address, port, &hints, &result);
+		if (rc != 0)
+			die("getaddrinfo: %s\n", gai_strerror(rc));
+		memcpy(&addr.sa, result->ai_addr, result->ai_addrlen);
+		addrlen = result->ai_addrlen;
+		freeaddrinfo(result);
 	}
 
 	sock = socket(addr.sa.sa_family, SOCK_STREAM, 0);

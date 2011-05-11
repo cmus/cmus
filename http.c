@@ -22,6 +22,7 @@
 #include "xmalloc.h"
 #include "gbuf.h"
 
+#include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/types.h>
@@ -133,13 +134,18 @@ void http_free_uri(struct http_uri *u)
 
 int http_open(struct http_get *hg, int timeout_ms)
 {
-	struct hostent *hostent;
+	const struct addrinfo hints = {
+		.ai_socktype = SOCK_STREAM
+	};
+	struct addrinfo *result;
 	union {
 		struct sockaddr sa;
-		struct sockaddr_in in;
+		struct sockaddr_storage sas;
 	} addr;
+	size_t addrlen;
 	struct timeval tv;
-	int save, flags;
+	int save, flags, rc;
+	char port[16];
 
 	char *proxy = getenv("http_proxy");
 	if (proxy) {
@@ -152,15 +158,17 @@ int http_open(struct http_get *hg, int timeout_ms)
 		hg->proxy = NULL;
 	}
 
-	hostent = gethostbyname(hg->proxy ? hg->proxy->host : hg->uri.host);
-	if (hostent == NULL)
+	snprintf(port, sizeof(port), "%d", hg->proxy ? hg->proxy->port : hg->uri.port);
+	rc = getaddrinfo(hg->proxy ? hg->proxy->host : hg->uri.host, port, &hints, &result);
+	if (rc != 0) {
+		d_print("getaddrinfo: %s\n", gai_strerror(rc));
 		return -1;
+	}
+	memcpy(&addr.sa, result->ai_addr, result->ai_addrlen);
+	addrlen = result->ai_addrlen;
+	freeaddrinfo(result);
 
-	addr.in.sin_family = AF_INET;
-	addr.in.sin_port = htons(hg->proxy ? hg->proxy->port : hg->uri.port);
-	memcpy(&addr.in.sin_addr, hostent->h_addr_list[0], hostent->h_length);
-
-	hg->fd = socket(PF_INET, SOCK_STREAM, 0);
+	hg->fd = socket(addr.sa.sa_family, SOCK_STREAM, 0);
 	if (hg->fd == -1)
 		return -1;
 
@@ -174,7 +182,7 @@ int http_open(struct http_get *hg, int timeout_ms)
 		fd_set wfds;
 
 		d_print("connecting. timeout=%lld s %lld us\n", (long long)tv.tv_sec, (long long)tv.tv_usec);
-		if (connect(hg->fd, &addr.sa, sizeof(addr.in)) == 0)
+		if (connect(hg->fd, &addr.sa, addrlen) == 0)
 			break;
 		if (errno == EISCONN)
 			break;
@@ -184,8 +192,6 @@ int http_open(struct http_get *hg, int timeout_ms)
 		FD_ZERO(&wfds);
 		FD_SET(hg->fd, &wfds);
 		while (1) {
-			int rc;
-
 			rc = select(hg->fd + 1, NULL, &wfds, NULL, &tv);
 			if (rc == -1) {
 				if (errno != EINTR)

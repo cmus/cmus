@@ -55,7 +55,7 @@ LIST_HEAD(client_head);
 static union {
 	struct sockaddr sa;
 	struct sockaddr_un un;
-	struct sockaddr_in in;
+	struct sockaddr_storage sas;
 } addr;
 
 #define MAX_CLIENTS 10
@@ -277,29 +277,10 @@ void server_serve(struct client *client)
 	run_only_safe_commands = 0;
 }
 
-static void gethostbyname_failed(void)
-{
-	const char *error = "Unknown error.";
-
-	switch (h_errno) {
-	case HOST_NOT_FOUND:
-	case NO_DATA:
-		error = "Host not found.";
-		break;
-	case NO_RECOVERY:
-		error = "A non-recoverable name server error.";
-		break;
-	case TRY_AGAIN:
-		error = "A temporary error occurred on an authoritative name server.";
-		break;
-	}
-	die("gethostbyname: %s\n", error);
-}
-
 void server_init(char *address)
 {
-	int port = DEFAULT_PORT;
-	int addrlen;
+	const char *port = STRINGIZE(DEFAULT_PORT);
+	size_t addrlen;
 
 	if (strchr(address, '/')) {
 		addr.sa.sa_family = AF_UNIX;
@@ -307,28 +288,24 @@ void server_init(char *address)
 
 		addrlen = sizeof(struct sockaddr_un);
 	} else {
-		char *s = strchr(address, ':');
-		struct hostent *hent;
+		const struct addrinfo hints = {
+			.ai_socktype = SOCK_STREAM
+		};
+		struct addrinfo *result;
+		char *s = strrchr(address, ':');
+		int rc;
 
 		if (s) {
 			*s++ = 0;
-			port = atoi(s);
+			port = s;
 		}
-		hent = gethostbyname(address);
-		if (!hent)
-			gethostbyname_failed();
 
-		addr.sa.sa_family = hent->h_addrtype;
-		switch (addr.sa.sa_family) {
-		case AF_INET:
-			memcpy(&addr.in.sin_addr, hent->h_addr_list[0], hent->h_length);
-			addr.in.sin_port = htons(port);
-
-			addrlen = sizeof(addr.in);
-			break;
-		default:
-			die("unsupported address type\n");
-		}
+		rc = getaddrinfo(address, port, &hints, &result);
+		if (rc != 0)
+			die("getaddrinfo: %s\n", gai_strerror(rc));
+		memcpy(&addr.sa, result->ai_addr, result->ai_addrlen);
+		addrlen = result->ai_addrlen;
+		freeaddrinfo(result);
 	}
 
 	server_socket = socket(addr.sa.sa_family, SOCK_STREAM, 0);
@@ -343,7 +320,7 @@ void server_init(char *address)
 
 		/* address already in use */
 		if (addr.sa.sa_family != AF_UNIX)
-			die("cmus is already listening on %s:%d\n", address, port);
+			die("cmus is already listening on %s:%s\n", address, port);
 
 		/* try to connect to server */
 		sock = socket(AF_UNIX, SOCK_STREAM, 0);

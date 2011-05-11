@@ -34,6 +34,9 @@
 
 #define N_ELEMENTS(array) (sizeof(array) / sizeof((array)[0]))
 
+#define STRINGIZE_HELPER(x) #x
+#define STRINGIZE(x) STRINGIZE_HELPER(x)
+
 #define getentry(ptr, offset, type) (*((type *) ((char *) (ptr) + (offset))))
 
 static inline int min(int a, int b)
