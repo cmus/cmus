@@ -142,7 +142,7 @@ static int sun_close(void)
 	return 0;
 }
 
-static int sun_open(sample_format_t sf)
+static int sun_open(sample_format_t sf, const channel_position_t *channel_map)
 {
 	sun_fd = open(sun_audio_device, O_WRONLY);
 	if (sun_fd == -1)

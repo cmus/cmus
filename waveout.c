@@ -75,7 +75,7 @@ static void clean_buffers(void)
 	}
 }
 
-static int waveout_open(sample_format_t sf)
+static int waveout_open(sample_format_t sf, const channel_position_t *channel_map)
 {
 	WAVEFORMATEX format = {
 		.cbSize          = sizeof(format),

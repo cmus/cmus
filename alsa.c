@@ -178,7 +178,7 @@ out:
 	return rc;
 }
 
-static int op_alsa_open(sample_format_t sf)
+static int op_alsa_open(sample_format_t sf, const channel_position_t *channel_map)
 {
 	int rc;
 

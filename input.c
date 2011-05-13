@@ -386,7 +386,8 @@ static void ip_init(struct input_plugin *ip, char *filename)
 		.data = {
 			.fd         = -1,
 			.filename   = filename,
-			.remote     = is_url(filename)
+			.remote     = is_url(filename),
+			.channel_map = CHANNEL_MAP_INIT
 		}
 	};
 	*ip = t;
@@ -745,6 +746,12 @@ sample_format_t ip_get_sf(struct input_plugin *ip)
 {
 	BUG_ON(!ip->open);
 	return ip->data.sf;
+}
+
+void ip_get_channel_map(struct input_plugin *ip, channel_position_t *channel_map)
+{
+	BUG_ON(!ip->open);
+	channel_map_copy(channel_map, ip->data.channel_map);
 }
 
 const char *ip_get_filename(struct input_plugin *ip)

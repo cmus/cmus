@@ -141,7 +141,7 @@ static int wav_open(struct input_plugin_data *ip_data)
 		goto error_exit;
 	}
 	{
-		unsigned int format_tag, channels, rate, bits;
+		unsigned int format_tag, channels, rate, bits, channel_mask = 0;
 
 		format_tag = read_le16(fmt + 0);
 		channels = read_le16(fmt + 2);
@@ -171,8 +171,7 @@ static int wav_open(struct input_plugin_data *ip_data)
 				rc = -IP_ERROR_FILE_FORMAT;
 				goto error_exit;
 			}
-			/* speaker position mask */
-			read_le32(fmt + 20);
+			channel_mask = read_le32(fmt + 20);
 			format_tag = read_le16(fmt + 24);
 			/* ignore rest of extension tag */
 		}
@@ -183,12 +182,13 @@ static int wav_open(struct input_plugin_data *ip_data)
 			rc = -IP_ERROR_UNSUPPORTED_FILE_TYPE;
 			goto error_exit;
 		}
-		if ((bits != 8 && bits != 16 && bits != 24 && bits != 32) || channels < 1 || channels > 2) {
+		if ((bits != 8 && bits != 16 && bits != 24 && bits != 32) || channels < 1) {
 			rc = -IP_ERROR_SAMPLE_FORMAT;
 			goto error_exit;
 		}
 		ip_data->sf = sf_channels(channels) | sf_rate(rate) | sf_bits(bits) |
 			sf_signed(bits > 8);
+		channel_map_init_waveex(channels, channel_mask, ip_data->channel_map);
 	}
 
 	rc = find_chunk(ip_data->fd, "data", &priv->pcm_size);

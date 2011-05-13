@@ -261,6 +261,7 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 #ifdef WORDS_BIGENDIAN
 	ip_data->sf |= sf_bigendian(1);
 #endif
+	channel_map_init_waveex(cc->channels, cc->channel_layout, ip_data->channel_map);
 	return 0;
 }
 

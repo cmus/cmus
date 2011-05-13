@@ -22,6 +22,7 @@
 #include "file.h"
 #include "config/mp4.h"
 #include "comment.h"
+#include "aac.h"
 
 #if USE_MPEG4IP
 #include <mp4.h>
@@ -97,6 +98,34 @@ static MP4TrackId mp4_get_track(MP4FileHandle *handle)
 	return MP4_INVALID_TRACK_ID;
 }
 
+static void mp4_get_channel_map(struct input_plugin_data *ip_data)
+{
+	struct mp4_private *priv = ip_data->private;
+	unsigned char *aac_data = NULL;
+	unsigned int aac_data_len = 0;
+	NeAACDecFrameInfo frame_info;
+	int i;
+
+	ip_data->channel_map[0] = CHANNEL_POSITION_INVALID;
+
+	if (MP4ReadSample(priv->mp4.handle, priv->mp4.track, priv->mp4.sample,
+			&aac_data, &aac_data_len, NULL, NULL, NULL, NULL) == 0)
+		return;
+
+	if (!aac_data)
+		return;
+
+	NeAACDecDecode(priv->decoder, &frame_info, aac_data, aac_data_len);
+	free(aac_data);
+
+	if (frame_info.error != 0 || frame_info.bytesconsumed <= 0
+			|| frame_info.channels > CHANNELS_MAX)
+		return;
+
+	for (i = 0; i < frame_info.channels; i++)
+		ip_data->channel_map[i] = channel_position_aac(frame_info.channel_position[i]);
+}
+
 static int mp4_open(struct input_plugin_data *ip_data)
 {
 	struct mp4_private *priv;
@@ -123,7 +152,7 @@ static int mp4_open(struct input_plugin_data *ip_data)
 	/* set decoder config */
 	neaac_cfg = NeAACDecGetCurrentConfiguration(priv->decoder);
 	neaac_cfg->outputFormat = FAAD_FMT_16BIT;	/* force 16 bit audio */
-	neaac_cfg->downMatrix = 1;			/* 5.1 -> stereo */
+	neaac_cfg->downMatrix = 0;			/* NOT 5.1 -> stereo */
 	NeAACDecSetConfiguration(priv->decoder, neaac_cfg);
 
 	/* open mpeg-4 file */
@@ -170,6 +199,7 @@ static int mp4_open(struct input_plugin_data *ip_data)
 #if defined(WORDS_BIGENDIAN)
 	ip_data->sf |= sf_bigendian(1);
 #endif
+	mp4_get_channel_map(ip_data);
 
 	return 0;
 

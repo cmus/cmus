@@ -43,7 +43,7 @@ static int op_arts_exit(void)
 	return 0;
 }
 
-static int op_arts_open(sample_format_t sf)
+static int op_arts_open(sample_format_t sf, const channel_position_t *channel_map)
 {
 	int buffer_time, server_latency, total_latency;
 	int blocking;

@@ -107,7 +107,7 @@ static int _set_role(void)
 	return 0;
 }
 
-static int op_roar_open(sample_format_t sf)
+static int op_roar_open(sample_format_t sf, const channel_position_t *channel_map)
 {
 	int codec = -1;
 	int ret;

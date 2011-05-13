@@ -22,6 +22,7 @@
 #include "id3.h"
 #include "comment.h"
 #include "read_wrapper.h"
+#include "aac.h"
 
 #include <neaacdec.h>
 
@@ -191,6 +192,27 @@ static int buffer_fill_frame(struct input_plugin_data *ip_data)
 	/* not reached */
 }
 
+static void aac_get_channel_map(struct input_plugin_data *ip_data)
+{
+	struct aac_private *priv = ip_data->private;
+	NeAACDecFrameInfo frame_info;
+	void *buf;
+	int i;
+
+	ip_data->channel_map[0] = CHANNEL_POSITION_INVALID;
+
+	if (buffer_fill_frame(ip_data) <= 0)
+		return;
+
+	buf = NeAACDecDecode(priv->decoder, &frame_info, buffer_data(ip_data), buffer_length(ip_data));
+	if (!buf || frame_info.error != 0 || frame_info.bytesconsumed <= 0
+			|| frame_info.channels > CHANNELS_MAX)
+		return;
+
+	for (i = 0; i < frame_info.channels; i++)
+		ip_data->channel_map[i] = channel_position_aac(frame_info.channel_position[i]);
+}
+
 static int aac_open(struct input_plugin_data *ip_data)
 {
 	struct aac_private *priv;
@@ -210,7 +232,7 @@ static int aac_open(struct input_plugin_data *ip_data)
 	/* set decoder config */
 	neaac_cfg = NeAACDecGetCurrentConfiguration(priv->decoder);
 	neaac_cfg->outputFormat = FAAD_FMT_16BIT;	/* force 16 bit audio */
-	neaac_cfg->downMatrix = 1;			/* 5.1 -> stereo */
+	neaac_cfg->downMatrix = 0;			/* NOT 5.1 -> stereo */
 	neaac_cfg->dontUpSampleImplicitSBR = 0;		/* upsample, please! */
 	NeAACDecSetConfiguration(priv->decoder, neaac_cfg);
 
@@ -255,6 +277,8 @@ static int aac_open(struct input_plugin_data *ip_data)
 #if defined(WORDS_BIGENDIAN)
 	ip_data->sf |= sf_bigendian(1);
 #endif
+	aac_get_channel_map(ip_data);
+
 	return 0;
 out:
 	NeAACDecClose(priv->decoder);

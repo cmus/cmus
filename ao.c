@@ -20,6 +20,7 @@
 #include "xmalloc.h"
 #include "utils.h"
 #include "misc.h"
+#include "debug.h"
 
 /*
  * <ao/ao.h> uses FILE but doesn't include stdio.h.
@@ -55,13 +56,61 @@ static int op_ao_exit(void)
 	return 0;
 }
 
-static int op_ao_open(sample_format_t sf)
+/* http://www.xiph.org/ao/doc/ao_sample_format.html */
+static const struct {
+	channel_position_t pos;
+	const char *str;
+} ao_channel_mapping[] = {
+	{ CHANNEL_POSITION_LEFT,			"L" },
+	{ CHANNEL_POSITION_RIGHT,			"R" },
+	{ CHANNEL_POSITION_CENTER,			"C" },
+	{ CHANNEL_POSITION_MONO,			"M" },
+	{ CHANNEL_POSITION_FRONT_LEFT_OF_CENTER,	"CL" },
+	{ CHANNEL_POSITION_FRONT_RIGHT_OF_CENTER,	"CR" },
+	{ CHANNEL_POSITION_REAR_LEFT,			"BL" },
+	{ CHANNEL_POSITION_REAR_RIGHT,			"BR" },
+	{ CHANNEL_POSITION_REAR_CENTER,			"BC" },
+	{ CHANNEL_POSITION_SIDE_LEFT,			"SL" },
+	{ CHANNEL_POSITION_SIDE_RIGHT,			"SR" },
+	{ CHANNEL_POSITION_LFE,				"LFE" },
+	{ CHANNEL_POSITION_INVALID,			"X" },
+};
+
+static char *ao_channel_matrix(int channels, const channel_position_t *map)
+{
+	int i, j;
+	char buf[256] = "";
+
+	if (!map || !channel_map_valid(map))
+		return NULL;
+
+	for (i = 0; i < channels; i++) {
+		const channel_position_t pos = map[i];
+		int found = 0;
+		for (j = 0; j < N_ELEMENTS(ao_channel_mapping); j++) {
+			if (pos == ao_channel_mapping[j].pos) {
+				strcat(buf, ao_channel_mapping[j].str);
+				strcat(buf, ",");
+				found = 1;
+				break;
+			}
+		}
+		if (!found)
+			strcat(buf, "M,");
+	}
+	buf[strlen(buf)-1] = '\0';
+
+	return xstrdup(buf);
+}
+
+static int op_ao_open(sample_format_t sf, const channel_position_t *channel_map)
 {
 	ao_sample_format format = {
 		.bits        = sf_get_bits(sf),
 		.rate        = sf_get_rate(sf),
 		.channels    = sf_get_channels(sf),
-		.byte_format = sf_get_bigendian(sf) ? AO_FMT_BIG : AO_FMT_LITTLE
+		.byte_format = sf_get_bigendian(sf) ? AO_FMT_BIG : AO_FMT_LITTLE,
+		.matrix      = ao_channel_matrix(sf_get_channels(sf), channel_map)
 	};
 	int driver;
 
@@ -109,6 +158,8 @@ static int op_ao_open(sample_format_t sf)
 			return -OP_ERROR_INTERNAL;
 		}
 	}
+
+	d_print("channel matrix: %s\n", format.matrix ? format.matrix : "default");
 	return 0;
 }
 

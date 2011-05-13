@@ -85,6 +85,7 @@ int soft_vol_r;
 static const struct player_callbacks *player_cbs = NULL;
 
 static sample_format_t buffer_sf;
+static CHANNEL_MAP(buffer_channel_map);
 
 static pthread_t producer_thread;
 static pthread_mutex_t producer_mutex = CMUS_MUTEX_INITIALIZER;
@@ -136,9 +137,10 @@ static void reset_buffer(void)
 	pthread_cond_broadcast(&producer_playing);
 }
 
-static void set_buffer_sf(sample_format_t sf)
+static void set_buffer_sf(void)
 {
-	buffer_sf = sf;
+	buffer_sf = ip_get_sf(ip);
+	ip_get_channel_map(ip, buffer_channel_map);
 
 	/* ip_read converts samples to this format */
 	if (sf_get_channels(buffer_sf) <= 2 && sf_get_bits(buffer_sf) <= 16) {
@@ -147,6 +149,7 @@ static void set_buffer_sf(sample_format_t sf)
 #ifdef WORDS_BIGENDIAN
 		buffer_sf |= sf_bigendian(1);
 #endif
+		channel_map_init_stereo(buffer_channel_map);
 	}
 }
 
@@ -713,8 +716,8 @@ static void __consumer_play(void)
 	} else if (consumer_status == CS_STOPPED) {
 		int rc;
 
-		set_buffer_sf(ip_get_sf(ip));
-		rc = op_open(buffer_sf);
+		set_buffer_sf();
+		rc = op_open(buffer_sf, buffer_channel_map);
 		if (rc) {
 			player_op_error(rc, "opening audio device");
 		} else {
@@ -756,19 +759,22 @@ static void __consumer_pause(void)
 
 /* setting consumer status }}} */
 
-static int change_sf(sample_format_t sf, int drop)
+
+static int change_sf(int drop)
 {
 	int old_sf = buffer_sf;
+	CHANNEL_MAP(old_channel_map);
+	channel_map_copy(old_channel_map, buffer_channel_map);
 
-	set_buffer_sf(sf);
-	if (buffer_sf != old_sf) {
+	set_buffer_sf();
+	if (buffer_sf != old_sf || !channel_map_equal(buffer_channel_map, old_channel_map, sf_get_channels(buffer_sf))) {
 		/* reopen */
 		int rc;
 
 		if (drop)
 			op_drop();
 		op_close();
-		rc = op_open(buffer_sf);
+		rc = op_open(buffer_sf, buffer_channel_map);
 		if (rc) {
 			player_op_error(rc, "opening audio device");
 			__consumer_status_update(CS_STOPPED);
@@ -820,7 +826,7 @@ static void __consumer_handle_eof(void)
 			} else {
 				/* PS_PLAYING */
 				file_changed(ti);
-				if (!change_sf(ip_get_sf(ip), 0))
+				if (!change_sf(0))
 					__prebuffer();
 			}
 		} else {
@@ -1147,7 +1153,7 @@ void player_set_file(struct track_info *ti)
 			__consumer_stop();
 			goto out;
 		}
-		change_sf(ip_get_sf(ip), 1);
+		change_sf(1);
 	}
 out:
 	__player_status_changed();
@@ -1181,7 +1187,7 @@ void player_play_file(struct track_info *ti)
 			__producer_stop();
 	} else {
 		op_drop();
-		change_sf(ip_get_sf(ip), 1);
+		change_sf(1);
 	}
 out:
 	__player_status_changed();
@@ -1313,8 +1319,8 @@ void player_set_op(const char *name)
 	}
 
 	if (consumer_status == CS_PLAYING || consumer_status == CS_PAUSED) {
-		set_buffer_sf(ip_get_sf(ip));
-		rc = op_open(buffer_sf);
+		set_buffer_sf();
+		rc = op_open(buffer_sf, buffer_channel_map);
 		if (rc) {
 			__consumer_status_update(CS_STOPPED);
 			__producer_stop();

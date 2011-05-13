@@ -182,6 +182,7 @@ static int mpc_open(struct input_plugin_data *ip_data)
 
 	ip_data->sf = sf_rate(priv->info.sample_freq) | sf_channels(priv->info.channels) |
 		sf_bits(16) | sf_signed(1);
+	channel_map_init_waveex(priv->info.channels, 0, ip_data->channel_map);
 	return 0;
 }
 

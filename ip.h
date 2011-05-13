@@ -21,6 +21,7 @@
 
 #include "keyval.h"
 #include "sf.h"
+#include "channelmap.h"
 
 #ifndef __GNUC__
 #include <fcntl.h>
@@ -72,6 +73,7 @@ struct input_plugin_data {
 
 	/* filled by plugin */
 	sample_format_t sf;
+	channel_position_t channel_map[CHANNELS_MAX];
 	void *private;
 };
 

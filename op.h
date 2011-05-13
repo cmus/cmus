@@ -20,6 +20,7 @@
 #define _OP_H
 
 #include "sf.h"
+#include "channelmap.h"
 
 #ifndef __GNUC__
 #include <fcntl.h>
@@ -49,7 +50,7 @@ enum {
 struct output_plugin_ops {
 	int (*init)(void);
 	int (*exit)(void);
-	int (*open)(sample_format_t sf);
+	int (*open)(sample_format_t sf, const channel_position_t *channel_map);
 	int (*close)(void);
 	int (*drop)(void);
 	int (*write)(const char *buffer, int count);

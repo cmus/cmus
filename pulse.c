@@ -313,10 +313,29 @@ static int op_pulse_exit(void)
 	return OP_ERROR_SUCCESS;
 }
 
-static int op_pulse_open(sample_format_t sf)
+#define RET_IF(x) case CHANNEL_POSITION_ ## x: return PA_CHANNEL_POSITION_ ## x
+
+static pa_channel_position_t pulse_channel_position(channel_position_t p)
+{
+	switch (p) {
+	RET_IF(MONO);
+	RET_IF(FRONT_LEFT); RET_IF(FRONT_RIGHT); RET_IF(FRONT_CENTER);
+	RET_IF(REAR_CENTER); RET_IF(REAR_LEFT); RET_IF(REAR_RIGHT);
+	RET_IF(LFE);
+	RET_IF(FRONT_LEFT_OF_CENTER); RET_IF(FRONT_RIGHT_OF_CENTER);
+	RET_IF(SIDE_LEFT); RET_IF(SIDE_RIGHT);
+	RET_IF(TOP_CENTER);
+	RET_IF(TOP_FRONT_LEFT); RET_IF(TOP_FRONT_RIGHT); RET_IF(TOP_FRONT_CENTER);
+	RET_IF(TOP_REAR_LEFT); RET_IF(TOP_REAR_RIGHT); RET_IF(TOP_REAR_CENTER);
+	default:
+		return PA_CHANNEL_POSITION_INVALID;
+	}
+}
+
+static int op_pulse_open(sample_format_t sf, const channel_position_t *channel_map)
 {
 	pa_proplist	*pl;
-	int		 rc;
+	int		 rc, i;
 
 	const pa_sample_spec ss = {
 		.format		= __pa_sample_format(sf),
@@ -328,10 +347,13 @@ static int op_pulse_open(sample_format_t sf)
 		return -OP_ERROR_SAMPLE_FORMAT;
 
 	pa_ss = ss;
-	/* can't be done in op_pulse_mixer_open() since channels is not known
-	 * TODO: use correct channel map once sample_format_t is updated */
-	if (!pa_channel_map_init_auto(&pa_cmap, ss.channels, PA_CHANNEL_MAP_ALSA))
-		ret_pa_last_error();
+	if (channel_map && channel_map_valid(channel_map)) {
+		pa_channel_map_init(&pa_cmap);
+		pa_cmap.channels = ss.channels;
+		for (i = 0; i < pa_cmap.channels; i++)
+			pa_cmap.map[i] = pulse_channel_position(channel_map[i]);
+	} else
+		pa_channel_map_init_auto(&pa_cmap, ss.channels, PA_CHANNEL_MAP_ALSA);
 
 	rc = __pa_create_context();
 	if (rc)

@@ -379,6 +379,17 @@ static void free_priv(struct input_plugin_data *ip_data)
 	errno = save;
 }
 
+/* http://flac.sourceforge.net/format.html#frame_header */
+static void channel_map_init_flac(int channels, channel_position_t *map)
+{
+	unsigned int mask = 0;
+	if (channels == 4)
+		mask = 0x33; // 0b110011, without center and lfe
+	else if (channels == 5)
+		mask = 0x37; // 0b110111, without lfe
+	channel_map_init_waveex(channels, mask, map);
+}
+
 static int flac_open(struct input_plugin_data *ip_data)
 {
 	struct flac_private *priv;
@@ -463,6 +474,7 @@ static int flac_open(struct input_plugin_data *ip_data)
 		return -IP_ERROR_SAMPLE_FORMAT;
 	}
 
+	channel_map_init_flac(sf_get_channels(ip_data->sf), ip_data->channel_map);
 	d_print("sr: %d, ch: %d, bits: %d\n",
 			sf_get_rate(ip_data->sf),
 			sf_get_channels(ip_data->sf),

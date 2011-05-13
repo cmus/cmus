@@ -86,6 +86,7 @@ static int mad_open(struct input_plugin_data *ip_data)
 	/* always 16-bit signed little-endian */
 	ip_data->sf = sf_rate(info->sample_rate) | sf_channels(info->channels) |
 		sf_bits(16) | sf_signed(1);
+	channel_map_init_waveex(info->channels, 0, ip_data->channel_map);
 	return 0;
 }
 

@@ -104,6 +104,52 @@ static ov_callbacks callbacks = {
 	.tell_func = tell_func
 };
 
+/* http://xiph.org/vorbis/doc/Vorbis_I_spec.html#x1-800004.3.9 */
+static void channel_map_init_vorbis(int channels, channel_position_t *map)
+{
+	switch (channels) {
+	case 8:
+		channel_map_init_vorbis(7, map);
+		map[5] = CHANNEL_POSITION_REAR_LEFT;
+		map[6] = CHANNEL_POSITION_REAR_RIGHT;
+		map[7] = CHANNEL_POSITION_LFE;
+		break;
+	case 7:
+		channel_map_init_vorbis(3, map);
+		map[3] = CHANNEL_POSITION_SIDE_LEFT;
+		map[4] = CHANNEL_POSITION_SIDE_RIGHT;
+		map[5] = CHANNEL_POSITION_REAR_CENTER;
+		map[6] = CHANNEL_POSITION_LFE;
+		break;
+	case 6:
+		map[5] = CHANNEL_POSITION_LFE;
+		/* Fall through */
+	case 5:
+		map[3] = CHANNEL_POSITION_REAR_LEFT;
+		map[4] = CHANNEL_POSITION_REAR_RIGHT;
+		/* Fall through */
+	case 3:
+		map[0] = CHANNEL_POSITION_FRONT_LEFT;
+		map[1] = CHANNEL_POSITION_CENTER;
+		map[2] = CHANNEL_POSITION_FRONT_RIGHT;
+		break;
+	case 4:
+		map[2] = CHANNEL_POSITION_REAR_LEFT;
+		map[3] = CHANNEL_POSITION_REAR_RIGHT;
+		/* Fall through */
+	case 2:
+		map[0] = CHANNEL_POSITION_FRONT_LEFT;
+		map[1] = CHANNEL_POSITION_FRONT_RIGHT;
+		break;
+	case 1:
+		map[0] = CHANNEL_POSITION_MONO;
+		break;
+	default:
+		map[0] = CHANNEL_POSITION_INVALID;
+		break;
+	}
+}
+
 static int vorbis_open(struct input_plugin_data *ip_data)
 {
 	struct vorbis_private *priv;
@@ -129,6 +175,7 @@ static int vorbis_open(struct input_plugin_data *ip_data)
 #ifdef WORDS_BIGENDIAN
 	ip_data->sf |= sf_bigendian(1);
 #endif
+	channel_map_init_vorbis(vi->channels, ip_data->channel_map);
 	return 0;
 }
 

@@ -170,7 +170,7 @@ static int oss_exit(void)
 	return 0;
 }
 
-static int oss_open(sample_format_t sf)
+static int oss_open(sample_format_t sf, const channel_position_t *channel_map)
 {
 	int oss_version = 0;
 	oss_fd = open(oss_dsp_device, O_WRONLY);
