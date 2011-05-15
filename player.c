@@ -1250,6 +1250,7 @@ void player_seek(double offset, int relative, int start_playing)
 				__player_status_changed();
 			}
 		} else {
+			player_ip_error(rc, "seeking in file %s", ip_get_filename(ip));
 			d_print("error: ip_seek returned %d\n", rc);
 		}
 	}
