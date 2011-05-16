@@ -490,6 +490,8 @@ struct track_info *tree_set_selected(void)
 	struct track_info *info;
 
 	lib_cur_track = tree_get_selected();
+	if (!lib_cur_track)
+		return NULL;
 
 	lib_tree_win->changed = 1;
 	lib_track_win->changed = 1;
