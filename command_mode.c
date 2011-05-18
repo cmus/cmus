@@ -1899,7 +1899,7 @@ static void cmd_lqueue(char *arg)
 		struct tree_track *t;
 		struct rb_node *tmp;
  
-		rb_for_each_entry(t, tmp, &album->track_root, tree_node)
+		rb_for_each_entry(t, tmp, &a->album->track_root, tree_node)
 			play_queue_append(tree_track_info(t));
 		free(a);
 		item = next;
