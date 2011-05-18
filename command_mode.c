@@ -1859,13 +1859,18 @@ static void cmd_lqueue(char *arg)
 		struct rb_node *tmp;
  
 		rb_for_each_entry(t, tmp, &album->track_root, tree_node)
-			editable_add(&pq_editable, simple_track_new(tree_track_info(t)));
+			play_queue_append(tree_track_info(t));
 		free(a);
 		item = next;
 	} while (item != &head);
 unlock:
 	editable_unlock();
 }
+
+struct track_list {
+	struct list_head node;
+	const struct simple_track *track;
+};
 
 static void cmd_tqueue(char *arg)
 {
@@ -1893,13 +1898,14 @@ static void cmd_tqueue(char *arg)
 	item = lib_editable.head.next;
 	pos = 0;
 	for (i = 0; i < count; i++) {
-		struct simple_track *t;
+		struct track_list *t;
 
 		while (pos < r[i]) {
 			item = item->next;
 			pos++;
 		}
-		t = simple_track_new(to_simple_track(item)->info);
+		t = xnew(struct track_list, 1);
+		t->track = to_simple_track(item);
 		list_add_rand(&head, &t->node, i);
 	}
 	free(r);
@@ -1907,8 +1913,9 @@ static void cmd_tqueue(char *arg)
 	item = head.next;
 	do {
 		struct list_head *next = item->next;
-		struct simple_track *t = to_simple_track(item);
-		editable_add(&pq_editable, t);
+		struct track_list *t = container_of(item, struct track_list, node);
+		play_queue_append(t->track->info);
+		free(t);
 		item = next;
 	} while (item != &head);
 unlock:
