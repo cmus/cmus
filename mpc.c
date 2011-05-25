@@ -96,10 +96,8 @@ static mpc_int32_t read_impl(callback_t *data, void *ptr, mpc_int32_t size)
 static mpc_bool_t seek_impl(callback_t *data, mpc_int32_t offset)
 {
 	struct input_plugin_data *ip_data = get_ip_data(data);
-	int rc;
 
-	rc = lseek(ip_data->fd, offset, SEEK_SET);
-	if (rc == -1)
+	if (lseek(ip_data->fd, offset, SEEK_SET) == -1)
 		return MPC_FALSE;
 	return MPC_TRUE;
 }

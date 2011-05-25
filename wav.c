@@ -194,8 +194,7 @@ static int wav_open(struct input_plugin_data *ip_data)
 	rc = find_chunk(ip_data->fd, "data", &priv->pcm_size);
 	if (rc)
 		goto error_exit;
-	rc = lseek(ip_data->fd, 0, SEEK_CUR);
-	if (rc == -1) {
+	if (lseek(ip_data->fd, 0, SEEK_CUR) == -1) {
 		rc = -IP_ERROR_ERRNO;
 		goto error_exit;
 	}
@@ -261,14 +260,12 @@ static int wav_seek(struct input_plugin_data *ip_data, double _offset)
 {
 	struct wav_private *priv = ip_data->private;
 	unsigned int offset;
-	off_t rc;
 
 	offset = (unsigned int)(_offset * (double)priv->sec_size + 0.5);
 	/* align to frame size */
 	offset -= offset % priv->frame_size;
 	priv->pos = offset;
-	rc = lseek(ip_data->fd, priv->pcm_start + offset, SEEK_SET);
-	if (rc == (off_t)-1)
+	if (lseek(ip_data->fd, priv->pcm_start + offset, SEEK_SET) == -1)
 		return -1;
 	return 0;
 }
@@ -311,9 +308,10 @@ static int wav_read_comments(struct input_plugin_data *ip_data,
 	priv = ip_data->private;
 	id[4] = '\0';
 
-	rc = lseek(ip_data->fd, 12, SEEK_SET);
-	if (rc == -1)
+	if (lseek(ip_data->fd, 12, SEEK_SET) == -1) {
+		rc = -1;
 		goto out;
+	}
 
 	while (1) {
 		rc = read_chunk_header(ip_data->fd, id, &size);
@@ -345,9 +343,10 @@ static int wav_read_comments(struct input_plugin_data *ip_data,
 			}
 		}
 
-		rc = lseek(ip_data->fd, size, SEEK_CUR);
-		if (rc == -1)
+		if (lseek(ip_data->fd, size, SEEK_CUR) == -1) {
+			rc = -1;
 			break;
+		}
 	}
 
 out:

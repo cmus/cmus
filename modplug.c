@@ -36,7 +36,8 @@ static int mod_open(struct input_plugin_data *ip_data)
 {
 	struct mod_private *priv;
 	char *contents;
-	int size, rc;
+	off_t size;
+	ssize_t rc;
 	ModPlugFile *file;
 	ModPlug_Settings settings;
 

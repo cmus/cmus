@@ -211,7 +211,8 @@ static off_t get_size(int fd)
 int ape_read_tags(struct apetag *ape, int fd, int slow)
 {
 	struct ape_header *h = &ape->header;
-	int old_pos, rc = -1;
+	int rc = -1;
+	off_t old_pos;
 
 	/* save position */
 	old_pos = lseek(fd, 0, SEEK_CUR);

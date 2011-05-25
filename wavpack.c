@@ -89,10 +89,8 @@ static uint32_t get_pos(void *data)
 static int set_pos_rel(void *data, int32_t delta, int mode)
 {
 	struct wavpack_file *file = data;
-	int rc;
 
-	rc = lseek(file->fd, delta, mode);
-	if (rc == -1)
+	if (lseek(file->fd, delta, mode) == -1)
 		return -1;
 
 	file->push_back_byte = EOF;
@@ -125,7 +123,7 @@ static uint32_t get_length(void *data)
 static int can_seek(void *data)
 {
 	struct wavpack_file *file = data;
-	return file->len != (off_t) -1;
+	return file->len != -1;
 }
 
 static int32_t write_bytes(void *data, void *ptr, int32_t count)
@@ -193,7 +191,7 @@ static int wavpack_open(struct input_plugin_data *ip_data)
 		}
 		free(filename_wvc);
 	} else
-		priv->wv_file.len = (off_t) -1;
+		priv->wv_file.len = -1;
 	ip_data->private = priv;
 
 	*msg = '\0';

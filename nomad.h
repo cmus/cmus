@@ -70,7 +70,7 @@ struct nomad_info {
 	/* guessed */
 	int avg_bitrate;
 	/* -1 if file not seekable */
-	int filesize;
+	off_t filesize;
 	unsigned int joint_stereo : 1;
 	unsigned int dual_channel : 1;
 };

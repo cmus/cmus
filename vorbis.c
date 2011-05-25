@@ -62,10 +62,8 @@ static size_t read_func(void *ptr, size_t size, size_t nmemb, void *datasource)
 static int seek_func(void *datasource, ogg_int64_t offset, int whence)
 {
 	struct input_plugin_data *ip_data = datasource;
-	int rc;
 
-	rc = lseek(ip_data->fd, offset, whence);
-	if (rc == -1)
+	if (lseek(ip_data->fd, offset, whence) == -1)
 		return -1;
 	return 0;
 }
@@ -83,10 +81,10 @@ static int close_func(void *datasource)
 static long tell_func(void *datasource)
 {
 	struct input_plugin_data *ip_data = datasource;
-	int rc;
+	off_t off;
 
-	rc = lseek(ip_data->fd, 0, SEEK_CUR);
-	return rc;
+	off = lseek(ip_data->fd, 0, SEEK_CUR);
+	return (off == -1) ? -1 : off;
 }
 
 /*

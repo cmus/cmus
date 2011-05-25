@@ -499,7 +499,7 @@ start:
 	nomad->cur_frame++;
 	nomad->current.bitrate_sum += nomad->frame.header.bitrate;
 	nomad->current.nr_frames++;
-	if (nomad->info.filesize > 0) {
+	if (nomad->info.filesize != -1) {
 		build_seek_index(nomad);
 	} else {
 		mad_timer_add(&nomad->timer, nomad->frame.header.duration);
@@ -725,7 +725,7 @@ static int nomad_time_seek_accurate(struct nomad *nomad, double pos)
 	int rc;
 
 	/* seek to beginning of file and search frame-by-frame */
-	if (nomad->cbs.lseek(nomad->datasource, 0, SEEK_SET) < 0)
+	if (nomad->cbs.lseek(nomad->datasource, 0, SEEK_SET) == -1)
 		return -1;
 
 	/* XING header should NOT be counted - if we're here, we know it's present */
@@ -805,7 +805,7 @@ int nomad_time_seek(struct nomad *nomad, double pos)
 			nomad->timer = nomad->seek_idx.table[idx].timer;
 		}
 	}
-	if (nomad->cbs.lseek(nomad->datasource, offset, SEEK_SET) < 0)
+	if (nomad->cbs.lseek(nomad->datasource, offset, SEEK_SET) == -1)
 		return -1;
 
 	nomad->input_offset = offset;
