@@ -10,6 +10,7 @@
 #include "options.h"
 #include "debug.h"
 #include "utils.h"
+#include "file.h"
 
 #include <unistd.h>
 #include <inttypes.h>
@@ -470,23 +471,6 @@ static int v2_4_0_frame_header_parse(struct v2_frame_header *header, const char 
 	id3_debug("%c%c%c%c %d\n", header->id[0], header->id[1], header->id[2],
 			header->id[3], header->size);
 	return 1;
-}
-
-static int read_all(int fd, char *buf, size_t size)
-{
-	size_t pos = 0;
-
-	while (pos < size) {
-		int rc = read(fd, buf + pos, size - pos);
-
-		if (rc == -1) {
-			if (errno == EINTR || errno == EAGAIN)
-				continue;
-			return -1;
-		}
-		pos += rc;
-	}
-	return 0;
 }
 
 static char *parse_genre(const char *str)
@@ -1004,7 +988,7 @@ static int v2_read(struct id3tag *id3, int fd, const struct v2_header *header)
 	buf_size = header->size;
 	buf = xnew(char, buf_size);
 	rc = read_all(fd, buf, buf_size);
-	if (rc) {
+	if (rc == -1) {
 		free(buf);
 		return rc;
 	}
@@ -1118,7 +1102,7 @@ int id3_read_tags(struct id3tag *id3, int fd, unsigned int flags)
 		char buf[138];
 
 		rc = read_all(fd, buf, 10);
-		if (rc)
+		if (rc == -1)
 			goto rc_error;
 		if (v2_header_parse(&header, buf)) {
 			rc = v2_read(id3, fd, &header);
@@ -1132,7 +1116,7 @@ int id3_read_tags(struct id3tag *id3, int fd, unsigned int flags)
 			if (off == -1)
 				goto error;
 			rc = read_all(fd, buf, 138);
-			if (rc)
+			if (rc == -1)
 				goto rc_error;
 
 			if (is_v1(buf + 10)) {
@@ -1166,7 +1150,7 @@ int id3_read_tags(struct id3tag *id3, int fd, unsigned int flags)
 		if (off == -1)
 			goto error;
 		rc = read_all(fd, id3->v1, 128);
-		if (rc)
+		if (rc == -1)
 			goto rc_error;
 		id3->has_v1 = is_v1(id3->v1);
 	}

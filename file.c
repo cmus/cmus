@@ -31,10 +31,10 @@
 ssize_t read_all(int fd, void *buf, size_t count)
 {
 	char *buffer = buf;
-	int pos = 0;
+	ssize_t pos = 0;
 
 	do {
-		int rc;
+		ssize_t rc;
 
 		rc = read(fd, buffer + pos, count - pos);
 		if (rc == -1) {
