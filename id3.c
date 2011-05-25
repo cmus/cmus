@@ -1126,7 +1126,7 @@ int id3_read_tags(struct id3tag *id3, int fd, unsigned int flags)
 				}
 				if (v2_footer_parse(&header, buf)) {
 					/* footer at end of file - 128 */
-					off = lseek(fd, -(header.size + 138), SEEK_END);
+					off = lseek(fd, -((off_t) header.size + 138), SEEK_END);
 					if (off == -1)
 						goto error;
 					rc = v2_read(id3, fd, &header);
@@ -1135,7 +1135,7 @@ int id3_read_tags(struct id3tag *id3, int fd, unsigned int flags)
 				}
 			} else if (v2_footer_parse(&header, buf + 128)) {
 				/* footer at end of file */
-				off = lseek(fd, -(header.size + 10), SEEK_END);
+				off = lseek(fd, -((off_t) header.size + 10), SEEK_END);
 				if (off == -1)
 					goto error;
 				rc = v2_read(id3, fd, &header);
