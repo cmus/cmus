@@ -752,7 +752,7 @@ void tree_add_track(struct tree_track *track)
 	}
 
 	new_artist = artist_new(artist_name, artistsort_name, is_va_compilation);
-	new_album = album = NULL;
+	album = NULL;
 
 	artist = find_artist(new_artist);
 	if (artist) {
