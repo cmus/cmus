@@ -292,7 +292,7 @@ void view_save(int view, char *arg, int to_stdout, int filtered, int extended)
 		if (worker_has_job(JOB_TYPE_PL))
 			goto worker_running;
 		dest = extended ? &pl_ext_filename : &pl_filename;
-		do_save(pl_for_each, arg, &pl_filename, save_ti);
+		do_save(pl_for_each, arg, dest, save_ti);
 		break;
 	case QUEUE_VIEW:
 		if (worker_has_job(JOB_TYPE_QUEUE))
