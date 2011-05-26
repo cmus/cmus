@@ -79,6 +79,8 @@ int comments_get_int(const struct keyval *comments, const char *key)
 	val = keyvals_get_val(comments, key);
 	if (val == NULL)
 		return -1;
+	while (*val && !(*val >= '0' && *val <= '9'))
+		val++;
 	if (str_to_int(val, &ival) == -1)
 		return -1;
 	return ival;
