@@ -196,8 +196,6 @@ static int parse_lame(struct nomad *nomad, struct mad_bitptr ptr, int bitlen)
 
 	mad_bit_read(&ptr, 96);
 
-	bitlen -= 288;
-
 	nomad->start_drop_frames = 1;	/* XING/LAME header is an empty frame */
 	nomad->start_drop_samples = nomad->lame.encoderDelay + DECODERDELAY;
 	nomad->end_drop_samples = nomad->lame.encoderPadding - DECODERDELAY;
