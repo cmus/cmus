@@ -38,6 +38,10 @@
 # define NUM_FFMPEG_KEYS 8
 #endif
 
+#if (LIBAVCODEC_VERSION_INT < ((52<<16)+(64<<8)+0))
+# define AVMEDIA_TYPE_AUDIO CODEC_TYPE_AUDIO
+#endif
+
 #if (LIBAVCODEC_VERSION_INT < ((52<<16)+(94<<8)+1))
 #define AV_SAMPLE_FMT_U8   SAMPLE_FMT_U8
 #define AV_SAMPLE_FMT_S16  SAMPLE_FMT_S16
@@ -182,7 +186,7 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 
 		for (i = 0; i < ic->nb_streams; i++) {
 			cc = ic->streams[i]->codec;
-			if (cc->codec_type == CODEC_TYPE_AUDIO) {
+			if (cc->codec_type == AVMEDIA_TYPE_AUDIO) {
 				stream_index = i;
 				break;
 			}
