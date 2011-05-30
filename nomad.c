@@ -45,6 +45,9 @@
 /* the number of samples of silence the decoder inserts at start */
 #define DECODERDELAY		529
 
+#define XING_MAGIC (('X' << 24) | ('i' << 16) | ('n' << 8) | 'g')
+#define INFO_MAGIC (('I' << 24) | ('n' << 16) | ('f' << 8) | 'o')
+
 struct seek_idx_entry {
 	off_t offset;
 	mad_timer_t timer;
@@ -218,6 +221,7 @@ static int parse_lame(struct nomad *nomad, struct mad_bitptr ptr, int bitlen)
 static int xing_parse(struct nomad *nomad)
 {
 	struct mad_bitptr ptr = nomad->stream.anc_ptr;
+	struct mad_bitptr start = ptr;
 	int oldbitlen = nomad->stream.anc_bitlen;
 	int bitlen = nomad->stream.anc_bitlen;
 	int bitsleft;
@@ -228,16 +232,22 @@ static int xing_parse(struct nomad *nomad)
 	if (bitlen < 64)
 		return -1;
 	xing_id = mad_bit_read(&ptr, 32);
-	switch (xing_id) {
-	case (('X' << 24) | ('i' << 16) | ('n' << 8) | 'g'):
-		nomad->xing.is_info = 0;
-		break;
-	case (('I' << 24) | ('n' << 16) | ('f' << 8) | 'o'):
-		nomad->xing.is_info = 1;
-		break;
-	default:
-		return -1;
+	if (xing_id != XING_MAGIC && xing_id != INFO_MAGIC) {
+		/*
+		 * Due to an unfortunate historical accident, a Xing VBR tag
+		 * may be misplaced in a stream with CRC protection. We check
+		 * for this by assuming the tag began two octets prior and the
+		 * high bits of the following flags field are always zero.
+		 */
+		if (xing_id != ((XING_MAGIC << 16) & 0xffffffffL) &&
+				xing_id != ((INFO_MAGIC << 16) & 0xffffffffL))
+			return -1;
+		xing_id >>= 16;
+		ptr = start;
+		mad_bit_skip(&ptr, 16);
+		bitlen += 16;
 	}
+	nomad->xing.is_info = ((xing_id & 0x0000ffffL) == (INFO_MAGIC & 0x0000ffffL));
 	nomad->xing.flags = mad_bit_read(&ptr, 32);
 	bitlen -= 64;
 	if (nomad->xing.flags & XING_FRAMES) {
