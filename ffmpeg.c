@@ -167,6 +167,7 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 	int err = 0;
 	int i;
 	int stream_index = -1;
+	int64_t channel_layout = 0;
 	AVCodec *codec;
 	AVCodecContext *cc = NULL;
 	AVFormatContext *ic;
@@ -265,7 +266,10 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 #ifdef WORDS_BIGENDIAN
 	ip_data->sf |= sf_bigendian(1);
 #endif
-	channel_map_init_waveex(cc->channels, cc->channel_layout, ip_data->channel_map);
+#if (LIBAVCODEC_VERSION_INT > ((52<<16)+(1<<8)+0))
+	channel_layout = cc->channel_layout;
+#endif
+	channel_map_init_waveex(cc->channels, channel_layout, ip_data->channel_map);
 	return 0;
 }
 
