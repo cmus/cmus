@@ -30,6 +30,10 @@
 #include <strings.h>
 #include <ao/ao.h>
 
+#ifdef AO_EBADFORMAT
+#define AO_API_1
+#endif
+
 static ao_device *libao_device;
 static char *wav_dir = NULL;
 static int wav_counter = 1;
@@ -76,6 +80,7 @@ static const struct {
 	{ CHANNEL_POSITION_INVALID,			"X" },
 };
 
+#ifdef AO_API_1
 static char *ao_channel_matrix(int channels, const channel_position_t *map)
 {
 	int i, j;
@@ -102,6 +107,7 @@ static char *ao_channel_matrix(int channels, const channel_position_t *map)
 
 	return xstrdup(buf);
 }
+#endif
 
 static int op_ao_open(sample_format_t sf, const channel_position_t *channel_map)
 {
@@ -110,7 +116,9 @@ static int op_ao_open(sample_format_t sf, const channel_position_t *channel_map)
 		.rate        = sf_get_rate(sf),
 		.channels    = sf_get_channels(sf),
 		.byte_format = sf_get_bigendian(sf) ? AO_FMT_BIG : AO_FMT_LITTLE,
+#ifdef AO_API_1
 		.matrix      = ao_channel_matrix(sf_get_channels(sf), channel_map)
+#endif
 	};
 	int driver;
 
@@ -159,7 +167,9 @@ static int op_ao_open(sample_format_t sf, const channel_position_t *channel_map)
 		}
 	}
 
+#ifdef AO_API_1
 	d_print("channel matrix: %s\n", format.matrix ? format.matrix : "default");
+#endif
 	return 0;
 }
 
