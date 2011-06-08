@@ -540,6 +540,7 @@ static struct {
 
 	/* obsolete frames (2.2.0) */
 	{ "TP1",  ID3_ARTIST },
+	{ "TP2",  ID3_ALBUMARTIST },
 	{ "TAL",  ID3_ALBUM },
 	{ "TT2",  ID3_TITLE },
 	{ "TYE",  ID3_DATE },
