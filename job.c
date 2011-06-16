@@ -32,6 +32,7 @@
 #include "cache.h"
 #include "player.h"
 #include "discid.h"
+#include "xstrjoin.h"
 
 #include <string.h>
 #include <unistd.h>
@@ -206,7 +207,9 @@ static int handle_line(void *data, const char *line)
 	if (is_http_url(line)) {
 		add_url(line);
 	} else {
-		add_file(line);
+		char *absolute = path_absolute_cwd(line, data);
+		add_file(absolute);
+		free(absolute);
 	}
 	return 0;
 }
@@ -221,10 +224,12 @@ static void add_pl(const char *filename)
 		return;
 
 	if (buf) {
+		char *cwd = xstrjoin(filename, "/..");
 		/* beautiful hack */
 		reverse = jd->add == play_queue_prepend;
 
-		cmus_playlist_for_each(buf, size, reverse, handle_line, NULL);
+		cmus_playlist_for_each(buf, size, reverse, handle_line, cwd);
+		free(cwd);
 		munmap(buf, size);
 	}
 }
