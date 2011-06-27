@@ -38,6 +38,21 @@ special_decompositions = {
     u'ð': u'd',
     u'ø': u'o',
     u'þ': u'p',
+# Various punctation/quotation characters
+    u'‐': u'-',
+    u'‒': u'-',
+    u'–': u'-',
+    u'−': u'-',
+    u'—': u'-',
+    u'―': u'-',
+    u'‘': u"'",
+    u'’': u"'",
+    u'′': u"'",
+    u'“': u'"',
+    u'”': u'"',
+    u'″': u'"',
+    u'〃': u'"',
+    u'…': u'.',
 }
 
 def parse_unidata(f):
