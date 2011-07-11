@@ -1,6 +1,6 @@
 /*
  * Copyright 2006 Johannes Weißl
- * Copyright 2010 Philipp 'ph3-der-loewe' Schafft
+ * Copyright 2010-2011 Philipp 'ph3-der-loewe' Schafft
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -31,6 +31,7 @@
 // so we use 2^(16-1)-1 here.
 #define MIXER_BASE_VOLUME 32767
 
+static struct roar_connection con;
 static roar_vs_t *vss = NULL;
 static int err;
 static sample_format_t format;
@@ -41,7 +42,7 @@ static char *role = NULL;
 
 static inline void _err_to_errno(void)
 {
-	roar_errno = err;
+	roar_err_set(err);
 	roar_err_to_errno();
 }
 
@@ -110,33 +111,63 @@ static int _set_role(void)
 
 static int op_roar_open(sample_format_t sf)
 {
-	int codec = -1;
+	struct roar_audio_info info;
 	int ret;
+
+	memset(&info, 0, sizeof(info));
 
 	ROAR_DBG("op_roar_open(*) = ?");
 
 	format = sf;
 
+	info.rate = sf_get_rate(sf);
+	info.channels = sf_get_channels(sf);
+	info.bits = sf_get_bits(sf);
+
 	if (sf_get_bigendian(sf)) {
 		if (sf_get_signed(sf)) {
-			codec = ROAR_CODEC_PCM_S_BE;
+			info.codec = ROAR_CODEC_PCM_S_BE;
 		} else {
-			codec = ROAR_CODEC_PCM_U_BE;
+			info.codec = ROAR_CODEC_PCM_U_BE;
 		}
 	} else {
 		if (sf_get_signed(sf)) {
-			codec = ROAR_CODEC_PCM_S_LE;
+			info.codec = ROAR_CODEC_PCM_S_LE;
 		} else {
-			codec = ROAR_CODEC_PCM_U_LE;
+			info.codec = ROAR_CODEC_PCM_U_LE;
 		}
 	}
 
 	ROAR_DBG("op_roar_open(*) = ?");
 
-	vss = roar_vs_new_playback(host, "C* Music Player (cmus)", sf_get_rate(sf), sf_get_channels(sf), codec, sf_get_bits(sf), &err);
+	if ( roar_libroar_set_server(host) == -1 ) {
+		ROAR_DBG("op_roar_open(*) = ?");
 
+		roar_err_to_errno();
+		return -OP_ERROR_ERRNO;
+	}
+
+	if ( roar_simple_connect2(&con, NULL, "C* Music Player (cmus)", ROAR_ENUM_FLAG_NONBLOCK, 0) == -1 ) {
+		ROAR_DBG("op_roar_open(*) = ?");
+
+		roar_err_to_errno();
+		return -OP_ERROR_ERRNO;
+	}
+
+	vss = roar_vs_new_from_con(&con, &err);
 	if (vss == NULL) {
 		ROAR_DBG("op_roar_open(*) = ?");
+
+		roar_disconnect(&con);
+
+		_err_to_errno();
+		return -OP_ERROR_ERRNO;
+	}
+
+	if ( roar_vs_stream(vss, &info, ROAR_DIR_PLAY, &err) == -1 ) {
+		ROAR_DBG("op_roar_open(*) = ?");
+
+		roar_disconnect(&con);
 
 		_err_to_errno();
 		return -OP_ERROR_ERRNO;
@@ -146,6 +177,7 @@ static int op_roar_open(sample_format_t sf)
 
 	if (roar_vs_buffer(vss, 2048*8, &err) == -1) {
 		roar_vs_close(vss, ROAR_VS_TRUE, NULL);
+		roar_disconnect(&con);
 		_err_to_errno();
 		return -OP_ERROR_ERRNO;
 	}
@@ -155,6 +187,7 @@ static int op_roar_open(sample_format_t sf)
 	ret = _set_role();
 	if (ret != 0) {
 		roar_vs_close(vss, ROAR_VS_TRUE, NULL);
+		roar_disconnect(&con);
 		_err_to_errno();
 		return ret;
 	}
@@ -171,6 +204,7 @@ static int op_roar_open(sample_format_t sf)
 static int op_roar_close(void)
 {
 	roar_vs_close(vss, ROAR_VS_FALSE, &err);
+	roar_disconnect(&con);
 	return 0;
 }
 
@@ -348,4 +382,4 @@ const char * const op_mixer_options[] = {
 	NULL
 };
 
-const int op_priority = -1;
+const int op_priority = -3;
