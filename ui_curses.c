@@ -2213,19 +2213,11 @@ static void init_all(void)
 	if (!soft_vol)
 		mixer_open();
 
-	if (resume_cmus)
-		resume_load();
-
 	lib_autosave_filename = xstrjoin(cmus_config_dir, "/lib.pl");
 	pl_autosave_filename = xstrjoin(cmus_config_dir, "/playlist.pl");
 	play_queue_autosave_filename = xstrjoin(cmus_config_dir, "/queue.pl");
 	pl_filename = xstrdup(pl_autosave_filename);
 	lib_filename = xstrdup(lib_autosave_filename);
-
-	if (resume_cmus)
-		cmus_add(play_queue_append, play_queue_autosave_filename, FILE_TYPE_PL, JOB_TYPE_QUEUE);
-	cmus_add(pl_add_track, pl_autosave_filename, FILE_TYPE_PL, JOB_TYPE_PL);
-	cmus_add(lib_add_track, lib_autosave_filename, FILE_TYPE_PL, JOB_TYPE_LIB);
 
 	if (error_count) {
 		char buf[16];
@@ -2239,6 +2231,14 @@ static void init_all(void)
 	help_add_all_unbound();
 
 	init_curses();
+
+	if (resume_cmus) {
+		resume_load();
+		cmus_add(play_queue_append, play_queue_autosave_filename, FILE_TYPE_PL, JOB_TYPE_QUEUE);
+	}
+
+	cmus_add(pl_add_track, pl_autosave_filename, FILE_TYPE_PL, JOB_TYPE_PL);
+	cmus_add(lib_add_track, lib_autosave_filename, FILE_TYPE_PL, JOB_TYPE_LIB);
 }
 
 static void exit_all(void)
