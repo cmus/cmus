@@ -80,10 +80,9 @@ static int op_roar_init(void)
 
 static int op_roar_exit(void)
 {
-	if (host != NULL)
-		free(host);
-	if (role != NULL)
-		free(role);
+	free(host);
+	free(role);
+
 	return 0;
 }
 
@@ -139,7 +138,7 @@ static int op_roar_open(sample_format_t sf, const channel_position_t *channel_ma
 
 	ROAR_DBG("op_roar_open(*) = ?");
 
-	if ( roar_libroar_set_server(host) == -1 ) {
+	if (roar_libroar_set_server(host) == -1) {
 		ROAR_DBG("op_roar_open(*) = ?");
 
 		roar_err_to_errno();
@@ -163,7 +162,7 @@ static int op_roar_open(sample_format_t sf, const channel_position_t *channel_ma
 		return -OP_ERROR_ERRNO;
 	}
 
-	if ( roar_vs_stream(vss, &info, ROAR_DIR_PLAY, &err) == -1 ) {
+	if (roar_vs_stream(vss, &info, ROAR_DIR_PLAY, &err) == -1) {
 		ROAR_DBG("op_roar_open(*) = ?");
 
 		roar_disconnect(&con);
@@ -259,13 +258,11 @@ static int op_roar_set_option(int key, const char *val)
 {
 	switch (key) {
 	case 0:
-		if (host != NULL)
-			free(host);
+		free(host);
 		host = xstrdup(val);
 		break;
 	case 1:
-		if (role != NULL)
-			free(role);
+		free(role);
 		role = xstrdup(val);
 		_set_role();
 		break;
