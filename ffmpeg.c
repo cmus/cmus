@@ -191,7 +191,11 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 	}
 
 	do {
+#if (LIBAVFORMAT_VERSION_INT < ((53<<16)+(6<<8)+0))
 		err = av_find_stream_info(ic);
+#else
+		err = avformat_find_stream_info(ic, NULL);
+#endif
 		if (err < 0) {
 			d_print("unable to find stream info: %d\n", err);
 			err = -IP_ERROR_FILE_FORMAT;
@@ -222,7 +226,11 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 		if (codec->capabilities & CODEC_CAP_TRUNCATED)
 			cc->flags |= CODEC_FLAG_TRUNCATED;
 
+#if (LIBAVCODEC_VERSION_INT < ((53<<16)+(9<<8)+0))
 		if (avcodec_open(cc, codec) < 0) {
+#else
+		if (avcodec_open2(cc, codec, NULL) < 0) {
+#endif
 			d_print("could not open codec: %d, %s\n", cc->codec_id, cc->codec_name);
 			err = -IP_ERROR_UNSUPPORTED_FILE_TYPE;
 			break;
