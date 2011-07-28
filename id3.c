@@ -787,8 +787,8 @@ static void decode_txxx(struct id3tag *id3, const char *buf, int len, int encodi
 static void decode_comment(struct id3tag *id3, const char *buf, int len, int encoding)
 {
 	int slen;
-	char out0;
 	char *out;
+	int valid_description;
 
 	if (len <= 3)
 		return;
@@ -802,11 +802,10 @@ static void decode_comment(struct id3tag *id3, const char *buf, int len, int enc
 	if (!out)
 		return;
 
-	out0 = *out;
+	valid_description = strcmp(out, "") == 0 || strcmp(out, "description") == 0;
 	free(out);
 
-	/* we are interested only in comments with empty description */
-	if (out0 != '\0')
+	if (!valid_description)
 		return;
 
 	slen = id3_skiplen(buf, len, encoding);
