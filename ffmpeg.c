@@ -52,6 +52,12 @@
 #endif
 #endif
 
+#if (LIBAVUTIL_VERSION_INT < ((51<<16)+(5<<8)+0))
+#define AV_DICT_IGNORE_SUFFIX AV_METADATA_IGNORE_SUFFIX
+#define av_dict_get av_metadata_get
+#define AVDictionaryEntry AVMetadataTag
+#endif
+
 struct ffmpeg_input {
 	AVPacket pkt;
 	int curr_pkt_size;
@@ -174,7 +180,11 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 
 	ffmpeg_init();
 
+#if (LIBAVFORMAT_VERSION_INT < ((53<<16)+(2<<8)+0))
 	err = av_open_input_file(&ic, ip_data->filename, NULL, 0, NULL);
+#else
+	err = avformat_open_input(&ic, ip_data->filename, NULL, NULL);
+#endif
 	if (err < 0) {
 		d_print("av_open failed: %d\n", err);
 		return -IP_ERROR_FILE_FORMAT;
@@ -437,9 +447,9 @@ static int ffmpeg_read_comments(struct input_plugin_data *ip_data, struct keyval
 	}
 #else
 	GROWING_KEYVALS(c);
-	AVMetadataTag *tag = NULL;
+	AVDictionaryEntry *tag = NULL;
  
-	while ((tag = av_metadata_get(ic->metadata, "", tag, AV_METADATA_IGNORE_SUFFIX))) {
+	while ((tag = av_dict_get(ic->metadata, "", tag, AV_DICT_IGNORE_SUFFIX))) {
 		if (tag && tag->value[0])
 			comments_add_const(&c, tag->key, tag->value);
 	}
