@@ -32,6 +32,9 @@
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libavformat/avio.h>
+#ifndef AVUTIL_MATHEMATICS_H
+#include <libavutil/mathematics.h>
+#endif
 #endif
 
 #if (LIBAVFORMAT_VERSION_INT < ((52<<16)+(31<<8)+0))
