@@ -175,7 +175,7 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 	int stream_index = -1;
 	AVCodec *codec;
 	AVCodecContext *cc = NULL;
-	AVFormatContext *ic;
+	AVFormatContext *ic = NULL;
 
 	ffmpeg_init();
 
