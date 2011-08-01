@@ -288,7 +288,7 @@ check_waveout()
 
 check_roar()
 {
-	pkg_config ROAR "libroar >= 0.4.5" "" "-lroar"
+	pkg_config ROAR "libroar >= 0.4.5"
 	return $?
 }
 
