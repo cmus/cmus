@@ -190,7 +190,7 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 	}
 
 	do {
-#if (LIBAVFORMAT_VERSION_INT < ((53<<16)+(6<<8)+0))
+#if (LIBAVFORMAT_VERSION_INT < ((53<<16)+(3<<8)+0))
 		err = av_find_stream_info(ic);
 #else
 		err = avformat_find_stream_info(ic, NULL);
@@ -225,7 +225,7 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 		if (codec->capabilities & CODEC_CAP_TRUNCATED)
 			cc->flags |= CODEC_FLAG_TRUNCATED;
 
-#if (LIBAVCODEC_VERSION_INT < ((53<<16)+(9<<8)+0))
+#if (LIBAVCODEC_VERSION_INT < ((53<<16)+(6<<8)+0))
 		if (avcodec_open(cc, codec) < 0) {
 #else
 		if (avcodec_open2(cc, codec, NULL) < 0) {
