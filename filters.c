@@ -17,6 +17,7 @@
  */
 
 #include "filters.h"
+#include "cmdline.h"
 #include "expr.h"
 #include "window.h"
 #include "search.h"
@@ -27,6 +28,7 @@
 #include "ui_curses.h"
 #include "xmalloc.h"
 
+#include <stdio.h>
 #include <ctype.h>
 
 struct window *filters_win;
@@ -114,10 +116,34 @@ static const char *get_filter(const char *name)
 	return NULL;
 }
 
+static void edit_sel_filter(void)
+{
+	struct iter sel;
+	struct filter_entry *e;
+	char buf[512];
+
+	if (!window_get_sel(filters_win, &sel))
+		return;
+
+	e = iter_to_filter_entry(&sel);
+	snprintf(buf, sizeof(buf), "fset %s=%s", e->name, e->filter);
+	cmdline_set_text(buf);
+	enter_command_mode();
+}
+
 void filters_activate(void)
 {
 	struct filter_entry *f;
 	struct expr *e, *expr = NULL;
+	int unchanged = 1;
+
+	/* if no pending selection is to apply, edit currently select filter */
+	list_for_each_entry(f, &filters_head, node) {
+		if (f->act_stat != f->sel_stat)
+			unchanged = 0;
+	}
+	if (unchanged)
+		edit_sel_filter();
 
 	/* mark visited and AND together all selected filters
 	 * mark any other filters unvisited */
@@ -344,6 +370,7 @@ static void do_filters_set_filter(const char *keyval)
 			/* replace */
 			struct iter iter;
 
+			new->sel_stat = e->sel_stat;
 			if (ui_initialized) {
 				filter_entry_to_iter(e, &iter);
 				window_row_vanishes(filters_win, &iter);
