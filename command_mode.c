@@ -2289,6 +2289,26 @@ static void expand_factivate(const char *str)
 	tabexp.count = array.count;
 }
 
+static void expand_fset(const char *str)
+{
+	struct filter_entry *e;
+	PTR_ARRAY(array);
+
+	list_for_each_entry(e, &filters_head, node) {
+		char *line = xnew(char, strlen(e->name) + strlen(e->filter) + 2);
+		sprintf(line, "%s=%s", e->name, e->filter);
+		if (!strncmp(str, line, strlen(str)))
+			ptr_array_add(&array, xstrdup(line + strlen(str)));
+		free(line);
+	}
+	if (!array.count)
+		return;
+
+	tabexp.head = xstrdup(str);
+	tabexp.tails = array.ptrs;
+	tabexp.count = array.count;
+}
+
 static void expand_options(const char *str)
 {
 	struct cmus_opt *opt;
@@ -2434,7 +2454,7 @@ struct command commands[] = {
 	{ "echo",		cmd_echo,	1,-1, NULL,		  0, 0 },
 	{ "factivate",		cmd_factivate,	0, 1, expand_factivate,	  0, 0 },
 	{ "filter",		cmd_filter,	0, 1, NULL,		  0, 0 },
-	{ "fset",		cmd_fset,	1, 1, NULL,		  0, 0 },
+	{ "fset",		cmd_fset,	1, 1, expand_fset,	  0, 0 },
 	{ "help",		cmd_help,	0, 0, NULL,		  0, 0 },
 	{ "invert",		cmd_invert,	0, 0, NULL,		  0, 0 },
 	{ "live-filter",	cmd_live_filter,0, 1, NULL,		  0, CMD_LIVE },
