@@ -241,6 +241,7 @@ const char * const id3_key_names[NUM_ID3_KEYS] = {
 	"album",
 	"title",
 	"date",
+	"originaldate",
 	"genre",
 	"discnumber",
 	"tracknumber",
@@ -535,7 +536,7 @@ static struct {
 	/* 2.4.0 */
 	{ "TDRC", ID3_DATE }, // recording date
 	{ "TDRL", ID3_DATE }, // release date
-	{ "TDOR", ID3_DATE }, // original release date
+	{ "TDOR", ID3_ORIGINALDATE }, // original release date
 	{ "TSOP", ID3_ARTISTSORT },
 
 	/* >= 2.3.0 */
@@ -550,6 +551,7 @@ static struct {
 	{ "TSO2", ID3_ALBUMARTISTSORT },
 	{ "XSOP", ID3_ARTISTSORT }, // obsolete
 	{ "TCMP", ID3_COMPILATION },
+	{ "TORY", ID3_ORIGINALDATE },
 
 	/* obsolete frames (2.2.0) */
 	{ "TP1",  ID3_ARTIST },
@@ -688,7 +690,7 @@ static void decode_normal(struct id3tag *id3, const char *buf, int len, int enco
 		tmp = parse_genre(out);
 		free(out);
 		out = tmp;
-	} else if (key == ID3_DATE) {
+	} else if (key == ID3_DATE || key == ID3_ORIGINALDATE) {
 		int date_len = check_date_format(out);
 		id3_debug("date before: '%s'\n", out);
 		if (date_len)

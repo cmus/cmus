@@ -432,6 +432,7 @@ static const struct {
 	{ "duration",	EXPR_INT	},
 	{ "filename",	EXPR_STR	},
 	{ "genre",	EXPR_STR	},
+	{ "originaldate",EXPR_INT	},
 	{ "stream",	EXPR_BOOL	},
 	{ "tag",	EXPR_BOOL	},
 	{ "title",	EXPR_STR	},
@@ -915,6 +916,8 @@ int expr_eval(struct expr *expr, struct track_info *ti)
 				val = INT_MAX;
 		} else if (strcmp(key, "date") == 0) {
 			val = (ti->date >= 0) ? (ti->date / 10000) : -1;
+		} else if (strcmp(key, "originaldate") == 0) {
+			val = (ti->originaldate >= 0) ? (ti->originaldate / 10000) : -1;
 		} else if (strcmp(key, "bitrate") == 0) {
 			val = (ti->bitrate >= 0) ? (int) (ti->bitrate / 1000. + 0.5) : -1;
 		} else {

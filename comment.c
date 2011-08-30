@@ -160,6 +160,7 @@ int comments_get_date(const struct keyval *comments, const char *key)
 static const char *interesting[] = {
 	"artist", "album", "title", "tracknumber", "discnumber", "genre",
 	"date", "compilation", "albumartist", "artistsort", "albumartistsort",
+	"originaldate",
 	"replaygain_track_gain",
 	"replaygain_track_peak",
 	"replaygain_album_gain",
@@ -179,6 +180,7 @@ static struct {
 	{ "WM/Year", "date" },
 	{ "WM/ArtistSortOrder", "artistsort" },
 	{ "WM/AlbumArtistSortOrder", "albumartistsort" },
+	{ "WM/OriginalReleaseYear", "originaldate" },
 	{ NULL, NULL }
 };
 

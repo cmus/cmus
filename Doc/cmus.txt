@@ -973,6 +973,7 @@ Special Keys:
 	%d  %{duration}		@br
 	%f  %{path}		@br
 	%F  %{filename}		@br
+	    %{originaldate}	@br
 	    %{bitrate}		@br
 	    %{codec}		@br
 	    %{codec_profile}	@br
@@ -1008,9 +1009,10 @@ Examples:
 Sort option (lib_sort, pl_sort) value is space separated list of the following
 sort keys:
 
-	artist, album, title, tracknumber, discnumber, date, genre, comment,
-	albumartist, filename, filemtime, bitrate, codec, codec_profile,
-	rg_track_gain, rg_track_peak, rg_album_gain, rg_album_peak
+	artist, album, title, tracknumber, discnumber, date, originaldate,
+	genre, comment, albumartist, filename, filemtime, bitrate, codec,
+	codec_profile, rg_track_gain, rg_track_peak, rg_album_gain,
+	rg_album_peak
 
 
 @h1 PLUGIN OPTIONS
@@ -1152,8 +1154,8 @@ Comparators: none
 @h2 Integers
 
 @li long
-*discnumber*, *tracknumber*, *date* (year), *duration* (seconds),
-*bitrate*
+*discnumber*, *tracknumber*, *date* (year), *originaldate* (year), *duration*
+(seconds), *bitrate*
 @br
 Comparators: *<*, *<=*, *=*, *>=*, *>*, *!=*
 

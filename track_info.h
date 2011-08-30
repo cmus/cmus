@@ -39,6 +39,7 @@ struct track_info {
 	int tracknumber;
 	int discnumber;
 	int date;
+	int originaldate;
 	double rg_track_gain;
 	double rg_track_peak;
 	double rg_album_gain;
@@ -69,6 +70,7 @@ typedef size_t sort_key_t;
 #define SORT_TRACKNUMBER   offsetof(struct track_info, tracknumber)
 #define SORT_DISCNUMBER    offsetof(struct track_info, discnumber)
 #define SORT_DATE          offsetof(struct track_info, date)
+#define SORT_ORIGINALDATE  offsetof(struct track_info, originaldate)
 #define SORT_RG_TRACK_GAIN offsetof(struct track_info, rg_track_gain)
 #define SORT_RG_TRACK_PEAK offsetof(struct track_info, rg_track_peak)
 #define SORT_RG_ALBUM_GAIN offsetof(struct track_info, rg_album_gain)

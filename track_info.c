@@ -63,6 +63,7 @@ void track_info_set_comments(struct track_info *ti, struct keyval *comments) {
 	ti->tracknumber = comments_get_int(comments, "tracknumber");
 	ti->discnumber = comments_get_int(comments, "discnumber");
 	ti->date = comments_get_date(comments, "date");
+	ti->originaldate = comments_get_date(comments, "originaldate");
 	ti->genre = keyvals_get_val(comments, "genre");
 	ti->comment = keyvals_get_val(comments, "comment");
 	ti->albumartist = comments_get_albumartist(comments);
@@ -183,6 +184,7 @@ int track_info_cmp(const struct track_info *a, const struct track_info *b, const
 		case SORT_TRACKNUMBER:
 		case SORT_DISCNUMBER:
 		case SORT_DATE:
+		case SORT_ORIGINALDATE:
 			res = getentry(a, key, int) - getentry(b, key, int);
 			break;
 		case SORT_FILEMTIME:

@@ -219,6 +219,7 @@ enum {
 	TF_TRACK,
 	TF_TITLE,
 	TF_YEAR,
+	TF_ORIGINALYEAR,
 	TF_GENRE,
 	TF_COMMENT,
 	TF_DURATION,
@@ -242,6 +243,7 @@ static struct format_option track_fopts[NR_TFS + 1] = {
 	DEF_FO_INT('n', "tracknumber", 1),
 	DEF_FO_STR('t', "title", 0),
 	DEF_FO_STR('y', "date", 1),
+	DEF_FO_STR('\0', "originaldate", 1),
 	DEF_FO_STR('g', "genre", 0),
 	DEF_FO_STR('c', "comment", 0),
 	DEF_FO_TIME('d', "duration", 0),
@@ -562,6 +564,7 @@ static void fill_track_fopts_track_info(struct track_info *info)
 	fopt_set_double(&track_fopts[TF_RG_TRACK_PEAK], info->rg_track_peak, isnan(info->rg_track_peak));
 	fopt_set_double(&track_fopts[TF_RG_ALBUM_GAIN], info->rg_album_gain, isnan(info->rg_album_gain));
 	fopt_set_double(&track_fopts[TF_RG_ALBUM_PEAK], info->rg_album_peak, isnan(info->rg_album_peak));
+	fopt_set_str(&track_fopts[TF_ORIGINALYEAR], keyvals_get_val(info->comments, "originaldate"));
 	fopt_set_int(&track_fopts[TF_BITRATE], (int) (info->bitrate / 1000. + 0.5), info->bitrate == -1);
 	fopt_set_str(&track_fopts[TF_CODEC], info->codec);
 	fopt_set_str(&track_fopts[TF_CODEC_PROFILE], info->codec_profile);

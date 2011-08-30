@@ -227,6 +227,7 @@ static const struct {
 	{ "tracknumber",	SORT_TRACKNUMBER	},
 	{ "discnumber",		SORT_DISCNUMBER		},
 	{ "date",		SORT_DATE		},
+	{ "originaldate",	SORT_ORIGINALDATE	},
 	{ "genre",		SORT_GENRE		},
 	{ "comment",		SORT_COMMENT		},
 	{ "albumartist",	SORT_ALBUMARTIST	},
