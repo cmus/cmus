@@ -126,6 +126,15 @@ static void mp4_get_channel_map(struct input_plugin_data *ip_data)
 		ip_data->channel_map[i] = channel_position_aac(frame_info.channel_position[i]);
 }
 
+static void mp4_close_handle(MP4FileHandle handle)
+{
+#ifdef MP4_CLOSE_DO_NOT_COMPUTE_BITRATE
+	MP4Close(handle, 0);
+#else
+	MP4Close(handle);
+#endif
+}
+
 static int mp4_open(struct input_plugin_data *ip_data)
 {
 	struct mp4_private *priv;
@@ -156,7 +165,11 @@ static int mp4_open(struct input_plugin_data *ip_data)
 	NeAACDecSetConfiguration(priv->decoder, neaac_cfg);
 
 	/* open mpeg-4 file */
+#ifdef MP4_DETAILS_ALL
 	priv->mp4.handle = MP4Read(ip_data->filename, 0);
+#else
+	priv->mp4.handle = MP4Read(ip_data->filename);
+#endif
 	if (!priv->mp4.handle) {
 		d_print("MP4Read failed\n");
 		goto out;
@@ -205,7 +218,7 @@ static int mp4_open(struct input_plugin_data *ip_data)
 
 out:
 	if (priv->mp4.handle)
-		MP4Close(priv->mp4.handle);
+		mp4_close_handle(priv->mp4.handle);
 	if (priv->decoder)
 		NeAACDecClose(priv->decoder);
 	free(priv);
@@ -219,7 +232,7 @@ static int mp4_close(struct input_plugin_data *ip_data)
 	priv = ip_data->private;
 
 	if (priv->mp4.handle)
-		MP4Close(priv->mp4.handle);
+		mp4_close_handle(priv->mp4.handle);
 
 	if (priv->decoder)
 		NeAACDecClose(priv->decoder);
