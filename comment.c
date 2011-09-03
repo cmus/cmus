@@ -165,6 +165,7 @@ static const char *interesting[] = {
 	"replaygain_track_peak",
 	"replaygain_album_gain",
 	"replaygain_album_peak",
+	"musicbrainz_trackid",
 	"comment",
 	NULL
 };
@@ -181,6 +182,7 @@ static struct {
 	{ "WM/ArtistSortOrder", "artistsort" },
 	{ "WM/AlbumArtistSortOrder", "albumartistsort" },
 	{ "WM/OriginalReleaseYear", "originaldate" },
+	{ "MusicBrainz Track Id", "musicbrainz_trackid" },
 	{ NULL, NULL }
 };
 

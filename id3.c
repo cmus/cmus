@@ -254,6 +254,7 @@ const char * const id3_key_names[NUM_ID3_KEYS] = {
 	"replaygain_album_gain",
 	"replaygain_album_peak",
 	"comment",
+	"musicbrainz_trackid",
 };
 
 static int utf16_is_lsurrogate(uchar uch)
@@ -935,6 +936,22 @@ static void decode_rva2(struct id3tag *id3, const char *buf, int len)
 	id3_debug("gain %s, peak %s\n", gain_str, peak_str ? peak_str : "none");
 }
 
+static void decode_ufid(struct id3tag *id3, const char *buf, int len)
+{
+	char *ufid;
+	int ufid_len = len - 22 - 1;
+
+	if (ufid_len < 0 || strcmp(buf, "http://musicbrainz.org") != 0)
+		return;
+
+	ufid = xnew(char, ufid_len + 1);
+	memcpy(ufid, buf + len - ufid_len, ufid_len);
+	ufid[ufid_len] = '\0';
+
+	id3_debug("%s: %s\n", buf, ufid);
+	add_v2(id3, ID3_MUSICBRAINZ_TRACKID, ufid);
+}
+
 
 static void v2_add_frame(struct id3tag *id3, struct v2_frame_header *fh, const char *buf)
 {
@@ -944,6 +961,9 @@ static void v2_add_frame(struct id3tag *id3, struct v2_frame_header *fh, const c
 
 	if (!strncmp(fh->id, "RVA2", 4)) {
 		decode_rva2(id3, buf, fh->size);
+		return;
+	} else if (!strncmp(fh->id, "UFID", 4)) {
+		decode_ufid(id3, buf, fh->size);
 		return;
 	}
 

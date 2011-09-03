@@ -1671,7 +1671,8 @@ static void spawn_status_program(void)
 	argv[i++] = xstrdup(player_status_names[status]);
 	if (player_info.ti) {
 		static const char *keys[] = {
-			"artist", "album", "discnumber", "tracknumber", "title", "date", NULL
+			"artist", "album", "discnumber", "tracknumber", "title", "date",
+			"musicbrainz_trackid", NULL
 		};
 		int j;
 
