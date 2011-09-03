@@ -86,7 +86,7 @@ static void tree_set_expand_artist(struct artist *artist, int expand)
 static int tree_search_get_prev(struct iter *iter)
 {
 	struct rb_root *root = iter->data0;
-	struct tree_track *track = iter->data1, *old = track;
+	struct tree_track *track = iter->data1;
 	struct artist *artist;
 	struct album *album;
 
@@ -122,17 +122,13 @@ static int tree_search_get_prev(struct iter *iter)
 		track = to_tree_track(rb_prev(&track->tree_node));
 	}
 	iter->data1 = track;
-	/* collapse old search result */
-	artist = old->album->artist;
-	if (artist != track->album->artist && artist->expanded)
-		tree_set_expand_artist(artist, 0);
 	return 1;
 }
 
 static int tree_search_get_next(struct iter *iter)
 {
 	struct rb_root *root = iter->data0;
-	struct tree_track *track = iter->data1, *old = track;
+	struct tree_track *track = iter->data1;
 	struct artist *artist;
 	struct album *album;
 
@@ -168,10 +164,6 @@ static int tree_search_get_next(struct iter *iter)
 		track = to_tree_track(rb_next(&track->tree_node));
 	}
 	iter->data1 = track;
-	/* collapse old search result */
-	artist = old->album->artist;
-	if (artist != track->album->artist && artist->expanded)
-		tree_set_expand_artist(artist, 0);
 	return 1;
 }
 /* }}} */
@@ -390,6 +382,11 @@ static struct artist *artist_new(const char *name, const char *sort_name, int is
 	return a;
 }
 
+static struct artist *artist_copy(const struct artist *artist)
+{
+	return artist_new(artist->name, artist->sort_name, artist->is_compilation);
+}
+
 static void artist_free(struct artist *artist)
 {
 	free(artist->name);
@@ -556,6 +553,8 @@ static struct artist *do_find_artist(const struct artist *artist,
 }
 
 /* search (tree) {{{ */
+static struct artist *collapse_artist;
+
 static int tree_search_matches(void *data, struct iter *iter, const char *text)
 {
 	struct tree_track *track;
@@ -567,6 +566,19 @@ static int tree_search_matches(void *data, struct iter *iter, const char *text)
 	track = iter_to_tree_search_track(iter);
 	if (!track_info_matches(tree_track_info(track), text, flags))
 		return 0;
+
+	/* collapse old search result */
+	if (collapse_artist) {
+		struct artist *artist = do_find_artist(collapse_artist, &lib_artist_root, NULL, NULL);
+		if (artist && artist != track->album->artist) {
+			if (artist->expanded)
+				tree_set_expand_artist(artist, 0);
+			artist_free(collapse_artist);
+			collapse_artist = (!track->album->artist->expanded) ? artist_copy(track->album->artist) : NULL;
+		}
+	} else if (!track->album->artist->expanded)
+		collapse_artist = artist_copy(track->album->artist);
+
 	track->album->artist->expanded = 1;
 	album_to_iter(track->album, &tmpiter);
 	window_set_sel(lib_tree_win, &tmpiter);
