@@ -64,6 +64,7 @@ int show_hidden = 0;
 int show_current_bitrate = 0;
 int show_remaining_time = 0;
 int set_term_title = 1;
+int wrap_search = 1;
 int play_library = 1;
 int repeat = 0;
 int shuffle = 0;
@@ -844,6 +845,22 @@ static void toggle_softvol(unsigned int id)
 	do_set_softvol(soft_vol ^ 1);
 }
 
+static void get_wrap_search(unsigned int id, char *buf)
+{
+	strcpy(buf, bool_names[wrap_search]);
+}
+
+static void set_wrap_search(unsigned int id, const char *buf)
+{
+	parse_bool(buf, &wrap_search);
+}
+
+static void toggle_wrap_search(unsigned int id)
+{
+	wrap_search ^= 1;
+}
+
+
 /* }}} */
 
 /* special callbacks (id set) {{{ */
@@ -971,6 +988,7 @@ static const struct {
 	DT(softvol)
 	DN(softvol_state)
 	DN_FLAGS(status_display_program, OPT_PROGRAM_PATH)
+	DT(wrap_search)
 	{ NULL, NULL, NULL, NULL, 0 }
 };
 

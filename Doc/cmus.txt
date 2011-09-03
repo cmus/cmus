@@ -936,6 +936,9 @@ status_display_program () [command]
 	background or panel for example.  See
 	`/usr/share/doc/cmus/examples/cmus-status-display`.
 
+wrap_search (true)
+	Controls whether the search wraps around the end.
+
 @h2 Colors
 
 Color is integer in range -1..255.

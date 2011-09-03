@@ -112,6 +112,7 @@ extern int show_hidden;
 extern int show_current_bitrate;
 extern int show_remaining_time;
 extern int set_term_title;
+extern int wrap_search;
 extern int play_library;
 extern int repeat;
 extern int shuffle;

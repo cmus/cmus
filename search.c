@@ -21,6 +21,7 @@
 #include "xmalloc.h"
 #include "ui_curses.h"
 #include "convert.h"
+#include "options.h"
 
 struct searchable {
 	void *data;
@@ -52,6 +53,8 @@ static int do_u_search(struct searchable *s, struct iter *iter, const char *text
 		}
 		if (direction == SEARCH_FORWARD) {
 			if (!s->ops.get_next(iter)) {
+				if (!wrap_search)
+					return 0;
 				*iter = s->head;
 				if (!s->ops.get_next(iter))
 					return 0;
@@ -59,6 +62,8 @@ static int do_u_search(struct searchable *s, struct iter *iter, const char *text
 			}
 		} else {
 			if (!s->ops.get_prev(iter)) {
+				if (!wrap_search)
+					return 0;
 				*iter = s->head;
 				if (!s->ops.get_prev(iter))
 					return 0;
