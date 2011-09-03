@@ -306,25 +306,7 @@ static inline struct tree_track *iter_to_tree_search_track(const struct iter *it
 	return iter->data1;
 }
 
-static int tree_search_matches(void *data, struct iter *iter, const char *text)
-{
-	struct tree_track *track;
-	struct iter tmpiter;
-	unsigned int flags = TI_MATCH_ARTIST | TI_MATCH_ALBUM | TI_MATCH_ALBUMARTIST;
-
-	if (!search_restricted)
-		flags |= TI_MATCH_TITLE;
-	track = iter_to_tree_search_track(iter);
-	if (!track_info_matches(tree_track_info(track), text, flags))
-		return 0;
-	track->album->artist->expanded = 1;
-	album_to_iter(track->album, &tmpiter);
-	window_set_sel(lib_tree_win, &tmpiter);
-
-	tree_track_to_iter(track, &tmpiter);
-	window_set_sel(lib_track_win, &tmpiter);
-	return 1;
-}
+static int tree_search_matches(void *data, struct iter *iter, const char *text);
 
 static const struct searchable_ops tree_search_ops = {
 	.get_prev = tree_search_get_prev,
@@ -572,6 +554,28 @@ static struct artist *do_find_artist(const struct artist *artist,
 		*p_parent = parent;
 	return NULL;
 }
+
+/* search (tree) {{{ */
+static int tree_search_matches(void *data, struct iter *iter, const char *text)
+{
+	struct tree_track *track;
+	struct iter tmpiter;
+	unsigned int flags = TI_MATCH_ARTIST | TI_MATCH_ALBUM | TI_MATCH_ALBUMARTIST;
+
+	if (!search_restricted)
+		flags |= TI_MATCH_TITLE;
+	track = iter_to_tree_search_track(iter);
+	if (!track_info_matches(tree_track_info(track), text, flags))
+		return 0;
+	track->album->artist->expanded = 1;
+	album_to_iter(track->album, &tmpiter);
+	window_set_sel(lib_tree_win, &tmpiter);
+
+	tree_track_to_iter(track, &tmpiter);
+	window_set_sel(lib_track_win, &tmpiter);
+	return 1;
+}
+/* search (tree) }}} */
 
 static void insert_artist(struct artist *artist, struct rb_root *root)
 {
