@@ -402,6 +402,7 @@ static const struct {
 	char short_key;
 	const char *long_key;
 } map_short2long[] = {
+	{ 'A',	"albumartist"	},
 	{ 'D',	"discnumber"	},
 	{ 'T',	"tag",		},
 	{ 'a',	"artist"	},
@@ -422,6 +423,7 @@ static const struct {
 	enum expr_type type;
 } builtin[] = {
 	{ "album",	EXPR_STR	},
+	{ "albumartist",EXPR_STR	},
 	{ "artist",	EXPR_STR	},
 	{ "bitrate",	EXPR_INT	},
 	{ "codec",	EXPR_STR	},
@@ -831,7 +833,7 @@ unsigned int expr_get_match_type(struct expr *expr)
 	}
 
 	key = expr->key;
-	if (strcmp(key, "artist") == 0)
+	if (strcmp(key, "artist") == 0 || strcmp(key, "albumartist") == 0)
 		return TI_MATCH_ARTIST;
 	if (strcmp(key, "album") == 0 || strcmp(key, "discnumber") == 0)
 		return TI_MATCH_ALBUM;
