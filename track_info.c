@@ -24,6 +24,7 @@
 #include "xmalloc.h"
 #include "utils.h"
 #include "debug.h"
+#include "path.h"
 
 #include <string.h>
 #include <math.h>
@@ -69,6 +70,11 @@ void track_info_set_comments(struct track_info *ti, struct keyval *comments) {
 	ti->albumartist = comments_get_albumartist(comments);
 	ti->artistsort = comments_get_artistsort(comments);
 	ti->is_va_compilation = track_is_va_compilation(comments);
+
+	if (track_info_has_tag(ti) && ti->title == NULL) {
+		/* best guess */
+		ti->title = path_basename(ti->filename);
+	}
 
 	ti->rg_track_gain = comments_get_double(comments, "replaygain_track_gain");
 	ti->rg_track_peak = comments_get_double(comments, "replaygain_track_peak");
