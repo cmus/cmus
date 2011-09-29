@@ -46,6 +46,7 @@
 #include "worker.h"
 #include "input.h"
 #include "file.h"
+#include "path.h"
 #include "mixer.h"
 #include "config/curses.h"
 #include "config/iconv.h"
@@ -572,14 +573,7 @@ static void fill_track_fopts_track_info(struct track_info *info)
 	if (is_http_url(info->filename)) {
 		fopt_set_str(&track_fopts[TF_FILE], filename);
 	} else {
-		const char *f;
-
-		f = strrchr(filename, '/');
-		if (f) {
-			fopt_set_str(&track_fopts[TF_FILE], f + 1);
-		} else {
-			fopt_set_str(&track_fopts[TF_FILE], filename);
-		}
+		fopt_set_str(&track_fopts[TF_FILE], path_basename(filename));
 	}
 }
 

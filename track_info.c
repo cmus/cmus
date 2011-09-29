@@ -133,13 +133,11 @@ int track_info_matches_full(const struct track_info *ti, const char *text,
 			matched = 1;
 		} else {
 			/* compare with url or filename without path */
-			char *filename = ti->filename;
+			const char *filename = ti->filename;
 
-			if (!is_url(filename)) {
-				char *slash = strrchr(ti->filename, '/');
-				if (slash)
-					filename = slash + 1;
-			}
+			if (!is_url(filename))
+				filename = path_basename(filename);
+
 			if (u_strcasestr_filename(filename, word))
 				matched = 1;
 		}

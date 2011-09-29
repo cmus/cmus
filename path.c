@@ -22,6 +22,15 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+const char *path_basename(const char *path)
+{
+	const char *f;
+
+	f = strrchr(path, '/');
+
+	return f ? f + 1 : path;
+}
+
 void path_strip(char *str)
 {
 	int i, s, d;
