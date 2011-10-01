@@ -527,6 +527,9 @@ int ip_open(struct input_plugin *ip)
 		if (is_cdda_url(ip->data.filename)) {
 			ip->ops = get_ops_by_mime_type("x-content/audio-cdda");
 			rc = ip->ops ? ip->ops->open(&ip->data) : 1;
+		} else if (is_cue_url(ip->data.filename)) {
+			ip->ops = get_ops_by_mime_type("application/x-cue");
+			rc = ip->ops ? ip->ops->open(&ip->data) : 1;
 		} else
 			rc = open_file(ip);
 	}

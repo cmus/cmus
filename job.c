@@ -33,6 +33,7 @@
 #include "player.h"
 #include "discid.h"
 #include "xstrjoin.h"
+#include "cue_utils.h"
 
 #include <string.h>
 #include <unistd.h>
@@ -63,9 +64,14 @@ static void add_ti(struct track_info *ti)
 	ti_buffer[ti_buffer_fill++] = ti;
 }
 
+static int add_file_cue(const char *filename);
+
 static void add_file(const char *filename)
 {
 	struct track_info *ti;
+
+	if (!is_cue_url(filename) && add_file_cue(filename))
+		return;
 
 	cache_lock();
 	ti = cache_get_ti(filename);
@@ -73,6 +79,32 @@ static void add_file(const char *filename)
 
 	if (ti)
 		add_ti(ti);
+}
+
+static int add_file_cue(const char *filename)
+{
+	int n_tracks;
+	char *url;
+	char *cue_filename;
+
+	cue_filename = associated_cue(filename);
+	if (cue_filename == NULL)
+		return 0;
+
+	n_tracks = cue_get_ntracks(cue_filename);
+	if (n_tracks <= 0) {
+		free(cue_filename);
+		return 0;
+	}
+
+	for (int i = 1; i <= n_tracks; ++i) {
+		url = construct_cue_url(cue_filename, i);
+		add_file(url);
+		free(url);
+	}
+
+	free(cue_filename);
+	return 1;
 }
 
 static void add_url(const char *url)
@@ -204,7 +236,7 @@ static int handle_line(void *data, const char *line)
 	if (worker_cancelling())
 		return 1;
 
-	if (is_http_url(line)) {
+	if (is_http_url(line) || is_cue_url(line)) {
 		add_url(line);
 	} else {
 		char *absolute = path_absolute_cwd(line, data);

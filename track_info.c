@@ -71,6 +71,11 @@ void track_info_set_comments(struct track_info *ti, struct keyval *comments) {
 	ti->artistsort = comments_get_artistsort(comments);
 	ti->is_va_compilation = track_is_va_compilation(comments);
 
+	if (ti->artist == NULL && ti->albumartist != NULL) {
+		/* best guess */
+		ti->artist = ti->albumartist;
+	}
+
 	if (track_info_has_tag(ti) && ti->title == NULL) {
 		/* best guess */
 		ti->title = path_basename(ti->filename);
