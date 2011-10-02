@@ -22,6 +22,7 @@
 #include "http.h"
 #include "xmalloc.h"
 #include "file.h"
+#include "path.h"
 #include "utils.h"
 #include "cmus.h"
 #include "options.h"
@@ -101,21 +102,6 @@ static const char *pl_mime_types[] = {
 	"audio/x-scpls",
 	"audio/x-mpegurl"
 };
-
-static const char *get_extension(const char *filename)
-{
-	const char *ext;
-
-	ext = filename + strlen(filename) - 1;
-	while (ext >= filename && *ext != '/') {
-		if (*ext == '.') {
-			ext++;
-			return ext;
-		}
-		ext--;
-	}
-	return NULL;
-}
 
 static const struct input_plugin_ops *get_ops_by_extension(const char *ext, struct list_head **headp)
 {

@@ -22,6 +22,21 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+const char *get_extension(const char *filename)
+{
+	const char *ext;
+
+	ext = filename + strlen(filename) - 1;
+	while (ext >= filename && *ext != '/') {
+		if (*ext == '.') {
+			ext++;
+			return ext;
+		}
+		ext--;
+	}
+	return NULL;
+}
+
 const char *path_basename(const char *path)
 {
 	const char *f;
