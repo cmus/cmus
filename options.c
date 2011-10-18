@@ -1211,6 +1211,7 @@ struct resume {
 	char *lib_filename;
 	int view;
 	char *live_filter;
+	char *browser_dir;
 };
 
 static int handle_resume_line(void *data, const char *line)
@@ -1238,6 +1239,9 @@ static int handle_resume_line(void *data, const char *line)
 	} else if (strcmp(cmd, "live-filter") == 0) {
 		free(resume->live_filter);
 		resume->live_filter = xstrdup(unescape(arg));
+	} else if (strcmp(cmd, "browser-dir") == 0) {
+		free(resume->browser_dir);
+		resume->browser_dir = xstrdup(unescape(arg));
 	}
 
 	free(arg);
@@ -1298,6 +1302,10 @@ void resume_load(void)
 		editable_unlock();
 		free(resume.live_filter);
 	}
+	if (resume.browser_dir) {
+		browser_chdir(resume.browser_dir);
+		free(resume.browser_dir);
+	}
 }
 
 void resume_exit(void)
@@ -1330,6 +1338,7 @@ void resume_exit(void)
 	fprintf(f, "view %s\n", view_names[cur_view]);
 	if (lib_live_filter)
 		fprintf(f, "live-filter %s\n", escape(lib_live_filter));
+	fprintf(f, "browser-dir %s\n", escape(browser_dir));
 
 	fclose(f);
 }
