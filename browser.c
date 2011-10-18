@@ -325,10 +325,7 @@ void browser_up(void)
 	/* remember last position */
 	ptr++;
 	len = strlen(ptr);
-	pos = xnew(char, len + 2);
-	memcpy(pos, ptr, len);
-	pos[len] = '/';
-	pos[len + 1] = 0;
+	pos = xstrdup(ptr);
 
 	if (browser_load(new)) {
 		error_msg("could not open directory '%s': %s\n", new, strerror(errno));
@@ -339,7 +336,8 @@ void browser_up(void)
 
 	/* select */
 	list_for_each_entry(e, &browser_head, node) {
-		if (strcmp(e->name, pos) == 0) {
+		if (strncmp(e->name, pos, len) == 0 &&
+		    (e->name[len] == '/' || e->name[len] == '\0')) {
 			struct iter iter;
 
 			browser_entry_to_iter(e, &iter);
