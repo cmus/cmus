@@ -33,7 +33,9 @@
 #include "player.h"
 #include "discid.h"
 #include "xstrjoin.h"
+#ifdef CONFIG_CUE
 #include "cue_utils.h"
+#endif
 
 #include <string.h>
 #include <unistd.h>
@@ -64,14 +66,18 @@ static void add_ti(struct track_info *ti)
 	ti_buffer[ti_buffer_fill++] = ti;
 }
 
+#ifdef CONFIG_CUE
 static int add_file_cue(const char *filename);
+#endif
 
 static void add_file(const char *filename)
 {
 	struct track_info *ti;
 
+#ifdef CONFIG_CUE
 	if (!is_cue_url(filename) && add_file_cue(filename))
 		return;
+#endif
 
 	cache_lock();
 	ti = cache_get_ti(filename);
@@ -81,6 +87,7 @@ static void add_file(const char *filename)
 		add_ti(ti);
 }
 
+#ifdef CONFIG_CUE
 static int add_file_cue(const char *filename)
 {
 	int n_tracks;
@@ -106,6 +113,7 @@ static int add_file_cue(const char *filename)
 	free(cue_filename);
 	return 1;
 }
+#endif
 
 static void add_url(const char *url)
 {
