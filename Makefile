@@ -92,6 +92,7 @@ ip-$(CONFIG_WAVPACK)	+= wavpack.so
 ip-$(CONFIG_WAV)	+= wav.so
 ip-$(CONFIG_MP4)	+= mp4.so
 ip-$(CONFIG_AAC)	+= aac.so
+ip-$(CONFIG_FFMPEG)	+= ffmpeg.so
 ip-$(CONFIG_CUE)	+= cue.so
 
 $(cdio-objs):		CFLAGS += $(CDIO_CFLAGS) $(CDDB_CFLAGS)
