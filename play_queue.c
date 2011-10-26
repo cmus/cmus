@@ -40,50 +40,28 @@ void play_queue_append(struct track_info *ti)
 {
 	struct simple_track *t = simple_track_new(ti);
 
-	list_add_tail(&t->node, &pq_editable.head);
-	pq_editable.nr_tracks++;
-	if (t->info->duration != -1)
-		pq_editable.total_time += t->info->duration;
-	window_changed(pq_editable.win);
+	editable_add(&pq_editable, t);
 }
 
 void play_queue_prepend(struct track_info *ti)
 {
 	struct simple_track *t = simple_track_new(ti);
 
-	list_add(&t->node, &pq_editable.head);
-	pq_editable.nr_tracks++;
-	if (t->info->duration != -1)
-		pq_editable.total_time += t->info->duration;
-	window_changed(pq_editable.win);
-}
-
-static struct track_info *pq_remove_track(struct list_head *item)
-{
-	struct simple_track *t;
-	struct track_info *info;
-	struct iter iter;
-
-	if (item == &pq_editable.head)
-		return NULL;
-
-	t = to_simple_track(item);
-
-	editable_track_to_iter(&pq_editable, t, &iter);
-	window_row_vanishes(pq_editable.win, &iter);
-
-	pq_editable.nr_marked -= t->marked;
-	pq_editable.nr_tracks--;
-	list_del(&t->node);
-
-	info = t->info;
-	free(t);
-	return info;
+	editable_add_before(&pq_editable, t);
 }
 
 struct track_info *play_queue_remove(void)
 {
-	return pq_remove_track(pq_editable.head.next);
+	struct track_info *info = NULL;
+
+	if (!list_empty(&pq_editable.head)) {
+		struct simple_track *t = to_simple_track(pq_editable.head.next);
+		info = t->info;
+		track_info_ref(info);
+		editable_remove_track(&pq_editable, t);
+	}
+
+	return info;
 }
 
 int play_queue_for_each(int (*cb)(void *data, struct track_info *ti), void *data)
@@ -97,26 +75,4 @@ int play_queue_for_each(int (*cb)(void *data, struct track_info *ti), void *data
 			break;
 	}
 	return rc;
-}
-
-void play_queue_update_track(struct track_info *old, struct track_info *new)
-{
-	struct list_head *item, *tmp;
-	int changed = 0;
-
-	list_for_each_safe(item, tmp, &pq_editable.head) {
-		struct simple_track *track = to_simple_track(item);
-		if (track->info == old) {
-			if (new) {
-				track_info_unref(old);
-				track_info_ref(new);
-				track->info = new;
-			} else {
-				pq_remove_track(item);
-			}
-			changed = 1;
-		}
-	}
-	if (changed)
-		window_changed(pq_editable.win);
 }

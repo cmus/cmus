@@ -163,42 +163,85 @@ again:
 	return NULL;
 }
 
-void sorted_list_add_track(struct list_head *head, struct rb_root *tree_root, struct simple_track *track, const sort_key_t *keys)
+void sorted_list_add_track(struct list_head *head, struct rb_root *tree_root, struct simple_track *track,
+		const sort_key_t *keys, int tiebreak)
 {
-	struct rb_node **new = &(tree_root->rb_node), *parent = NULL, *curr, *prev, *next;
+	struct rb_node **new = &(tree_root->rb_node), *parent = NULL, *curr, *next;
+	struct list_head *node;
+	int result = 0;
 
 	/* try to locate track in tree */
 	while (*new) {
 		const struct simple_track *t = tree_node_to_simple_track(*new);
-		int result = track_info_cmp(track->info, t->info, keys);
+		result = track_info_cmp(track->info, t->info, keys);
 
 		parent = *new;
 		if (result < 0)
-			new = &((*new)->rb_left);
+			new = &(parent->rb_left);
+		else if (result > 0)
+			new = &(parent->rb_right);
 		else
-			new = &((*new)->rb_right);
+			break;
 	}
 
-	rb_link_node(&track->tree_node, parent, new);
-	curr = *new;
-	rb_insert_color(&track->tree_node, tree_root);
-
-	next = rb_next(curr);
-	if (next) {
-		struct simple_track *next_track = tree_node_to_simple_track(next);
-		list_add_tail(&track->node, &next_track->node);
-		return;
+	/* duplicate is present in the tree */
+	if (parent && result == 0) {
+		if (tiebreak < 0) {
+			node = &(tree_node_to_simple_track(parent)->node);
+			rb_replace_node(parent, &track->tree_node, tree_root);
+			RB_CLEAR_NODE(parent);
+		} else {
+			next = rb_next(parent);
+			node = next ? &(tree_node_to_simple_track(next)->node) : head;
+		}
+	} else {
+		rb_link_node(&track->tree_node, parent, new);
+		curr = *new;
+		rb_insert_color(&track->tree_node, tree_root);
+		if (result < 0) {
+			node = &(tree_node_to_simple_track(parent)->node);
+		} else if (result > 0) {
+			next = rb_next(curr);
+			node = next ? &(tree_node_to_simple_track(next)->node) : head;
+		} else {
+			/* rbtree was empty, just add after list head */
+			node = head;
+		}
 	}
+	list_add(&track->node, node->prev);
+}
 
-	prev = rb_prev(curr);
-	if (prev) {
-		struct simple_track *prev_track = tree_node_to_simple_track(prev);
-		list_add(&track->node, &prev_track->node);
-		return;
+void sorted_list_remove_track(struct list_head *head, struct rb_root *tree_root, struct simple_track *track)
+{
+	struct simple_track *next_track;
+	struct rb_node *tree_next;
+
+	if (!RB_EMPTY_NODE(&track->tree_node)) {
+		next_track = (track->node.next != head) ? to_simple_track(track->node.next) : NULL;
+		tree_next = rb_next(&track->tree_node);
+
+		if (next_track && (!tree_next || tree_node_to_simple_track(tree_next) != next_track)) {
+			rb_replace_node(&track->tree_node, &next_track->tree_node, tree_root);
+			RB_CLEAR_NODE(&track->tree_node);
+		} else
+			rb_erase(&track->tree_node, tree_root);
 	}
+	list_del(&track->node);
+}
 
-	/* rbtree was empty, just add after list head */
-	list_add(&track->node, head);
+void sorted_list_rebuild(struct list_head *head, struct rb_root *tree_root, const sort_key_t *keys)
+{
+	struct list_head *item, *tmp;
+	struct rb_root tmp_tree = RB_ROOT;
+	LIST_HEAD(tmp_head);
+
+	list_for_each_safe(item, tmp, head) {
+		struct simple_track *track = to_simple_track(item);
+		sorted_list_remove_track(head, tree_root, track);
+		sorted_list_add_track(&tmp_head, &tmp_tree, track, keys, 0);
+	}
+	tree_root->rb_node = tmp_tree.rb_node;
+	__list_add(head, tmp_head.prev, tmp_head.next);
 }
 
 static int compare_rand(const struct rb_node *a, const struct rb_node *b)

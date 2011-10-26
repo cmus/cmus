@@ -369,7 +369,7 @@ void do_update_cache_job(void *data)
 		if (lib_remove(old) && new)
 			lib_add_track(new);
 		editable_update_track(&pl_editable, old, new);
-		play_queue_update_track(old, new);
+		editable_update_track(&pq_editable, old, new);
 		if (player_info.ti == old && new) {
 			track_info_ref(new);
 			player_file_changed(new);

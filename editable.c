@@ -67,13 +67,23 @@ void editable_init(struct editable *e, void (*free_track)(struct list_head *item
 	e->searchable = searchable_new(e->win, &iter, &simple_search_ops);
 }
 
-void editable_add(struct editable *e, struct simple_track *track)
+static void do_editable_add(struct editable *e, struct simple_track *track, int tiebreak)
 {
-	sorted_list_add_track(&e->head, &e->tree_root, track, e->sort_keys);
+	sorted_list_add_track(&e->head, &e->tree_root, track, e->sort_keys, tiebreak);
 	e->nr_tracks++;
 	if (track->info->duration != -1)
 		e->total_time += track->info->duration;
 	window_changed(e->win);
+}
+
+void editable_add(struct editable *e, struct simple_track *track)
+{
+	do_editable_add(e, track, +1);
+}
+
+void editable_add_before(struct editable *e, struct simple_track *track)
+{
+	do_editable_add(e, track, -1);
 }
 
 void editable_remove_track(struct editable *e, struct simple_track *track)
@@ -89,10 +99,7 @@ void editable_remove_track(struct editable *e, struct simple_track *track)
 	if (ti->duration != -1)
 		e->total_time -= ti->duration;
 
-	list_del(&track->node);
-	if (!RB_EMPTY_NODE(&track->tree_node))
-		rb_erase(&track->tree_node, &e->tree_root);
-
+	sorted_list_remove_track(&e->head, &e->tree_root, track);
 	e->free_track(&track->node);
 }
 
@@ -120,16 +127,9 @@ void editable_remove_sel(struct editable *e)
 
 void editable_sort(struct editable *e)
 {
-	struct rb_node *node, *tmp;
-	struct rb_root tmptree = RB_ROOT;
-
-	list_init(&e->head);
-	rb_for_each_safe(node, tmp, &e->tree_root) {
-		struct simple_track *track = tree_node_to_simple_track(node);
-		rb_erase(node, &e->tree_root);
-		sorted_list_add_track(&e->head, &tmptree, track, e->sort_keys);
-	}
-	e->tree_root.rb_node = tmptree.rb_node;
+	if (e->nr_tracks <= 1)
+		return;
+	sorted_list_rebuild(&e->head, &e->tree_root, e->sort_keys);
 
 	window_changed(e->win);
 	window_goto_top(e->win);
@@ -168,6 +168,18 @@ static void move_item(struct editable *e, struct list_head *head, struct list_he
 	list_add(item, head);
 }
 
+static void reset_tree(struct editable *e)
+{
+	struct simple_track *old, *first_track;
+
+	old = tree_node_to_simple_track(rb_first(&e->tree_root));
+	first_track = to_simple_track(e->head.next);
+	if (old != first_track) {
+		rb_replace_node(&old->tree_node, &first_track->tree_node, &e->tree_root);
+		RB_CLEAR_NODE(&old->tree_node);
+	}
+}
+
 static void move_sel(struct editable *e, struct list_head *after)
 {
 	struct simple_track *t;
@@ -198,6 +210,7 @@ static void move_sel(struct editable *e, struct list_head *after)
 		list_add(item, after);
 		item = next;
 	}
+	reset_tree(e);
 
 	/* select top-most of the moved tracks */
 	editable_track_to_iter(e, to_simple_track(after->next), &iter);

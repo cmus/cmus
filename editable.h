@@ -43,6 +43,7 @@ extern pthread_mutex_t editable_mutex;
 
 void editable_init(struct editable *e, void (*free_track)(struct list_head *item));
 void editable_add(struct editable *e, struct simple_track *track);
+void editable_add_before(struct editable *e, struct simple_track *track);
 void editable_remove_track(struct editable *e, struct simple_track *track);
 void editable_remove_sel(struct editable *e);
 void editable_sort(struct editable *e);
