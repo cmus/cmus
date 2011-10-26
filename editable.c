@@ -49,7 +49,7 @@ void editable_init(struct editable *e, void (*free_track)(struct list_head *item
 	struct iter iter;
 
 	list_init(&e->head);
-	e->tree_root.rb_node = NULL;
+	e->tree_root = RB_ROOT;
 	e->nr_tracks = 0;
 	e->nr_marked = 0;
 	e->total_time = 0;
@@ -276,14 +276,10 @@ void editable_move_before(struct editable *e)
 
 void editable_clear(struct editable *e)
 {
-	struct list_head *item, *next;
+	struct list_head *item, *tmp;
 
-	item = e->head.next;
-	while (item != &e->head) {
-		next = item->next;
+	list_for_each_safe(item, tmp, &e->head)
 		editable_remove_track(e, to_simple_track(item));
-		item = next;
-	}
 }
 
 void editable_remove_matching_tracks(struct editable *e,
