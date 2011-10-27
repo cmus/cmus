@@ -233,6 +233,19 @@ enum {
 	TF_RG_TRACK_PEAK,
 	TF_RG_ALBUM_GAIN,
 	TF_RG_ALBUM_PEAK,
+	TF_ARRANGER,
+	TF_COMPOSER,
+	TF_CONDUCTOR,
+	TF_LYRICIST,
+	TF_PERFORMER,
+	TF_REMIXER,
+	TF_LABEL,
+	TF_PUBLISHER,
+	TF_WORK,
+	TF_OPUS,
+	TF_PARTNUMBER,
+	TF_PART,
+	TF_SUBTITLE,
 	NR_TFS
 };
 
@@ -257,6 +270,19 @@ static struct format_option track_fopts[NR_TFS + 1] = {
 	DEF_FO_DOUBLE('\0', "rg_track_peak", 0),
 	DEF_FO_DOUBLE('\0', "rg_album_gain", 0),
 	DEF_FO_DOUBLE('\0', "rg_album_peak", 0),
+	DEF_FO_STR('\0', "arranger", 0),
+	DEF_FO_STR('\0', "composer", 0),
+	DEF_FO_STR('\0', "conductor", 0),
+	DEF_FO_STR('\0', "lyricist", 0),
+	DEF_FO_STR('\0', "performer", 0),
+	DEF_FO_STR('\0', "remixer", 0),
+	DEF_FO_STR('\0', "label", 0),
+	DEF_FO_STR('\0', "publisher", 0),
+	DEF_FO_STR('\0', "work", 0),
+	DEF_FO_STR('\0', "opus", 0),
+	DEF_FO_STR('\0', "partnumber", 0),
+	DEF_FO_STR('\0', "part", 0),
+	DEF_FO_STR('\0', "subtitle", 0),
 	DEF_FO_END
 };
 
@@ -570,6 +596,19 @@ static void fill_track_fopts_track_info(struct track_info *info)
 	fopt_set_str(&track_fopts[TF_CODEC], info->codec);
 	fopt_set_str(&track_fopts[TF_CODEC_PROFILE], info->codec_profile);
 	fopt_set_str(&track_fopts[TF_PATHFILE], filename);
+	fopt_set_str(&track_fopts[TF_ARRANGER], keyvals_get_val(info->comments, "arranger"));
+	fopt_set_str(&track_fopts[TF_COMPOSER], keyvals_get_val(info->comments, "composer"));
+	fopt_set_str(&track_fopts[TF_CONDUCTOR], keyvals_get_val(info->comments, "conductor"));
+	fopt_set_str(&track_fopts[TF_LYRICIST], keyvals_get_val(info->comments, "lyricist"));
+	fopt_set_str(&track_fopts[TF_PERFORMER], keyvals_get_val(info->comments, "performer"));
+	fopt_set_str(&track_fopts[TF_REMIXER], keyvals_get_val(info->comments, "remixer"));
+	fopt_set_str(&track_fopts[TF_LABEL], keyvals_get_val(info->comments, "label"));
+	fopt_set_str(&track_fopts[TF_PUBLISHER], keyvals_get_val(info->comments, "publisher"));
+	fopt_set_str(&track_fopts[TF_WORK], keyvals_get_val(info->comments, "work"));
+	fopt_set_str(&track_fopts[TF_OPUS], keyvals_get_val(info->comments, "opus"));
+	fopt_set_str(&track_fopts[TF_PARTNUMBER], keyvals_get_val(info->comments, "partnumber"));
+	fopt_set_str(&track_fopts[TF_PART], keyvals_get_val(info->comments, "part"));
+	fopt_set_str(&track_fopts[TF_SUBTITLE], keyvals_get_val(info->comments, "subtitle"));
 	if (is_http_url(info->filename)) {
 		fopt_set_str(&track_fopts[TF_FILE], filename);
 	} else {

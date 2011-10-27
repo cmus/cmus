@@ -167,6 +167,9 @@ static const char *interesting[] = {
 	"replaygain_album_peak",
 	"musicbrainz_trackid",
 	"comment",
+	"arranger", "composer", "conductor", "lyricist", "performer",
+	"remixer", "label", "publisher", "work", "opus", "partnumber", "part",
+	"subtitle",
 	NULL
 };
 
@@ -183,6 +186,7 @@ static struct {
 	{ "WM/AlbumArtistSortOrder", "albumartistsort" },
 	{ "WM/OriginalReleaseYear", "originaldate" },
 	{ "MusicBrainz Track Id", "musicbrainz_trackid" },
+	{ "version", "subtitle" },
 	{ NULL, NULL }
 };
 
@@ -204,6 +208,11 @@ static const char *fix_key(const char *key)
 int comments_add(struct growing_keyvals *c, const char *key, char *val)
 {
 	int i;
+
+	if (!strcasecmp(key, "songwriter")) {
+		int r = comments_add_const(c, "lyricist", val);
+		return comments_add(c, "composer", val) && r;
+	}
 
 	key = fix_key(key);
 	if (!key) {

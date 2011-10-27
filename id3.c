@@ -253,6 +253,13 @@ const char * const id3_key_names[NUM_ID3_KEYS] = {
 	"replaygain_track_peak",
 	"replaygain_album_gain",
 	"replaygain_album_peak",
+	"composer",
+	"conductor",
+	"lyricist",
+	"remixer",
+	"label",
+	"publisher",
+	"subtitle",
 	"comment",
 	"musicbrainz_trackid",
 };
@@ -553,6 +560,12 @@ static struct {
 	{ "XSOP", ID3_ARTISTSORT }, // obsolete
 	{ "TCMP", ID3_COMPILATION },
 	{ "TORY", ID3_ORIGINALDATE },
+	{ "TCOM", ID3_COMPOSER },
+	{ "TPE3", ID3_CONDUCTOR },
+	{ "TEXT", ID3_LYRICIST },
+	{ "TPE4", ID3_REMIXER },
+	{ "TPUB", ID3_PUBLISHER }, // TPUB can be both publisher or label
+	{ "TIT3", ID3_SUBTITLE },
 
 	/* obsolete frames (2.2.0) */
 	{ "TP1",  ID3_ARTIST },
@@ -710,6 +723,8 @@ static void decode_normal(struct id3tag *id3, const char *buf, int len, int enco
 		 */
 		if (id3->v2[key])
 			return;
+	} else if (key == ID3_PUBLISHER) {
+		 add_v2(id3, ID3_LABEL, strdup(out));
 	}
 
 	add_v2(id3, key, out);

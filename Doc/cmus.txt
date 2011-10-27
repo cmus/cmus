@@ -984,6 +984,19 @@ Special Keys:
 	    %{rg_track_peak}	@br
 	    %{rg_album_gain}	@br
 	    %{rg_album_peak}	@br
+	    %{arranger}		@br
+	    %{composer}		@br
+	    %{conductor}	@br
+	    %{lyricist}		@br
+	    %{performer}	@br
+	    %{remixer}		@br
+	    %{label}		@br
+	    %{publisher}	@br
+	    %{work}		@br
+	    %{opus}		@br
+	    %{partnumber}	@br
+	    %{part}		@br
+	    %{subtitle}		@br
 	%=
 		start align right (use at most once)
 	%%
