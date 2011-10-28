@@ -513,6 +513,7 @@ config_header config/ffmpeg.h HAVE_FFMPEG_AVCODEC_H USE_FALLBACK_IP
 config_header config/utils.h HAVE_BYTESWAP_H
 config_header config/iconv.h HAVE_ICONV
 config_header config/xmalloc.h HAVE_STRDUP HAVE_STRNDUP
+config_header config/cue.h CONFIG_CUE
 
 makefile_vars bindir datadir libdir mandir exampledir
 makefile_vars CONFIG_CDIO CONFIG_FLAC CONFIG_MAD CONFIG_MIKMOD CONFIG_MODPLUG CONFIG_MPC CONFIG_VORBIS CONFIG_WAVPACK CONFIG_WAV CONFIG_MP4 CONFIG_AAC CONFIG_FFMPEG CONFIG_CUE

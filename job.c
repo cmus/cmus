@@ -33,6 +33,7 @@
 #include "player.h"
 #include "discid.h"
 #include "xstrjoin.h"
+#include "config/cue.h"
 #ifdef CONFIG_CUE
 #include "cue_utils.h"
 #endif
