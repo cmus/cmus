@@ -241,6 +241,7 @@ static const struct {
 	{ "bitrate",		SORT_BITRATE		},
 	{ "codec",		SORT_CODEC		},
 	{ "codec_profile",	SORT_CODEC_PROFILE	},
+	{ "media",		SORT_MEDIA		},
 	{ NULL,                 SORT_INVALID            }
 };
 

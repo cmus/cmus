@@ -246,6 +246,7 @@ enum {
 	TF_PARTNUMBER,
 	TF_PART,
 	TF_SUBTITLE,
+	TF_MEDIA,
 	NR_TFS
 };
 
@@ -283,6 +284,7 @@ static struct format_option track_fopts[NR_TFS + 1] = {
 	DEF_FO_STR('\0', "partnumber", 0),
 	DEF_FO_STR('\0', "part", 0),
 	DEF_FO_STR('\0', "subtitle", 0),
+	DEF_FO_STR('\0', "media", 0),
 	DEF_FO_END
 };
 
@@ -609,6 +611,7 @@ static void fill_track_fopts_track_info(struct track_info *info)
 	fopt_set_str(&track_fopts[TF_PARTNUMBER], keyvals_get_val(info->comments, "partnumber"));
 	fopt_set_str(&track_fopts[TF_PART], keyvals_get_val(info->comments, "part"));
 	fopt_set_str(&track_fopts[TF_SUBTITLE], keyvals_get_val(info->comments, "subtitle"));
+	fopt_set_str(&track_fopts[TF_MEDIA], keyvals_get_val(info->comments, "media"));
 	if (is_http_url(info->filename)) {
 		fopt_set_str(&track_fopts[TF_FILE], filename);
 	} else {

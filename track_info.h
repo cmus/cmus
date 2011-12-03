@@ -51,6 +51,7 @@ struct track_info {
 	const char *comment;
 	const char *albumartist;
 	const char *artistsort;
+	const char *media;
 
 	char *collkey_artist;
 	char *collkey_album;
@@ -83,6 +84,7 @@ typedef size_t sort_key_t;
 #define SORT_BITRATE       offsetof(struct track_info, bitrate)
 #define SORT_CODEC         offsetof(struct track_info, codec)
 #define SORT_CODEC_PROFILE offsetof(struct track_info, codec_profile)
+#define SORT_MEDIA         offsetof(struct track_info, media)
 #define SORT_INVALID       ((sort_key_t) (-1))
 
 #define TI_MATCH_ARTIST       (1 << 0)

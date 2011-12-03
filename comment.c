@@ -169,7 +169,7 @@ static const char *interesting[] = {
 	"comment",
 	"arranger", "composer", "conductor", "lyricist", "performer",
 	"remixer", "label", "publisher", "work", "opus", "partnumber", "part",
-	"subtitle",
+	"subtitle", "media",
 	NULL
 };
 
@@ -185,6 +185,8 @@ static struct {
 	{ "WM/ArtistSortOrder", "artistsort" },
 	{ "WM/AlbumArtistSortOrder", "albumartistsort" },
 	{ "WM/OriginalReleaseYear", "originaldate" },
+	{ "WM/Media", "media" },
+	{ "sourcemedia", "media" },
 	{ "MusicBrainz Track Id", "musicbrainz_trackid" },
 	{ "version", "subtitle" },
 	{ NULL, NULL }

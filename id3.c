@@ -262,6 +262,7 @@ const char * const id3_key_names[NUM_ID3_KEYS] = {
 	"subtitle",
 	"comment",
 	"musicbrainz_trackid",
+	"media",
 };
 
 static int utf16_is_lsurrogate(uchar uch)
@@ -566,6 +567,7 @@ static struct {
 	{ "TPE4", ID3_REMIXER },
 	{ "TPUB", ID3_PUBLISHER }, // TPUB can be both publisher or label
 	{ "TIT3", ID3_SUBTITLE },
+	{ "TMED", ID3_MEDIA },
 
 	/* obsolete frames (2.2.0) */
 	{ "TP1",  ID3_ARTIST },

@@ -997,6 +997,7 @@ Special Keys:
 	    %{partnumber}	@br
 	    %{part}		@br
 	    %{subtitle}		@br
+	    %{media}		@br
 	%=
 		start align right (use at most once)
 	%%
@@ -1027,7 +1028,7 @@ sort keys:
 
 	artist, album, title, tracknumber, discnumber, date, originaldate,
 	genre, comment, albumartist, filename, filemtime, bitrate, codec,
-	codec_profile, rg_track_gain, rg_track_peak, rg_album_gain,
+	media, codec_profile, rg_track_gain, rg_track_peak, rg_album_gain,
 	rg_album_peak
 
 
@@ -1158,7 +1159,7 @@ built-in filters. Also (and)-grouping is done implicitly.
 
 @li long
 *filename*, *artist*, *albumartist*, *album*, *title*, *genre*, *comment*,
-*codec*, *codec_profile*
+*codec*, *codec_profile*, *media*
 @br
 Comparators: *=* and *!=* (not equal)
 
