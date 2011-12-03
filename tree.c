@@ -754,7 +754,9 @@ void tree_add_track(struct tree_track *track)
 	int date;
 	int is_va_compilation = 0;
 
-	date = ti->date;
+	date = ti->originaldate;
+	if (date < 0)
+		date = ti->date;
 
 	if (is_http_url(ti->filename)) {
 		artist_name = "<Stream>";
