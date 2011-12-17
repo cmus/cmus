@@ -447,7 +447,7 @@ static inline void metadata_changed(void)
 static void player_error(const char *msg)
 {
 	player_info_lock();
-	player_info.status = consumer_status;
+	player_info.status = (enum player_status)consumer_status;
 	player_info.pos = 0;
 	player_info.current_bitrate = -1;
 	player_info.buffer_fill = buffer_get_filled_chunks();
@@ -551,7 +551,7 @@ static void __player_status_changed(void)
 		pos = consumer_pos / buffer_second_size();
 
 	player_info_lock();
-	player_info.status = consumer_status;
+	player_info.status = (enum player_status)consumer_status;
 	player_info.pos = pos;
 	player_info.current_bitrate = -1;
 	player_info.buffer_fill = buffer_get_filled_chunks();
