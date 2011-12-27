@@ -380,6 +380,7 @@ int main() {
 prefix=/usr/local
 DEBUG=1
 HAVE_CDDB=n
+CONFIG_FFMPEG=n
 CONFIG_TREMOR=n
 CONFIG_MIKMOD=n
 USE_FALLBACK_IP=n
@@ -413,7 +414,7 @@ Optional Features: y/n
   CONFIG_WAVPACK  	WavPack (.wv, audio/x-wavpack)                  [auto]
   CONFIG_MP4      	MPEG-4 AAC (.mp4, .m4a, .m4b)                   [auto]
   CONFIG_AAC      	AAC (.aac, audio/aac, audio/aacp)               [auto]
-  CONFIG_FFMPEG   	FFMPEG (.shn, .wma)                             [auto]
+  CONFIG_FFMPEG   	FFMPEG (.shn, .wma)                             [n]
   CONFIG_CUE    	CUE sheets (.cue)                               [auto]
   CONFIG_ROAR           native RoarAudio output                         [auto]
   CONFIG_PULSE    	native PulseAudio output                        [auto]
