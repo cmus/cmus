@@ -183,7 +183,7 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 
 	ffmpeg_init();
 
-#if (LIBAVFORMAT_VERSION_INT < ((53<<16)+(2<<8)+0))
+#if (LIBAVFORMAT_VERSION_INT <= ((53<<16)+(2<<8)+0))
 	err = av_open_input_file(&ic, ip_data->filename, NULL, 0, NULL);
 #else
 	err = avformat_open_input(&ic, ip_data->filename, NULL, NULL);
