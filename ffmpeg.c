@@ -194,7 +194,7 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 	}
 
 	do {
-#if (LIBAVFORMAT_VERSION_INT < ((53<<16)+(5<<8)+0))
+#if (LIBAVFORMAT_VERSION_INT <= ((53<<16)+(5<<8)+0))
 		err = av_find_stream_info(ic);
 #else
 		err = avformat_find_stream_info(ic, NULL);
