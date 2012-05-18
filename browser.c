@@ -147,6 +147,11 @@ static int do_browser_load(const char *name)
 		free_browser_list();
 
 		if (buf) {
+			struct browser_entry *parent_dir_e = xmalloc(sizeof(struct browser_entry) + 4);
+			strcpy(parent_dir_e->name, "../");
+			parent_dir_e->type = BROWSER_ENTRY_DIR;
+			list_add_tail(&parent_dir_e->node, &browser_head);
+
 			cmus_playlist_for_each(buf, size, 0, add_pl_line, NULL);
 			munmap(buf, size);
 		}
