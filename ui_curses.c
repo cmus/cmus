@@ -48,8 +48,10 @@
 #include "file.h"
 #include "path.h"
 #include "mixer.h"
+#ifdef HAVE_CONFIG
 #include "config/curses.h"
 #include "config/iconv.h"
+#endif
 
 #include <unistd.h>
 #include <stdlib.h>

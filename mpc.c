@@ -25,7 +25,9 @@
 #include "xmalloc.h"
 #include "read_wrapper.h"
 
+#ifdef HAVE_CONFIG
 #include "config/mpc.h"
+#endif
 
 #if MPC_SV8
 #include <mpc/mpcdec.h>

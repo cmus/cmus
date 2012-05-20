@@ -20,7 +20,9 @@
 #include "xmalloc.h"
 #include "read_wrapper.h"
 #include "debug.h"
+#ifdef HAVE_CONFIG
 #include "config/tremor.h"
+#endif
 #include "comment.h"
 
 #ifdef CONFIG_TREMOR

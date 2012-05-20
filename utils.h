@@ -19,7 +19,9 @@
 #ifndef _UTILS_H
 #define _UTILS_H
 
+#ifdef HAVE_CONFIG
 #include "config/utils.h"
+#endif
 
 #include <stdlib.h>
 #include <string.h>

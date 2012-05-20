@@ -20,7 +20,9 @@
 #include "file.h"
 #include "xmalloc.h"
 #include "comment.h"
+#ifdef HAVE_CONFIG
 #include "config/modplug.h"
+#endif
 
 #include <modplug.h>
 #include <sys/types.h>

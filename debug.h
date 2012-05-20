@@ -20,7 +20,9 @@
 #define DEBUG_H
 
 #include "compiler.h"
+#ifdef HAVE_CONFIG
 #include "config/debug.h"
+#endif
 
 #include <errno.h>
 #include <stdint.h>

@@ -33,7 +33,9 @@
 #include "player.h"
 #include "discid.h"
 #include "xstrjoin.h"
+#ifdef HAVE_CONFIG
 #include "config/cue.h"
+#endif
 #ifdef CONFIG_CUE
 #include "cue_utils.h"
 #endif

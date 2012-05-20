@@ -18,7 +18,9 @@
 
 #include "convert.h"
 #include "xmalloc.h"
+#ifdef HAVE_CONFIG
 #include "config/iconv.h"
+#endif
 
 #ifdef HAVE_ICONV
 #include <iconv.h>

@@ -20,7 +20,9 @@
 #include "xmalloc.h"
 #include "debug.h"
 #include "file.h"
+#ifdef HAVE_CONFIG
 #include "config/mp4.h"
+#endif
 #include "comment.h"
 #include "aac.h"
 

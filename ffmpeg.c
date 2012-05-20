@@ -21,7 +21,9 @@
 #include "debug.h"
 #include "utils.h"
 #include "comment.h"
+#ifdef HAVE_CONFIG
 #include "config/ffmpeg.h"
+#endif
 
 #include <stdio.h>
 #ifdef HAVE_FFMPEG_AVCODEC_H

@@ -354,7 +354,23 @@ check_ffmpeg()
 	else
 		check_header "ffmpeg/avcodec.h" $FFMPEG_CFLAGS || return $?
 	fi
-	return 0
+	# ffmpeg api changes so frequently that it is best to compile the module
+	libs="$LDDLFLAGS $FFMPEG_LIBS"
+	cflags="$SOFLAGS $FFMPEG_CFLAGS"
+	if test "$HAVE_FFMPEG_AVCODEC_H" = y
+	then
+		cflags="$cflags -DHAVE_FFMPEG_AVCODEC_H"
+	fi
+	topdir=`dirname "$0"`
+	ffmpeg_code=`cat "$topdir"/ffmpeg.c | sed 's/\\\n//g'`
+	msg_checking "for successful build of ffmpeg.c"
+	if try_compile_link "$ffmpeg_code" $cflags $libs
+	then
+		msg_result yes
+		return 0
+	fi
+	msg_result no
+	return 1
 }
 
 check_string_function()
@@ -515,6 +531,8 @@ config_header config/utils.h HAVE_BYTESWAP_H
 config_header config/iconv.h HAVE_ICONV
 config_header config/xmalloc.h HAVE_STRDUP HAVE_STRNDUP
 config_header config/cue.h CONFIG_CUE
+
+CFLAGS="${CFLAGS} -DHAVE_CONFIG"
 
 makefile_vars bindir datadir libdir mandir exampledir
 makefile_vars CONFIG_CDIO CONFIG_FLAC CONFIG_MAD CONFIG_MIKMOD CONFIG_MODPLUG CONFIG_MPC CONFIG_VORBIS CONFIG_WAVPACK CONFIG_WAV CONFIG_MP4 CONFIG_AAC CONFIG_FFMPEG CONFIG_CUE
