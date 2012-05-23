@@ -27,6 +27,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <mmsystem.h>
+#include <stdio.h>
 
 static HWAVEOUT wave_out;
 static sample_format_t waveout_sf;
