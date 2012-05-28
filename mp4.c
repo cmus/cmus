@@ -456,6 +456,8 @@ static int mp4_read_comments(struct input_plugin_data *ip_data,
 		comments_add_const(&c, "artistsort", tags->sortArtist);
 	if (tags->sortAlbumArtist)
 		comments_add_const(&c, "albumartistsort", tags->sortAlbumArtist);
+	if (tags->sortAlbum)
+		comments_add_const(&c, "albumsort", tags->sortAlbum);
 	if (tags->album)
 		comments_add_const(&c, "album", tags->album);
 	if (tags->name)

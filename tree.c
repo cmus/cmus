@@ -398,12 +398,15 @@ static void artist_free(struct artist *artist)
 	free(artist);
 }
 
-static struct album *album_new(struct artist *artist, const char *name, int date)
+static struct album *album_new(struct artist *artist, const char *name,
+		const char *sort_name, int date)
 {
 	struct album *album = xnew(struct album, 1);
 
 	album->name = xstrdup(name);
+	album->sort_name = sort_name ? xstrdup(sort_name) : NULL;
 	album->collkey_name = u_strcasecoll_key(name);
+	album->collkey_sort_name = u_strcasecoll_key0(sort_name);
 	album->date = date;
 	rb_root_init(&album->track_root);
 	album->artist = artist;
@@ -414,7 +417,9 @@ static struct album *album_new(struct artist *artist, const char *name, int date
 static void album_free(struct album *album)
 {
 	free(album->name);
+	free(album->sort_name);
 	free(album->collkey_name);
+	free(album->collkey_sort_name);
 	free(album);
 }
 
@@ -491,9 +496,17 @@ static int special_name_cmp(const char *a, const char *collkey_a,
 	return strcmp(collkey_a, collkey_b);
 }
 
+static inline const char *album_sort_collkey(const struct album *a)
+{
+        if (a->sort_name)
+                return a->collkey_sort_name;
+
+        return a->collkey_name;
+}
+
 static int special_album_cmp(const struct album *a, const struct album *b)
 {
-	return special_name_cmp(a->name, a->collkey_name, b->name, b->collkey_name);
+	return special_name_cmp(a->name, album_sort_collkey(a), b->name, album_sort_collkey(b));
 }
 
 static int special_album_cmp_date(const struct album *a, const struct album *b)
@@ -507,7 +520,7 @@ static int special_album_cmp_date(const struct album *a, const struct album *b)
 	if (cmp)
 		return cmp;
 
-	return strcmp(a->collkey_name, b->collkey_name);
+	return strcmp(album_sort_collkey(a), album_sort_collkey(b));
 }
 
 /* has to follow the same logic as artist_sort_name() */
@@ -749,6 +762,7 @@ void tree_add_track(struct tree_track *track)
 {
 	const struct track_info *ti = tree_track_info(track);
 	const char *album_name, *artist_name, *artistsort_name = NULL;
+	const char *albumsort_name = NULL;
 	struct artist *artist, *new_artist;
 	struct album *album, *new_album;
 	int date;
@@ -765,6 +779,7 @@ void tree_add_track(struct tree_track *track)
 		album_name	= tree_album_name(ti);
 		artist_name	= tree_artist_name(ti);
 		artistsort_name	= ti->artistsort;
+		albumsort_name	= ti->albumsort;
 
 		is_va_compilation = ti->is_va_compilation;
 	}
@@ -775,12 +790,12 @@ void tree_add_track(struct tree_track *track)
 	artist = find_artist(new_artist);
 	if (artist) {
 		artist_free(new_artist);
-		new_album = album_new(artist, album_name, date);
+		new_album = album_new(artist, album_name, albumsort_name, date);
 		album = find_album(new_album);
 		if (album)
 			album_free(new_album);
 	} else
-		new_album = album_new(new_artist, album_name, date);
+		new_album = album_new(new_artist, album_name, albumsort_name, date);
 
 	if (artist) {
 		int changed = 0;

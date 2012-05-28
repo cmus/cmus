@@ -69,6 +69,7 @@ void track_info_set_comments(struct track_info *ti, struct keyval *comments) {
 	ti->comment = keyvals_get_val(comments, "comment");
 	ti->albumartist = comments_get_albumartist(comments);
 	ti->artistsort = comments_get_artistsort(comments);
+	ti->albumsort = keyvals_get_val(comments, "albumsort");
 	ti->is_va_compilation = track_is_va_compilation(comments);
 	ti->media = keyvals_get_val(comments, "media");
 

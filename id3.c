@@ -248,6 +248,7 @@ const char * const id3_key_names[NUM_ID3_KEYS] = {
 	"albumartist",
 	"artistsort",
 	"albumartistsort",
+	"albumsort",
 	"compilation",
 	"replaygain_track_gain",
 	"replaygain_track_peak",
@@ -547,6 +548,7 @@ static struct {
 	{ "TDRL", ID3_DATE }, // release date
 	{ "TDOR", ID3_ORIGINALDATE }, // original release date
 	{ "TSOP", ID3_ARTISTSORT },
+	{ "TSOA", ID3_ALBUMSORT },
 
 	/* >= 2.3.0 */
 	{ "TPE1", ID3_ARTIST },
@@ -559,6 +561,7 @@ static struct {
 	{ "TPE2", ID3_ALBUMARTIST },
 	{ "TSO2", ID3_ALBUMARTISTSORT },
 	{ "XSOP", ID3_ARTISTSORT }, // obsolete
+	{ "XSOA", ID3_ALBUMSORT }, // obsolete
 	{ "TCMP", ID3_COMPILATION },
 	{ "TORY", ID3_ORIGINALDATE },
 	{ "TCOM", ID3_COMPOSER },
@@ -580,6 +583,7 @@ static struct {
 	{ "TRK",  ID3_TRACK },
 	{ "TSP",  ID3_ARTISTSORT },
 	{ "TS2",  ID3_ALBUMARTISTSORT },
+	{ "TSA",  ID3_ALBUMSORT },
 	{ "TCP",  ID3_COMPILATION },
 
 	{ "", -1 }
@@ -783,6 +787,8 @@ static void decode_txxx(struct id3tag *id3, const char *buf, int len, int encodi
 		key = ID3_ALBUMARTIST;
 	else if (!strcasecmp(out, "albumartistsort"))
 		key = ID3_ALBUMARTISTSORT;
+	else if (!strcasecmp(out, "albumsort"))
+		key = ID3_ALBUMSORT;
 	else if (!strcasecmp(out, "compilation"))
 		key = ID3_COMPILATION;
 
