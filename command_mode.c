@@ -1363,6 +1363,11 @@ static void add_from_browser(add_ti_cb add, int job_type)
 		enum file_type ft;
 		char *ret;
 
+		if (ends_with(sel, "/../") || ends_with(sel, "/..")) {
+			info_msg("For convenience, you can not add \"..\" directory from the browser view");
+			return;
+		}
+
 		ft = cmus_detect_ft(sel, &ret);
 		if (ft != FILE_TYPE_INVALID) {
 			cmus_add(add, ret, ft, job_type);
