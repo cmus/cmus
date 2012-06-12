@@ -24,6 +24,14 @@
 #include <string.h>
 #include <strings.h>
 
+static int is_various_artists(const char *a)
+{
+	return strcasecmp(a, "Various Artists") == 0 ||
+	       strcasecmp(a, "Various")         == 0 ||
+	       strcasecmp(a, "VA")              == 0 ||
+	       strcasecmp(a, "V/A")             == 0;
+}
+
 int track_is_compilation(const struct keyval *comments)
 {
 	const char *c, *a, *aa;
@@ -33,7 +41,7 @@ int track_is_compilation(const struct keyval *comments)
 		return 1;
 
 	aa = keyvals_get_val(comments, "albumartist");
-	if (aa && strcasecmp(aa, "Various Artists") == 0)
+	if (aa && is_various_artists(aa))
 		return 1;
 
 	a = keyvals_get_val(comments, "artist");
@@ -49,7 +57,7 @@ int track_is_va_compilation(const struct keyval *comments)
 
 	aa = keyvals_get_val(comments, "albumartist");
 	if (aa)
-		return strcasecmp(aa, "Various Artists") == 0;
+		return is_various_artists(aa);
 
 	c = keyvals_get_val(comments, "compilation");
 
