@@ -223,15 +223,17 @@ static int do_http_get(struct http_get *hg, const char *uri, int redirections)
 		val = keyvals_get_val(hg->headers, "location");
 		if (!val)
 			return -IP_ERROR_HTTP_RESPONSE;
-		redirloc = xstrdup(val);
-		http_get_free(hg);
-		close(hg->fd);
 
 		redirections++;
 		if (redirections > 2)
 			return -IP_ERROR_HTTP_REDIRECT_LIMIT;
 
+		redirloc = xstrdup(val);
+		http_get_free(hg);
+		close(hg->fd);
+
 		rc = do_http_get(hg, redirloc, redirections);
+
 		free(redirloc);
 		return rc;
 	default:
