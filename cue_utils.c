@@ -54,7 +54,7 @@ Cd *cue_parse_file__no_stderr_garbage(FILE *f)
 
 char *associated_cue(const char *filename)
 {
-	char *f;
+	FILE *fp;
 	const char *ext;
 	char buf[4096] = {0};
 	const char *dot;
@@ -67,10 +67,13 @@ char *associated_cue(const char *filename)
 	if (dot == NULL)
 		return NULL;
 
-	f = xstrndup(filename, dot - filename);
-	snprintf(buf, sizeof buf, "%s.cue", f);
+	snprintf(buf, sizeof buf, "%.*s.cue", (int) (dot - filename), filename);
+	fp = fopen(buf, "r");
+	if (!fp)
+		snprintf(buf, sizeof buf, "%s.cue", filename);
+	else
+		fclose(fp);
 
-	free(f);
 	return xstrdup(buf);
 }
 
