@@ -313,6 +313,34 @@ void window_page_down(struct window *win)
 	window_down(win, win->nr_rows - 1);
 }
 
+static void window_goto_pos(struct window *win, int pos)
+{
+	struct iter old_sel;
+	int i;
+
+	old_sel = win->sel;
+	win->sel = win->top;
+	for (i = 0; i < pos; i++)
+		win->get_next(&win->sel);
+	if (!iters_equal(&old_sel, &win->sel))
+		sel_changed(win);
+}
+
+void window_page_top(struct window *win)
+{
+	window_goto_pos(win, 0);
+}
+
+void window_page_bottom(struct window *win)
+{
+	window_goto_pos(win, win->nr_rows - 1);
+}
+
+void window_page_middle(struct window *win)
+{
+	window_goto_pos(win, win->nr_rows / 2);
+}
+
 int window_get_nr_rows(struct window *win)
 {
 	return win->nr_rows;

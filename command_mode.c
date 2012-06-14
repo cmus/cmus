@@ -1675,6 +1675,27 @@ static void cmd_win_pg_up(char *arg)
 	editable_unlock();
 }
 
+static void cmd_win_pg_top(char *arg)
+{
+	editable_lock();
+	window_page_top(current_win());
+	editable_unlock();
+}
+
+static void cmd_win_pg_bottom(char *arg)
+{
+	editable_lock();
+	window_page_bottom(current_win());
+	editable_unlock();
+}
+
+static void cmd_win_pg_middle(char *arg)
+{
+	editable_lock();
+	window_page_middle(current_win());
+	editable_unlock();
+}
+
 static void cmd_win_update_cache(char *arg)
 {
 	struct track_info_selection sel = { .tis = NULL };
@@ -2505,7 +2526,10 @@ struct command commands[] = {
 	{ "win-mv-after",	cmd_win_mv_after,0, 0, NULL,		  0, 0 },
 	{ "win-mv-before",	cmd_win_mv_before,0, 0, NULL,		  0, 0 },
 	{ "win-next",		cmd_win_next,	0, 0, NULL,		  0, 0 },
+	{ "win-page-bottom",	cmd_win_pg_bottom,0, 0, NULL,		  0, 0 },
 	{ "win-page-down",	cmd_win_pg_down,0, 0, NULL,		  0, 0 },
+	{ "win-page-middle",	cmd_win_pg_middle,0, 0, NULL,		  0, 0 },
+	{ "win-page-top",	cmd_win_pg_top,	0, 0, NULL,		  0, 0 },
 	{ "win-page-up",	cmd_win_pg_up,	0, 0, NULL,		  0, 0 },
 	{ "win-remove",		cmd_win_remove,	0, 0, NULL,		  0, CMD_UNSAFE },
 	{ "win-sel-cur",	cmd_win_sel_cur,0, 0, NULL,		  0, 0 },

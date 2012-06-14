@@ -677,8 +677,17 @@ win-mv-before (*P*)
 win-next (*tab*)
 	Activate next window.  Only relevant in view 1.
 
+win-page-bottom
+	Goto the bottom of the visible part of the current window.
+
 win-page-down (*^F*, *page_down*)
 	Goto down one page in the current window.
+
+win-page-middle
+	Goto the middle of the visible part of the current window.
+
+win-page-top
+	Goto the top of the visible part of the current window.
 
 win-page-up (*^B*, *page_up*)
 	Goto up one page in the current window.
