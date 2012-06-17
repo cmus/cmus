@@ -214,6 +214,28 @@ static unsigned char cursed_to_fg_idx[NR_CURSED] = {
 	COLOR_INFO
 };
 
+static unsigned char cursed_to_attr_idx[NR_CURSED] = {
+	COLOR_WIN_ATTR,
+	COLOR_WIN_ATTR,
+	COLOR_WIN_INACTIVE_SEL_ATTR,
+	COLOR_WIN_INACTIVE_CUR_SEL_ATTR,
+
+	COLOR_WIN_ATTR,
+	COLOR_WIN_ATTR,
+	COLOR_WIN_SEL_ATTR,
+	COLOR_WIN_CUR_SEL_ATTR,
+
+	COLOR_WIN_ATTR,
+	COLOR_WIN_TITLE_ATTR,
+	COLOR_CMDLINE_ATTR,
+	COLOR_STATUSLINE_ATTR,
+
+	COLOR_TITLELINE_ATTR,
+	COLOR_WIN_ATTR,
+	COLOR_CMDLINE_ATTR,
+	COLOR_CMDLINE_ATTR
+};
+
 /* index is CURSED_*, value is fucking color pair */
 static int pairs[NR_CURSED];
 
@@ -1662,15 +1684,16 @@ void update_colors(void)
 	for (i = 0; i < NR_CURSED; i++) {
 		int bg = colors[cursed_to_bg_idx[i]];
 		int fg = colors[cursed_to_fg_idx[i]];
+		int attr = attrs[cursed_to_attr_idx[i]];
 		int pair = i + 1;
 
 		if (fg >= 8 && fg <= 15) {
 			/* fg colors 8..15 are special (0..7 + bold) */
 			init_pair(pair, fg & 7, bg);
-			pairs[i] = COLOR_PAIR(pair) | (fg & BRIGHT ? A_BOLD : 0);
+			pairs[i] = COLOR_PAIR(pair) | (fg & BRIGHT ? A_BOLD : 0) | attr;
 		} else {
 			init_pair(pair, fg, bg);
-			pairs[i] = COLOR_PAIR(pair);
+			pairs[i] = COLOR_PAIR(pair) | attr;
 		}
 	}
 }

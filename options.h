@@ -99,6 +99,20 @@ enum {
 	NR_COLORS
 };
 
+enum {
+	COLOR_CMDLINE_ATTR,
+	COLOR_STATUSLINE_ATTR,
+	COLOR_TITLELINE_ATTR,
+	COLOR_WIN_ATTR,
+	COLOR_WIN_CUR_SEL_ATTR,
+	COLOR_CUR_SEL_ATTR,
+	COLOR_WIN_INACTIVE_CUR_SEL_ATTR,
+	COLOR_WIN_INACTIVE_SEL_ATTR,
+	COLOR_WIN_SEL_ATTR,
+	COLOR_WIN_TITLE_ATTR,
+	NR_ATTRS
+};
+
 #define BRIGHT (1 << 3)
 
 extern char *cdda_device;
@@ -123,6 +137,7 @@ extern const char * const aaa_mode_names[];
 extern const char * const view_names[NR_VIEWS + 1];
 
 extern int colors[NR_COLORS];
+extern int attrs[NR_ATTRS];
 
 /* format string for track window (tree view) */
 extern char *track_win_format;

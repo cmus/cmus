@@ -104,6 +104,18 @@ int colors[NR_COLORS] = {
 	COLOR_WHITE | BRIGHT
 };
 
+int attrs[NR_ATTRS] = {
+	A_NORMAL,
+	A_NORMAL,
+	A_NORMAL,
+	A_NORMAL,
+	A_NORMAL,
+	A_NORMAL,
+	A_NORMAL,
+	A_NORMAL,
+	A_NORMAL
+};
+
 /* uninitialized option variables */
 char *track_win_format = NULL;
 char *track_win_format_va = NULL;
@@ -911,6 +923,79 @@ static void set_color(unsigned int id, const char *buf)
 	update_full();
 }
 
+static const char * const attr_enum_names[6 + 1] = {
+	"default",
+	"standout", "underline", "reverse", "blink", "bold",
+	NULL
+};
+
+static void get_attr(unsigned int id, char *buf)
+{
+	int attr = attrs[id];
+
+	if (attr == 0) {
+		strcpy(buf, "default");
+		return;
+	}
+
+	if (attr & A_STANDOUT)
+		strcat(buf, "standout|");
+
+	if (attr & A_UNDERLINE)
+		strcat(buf, "underline|");
+
+	if (attr & A_REVERSE)
+		strcat(buf, "reverse|");
+
+	if (attr & A_BLINK)
+		strcat(buf, "blink|");
+
+	if (attr & A_BOLD)
+		strcat(buf, "bold|");
+
+	buf[strlen(buf) - 1] = '\0';
+}
+
+static void set_attr(unsigned int id, const char *buf)
+{
+	int attr = 0;
+	size_t i = 0;
+	size_t offset = 0;
+	size_t length = 0;
+	char*  current;
+
+	do {
+		if (buf[i] == '|' || buf[i] == '\0') {
+			current = strndup(&buf[offset], length);
+
+			if (strcmp(current, "default") == 0)
+				attr |= A_NORMAL;
+			else if (strcmp(current, "standout") == 0)
+				attr |= A_STANDOUT;
+			else if (strcmp(current, "underline") == 0)
+				attr |= A_UNDERLINE;
+			else if (strcmp(current, "reverse") == 0)
+				attr |= A_REVERSE;
+			else if (strcmp(current, "blink") == 0)
+				attr |= A_BLINK;
+			else if (strcmp(current, "bold") == 0)
+				attr |= A_BOLD;
+
+			free(current);
+
+			offset = i;
+			length = -1;
+		}
+
+		i++;
+		length++;
+	} while (buf[i - 1] != '\0');
+
+	attrs[id] = attr;
+	update_colors();
+	update_full();
+}
+
 static char **id_to_fmt(enum format_id id)
 {
 	switch (id) {
@@ -1034,6 +1119,19 @@ static const char * const color_names[NR_COLORS] = {
 	"color_win_title_fg"
 };
 
+static const char * const attr_names[NR_ATTRS] = {
+	"color_cmdline_attr",
+	"color_statusline_attr",
+	"color_titleline_attr",
+	"color_win_attr",
+	"color_win_cur_sel_attr",
+	"color_cur_sel_attr",
+	"color_win_inactive_cur_sel_attr",
+	"color_win_inactive_sel_attr",
+	"color_win_sel_attr",
+	"color_win_title_attr"
+};
+
 /* default values for the variables which we must initialize but
  * can't do it statically */
 static const struct {
@@ -1121,6 +1219,9 @@ void options_add(void)
 
 	for (i = 0; i < NR_COLORS; i++)
 		option_add(color_names[i], i, get_color, set_color, NULL, 0);
+
+	for (i = 0; i < NR_ATTRS; i++)
+		option_add(attr_names[i], i, get_attr, set_attr, NULL, 0);
 
 	ip_add_options();
 	op_add_options();
