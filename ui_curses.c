@@ -118,7 +118,7 @@ static char *server_address = NULL;
 
 static char print_buffer[512];
 
-/* destination buffer for utf8_encode and utf8_decode */
+/* destination buffer for utf8_encode_to_buf and utf8_decode */
 static char conv_buffer[512];
 
 /* one character can take up to 4 bytes in UTF-8 */
@@ -329,7 +329,7 @@ int track_format_valid(const char *format)
 	return format_valid(format, track_fopts);
 }
 
-static void utf8_encode(const char *buffer)
+static void utf8_encode_to_buf(const char *buffer)
 {
 	int n;
 #ifdef HAVE_ICONV
@@ -577,7 +577,7 @@ static void fill_track_fopts_track_info(struct track_info *info)
 	if (using_utf8) {
 		filename = info->filename;
 	} else {
-		utf8_encode(info->filename);
+		utf8_encode_to_buf(info->filename);
 		filename = conv_buffer;
 	}
 
@@ -769,7 +769,7 @@ static void print_filter(struct window *win, int row, struct iter *iter)
 
 	e_filter = e->filter;
 	if (!using_utf8) {
-		utf8_encode(e_filter);
+		utf8_encode_to_buf(e_filter);
 		e_filter = conv_buffer;
 	}
 
@@ -904,7 +904,7 @@ static void update_editable_window(struct editable *e, const char *title, const 
 		if (using_utf8) {
 			/* already UTF-8 */
 		} else {
-			utf8_encode(filename);
+			utf8_encode_to_buf(filename);
 			filename = conv_buffer;
 		}
 		snprintf(buf, sizeof(buf), "%s %s - %d tracks", title,
@@ -951,7 +951,7 @@ static void update_browser_window(void)
 		/* already UTF-8 */
 		dirname = browser_dir;
 	} else {
-		utf8_encode(browser_dir);
+		utf8_encode_to_buf(browser_dir);
 		dirname = conv_buffer;
 	}
 	snprintf(title, sizeof(title), "Browser - %s", dirname);
@@ -1174,7 +1174,7 @@ static void do_update_commandline(void)
 		 * (displayed as <xx>) there would be no problem because bpos
 		 * still equals to cpos, I think.
 		 */
-		utf8_encode(cmdline.line);
+		utf8_encode_to_buf(cmdline.line);
 		str = conv_buffer;
 	}
 
@@ -1339,7 +1339,7 @@ static int cmdline_cursor_column(void)
 	str = cmdline.line;
 	if (!using_utf8) {
 		/* see do_update_commandline */
-		utf8_encode(cmdline.line);
+		utf8_encode_to_buf(cmdline.line);
 		str = conv_buffer;
 	}
 
