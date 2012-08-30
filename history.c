@@ -21,10 +21,12 @@
 #include "file.h"
 #include "uchar.h"
 #include "list.h"
+#include "prog.h"
 
 #include <sys/types.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <stdio.h>
 
 struct history_entry {
 	struct list_head node;
@@ -81,16 +83,18 @@ void history_load(struct history *history, char *filename, int max_lines)
 
 void history_save(struct history *history)
 {
+	char filename_tmp[512];
 	struct list_head *item;
 	int fd;
+	ssize_t rc;
 
-	fd = open(history->filename, O_CREAT | O_WRONLY | O_TRUNC, 0666);
+	snprintf(filename_tmp, sizeof(filename_tmp), "%s.tmp", history->filename);
+	fd = open(filename_tmp, O_CREAT | O_WRONLY | O_TRUNC, 0666);
 	if (fd == -1)
 		return;
 	list_for_each(item, &history->head) {
 		struct history_entry *history_entry;
 		const char nl = '\n';
-		ssize_t rc;
 
 		history_entry = list_entry(item, struct history_entry, node);
 
@@ -104,6 +108,10 @@ void history_save(struct history *history)
 	}
 out:
 	close(fd);
+
+	rc = rename(filename_tmp, history->filename);
+	if (rc)
+		warn_errno("renaming %s to %s", filename_tmp, history->filename);
 }
 
 void history_add_line(struct history *history, const char *line)

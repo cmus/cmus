@@ -1305,14 +1305,15 @@ void options_exit(void)
 {
 	struct cmus_opt *opt;
 	struct filter_entry *filt;
+	char filename_tmp[512];
 	char filename[512];
 	FILE *f;
 	int i;
 
-	snprintf(filename, sizeof(filename), "%s/autosave", cmus_config_dir);
-	f = fopen(filename, "w");
+	snprintf(filename_tmp, sizeof(filename_tmp), "%s/autosave.tmp", cmus_config_dir);
+	f = fopen(filename_tmp, "w");
 	if (f == NULL) {
-		warn_errno("creating %s", filename);
+		warn_errno("creating %s", filename_tmp);
 		return;
 	}
 
@@ -1352,6 +1353,11 @@ void options_exit(void)
 	fprintf(f, "\n");
 
 	fclose(f);
+
+	snprintf(filename, sizeof(filename), "%s/autosave", cmus_config_dir);
+	i = rename(filename_tmp, filename);
+	if (i)
+		warn_errno("renaming %s to %s", filename_tmp, filename);
 }
 
 struct resume {
@@ -1460,14 +1466,16 @@ void resume_load(void)
 
 void resume_exit(void)
 {
+	char filename_tmp[512];
 	char filename[512];
 	struct track_info *ti;
 	FILE *f;
+	int rc;
 
-	snprintf(filename, sizeof(filename), "%s/resume", cmus_config_dir);
-	f = fopen(filename, "w");
+	snprintf(filename_tmp, sizeof(filename_tmp), "%s/resume.tmp", cmus_config_dir);
+	f = fopen(filename_tmp, "w");
 	if (!f) {
-		warn_errno("creating %s", filename);
+		warn_errno("creating %s", filename_tmp);
 		return;
 	}
 
@@ -1491,4 +1499,9 @@ void resume_exit(void)
 	fprintf(f, "browser-dir %s\n", escape(browser_dir));
 
 	fclose(f);
+
+	snprintf(filename, sizeof(filename), "%s/resume", cmus_config_dir);
+	rc = rename(filename_tmp, filename);
+	if (rc)
+		warn_errno("renaming %s to %s", filename_tmp, filename);
 }
