@@ -16,6 +16,7 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "convert.h"
 #include "ui_curses.h"
 #include "cmdline.h"
 #include "search_mode.h"
@@ -142,6 +143,8 @@ static int track_win_w = 0;
 static int show_cursor;
 static int cursor_x;
 static int cursor_y;
+
+static char *title_buf = NULL;
 
 enum {
 	CURSED_WIN,
@@ -1284,11 +1287,13 @@ static void do_update_titleline(void)
 			const char *title = get_stream_title();
 
 			if (title != NULL) {
+				free(title_buf);
+				title_buf = to_utf8(title, icecast_default_charset);
 				/*
 				 * StreamTitle overrides radio station name
 				 */
 				use_alt_format = 0;
-				fopt_set_str(&track_fopts[TF_TITLE], title);
+				fopt_set_str(&track_fopts[TF_TITLE], title_buf);
 			}
 		}
 

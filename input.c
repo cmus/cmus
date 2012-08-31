@@ -16,6 +16,7 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "convert.h"
 #include "input.h"
 #include "ip.h"
 #include "pcm.h"
@@ -272,15 +273,15 @@ static int setup_remote(struct input_plugin *ip, const struct keyval *headers, i
 
 	val = keyvals_get_val(headers, "icy-name");
 	if (val)
-		ip->data.icy_name = xstrdup(val);
+		ip->data.icy_name = to_utf8(val, icecast_default_charset);
 
 	val = keyvals_get_val(headers, "icy-genre");
 	if (val)
-		ip->data.icy_genre = xstrdup(val);
+		ip->data.icy_genre = to_utf8(val, icecast_default_charset);
 
 	val = keyvals_get_val(headers, "icy-url");
 	if (val)
-		ip->data.icy_url = xstrdup(val);
+		ip->data.icy_url = to_utf8(val, icecast_default_charset);
 
 	return 0;
 }

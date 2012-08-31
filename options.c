@@ -116,6 +116,7 @@ char *current_alt_format = NULL;
 char *window_title_format = NULL;
 char *window_title_alt_format = NULL;
 char *id3_default_charset = NULL;
+char *icecast_default_charset = NULL;
 
 static void buf_int(char *buf, int val)
 {
@@ -214,10 +215,21 @@ static void get_id3_default_charset(unsigned int id, char *buf)
 	strcpy(buf, id3_default_charset);
 }
 
+static void get_icecast_default_charset(unsigned int id, char *buf)
+{
+	strcpy(buf, icecast_default_charset);
+}
+
 static void set_id3_default_charset(unsigned int id, const char *buf)
 {
 	free(id3_default_charset);
 	id3_default_charset = xstrdup(buf);
+}
+
+static void set_icecast_default_charset(unsigned int id, const char *buf)
+{
+	free(icecast_default_charset);
+	icecast_default_charset = xstrdup(buf);
 }
 
 static const struct {
@@ -970,6 +982,7 @@ static const struct {
 	DT(continue)
 	DT(smart_artist_sort)
 	DN(id3_default_charset)
+	DN(icecast_default_charset)
 	DN(lib_sort)
 	DN(output_plugin)
 	DN(passwd)
@@ -1041,6 +1054,7 @@ static const struct {
 	{ "lib_sort"	,	"albumartist date album discnumber tracknumber title filename" },
 	{ "pl_sort",		"" },
 	{ "id3_default_charset","ISO-8859-1" },
+	{ "icecast_default_charset","ISO-8859-1" },
 	{ NULL, NULL }
 };
 

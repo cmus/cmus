@@ -869,6 +869,11 @@ id3_default_charset (ISO-8859-1)
 
 	NOTE:  This is used only if the tag is not valid UTF-8.
 
+icecast_default_charset (ISO-8859-1)
+	Default character set to use for non-UTF-8 icecast stream metadata.
+
+	NOTE:  This is used only if the metadata is not valid UTF-8.
+
 lib_sort (artist album discnumber tracknumber title filename) [`Sort Keys`]
 	Sort keys for the sorted library view (2).
 

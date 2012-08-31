@@ -18,6 +18,7 @@
 
 #include "convert.h"
 #include "xmalloc.h"
+#include "uchar.h"
 #ifdef HAVE_CONFIG
 #include "config/iconv.h"
 #endif
@@ -112,4 +113,17 @@ int utf8_encode(const char *inbuf, const char *encoding, char **outbuf)
 	rc = convert(inbuf, inbuf_size, outbuf, outbuf_size, "UTF-8", encoding);
 
 	return rc < 0 ? -1 : 0;
+}
+
+char *to_utf8(const char *str, const char *enc)
+{
+	char *outbuf = NULL;
+	int rc;
+
+	if (u_is_valid(str)) {
+		return xstrdup(str);
+	} else {
+		rc = utf8_encode(str, enc, &outbuf);
+		return rc < 0 ? xstrdup(str) : outbuf;
+	}
 }
