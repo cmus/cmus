@@ -72,6 +72,7 @@ int repeat = 0;
 int shuffle = 0;
 int display_artist_sort_name;
 int smart_artist_sort = 1;
+int scroll_offset = 0;
 
 int colors[NR_COLORS] = {
 	-1,
@@ -220,6 +221,19 @@ static void set_buffer_seconds(unsigned int id, const char *buf)
 
 	if (parse_int(buf, 1, 300, &sec))
 		player_set_buffer_chunks((sec * SECOND_SIZE + CHUNK_SIZE / 2) / CHUNK_SIZE);
+}
+
+static void get_scroll_offset(unsigned int id, char *buf)
+{
+	buf_int(buf, scroll_offset);
+}
+
+static void set_scroll_offset(unsigned int id, const char *buf)
+{
+	int offset;
+
+	if (parse_int(buf, 0, 9999, &offset))
+		scroll_offset = offset;
 }
 
 static void get_id3_default_charset(unsigned int id, char *buf)
@@ -1063,6 +1077,7 @@ static const struct {
 	DT(auto_reshuffle)
 	DN_FLAGS(device, OPT_PROGRAM_PATH)
 	DN(buffer_seconds)
+	DN(scroll_offset)
 	DT(confirm_run)
 	DT(continue)
 	DT(smart_artist_sort)

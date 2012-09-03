@@ -17,6 +17,7 @@
  */
 
 #include "window.h"
+#include "options.h"
 #include "xmalloc.h"
 #include "debug.h"
 
@@ -83,25 +84,51 @@ void window_set_nr_rows(struct window *win, int nr_rows)
 
 void window_up(struct window *win, int rows)
 {
-	int i;
+	struct iter iter;
+	int delta, sel_up, top_up, actual_offset = -1;
 
-	for (i = 0; i < rows; i++) {
-		struct iter prev = win->sel;
-
-		if (!win->get_prev(&prev))
-			break;
-		if (iters_equal(&win->sel, &win->top))
-			win->top = prev;
-		win->sel = prev;
+	/* distance between top and sel */
+	delta = 0;
+	iter = win->top;
+	while (!iters_equal(&iter, &win->sel)) {
+		win->get_next(&iter);
+		delta++;
 	}
-	if (i)
+
+	for (sel_up = 0; sel_up < rows; sel_up++) {
+		iter = win->sel;
+		if (!win->get_prev(&iter)) {
+			actual_offset = 0;
+			break;
+		}
+		win->sel = iter;
+	}
+
+	if (actual_offset == -1) {
+		int upper_bound = win->nr_rows / 2;
+		if (scroll_offset < upper_bound)
+			upper_bound = scroll_offset;
+		for (actual_offset = 0; actual_offset < upper_bound; actual_offset++) {
+			if (!win->get_prev(&iter)) {
+				break;
+			}
+		}
+	}
+
+	top_up = actual_offset + sel_up - delta;
+	while (top_up > 0) {
+		win->get_prev(&win->top);
+		top_up--;
+	}
+
+	if (sel_up)
 		sel_changed(win);
 }
 
 void window_down(struct window *win, int rows)
 {
 	struct iter iter;
-	int delta, sel_down, top_down;
+	int delta, sel_down, top_down, actual_offset = -1;
 
 	/* distance between top and sel */
 	delta = 0;
@@ -113,16 +140,30 @@ void window_down(struct window *win, int rows)
 
 	for (sel_down = 0; sel_down < rows; sel_down++) {
 		iter = win->sel;
-		if (!win->get_next(&iter))
+		if (!win->get_next(&iter)) {
+			actual_offset = 0;
 			break;
+		}
 		win->sel = iter;
 	}
 
-	top_down = sel_down - (win->nr_rows - delta - 1);
+	if (actual_offset == -1) {
+		int upper_bound = (win->nr_rows - 1) / 2;
+		if (scroll_offset < upper_bound)
+			upper_bound = scroll_offset;
+		for (actual_offset = 0; actual_offset < upper_bound; actual_offset++) {
+			if (!win->get_next(&iter)) {
+				break;
+			}
+		}
+	}
+
+	top_down = actual_offset + sel_down - (win->nr_rows - delta - 1);
 	while (top_down > 0) {
 		win->get_next(&win->top);
 		top_down--;
 	}
+
 	if (sel_down)
 		sel_changed(win);
 }

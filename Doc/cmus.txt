@@ -948,6 +948,9 @@ replaygain_preamp (6.0)
 resume (false)
 	Resume playback on startup.
 
+scroll_offset (0) [0-9999]
+	Minimal number of screen lines to keep above and below the cursor.
+
 show_hidden (false)
 	Display hidden files in browser.
 
