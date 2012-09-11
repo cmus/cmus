@@ -2785,9 +2785,11 @@ void run_parsed_command(char *cmd, char *arg)
 				error_msg("too many arguments\n");
 				break;
 			}
-			if (run_only_safe_commands && c->flags & CMD_UNSAFE) {
-				d_print("trying to execute unsafe command over net\n");
-				break;
+			if (run_only_safe_commands && (c->flags & CMD_UNSAFE)) {
+				if (c->func != cmd_save || !is_stdout_filename(arg)) {
+					d_print("trying to execute unsafe command over net\n");
+					break;
+				}
 			}
 			c->func(arg);
 			break;
