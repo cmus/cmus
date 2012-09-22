@@ -274,7 +274,8 @@ int window_get_next(struct window *win, struct iter *iter)
 
 void window_set_sel(struct window *win, struct iter *iter)
 {
-	int sel_nr, top_nr;
+	int sel_nr, top_nr, bottom_nr;
+	int upper_bound;
 	struct iter tmp;
 
 	BUG_ON(iter_is_empty(&win->top));
@@ -301,11 +302,50 @@ void window_set_sel(struct window *win, struct iter *iter)
 		sel_nr++;
 	}
 
-	if (sel_nr < top_nr)
-		win->top = win->sel;
-	while (sel_nr - top_nr >= win->nr_rows) {
-		win->get_next(&win->top);
-		top_nr++;
+	upper_bound = win->nr_rows / 2;
+	if (scroll_offset < upper_bound)
+		upper_bound = scroll_offset;
+
+	if (sel_nr < top_nr + upper_bound) { // scroll up
+		tmp = win->head;
+		win->get_next(&tmp);
+		if (sel_nr < upper_bound) { // no space above
+			win->top = tmp;
+		} else {
+			win->top = win->sel;
+			while (upper_bound > 0) {
+				win->get_prev(&win->top);
+				upper_bound--;
+			}
+		}
+	} else { //scroll down
+		upper_bound = (win->nr_rows - 1) / 2;
+		if (scroll_offset < upper_bound)
+			upper_bound = scroll_offset;
+
+		tmp = win->sel;
+		bottom_nr = sel_nr;
+		if (sel_nr >= top_nr + win->nr_rows) { //  seleced element not visible
+			while (sel_nr >= top_nr + win->nr_rows) {
+				win->get_next(&win->top);
+				top_nr++;
+			}
+		} else { // selected element visible
+			while (bottom_nr + 1 < top_nr + win->nr_rows) {
+				if (!win->get_next(&tmp)) { //no space below
+					bottom_nr = sel_nr + upper_bound;
+					break;
+				}
+				bottom_nr++;
+			}
+		}
+
+		while (bottom_nr < sel_nr + upper_bound) {
+			if (!win->get_next(&tmp))
+				break;
+			bottom_nr++;
+			win->get_next(&win->top);
+		}
 	}
 	sel_changed(win);
 }
