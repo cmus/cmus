@@ -62,6 +62,7 @@ bind common space win-toggle
 bind common t toggle show_remaining_time
 bind common tab win-next
 bind common u update-cache
+bind common U win-update-cache
 bind common up win-up
 bind common v player-stop
 bind common x player-play

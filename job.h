@@ -25,6 +25,7 @@ struct add_data {
 	enum file_type type;
 	char *name;
 	add_ti_cb add;
+	unsigned int force : 1;
 };
 
 struct update_data {

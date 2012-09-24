@@ -964,6 +964,11 @@ shuffle (false)
 	Play in shuffled order.  Shuffle works in the library views (1-2) and
 	playlist view (3).
 
+skip_track_info (false)
+	Don't load metadata when adding tracks. Useful when using network file system
+	and having huge amount of files.
+	Tags can be loaded using 'update-cache' or 'win-update-cache' commands.
+
 softvol (false)
 	Use software volume control.
 

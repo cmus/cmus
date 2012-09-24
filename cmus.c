@@ -110,7 +110,7 @@ void cmus_play_file(const char *filename)
 	struct track_info *ti;
 
 	cache_lock();
-	ti = cache_get_ti(filename);
+	ti = cache_get_ti(filename, 0);
 	cache_unlock();
 	if (!ti) {
 		error_msg("Couldn't get file information for %s\n", filename);
@@ -164,13 +164,14 @@ enum file_type cmus_detect_ft(const char *name, char **ret)
 	return FILE_TYPE_FILE;
 }
 
-void cmus_add(add_ti_cb add, const char *name, enum file_type ft, int jt)
+void cmus_add(add_ti_cb add, const char *name, enum file_type ft, int jt, int force)
 {
 	struct add_data *data = xnew(struct add_data, 1);
 
 	data->add = add;
 	data->name = xstrdup(name);
 	data->type = ft;
+	data->force = force;
 	worker_add_job(jt, do_add_job, free_add_job, data);
 }
 

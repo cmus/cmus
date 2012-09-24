@@ -2316,11 +2316,11 @@ static void init_all(void)
 
 	if (resume_cmus) {
 		resume_load();
-		cmus_add(play_queue_append, play_queue_autosave_filename, FILE_TYPE_PL, JOB_TYPE_QUEUE);
+		cmus_add(play_queue_append, play_queue_autosave_filename, FILE_TYPE_PL, JOB_TYPE_QUEUE, 0);
 	}
 
-	cmus_add(pl_add_track, pl_autosave_filename, FILE_TYPE_PL, JOB_TYPE_PL);
-	cmus_add(lib_add_track, lib_autosave_filename, FILE_TYPE_PL, JOB_TYPE_LIB);
+	cmus_add(pl_add_track, pl_autosave_filename, FILE_TYPE_PL, JOB_TYPE_PL, 0);
+	cmus_add(lib_add_track, lib_autosave_filename, FILE_TYPE_PL, JOB_TYPE_LIB, 0);
 }
 
 static void exit_all(void)

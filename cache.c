@@ -25,6 +25,7 @@
 #include "xmalloc.h"
 #include "xstrjoin.h"
 #include "gbuf.h"
+#include "options.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -145,7 +146,7 @@ static struct track_info *cache_entry_to_ti(struct cache_entry *e)
 	return ti;
 }
 
-static struct track_info *lookup_cache_entry(const char *filename, unsigned int hash)
+struct track_info *lookup_cache_entry(const char *filename, unsigned int hash)
 {
 	struct track_info *ti = hash_table[hash % HASH_SIZE];
 
@@ -407,14 +408,33 @@ static struct track_info *ip_get_ti(const char *filename)
 	return ti;
 }
 
-struct track_info *cache_get_ti(const char *filename)
+struct track_info *cache_get_ti(const char *filename, int force)
 {
 	unsigned int hash = hash_str(filename);
 	struct track_info *ti;
+	int reload = 0;
 
 	ti = lookup_cache_entry(filename, hash);
+	if (ti) {
+		if ((!skip_track_info && ti->duration == 0 && !is_http_url(filename)) || force){
+			do_cache_remove_ti(ti, hash);
+			ti = NULL;
+			reload = 1;
+		}
+	}
 	if (!ti) {
-		ti = ip_get_ti(filename);
+		if (skip_track_info && !reload && !force) {
+			struct growing_keyvals c = {NULL, 0, 0};
+
+			ti = track_info_new(filename);
+
+			keyvals_terminate(&c);
+			track_info_set_comments(ti, c.keyvals);
+
+			ti->duration = 0;
+		} else {
+		       	ti = ip_get_ti(filename);
+		}
 		if (!ti)
 			return NULL;
 		add_ti(ti, hash);

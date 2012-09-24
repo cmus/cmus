@@ -73,6 +73,7 @@ int shuffle = 0;
 int display_artist_sort_name;
 int smart_artist_sort = 1;
 int scroll_offset = 0;
+int skip_track_info = 0;
 
 int colors[NR_COLORS] = {
 	-1,
@@ -901,6 +902,21 @@ static void toggle_wrap_search(unsigned int id)
 	wrap_search ^= 1;
 }
 
+static void get_skip_track_info(unsigned int id, char *buf)
+{
+	strcpy(buf, bool_names[skip_track_info]);
+}
+
+static void set_skip_track_info(unsigned int id, const char *buf)
+{
+	parse_bool(buf, &skip_track_info);
+}
+
+static void toggle_skip_track_info(unsigned int id)
+{
+	skip_track_info ^= 1;
+}
+
 
 /* }}} */
 
@@ -980,7 +996,7 @@ static void set_attr(unsigned int id, const char *buf)
 
 	do {
 		if (buf[i] == '|' || buf[i] == '\0') {
-			current = strndup(&buf[offset], length);
+			current = xstrndup(&buf[offset], length);
 
 			if (strcmp(current, "default") == 0)
 				attr |= A_NORMAL;
@@ -1105,6 +1121,7 @@ static const struct {
 	DN(softvol_state)
 	DN_FLAGS(status_display_program, OPT_PROGRAM_PATH)
 	DT(wrap_search)
+	DT(skip_track_info)
 	{ NULL, NULL, NULL, NULL, 0 }
 };
 
@@ -1399,7 +1416,7 @@ void resume_load(void)
 		set_view(resume.view);
 	if (resume.lib_filename) {
 		cache_lock();
-		ti = old = cache_get_ti(resume.lib_filename);
+		ti = old = cache_get_ti(resume.lib_filename, 0);
 		cache_unlock();
 		if (ti) {
 			editable_lock();
@@ -1420,7 +1437,7 @@ void resume_load(void)
 	}
 	if (resume.filename) {
 		cache_lock();
-		ti = cache_get_ti(resume.filename);
+		ti = cache_get_ti(resume.filename, 0);
 		cache_unlock();
 		if (ti) {
 			player_set_file(ti);

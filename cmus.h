@@ -72,7 +72,7 @@ enum file_type cmus_detect_ft(const char *name, char **ret);
  *
  * returns immediately, actual work is done in the worker thread.
  */
-void cmus_add(add_ti_cb, const char *name, enum file_type ft, int jt);
+void cmus_add(add_ti_cb, const char *name, enum file_type ft, int jt, int force);
 
 int cmus_save(for_each_ti_cb for_each_ti, const char *filename);
 int cmus_save_ext(for_each_ti_cb for_each_ti, const char *filename);

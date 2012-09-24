@@ -73,17 +73,22 @@ static void add_ti(struct track_info *ti)
 static int add_file_cue(const char *filename);
 #endif
 
-static void add_file(const char *filename)
+static void add_file(const char *filename, int force)
 {
 	struct track_info *ti;
 
 #ifdef CONFIG_CUE
-	if (!is_cue_url(filename) && add_file_cue(filename))
-		return;
+	if (!is_cue_url(filename)) {
+		if (force || lookup_cache_entry(filename, hash_str(filename)) == NULL) {
+			int done = add_file_cue(filename);
+			if (done)
+				return;
+		}
+	}
 #endif
 
 	cache_lock();
-	ti = cache_get_ti(filename);
+	ti = cache_get_ti(filename, force);
 	cache_unlock();
 
 	if (ti)
@@ -109,7 +114,7 @@ static int add_file_cue(const char *filename)
 
 	for (int i = 1; i <= n_tracks; ++i) {
 		url = construct_cue_url(cue_filename, i);
-		add_file(url);
+		add_file(url, 0);
 		free(url);
 	}
 
@@ -120,7 +125,7 @@ static int add_file_cue(const char *filename)
 
 static void add_url(const char *url)
 {
-	add_file(url);
+	add_file(url, 0);
 }
 
 static void add_cdda(const char *url)
@@ -134,11 +139,11 @@ static void add_cdda(const char *url)
 		int i;
 		for (i = start_track; i <= end_track; i++) {
 			char *new_url = gen_cdda_url(disc_id, i, -1);
-			add_file(new_url);
+			add_file(new_url, 0);
 			free(new_url);
 		}
 	} else
-		add_file(url);
+		add_file(url, 0);
 	free(disc_id);
 }
 
@@ -234,7 +239,7 @@ static void add_dir(const char *dirname, const char *root)
 			if (S_ISDIR(ents[i]->mode)) {
 				add_dir(dir.path, root);
 			} else {
-				add_file(dir.path);
+				add_file(dir.path, 0);
 			}
 		}
 		free(ents[i]);
@@ -251,9 +256,10 @@ static int handle_line(void *data, const char *line)
 		add_url(line);
 	} else {
 		char *absolute = path_absolute_cwd(line, data);
-		add_file(absolute);
+		add_file(absolute, 0);
 		free(absolute);
 	}
+
 	return 0;
 }
 
@@ -294,7 +300,7 @@ void do_add_job(void *data)
 		add_dir(jd->name, jd->name);
 		break;
 	case FILE_TYPE_FILE:
-		add_file(jd->name);
+		add_file(jd->name, jd->force);
 		break;
 	case FILE_TYPE_INVALID:
 		break;
@@ -323,7 +329,8 @@ void do_update_job(void *data)
 
 		/* stat follows symlinks, lstat does not */
 		rc = stat(ti->filename, &s);
-		if (rc || d->force || ti->mtime != s.st_mtime) {
+		if (rc || d->force || ti->mtime != s.st_mtime || ti->duration == 0) {
+			int force = ti->duration == 0;
 			editable_lock();
 			lib_remove(ti);
 			editable_unlock();
@@ -332,12 +339,12 @@ void do_update_job(void *data)
 			cache_remove_ti(ti);
 			cache_unlock();
 
-			if (rc) {
+			if (!is_cue_url(ti->filename) && !is_http_url(ti->filename) && rc) {
 				d_print("removing dead file %s\n", ti->filename);
 			} else {
 				if (ti->mtime != s.st_mtime)
 					d_print("mtime changed: %s\n", ti->filename);
-				cmus_add(lib_add_track, ti->filename, FILE_TYPE_FILE, JOB_TYPE_LIB);
+				cmus_add(lib_add_track, ti->filename, FILE_TYPE_FILE, JOB_TYPE_LIB, force);
 			}
 		}
 		track_info_unref(ti);
