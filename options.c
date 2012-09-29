@@ -72,7 +72,7 @@ int repeat = 0;
 int shuffle = 0;
 int display_artist_sort_name;
 int smart_artist_sort = 1;
-int scroll_offset = 0;
+int scroll_offset = 2;
 int skip_track_info = 0;
 
 int colors[NR_COLORS] = {
