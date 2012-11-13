@@ -271,7 +271,7 @@ static struct tree_track *normal_get_prev(void)
 		if (!repeat)
 			return NULL;
 		/* last track of the album */
-		return to_tree_track(rb_prev(&CUR_ALBUM->tree_node));
+		return album_last_track(CUR_ALBUM);
 	}
 
 	/* not first album of the artist? */
