@@ -1101,9 +1101,15 @@ static void do_update_statusline(void)
 	fopt_set_str(&status_fopts[SF_CONTINUE], cont_strs[player_cont]);
 	fopt_set_int(&status_fopts[SF_BITRATE], player_info.current_bitrate / 1000. + 0.5, 0);
 
-	strcpy(format, " %s %p ");
-	if (duration != -1)
-		strcat(format, "/ %d ");
+	if (show_playback_position) {
+		strcpy(format, " %s %p ");
+		if (duration != -1)
+			strcat(format, "/ %d ");
+	} else {
+		strcpy(format, " %s ");
+		if (duration != -1)
+			strcat(format, "%d ");
+	}
 	strcat(format, "- %t ");
 	if (vol >= 0) {
 		if (vol_left != vol_right) {

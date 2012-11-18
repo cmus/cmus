@@ -957,6 +957,10 @@ show_hidden (false)
 show_current_bitrate (false)
 	Display current bitrate in the status lines.
 
+show_playback_position (true)
+	Display elapsed (or remaining) time in the status line. Can be disabled
+	to e.g. not trigger tmux's activity monitor.
+
 show_remaining_time (false)
 	Display remaining time instead of elapsed time.
 

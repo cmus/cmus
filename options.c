@@ -64,6 +64,7 @@ int confirm_run = 1;
 int resume_cmus = 0;
 int show_hidden = 0;
 int show_current_bitrate = 0;
+int show_playback_position = 1;
 int show_remaining_time = 0;
 int set_term_title = 1;
 int wrap_search = 1;
@@ -807,6 +808,24 @@ static void toggle_show_current_bitrate(unsigned int id)
 	update_statusline();
 }
 
+static void get_show_playback_position(unsigned int id, char *buf)
+{
+	strcpy(buf, bool_names[show_playback_position]);
+}
+
+static void set_show_playback_position(unsigned int id, const char *buf)
+{
+	if (!parse_bool(buf, &show_playback_position))
+		return;
+	update_statusline();
+}
+
+static void toggle_show_playback_position(unsigned int id)
+{
+	show_playback_position ^= 1;
+	update_statusline();
+}
+
 static void get_show_remaining_time(unsigned int id, char *buf)
 {
 	strcpy(buf, bool_names[show_remaining_time]);
@@ -1114,6 +1133,7 @@ static const struct {
 	DT(resume)
 	DT(show_hidden)
 	DT(show_current_bitrate)
+	DT(show_playback_position)
 	DT(show_remaining_time)
 	DT(set_term_title)
 	DT(shuffle)
