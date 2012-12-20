@@ -228,6 +228,12 @@ check_vorbis()
 	fi
 }
 
+check_opus()
+{
+	pkg_config OPUS "opusfile"
+	return $?
+}
+
 check_wavpack()
 {
 	pkg_config WAVPACK "wavpack" "" "-lwavpack"
@@ -425,6 +431,7 @@ Optional Features: y/n
   CONFIG_MPC      	libmpcdec (Musepack .mpc, .mpp, .mp+)           [auto]
   CONFIG_VORBIS   	Ogg/Vorbis (.ogg, application/ogg, audio/x-ogg) [auto]
   CONFIG_TREMOR   	Use Tremor as Ogg/Vorbis input plugin           [n]
+  CONFIG_OPUS   	Opus (.opus)                                    [auto]
   CONFIG_WAV      	WAV                                             [y]
   CONFIG_WAVPACK  	WavPack (.wv, audio/x-wavpack)                  [auto]
   CONFIG_MP4      	MPEG-4 AAC (.mp4, .m4a, .m4b)                   [auto]
@@ -485,6 +492,7 @@ check check_mikmod  CONFIG_MIKMOD
 check check_modplug CONFIG_MODPLUG
 check check_mpc     CONFIG_MPC
 check check_vorbis  CONFIG_VORBIS
+check check_opus    CONFIG_OPUS
 check check_wavpack CONFIG_WAVPACK
 check check_mp4     CONFIG_MP4
 check check_aac     CONFIG_AAC
@@ -534,7 +542,7 @@ config_header config/cue.h CONFIG_CUE
 CFLAGS="${CFLAGS} -DHAVE_CONFIG"
 
 makefile_vars bindir datadir libdir mandir exampledir
-makefile_vars CONFIG_CDIO CONFIG_FLAC CONFIG_MAD CONFIG_MIKMOD CONFIG_MODPLUG CONFIG_MPC CONFIG_VORBIS CONFIG_WAVPACK CONFIG_WAV CONFIG_MP4 CONFIG_AAC CONFIG_FFMPEG CONFIG_CUE
+makefile_vars CONFIG_CDIO CONFIG_FLAC CONFIG_MAD CONFIG_MIKMOD CONFIG_MODPLUG CONFIG_MPC CONFIG_VORBIS CONFIG_OPUS CONFIG_WAVPACK CONFIG_WAV CONFIG_MP4 CONFIG_AAC CONFIG_FFMPEG CONFIG_CUE
 makefile_vars CONFIG_ROAR CONFIG_PULSE CONFIG_ALSA CONFIG_AO CONFIG_ARTS CONFIG_OSS CONFIG_SUN CONFIG_WAVEOUT
 
 generate_config_mk
