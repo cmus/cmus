@@ -4,6 +4,7 @@ cmus — C\* Music Player
 http://cmus.sourceforge.net/
 
 Copyright © 2004-2008 Timo Hirvonen <tihirvon@gmail.com>
+
 Copyright © 2008-2012 Various Authors
 
 
@@ -25,7 +26,7 @@ To disable some feature, arts for example, and install to `$HOME` run
 After running configure you can see from the generated `config.mk` file
 what features have been configured in (see the `CONFIG_*` options).
 
-NOTE: For some distributions you need to install development versions
+*Note*: For some distributions you need to install development versions
 of the dependencies.  For example if you want to use 'mad' input plugin
 (mp3) you need to install `libmad0-dev` (Debian) or `libmad-devel` (RPM)
 package. After installing dependencies you need to run `./configure`
@@ -96,15 +97,16 @@ configured cmus with maximum debug level (`./configure DEBUG=2`).
 Git Repository
 --------------
 
-gitweb: https://github.com/cmus/cmus
-clone:  https://github.com/cmus/cmus.git
+https://github.com/cmus/cmus
+
+    $ git clone https://github.com/cmus/cmus.git
 
 
 Hacking
 -------
 
-cmus uses the Linux kernel coding style.  Use hard tabs. Tabs are
-_always_ 8 characters wide.  Keep the style consistent with rest of the
+cmus uses the [Linux kernel coding style](http://www.kernel.org/doc/Documentation/CodingStyle).
+Use hard tabs.  Tabs are _always_ 8 characters wide.  Keep the style consistent with rest of the
 code.
 
 Use `git format-patch` to generate patches from your commits.
