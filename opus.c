@@ -126,7 +126,7 @@ static int opus_close(struct input_plugin_data *ip_data)
  * 0
  *     indicates EOF
  * n
- *     indicates actual number of bytes read.
+ *     indicates actual number of bytes read
  */
 static int opus_read(struct input_plugin_data *ip_data, char *buffer, int count)
 {
