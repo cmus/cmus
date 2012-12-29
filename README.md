@@ -1,10 +1,10 @@
+cmus — C\* Music Player
+=======================
 
-                     cmus - C* Music Player
+http://cmus.sourceforge.net/
 
-		    http://cmus.sourceforge.net/
-
-	 Copyright 2004-2008 Timo Hirvonen <tihirvon@gmail.com>
-	 Copyright 2008-2012 Various Authors
+Copyright © 2004-2008 Timo Hirvonen <tihirvon@gmail.com>
+Copyright © 2008-2012 Various Authors
 
 
 Configuration
@@ -12,30 +12,30 @@ Configuration
 
 List available optional features
 
-  $ ./configure --help
+    $ ./configure --help
 
 Auto-detect everything
 
-  $ ./configure
+    $ ./configure
 
-To disable some feature, arts for example, and install to $HOME run
+To disable some feature, arts for example, and install to `$HOME` run
 
-  $ ./configure prefix=$HOME CONFIG_ARTS=n
+    $ ./configure prefix=$HOME CONFIG_ARTS=n
 
-After running configure you can see from the generated config.mk file
-what features have been configured in (see the CONFIG_* options).
+After running configure you can see from the generated `config.mk` file
+what features have been configured in (see the `CONFIG_*` options).
 
 NOTE: For some distributions you need to install development versions
 of the dependencies.  For example if you want to use 'mad' input plugin
-(mp3) you need to install libmad0-dev (Debian) or libmad-devel (RPM)
-package. After installing dependencies you need to run ./configure
+(mp3) you need to install `libmad0-dev` (Debian) or `libmad-devel` (RPM)
+package. After installing dependencies you need to run `./configure`
 again, of course.
 
 If you want to use the Tremor library as alternative for decoding
-Ogg/Vorbis files you have to pass CONFIG_TREMOR=y to the configure
+Ogg/Vorbis files you have to pass `CONFIG_TREMOR=y` to the configure
 script:
 
-  $ ./configure CONFIG_VORBIS=y CONFIG_TREMOR=y
+    $ ./configure CONFIG_VORBIS=y CONFIG_TREMOR=y
 
 The Tremor library is supposed to be used on hardware that has no FPU.
 
@@ -43,43 +43,42 @@ The Tremor library is supposed to be used on hardware that has no FPU.
 Building
 --------
 
-  $ make
+    $ make
 
 Or on some BSD systems you need to explicitly use GNU make:
 
-  $ gmake
+    $ gmake
 
 
 Installation
 ------------
 
-  $ make install
+    $ make install
 
 Or to install to a temporary directory:
 
-  $ make install DESTDIR=~/tmp/cmus
+    $ make install DESTDIR=~/tmp/cmus
 
 This is useful when creating binary packages.
 
-Remember to replace 'make' with 'gmake' if needed.
+Remember to replace `make` with `gmake` if needed.
 
 
 Manuals
 -------
 
-  $ man cmus-tutorial
+    $ man cmus-tutorial
 
 And
 
-  $ man cmus
+    $ man cmus
 
 
 Mailing List
 ------------
 
 To subscribe to cmus-devel@lists.sourceforge.net visit
-
-  http://lists.sourceforge.net/lists/listinfo/cmus-devel
+http://lists.sourceforge.net/lists/listinfo/cmus-devel
 
 The list is open but moderated (you can post to the list without
 subscribing but it's not recommended because I have to accept each email
@@ -89,9 +88,9 @@ form non-subscribed users).  Traffic of the list is low.
 Reporting Bugs
 --------------
 
-After a crash send bug report with last lines of ~/cmus-debug.txt to
+After a crash send bug report with last lines of `~/cmus-debug.txt` to
 cmus-devel@lists.sourceforge.net.  The file exists only if you
-configured cmus with maximum debug level (./configure DEBUG=2).
+configured cmus with maximum debug level (`./configure DEBUG=2`).
 
 
 Git Repository
@@ -108,5 +107,5 @@ cmus uses the Linux kernel coding style.  Use hard tabs. Tabs are
 _always_ 8 characters wide.  Keep the style consistent with rest of the
 code.
 
-Use git format-patch to generate patches from your commits.
-Alternatively you can use "diff -up" if you don't want to use git.
+Use `git format-patch` to generate patches from your commits.
+Alternatively you can use `diff -up` if you don't want to use git.
