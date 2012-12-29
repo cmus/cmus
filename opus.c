@@ -179,19 +179,13 @@ static int opus_read(struct input_plugin_data *ip_data, char *buffer, int count)
 		case OP_EBADTIMESTAMP:
 			rc = -IP_ERROR_FILE_FORMAT;
 			break;
-		case 0:
-			if (errno) {
-				d_print("error: %s\n", strerror(errno));
-				rc = -1;
-				/* rc = -IP_ERROR_INTERNAL; */
-			} else {
-				/* EOF */
-				rc = 0;
-			}
 		default:
 			d_print("error: %d\n", samples);
 			rc = -IP_ERROR_FILE_FORMAT;
 		}
+	} else if (samples == 0) {
+		/* EOF or buffer too small */
+		rc = 0;
 	} else {
 		current_link = op_current_link(priv->of);
 		if (current_link < 0) {
