@@ -97,8 +97,8 @@ configured cmus with maximum debug level (./configure DEBUG=2).
 Git Repository
 --------------
 
-gitweb: http://gitorious.org/cmus
-clone:  git://gitorious.org/cmus/cmus.git
+gitweb: https://github.com/cmus/cmus
+clone:  https://github.com/cmus/cmus.git
 
 
 Hacking
