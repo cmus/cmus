@@ -132,13 +132,12 @@ static int opus_read(struct input_plugin_data *ip_data, char *buffer, int count)
 {
 	struct opus_private *priv;
 	int samples, current_link, rc;
-	opus_int16 *readbuf;
 
 	priv = ip_data->private;
 
 	/* samples = number of samples read per channel */
-	readbuf = xnew(opus_int16, count);
-	samples = op_read_stereo(priv->of, readbuf, count / sizeof(opus_int16));
+	samples = op_read_stereo(priv->of, (opus_int16*)buffer,
+							 count / sizeof(opus_int16));
 	if (samples < 0) {
 		switch (samples) {
 		case OP_HOLE:
@@ -205,12 +204,10 @@ static int opus_read(struct input_plugin_data *ip_data, char *buffer, int count)
 			}
 
 			/* bytes = samples * channels * sample_size */
-			rc = samples * CHANNELS * sizeof(*readbuf);
-			memcpy(buffer, readbuf, rc);
+			rc = samples * CHANNELS * sizeof(opus_int16);
 		}
 	}
 
-	free(readbuf);
 	return rc;
 }
 
