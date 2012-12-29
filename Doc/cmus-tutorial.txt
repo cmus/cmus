@@ -235,7 +235,7 @@ it should be intelligible. Try *man cmus* in a terminal. If that's not
 installed, try opening up `cmus.txt` from the `Doc` directory, or read the latest
 version online:
 
-`http://gitorious.org/cmus/cmus/blobs/master/Doc/cmus.txt`
+`https://github.com/cmus/cmus/blob/master/Doc/cmus.txt`
 
 There are more commands and features not covered hear like loading and saving
 playlists, controlling cmus remotely with `cmus-remote`, etc.
