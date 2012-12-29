@@ -144,31 +144,42 @@ static int opus_read(struct input_plugin_data *ip_data, char *buffer, int count)
 		case OP_HOLE:
 			errno = EAGAIN;
 			rc = -1;
+			break;
 		case OP_EREAD:
 			errno = EINVAL;
 			rc = -1;
+			break;
 		case OP_EFAULT:
 			errno = EINVAL;
 			rc = -1;
+			break;
 		case OP_EIMPL:
 			rc = -IP_ERROR_FUNCTION_NOT_SUPPORTED;
+			break;
 		case OP_EINVAL:
 			errno = EINVAL;
 			rc = -1;
+			break;
 		case OP_ENOTFORMAT:
 			rc = -IP_ERROR_FILE_FORMAT;
+			break;
 		case OP_EBADHEADER:
 			rc = -IP_ERROR_FILE_FORMAT;
+			break;
 		case OP_EVERSION:
 			rc = -IP_ERROR_FILE_FORMAT;
+			break;
 		case OP_EBADPACKET:
 			errno = EINVAL;
 			rc = -1;
+			break;
 		case OP_EBADLINK:
 			errno = EINVAL;
 			rc = -1;
+			break;
 		case OP_EBADTIMESTAMP:
 			rc = -IP_ERROR_FILE_FORMAT;
+			break;
 		case 0:
 			if (errno) {
 				d_print("error: %s\n", strerror(errno));
