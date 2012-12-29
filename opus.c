@@ -126,62 +126,66 @@ static int opus_close(struct input_plugin_data *ip_data)
  * 0
  *     indicates EOF
  * n
- *     indicates actual number of bytes read.
+ *     indicates actual number of bytes read
  */
 static int opus_read(struct input_plugin_data *ip_data, char *buffer, int count)
 {
 	struct opus_private *priv;
 	int samples, current_link, rc;
-	opus_int16 *readbuf;
 
 	priv = ip_data->private;
 
 	/* samples = number of samples read per channel */
-	readbuf = xnew(opus_int16, count);
-	samples = op_read_stereo(priv->of, readbuf, count / sizeof(opus_int16));
+	samples = op_read_stereo(priv->of, (opus_int16*)buffer,
+							 count / sizeof(opus_int16));
 	if (samples < 0) {
 		switch (samples) {
 		case OP_HOLE:
 			errno = EAGAIN;
 			rc = -1;
+			break;
 		case OP_EREAD:
 			errno = EINVAL;
 			rc = -1;
+			break;
 		case OP_EFAULT:
 			errno = EINVAL;
 			rc = -1;
+			break;
 		case OP_EIMPL:
 			rc = -IP_ERROR_FUNCTION_NOT_SUPPORTED;
+			break;
 		case OP_EINVAL:
 			errno = EINVAL;
 			rc = -1;
+			break;
 		case OP_ENOTFORMAT:
 			rc = -IP_ERROR_FILE_FORMAT;
+			break;
 		case OP_EBADHEADER:
 			rc = -IP_ERROR_FILE_FORMAT;
+			break;
 		case OP_EVERSION:
 			rc = -IP_ERROR_FILE_FORMAT;
+			break;
 		case OP_EBADPACKET:
 			errno = EINVAL;
 			rc = -1;
+			break;
 		case OP_EBADLINK:
 			errno = EINVAL;
 			rc = -1;
+			break;
 		case OP_EBADTIMESTAMP:
 			rc = -IP_ERROR_FILE_FORMAT;
-		case 0:
-			if (errno) {
-				d_print("error: %s\n", strerror(errno));
-				rc = -1;
-				/* rc = -IP_ERROR_INTERNAL; */
-			} else {
-				/* EOF */
-				rc = 0;
-			}
+			break;
 		default:
 			d_print("error: %d\n", samples);
 			rc = -IP_ERROR_FILE_FORMAT;
 		}
+	} else if (samples == 0) {
+		/* EOF or buffer too small */
+		rc = 0;
 	} else {
 		current_link = op_current_link(priv->of);
 		if (current_link < 0) {
@@ -194,12 +198,10 @@ static int opus_read(struct input_plugin_data *ip_data, char *buffer, int count)
 			}
 
 			/* bytes = samples * channels * sample_size */
-			rc = samples * CHANNELS * sizeof(*readbuf);
-			memcpy(buffer, readbuf, rc);
+			rc = samples * CHANNELS * sizeof(opus_int16);
 		}
 	}
 
-	free(readbuf);
 	return rc;
 }
 
