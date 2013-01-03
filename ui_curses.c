@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2011 Various Authors
+ * Copyright 2008-2013 Various Authors
  * Copyright 2004-2005 Timo Hirvonen
  *
  * This program is free software; you can redistribute it and/or
@@ -2407,7 +2407,7 @@ int main(int argc, char *argv[])
 		case FLAG_VERSION:
 			printf("cmus " VERSION
 			       "\nCopyright 2004-2006 Timo Hirvonen"
-			       "\nCopyright 2008-2011 Various Authors\n");
+			       "\nCopyright 2008-2013 Various Authors\n");
 			return 0;
 		case FLAG_PLUGINS:
 			list_plugins = 1;

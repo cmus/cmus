@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# Copyright 2010-2011 Various Authors
+# Copyright 2010-2013 Various Authors
 # Copyright 2010 Johannes Weißl
 #
 # This program is free software; you can redistribute it and/or

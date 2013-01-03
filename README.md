@@ -5,7 +5,7 @@ http://cmus.sourceforge.net/
 
 Copyright © 2004-2008 Timo Hirvonen <tihirvon@gmail.com>
 
-Copyright © 2008-2012 Various Authors
+Copyright © 2008-2013 Various Authors
 
 
 Configuration

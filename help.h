@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2011 Various Authors
+ * Copyright 2008-2013 Various Authors
  * Copyright 2006 <ft@bewatermyfriend.org>
  *
  * heavily based on filters.h

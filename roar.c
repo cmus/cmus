@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2011 Various Authors
+ * Copyright 2008-2013 Various Authors
  * Copyright 2010-2011 Philipp 'ph3-der-loewe' Schafft
  * Copyright 2006 Johannes Weißl
  *

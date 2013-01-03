@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2011 Various Authors
+ * Copyright 2008-2013 Various Authors
  * Copyright 2004 Timo Hirvonen
  *
  * This program is free software; you can redistribute it and/or

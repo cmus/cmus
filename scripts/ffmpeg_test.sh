@@ -1,7 +1,7 @@
 #!/bin/bash
 # vim: set expandtab shiftwidth=4:
 #
-# Copyright 2010-2012 Various Authors
+# Copyright 2010-2013 Various Authors
 # Copyright 2012 Johannes Weißl
 #
 # This program is free software; you can redistribute it and/or
