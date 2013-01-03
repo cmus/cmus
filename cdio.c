@@ -1,5 +1,5 @@
 /*
- * Copyright 2011 Various Authors
+ * Copyright 2011-2013 Various Authors
  * Copyright 2011 Johannes Weißl
  *
  * Based on cdda.c from XMMS2.

@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2011 Various Authors
+ * Copyright 2008-2013 Various Authors
  * Copyright 2007 dnk <dnk@bjum.net>
  *
  * Based on oss.c

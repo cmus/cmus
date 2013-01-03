@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2011 Various Authors
+ * Copyright 2008-2013 Various Authors
  * Copyright 2008 Timo Hirvonen
  *
  * This code is largely based on strbuf in the GIT version control system.
