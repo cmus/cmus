@@ -27,9 +27,14 @@
 #include "comment.h"
 #include "discid.h"
 
-#include <cdio/cdda.h>
 #include <cdio/cdio.h>
 #include <cdio/logging.h>
+#if LIBCDIO_VERSION_NUM >= 90
+#include <cdio/paranoia/cdda.h>
+#else
+#include <cdio/cdda.h>
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -352,24 +357,47 @@ static int libcdio_read_comments(struct input_plugin_data *ip_data, struct keyva
 	GROWING_KEYVALS(c);
 	const char *artist = NULL, *albumartist = NULL, *album = NULL,
 		*title = NULL, *genre = NULL, *comment = NULL;
-	const cdtext_t *cdtext_track, *cdtext_album;
+	int track_comments_found = 0;
+	const cdtext_t *cdt;
 #ifdef HAVE_CDDB
 	cddb_conn_t *cddb_conn = NULL;
 	cddb_disc_t *cddb_disc = NULL;
 #endif
 	char buf[64];
 
-	cdtext_track = cdio_get_cdtext(priv->cdio, priv->track);
-	if (cdtext_track) {
-		char * const *field = cdtext_track->field;
+#if LIBCDIO_VERSION_NUM >= 90
+	cdt = cdio_get_cdtext(priv->cdio);
+	if (cdt) {
+		artist = cdtext_get(cdt, CDTEXT_FIELD_PERFORMER, priv->track);
+		title = cdtext_get(cdt, CDTEXT_FIELD_TITLE, priv->track);
+		genre = cdtext_get(cdt, CDTEXT_FIELD_GENRE, priv->track);
+		comment = cdtext_get(cdt, CDTEXT_FIELD_MESSAGE, priv->track);
+
+		if (title)
+			track_comments_found = 1;
+
+		album = cdtext_get(cdt, CDTEXT_FIELD_TITLE, 0);
+		albumartist = cdtext_get(cdt, CDTEXT_FIELD_PERFORMER, 0);
+		if (!artist)
+			artist = albumartist;
+		if (!genre)
+			genre = cdtext_get(cdt, CDTEXT_FIELD_GENRE, 0);
+		if (!comment)
+			comment = cdtext_get(cdt, CDTEXT_FIELD_MESSAGE, 0);
+	}
+#else
+	cdt = cdio_get_cdtext(priv->cdio, priv->track);
+	if (cdt) {
+		track_comments_found = 1;
+		char * const *field = cdt->field;
 		artist = field[CDTEXT_PERFORMER];
 		title = field[CDTEXT_TITLE];
 		genre = field[CDTEXT_GENRE];
 		comment = field[CDTEXT_MESSAGE];
 	}
-	cdtext_album = cdio_get_cdtext(priv->cdio, 0);
-	if (cdtext_album) {
-		char * const *field = cdtext_album->field;
+	cdt = cdio_get_cdtext(priv->cdio, 0);
+	if (cdt) {
+		char * const *field = cdt->field;
 		album = field[CDTEXT_TITLE];
 		albumartist = field[CDTEXT_PERFORMER];
 		if (!artist)
@@ -379,9 +407,10 @@ static int libcdio_read_comments(struct input_plugin_data *ip_data, struct keyva
 		if (!comment)
 			comment = field[CDTEXT_MESSAGE];
 	}
+#endif
 
 #ifdef HAVE_CDDB
-	if (!cdtext_track && cddb_url && cddb_url[0]) {
+	if (!track_comments_found && cddb_url && cddb_url[0]) {
 		cddb_track_t *cddb_track;
 		track_t i_tracks = cdio_get_num_tracks(priv->cdio);
 		track_t i_first_track = cdio_get_first_track_num(priv->cdio);
