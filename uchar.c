@@ -188,6 +188,10 @@ int u_char_width(uchar u)
 	if (u <= 0x115fU)
 		goto wide;
 
+	/* Zero-width characters */
+	if (u == 0x200bU || u == 0x200cU || u == 0x200dU)
+		goto zero;
+
 	/* angle brackets */
 	if (u == 0x2329U || u == 0x232aU)
 		goto wide;
@@ -240,6 +244,8 @@ int u_char_width(uchar u)
 	/* invalid bytes in unicode stream are rendered "<xx>" */
 	if (u & U_INVALID_MASK)
 		goto invalid;
+zero:
+	return 0;
 narrow:
 	return 1;
 wide:
