@@ -32,6 +32,7 @@
 #include "ui_curses.h"
 #include "misc.h"
 #include "keyval.h"
+#include "convert.h"
 
 #include <stdarg.h>
 #include <unistd.h>
@@ -51,6 +52,8 @@
 
 int server_socket;
 LIST_HEAD(client_head);
+
+static char *title_buf = NULL;
 
 static union {
 	struct sockaddr sa;
@@ -82,6 +85,7 @@ static int cmd_status(struct client *client)
 	GBUF(buf);
 	int vol_left, vol_right;
 	int i, ret;
+	enum player_status status;
 
 	player_info_lock();
 	gbuf_addf(&buf, "status %s\n", player_status_names[player_info.status]);
@@ -94,6 +98,21 @@ static int cmd_status(struct client *client)
 			gbuf_addf(&buf, "tag %s %s\n",
 					ti->comments[i].key,
 					escape(ti->comments[i].val));
+	}
+
+	/* add track metadata to cmus-status */
+	status = player_info.status;
+	if (status == PLAYER_STATUS_PLAYING && ti && is_http_url(player_info.ti->filename)) {
+	const char *title = get_stream_title();
+		if (title != NULL) {
+			free(title_buf);
+			title_buf = to_utf8(title, icecast_default_charset);
+			// we have a stream title (probably artist/track/album info)
+			gbuf_addf(&buf, "stream %s\n", escape(title_buf));
+		} else {
+			// fallback to the radio station name
+			gbuf_addf(&buf, "stream %s\n", escape(ti->comment));
+		}
 	}
 
 	/* output options */
