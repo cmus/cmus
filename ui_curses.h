@@ -62,4 +62,7 @@ void enter_search_backward_mode(void);
 
 int track_format_valid(const char *format);
 
+/* lock player_info ! */
+const char *get_stream_title(void);
+
 #endif
