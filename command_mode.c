@@ -987,7 +987,7 @@ static void cmd_run(char *arg)
 	editable_lock();
 	switch (cur_view) {
 	case TREE_VIEW:
-		__tree_for_each_sel(add_ti, NULL, 0);
+		__tree_for_each_sel(add_ti, &sel, 0);
 		break;
 	case SORTED_VIEW:
 		__editable_for_each_sel(&lib_editable, add_ti, &sel, 0);
