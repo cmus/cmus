@@ -1103,6 +1103,8 @@ sort keys:
 	media, codec_profile, rg_track_gain, rg_track_peak, rg_album_gain,
 	rg_album_peak
 
+Note: Adding a '-' in front of the key will sort in reverse order
+
 
 @h1 PLUGIN OPTIONS
 

@@ -214,6 +214,28 @@ int track_info_cmp(const struct track_info *a, const struct track_info *b, const
 		case SORT_BITRATE:
 			res = getentry(a, key, long) - getentry(b, key, long);
 			break;
+		case REV_SORT_TRACKNUMBER:
+		case REV_SORT_DISCNUMBER:
+		case REV_SORT_DATE:
+		case REV_SORT_ORIGINALDATE:
+			res = getentry(b, key, int) - getentry(a, key, int);
+			break;
+		case REV_SORT_FILEMTIME:
+			res = b->mtime - a->mtime;
+			break;
+		case REV_SORT_FILENAME:
+			/* NOTE: filenames are not necessarily UTF-8 */
+			res = strcoll(b->filename, a->filename);
+			break;
+		case REV_SORT_RG_TRACK_GAIN:
+		case REV_SORT_RG_TRACK_PEAK:
+		case REV_SORT_RG_ALBUM_GAIN:
+		case REV_SORT_RG_ALBUM_PEAK:
+			res = doublecmp0(getentry(b, key, double), getentry(a, key, double));
+			break;
+		case REV_SORT_BITRATE:
+			res = getentry(b, key, long) - getentry(a, key, long);
+			break;
 		default:
 			av = getentry(a, key, const char *);
 			bv = getentry(b, key, const char *);
