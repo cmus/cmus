@@ -163,7 +163,7 @@ static int dir_entry_cmp_reverse(const void *ap, const void *bp)
 	return strcmp(b->name, a->name);
 }
 
-static int points_within(const char *target, const char *root)
+static int points_within_and_visible(const char *target, const char *root)
 {
 	int tlen = strlen(target);
 	int rlen = strlen(root);
@@ -172,7 +172,13 @@ static int points_within(const char *target, const char *root)
 		return 0;
 	if (strncmp(target, root, rlen))
 		return 0;
-	return target[rlen] == '/' || !target[rlen];
+	if (target[rlen] != '/' && target[rlen] != '\0')
+		return 0;
+	/* assume the path is normalized */
+	if (strstr(target + rlen, "/."))
+		return 0;
+
+	return 1;
 }
 
 static void add_dir(const char *dirname, const char *root)
@@ -203,8 +209,7 @@ static void add_dir(const char *dirname, const char *root)
 				continue;
 			buf[rc] = 0;
 			target = path_absolute_cwd(buf, dirname);
-			if (points_within(target, root)) {
-				/* symlink points withing the root */
+			if (points_within_and_visible(target, root)) {
 				d_print("%s -> %s points within %s. ignoring\n",
 						dir.path, target, root);
 				free(target);
