@@ -134,6 +134,7 @@ extern int shuffle;
 extern int display_artist_sort_name;
 extern int smart_artist_sort;
 extern int scroll_offset;
+extern int rewind_offset;
 extern int skip_track_info;
 
 extern const char * const aaa_mode_names[];

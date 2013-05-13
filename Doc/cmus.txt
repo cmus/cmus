@@ -948,6 +948,12 @@ replaygain_preamp (6.0)
 resume (false)
 	Resume playback on startup.
 
+rewind_offset (5) [-1-9999]
+	If the position of the current track is smaller than rewind_offset,
+	player_prev jumps to the previous track. Otherwise, player_prev jumps
+	to the beginning of the current track. If rewind_offset=-1, player_prev
+	always jumps to the previous track.
+
 scroll_offset (2) [0-9999]
 	Minimal number of screen lines to keep above and below the cursor.
 

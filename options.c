@@ -74,6 +74,7 @@ int shuffle = 0;
 int display_artist_sort_name;
 int smart_artist_sort = 1;
 int scroll_offset = 2;
+int rewind_offset = 5;
 int skip_track_info = 0;
 
 int colors[NR_COLORS] = {
@@ -236,6 +237,19 @@ static void set_scroll_offset(unsigned int id, const char *buf)
 
 	if (parse_int(buf, 0, 9999, &offset))
 		scroll_offset = offset;
+}
+
+static void get_rewind_offset(unsigned int id, char *buf)
+{
+	buf_int(buf, rewind_offset);
+}
+
+static void set_rewind_offset(unsigned int id, const char *buf)
+{
+	int offset;
+
+	if (parse_int(buf, -1, 9999, &offset))
+		rewind_offset = offset;
 }
 
 static void get_id3_default_charset(unsigned int id, char *buf)
@@ -1133,6 +1147,7 @@ static const struct {
 	DN_FLAGS(device, OPT_PROGRAM_PATH)
 	DN(buffer_seconds)
 	DN(scroll_offset)
+	DN(rewind_offset)
 	DT(confirm_run)
 	DT(continue)
 	DT(smart_artist_sort)
