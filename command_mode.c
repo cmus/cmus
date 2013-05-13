@@ -1295,7 +1295,11 @@ static void cmd_p_play(char *arg)
 
 static void cmd_p_prev(char *arg)
 {
-	cmus_prev();
+	if (rewind_offset < 0 || player_info.pos < rewind_offset) {
+		cmus_prev();
+	} else {
+		player_play();
+	}
 }
 
 static void cmd_p_stop(char *arg)
