@@ -185,11 +185,17 @@ static int doublecmp0(double a, double b)
 /* this function gets called *alot*, it must be very fast */
 int track_info_cmp(const struct track_info *a, const struct track_info *b, const sort_key_t *keys)
 {
-	int i, res = 0;
+	int i, rev = 0, res = 0;
 
 	for (i = 0; keys[i] != SORT_INVALID; i++) {
 		sort_key_t key = keys[i];
 		const char *av, *bv;
+
+		rev = 0;
+		if (key >= REV_SORT__START) {
+			rev = 1;
+			key -= REV_SORT__START;
+		}
 
 		switch (key) {
 		case SORT_TRACKNUMBER:
@@ -214,28 +220,6 @@ int track_info_cmp(const struct track_info *a, const struct track_info *b, const
 		case SORT_BITRATE:
 			res = getentry(a, key, long) - getentry(b, key, long);
 			break;
-		case REV_SORT_TRACKNUMBER:
-		case REV_SORT_DISCNUMBER:
-		case REV_SORT_DATE:
-		case REV_SORT_ORIGINALDATE:
-			res = getentry(b, key, int) - getentry(a, key, int);
-			break;
-		case REV_SORT_FILEMTIME:
-			res = b->mtime - a->mtime;
-			break;
-		case REV_SORT_FILENAME:
-			/* NOTE: filenames are not necessarily UTF-8 */
-			res = strcoll(b->filename, a->filename);
-			break;
-		case REV_SORT_RG_TRACK_GAIN:
-		case REV_SORT_RG_TRACK_PEAK:
-		case REV_SORT_RG_ALBUM_GAIN:
-		case REV_SORT_RG_ALBUM_PEAK:
-			res = doublecmp0(getentry(b, key, double), getentry(a, key, double));
-			break;
-		case REV_SORT_BITRATE:
-			res = getentry(b, key, long) - getentry(a, key, long);
-			break;
 		default:
 			av = getentry(a, key, const char *);
 			bv = getentry(b, key, const char *);
@@ -246,5 +230,5 @@ int track_info_cmp(const struct track_info *a, const struct track_info *b, const
 		if (res)
 			break;
 	}
-	return res;
+	return rev ? -res : res;
 }
