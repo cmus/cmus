@@ -39,7 +39,7 @@
 #define STRINGIZE_HELPER(x) #x
 #define STRINGIZE(x) STRINGIZE_HELPER(x)
 
-#define getentry(ptr, offset, type) (*((type *) ((char *) (ptr) + (offset))))
+#define getentry(ptr, offset, type) (*((type *) ((void *) ((char *) (ptr) + (offset)))))
 
 static inline int min(int a, int b)
 {
