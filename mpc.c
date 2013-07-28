@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2011 Various Authors
+ * Copyright 2008-2013 Various Authors
  * Copyright 2006 Chun-Yu Shei <cshei AT cs.indiana.edu>
  *
  * Cleaned up by Timo Hirvonen <tihirvon@gmail.com>

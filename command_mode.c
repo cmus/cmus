@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2011 Various Authors
+ * Copyright 2008-2013 Various Authors
  * Copyright 2004-2005 Timo Hirvonen
  *
  * This program is free software; you can redistribute it and/or
@@ -987,7 +987,7 @@ static void cmd_run(char *arg)
 	editable_lock();
 	switch (cur_view) {
 	case TREE_VIEW:
-		__tree_for_each_sel(add_ti, NULL, 0);
+		__tree_for_each_sel(add_ti, &sel, 0);
 		break;
 	case SORTED_VIEW:
 		__editable_for_each_sel(&lib_editable, add_ti, &sel, 0);
@@ -1295,7 +1295,11 @@ static void cmd_p_play(char *arg)
 
 static void cmd_p_prev(char *arg)
 {
-	cmus_prev();
+	if (rewind_offset < 0 || player_info.pos < rewind_offset) {
+		cmus_prev();
+	} else {
+		player_play();
+	}
 }
 
 static void cmd_p_stop(char *arg)

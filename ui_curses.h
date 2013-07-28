@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2011 Various Authors
+ * Copyright 2008-2013 Various Authors
  * Copyright 2004-2006 Timo Hirvonen
  *
  * This program is free software; you can redistribute it and/or
@@ -61,5 +61,8 @@ void enter_search_mode(void);
 void enter_search_backward_mode(void);
 
 int track_format_valid(const char *format);
+
+/* lock player_info ! */
+const char *get_stream_title(void);
 
 #endif

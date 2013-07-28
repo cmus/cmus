@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2011 Various Authors
+ * Copyright 2008-2013 Various Authors
  * Copyright 2004-2005 Timo Hirvonen
  *
  * This program is free software; you can redistribute it and/or
@@ -185,11 +185,17 @@ static int doublecmp0(double a, double b)
 /* this function gets called *alot*, it must be very fast */
 int track_info_cmp(const struct track_info *a, const struct track_info *b, const sort_key_t *keys)
 {
-	int i, res = 0;
+	int i, rev = 0, res = 0;
 
 	for (i = 0; keys[i] != SORT_INVALID; i++) {
 		sort_key_t key = keys[i];
 		const char *av, *bv;
+
+		rev = 0;
+		if (key >= REV_SORT__START) {
+			rev = 1;
+			key -= REV_SORT__START;
+		}
 
 		switch (key) {
 		case SORT_TRACKNUMBER:
@@ -224,5 +230,5 @@ int track_info_cmp(const struct track_info *a, const struct track_info *b, const
 		if (res)
 			break;
 	}
-	return res;
+	return rev ? -res : res;
 }

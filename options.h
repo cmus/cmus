@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2011 Various Authors
+ * Copyright 2008-2013 Various Authors
  * Copyright 2005 Timo Hirvonen
  *
  * This program is free software; you can redistribute it and/or
@@ -134,6 +134,7 @@ extern int shuffle;
 extern int display_artist_sort_name;
 extern int smart_artist_sort;
 extern int scroll_offset;
+extern int rewind_offset;
 extern int skip_track_info;
 
 extern const char * const aaa_mode_names[];

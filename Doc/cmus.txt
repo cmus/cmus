@@ -13,8 +13,8 @@ cmus [*options*]
 @h1 DESCRIPTION
 
 cmus is a small ncurses based music player.  It supports various output
-methods by output-plugins. It has got completely configurable keybindings and
-it can be controlled from the outside via *cmus-remote*(1).
+methods by output-plugins. cmus has completely configurable keybindings and
+can be controlled from the outside via *cmus-remote*(1).
 
 @h1 OPTIONS
 
@@ -948,6 +948,12 @@ replaygain_preamp (6.0)
 resume (false)
 	Resume playback on startup.
 
+rewind_offset (5) [-1-9999]
+	If the position of the current track is smaller than rewind_offset,
+	player_prev jumps to the previous track. Otherwise, player_prev jumps
+	to the beginning of the current track. If rewind_offset=-1, player_prev
+	always jumps to the previous track.
+
 scroll_offset (2) [0-9999]
 	Minimal number of screen lines to keep above and below the cursor.
 
@@ -1102,6 +1108,8 @@ sort keys:
 	genre, comment, albumartist, filename, filemtime, bitrate, codec,
 	media, codec_profile, rg_track_gain, rg_track_peak, rg_album_gain,
 	rg_album_peak
+
+Note: Adding a '-' in front of the key will sort in reverse order
 
 
 @h1 PLUGIN OPTIONS

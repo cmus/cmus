@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2011 Various Authors
+ * Copyright 2008-2013 Various Authors
  * Copyright 2004-2005 Timo Hirvonen
  *
  * sun.c by alex <pukpuk@gmx.de>

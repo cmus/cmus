@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2011 Various Authors
+ * Copyright 2008-2013 Various Authors
  * Copyright 2006 Timo Hirvonen
  *
  * This program is free software; you can redistribute it and/or
@@ -74,6 +74,7 @@ int shuffle = 0;
 int display_artist_sort_name;
 int smart_artist_sort = 1;
 int scroll_offset = 2;
+int rewind_offset = 5;
 int skip_track_info = 0;
 
 int colors[NR_COLORS] = {
@@ -238,6 +239,19 @@ static void set_scroll_offset(unsigned int id, const char *buf)
 		scroll_offset = offset;
 }
 
+static void get_rewind_offset(unsigned int id, char *buf)
+{
+	buf_int(buf, rewind_offset);
+}
+
+static void set_rewind_offset(unsigned int id, const char *buf)
+{
+	int offset;
+
+	if (parse_int(buf, -1, 9999, &offset))
+		rewind_offset = offset;
+}
+
 static void get_id3_default_charset(unsigned int id, char *buf)
 {
 	strcpy(buf, id3_default_charset);
@@ -284,6 +298,26 @@ static const struct {
 	{ "codec",		SORT_CODEC		},
 	{ "codec_profile",	SORT_CODEC_PROFILE	},
 	{ "media",		SORT_MEDIA		},
+	{ "-artist",		REV_SORT_ARTIST		},
+	{ "-album",		REV_SORT_ALBUM		},
+	{ "-title",		REV_SORT_TITLE		},
+	{ "-tracknumber",	REV_SORT_TRACKNUMBER	},
+	{ "-discnumber",	REV_SORT_DISCNUMBER	},
+	{ "-date",		REV_SORT_DATE		},
+	{ "-originaldate",	REV_SORT_ORIGINALDATE	},
+	{ "-genre",		REV_SORT_GENRE		},
+	{ "-comment",		REV_SORT_COMMENT	},
+	{ "-albumartist",	REV_SORT_ALBUMARTIST	},
+	{ "-filename",		REV_SORT_FILENAME	},
+	{ "-filemtime",		REV_SORT_FILEMTIME	},
+	{ "-rg_track_gain",	REV_SORT_RG_TRACK_GAIN	},
+	{ "-rg_track_peak",	REV_SORT_RG_TRACK_PEAK	},
+	{ "-rg_album_gain",	REV_SORT_RG_ALBUM_GAIN	},
+	{ "-rg_album_peak",	REV_SORT_RG_ALBUM_PEAK	},
+	{ "-bitrate",		REV_SORT_BITRATE	},
+	{ "-codec",		REV_SORT_CODEC		},
+	{ "-codec_profile",	REV_SORT_CODEC_PROFILE	},
+	{ "-media",		REV_SORT_MEDIA		},
 	{ NULL,                 SORT_INVALID            }
 };
 
@@ -1113,6 +1147,7 @@ static const struct {
 	DN_FLAGS(device, OPT_PROGRAM_PATH)
 	DN(buffer_seconds)
 	DN(scroll_offset)
+	DN(rewind_offset)
 	DT(confirm_run)
 	DT(continue)
 	DT(smart_artist_sort)

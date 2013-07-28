@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2011 Various Authors
+ * Copyright 2008-2013 Various Authors
  * Copyright 2004-2005 Timo Hirvonen
  *
  * This program is free software; you can redistribute it and/or
@@ -1266,28 +1266,6 @@ static void do_update_commandline(void)
 	}
 }
 
-/* lock player_info! */
-static const char *get_stream_title(void)
-{
-	static char stream_title[255 * 16 + 1];
-	char *ptr, *title;
-
-	ptr = strstr(player_info.metadata, "StreamTitle='");
-	if (ptr == NULL)
-		return NULL;
-	ptr += 13;
-	title = ptr;
-	while (*ptr) {
-		if (*ptr == '\'' && *(ptr + 1) == ';') {
-			memcpy(stream_title, title, ptr - title);
-			stream_title[ptr - title] = 0;
-			return stream_title;
-		}
-		ptr++;
-	}
-	return NULL;
-}
-
 static void set_title(const char *title)
 {
 	if (!set_term_title)
@@ -1427,6 +1405,28 @@ static void post_update(void)
 			curs_set(0);
 		}
 	}
+}
+
+/* lock player_info! */
+const char *get_stream_title(void)
+{
+	static char stream_title[255 * 16 + 1];
+	char *ptr, *title;
+
+	ptr = strstr(player_info.metadata, "StreamTitle='");
+	if (ptr == NULL)
+		return NULL;
+	ptr += 13;
+	title = ptr;
+	while (*ptr) {
+		if (*ptr == '\'' && *(ptr + 1) == ';') {
+			memcpy(stream_title, title, ptr - title);
+			stream_title[ptr - title] = 0;
+			return stream_title;
+		}
+		ptr++;
+	}
+	return NULL;
 }
 
 void update_titleline(void)
@@ -2407,7 +2407,7 @@ int main(int argc, char *argv[])
 		case FLAG_VERSION:
 			printf("cmus " VERSION
 			       "\nCopyright 2004-2006 Timo Hirvonen"
-			       "\nCopyright 2008-2011 Various Authors\n");
+			       "\nCopyright 2008-2013 Various Authors\n");
 			return 0;
 		case FLAG_PLUGINS:
 			list_plugins = 1;
