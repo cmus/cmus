@@ -5,6 +5,7 @@
 *.lo
 *.so
 tags
+cscope.out
 !.gitignore
 
 # top-level ignores

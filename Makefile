@@ -18,6 +18,9 @@ include scripts/lib.mk
 
 CFLAGS += -D_FILE_OFFSET_BITS=64
 
+FFMPEG_CFLAGS += $(shell pkg-config --cflags libswresample)
+FFMPEG_LIBS += $(shell pkg-config --libs libswresample)
+
 CMUS_LIBS = $(PTHREAD_LIBS) $(NCURSES_LIBS) $(ICONV_LIBS) $(DL_LIBS) $(DISCID_LIBS) $(CUE_LIBS) -lm $(COMPAT_LIBS)
 
 input.o main.o ui_curses.o pulse.lo: .version
