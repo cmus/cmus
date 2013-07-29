@@ -290,8 +290,8 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 
 	/* Prepare for resampling. */
 	if(swr) {
-	    swr_free(&swr);
-	    swr = NULL;
+		swr_free(&swr);
+		swr = NULL;
 	}
 	swr = swr_alloc();
 	av_opt_set_int(swr, "in_channel_layout",  av_get_default_channel_layout(cc->channels), 0);
@@ -304,18 +304,18 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 	ip_data->sf = sf_rate(cc->sample_rate) | sf_channels(cc->channels);
 	switch (cc->sample_fmt) {
 	case AV_SAMPLE_FMT_U8:
-	    ip_data->sf |= sf_bits(8) | sf_signed(0);
-	    av_opt_set_sample_fmt(swr, "out_sample_fmt", AV_SAMPLE_FMT_U8,  0);
-	    break;
+		ip_data->sf |= sf_bits(8) | sf_signed(0);
+		av_opt_set_sample_fmt(swr, "out_sample_fmt", AV_SAMPLE_FMT_U8,  0);
+		break;
 	case AV_SAMPLE_FMT_S32:
-	    ip_data->sf |= sf_bits(32) | sf_signed(1);
-	    av_opt_set_sample_fmt(swr, "out_sample_fmt", AV_SAMPLE_FMT_S32,  0);
-	    break;
-	    /* AV_SAMPLE_FMT_S16 */
+		ip_data->sf |= sf_bits(32) | sf_signed(1);
+		av_opt_set_sample_fmt(swr, "out_sample_fmt", AV_SAMPLE_FMT_S32,  0);
+		break;
+		/* AV_SAMPLE_FMT_S16 */
 	default:
-	    ip_data->sf |= sf_bits(16) | sf_signed(1);
-	    av_opt_set_sample_fmt(swr, "out_sample_fmt", AV_SAMPLE_FMT_S16,  0);
-	    break;
+		ip_data->sf |= sf_bits(16) | sf_signed(1);
+		av_opt_set_sample_fmt(swr, "out_sample_fmt", AV_SAMPLE_FMT_S16,  0);
+		break;
 	}
 	swr_init(swr);
 #ifdef WORDS_BIGENDIAN
@@ -423,24 +423,14 @@ static int ffmpeg_fill_buffer(AVFormatContext *ic, AVCodecContext *cc, struct ff
 		}
 #else
 		if(got_frame) {
-			/*int i;
-			  size_t sample_size;*/
-			int res = swr_convert(swr, &output->buffer, frame->nb_samples, (const uint8_t **)frame->extended_data, frame->nb_samples);
+			int res = swr_convert(swr,
+					&output->buffer,
+					frame->nb_samples,
+					(const uint8_t **)frame->extended_data,
+					frame->nb_samples);
 			if(res<0) res=0;
-			/*if(AV_SAMPLE_FMT_U8 == cc->sample_fmt) {
-			  sample_size = sizeof(uint8_t);
-			  } else if(AV_SAMPLE_FMT_S32 == cc->sample_fmt) {
-			  sample_size = sizeof(int32_t);
-			  } else {
-			  sample_size = sizeof(uint16_t);
-			  }
-			  for(i=0; i<frame->linesize[0]; i+=sample_size) {
-			  memcpy(output->buffer+i*2, (char*)frame->extended_data[0]+i, sample_size);
-			  memcpy(output->buffer+i*2+sample_size, (char*)frame->extended_data[1]+i, sample_size);
-			  }*/
 			output->buffer_pos = output->buffer;
 			output->buffer_used_len = res * cc->channels * sizeof(int16_t);
-			/*fwrite(frame->extended_data[0], sizeof(char), frame->linesize[0], ftmp);*/
 			avcodec_free_frame(&frame);
 			return output->buffer_used_len;
 		}
