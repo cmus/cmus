@@ -2200,6 +2200,7 @@ static void init_curses(void)
 	act.sa_flags = 0;
 	act.sa_handler = sig_hup;
 	sigaction(SIGHUP, &act, NULL);
+	sigaction(SIGTERM, &act, NULL);
 
 	sigemptyset(&act.sa_mask);
 	act.sa_flags = 0;
