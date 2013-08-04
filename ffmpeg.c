@@ -69,6 +69,10 @@
 #define AVDictionaryEntry AVMetadataTag
 #endif
 
+#ifndef AVCODEC_MAX_AUDIO_FRAME_SIZE
+#define AVCODEC_MAX_AUDIO_FRAME_SIZE 192000
+#endif
+
 struct ffmpeg_input {
 	AVPacket pkt;
 	int curr_pkt_size;
