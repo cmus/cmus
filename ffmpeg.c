@@ -93,6 +93,7 @@ struct ffmpeg_private {
 	AVCodecContext *codec_context;
 	AVFormatContext *input_context;
 	AVCodec *codec;
+	SwrContext *swr;
 	int stream_index;
 
 	struct ffmpeg_input *input;
@@ -182,8 +183,6 @@ static void ffmpeg_init(void)
 #endif
 }
 
-static SwrContext *swr = NULL;
-
 static int ffmpeg_open(struct input_plugin_data *ip_data)
 {
 	struct ffmpeg_private *priv;
@@ -194,6 +193,7 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 	AVCodec *codec;
 	AVCodecContext *cc = NULL;
 	AVFormatContext *ic = NULL;
+	SwrContext *swr = NULL;
 
 	ffmpeg_init();
 
@@ -293,16 +293,13 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 	priv->output = ffmpeg_output_create();
 
 	/* Prepare for resampling. */
-	if(swr) {
-		swr_free(&swr);
-		swr = NULL;
-	}
 	swr = swr_alloc();
 	av_opt_set_int(swr, "in_channel_layout",  av_get_default_channel_layout(cc->channels), 0);
 	av_opt_set_int(swr, "out_channel_layout", AV_CH_LAYOUT_STEREO,  0);
 	av_opt_set_int(swr, "in_sample_rate",     cc->sample_rate, 0);
 	av_opt_set_int(swr, "out_sample_rate",    cc->sample_rate, 0);
 	av_opt_set_sample_fmt(swr, "in_sample_fmt",  cc->sample_fmt, 0);
+	priv->swr = swr;
 
 	ip_data->private = priv;
 	ip_data->sf = sf_rate(cc->sample_rate) | sf_channels(cc->channels);
@@ -342,8 +339,7 @@ static int ffmpeg_close(struct input_plugin_data *ip_data)
 #else
 	avformat_close_input(&priv->input_context);
 #endif
-	swr_free(&swr);
-	swr = NULL;
+	swr_free(&priv->swr);
 	ffmpeg_input_free(priv->input);
 	ffmpeg_output_free(priv->output);
 	free(priv);
@@ -356,7 +352,7 @@ static int ffmpeg_close(struct input_plugin_data *ip_data)
  * It returns < 0 on error.  0 on EOF.
  */
 static int ffmpeg_fill_buffer(AVFormatContext *ic, AVCodecContext *cc, struct ffmpeg_input *input,
-			      struct ffmpeg_output *output)
+			      struct ffmpeg_output *output, SwrContext *swr)
 {
 #if (LIBAVCODEC_VERSION_INT >= ((53<<16) + (25<<8) + 0))
 	AVFrame *frame = avcodec_alloc_frame();
@@ -452,7 +448,8 @@ static int ffmpeg_read(struct input_plugin_data *ip_data, char *buffer, int coun
 	int out_size;
 
 	if (output->buffer_used_len == 0) {
-		rc = ffmpeg_fill_buffer(priv->input_context, priv->codec_context, priv->input, priv->output);
+		rc = ffmpeg_fill_buffer(priv->input_context, priv->codec_context,
+				priv->input, priv->output, priv->swr);
 		if (rc <= 0) {
 			return rc;
 		}
