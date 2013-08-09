@@ -30,10 +30,16 @@
 #include <ffmpeg/avcodec.h>
 #include <ffmpeg/avformat.h>
 #include <ffmpeg/avio.h>
+#include <libswresample/swresample.h>
+#include <libavutil/opt.h>
+#include <libavutil/audioconvert.h>
 #else
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libavformat/avio.h>
+#include <libswresample/swresample.h>
+#include <libavutil/opt.h>
+#include <libavutil/audioconvert.h>
 #ifndef AVUTIL_MATHEMATICS_H
 #include <libavutil/mathematics.h>
 #endif
@@ -63,6 +69,10 @@
 #define AVDictionaryEntry AVMetadataTag
 #endif
 
+#ifndef AVCODEC_MAX_AUDIO_FRAME_SIZE
+#define AVCODEC_MAX_AUDIO_FRAME_SIZE 192000
+#endif
+
 struct ffmpeg_input {
 	AVPacket pkt;
 	int curr_pkt_size;
@@ -83,6 +93,7 @@ struct ffmpeg_private {
 	AVCodecContext *codec_context;
 	AVFormatContext *input_context;
 	AVCodec *codec;
+	SwrContext *swr;
 	int stream_index;
 
 	struct ffmpeg_input *input;
@@ -182,6 +193,7 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 	AVCodec *codec;
 	AVCodecContext *cc = NULL;
 	AVFormatContext *ic = NULL;
+	SwrContext *swr = NULL;
 
 	ffmpeg_init();
 
@@ -241,20 +253,24 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 			break;
 		}
 
-#if (LIBAVCODEC_VERSION_INT > ((51<<16)+(64<<8)+0))
+/*#if (LIBAVCODEC_VERSION_INT > ((51<<16)+(64<<8)+0))
 		if (cc->sample_fmt == AV_SAMPLE_FMT_FLT || cc->sample_fmt == AV_SAMPLE_FMT_DBL) {
 #else
 		if (cc->sample_fmt == AV_SAMPLE_FMT_FLT) {
 #endif
 			err = -IP_ERROR_SAMPLE_FORMAT;
 			break;
-		}
+		}*/
 		/* We assume below that no more errors follow. */
 	} while (0);
 
 	if (err < 0) {
 		/* Clean up.  cc is never opened at this point.  (See above assumption.) */
+#if (LIBAVCODEC_VERSION_INT < ((53<<16)+(25<<8)+0))
 		av_close_input_file(ic);
+#else
+		avformat_close_input(&ic);
+#endif
 		return err;
 	}
 
@@ -266,26 +282,43 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 	priv->input = ffmpeg_input_create();
 	if (priv->input == NULL) {
 		avcodec_close(cc);
+#if (LIBAVCODEC_VERSION_INT < ((53<<16)+(25<<8)+0))
 		av_close_input_file(ic);
+#else
+		avformat_close_input(&ic);
+#endif
 		free(priv);
 		return -IP_ERROR_INTERNAL;
 	}
 	priv->output = ffmpeg_output_create();
+
+	/* Prepare for resampling. */
+	swr = swr_alloc();
+	av_opt_set_int(swr, "in_channel_layout",  av_get_default_channel_layout(cc->channels), 0);
+	av_opt_set_int(swr, "out_channel_layout", AV_CH_LAYOUT_STEREO,  0);
+	av_opt_set_int(swr, "in_sample_rate",     cc->sample_rate, 0);
+	av_opt_set_int(swr, "out_sample_rate",    cc->sample_rate, 0);
+	av_opt_set_sample_fmt(swr, "in_sample_fmt",  cc->sample_fmt, 0);
+	priv->swr = swr;
 
 	ip_data->private = priv;
 	ip_data->sf = sf_rate(cc->sample_rate) | sf_channels(cc->channels);
 	switch (cc->sample_fmt) {
 	case AV_SAMPLE_FMT_U8:
 		ip_data->sf |= sf_bits(8) | sf_signed(0);
+		av_opt_set_sample_fmt(swr, "out_sample_fmt", AV_SAMPLE_FMT_U8,  0);
 		break;
 	case AV_SAMPLE_FMT_S32:
 		ip_data->sf |= sf_bits(32) | sf_signed(1);
+		av_opt_set_sample_fmt(swr, "out_sample_fmt", AV_SAMPLE_FMT_S32,  0);
 		break;
-	/* AV_SAMPLE_FMT_S16 */
+		/* AV_SAMPLE_FMT_S16 */
 	default:
 		ip_data->sf |= sf_bits(16) | sf_signed(1);
+		av_opt_set_sample_fmt(swr, "out_sample_fmt", AV_SAMPLE_FMT_S16,  0);
 		break;
 	}
+	swr_init(swr);
 #ifdef WORDS_BIGENDIAN
 	ip_data->sf |= sf_bigendian(1);
 #endif
@@ -301,7 +334,12 @@ static int ffmpeg_close(struct input_plugin_data *ip_data)
 	struct ffmpeg_private *priv = ip_data->private;
 
 	avcodec_close(priv->codec_context);
+#if (LIBAVCODEC_VERSION_INT < ((53<<16)+(25<<8)+0))
 	av_close_input_file(priv->input_context);
+#else
+	avformat_close_input(&priv->input_context);
+#endif
+	swr_free(&priv->swr);
 	ffmpeg_input_free(priv->input);
 	ffmpeg_output_free(priv->output);
 	free(priv);
@@ -314,8 +352,12 @@ static int ffmpeg_close(struct input_plugin_data *ip_data)
  * It returns < 0 on error.  0 on EOF.
  */
 static int ffmpeg_fill_buffer(AVFormatContext *ic, AVCodecContext *cc, struct ffmpeg_input *input,
-			      struct ffmpeg_output *output)
+			      struct ffmpeg_output *output, SwrContext *swr)
 {
+#if (LIBAVCODEC_VERSION_INT >= ((53<<16) + (25<<8) + 0))
+	AVFrame *frame = avcodec_alloc_frame();
+	int got_frame;
+#endif
 	while (1) {
 		/* frame_size specifies the size of output->buffer for
 		 * avcodec_decode_audio2. */
@@ -326,6 +368,9 @@ static int ffmpeg_fill_buffer(AVFormatContext *ic, AVCodecContext *cc, struct ff
 			av_free_packet(&input->pkt);
 			if (av_read_frame(ic, &input->pkt) < 0) {
 				/* Force EOF once we can read no longer. */
+#if (LIBAVCODEC_VERSION_INT >= ((53<<16) + (25<<8) + 0))
+				avcodec_free_frame(&frame);
+#endif
 				return 0;
 			}
 			input->curr_pkt_size = input->pkt.size;
@@ -345,13 +390,21 @@ static int ffmpeg_fill_buffer(AVFormatContext *ic, AVCodecContext *cc, struct ff
 #elif (LIBAVCODEC_VERSION_INT <= ((52<<16) + (25<<8) + 0))
 		len = avcodec_decode_audio2(cc, (int16_t *) output->buffer, &frame_size,
 				input->curr_pkt_buf, input->curr_pkt_size);
-#else
+#elif (LIBAVCODEC_VERSION_INT < ((53<<16) + (25<<8) + 0))
 		{
 			AVPacket avpkt;
 			av_init_packet(&avpkt);
 			avpkt.data = input->curr_pkt_buf;
 			avpkt.size = input->curr_pkt_size;
 			len = avcodec_decode_audio3(cc, (int16_t *) output->buffer, &frame_size, &avpkt);
+			av_free_packet(&avpkt);
+		}
+#else
+		{
+			AVPacket avpkt;
+			av_new_packet(&avpkt, input->curr_pkt_size);
+			memcpy(avpkt.data, input->curr_pkt_buf, input->curr_pkt_size);
+			len = avcodec_decode_audio4(cc, frame, &got_frame, &avpkt);
 			av_free_packet(&avpkt);
 		}
 #endif
@@ -362,11 +415,26 @@ static int ffmpeg_fill_buffer(AVFormatContext *ic, AVCodecContext *cc, struct ff
 		}
 		input->curr_pkt_size -= len;
 		input->curr_pkt_buf += len;
+#if (LIBAVCODEC_VERSION_INT < ((53<<16) + (25<<8) + 0))
 		if (frame_size > 0) {
 			output->buffer_pos = output->buffer;
 			output->buffer_used_len = frame_size;
 			return frame_size;
 		}
+#else
+		if(got_frame) {
+			int res = swr_convert(swr,
+					&output->buffer,
+					frame->nb_samples,
+					(const uint8_t **)frame->extended_data,
+					frame->nb_samples);
+			if(res<0) res=0;
+			output->buffer_pos = output->buffer;
+			output->buffer_used_len = res * cc->channels * sizeof(int16_t);
+			avcodec_free_frame(&frame);
+			return output->buffer_used_len;
+		}
+#endif
 	}
 	/* This should never get here. */
 	return -IP_ERROR_INTERNAL;
@@ -380,7 +448,8 @@ static int ffmpeg_read(struct input_plugin_data *ip_data, char *buffer, int coun
 	int out_size;
 
 	if (output->buffer_used_len == 0) {
-		rc = ffmpeg_fill_buffer(priv->input_context, priv->codec_context, priv->input, priv->output);
+		rc = ffmpeg_fill_buffer(priv->input_context, priv->codec_context,
+				priv->input, priv->output, priv->swr);
 		if (rc <= 0) {
 			return rc;
 		}
