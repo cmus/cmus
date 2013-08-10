@@ -1800,7 +1800,7 @@ static void sig_int(int sig)
 	ctrl_c_pressed = 1;
 }
 
-static void sig_hup(int sig)
+static void sig_shutdown(int sig)
 {
 	cmus_running = 0;
 }
@@ -2198,7 +2198,7 @@ static void init_curses(void)
 
 	sigemptyset(&act.sa_mask);
 	act.sa_flags = 0;
-	act.sa_handler = sig_hup;
+	act.sa_handler = sig_shutdown;
 	sigaction(SIGHUP, &act, NULL);
 	sigaction(SIGTERM, &act, NULL);
 
