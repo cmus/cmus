@@ -30,9 +30,9 @@
 #include <ffmpeg/avcodec.h>
 #include <ffmpeg/avformat.h>
 #include <ffmpeg/avio.h>
-#include <libswresample/swresample.h>
-#include <libavutil/opt.h>
-#include <libavutil/audioconvert.h>
+#include <ffmpeg/swresample.h>
+#include <ffmpeg/opt.h>
+#include <ffmpeg/audioconvert.h>
 #else
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
@@ -253,14 +253,6 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 			break;
 		}
 
-/*#if (LIBAVCODEC_VERSION_INT > ((51<<16)+(64<<8)+0))
-		if (cc->sample_fmt == AV_SAMPLE_FMT_FLT || cc->sample_fmt == AV_SAMPLE_FMT_DBL) {
-#else
-		if (cc->sample_fmt == AV_SAMPLE_FMT_FLT) {
-#endif
-			err = -IP_ERROR_SAMPLE_FORMAT;
-			break;
-		}*/
 		/* We assume below that no more errors follow. */
 	} while (0);
 
@@ -295,7 +287,7 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 	/* Prepare for resampling. */
 	swr = swr_alloc();
 	av_opt_set_int(swr, "in_channel_layout",  av_get_default_channel_layout(cc->channels), 0);
-	av_opt_set_int(swr, "out_channel_layout", AV_CH_LAYOUT_STEREO,  0);
+	av_opt_set_int(swr, "out_channel_layout", av_get_default_channel_layout(cc->channels), 0);
 	av_opt_set_int(swr, "in_sample_rate",     cc->sample_rate, 0);
 	av_opt_set_int(swr, "out_sample_rate",    cc->sample_rate, 0);
 	av_opt_set_sample_fmt(swr, "in_sample_fmt",  cc->sample_fmt, 0);
@@ -312,7 +304,7 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 		ip_data->sf |= sf_bits(32) | sf_signed(1);
 		av_opt_set_sample_fmt(swr, "out_sample_fmt", AV_SAMPLE_FMT_S32,  0);
 		break;
-		/* AV_SAMPLE_FMT_S16 */
+	/* AV_SAMPLE_FMT_S16 */
 	default:
 		ip_data->sf |= sf_bits(16) | sf_signed(1);
 		av_opt_set_sample_fmt(swr, "out_sample_fmt", AV_SAMPLE_FMT_S16,  0);
