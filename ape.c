@@ -107,6 +107,12 @@ static int find_ape_tag(int fd, struct ape_header *h, int slow)
 	if (read_header(fd, h))
 		return 1;
 
+	/* try to skip ID3v1 tag at the end of the file */
+	if (lseek(fd, -(HEADER_SIZE + 128), SEEK_END) == -1)
+		return 0;
+	if (read_header(fd, h))
+		return 1;
+
 	if (!slow)
 		return 0;
 
@@ -198,15 +204,6 @@ static int ape_parse_one(const char *buf, int size, char **keyp, char **valp)
 	return -1;
 }
 
-static off_t get_size(int fd)
-{
-	struct stat statbuf;
-
-	if (fstat(fd, &statbuf) || !S_ISREG(statbuf.st_mode))
-		return 0;
-	return statbuf.st_size;
-}
-
 /* return the number of comments, or -1 */
 int ape_read_tags(struct apetag *ape, int fd, int slow)
 {
@@ -222,7 +219,7 @@ int ape_read_tags(struct apetag *ape, int fd, int slow)
 
 	if (AF_IS_FOOTER(h->flags)) {
 		/* seek back right after the header */
-		if (lseek(fd, get_size(fd) - h->size, SEEK_SET) == -1)
+		if (lseek(fd, -((int)h->size), SEEK_CUR) == -1)
 			goto fail;
 	}
 
