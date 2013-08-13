@@ -367,7 +367,11 @@ static void update_rg_scale(void)
 		d_print("gain not available\n");
 		return;
 	}
-	if (!isnan(peak) && peak < 0.05) {
+	if (isnan(peak)) {
+		d_print("peak not available, defaulting to 1\n");
+		peak = 1;
+	}
+	if (peak < 0.05) {
 		d_print("peak (%g) is too small\n", peak);
 		return;
 	}
