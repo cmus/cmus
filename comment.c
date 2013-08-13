@@ -219,8 +219,6 @@ static const char *fix_key(const char *key)
 
 int comments_add(struct growing_keyvals *c, const char *key, char *val)
 {
-	int i;
-
 	if (!strcasecmp(key, "songwriter")) {
 		int r = comments_add_const(c, "lyricist", val);
 		return comments_add(c, "composer", val) && r;
@@ -238,12 +236,10 @@ int comments_add(struct growing_keyvals *c, const char *key, char *val)
 			*slash = 0;
 	}
 
-	/* don't add duplicates. can't use keyvals_get_val() */
-	for (i = 0; i < c->count; i++) {
-		if (!strcasecmp(key, c->keyvals[i].key) && !strcmp(val, c->keyvals[i].val)) {
-			free(val);
-			return 0;
-		}
+	/* don't add duplicates */
+	if (keyvals_get_val_growing(c, key)) {
+		free(val);
+		return 0;
 	}
 
 	keyvals_add(c, key, val);
