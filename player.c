@@ -76,7 +76,7 @@ int player_repeat_current;
 
 enum replaygain replaygain;
 int replaygain_limit = 1;
-double replaygain_preamp = 6.0;
+double replaygain_preamp = 0.0;
 
 int soft_vol;
 int soft_vol_l;

@@ -942,7 +942,7 @@ replaygain (disabled)
 replaygain_limit (true)
 	Use replay gain limiting when clipping.
 
-replaygain_preamp (6.0)
+replaygain_preamp (0.0)
 	Replay gain preamplification in decibels.
 
 resume (false)
