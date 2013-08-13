@@ -464,7 +464,7 @@ static int v2_3_0_frame_header_parse(struct v2_frame_header *header, const char 
 	int i;
 
 	for (i = 0; i < 4; i++) {
-		if (!is_frame_id_char(buf[i]))
+		if (!(is_frame_id_char(buf[i]) || (i == 3 && buf[i] == '\0')))
 			return 0;
 		header->id[i] = buf[i];
 	}
@@ -483,7 +483,7 @@ static int v2_4_0_frame_header_parse(struct v2_frame_header *header, const char 
 	int i;
 
 	for (i = 0; i < 4; i++) {
-		if (!is_frame_id_char(buf[i]))
+		if (!(is_frame_id_char(buf[i]) || (i == 3 && buf[i] == '\0')))
 			return 0;
 		header->id[i] = buf[i];
 	}
