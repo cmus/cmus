@@ -567,7 +567,7 @@ static char *expand_short_expr(const char *expr_short)
 			stack4_pop(&state_stack);
 			key = lookup_long_key(c);
 			if (!key) {
-				set_error("unkown short key %c", c);
+				set_error("unknown short key %c", c);
 				goto error_exit;
 			}
 			etype = lookup_key_type(key);
