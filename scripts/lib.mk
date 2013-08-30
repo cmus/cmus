@@ -83,7 +83,7 @@ uninstall:
 
 # CC for program object files (.o)
 quiet_cmd_cc    = CC     $@
-      cmd_cc    = $(CC) -c $(CFLAGS) -o $@ $<
+      cmd_cc    = $(CC) -c $(CPPFLAGS) $(CFLAGS) -o $@ $<
 
 # HOSTCC for program object files (.o)
 quiet_cmd_hostcc    = HOSTCC     $@
@@ -91,7 +91,7 @@ quiet_cmd_hostcc    = HOSTCC     $@
 
 # CC for shared library and dynamically loadable module objects (.lo)
 quiet_cmd_cc_lo = CC     $@
-      cmd_cc_lo = $(CC) -c $(CFLAGS) $(SOFLAGS) -o $@ $<
+      cmd_cc_lo = $(CC) -c $(CPPFLAGS) $(CFLAGS) $(SOFLAGS) -o $@ $<
 
 # LD for programs, optional parameter: libraries
 quiet_cmd_ld = LD     $@
@@ -111,11 +111,11 @@ quiet_cmd_ld_dl = LD     $@
 
 # CXX for program object files (.o)
 quiet_cmd_cxx    = CXX    $@
-      cmd_cxx    = $(CXX) -c $(CXXFLAGS) -o $@ $<
+      cmd_cxx    = $(CXX) -c $(CPPFLAGS) $(CXXFLAGS) -o $@ $<
 
 # CXX for shared library and dynamically loadable module objects (.lo)
 quiet_cmd_cxx_lo = CXX    $@
-      cmd_cxx_lo = $(CXX) -c $(CXXFLAGS) $(SOFLAGS) -o $@ $<
+      cmd_cxx_lo = $(CXX) -c $(CPPFLAGS) $(CXXFLAGS) $(SOFLAGS) -o $@ $<
 
 # CXXLD for programs, optional parameter: libraries
 quiet_cmd_cxxld = CXXLD  $@
