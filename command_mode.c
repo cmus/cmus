@@ -1372,6 +1372,7 @@ static void add_from_browser(add_ti_cb add, int job_type)
 
 		if (ends_with(sel, "/../") || ends_with(sel, "/..")) {
 			info_msg("For convenience, you can not add \"..\" directory from the browser view");
+			free(sel);
 			return;
 		}
 
