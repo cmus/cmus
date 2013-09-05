@@ -867,7 +867,7 @@ static char *parse_one(const char **strp)
 	char *ret = NULL;
 
 	while (1) {
-		char *part;
+		char *part = NULL;
 		int c = *str;
 
 		if (!c || c == ' ')
@@ -897,6 +897,7 @@ static char *parse_one(const char **strp)
 			free(ret);
 			ret = tmp;
 		}
+		free(part);
 	}
 	*strp = str;
 	return ret;
