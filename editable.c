@@ -200,7 +200,8 @@ static void move_sel(struct editable *e, struct list_head *after)
 	} else {
 		/* collect the selected track */
 		t = get_selected(e);
-		move_item(e, &tmp_head, &t->node);
+		if (t)
+			move_item(e, &tmp_head, &t->node);
 	}
 
 	/* put them back to the list after @after */
