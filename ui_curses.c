@@ -1926,7 +1926,7 @@ static void update(void)
 		lib_editable.win->changed = 0;
 	} else {
 		needs_status_update += pl_editable.win->changed;
-		lib_editable.win->changed = 0;
+		pl_editable.win->changed = 0;
 	}
 
 	editable_unlock();
