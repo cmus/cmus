@@ -477,6 +477,7 @@ static void cmd_seek(char *arg)
 	switch (*arg) {
 	case '-':
 		sign = -1;
+		/* fallthrough */
 	case '+':
 		relative = 1;
 		arg++;
