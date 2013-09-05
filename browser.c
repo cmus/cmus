@@ -327,17 +327,17 @@ void browser_up(void)
 		new = xstrndup(browser_dir, ptr - browser_dir);
 	}
 
-	/* remember last position */
-	ptr++;
-	len = strlen(ptr);
-	pos = xstrdup(ptr);
-
 	if (browser_load(new)) {
 		error_msg("could not open directory '%s': %s\n", new, strerror(errno));
 		free(new);
 		return;
 	}
 	free(new);
+
+	/* remember last position */
+	ptr++;
+	len = strlen(ptr);
+	pos = xstrdup(ptr);
 
 	/* select */
 	list_for_each_entry(e, &browser_head, node) {
