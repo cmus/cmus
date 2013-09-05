@@ -509,8 +509,10 @@ inside:
 		switch (tolower((unsigned char)*arg)) {
 		case 'h':
 			seek *= 60;
+			/* fallthrough */
 		case 'm':
 			seek *= 60;
+			/* fallthrough */
 		case 's':
 			arg++;
 			break;
