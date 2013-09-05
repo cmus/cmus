@@ -610,7 +610,10 @@ static void set_play_sorted(unsigned int id, const char *buf)
 	if (!parse_bool(buf, &tmp))
 		return;
 
+	editable_lock();
 	play_sorted = tmp;
+	editable_unlock();
+
 	update_statusline();
 }
 
