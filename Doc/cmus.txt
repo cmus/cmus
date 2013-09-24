@@ -170,7 +170,7 @@ Right hand side of the status line (second row from the bottom, black text on
 a grey background) consists of the following fields:
 
 @pre
-aaa_mode & play_sorted & play_library | continue repeat shuffle
+aaa_mode & play_sorted & play_library | continue follow repeat shuffle
 @endpre
 
 NOTE: *aaa_mode* and *play_sorted* will be displayed only if *play_library* is
