@@ -651,12 +651,37 @@ static void fill_track_fopts_track_info(struct track_info *info)
 static void print_track(struct window *win, int row, struct iter *iter)
 {
 	struct tree_track *track;
+	struct album *album;
 	struct track_info *ti;
 	struct iter sel;
 	int current, selected, active;
 	const char *format;
 
 	track = iter_to_tree_track(iter);
+	album = iter_to_album(iter);
+
+	if (track == (struct tree_track*)album) {
+		int pos;
+
+		/* FIXME:
+		 * replace A_BOLD by something useful */
+		bkgdset(A_BOLD);
+		print_buffer[0] = ' ';
+		pos = format_str(print_buffer + 1, album->name, track_win_w - 2);
+		print_buffer[++pos] = ' ';
+		print_buffer[++pos] = 0;
+		dump_print_buffer(track_win_y + row + 1, track_win_x);
+
+		bkgdset(pairs[CURSED_SEPARATOR]);
+		pos = track_win_x + u_str_width(album->name) + 2;
+		while (pos < COLS) {
+			(void) mvaddch(track_win_y + row + 1, pos, ACS_HLINE);
+			pos++;
+		}
+
+		return;
+	}
+
 	current = lib_cur_track == track;
 	window_get_sel(win, &sel);
 	selected = iters_equal(iter, &sel);
