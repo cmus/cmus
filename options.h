@@ -119,6 +119,7 @@ extern char *cdda_device;
 extern char *output_plugin;
 extern char *status_display_program;
 extern char *server_password;
+extern int auto_expand_albums;
 extern int auto_reshuffle;
 extern int confirm_run;
 extern int resume_cmus;

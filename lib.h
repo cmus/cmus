@@ -156,9 +156,19 @@ static inline struct album *iter_to_album(const struct iter *iter)
 	return iter->data2;
 }
 
+static inline void iter_set_album(struct iter *iter, struct album *album)
+{
+	iter->data2 = album;
+}
+
 static inline struct tree_track *iter_to_tree_track(const struct iter *iter)
 {
 	return iter->data1;
+}
+
+static inline void iter_set_tree_track(struct iter *iter, struct tree_track *track)
+{
+	iter->data1 = track;
 }
 
 static inline struct artist *to_artist(const struct rb_node *node)

@@ -30,6 +30,13 @@ static void sel_changed(struct window *win)
 	win->changed = 1;
 }
 
+static int selectable(struct window *win, struct iter *iter)
+{
+	if (win->selectable)
+		return win->selectable(iter);
+	return 1;
+}
+
 struct window *window_new(int (*get_prev)(struct iter *), int (*get_next)(struct iter *))
 {
 	struct window *win;
@@ -37,6 +44,7 @@ struct window *window_new(int (*get_prev)(struct iter *), int (*get_next)(struct
 	win = xnew(struct window, 1);
 	win->get_next = get_next;
 	win->get_prev = get_prev;
+	win->selectable = NULL;
 	win->sel_changed = NULL;
 	win->nr_rows = 1;
 	win->changed = 1;
@@ -85,7 +93,7 @@ void window_set_nr_rows(struct window *win, int nr_rows)
 void window_up(struct window *win, int rows)
 {
 	struct iter iter;
-	int delta, sel_up, top_up, actual_offset = -1;
+	int delta, sel_up, top_up, skipped, actual_offset = -1;
 
 	/* distance between top and sel */
 	delta = 0;
@@ -95,12 +103,23 @@ void window_up(struct window *win, int rows)
 		delta++;
 	}
 
-	for (sel_up = 0; sel_up < rows; sel_up++) {
+	skipped = 0;
+	for (sel_up = 0; sel_up < rows;) {
 		iter = win->sel;
-		if (!win->get_prev(&iter)) {
-			actual_offset = 0;
-			break;
+		while (1) {
+			if (!win->get_prev(&iter)) {
+				actual_offset = 0;
+				break;
+			}
+			if (selectable(win, &iter)) {
+				sel_up++;
+				break;
+			} else {
+				skipped++;
+			}
 		}
+		if (actual_offset == 0)
+			break;
 		win->sel = iter;
 	}
 
@@ -115,7 +134,7 @@ void window_up(struct window *win, int rows)
 		}
 	}
 
-	top_up = actual_offset + sel_up - delta;
+	top_up = actual_offset + sel_up - delta + skipped;
 	while (top_up > 0) {
 		win->get_prev(&win->top);
 		top_up--;
@@ -128,7 +147,7 @@ void window_up(struct window *win, int rows)
 void window_down(struct window *win, int rows)
 {
 	struct iter iter;
-	int delta, sel_down, top_down, actual_offset = -1;
+	int delta, sel_down, top_down, skipped, actual_offset = -1;
 
 	/* distance between top and sel */
 	delta = 0;
@@ -138,12 +157,23 @@ void window_down(struct window *win, int rows)
 		delta++;
 	}
 
-	for (sel_down = 0; sel_down < rows; sel_down++) {
+	skipped = 0;
+	for (sel_down = 0; sel_down < rows;) {
 		iter = win->sel;
-		if (!win->get_next(&iter)) {
-			actual_offset = 0;
-			break;
+		while (1) {
+			if (!win->get_next(&iter)) {
+				actual_offset = 0;
+				break;
+			}
+			if (selectable(win, &iter)) {
+				sel_down++;
+				break;
+			} else {
+				skipped++;
+			}
 		}
+		if (actual_offset == 0)
+			break;
 		win->sel = iter;
 	}
 
@@ -158,7 +188,7 @@ void window_down(struct window *win, int rows)
 		}
 	}
 
-	top_down = actual_offset + sel_down - (win->nr_rows - delta - 1);
+	top_down = actual_offset + sel_down - (win->nr_rows - delta - 1) + skipped;
 	while (top_down > 0) {
 		win->get_next(&win->top);
 		top_down--;
