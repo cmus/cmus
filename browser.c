@@ -139,7 +139,7 @@ static int do_browser_load(const char *name)
 	if (S_ISREG(st.st_mode) && cmus_is_playlist(name)) {
 		char *buf;
 		int size;
-		
+
 		buf = mmap_file(name, &size);
 		if (size == -1)
 			return -1;

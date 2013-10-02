@@ -3,7 +3,7 @@
 /*
   Red Black Trees
   (C) 1999  Andrea Arcangeli <andrea@suse.de>
-  
+
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation; either version 2 of the License, or
@@ -147,7 +147,7 @@ struct rb_node *rb_first(const struct rb_root *);
 struct rb_node *rb_last(const struct rb_root *);
 
 /* Fast replacement of a single node without remove/rebalance/add/rebalance */
-void rb_replace_node(struct rb_node *victim, struct rb_node *new, 
+void rb_replace_node(struct rb_node *victim, struct rb_node *new,
 			struct rb_root *root);
 
 static inline void rb_link_node(struct rb_node * node, struct rb_node * parent,

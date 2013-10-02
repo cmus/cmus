@@ -114,7 +114,7 @@ static int mod_read(struct input_plugin_data *ip_data, char *buffer, int count)
 {
 	struct mod_private *priv = ip_data->private;
 	int rc;
-	
+
 	errno = 0;
 	rc = ModPlug_Read(priv->file, buffer, count);
 	if (rc < 0) {

@@ -1069,7 +1069,7 @@ void player_exit(void)
 	producer_running = 0;
 	pthread_cond_broadcast(&producer_playing);
 	player_unlock();
-	
+
 	rc = pthread_join(consumer_thread, NULL);
 	BUG_ON(rc);
 	rc = pthread_join(producer_thread, NULL);

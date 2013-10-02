@@ -23,7 +23,7 @@
  * Open
  * SND_PCM_STATE_OPEN = 0,
  * 
- * Setup installed 
+ * Setup installed
  * SND_PCM_STATE_SETUP = 1,
  * 
  * Ready to start
