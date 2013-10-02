@@ -410,6 +410,6 @@ const struct input_plugin_ops ip_ops = {
 };
 
 const int ip_priority = 50;
-const char * const ip_extensions[] = { "ogg", NULL };
+const char * const ip_extensions[] = { "ogg", "oga", "ogx", NULL };
 const char * const ip_mime_types[] = { "application/ogg", "audio/x-ogg", NULL };
 const char * const ip_options[] = { NULL };
