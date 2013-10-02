@@ -184,7 +184,7 @@ int u_char_width(uchar u)
 	if (u < 0x1100U)
 		goto narrow;
 
-	/* Hangul Jamo init. consonants */ 
+	/* Hangul Jamo init. consonants */
 	if (u <= 0x115fU)
 		goto wide;
 

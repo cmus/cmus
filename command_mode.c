@@ -1894,7 +1894,7 @@ static void cmd_lqueue(char *arg)
 		struct album_list *a = container_of(item, struct album_list, node);
 		struct tree_track *t;
 		struct rb_node *tmp;
- 
+
 		rb_for_each_entry(t, tmp, &a->album->track_root, tree_node)
 			play_queue_append(tree_track_info(t));
 		free(a);

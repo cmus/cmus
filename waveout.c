@@ -206,7 +206,7 @@ static int waveout_write(const char *buffer, int count)
 			waveout_error("waveOutWrite", rc);
 			break;
 		}
- 
+
 		written += len;
 		count -= len;
 		buffer_idx = (buffer_idx + 1) % buffer_count;
