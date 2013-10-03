@@ -104,7 +104,7 @@ static int mad_close(struct input_plugin_data *ip_data)
 static int mad_read(struct input_plugin_data *ip_data, char *buffer, int count)
 {
 	struct nomad *nomad;
-	
+
 	nomad = ip_data->private;
 	return nomad_read(nomad, buffer, count);
 }
@@ -112,7 +112,7 @@ static int mad_read(struct input_plugin_data *ip_data, char *buffer, int count)
 static int mad_seek(struct input_plugin_data *ip_data, double offset)
 {
 	struct nomad *nomad;
-	
+
 	nomad = ip_data->private;
 	return nomad_time_seek(nomad, offset);
 }
