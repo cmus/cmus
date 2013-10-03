@@ -186,18 +186,42 @@ static int parse_bool(const char *buf, int *val)
 
 /* this is used as id in struct cmus_opt */
 enum format_id {
-	FMT_CURRENT_ALT,
-	FMT_PLAYLIST_ALT,
-	FMT_TITLE_ALT,
-	FMT_TRACKWIN_ALT,
 	FMT_CURRENT,
+	FMT_CURRENT_ALT,
 	FMT_PLAYLIST,
+	FMT_PLAYLIST_ALT,
 	FMT_PLAYLIST_VA,
 	FMT_TITLE,
+	FMT_TITLE_ALT,
 	FMT_TRACKWIN,
+	FMT_TRACKWIN_ALT,
 	FMT_TRACKWIN_VA,
 
 	NR_FMTS
+};
+
+/* default values for the variables which we must initialize but
+ * can't do it statically */
+static const struct {
+	const char *name;
+	const char *value;
+} str_defaults[] = {
+	[FMT_CURRENT_ALT]	= { "altformat_current"	, " %F "				},
+	[FMT_CURRENT]		= { "format_current"	, " %a - %l -%3n. %t%= %y "		},
+	[FMT_PLAYLIST_ALT]	= { "altformat_playlist", " %f%= %d "				},
+	[FMT_PLAYLIST]		= { "format_playlist"	, " %-25%a %3n. %t%= %y %d "		},
+	[FMT_PLAYLIST_VA]	= { "format_playlist_va", " %-25%A %3n. %t (%a)%= %y %d "	},
+	[FMT_TITLE_ALT]		= { "altformat_title"	, "%f"					},
+	[FMT_TITLE]		= { "format_title"	, "%a - %l - %t (%y)"			},
+	[FMT_TRACKWIN_ALT]	= { "altformat_trackwin", " %f%= %d "				},
+	[FMT_TRACKWIN]		= { "format_trackwin"	, "%3n. %t%= %y %d "			},
+	[FMT_TRACKWIN_VA]	= { "format_trackwin_va", "%3n. %t (%a)%= %y %d "		},
+
+	{ "lib_sort", "albumartist date album discnumber tracknumber title filename" },
+	{ "pl_sort", "" },
+	{ "id3_default_charset","ISO-8859-1" },
+	{ "icecast_default_charset","ISO-8859-1" },
+	{ NULL, NULL }
 };
 
 /* callbacks for normal options {{{ */
@@ -1240,30 +1264,6 @@ static const char * const attr_names[NR_ATTRS] = {
 	"color_win_inactive_sel_attr",
 	"color_win_sel_attr",
 	"color_win_title_attr"
-};
-
-/* default values for the variables which we must initialize but
- * can't do it statically */
-static const struct {
-	const char *name;
-	const char *value;
-} str_defaults[] = {
-	{ "altformat_current",	" %F " },
-	{ "altformat_playlist",	" %f%= %d " },
-	{ "altformat_title",	"%f" },
-	{ "altformat_trackwin",	" %f%= %d " },
-	{ "format_current",	" %a - %l -%3n. %t%= %y " },
-	{ "format_playlist",	" %-25%a %3n. %t%= %y %d " },
-	{ "format_playlist_va",	" %-25%A %3n. %t (%a)%= %y %d " },
-	{ "format_title",	"%a - %l - %t (%y)" },
-	{ "format_trackwin",	"%3n. %t%= %y %d " },
-	{ "format_trackwin_va",	"%3n. %t (%a)%= %y %d " },
-
-	{ "lib_sort"	,	"albumartist date album discnumber tracknumber title filename" },
-	{ "pl_sort",		"" },
-	{ "id3_default_charset","ISO-8859-1" },
-	{ "icecast_default_charset","ISO-8859-1" },
-	{ NULL, NULL }
 };
 
 LIST_HEAD(option_head);
