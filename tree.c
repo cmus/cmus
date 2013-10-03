@@ -39,7 +39,7 @@ struct rb_root lib_artist_root;
 
 static int tree_album_selected(void)
 {
-	return iter_to_album(&(lib_tree_win->sel)) != NULL;
+	return iter_to_album(&lib_tree_win->sel) != NULL;
 }
 
 static inline void tree_search_track_to_iter(struct tree_track *track, struct iter *iter)
@@ -66,13 +66,13 @@ static inline void artist_to_iter(struct artist *artist, struct iter *iter)
 static inline void tree_track_to_iter(struct tree_track *track, struct iter *iter)
 {
 	if (tree_album_selected()) {
-		iter->data0 = &track->album->track_root;
-		iter->data2 = NULL;
+		iter_set_root(iter, &track->album->track_root);
+		iter_set_album(iter, NULL);
 	} else {
-		iter->data0 = &track->album->artist->album_root;
-		iter->data2 = *(&track->album);
+		iter_set_root(iter, &track->album->artist->album_root);
+		iter_set_album(iter, track->album);
 	}
-	iter->data1 = track;
+	iter_set_tree_track(iter, track);
 }
 
 static void tree_set_expand_artist(struct artist *artist, int expand)
@@ -279,10 +279,11 @@ static GENERIC_TREE_ITER_NEXT(tree_track_get_next_by_album, struct tree_track, t
 /* track window iterators by artist */
 static int tree_track_get_prev_by_artist(struct iter *iter)
 {
-	struct rb_root *root = iter->data0;
+	struct rb_root *root;
 	struct tree_track *track;
 	struct album *album;
 
+	root = iter_to_root(iter);
 	track = iter_to_tree_track(iter);
 	album = iter_to_album(iter);
 
@@ -337,10 +338,11 @@ static int tree_track_get_prev_by_artist(struct iter *iter)
 
 static int tree_track_get_next_by_artist(struct iter *iter)
 {
-	struct rb_root *root = iter->data0;
+	struct rb_root *root;
 	struct tree_track *track;
 	struct album *album;
 
+	root = iter_to_root(iter);
 	track = iter_to_tree_track(iter);
 	album = iter_to_album(iter);
 
@@ -458,9 +460,9 @@ static const struct searchable_ops tree_search_ops = {
 static inline int track_parent_selected(struct tree_track *track)
 {
 	if (tree_album_selected())
-		return track->album == iter_to_album(&(lib_tree_win->sel));
+		return track->album == iter_to_album(&lib_tree_win->sel);
 	else
-		return track->album->artist == iter_to_artist(&(lib_tree_win->sel));
+		return track->album->artist == iter_to_artist(&lib_tree_win->sel);
 }
 
 static void tree_sel_changed(void)

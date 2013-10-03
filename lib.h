@@ -156,6 +156,16 @@ static inline struct album *iter_to_album(const struct iter *iter)
 	return iter->data2;
 }
 
+static inline struct rb_root *iter_to_root(const struct iter *iter)
+{
+	return iter->data0;
+}
+
+static inline void iter_set_root(struct iter *iter, struct rb_root *root)
+{
+	iter->data0 = root;
+}
+
 static inline void iter_set_album(struct iter *iter, struct album *album)
 {
 	iter->data2 = album;
