@@ -106,7 +106,7 @@ static inline int scale(mad_fixed_t sample)
 static inline double timer_to_seconds(mad_timer_t timer)
 {
 	signed long ms;
-	
+
 	ms = mad_timer_count(timer, MAD_UNITS_MILLISECONDS);
 	return (double)ms / 1000.0;
 }
@@ -628,7 +628,7 @@ void nomad_close(struct nomad *nomad)
 int nomad_read(struct nomad *nomad, char *buffer, int count)
 {
 	int i, j, size, psize, to;
-	
+
 	if (nomad->i == -1) {
 		int rc;
 

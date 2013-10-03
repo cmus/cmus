@@ -104,7 +104,7 @@ int utf8_encode(const char *inbuf, const char *encoding, char **outbuf)
 	outbuf_size = inbuf_size;
 	for (i = 0; i < inbuf_size; i++) {
 		unsigned char ch;
-		
+
 		ch = inbuf[i];
 		if (ch > 127)
 			outbuf_size++;

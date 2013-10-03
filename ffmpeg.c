@@ -523,7 +523,7 @@ static int ffmpeg_read_comments(struct input_plugin_data *ip_data, struct keyval
 #else
 	GROWING_KEYVALS(c);
 	AVDictionaryEntry *tag = NULL;
- 
+
 	while ((tag = av_dict_get(ic->metadata, "", tag, AV_DICT_IGNORE_SUFFIX))) {
 		if (tag && tag->value[0])
 			comments_add_const(&c, tag->key, tag->value);

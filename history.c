@@ -128,7 +128,7 @@ void history_add_line(struct history *history, const char *line)
 	while (item != &history->head) {
 		struct list_head *next = item->next;
 		struct history_entry *hentry;
-		
+
 		hentry = container_of(item, struct history_entry, node);
 		if (strcmp(hentry->text, new->text) == 0) {
 			list_del(item);
@@ -170,7 +170,7 @@ const char *history_search_forward(struct history *history, const char *text)
 	search_len = strlen(text);
 	while (item != &history->head) {
 		struct history_entry *hentry;
-		
+
 		hentry = list_entry(item, struct history_entry, node);
 		if (strncmp(text, hentry->text, search_len) == 0) {
 			history->search_pos = item;
@@ -192,7 +192,7 @@ const char *history_search_backward(struct history *history, const char *text)
 	search_len = strlen(text);
 	while (item != &history->head) {
 		struct history_entry *hentry;
-		
+
 		hentry = list_entry(item, struct history_entry, node);
 		if (strncmp(text, hentry->text, search_len) == 0) {
 			history->search_pos = item;

@@ -397,7 +397,7 @@ int http_get(struct http_get *hg, struct keyval *headers, int timeout_ms)
 		gbuf_add_str(&buf, "\r\n");
 	}
 	gbuf_add_str(&buf, "\r\n");
-	
+
 	rc = http_write(hg->fd, buf.buffer, buf.len, timeout_ms);
 	if (rc)
 		goto out;
