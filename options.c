@@ -855,15 +855,12 @@ static void get_auto_expand_albums(unsigned int id, char *buf)
 
 static void set_auto_expand_albums(unsigned int id, const char *buf)
 {
-	if (!parse_bool(buf, &auto_expand_albums))
-		return;
-	browser_reload();
+	parse_bool(buf, &auto_expand_albums);
 }
 
 static void toggle_auto_expand_albums(unsigned int id)
 {
 	auto_expand_albums ^= 1;
-	browser_reload();
 }
 
 static void get_show_current_bitrate(unsigned int id, char *buf)
