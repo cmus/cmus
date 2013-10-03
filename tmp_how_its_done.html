@@ -1,0 +1,73 @@
+<h3>How iters currently look like</h3>
+
+<p>When an album is selected, the track window is initialized with an iter of the following form</p>
+
+<pre><code>{
+    data0 = &amp;album-&gt;track_root,
+    data1 = NULL,
+    data2 = NULL
+}
+</code></pre>
+
+<p>When <code>tree_track_get_next_by_album</code> iterates over this iter, <code>data1</code> is set to the current track.
+<code>data2</code> is always <code>NULL</code>.</p>
+
+<h3>How the new iter looks like when an artist is selected</h3>
+
+<p>When an artist is selected, the track window is initialized with an iter of the following form</p>
+
+<pre><code>{
+    data0 = &amp;artist-&gt;album_root,
+    data1 = NULL,
+    data2 = NULL
+}
+</code></pre>
+
+<p>When <code>tree_track_get_next_by_artist</code> gets this iter for the first time, both <code>data1</code> and <code>data2</code> are set to <code>to_album(rb_first(data0))</code>.
+This is interpreted by <code>print_track</code> as the command to draw the album header.
+Subsequent calls of <code>ttgnba</code> iterate over the tracks and save them in <code>data1</code>.
+Once all tracks are done, we continue as above but with <code>rb_next(&amp;album-&gt;tree_node)</code>.</p>
+
+<h3>How the tree iter looks like</h3>
+
+<p>When an artist is selected, the tree iter look like this:</p>
+
+<pre><code>{
+    data0 = tree_root,
+    data1 = artist,
+    data2 = NULL
+}
+</code></pre>
+
+<p>When an album is selected, the tree iter look like this:</p>
+
+<pre><code>{
+    data0 = tree_root,
+    data1 = artist,
+    data2 = album
+}
+</code></pre>
+
+<h3>How the track window calls <code>ttgnb_album</code> and <code>ttgnb_artist</code></h3>
+
+<p>Since the track window cannot be told which function to use when it is initialized with an iter, it always calls the function <code>tree_track_get_next</code>.
+In there, we have to distinguish the two cases. 
+I don't think it's possible to distingish those cases by looking at the iter itself.
+Instead we use the following function:</p>
+
+<pre><code>static inline int tree_album_selected(void)
+{
+    return iter_to_album(&amp;lib_tree_win-&gt;sel) != NULL;
+}
+</code></pre>
+
+<p>where</p>
+
+<pre><code>static inline struct album *iter_to_album(const struct iter *iter)
+{
+    return iter-&gt;data2;
+}
+</code></pre>
+
+<p>and redirect the calls to <code>ttgnb_album</code> or <code>ttgnb_artist</code> depending on which type is selected in the tree.
+This is possible because of the previous paragraph.</p>
