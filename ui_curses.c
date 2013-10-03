@@ -326,6 +326,7 @@ enum {
 	SF_BUFFER,
 	SF_REPEAT,
 	SF_CONTINUE,
+	SF_FOLLOW,
 	SF_SHUFFLE,
 	SF_PLAYLISTMODE,
 	SF_BITRATE,
@@ -343,6 +344,7 @@ static struct format_option status_fopts[NR_SFS + 1] = {
 	DEF_FO_INT('b', NULL, 0),
 	DEF_FO_STR('R', NULL, 0),
 	DEF_FO_STR('C', NULL, 0),
+	DEF_FO_STR('F', NULL, 0),
 	DEF_FO_STR('S', NULL, 0),
 	DEF_FO_STR('L', NULL, 0),
 	DEF_FO_INT('B', NULL, 0),
@@ -1052,6 +1054,7 @@ static void do_update_statusline(void)
 {
 	static const char *status_strs[] = { ".", ">", "|" };
 	static const char *cont_strs[] = { " ", "C" };
+	static const char *follow_strs[] = { " ", "F" };
 	static const char *repeat_strs[] = { " ", "R" };
 	static const char *shuffle_strs[] = { " ", "S" };
 	int buffer_fill, vol, vol_left, vol_right;
@@ -1064,6 +1067,7 @@ static void do_update_statusline(void)
 			pl_editable.total_time, 0);
 	editable_unlock();
 
+	fopt_set_str(&status_fopts[SF_FOLLOW], follow_strs[follow]);
 	fopt_set_str(&status_fopts[SF_REPEAT], repeat_strs[repeat]);
 	fopt_set_str(&status_fopts[SF_SHUFFLE], shuffle_strs[shuffle]);
 	fopt_set_str(&status_fopts[SF_PLAYLISTMODE], aaa_mode_names[aaa_mode]);
@@ -1140,7 +1144,7 @@ static void do_update_statusline(void)
 	} else {
 		strcat(format, "playlist");
 	}
-	strcat(format, " | %1C%1R%1S ");
+	strcat(format, " | %1C%1F%1R%1S ");
 	format_print(print_buffer, COLS, format, status_fopts);
 
 	msg = player_info.error_msg;
