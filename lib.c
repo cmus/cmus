@@ -340,6 +340,10 @@ struct track_info *lib_set_track(struct tree_track *track)
 		lib_cur_track = track;
 		ti = tree_track_info(track);
 		track_info_ref(ti);
+		if (follow) {
+			tree_sel_current();
+			sorted_sel_current();
+		}
 		all_wins_changed();
 	}
 	return ti;

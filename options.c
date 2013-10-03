@@ -71,6 +71,7 @@ int wrap_search = 1;
 int play_library = 1;
 int repeat = 0;
 int shuffle = 0;
+int follow = 0;
 int display_artist_sort_name;
 int smart_artist_sort = 1;
 int scroll_offset = 2;
@@ -558,6 +559,24 @@ static void set_auto_reshuffle(unsigned int id, const char *buf)
 static void toggle_auto_reshuffle(unsigned int id)
 {
 	auto_reshuffle ^= 1;
+}
+
+static void get_follow(unsigned int id, char *buf)
+{
+	strcpy(buf, bool_names[follow]);
+}
+
+static void set_follow(unsigned int id, const char *buf)
+{
+	if (!parse_bool(buf, &follow))
+		return;
+	update_statusline();
+}
+
+static void toggle_follow(unsigned int id)
+{
+	follow ^= 1;
+	update_statusline();
 }
 
 static void get_continue(unsigned int id, char *buf)
@@ -1175,6 +1194,7 @@ static const struct {
 	DT(show_remaining_time)
 	DT(set_term_title)
 	DT(shuffle)
+	DT(follow)
 	DT(softvol)
 	DN(softvol_state)
 	DN_FLAGS(status_display_program, OPT_PROGRAM_PATH)

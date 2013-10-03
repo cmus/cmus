@@ -131,6 +131,7 @@ extern int wrap_search;
 extern int play_library;
 extern int repeat;
 extern int shuffle;
+extern int follow;
 extern int display_artist_sort_name;
 extern int smart_artist_sort;
 extern int scroll_offset;

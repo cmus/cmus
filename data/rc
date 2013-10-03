@@ -40,6 +40,7 @@ bind common down win-down
 bind common e win-add-q
 bind common end win-bottom
 bind common enter win-activate
+bind common f toggle follow
 bind common g win-top
 bind common h seek -5
 bind common home win-top
