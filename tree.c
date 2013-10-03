@@ -39,9 +39,7 @@ struct rb_root lib_artist_root;
 
 static int tree_album_selected(void)
 {
-	struct iter sel;
-	window_get_sel(lib_tree_win, &sel);
-	return iter_to_album(&sel) != NULL;
+	return iter_to_album(&(lib_tree_win->sel)) != NULL;
 }
 
 static inline void tree_search_track_to_iter(struct tree_track *track, struct iter *iter)
@@ -459,16 +457,10 @@ static const struct searchable_ops tree_search_ops = {
 
 static inline int track_parent_selected(struct tree_track *track)
 {
-	struct iter sel;
-
-	if (window_get_sel(lib_tree_win, &sel))
-	{
-		if (tree_album_selected())
-			return track->album == iter_to_album(&sel);
-		else
-			return track->album->artist == iter_to_artist(&sel);
-	}
-	return 0;
+	if (tree_album_selected())
+		return track->album == iter_to_album(&(lib_tree_win->sel));
+	else
+		return track->album->artist == iter_to_artist(&(lib_tree_win->sel));
 }
 
 static void tree_sel_changed(void)
