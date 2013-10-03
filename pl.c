@@ -57,6 +57,8 @@ static struct track_info *set_track(struct simple_track *track)
 		pl_cur_track = track;
 		ti = track->info;
 		track_info_ref(ti);
+		if (follow)
+			pl_sel_current();
 		pl_editable.win->changed = 1;
 	}
 	return ti;
