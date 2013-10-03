@@ -37,7 +37,7 @@ struct window *lib_track_win;
 struct window *lib_cur_win;
 struct rb_root lib_artist_root;
 
-static int tree_album_selected(void)
+static inline int tree_album_selected(void)
 {
 	return iter_to_album(&lib_tree_win->sel) != NULL;
 }
