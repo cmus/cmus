@@ -31,19 +31,18 @@
 #include <string.h>
 #include <strings.h>
 
-enum tree_row_type
-{
-    ARTIST,
-    ALBUM
-};
-
-enum tree_row_type sel_row_type = ARTIST;
-
 struct searchable *tree_searchable;
 struct window *lib_tree_win;
 struct window *lib_track_win;
 struct window *lib_cur_win;
 struct rb_root lib_artist_root;
+
+static int tree_album_selected(void)
+{
+	struct iter sel;
+	window_get_sel(lib_tree_win, &sel);
+	return iter_to_album(&sel) != NULL;
+}
 
 static inline void tree_search_track_to_iter(struct tree_track *track, struct iter *iter)
 {
@@ -68,12 +67,12 @@ static inline void artist_to_iter(struct artist *artist, struct iter *iter)
 
 static inline void tree_track_to_iter(struct tree_track *track, struct iter *iter)
 {
-	if (sel_row_type == ARTIST) {
-		iter->data0 = &track->album->artist->album_root;
-		iter->data2 = *(&track->album);
-	} else {
+	if (tree_album_selected()) {
 		iter->data0 = &track->album->track_root;
 		iter->data2 = NULL;
+	} else {
+		iter->data0 = &track->album->artist->album_root;
+		iter->data2 = *(&track->album);
 	}
 	iter->data1 = track;
 }
@@ -400,7 +399,7 @@ static int tree_track_get_next_by_artist(struct iter *iter)
 /* track window iterators */
 static int tree_track_get_prev(struct iter *iter)
 {
-	if (sel_row_type == ALBUM) {
+	if (tree_album_selected()) {
 		return tree_track_get_prev_by_album(iter);
 	} else {
 		return tree_track_get_prev_by_artist(iter);
@@ -409,7 +408,7 @@ static int tree_track_get_prev(struct iter *iter)
 
 static int tree_track_get_next(struct iter *iter)
 {
-	if (sel_row_type == ALBUM) {
+	if (tree_album_selected()) {
 		return tree_track_get_next_by_album(iter);
 	} else {
 		return tree_track_get_next_by_artist(iter);
@@ -464,7 +463,7 @@ static inline int track_parent_selected(struct tree_track *track)
 
 	if (window_get_sel(lib_tree_win, &sel))
 	{
-		if (sel_row_type == ALBUM)
+		if (tree_album_selected())
 			return track->album == iter_to_album(&sel);
 		else
 			return track->album->artist == iter_to_artist(&sel);
@@ -482,10 +481,8 @@ static void tree_sel_changed(void)
 	album = iter_to_album(&sel);
 	artist = iter_to_artist(&sel);
 	if (album != NULL) {
-		sel_row_type = ALBUM;
 		window_set_contents(lib_track_win, &album->track_root);
 	} else if (artist != NULL) {
-		sel_row_type = ARTIST;
 		window_set_contents(lib_track_win, &artist->album_root);
 		window_down(lib_track_win, 1);
 	} else {
