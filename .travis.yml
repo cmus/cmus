@@ -1,0 +1,27 @@
+language: c
+compiler:
+    - clang
+    - gcc
+before_install:
+    - sudo apt-get update -qq
+    - sudo apt-get install -qq libncursesw5-dev
+    - sudo apt-get install -qq libpulse-dev
+    - sudo apt-get install -qq libasound2-dev
+    - sudo apt-get install -qq libroar-dev
+    - sudo apt-get install -qq libao-dev
+    - sudo apt-get install -qq libcdio-dev
+    - sudo apt-get install -qq libcdio-cdda-dev
+    - sudo apt-get install -qq libcddb2-dev
+    - sudo apt-get install -qq libcue-dev
+#   - sudo apt-get install -qq libopus-dev
+    - sudo apt-get install -qq libflac-dev
+    - sudo apt-get install -qq libvorbis-dev
+    - sudo apt-get install -qq libmpcdec-dev
+    - sudo apt-get install -qq libwavpack-dev
+    - sudo apt-get install -qq libmad0-dev
+    - sudo apt-get install -qq libavformat-dev libavcodec-dev
+    - sudo apt-get install -qq libfaad-dev
+    - sudo apt-get install -qq libmp4v2-dev
+    - sudo apt-get install -qq libmodplug-dev
+    - sudo apt-get install -qq libmikmod2-dev
+script: ./configure && make

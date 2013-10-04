@@ -3,6 +3,8 @@ cmus — C\* Music Player
 
 http://cmus.sourceforge.net/
 
+[![Build Status](https://travis-ci.org/cmus/cmus.png?branch=master)](https://travis-ci.org/cmus/cmus)
+
 Copyright © 2004-2008 Timo Hirvonen <tihirvon@gmail.com>
 
 Copyright © 2008-2013 Various Authors
