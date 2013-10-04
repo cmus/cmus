@@ -217,6 +217,8 @@ static const struct {
 	[FMT_TRACKWIN]		= { "format_trackwin"	, "%3n. %t%= %y %d "			},
 	[FMT_TRACKWIN_VA]	= { "format_trackwin_va", "%3n. %t (%a)%= %y %d "		},
 
+	[NR_FMTS] =
+
 	{ "lib_sort", "albumartist date album discnumber tracknumber title filename" },
 	{ "pl_sort", "" },
 	{ "id3_default_charset", "ISO-8859-1" },
