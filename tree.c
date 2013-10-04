@@ -399,20 +399,18 @@ static int tree_track_get_next_by_artist(struct iter *iter)
 /* track window iterators */
 static int tree_track_get_prev(struct iter *iter)
 {
-	if (tree_album_selected()) {
+	if (tree_album_selected())
 		return tree_track_get_prev_by_album(iter);
-	} else {
+	else
 		return tree_track_get_prev_by_artist(iter);
-	}
 }
 
 static int tree_track_get_next(struct iter *iter)
 {
-	if (tree_album_selected()) {
+	if (tree_album_selected())
 		return tree_track_get_next_by_album(iter);
-	} else {
+	else
 		return tree_track_get_next_by_artist(iter);
-	}
 }
 
 /* search (tree) {{{ */
