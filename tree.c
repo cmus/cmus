@@ -1160,6 +1160,17 @@ void tree_remove(struct tree_track *track)
 			artist->expanded = 0;
 			remove_artist(artist);
 			artist_free(artist);
+		} else {
+			/* make sure that the album header isn't
+			 * referenced anymore in lib_tark_win */
+			struct iter iter;
+			iter.data0 = &artist->album_root;
+			iter.data1 = iter.data2 = album;
+			if (iters_equal(&lib_track_win->top, &iter)) {
+				iter = lib_track_win->sel;
+				tree_track_get_prev_by_artist(&iter);
+				lib_track_win->top = iter;
+			}
 		}
 	}
 }

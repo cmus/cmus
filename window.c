@@ -262,21 +262,36 @@ minimize:
 	win->changed = 1;
 }
 
+/* FIXME: This function should only be called when there is
+ * another selectable line */
 void window_row_vanishes(struct window *win, struct iter *iter)
 {
 	struct iter new = *iter;
 
 	BUG_ON(iter->data0 != win->head.data0);
-	if (!win->get_next(&new)) {
-		new = *iter;
-		win->get_prev(&new);
-	}
-	if (iters_equal(&win->top, iter))
+	if (iters_equal(&win->top, iter)) {
+		win->get_next(&new);
 		win->top = new;
+		new = *iter;
+	}
 	if (iters_equal(&win->sel, iter)) {
+		/* FIXME: Get the closest selectable element */
+		while (1) {
+			if (!win->get_next(&new)) {
+				new = *iter;
+				while (win->get_prev(&new)) {
+					if (selectable(win, &new))
+						break;
+				}
+				break;
+			}
+			if (selectable(win, &new))
+				break;
+		}
 		win->sel = new;
 		sel_changed(win);
 	}
+
 	win->changed = 1;
 }
 
