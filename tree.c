@@ -49,11 +49,19 @@ static inline void tree_search_track_to_iter(struct tree_track *track, struct it
 	iter->data2 = NULL;
 }
 
-static inline void album_to_iter(struct album *album, struct iter *iter)
+static inline void album_to_tree_iter(struct album *album, struct iter *iter)
 {
 	iter->data0 = &lib_artist_root;
 	iter->data1 = album->artist;
 	iter->data2 = album;
+}
+
+static inline void album_to_track_iter(struct album *album, struct iter *iter)
+{
+	struct tree_track *track = (struct tree_track *)album;
+	iter_set_root(iter, &album->artist->album_root);
+	iter_set_album(iter, album);
+	iter_set_tree_track(iter, track);
 }
 
 static inline void artist_to_iter(struct artist *artist, struct iter *iter)
@@ -719,7 +727,7 @@ static int tree_search_matches(void *data, struct iter *iter, const char *text)
 
 		track->album->artist->expanded = 1;
 
-		album_to_iter(track->album, &tmpiter);
+		album_to_tree_iter(track->album, &tmpiter);
 	} else {
 		artist_to_iter(track->album->artist, &tmpiter);
 	}
@@ -874,7 +882,7 @@ static void remove_album(struct album *album)
 	if (album->artist->expanded) {
 		struct iter iter;
 
-		album_to_iter(album, &iter);
+		album_to_tree_iter(album, &iter);
 		window_row_vanishes(lib_tree_win, &iter);
 	}
 	rb_erase(&album->tree_node, &album->artist->album_root);
@@ -1164,8 +1172,7 @@ void tree_remove(struct tree_track *track)
 			/* make sure that the album header isn't
 			 * referenced anymore in lib_tark_win */
 			struct iter iter;
-			iter.data0 = &artist->album_root;
-			iter.data1 = iter.data2 = album;
+			album_to_track_iter(album, &iter);
 			if (iters_equal(&lib_track_win->top, &iter)) {
 				iter = lib_track_win->sel;
 				tree_track_get_prev_by_artist(&iter);
@@ -1229,7 +1236,7 @@ void tree_sel_track(struct tree_track *t)
 		if (auto_expand_albums)
 			t->album->artist->expanded = 1;
 		if (t->album->artist->expanded)
-			album_to_iter(t->album, &iter);
+			album_to_tree_iter(t->album, &iter);
 		else
 			artist_to_iter(t->album->artist, &iter);
 
