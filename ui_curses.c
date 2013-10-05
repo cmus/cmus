@@ -662,24 +662,22 @@ static void print_track(struct window *win, int row, struct iter *iter)
 
 	if (track == (struct tree_track*)album) {
 		int pos;
-		int col = track_win_x;
-		int padding = 0;
-		bkgdset(pairs[CURSED_SEPARATOR]);
-		for (; col < track_win_x + padding; col++)
-			(void) mvaddch(track_win_y + row + 1, col, ACS_HLINE);
 
+		/* FIXME:
+		 * replace A_BOLD by something useful */
 		bkgdset(A_BOLD);
 		print_buffer[0] = ' ';
-		strncpy(print_buffer + 1, album->name, min(sizeof(print_buffer) - 3, track_win_w - padding - 2));
-		pos = strnlen(print_buffer, sizeof(print_buffer) - 2);
-		print_buffer[pos] = ' ';
-		print_buffer[pos+1] = 0;
-		dump_print_buffer(track_win_y + row + 1, col);
+		pos = format_str(print_buffer + 1, album->name, track_win_w - 2);
+		print_buffer[++pos] = ' ';
+		print_buffer[++pos] = 0;
+		dump_print_buffer(track_win_y + row + 1, track_win_x);
 
 		bkgdset(pairs[CURSED_SEPARATOR]);
-		col += u_str_width(album->name) + 2;
-		for (; col < COLS; col++)
-			(void) mvaddch(track_win_y + row + 1, col, ACS_HLINE);
+		pos = track_win_x + u_str_width(album->name) + 2;
+		while (pos < COLS) {
+			(void) mvaddch(track_win_y + row + 1, pos, ACS_HLINE);
+			pos++;
+		}
 
 		return;
 	}
