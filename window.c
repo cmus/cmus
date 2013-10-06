@@ -269,8 +269,13 @@ void window_row_vanishes(struct window *win, struct iter *iter)
 	BUG_ON(iter->data0 != win->head.data0);
 	if (iters_equal(&win->top, iter)) {
 		new = *iter;
-		if (win->get_next(&new))
+		if (win->get_next(&new)) {
 			win->top = new;
+		} else {
+			new = *iter;
+			win->get_prev(&new);
+			win->top = new;
+		}
 	}
 	if (iters_equal(&win->sel, iter)) {
 		/* calculate minimal distance to next selectable */

@@ -296,14 +296,11 @@ static int tree_track_get_prev_by_artist(struct iter *iter)
 
 	/* get last album */
 	if (it->album == NULL) {
+		if (rb_root_empty(it->root))
+			return 0;
 		it->album = to_album(rb_last(it->root));
+		it->track = NULL;
 		return tree_track_get_prev_by_artist(iter);
-	}
-
-	/* get last track */
-	if (it->track == NULL) {
-		it->track = container_of(rb_last(&it->album->track_root), struct tree_track, tree_node);
-		return 1;
 	}
 
 	/* get previous album */
@@ -311,14 +308,23 @@ static int tree_track_get_prev_by_artist(struct iter *iter)
 		/* no more albums */
 		if (rb_prev(&it->album->tree_node) == NULL)
 			return 0;
-		it->album = container_of(rb_prev(&it->album->tree_node), struct album, tree_node);
+		it->album = to_album(rb_prev(&it->album->tree_node));
 		it->track = NULL;
 		return tree_track_get_prev_by_artist(iter);
 	}
 
+	/* get last track */
+	if (it->track == NULL) {
+		if (rb_root_empty(&it->album->track_root))
+			it->track = (struct tree_track *)it->album;
+		else
+			it->track = to_tree_track(rb_last(&it->album->track_root));
+		return 1;
+	}
+
 	/* get previous track */
 	if (rb_prev(&it->track->tree_node) != NULL) {
-		it->track = container_of(rb_prev(&it->track->tree_node), struct tree_track, tree_node);
+		it->track = to_tree_track(rb_prev(&it->track->tree_node));
 		return 1;
 	}
 
@@ -334,35 +340,38 @@ static int tree_track_get_next_by_artist(struct iter *iter)
 
 	/* get first album */
 	if (it->album == NULL) {
+		if (rb_root_empty(it->root))
+			return 0;
 		it->album = to_album(rb_first(it->root));
-		return tree_track_get_next_by_artist(iter);
-	}
-
-	/* head of album
-	 * return album header */
-	if (it->track == NULL) {
 		it->track = (struct tree_track *)it->album;
 		return 1;
 	}
 
 	/* get first track */
 	if (it->track == (struct tree_track *)it->album) {
-		it->track = container_of(rb_first(&it->album->track_root), struct tree_track, tree_node);
-		return 1;
+		/* this happens when the last track in an album is deleted but
+		 * the album header is still referenced in lib_track_win->top
+		 * set track = NULL to skip the next `if` without goto */
+		if (rb_root_empty(&it->album->track_root)) {
+			it->track = NULL;
+		} else {
+			it->track = to_tree_track(rb_first(&it->album->track_root));
+			return 1;
+		}
 	}
 
 	/* get next track */
-	if (rb_next(&it->track->tree_node) != NULL) {
-		it->track = container_of(rb_next(&it->track->tree_node), struct tree_track, tree_node);
+	if (it->track != NULL && rb_next(&it->track->tree_node) != NULL) {
+		it->track = to_tree_track(rb_next(&it->track->tree_node));
 		return 1;
 	}
 
 	/* no more tracks
 	 * get next album */
 	if (rb_next(&it->album->tree_node) != NULL) {
-		it->album = container_of(rb_next(&it->album->tree_node), struct album, tree_node);
-		it->track = NULL;
-		return tree_track_get_next_by_artist(iter);
+		it->album = to_album(rb_next(&it->album->tree_node));
+		it->track = (struct tree_track *)it->album;
+		return 1;
 	}
 
 	/* no more albums */
@@ -549,7 +558,8 @@ static void album_free(struct album *album)
 
 static int track_selectable(struct iter *iter)
 {
-	return iter->data1 != iter->data2;
+	struct track_iter *it = (struct track_iter *)iter;
+	return it->album != (struct album *)it->track;
 }
 
 void tree_init(void)
@@ -713,11 +723,11 @@ static int tree_search_matches(void *data, struct iter *iter, const char *text)
 				artist_free(collapse_artist);
 				collapse_artist = (!track->album->artist->expanded) ? artist_copy(track->album->artist) : NULL;
 			}
-		} else if (!track->album->artist->expanded)
-		 collapse_artist = artist_copy(track->album->artist);
+		} else if (!track->album->artist->expanded) {
+			collapse_artist = artist_copy(track->album->artist);
+		}
 
 		track->album->artist->expanded = 1;
-
 		album_to_iter(track->album, &tmpiter);
 	} else {
 		artist_to_iter(track->album->artist, &tmpiter);
@@ -1128,7 +1138,6 @@ static void remove_track(struct tree_track *track)
 {
 	if (track_parent_selected(track)) {
 		struct track_iter iter;
-
 		tree_track_to_track_iter(track, &iter);
 		window_row_vanishes(lib_track_win, (struct iter *)&iter);
 	}
@@ -1152,6 +1161,12 @@ void tree_remove(struct tree_track *track)
 		if (sel_album == album)
 			lib_cur_win = lib_tree_win;
 
+		if (track_parent_selected(track) && !tree_album_selected()) {
+			struct iter iter;
+			album_to_track_iter(album, (struct track_iter*)&iter);
+			window_row_vanishes(lib_track_win, &iter);
+		}
+
 		remove_album(album);
 		album_free(album);
 
@@ -1159,16 +1174,6 @@ void tree_remove(struct tree_track *track)
 			artist->expanded = 0;
 			remove_artist(artist);
 			artist_free(artist);
-		} else {
-			/* make sure that the album header isn't
-			 * referenced anymore in lib_tark_win */
-			struct iter iter;
-			album_to_track_iter(album, (struct track_iter*)&iter);
-			if (iters_equal(&lib_track_win->top, &iter)) {
-				iter = lib_track_win->sel;
-				tree_track_get_prev_by_artist(&iter);
-				lib_track_win->top = iter;
-			}
 		}
 	}
 }
