@@ -46,10 +46,10 @@
  * converted to stereo so it's worthwhile to split the conversion to 2 phases.
  */
 
-static void convert_u8_1ch_to_s16_2ch(char *dst, const char *src, int count)
+static void convert_u8_1ch_to_s16_2ch(void *dst, const void *src, int count)
 {
-	int16_t *d = (int16_t *)dst;
-	const uint8_t *s = (const uint8_t *)src;
+	int16_t *d = dst;
+	const uint8_t *s = src;
 	int i, j = 0;
 
 	for (i = 0; i < count; i++) {
@@ -60,10 +60,10 @@ static void convert_u8_1ch_to_s16_2ch(char *dst, const char *src, int count)
 	}
 }
 
-static void convert_s8_1ch_to_s16_2ch(char *dst, const char *src, int count)
+static void convert_s8_1ch_to_s16_2ch(void *dst, const void *src, int count)
 {
-	int16_t *d = (int16_t *)dst;
-	const int8_t *s = (const int8_t *)src;
+	int16_t *d = dst;
+	const int8_t *s = src;
 	int i, j = 0;
 
 	for (i = 0; i < count; i++) {
@@ -73,10 +73,10 @@ static void convert_s8_1ch_to_s16_2ch(char *dst, const char *src, int count)
 	}
 }
 
-static void convert_u8_2ch_to_s16_2ch(char *dst, const char *src, int count)
+static void convert_u8_2ch_to_s16_2ch(void *dst, const void *src, int count)
 {
-	int16_t *d = (int16_t *)dst;
-	const int8_t *s = (const int8_t *)src;
+	int16_t *d = dst;
+	const int8_t *s = src;
 	int i;
 
 	for (i = 0; i < count; i++) {
@@ -86,10 +86,10 @@ static void convert_u8_2ch_to_s16_2ch(char *dst, const char *src, int count)
 	}
 }
 
-static void convert_s8_2ch_to_s16_2ch(char *dst, const char *src, int count)
+static void convert_s8_2ch_to_s16_2ch(void *dst, const void *src, int count)
 {
-	int16_t *d = (int16_t *)dst;
-	const int8_t *s = (const int8_t *)src;
+	int16_t *d = dst;
+	const int8_t *s = src;
 	int i;
 
 	for (i = 0; i < count; i++) {
@@ -98,9 +98,9 @@ static void convert_s8_2ch_to_s16_2ch(char *dst, const char *src, int count)
 	}
 }
 
-static void convert_u16_le_to_s16_le(char *buf, int count)
+static void convert_u16_le_to_s16_le(void *buf, int count)
 {
-	int16_t *b = (int16_t *)buf;
+	int16_t *b = buf;
 	int i;
 
 	for (i = 0; i < count; i++) {
@@ -110,9 +110,9 @@ static void convert_u16_le_to_s16_le(char *buf, int count)
 	}
 }
 
-static void convert_u16_be_to_s16_le(char *buf, int count)
+static void convert_u16_be_to_s16_le(void *buf, int count)
 {
-	int16_t *b = (int16_t *)buf;
+	int16_t *b = buf;
 	int i;
 
 	for (i = 0; i < count; i++) {
@@ -125,19 +125,19 @@ static void convert_u16_be_to_s16_le(char *buf, int count)
 	}
 }
 
-static void swap_s16_byte_order(char *buf, int count)
+static void swap_s16_byte_order(void *buf, int count)
 {
-	int16_t *b = (int16_t *)buf;
+	int16_t *b = buf;
 	int i;
 
 	for (i = 0; i < count; i++)
 		b[i] = swap_uint16(b[i]);
 }
 
-static void convert_16_1ch_to_16_2ch(char *dst, const char *src, int count)
+static void convert_16_1ch_to_16_2ch(void *dst, const void *src, int count)
 {
-	int16_t *d = (int16_t *)dst;
-	const int16_t *s = (const int16_t *)src;
+	int16_t *d = dst;
+	const int16_t *s = src;
 	int i, j = 0;
 
 	for (i = 0; i < count; i++) {

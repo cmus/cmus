@@ -136,7 +136,7 @@ static int opus_read(struct input_plugin_data *ip_data, char *buffer, int count)
 	priv = ip_data->private;
 
 	/* samples = number of samples read per channel */
-	samples = op_read_stereo(priv->of, (opus_int16*)buffer,
+	samples = op_read_stereo(priv->of, (void*)buffer,
 							 count / sizeof(opus_int16));
 	if (samples < 0) {
 		switch (samples) {

@@ -243,35 +243,35 @@ static FLAC__StreamDecoderWriteStatus write_cb(const Dec *dec, const FLAC__Frame
 				b[j++] = buf[ch % nch][i];
 		}
 	} else if (depth == 16) {
-		int16_t *b = (int16_t *)(priv->buf + priv->buf_wpos);
+		int16_t *b = (void *)(priv->buf + priv->buf_wpos);
 
 		for (i = 0; i < frames; i++) {
 			for (ch = 0; ch < channels; ch++)
 				b[j++] = LE16(buf[ch % nch][i]);
 		}
 	} else if (depth == 32) {
-		int32_t *b = (int32_t *)(priv->buf + priv->buf_wpos);
+		int32_t *b = (void *)(priv->buf + priv->buf_wpos);
 
 		for (i = 0; i < frames; i++) {
 			for (ch = 0; ch < channels; ch++)
 				b[j++] = LE32(buf[ch % nch][i]);
 		}
 	} else if (depth == 12) { /* -> 16 */
-		int16_t *b = (int16_t *)(priv->buf + priv->buf_wpos);
+		int16_t *b = (void *)(priv->buf + priv->buf_wpos);
 
 		for (i = 0; i < frames; i++) {
 			for (ch = 0; ch < channels; ch++)
 				b[j++] = LE16(buf[ch % nch][i] << 4);
 		}
 	} else if (depth == 20) { /* -> 32 */
-		int32_t *b = (int32_t *)(priv->buf + priv->buf_wpos);
+		int32_t *b = (void *)(priv->buf + priv->buf_wpos);
 
 		for (i = 0; i < frames; i++) {
 			for (ch = 0; ch < channels; ch++)
 				b[j++] = LE32(buf[ch % nch][i] << 12);
 		}
 	} else if (depth == 24) { /* -> 32 */
-		int32_t *b = (int32_t *)(priv->buf + priv->buf_wpos);
+		int32_t *b = (void *)(priv->buf + priv->buf_wpos);
 
 		for (i = 0; i < frames; i++) {
 			for (ch = 0; ch < channels; ch++)

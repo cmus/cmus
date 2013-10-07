@@ -388,8 +388,8 @@ static int libcdio_read_comments(struct input_plugin_data *ip_data, struct keyva
 #else
 	cdt = cdio_get_cdtext(priv->cdio, priv->track);
 	if (cdt) {
-		track_comments_found = 1;
 		char * const *field = cdt->field;
+		track_comments_found = 1;
 		artist = field[CDTEXT_PERFORMER];
 		title = field[CDTEXT_TITLE];
 		genre = field[CDTEXT_GENRE];
