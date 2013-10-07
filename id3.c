@@ -591,7 +591,7 @@ static int frame_tab_index(const char *id)
 {
 	int i = 0;
 
-	while (i < sizeof(frame_tab)/sizeof(frame_tab[0])) {
+	while (i < N_ELEMENTS(frame_tab)) {
 		if (!strncmp(id, frame_tab[i].name, 4))
 			return i;
 		i++;

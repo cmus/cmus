@@ -351,6 +351,11 @@ static int ffmpeg_fill_buffer(AVFormatContext *ic, AVCodecContext *cc, struct ff
 	int got_frame;
 #endif
 	while (1) {
+#if (LIBAVCODEC_VERSION_INT < ((53<<16) + (25<<8) + 0))
+		/* frame_size specifies the size of output->buffer for
+		 * avcodec_decode_audio2. */
+		int frame_size = AVCODEC_MAX_AUDIO_FRAME_SIZE;
+#endif
 		int len;
 
 		if (input->curr_pkt_size <= 0) {
