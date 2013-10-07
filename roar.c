@@ -192,7 +192,7 @@ static int op_roar_open(sample_format_t sf, const channel_position_t *channel_ma
 
 	ROAR_DBG("op_roar_open(*) = ?");
 
-	(void) roar_vs_blocking(vss, ROAR_VS_FALSE, &err);
+	(int){0} = roar_vs_blocking(vss, ROAR_VS_FALSE, &err);
 
 	ROAR_DBG("op_roar_open(*) = 0");
 
@@ -208,7 +208,7 @@ static int op_roar_close(void)
 
 static int op_roar_drop(void)
 {
-	(void) roar_vs_reset_buffer(vss, ROAR_VS_TRUE, ROAR_VS_TRUE, &err);
+	(int){0} = roar_vs_reset_buffer(vss, ROAR_VS_TRUE, ROAR_VS_TRUE, &err);
 	return 0;
 }
 
