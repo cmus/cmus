@@ -36,9 +36,9 @@ ssize_t convert(const char *inbuf, ssize_t inbuf_size,
 #ifdef HAVE_ICONV
 	const char *in;
 	char *out;
-	size_t outbuf_size, inbytesleft, outbytesleft;
+	size_t rc, outbuf_size, inbytesleft, outbytesleft;
 	iconv_t cd;
-	int rc, finished = 0, err_save;
+	int finished = 0, err_save;
 
 	cd = iconv_open(tocode, fromcode);
 	if (cd == (iconv_t) -1)
