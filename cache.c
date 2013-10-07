@@ -216,7 +216,7 @@ static int read_cache(void)
 
 	offset = sizeof(cache_header);
 	while (offset < size) {
-		struct cache_entry *e = (struct cache_entry *)(buf + offset);
+		struct cache_entry *e = (void *)(buf + offset);
 		struct track_info *ti;
 
 		if (!valid_cache_entry(e, size - offset))
