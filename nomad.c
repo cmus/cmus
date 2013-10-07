@@ -239,8 +239,8 @@ static int xing_parse(struct nomad *nomad)
 		 * for this by assuming the tag began two octets prior and the
 		 * high bits of the following flags field are always zero.
 		 */
-		if (xing_id != (((XING_MAGIC+0L) << 16) & 0xffffffffL) &&
-				xing_id != (((INFO_MAGIC+0L) << 16) & 0xffffffffL))
+		if (xing_id != (((XING_MAGIC+0UL) << 16) & 0xffffffffL) &&
+				xing_id != (((INFO_MAGIC+0UL) << 16) & 0xffffffffL))
 			return -1;
 		xing_id >>= 16;
 		ptr = start;
