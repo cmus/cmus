@@ -118,7 +118,6 @@ void window_up(struct window *win, int rows)
 		if (selectable(win, &iter)) {
 			sel_up++;
 			win->sel = iter;
-			break;
 		} else {
 			skipped++;
 		}
