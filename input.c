@@ -71,8 +71,8 @@ struct input_plugin {
 	 * pcm is converted to 16-bit signed little-endian stereo
 	 * NOTE: no conversion is done if channels > 2 or bits > 16
 	 */
-	void (*pcm_convert)(char *, const char *, int);
-	void (*pcm_convert_in_place)(char *, int);
+	void (*pcm_convert)(void *, const void *, int);
+	void (*pcm_convert_in_place)(void *, int);
 	/*
 	 * 4  if 8-bit mono
 	 * 2  if 8-bit stereo or 16-bit mono

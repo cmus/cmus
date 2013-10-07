@@ -233,7 +233,7 @@ static inline int sf_need_swap(sample_format_t sf)
 #define SCALE_SAMPLES(TYPE, buffer, count, l, r, swap)				\
 {										\
 	const int frames = count / sizeof(TYPE) / 2;				\
-	TYPE *buf = (TYPE *) buffer;						\
+	TYPE *buf = (void *) buffer;						\
 	int i;									\
 	/* avoid underflowing -32768 to 32767 when scale is 65536 */		\
 	if (l != SOFT_VOL_SCALE && r != SOFT_VOL_SCALE) {			\
