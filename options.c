@@ -78,6 +78,7 @@ int scroll_offset = 2;
 int rewind_offset = 5;
 int skip_track_info = 0;
 int auto_expand_albums = 1;
+int show_all_tracks = 1;
 
 int colors[NR_COLORS] = {
 	-1,
@@ -889,6 +890,25 @@ static void toggle_auto_expand_albums(unsigned int id)
 	auto_expand_albums ^= 1;
 }
 
+static void get_show_all_tracks(unsigned int id, char *buf)
+{
+	strcpy(buf, bool_names[show_all_tracks]);
+}
+
+static void set_show_all_tracks(unsigned int id, const char *buf)
+{
+	int old = show_all_tracks;
+	parse_bool(buf, &show_all_tracks);
+	if (old != show_all_tracks)
+		tree_sel_update(0);
+}
+
+static void toggle_show_all_tracks(unsigned int id)
+{
+	show_all_tracks ^= 1;
+	tree_sel_update(0);
+}
+
 static void get_show_current_bitrate(unsigned int id, char *buf)
 {
 	strcpy(buf, bool_names[show_current_bitrate]);
@@ -1232,6 +1252,7 @@ static const struct {
 	DT(resume)
 	DT(show_hidden)
 	DT(auto_expand_albums)
+	DT(show_all_tracks)
 	DT(show_current_bitrate)
 	DT(show_playback_position)
 	DT(show_remaining_time)

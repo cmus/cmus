@@ -48,6 +48,16 @@ static inline int tree_album_selected(void)
 	return iter_to_album(&lib_tree_win->sel) != NULL;
 }
 
+static inline int track_visible(struct tree_track *track)
+{
+	if (tree_album_selected())
+		return track->album == iter_to_album(&lib_tree_win->sel);
+	else if (show_all_tracks)
+		return track->album->artist == iter_to_artist(&lib_tree_win->sel);
+	else
+		return 0;
+}
+
 static inline void tree_search_track_to_iter(struct tree_track *track, struct iter *iter)
 {
 	iter->data0 = &lib_artist_root;
@@ -437,15 +447,12 @@ static const struct searchable_ops tree_search_ops = {
 };
 /* search (tree) }}} */
 
-static inline int track_parent_selected(struct tree_track *track)
+static void tree_sel_changed(void)
 {
-	if (tree_album_selected())
-		return track->album == iter_to_album(&lib_tree_win->sel);
-	else
-		return track->album->artist == iter_to_artist(&lib_tree_win->sel);
+	tree_sel_update(1);
 }
 
-static void tree_sel_changed(void)
+void tree_sel_update(int changed)
 {
 	struct iter sel;
 	struct album *album;
@@ -453,13 +460,19 @@ static void tree_sel_changed(void)
 
 	window_get_sel(lib_tree_win, &sel);
 	album = iter_to_album(&sel);
-	artist = iter_to_artist(&sel);
+	artist = show_all_tracks ? iter_to_artist(&sel) : NULL;
+
 	if (album != NULL) {
-		window_set_contents(lib_track_win, &album->track_root);
+		if (changed)
+			window_set_contents(lib_track_win, &album->track_root);
 	} else if (artist != NULL) {
 		window_set_contents(lib_track_win, &artist->album_root);
 		window_down(lib_track_win, 1);
 	} else {
+		if (lib_cur_win != lib_tree_win) {
+			lib_cur_win = lib_tree_win;
+			lib_tree_win->changed = 1;
+		}
 		window_set_empty(lib_track_win);
 	}
 }
@@ -991,7 +1004,7 @@ void tree_add_track(struct tree_track *track)
 		window_changed(lib_tree_win);
 	}
 
-	if (track_parent_selected(track))
+	if (track_visible(track))
 		window_changed(lib_track_win);
 }
 
@@ -1057,7 +1070,7 @@ void tree_toggle_active_window(void)
 		struct album *album;
 
 		tree_win_get_selected(&artist, &album);
-		if (artist) {
+		if (album || (artist && show_all_tracks)) {
 			lib_cur_win = lib_track_win;
 			lib_tree_win->changed = 1;
 			lib_track_win->changed = 1;
@@ -1136,7 +1149,7 @@ void tree_expand_all(void)
 
 static void remove_track(struct tree_track *track)
 {
-	if (track_parent_selected(track)) {
+	if (track_visible(track)) {
 		struct track_iter iter;
 		tree_track_to_track_iter(track, &iter);
 		window_row_vanishes(lib_track_win, (struct iter *)&iter);
@@ -1161,7 +1174,7 @@ void tree_remove(struct tree_track *track)
 		if (sel_album == album)
 			lib_cur_win = lib_tree_win;
 
-		if (track_parent_selected(track) && !tree_album_selected()) {
+		if (track_visible(track) && !tree_album_selected()) {
 			struct iter iter;
 			album_to_track_iter(album, (struct track_iter*)&iter);
 			window_row_vanishes(lib_track_win, &iter);
