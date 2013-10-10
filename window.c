@@ -254,7 +254,10 @@ minimize:
 
 void window_row_vanishes(struct window *win, struct iter *iter)
 {
-	struct iter new;
+	struct iter new = *iter;
+	if (!win->get_next(&new) && !win->get_prev(&new)) {
+		window_set_empty(win);
+	}
 
 	BUG_ON(iter->data0 != win->head.data0);
 	if (iters_equal(&win->top, iter)) {
@@ -296,11 +299,12 @@ void window_row_vanishes(struct window *win, struct iter *iter)
 			do {
 				win->get_prev(&new);
 			} while (!selectable(win, &new));
+		} else {
+			/* no selectable item left but window not empty */
+			new.data1 = new.data2 = NULL;
 		}
-		if (up + down > 0) {
-			win->sel = new;
-			sel_changed(win);
-		}
+		win->sel = new;
+		sel_changed(win);
 	}
 
 	win->changed = 1;
