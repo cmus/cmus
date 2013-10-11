@@ -110,7 +110,8 @@ static void tree_set_expand_artist(struct artist *artist, int expand)
 		window_set_sel(lib_tree_win, &sel);
 
 		artist->expanded = 0;
-		lib_cur_win = lib_tree_win;
+		if (!show_all_tracks)
+			lib_cur_win = lib_tree_win;
 	}
 	window_changed(lib_tree_win);
 }
