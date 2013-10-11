@@ -102,17 +102,15 @@ static void tree_set_expand_artist(struct artist *artist, int expand)
 {
 	struct iter sel;
 
-	if (expand) {
-		artist->expanded = 1;
-	} else {
+	if (!expand) {
 		/* deselect album, select artist */
 		artist_to_iter(artist, &sel);
 		window_set_sel(lib_tree_win, &sel);
 
-		artist->expanded = 0;
 		if (!show_all_tracks)
 			lib_cur_win = lib_tree_win;
 	}
+	artist->expanded = expand;
 	window_changed(lib_tree_win);
 }
 
@@ -1092,13 +1090,22 @@ void tree_toggle_active_window(void)
 
 void tree_toggle_expand_artist(void)
 {
-	struct iter sel;
+	struct track_iter sel;
 	struct artist *artist;
+	struct album *album;
+	struct tree_track *track;
 
-	window_get_sel(lib_tree_win, &sel);
-	artist = iter_to_artist(&sel);
-	if (artist)
+	tree_win_get_selected(&artist, &album);
+	if (album != NULL && show_all_tracks) {
+		window_get_sel(lib_track_win, (struct iter *)&sel);
+		track = sel.track;
 		tree_set_expand_artist(artist, !artist->expanded);
+		tree_track_to_track_iter(track, &sel);
+		window_set_sel(lib_track_win, (struct iter *)&sel);
+	} else if (artist != NULL) {
+		tree_set_expand_artist(artist, !artist->expanded);
+	}
+
 }
 
 void tree_expand_matching(const char *text)
