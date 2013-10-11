@@ -608,9 +608,16 @@ struct tree_track *tree_get_selected(void)
 		return NULL;
 
 	tree_win_get_selected(&artist, &album);
-	window_get_sel(lib_track_win, &sel);
-	track = iter_to_tree_track(&sel);
-
+	if (album == NULL && !show_all_tracks) {
+		/* track window is empty
+		 * => get first album of the selected artist and first track of that album
+		 */
+		album = to_album(rb_first(&artist->album_root));
+		track = to_tree_track(rb_first(&album->track_root));
+	} else {
+		window_get_sel(lib_track_win, &sel);
+		track = iter_to_tree_track(&sel);
+	}
 
 	return track;
 }
