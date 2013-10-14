@@ -122,6 +122,8 @@ void window_up(struct window *win, int rows)
 			skipped++;
 		}
 	}
+	/* if there is no selectable row above the current, we move win->top instead
+	 * this is necessary when scroll_offset=0 to make the first album header visible */
 	if (sel_up == 0) {
 		skipped = 0;
 		upper_bound = min(buffer+rows, win->nr_rows/2);
