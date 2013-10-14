@@ -456,12 +456,69 @@ void window_goto_bottom(struct window *win)
 
 void window_page_up(struct window *win)
 {
-	window_up(win, win->nr_rows - 1);
+	struct iter sel = win->sel;
+	struct iter top = win->top;
+	int up;
+
+	/*
+	if (!win->get_prev(&top)) {
+		window_up(win, win->nr_rows - 1);
+		return;
+	}
+	top = win->top; */
+
+	for (up = 0; up < win->nr_rows - 1; up++) {
+		if (!win->get_prev(&sel) || !win->get_prev(&top))
+			break;
+		if (selectable(win, &sel)) {
+			win->sel = sel;
+			win->top = top;
+		}
+	}
+
+	sel_changed(win);
+}
+
+static struct iter window_bottom(struct window *win)
+{
+	struct iter bottom = win->top;
+	struct iter iter = win->top;
+	int down;
+
+	for (down = 0; down < win->nr_rows - 1; down++) {
+		if (!win->get_next(&iter))
+			break;
+		bottom = iter;
+	}
+
+	return bottom;
 }
 
 void window_page_down(struct window *win)
 {
-	window_down(win, win->nr_rows - 1);
+	struct iter sel = win->sel;
+	struct iter bot = window_bottom(win);
+	struct iter top = win->top;
+	/* struct iter tmp = bot; */
+	int down;
+
+	/* move cursor at bottom
+	if (!win->get_next(&tmp)) {
+		window_down(win, win->nr_rows - 1);
+		return;
+	} */
+
+	for (down = 0; down < win->nr_rows - 1; down++) {
+		if (!win->get_next(&sel) || !win->get_next(&bot))
+			break;
+		win->get_next(&top);
+		if (selectable(win, &sel)) {
+			win->sel = sel;
+			win->top = top;
+		}
+	}
+
+	sel_changed(win);
 }
 
 static void window_goto_pos(struct window *win, int pos)
