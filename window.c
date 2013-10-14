@@ -122,6 +122,10 @@ void window_up(struct window *win, int rows)
 			skipped++;
 		}
 	}
+	if (sel_up == 0) {
+		skipped = 0;
+		upper_bound = min(buffer+rows, win->nr_rows/2);
+	}
 
 	iter = win->sel;
 	while (actual_offset < upper_bound) {
@@ -137,7 +141,7 @@ void window_up(struct window *win, int rows)
 		top_up--;
 	}
 
-	if (sel_up)
+	if (sel_up > 0 || actual_offset > 0)
 		sel_changed(win);
 }
 
@@ -170,6 +174,10 @@ void window_down(struct window *win, int rows)
 			skipped++;
 		}
 	}
+	if (sel_down == 0) {
+		skipped = 0;
+		upper_bound = min(buffer+rows, (win->nr_rows-1)/2);
+	}
 
 	iter = win->sel;
 	while (actual_offset < upper_bound) {
@@ -184,7 +192,7 @@ void window_down(struct window *win, int rows)
 		top_down--;
 	}
 
-	if (sel_down)
+	if (sel_down > 0 || actual_offset > 0)
 		sel_changed(win);
 }
 
