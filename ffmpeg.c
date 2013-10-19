@@ -474,6 +474,30 @@ static int ffmpeg_seek(struct input_plugin_data *ip_data, double offset)
 	int64_t pts = av_rescale_q(offset * AV_TIME_BASE, AV_TIME_BASE_Q, st->time_base);
 #endif
 
+#if (LIBAVFORMAT_VERSION_INT >= ((53<<16) + (25<<8) + 0))
+	{
+		AVFrame *frame = avcodec_alloc_frame();
+		AVPacket pkt;
+		int got_frame=0;
+		av_new_packet(&pkt, 0);
+		/* This is specified in
+		 * http://ffmpeg.org/doxygen/trunk/group__lavc__decoding.html#ga834bb1b062fbcc2de4cf7fb93f154a3e
+		 * Quote:
+		 * Flushing is done by calling this function with packets with
+		 * avpkt->data set to NULL and avpkt->size set to 0 until it
+		 * stops returning samples. */
+		pkt.data = NULL;
+		pkt.size = 0;
+		do {
+			avcodec_decode_audio4(priv->codec_context, frame, &got_frame, &pkt);
+		} while (got_frame);
+		/* Force reading a new packet in next ffmpeg_fill_buffer(). */
+		priv->input->curr_pkt_size = 0;
+		av_free_packet(&pkt);
+		avcodec_free_frame(&frame);
+	}
+#endif
+
 	ret = av_seek_frame(priv->input_context, priv->stream_index, pts, 0);
 
 	if (ret < 0) {
