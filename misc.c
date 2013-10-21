@@ -33,6 +33,7 @@
 #include <pwd.h>
 
 const char *cmus_config_dir = NULL;
+const char *cmus_socket_path = NULL;
 const char *home_dir = NULL;
 const char *user_name = NULL;
 
@@ -198,6 +199,10 @@ int misc_init(void)
 	if (cmus_config_dir == NULL)
 		cmus_config_dir = xstrjoin(home_dir, "/.cmus");
 	make_dir(cmus_config_dir);
+
+	cmus_socket_path = get_non_empty_env("CMUS_SOCKET");
+	if (cmus_socket_path == NULL)
+		cmus_socket_path = xstrjoin(cmus_config_dir, "/socket");
 	return 0;
 }
 

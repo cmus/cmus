@@ -346,16 +346,22 @@ int main(int argc, char *argv[])
 		die("don't mix raw and cooked stuff\n");
 
 	if (server == NULL) {
-		const char *config_dir = getenv("CMUS_HOME");
+		const char *socket_path = getenv("CMUS_SOCKET");
 
-		if (config_dir && config_dir[0]) {
-			snprintf(server_buf, sizeof(server_buf), "%s/socket", config_dir);
+		if (socket_path && socket_path[0]) {
+			strncpy(server_buf, socket_path, sizeof(server_buf));
 		} else {
-			const char *home = getenv("HOME");
+			const char *config_dir = getenv("CMUS_HOME");
 
-			if (!home)
-				die("error: environment variable HOME not set\n");
-			snprintf(server_buf, sizeof(server_buf), "%s/.cmus/socket", home);
+			if (config_dir && config_dir[0]) {
+				snprintf(server_buf, sizeof(server_buf), "%s/socket", config_dir);
+			} else {
+				const char *home = getenv("HOME");
+
+				if (!home)
+					die("error: environment variable HOME not set\n");
+				snprintf(server_buf, sizeof(server_buf), "%s/.cmus/socket", home);
+			}
 		}
 		server = server_buf;
 	}

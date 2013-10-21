@@ -1357,6 +1357,9 @@ CMUS_CHARSET
 CMUS_HOME
 	Override cmus config directory (default: *$HOME*/.cmus).
 
+CMUS_SOCKET
+	Override cmus socket path (default: *$CMUS_HOME*/socket).
+
 HOME
 	Full path of the user's home directory.
 
