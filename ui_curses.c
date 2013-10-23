@@ -2441,7 +2441,7 @@ int main(int argc, char *argv[])
 
 	misc_init();
 	if (server_address == NULL)
-		server_address = xstrjoin(cmus_config_dir, "/socket");
+		server_address = xstrdup(cmus_socket_path);
 	debug_init();
 	d_print("charset = '%s'\n", charset);
 

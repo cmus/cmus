@@ -33,6 +33,7 @@
 #include <pwd.h>
 
 const char *cmus_config_dir = NULL;
+const char *cmus_socket_path = NULL;
 const char *home_dir = NULL;
 const char *user_name = NULL;
 
@@ -183,6 +184,8 @@ static char *get_non_empty_env(const char *name)
 
 int misc_init(void)
 {
+	const char *xdg_runtime_dir = get_non_empty_env("XDG_RUNTIME_DIR");
+
 	home_dir = get_non_empty_env("HOME");
 	if (home_dir == NULL)
 		die("error: environment variable HOME not set\n");
@@ -195,9 +198,31 @@ int misc_init(void)
 	}
 
 	cmus_config_dir = get_non_empty_env("CMUS_HOME");
-	if (cmus_config_dir == NULL)
-		cmus_config_dir = xstrjoin(home_dir, "/.cmus");
+	if (cmus_config_dir == NULL) {
+		const char *cmus_home = xstrjoin(home_dir, "/.cmus");
+		int cmus_home_exists = dir_exists(cmus_home);
+
+		if (cmus_home_exists == 1) {
+			cmus_config_dir = xstrdup(cmus_home);
+		} else if (cmus_home_exists == -1) {
+			die_errno("error: opening `%s'", cmus_home);
+		} else {
+			const char *xdg_config_home = get_non_empty_env("XDG_CONFIG_HOME");
+
+			if (xdg_config_home == NULL) {
+				cmus_config_dir = xstrjoin(home_dir, "/.config/cmus");
+			} else {
+				cmus_config_dir = xstrjoin(xdg_config_home, "/cmus");
+			}
+		}
+	}
 	make_dir(cmus_config_dir);
+
+	if (xdg_runtime_dir == NULL) {
+		cmus_socket_path = xstrjoin(cmus_config_dir, "/socket");
+	} else {
+		cmus_socket_path = xstrjoin(xdg_runtime_dir, "/cmus-socket");
+	}
 	return 0;
 }
 
