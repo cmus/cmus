@@ -20,6 +20,7 @@
 #define _MISC_H
 
 extern const char *cmus_config_dir;
+extern const char *cmus_socket_path;
 extern const char *home_dir;
 extern const char *user_name;
 
