@@ -97,7 +97,7 @@ this:
 
 @pre
 +---------------------------------------------------------------------+
-| Library ~/.cmus/lib.pl - 31 tracks sorted by artist album discnumbe |
+| Library ~/.config/cmus/lib.pl - 31 tracks sorted by artist album di |
 | Flying Lizards         . Money (That's What I Want)           02:31 |
 | Jason Woofenden        . VoR Theme                       2009 01:20 |
 | Keali'i Reichel      06. Wanting Memories                1994 04:28 |
