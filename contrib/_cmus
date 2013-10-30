@@ -41,7 +41,7 @@ case $service in
     ;;
   (cmus)
     _arguments \
-      '--listen[listen on ADDR instead of ~/.cmus/socket]:socket:_files'  \
+      '--listen[listen on ADDR instead of $XDG_RUNTIME_DIR/cmus-socket]:socket:_files' \
       '--plugins[list available plugins and exit]'                        \
       '--help[display this help and exit]'                                \
       '--version[display version information]'

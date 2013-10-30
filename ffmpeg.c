@@ -474,6 +474,14 @@ static int ffmpeg_seek(struct input_plugin_data *ip_data, double offset)
 	int64_t pts = av_rescale_q(offset * AV_TIME_BASE, AV_TIME_BASE_Q, st->time_base);
 #endif
 
+#if (LIBAVFORMAT_VERSION_INT >= ((53<<16) + (25<<8) + 0))
+	{
+		avcodec_flush_buffers(priv->codec_context);
+		/* Force reading a new packet in next ffmpeg_fill_buffer(). */
+		priv->input->curr_pkt_size = 0;
+	}
+#endif
+
 	ret = av_seek_frame(priv->input_context, priv->stream_index, pts, 0);
 
 	if (ret < 0) {

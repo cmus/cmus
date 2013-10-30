@@ -27,7 +27,7 @@ When *-C* is given all command line arguments are treated as raw commands.
 @h1 OPTIONS
 
 --server SOCKET
-	Connect using socket *SOCKET* instead of `~/.cmus/socket`.
+	Connect using socket *SOCKET* instead of `$XDG_RUNTIME_DIR/cmus-socket`.
 
 --help
 	Display usage information and exit.

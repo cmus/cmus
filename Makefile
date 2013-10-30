@@ -52,7 +52,7 @@ $(cmus-y): CFLAGS += $(PTHREAD_CFLAGS) $(NCURSES_CFLAGS) $(ICONV_CFLAGS) $(DL_CF
 cmus: $(cmus-y) file.o path.o prog.o xmalloc.o
 	$(call cmd,ld,$(CMUS_LIBS))
 
-cmus-remote: main.o file.o path.o prog.o xmalloc.o
+cmus-remote: main.o file.o misc.o path.o prog.o xmalloc.o xstrjoin.o
 	$(call cmd,ld,$(COMPAT_LIBS))
 
 # cygwin compat

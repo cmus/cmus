@@ -16,6 +16,7 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "misc.h"
 #include "prog.h"
 #include "file.h"
 #include "path.h"
@@ -230,7 +231,7 @@ static const char *usage =
 "   or: %s\n"
 "Control cmus through socket.\n"
 "\n"
-"      --server ADDR    connect using ADDR instead of ~/.cmus/socket\n"
+"      --server ADDR    connect using ADDR instead of $XDG_RUNTIME_DIR/cmus-socket\n"
 "                       ADDR is either a UNIX socket or host[:port]\n"
 "                       WARNING: using TCP/IP is insecure!\n"
 "      --passwd PASSWD  password to use for TCP/IP connection\n"
@@ -266,7 +267,6 @@ static const char *usage =
 
 int main(int argc, char *argv[])
 {
-	char server_buf[256];
 	char *server = NULL;
 	char *play_file = NULL;
 	char *volume = NULL;
@@ -345,20 +345,9 @@ int main(int argc, char *argv[])
 	if (nr_cmds && raw_args)
 		die("don't mix raw and cooked stuff\n");
 
-	if (server == NULL) {
-		const char *config_dir = getenv("CMUS_HOME");
-
-		if (config_dir && config_dir[0]) {
-			snprintf(server_buf, sizeof(server_buf), "%s/socket", config_dir);
-		} else {
-			const char *home = getenv("HOME");
-
-			if (!home)
-				die("error: environment variable HOME not set\n");
-			snprintf(server_buf, sizeof(server_buf), "%s/.cmus/socket", home);
-		}
-		server = server_buf;
-	}
+	misc_init();
+	if (server == NULL)
+		server = xstrdup(cmus_socket_path);
 
 	if (!remote_connect(server))
 		return 1;
