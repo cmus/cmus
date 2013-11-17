@@ -164,7 +164,7 @@ enum file_type cmus_detect_ft(const char *name, char **ret)
 	return FILE_TYPE_FILE;
 }
 
-void cmus_add(add_ti_cb add, const char *name, enum file_type ft, int jt, int force)
+static void cmus_add_generic(add_ti_cb add, const char *name, enum file_type ft, int jt, int force, void (*job_cb)(void *data))
 {
 	struct add_data *data = xnew(struct add_data, 1);
 
@@ -172,7 +172,17 @@ void cmus_add(add_ti_cb add, const char *name, enum file_type ft, int jt, int fo
 	data->name = xstrdup(name);
 	data->type = ft;
 	data->force = force;
-	worker_add_job(jt, do_add_job, free_add_job, data);
+	worker_add_job(jt, job_cb, free_add_job, data);
+}
+
+void cmus_add(add_ti_cb add, const char *name, enum file_type ft, int jt, int force)
+{
+	cmus_add_generic(add, name, ft, jt, force, do_add_job);
+}
+
+void cmus_load_lib(const char *name)
+{
+	cmus_add_generic(lib_add_track, name, FILE_TYPE_PL, JOB_TYPE_LIB, 0, do_load_lib_job);
 }
 
 static int save_ext_playlist_cb(void *data, struct track_info *ti)
