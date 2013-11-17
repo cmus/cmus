@@ -2331,7 +2331,7 @@ static void init_all(void)
 	}
 
 	cmus_add(pl_add_track, pl_autosave_filename, FILE_TYPE_PL, JOB_TYPE_PL, 0);
-	cmus_add(lib_add_track, lib_autosave_filename, FILE_TYPE_PL, JOB_TYPE_LIB, 0);
+	cmus_load_lib(lib_autosave_filename);
 }
 
 static void exit_all(void)

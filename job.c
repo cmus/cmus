@@ -315,6 +315,13 @@ void do_add_job(void *data)
 	jd = NULL;
 }
 
+void do_load_lib_job(void *data)
+{
+	do_add_job(data);
+	window_goto_top(lib_tree_win);
+	window_goto_top(lib_track_win);
+}
+
 void free_add_job(void *data)
 {
 	struct add_data *d = data;
