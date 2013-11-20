@@ -20,12 +20,9 @@
 #include "options.h"
 #include "xmalloc.h"
 #include "debug.h"
+#include "utils.h"
 
 #include <stdlib.h>
-
-#ifndef min
-#define min(a,b) (((a) < (b)) ? (a) : (b))
-#endif
 
 static void sel_changed(struct window *win)
 {
