@@ -237,6 +237,6 @@ version online:
 
 `https://github.com/cmus/cmus/blob/master/Doc/cmus.txt`
 
-There are more commands and features not covered hear like loading and saving
+There are more commands and features not covered here like loading and saving
 playlists, controlling cmus remotely with `cmus-remote`, etc.
 
