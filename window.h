@@ -54,6 +54,7 @@ struct window {
 	/* return 1 if got next/prev, otherwise 0 */
 	int (*get_prev)(struct iter *iter);
 	int (*get_next)(struct iter *iter);
+	int (*selectable)(struct iter *iter);
 	void (*sel_changed)(void);
 };
 

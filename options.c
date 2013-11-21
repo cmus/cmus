@@ -77,6 +77,8 @@ int smart_artist_sort = 1;
 int scroll_offset = 2;
 int rewind_offset = 5;
 int skip_track_info = 0;
+int auto_expand_albums = 1;
+int show_all_tracks = 1;
 
 int colors[NR_COLORS] = {
 	-1,
@@ -873,6 +875,60 @@ static void toggle_show_hidden(unsigned int id)
 	browser_reload();
 }
 
+static void get_auto_expand_albums(unsigned int id, char *buf)
+{
+	strcpy(buf, bool_names[auto_expand_albums]);
+}
+
+static void set_show_all_tracks_int(int); /* defined below */
+
+static void set_auto_expand_albums_int(int value)
+{
+	auto_expand_albums = !!value;
+	if (!auto_expand_albums && !show_all_tracks)
+		set_show_all_tracks_int(1);
+}
+
+static void set_auto_expand_albums(unsigned int id, const char *buf)
+{
+	int tmp;
+	parse_bool(buf, &tmp);
+	set_auto_expand_albums_int(tmp);
+}
+
+static void toggle_auto_expand_albums(unsigned int id)
+{
+	set_auto_expand_albums_int(!auto_expand_albums);
+}
+
+static void get_show_all_tracks(unsigned int id, char *buf)
+{
+	strcpy(buf, bool_names[show_all_tracks]);
+}
+
+static void set_show_all_tracks_int(int value)
+{
+	value = !!value;
+	if (show_all_tracks == value)
+		return;
+	show_all_tracks = value;
+	if (!show_all_tracks && !auto_expand_albums)
+		set_auto_expand_albums_int(1);
+	tree_sel_update(0);
+}
+
+static void set_show_all_tracks(unsigned int id, const char *buf)
+{
+	int tmp;
+	parse_bool(buf, &tmp);
+	set_show_all_tracks_int(tmp);
+}
+
+static void toggle_show_all_tracks(unsigned int id)
+{
+	set_show_all_tracks_int(!show_all_tracks);
+}
+
 static void get_show_current_bitrate(unsigned int id, char *buf)
 {
 	strcpy(buf, bool_names[show_current_bitrate]);
@@ -1215,6 +1271,8 @@ static const struct {
 	DN(replaygain_preamp)
 	DT(resume)
 	DT(show_hidden)
+	DT(auto_expand_albums)
+	DT(show_all_tracks)
 	DT(show_current_bitrate)
 	DT(show_playback_position)
 	DT(show_remaining_time)
