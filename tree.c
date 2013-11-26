@@ -466,7 +466,6 @@ void tree_sel_update(int changed)
 			window_set_contents(lib_track_win, &album->track_root);
 	} else if (artist != NULL) {
 		window_set_contents(lib_track_win, &artist->album_root);
-		window_down(lib_track_win, 1);
 	} else {
 		if (lib_cur_win != lib_tree_win) {
 			lib_cur_win = lib_tree_win;

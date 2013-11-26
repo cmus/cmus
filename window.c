@@ -79,6 +79,8 @@ void window_set_contents(struct window *win, void *head)
 	win->get_next(&first);
 	win->top = first;
 	win->sel = first;
+	while (!selectable(win, &win->sel))
+		win->get_next(&win->sel);
 	sel_changed(win);
 }
 
@@ -373,10 +375,10 @@ void window_set_sel(struct window *win, struct iter *iter)
 	if (scroll_offset < upper_bound)
 		upper_bound = scroll_offset;
 
-	if (sel_nr < top_nr + upper_bound) { // scroll up
+	if (sel_nr < top_nr + upper_bound) { /* scroll up */
 		tmp = win->head;
 		win->get_next(&tmp);
-		if (sel_nr < upper_bound) { // no space above
+		if (sel_nr < upper_bound) { /* no space above */
 			win->top = tmp;
 		} else {
 			win->top = win->sel;
@@ -385,21 +387,21 @@ void window_set_sel(struct window *win, struct iter *iter)
 				upper_bound--;
 			}
 		}
-	} else { //scroll down
+	} else { /* scroll down */
 		upper_bound = (win->nr_rows - 1) / 2;
 		if (scroll_offset < upper_bound)
 			upper_bound = scroll_offset;
 
 		tmp = win->sel;
 		bottom_nr = sel_nr;
-		if (sel_nr >= top_nr + win->nr_rows) { //  seleced element not visible
+		if (sel_nr >= top_nr + win->nr_rows) { /* seleced element not visible */
 			while (sel_nr >= top_nr + win->nr_rows) {
 				win->get_next(&win->top);
 				top_nr++;
 			}
-		} else { // selected element visible
+		} else { /* selected element visible */
 			while (bottom_nr + 1 < top_nr + win->nr_rows) {
-				if (!win->get_next(&tmp)) { //no space below
+				if (!win->get_next(&tmp)) { /* no space below */
 					bottom_nr = sel_nr + upper_bound;
 					break;
 				}
@@ -425,6 +427,8 @@ void window_goto_top(struct window *win)
 	win->sel = win->head;
 	win->get_next(&win->sel);
 	win->top = win->sel;
+	while (!selectable(win, &win->sel))
+		win->get_next(&win->sel);
 	if (!iters_equal(&old_sel, &win->sel))
 		sel_changed(win);
 }
@@ -447,6 +451,8 @@ void window_goto_bottom(struct window *win)
 		win->top = iter;
 		count--;
 	}
+	while (!selectable(win, &win->sel))
+		win->get_prev(&win->sel);
 	if (!iters_equal(&old_sel, &win->sel))
 		sel_changed(win);
 }
@@ -520,16 +526,22 @@ static void window_goto_pos(struct window *win, int pos)
 void window_page_top(struct window *win)
 {
 	window_goto_pos(win, 0);
+	while (!selectable(win, &win->sel))
+		win->get_next(&win->sel);
 }
 
 void window_page_bottom(struct window *win)
 {
 	window_goto_pos(win, win->nr_rows - 1);
+	while (!selectable(win, &win->sel))
+		win->get_prev(&win->sel);
 }
 
 void window_page_middle(struct window *win)
 {
 	window_goto_pos(win, win->nr_rows / 2);
+	while (!selectable(win, &win->sel))
+		win->get_next(&win->sel);
 }
 
 int window_get_nr_rows(struct window *win)
