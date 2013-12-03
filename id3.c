@@ -1280,3 +1280,10 @@ char *id3_get_comment(struct id3tag *id3, enum id3_key key)
 	}
 	return NULL;
 }
+
+char const *id3_get_genre(uint16_t id)
+{
+	if (id >= NR_GENRES)
+		return NULL;
+	return genres[id];
+}
