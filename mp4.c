@@ -464,7 +464,7 @@ static int mp4_read_comments(struct input_plugin_data *ip_data,
 		comments_add_const(&c, "title", tags->name);
 	if (tags->genre)
 		comments_add_const(&c, "genre", tags->genre);
-	if (tags->releaseDate)
+	if (tags->releaseDate && strcmp(tags->releaseDate, "0") != 0)
 		comments_add_const(&c, "date", tags->releaseDate);
 	if (tags->compilation)
 		comments_add_const(&c, "compilation", *tags->compilation ? "yes" : "no");
