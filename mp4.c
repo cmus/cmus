@@ -19,6 +19,7 @@
 #include "ip.h"
 #include "xmalloc.h"
 #include "debug.h"
+#include "id3.h"
 #include "file.h"
 #ifdef HAVE_CONFIG
 #include "config/mp4.h"
@@ -462,8 +463,13 @@ static int mp4_read_comments(struct input_plugin_data *ip_data,
 		comments_add_const(&c, "album", tags->album);
 	if (tags->name)
 		comments_add_const(&c, "title", tags->name);
-	if (tags->genre)
+	if (tags->genre) {
 		comments_add_const(&c, "genre", tags->genre);
+	} else if (tags->genreType) {
+		char const *genre = id3_get_genre(*tags->genreType - 1);
+		if (genre)
+			comments_add_const(&c, "genre", genre);
+	}
 	if (tags->releaseDate && strcmp(tags->releaseDate, "0") != 0)
 		comments_add_const(&c, "date", tags->releaseDate);
 	if (tags->compilation)
