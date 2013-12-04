@@ -891,7 +891,7 @@ static char *parse_one(const char **strp)
 		}
 
 		if (ret == NULL) {
-			ret = part;
+			ret = xstrdup(part);
 		} else {
 			char *tmp = xstrjoin(ret, part);
 			free(ret);
