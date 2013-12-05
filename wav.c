@@ -34,6 +34,8 @@
 #define WAVE_FORMAT_PCM        0x0001U
 #define WAVE_FORMAT_EXTENSIBLE 0xfffeU
 
+#define WAVE_WRONG_HEADER 1
+
 struct wav_private {
 	unsigned int pcm_start;
 	unsigned int pcm_size;
@@ -69,7 +71,7 @@ static int read_named_chunk_header(int fd, const char *name, unsigned int *size)
 	if (rc)
 		return rc;
 	if (memcmp(buf, name, 4))
-		return -IP_ERROR_FILE_FORMAT;
+		return WAVE_WRONG_HEADER;
 	return 0;
 }
 
@@ -79,11 +81,9 @@ static int find_chunk(int fd, const char *name, unsigned int *size)
 
 	do {
 		rc = read_named_chunk_header(fd, name, size);
-		if (rc == 0)
-			return 0;
-		if (rc != -IP_ERROR_FILE_FORMAT)
+		if (rc != WAVE_WRONG_HEADER)
 			return rc;
-		d_print("seeking %d\n", *size);
+		d_print("seeking %u\n", *size);
 		if (lseek(fd, *size, SEEK_CUR) == -1) {
 			d_print("seek failed\n");
 			return -IP_ERROR_ERRNO;
@@ -104,6 +104,8 @@ static int wav_open(struct input_plugin_data *ip_data)
 	priv = xnew(struct wav_private, 1);
 	ip_data->private = priv;
 	rc = read_named_chunk_header(ip_data->fd, "RIFF", &riff_size);
+	if (rc == WAVE_WRONG_HEADER)
+		rc = -IP_ERROR_FILE_FORMAT;
 	if (rc)
 		goto error_exit;
 	rc = read_all(ip_data->fd, buf, 4);
