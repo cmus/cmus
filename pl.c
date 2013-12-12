@@ -23,8 +23,7 @@
 
 struct editable pl_editable;
 struct simple_track *pl_cur_track = NULL;
-
-static struct rb_root pl_shuffle_root;
+struct rb_root pl_shuffle_root;
 
 static void pl_free_track(struct list_head *item)
 {

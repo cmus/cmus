@@ -25,6 +25,7 @@
 
 extern struct editable pl_editable;
 extern struct simple_track *pl_cur_track;
+extern struct rb_root pl_shuffle_root;
 
 void pl_init(void);
 struct track_info *pl_set_next(void);

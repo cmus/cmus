@@ -99,5 +99,6 @@ int simple_list_for_each_marked(struct list_head *head,
 
 void shuffle_list_add(struct shuffle_track *track, struct rb_root *tree_root);
 void shuffle_list_reshuffle(struct rb_root *tree_root);
+void shuffle_insert(struct rb_root *root, struct shuffle_track *previous, struct shuffle_track *new);
 
 #endif

@@ -90,6 +90,7 @@ enum aaa_mode {
 
 extern struct editable lib_editable;
 extern struct tree_track *lib_cur_track;
+extern struct rb_root lib_shuffle_root;
 extern enum aaa_mode aaa_mode;
 extern unsigned int play_sorted;
 extern char *lib_live_filter;

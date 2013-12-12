@@ -36,7 +36,7 @@ enum aaa_mode aaa_mode = AAA_MODE_ALL;
 /* used in ui_curses.c for status display */
 char *lib_live_filter = NULL;
 
-static struct rb_root lib_shuffle_root;
+struct rb_root lib_shuffle_root;
 static struct expr *filter = NULL;
 static int remove_from_hash = 1;
 
