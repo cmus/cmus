@@ -2197,9 +2197,9 @@ static int get_next(struct track_info **ti)
 	info = play_queue_remove();
 	if (info == NULL) {
 		if (play_library) {
-			info = lib_set_next();
+			info = lib_goto_next();
 		} else {
-			info = pl_set_next();
+			info = pl_goto_next();
 		}
 	}
 	editable_unlock();

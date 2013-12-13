@@ -1466,15 +1466,15 @@ static void cmd_win_activate(char *arg)
 	editable_lock();
 	switch (cur_view) {
 	case TREE_VIEW:
-		info = tree_set_selected();
+		info = tree_activate_selected();
 		next = &lib_cur_track->shuffle_track;
 		break;
 	case SORTED_VIEW:
-		info = sorted_set_selected();
+		info = sorted_activate_selected();
 		next = &lib_cur_track->shuffle_track;
 		break;
 	case PLAYLIST_VIEW:
-		info = pl_set_selected();
+		info = pl_activate_selected();
 		next = (struct shuffle_track *)pl_cur_track;
 		break;
 	case QUEUE_VIEW:

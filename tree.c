@@ -620,7 +620,7 @@ struct tree_track *tree_get_selected(void)
 	return track;
 }
 
-struct track_info *tree_set_selected(void)
+struct track_info *tree_activate_selected(void)
 {
 	struct track_info *info;
 

@@ -349,7 +349,7 @@ struct track_info *lib_set_track(struct tree_track *track)
 	return ti;
 }
 
-struct track_info *lib_set_next(void)
+struct track_info *lib_goto_next(void)
 {
 	struct tree_track *track;
 
@@ -369,7 +369,7 @@ struct track_info *lib_set_next(void)
 	return lib_set_track(track);
 }
 
-struct track_info *lib_set_prev(void)
+struct track_info *lib_goto_prev(void)
 {
 	struct tree_track *track;
 
@@ -400,7 +400,7 @@ static struct tree_track *sorted_get_selected(void)
 	return iter_to_sorted_track(&sel);
 }
 
-struct track_info *sorted_set_selected(void)
+struct track_info *sorted_activate_selected(void)
 {
 	return lib_set_track(sorted_get_selected());
 }
