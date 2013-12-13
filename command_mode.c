@@ -1451,17 +1451,31 @@ static void cmd_win_add_q(char *arg)
 static void cmd_win_activate(char *arg)
 {
 	struct track_info *info = NULL;
+	struct shuffle_track *previous = NULL, *next = NULL;
+	struct rb_root *shuffle_root = NULL;
+
+	if (cur_view == TREE_VIEW || cur_view == SORTED_VIEW) {
+		if (lib_cur_track)
+			previous = &lib_cur_track->shuffle_track;
+		shuffle_root = &lib_shuffle_root;
+	} else if (cur_view == PLAYLIST_VIEW) {
+		previous = (struct shuffle_track *)pl_cur_track;
+		shuffle_root = &pl_shuffle_root;
+	}
 
 	editable_lock();
 	switch (cur_view) {
 	case TREE_VIEW:
-		info = tree_set_selected();
+		info = tree_activate_selected();
+		next = &lib_cur_track->shuffle_track;
 		break;
 	case SORTED_VIEW:
-		info = sorted_set_selected();
+		info = sorted_activate_selected();
+		next = &lib_cur_track->shuffle_track;
 		break;
 	case PLAYLIST_VIEW:
-		info = pl_set_selected();
+		info = pl_activate_selected();
+		next = (struct shuffle_track *)pl_cur_track;
 		break;
 	case QUEUE_VIEW:
 		break;
@@ -1478,6 +1492,8 @@ static void cmd_win_activate(char *arg)
 	editable_unlock();
 
 	if (info) {
+		if (shuffle)
+			shuffle_insert(shuffle_root, previous, next);
 		/* update lib/pl mode */
 		if (cur_view < 2)
 			play_library = 1;

@@ -90,6 +90,7 @@ enum aaa_mode {
 
 extern struct editable lib_editable;
 extern struct tree_track *lib_cur_track;
+extern struct rb_root lib_shuffle_root;
 extern enum aaa_mode aaa_mode;
 extern unsigned int play_sorted;
 extern char *lib_live_filter;
@@ -105,8 +106,8 @@ extern struct rb_root lib_artist_root;
 
 void lib_init(void);
 void tree_init(void);
-struct track_info *lib_set_next(void);
-struct track_info *lib_set_prev(void);
+struct track_info *lib_goto_next(void);
+struct track_info *lib_goto_prev(void);
 void lib_add_track(struct track_info *track_info);
 void lib_set_filter(struct expr *expr);
 void lib_set_live_filter(const char *str);
@@ -123,7 +124,7 @@ void lib_store_cur_track(struct track_info *ti);
 struct track_info *lib_get_cur_stored_track(void);
 
 struct tree_track *tree_get_selected(void);
-struct track_info *tree_set_selected(void);
+struct track_info *tree_activate_selected(void);
 void tree_sort_artists(void);
 void tree_add_track(struct tree_track *track);
 void tree_remove(struct tree_track *track);
@@ -139,7 +140,7 @@ void tree_sel_track(struct tree_track *t);
 int tree_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
 int __tree_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
 
-struct track_info *sorted_set_selected(void);
+struct track_info *sorted_activate_selected(void);
 void sorted_sel_current(void);
 
 static inline struct tree_track *iter_to_sorted_track(const struct iter *iter)

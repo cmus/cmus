@@ -23,8 +23,7 @@
 
 struct editable pl_editable;
 struct simple_track *pl_cur_track = NULL;
-
-static struct rb_root pl_shuffle_root;
+struct rb_root pl_shuffle_root;
 
 static void pl_free_track(struct list_head *item)
 {
@@ -64,7 +63,7 @@ static struct track_info *set_track(struct simple_track *track)
 	return ti;
 }
 
-struct track_info *pl_set_next(void)
+struct track_info *pl_goto_next(void)
 {
 	struct simple_track *track;
 
@@ -80,7 +79,7 @@ struct track_info *pl_set_next(void)
 	return set_track(track);
 }
 
-struct track_info *pl_set_prev(void)
+struct track_info *pl_goto_prev(void)
 {
 	struct simple_track *track;
 
@@ -96,7 +95,7 @@ struct track_info *pl_set_prev(void)
 	return set_track(track);
 }
 
-struct track_info *pl_set_selected(void)
+struct track_info *pl_activate_selected(void)
 {
 	struct iter sel;
 

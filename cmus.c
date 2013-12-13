@@ -78,9 +78,9 @@ void cmus_next(void)
 	info = play_queue_remove();
 	if (info == NULL) {
 		if (play_library) {
-			info = lib_set_next();
+			info = lib_goto_next();
 		} else {
-			info = pl_set_next();
+			info = pl_goto_next();
 		}
 	}
 	editable_unlock();
@@ -95,9 +95,9 @@ void cmus_prev(void)
 
 	editable_lock();
 	if (play_library) {
-		info = lib_set_prev();
+		info = lib_goto_prev();
 	} else {
-		info = pl_set_prev();
+		info = pl_goto_prev();
 	}
 	editable_unlock();
 

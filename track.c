@@ -23,6 +23,7 @@
 #include "options.h"
 #include "uchar.h"
 #include "xmalloc.h"
+#include "debug.h"
 
 #include <string.h>
 
@@ -63,6 +64,26 @@ int simple_track_search_matches(void *data, struct iter *iter, const char *text)
 
 	window_set_sel(data, iter);
 	return 1;
+}
+
+void shuffle_insert(struct rb_root *root, struct shuffle_track *previous, struct shuffle_track *next)
+{
+	BUG_ON(root == NULL);
+	BUG_ON(next == NULL);
+
+	if (previous == next)
+		return;
+	rb_erase(&next->tree_node, root);
+
+	struct rb_node *parent = previous ? &previous->tree_node : NULL;
+	struct rb_node **new = parent ? &parent->rb_right : &root->rb_node;
+	while (*new) {
+		parent = *new;
+		new = &(*new)->rb_left;
+	}
+
+	rb_link_node(&next->tree_node, parent, new);
+	rb_insert_color(&next->tree_node, root);
 }
 
 struct shuffle_track *shuffle_list_get_next(struct rb_root *root, struct shuffle_track *cur,
