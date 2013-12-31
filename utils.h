@@ -25,6 +25,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -222,6 +223,25 @@ static inline uint16_t read_le16(const char *buf)
 	const unsigned char *b = (const unsigned char *)buf;
 
 	return b[0] | (b[1] << 8);
+}
+
+static inline FILE *new_memstream(void)
+{
+	return tmpfile();
+}
+
+static inline char *close_memstream(FILE *stream, size_t *size)
+{
+	fseek(stream, 0, SEEK_END);
+	size_t length = ftell(stream);
+	char *buf = malloc(length + 1);
+	buf[length] = 0;
+	rewind(stream);
+	fread(buf, length, 1, stream);
+	fclose(stream);
+	if (size)
+		*size = length;
+	return buf;
 }
 
 #endif

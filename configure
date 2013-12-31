@@ -8,11 +8,11 @@ check_cflags()
 		-Wwrite-strings -Wundef -Wmissing-prototypes -Wredundant-decls \
 		-Wextra -Wno-sign-compare -Wformat-security
 
-	for i in -Wdeclaration-after-statement \
-		-Wold-style-definition \
+	for i in -Wold-style-definition \
 		-Wno-pointer-sign \
 		-Werror-implicit-function-declaration \
-		-Wno-unused-parameter
+		-Wno-unused-parameter \
+		-Wno-missing-field-initializers
 	do
 		check_cc_flag $i
 	done
@@ -161,6 +161,12 @@ check_cdio()
 {
 	pkg_config CDIO "libcdio_cdda" "" "-lcdio_cdio -lcdio -lm"
 	return $?
+}
+
+check_dbus()
+{
+    pkg_config DBUS "dbus-1" && HAVE_DBUS=y
+    return $?
 }
 
 check_flac()
@@ -402,6 +408,7 @@ int main() {
 prefix=/usr/local
 DEBUG=1
 HAVE_CDDB=n
+HAVE_DBUS=n
 CONFIG_TREMOR=n
 CONFIG_MIKMOD=n
 USE_FALLBACK_IP=n
@@ -417,12 +424,14 @@ Options:
   datadir         Read-only data         [\$prefix/share]
   libdir          Libraries              [\$prefix/lib]
   mandir          Man pages              [\$datadir/man]
-  exampledir      Examples               [\$datadir/doc/cmus/examples]
+  docdir          Documentation          [\$datadir/doc/cmus]
+  exampledir      Examples               [\$docdir/examples]
   DEBUG           Debugging level (0-2)  [$DEBUG]
 
 Optional Features: y/n
   CONFIG_CDDB     	libcddb CDDA identification                     [auto]
   CONFIG_CDIO     	libcdio CDDA input                              [auto]
+  CONFIG_DBUS     	dbus integration                                [auto]
   CONFIG_DISCID   	libdiscid CDDA identification                   [auto]
   CONFIG_FLAC     	Free Lossless Audio Codec (.flac, .fla)         [auto]
   CONFIG_MAD      	MPEG Audio Decoder (.mp3, .mp2, streams)        [auto]
@@ -467,7 +476,8 @@ var_default bindir "${prefix}/bin"
 var_default datadir "${prefix}/share"
 var_default libdir "${prefix}/lib"
 var_default mandir "${datadir}/man"
-var_default exampledir "${datadir}/doc/cmus/examples"
+var_default docdir "${datadir}/doc/cmus"
+var_default exampledir "${docdir}/examples"
 
 check check_cc
 check check_host_cc
@@ -486,6 +496,7 @@ check_string_function "strndup" && HAVE_STRNDUP=y
 
 check check_cddb    CONFIG_CDDB
 check check_cdio    CONFIG_CDIO
+check check_dbus    CONFIG_DBUS
 check check_flac    CONFIG_FLAC
 check check_mad     CONFIG_MAD
 check check_mikmod  CONFIG_MIKMOD
@@ -525,6 +536,7 @@ DATADIR="$datadir"
 LIBDIR="$libdir"
 
 config_header config/cdio.h HAVE_CDDB
+config_header config/dbus.h HAVE_DBUS
 config_header config/datadir.h DATADIR
 config_header config/libdir.h LIBDIR
 config_header config/debug.h DEBUG
@@ -543,6 +555,6 @@ CFLAGS="${CFLAGS} -DHAVE_CONFIG"
 
 makefile_vars bindir datadir libdir mandir exampledir
 makefile_vars CONFIG_CDIO CONFIG_FLAC CONFIG_MAD CONFIG_MIKMOD CONFIG_MODPLUG CONFIG_MPC CONFIG_VORBIS CONFIG_OPUS CONFIG_WAVPACK CONFIG_WAV CONFIG_MP4 CONFIG_AAC CONFIG_FFMPEG CONFIG_CUE
-makefile_vars CONFIG_ROAR CONFIG_PULSE CONFIG_ALSA CONFIG_AO CONFIG_ARTS CONFIG_OSS CONFIG_SUN CONFIG_WAVEOUT
+makefile_vars CONFIG_ROAR CONFIG_PULSE CONFIG_ALSA CONFIG_AO CONFIG_ARTS CONFIG_OSS CONFIG_SUN CONFIG_WAVEOUT CONFIG_DBUS
 
 generate_config_mk

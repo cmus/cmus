@@ -47,6 +47,7 @@
 #ifdef HAVE_CONFIG
 #include "config/datadir.h"
 #endif
+#include "sd.h"
 #include "help.h"
 #include "op.h"
 
@@ -1248,6 +1249,7 @@ static void cmd_vol(char *arg)
 		mixer_read_volume();
 	}
 	update_statusline();
+	sd_notify(SD_VOL_CHANGE);
 	return;
 err:
 	free_str_array(values);

@@ -49,6 +49,7 @@
 #include "file.h"
 #include "path.h"
 #include "mixer.h"
+#include "sd.h"
 #ifdef HAVE_CONFIG
 #include "config/curses.h"
 #include "config/iconv.h"
@@ -1917,6 +1918,11 @@ static void update(void)
 	player_info_lock();
 	editable_lock();
 
+	if (player_info.file_changed)
+		sd_notify(SD_TRACK_CHANGE);
+	else if (player_info.status_changed)
+		sd_notify(SD_STATUS_CHANGE);
+
 	needs_spawn = player_info.status_changed || player_info.file_changed ||
 		player_info.metadata_changed;
 
@@ -2134,6 +2140,9 @@ static void main_loop(void)
 		if (notify_out > fd_high)
 			fd_high = notify_out;
 		FD_SET(server_socket, &set);
+		FD_SET(sd_socket, &set);
+		if (sd_socket > fd_high)
+			fd_high = sd_socket;
 		list_for_each_entry(client, &client_head, node) {
 			FD_SET(client->fd, &set);
 			if (client->fd > fd_high)
@@ -2164,8 +2173,10 @@ static void main_loop(void)
 			int or = volume_r;
 
 			mixer_read_volume();
-			if (ol != volume_l || or != volume_r)
+			if (ol != volume_l || or != volume_r) {
 				update_statusline();
+				sd_notify(SD_VOL_CHANGE);
+			}
 
 		}
 		if (rc <= 0) {
@@ -2182,6 +2193,7 @@ static void main_loop(void)
 				d_print("vol changed\n");
 				mixer_read_volume();
 				update_statusline();
+				sd_notify(SD_VOL_CHANGE);
 			}
 		}
 		if (FD_ISSET(server_socket, &set))
@@ -2199,6 +2211,9 @@ static void main_loop(void)
 
 		if (FD_ISSET(0, &set))
 			u_getch();
+
+		if (sd_socket != 0 && FD_ISSET(sd_socket, &set))
+			sd_handle();
 
 		if (FD_ISSET(notify_out, &set)) {
 			char buf[128];
@@ -2333,6 +2348,7 @@ static void notify_init(void)
 static void init_all(void)
 {
 	server_init(server_address);
+	sd_init();
 
 	/* does not select output plugin */
 	player_init(&player_callbacks);
@@ -2396,6 +2412,7 @@ static void exit_all(void)
 	options_exit();
 
 	server_exit();
+	sd_notify(SD_EXIT);
 	cmus_exit();
 	if (resume_cmus)
 		cmus_save(play_queue_for_each, play_queue_autosave_filename);
