@@ -284,8 +284,8 @@ static struct format_option track_fopts[NR_TFS + 1] = {
 	DEF_FO_INT('D', "discnumber", 1),
 	DEF_FO_INT('n', "tracknumber", 1),
 	DEF_FO_STR('t', "title", 0),
-	DEF_FO_STR('y', "date", 1),
-	DEF_FO_STR('\0', "originaldate", 1),
+	DEF_FO_INT('y', "date", 1),
+	DEF_FO_INT('\0', "originaldate", 1),
 	DEF_FO_STR('g', "genre", 0),
 	DEF_FO_STR('c', "comment", 0),
 	DEF_FO_TIME('d', "duration", 0),
@@ -612,7 +612,7 @@ static void fill_track_fopts_track_info(struct track_info *info)
 	fopt_set_int(&track_fopts[TF_DISC], info->discnumber, info->discnumber == -1);
 	fopt_set_int(&track_fopts[TF_TRACK], info->tracknumber, info->tracknumber == -1);
 	fopt_set_str(&track_fopts[TF_TITLE], info->title);
-	fopt_set_str(&track_fopts[TF_YEAR], keyvals_get_val(info->comments, "date"));
+	fopt_set_int(&track_fopts[TF_YEAR], info->date / 10000, info->date <= 0);
 	fopt_set_str(&track_fopts[TF_GENRE], info->genre);
 	fopt_set_str(&track_fopts[TF_COMMENT], info->comment);
 	fopt_set_time(&track_fopts[TF_DURATION], info->duration, info->duration == -1);
@@ -620,7 +620,7 @@ static void fill_track_fopts_track_info(struct track_info *info)
 	fopt_set_double(&track_fopts[TF_RG_TRACK_PEAK], info->rg_track_peak, isnan(info->rg_track_peak));
 	fopt_set_double(&track_fopts[TF_RG_ALBUM_GAIN], info->rg_album_gain, isnan(info->rg_album_gain));
 	fopt_set_double(&track_fopts[TF_RG_ALBUM_PEAK], info->rg_album_peak, isnan(info->rg_album_peak));
-	fopt_set_str(&track_fopts[TF_ORIGINALYEAR], keyvals_get_val(info->comments, "originaldate"));
+	fopt_set_int(&track_fopts[TF_ORIGINALYEAR], info->date / 10000, info->originaldate <= 0);
 	fopt_set_int(&track_fopts[TF_BITRATE], (int) (info->bitrate / 1000. + 0.5), info->bitrate == -1);
 	fopt_set_str(&track_fopts[TF_CODEC], info->codec);
 	fopt_set_str(&track_fopts[TF_CODEC_PROFILE], info->codec_profile);
