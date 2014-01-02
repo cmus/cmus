@@ -535,6 +535,25 @@ static void cmd_factivate(char *arg)
 	editable_unlock();
 }
 
+static void cmd_lib_list_albums(char *arg)
+{
+	struct artist *the_artist = NULL;
+	struct album *album;
+	struct rb_node *tmp;
+	struct artist *artist;
+	rb_for_each_entry(artist, tmp, &lib_artist_root, tree_node) {
+	    if( strncmp(arg, artist -> name, strlen(artist -> name)) == 0 ) {
+		the_artist = artist;
+		break;
+	    }
+	}
+
+	if( !the_artist ) return;
+
+	rb_for_each_entry(album, tmp, & artist -> album_root, tree_node)
+	    info_msg_const(album -> name);
+}
+
 static void cmd_lib_list_artists(char *arg)
 {
 	struct rb_node *tmp;
@@ -2519,6 +2538,7 @@ struct command commands[] = {
 	{ "fset",		cmd_fset,	1, 1, expand_fset,	  0, 0 },
 	{ "help",		cmd_help,	0, 0, NULL,		  0, 0 },
 	{ "invert",		cmd_invert,	0, 0, NULL,		  0, 0 },
+	{ "lib-list-albums",	cmd_lib_list_albums, 1, 1, NULL,	  0, 0 },
 	{ "lib-list-artists",	cmd_lib_list_artists, 0, 0, NULL,	  0, 0 },
 	{ "live-filter",	cmd_live_filter,0, 1, NULL,		  0, CMD_LIVE },
 	{ "load",		cmd_load,	1, 1, expand_load_save,	  0, 0 },
