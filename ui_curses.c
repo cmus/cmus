@@ -1519,8 +1519,13 @@ void info_msg(const char *format, ...)
 	vsnprintf(error_buf, sizeof(error_buf), format, ap);
 	va_end(ap);
 
+	info_msg_const(error_buf);
+}
+
+void info_msg_const(const char *msg)
+{
 	if (client_fd != -1) {
-		write_all(client_fd, error_buf, strlen(error_buf));
+		write_all(client_fd, msg, strlen(msg));
 		write_all(client_fd, "\n", 1);
 	}
 
