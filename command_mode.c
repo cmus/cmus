@@ -639,9 +639,6 @@ static void cmd_lib_list_tracks(char *arg)
 	}
 	artist_name = args[0];
 	album_name = args[1];
-	info_msg_const("parsed");
-	info_msg_const(artist_name);
-	info_msg_const(album_name);
 
 	rb_for_each_entry(artist, tmp, &lib_artist_root, tree_node) {
 	    if( strncmp(artist_name, artist -> name, strlen(artist -> name)) == 0 ) {
