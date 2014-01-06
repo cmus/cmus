@@ -433,6 +433,17 @@ invert
 	Invert the marking of tracks in playlist and queue views. See *mark*
 	and *unmark*.
 
+lib-list-artists
+	Print all artists name in library. One artist name per line.
+
+lib-list-albums <ARTIST-NAME>
+	Print all album names by ARTIST-NAME in library. One album name per
+	line.
+
+lib-list-tracks <ARTIST-NAME> <ALBUM-NAME>
+	Print all track names by ARTIST-NAME and ALBUM-NAME in library. One track
+	name per line.
+
 live-filter <simple-filter-expression|short-filter-expression>
 	Use this command when you want to temporarily filter contents of the
 	library views without having separately define (fset) and activate the

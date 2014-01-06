@@ -535,6 +535,135 @@ static void cmd_factivate(char *arg)
 	editable_unlock();
 }
 
+static void cmd_lib_list_albums(char *arg)
+{
+	struct artist *the_artist = NULL;
+	struct album *album;
+	struct rb_node *tmp;
+	struct artist *artist;
+	rb_for_each_entry(artist, tmp, &lib_artist_root, tree_node) {
+	    if( strncmp(arg, artist -> name, strlen(artist -> name)) == 0 ) {
+		the_artist = artist;
+		break;
+	    }
+	}
+
+	if( !the_artist ) return;
+
+	rb_for_each_entry(album, tmp, & artist -> album_root, tree_node)
+	    info_msg_const(album -> name);
+}
+
+static void cmd_lib_list_artists(char *arg)
+{
+	struct rb_node *tmp;
+	struct artist *artist;
+	rb_for_each_entry(artist, tmp, &lib_artist_root, tree_node)
+		info_msg_const(artist -> name);
+}
+
+static const char* parse_quoted_arg(const char *str, char **arg)
+{
+	const char *str_begin = str;
+	for( ; *str_begin == ' '; str_begin++)
+		;
+
+	int len = strlen(str_begin);
+	if(len == 0) return NULL;
+	int quoted = *str_begin == '"' || *str_begin == '\'';
+	int arg_len = 0;
+	if(quoted) {
+		/* step 1: calculate size */
+		char quote_char = *str_begin;
+		const char *str_end = NULL;
+		for(int i = 1; i < len; i++) {
+			if(str_begin[i] == '\\') {
+				/* error: not-closed escape */
+				if(i + 1 >= len) return NULL;
+				i++;
+			} else if(str_begin[i] == quote_char) {
+				str_end = str_begin + i + 1;
+				break;
+			}
+			arg_len++;
+		}
+		if(!str_end) return NULL;
+
+		/* step 2: build arg */
+		*arg = xmalloc(arg_len + 1);
+		for(int i = 1, arg_pos = 0; arg_pos < arg_len && i < len; i++) {
+			if(str_begin[i] == '\\') {
+				i++;
+			} else if(str_begin[i] == quote_char) {
+				break;
+			}
+			(*arg)[arg_pos++] = str_begin[i];
+		}
+		(*arg)[arg_len] = '\0';
+		return str_end;
+	} else {
+		for(int i = 0; i < len && str_begin[i] != ' '; i++)
+			++arg_len;
+		*arg = xmalloc(arg_len + 1);
+		strncpy(*arg, str_begin, arg_len);
+		(*arg)[arg_len] = '\0';
+		return str_begin + arg_len;
+	}
+}
+
+static int parse_quoted_args(const char *str, char **args, size_t max_num)
+{
+	const char* p = str;
+	for(int i = 0; i < max_num; i++) {
+		p = parse_quoted_arg(p, &args[i]);
+		if(!p) return 1;
+	}
+	return 0;
+}
+
+static void cmd_lib_list_tracks(char *arg)
+{
+	char **args = xnew0(char*, 2);
+	struct artist *the_artist = NULL;
+	struct album *the_album = NULL;
+	struct artist *artist;
+	struct album *album;
+	struct tree_track *track;
+	struct rb_node *tmp;
+	char *artist_name;
+	char *album_name;
+
+	if(parse_quoted_args(arg, args, 2)) {
+		error_msg("invalid argument");
+		goto finalize;
+	}
+	artist_name = args[0];
+	album_name = args[1];
+
+	rb_for_each_entry(artist, tmp, &lib_artist_root, tree_node) {
+	    if( strncmp(artist_name, artist -> name, strlen(artist -> name)) == 0 ) {
+		the_artist = artist;
+		break;
+	    }
+	}
+	if( !the_artist ) goto finalize;
+
+	rb_for_each_entry(album, tmp, & artist -> album_root, tree_node) {
+		if( strncmp(album_name, album -> name, strlen(album -> name)) == 0 ) {
+			the_album = album;
+			break;
+		}
+	}
+	if( !the_album ) goto finalize;
+
+	rb_for_each_entry(track, tmp, & album -> track_root, tree_node)
+		info_msg_const(track -> shuffle_track.simple_track.info -> title);
+
+finalize:
+	free(args[0]);
+	free(args[1]);
+}
+
 static void cmd_live_filter(char *arg)
 {
 	editable_lock();
@@ -2497,6 +2626,7 @@ static void expand_commands(const char *str);
 /* tab exp }}} */
 
 /* sort by name */
+/*        name			func	 min_args  max_args  expand	 bc  flags */
 struct command commands[] = {
 	{ "add",		cmd_add,	1, 1, expand_add,	  0, 0 },
 	{ "bind",		cmd_bind,	1, 1, expand_bind_args,	  0, CMD_UNSAFE },
@@ -2510,6 +2640,9 @@ struct command commands[] = {
 	{ "fset",		cmd_fset,	1, 1, expand_fset,	  0, 0 },
 	{ "help",		cmd_help,	0, 0, NULL,		  0, 0 },
 	{ "invert",		cmd_invert,	0, 0, NULL,		  0, 0 },
+	{ "lib-list-albums",	cmd_lib_list_albums, 1, 1, NULL,	  0, 0 },
+	{ "lib-list-artists",	cmd_lib_list_artists, 0, 0, NULL,	  0, 0 },
+	{ "lib-list-tracks",	cmd_lib_list_tracks, 2, 2, NULL,	  0, 0 },
 	{ "live-filter",	cmd_live_filter,0, 1, NULL,		  0, CMD_LIVE },
 	{ "load",		cmd_load,	1, 1, expand_load_save,	  0, 0 },
 	{ "lqueue",		cmd_lqueue,	0, 1, NULL,		  0, 0 },
