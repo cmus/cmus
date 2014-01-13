@@ -1,6 +1,5 @@
 ### 'Night' theme for CMus (for 255 color terms)
-### (C) 2013 Mladen Pejaković <pejakm@gmail.com>
-### GPL v3
+### (C) 2013 Mladen Pejaković <pejakm@autistici.org>
 ### {{{
 set color_cmdline_bg=default
 set color_cmdline_fg=255
