@@ -55,11 +55,6 @@ const char *artist_sort_name(const struct artist *a)
 	return a->name;
 }
 
-static inline struct tree_track *to_sorted(const struct list_head *item)
-{
-	return (struct tree_track *)container_of(item, struct simple_track, node);
-}
-
 static inline void sorted_track_to_iter(struct tree_track *track, struct iter *iter)
 {
 	iter->data0 = &lib_editable.head;

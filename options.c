@@ -1110,12 +1110,6 @@ static void set_color(unsigned int id, const char *buf)
 	update_full();
 }
 
-static const char * const attr_enum_names[6 + 1] = {
-	"default",
-	"standout", "underline", "reverse", "blink", "bold",
-	NULL
-};
-
 static void get_attr(unsigned int id, char *buf)
 {
 	int attr = attrs[id];
