@@ -109,7 +109,7 @@ static int cmd_status(struct client *client)
 			title_buf = to_utf8(title, icecast_default_charset);
 			// we have a stream title (probably artist/track/album info)
 			gbuf_addf(&buf, "stream %s\n", escape(title_buf));
-		} else {
+		} else if (ti->comment != NULL) {
 			// fallback to the radio station name
 			gbuf_addf(&buf, "stream %s\n", escape(ti->comment));
 		}
