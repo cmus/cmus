@@ -33,6 +33,7 @@
 #include "player.h"
 #include "discid.h"
 #include "xstrjoin.h"
+#include "ui_curses.h"
 #ifdef HAVE_CONFIG
 #include "config/cue.h"
 #endif
@@ -320,6 +321,7 @@ void free_add_job(void *data)
 	struct add_data *d = data;
 	free(d->name);
 	free(d);
+	ui_curses_notify();
 }
 
 void do_update_job(void *data)
@@ -362,6 +364,7 @@ void free_update_job(void *data)
 
 	free(d->ti);
 	free(d);
+	ui_curses_notify();
 }
 
 void do_update_cache_job(void *data)
@@ -403,4 +406,5 @@ void do_update_cache_job(void *data)
 void free_update_cache_job(void *data)
 {
 	free(data);
+	ui_curses_notify();
 }
