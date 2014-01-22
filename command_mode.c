@@ -1761,6 +1761,12 @@ static void cmd_win_update(char *arg)
 	case SORTED_VIEW:
 		cmus_update_lib();
 		break;
+	case PLAYLIST_VIEW:
+		editable_lock();
+		editable_clear(&pl_editable);
+		editable_unlock();
+		cmus_add(pl_add_track, pl_filename, FILE_TYPE_PL, JOB_TYPE_PL, 0);
+		break;
 	case BROWSER_VIEW:
 		browser_reload();
 		break;
