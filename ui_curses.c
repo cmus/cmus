@@ -55,6 +55,7 @@
 #endif
 
 #include <unistd.h>
+#include <fcntl.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
@@ -105,6 +106,9 @@ int using_utf8 = 0;
 static char *lib_autosave_filename;
 static char *pl_autosave_filename;
 static char *play_queue_autosave_filename;
+
+static int notify_in;
+static int notify_out;
 
 /* shown error message and time stamp
  * error is cleared if it is older than 3s and key was pressed
@@ -2079,6 +2083,12 @@ static void u_getch(void)
 	handle_ch(u);
 }
 
+void ui_curses_notify(void)
+{
+	char c;
+	write(notify_in, &c, 1);
+}
+
 static void main_loop(void)
 {
 	int rc, fd_high;
@@ -2120,6 +2130,9 @@ static void main_loop(void)
 
 		FD_ZERO(&set);
 		FD_SET(0, &set);
+		FD_SET(notify_out, &set);
+		if (notify_out > fd_high)
+			fd_high = notify_out;
 		FD_SET(server_socket, &set);
 		list_for_each_entry(client, &client_head, node) {
 			FD_SET(client->fd, &set);
@@ -2186,6 +2199,11 @@ static void main_loop(void)
 
 		if (FD_ISSET(0, &set))
 			u_getch();
+
+		if (FD_ISSET(notify_out, &set)) {
+			char buf[128];
+			read(notify_out, buf, sizeof(buf));
+		}
 	}
 }
 
@@ -2300,6 +2318,16 @@ static void init_curses(void)
 			t_fs = "\007";
 		}
 	}
+}
+
+static void notify_init(void)
+{
+	int fildes[2];
+	pipe(fildes);
+	notify_out = fildes[0];
+	notify_in = fildes[1];
+	int flags = fcntl(notify_in, F_GETFL, 0);
+	fcntl(notify_in, F_SETFL, flags | O_NONBLOCK);
 }
 
 static void init_all(void)
@@ -2477,6 +2505,7 @@ int main(int argc, char *argv[])
 		op_dump_plugins();
 		return 0;
 	}
+	notify_init();
 	init_all();
 	main_loop();
 	exit_all();
