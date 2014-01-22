@@ -673,6 +673,8 @@ static void cmd_bind(char *arg)
 		goto err;
 
 	key_bind(arg, key, func, flag == 'f');
+	if (cur_view == HELP_VIEW)
+		window_changed(help_win);
 	return;
 err:
 	error_msg("expecting 3 arguments (context, key and function)\n");
