@@ -44,6 +44,7 @@ extern char *play_queue_ext_filename;
 extern char *charset;
 extern int using_utf8;
 
+void ui_curses_notify(void);
 void update_titleline(void);
 void update_statusline(void);
 void update_filterline(void);

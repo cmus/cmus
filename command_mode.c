@@ -673,6 +673,8 @@ static void cmd_bind(char *arg)
 		goto err;
 
 	key_bind(arg, key, func, flag == 'f');
+	if (cur_view == HELP_VIEW)
+		window_changed(help_win);
 	return;
 err:
 	error_msg("expecting 3 arguments (context, key and function)\n");
@@ -1758,6 +1760,12 @@ static void cmd_win_update(char *arg)
 	case TREE_VIEW:
 	case SORTED_VIEW:
 		cmus_update_lib();
+		break;
+	case PLAYLIST_VIEW:
+		editable_lock();
+		editable_clear(&pl_editable);
+		editable_unlock();
+		cmus_add(pl_add_track, pl_filename, FILE_TYPE_PL, JOB_TYPE_PL, 0);
 		break;
 	case BROWSER_VIEW:
 		browser_reload();

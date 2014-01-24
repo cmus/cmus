@@ -1129,9 +1129,9 @@ void player_pause(void)
 		return;
 	}
 
-	if (ip && ip_is_remote(ip)) {
+	if (ip && ip_is_remote(ip) && consumer_status == CS_PLAYING) {
 		/* pausing not allowed */
-		player_unlock();
+		player_stop();
 		return;
 	}
 	__producer_pause();
