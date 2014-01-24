@@ -78,10 +78,10 @@ Settings view (7)
 
 Everything in cmus is implemented as commands which can be typed at command
 line or bound to a key.  To enter command mode type *:*.  To execute a command
-press *ENTER* or to cancel press *ESC*.  Use up/down arrows to browse command
-history.  Use *TAB* to complete commands and parameters, you can tab complete
-almost anything.  You don't need to type full command names if the command is
-unambiguous (no other commands starting with the same characters).
+press *ENTER* or to cancel press *ESC* or *CTRL-C*.  Use up/down arrows to
+browse command history.  Use *TAB* to complete commands and parameters, you can
+tab complete almost anything.  You don't need to type full command names if the
+command is unambiguous (no other commands starting with the same characters).
 
 Examples:
 
