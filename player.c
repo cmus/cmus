@@ -99,12 +99,12 @@ static pthread_mutex_t consumer_mutex = CMUS_MUTEX_INITIALIZER;
 static pthread_cond_t consumer_playing = CMUS_COND_INITIALIZER;
 static int consumer_running = 1;
 static enum consumer_status consumer_status = CS_STOPPED;
-static unsigned int consumer_pos = 0;
+static unsigned long consumer_pos = 0;
 
 /* for replay gain and soft vol
  * usually same as consumer_pos, sometimes less than consumer_pos
  */
-static unsigned int scale_pos;
+static unsigned long scale_pos;
 static double replaygain_scale = 1.0;
 
 /* locking {{{ */
