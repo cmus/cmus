@@ -24,7 +24,7 @@
 #include "config/modplug.h"
 #endif
 
-#include <modplug.h>
+#include <libmodplug/modplug.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <stdlib.h>
