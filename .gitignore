@@ -15,6 +15,7 @@ cscope.out
 /config.mk
 /cmus
 /cmus-remote
+/cmus-remote2
 
 # Cygwin stuff
 *.exe

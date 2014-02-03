@@ -1,0 +1,28 @@
+@title CMUS-REMOTE2 1 01/01/2014 cmus
+
+@h1 NAME
+
+cmus-remote2 - control cmus
+
+
+@h1 SYNOPSIS
+
+cmus-remote2 [*OPTION*]... [`FILE`|`DIR`|`PLAYLIST`]...@br
+cmus-remote2 *-C* `COMMAND`...@br
+cmus-remote2
+
+
+@h1 DESCRIPTION
+
+cmus-remote2 supports the same commands as *cmus-remote*(1) except for
+searching.  It works with the new D-Bus interface and is only available when
+enabled at compile time.  This command is not stable and might change in the
+future.
+
+@h1 SEE ALSO
+
+*cmus*(1), *cmus-remote*(1)
+
+@h1 AUTHOR
+
+Contributers are listed in the `AUTHORS` file.

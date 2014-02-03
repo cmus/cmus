@@ -26,6 +26,7 @@
 #include "debug.h"
 #include "compiler.h"
 #include "options.h"
+#include "sd.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -1363,6 +1364,7 @@ void player_set_soft_volume(int l, int r)
 	soft_vol_l = l;
 	soft_vol_r = r;
 	consumer_unlock();
+	sd_notify(SD_VOL_CHANGE);
 }
 
 void player_set_soft_vol(int soft)

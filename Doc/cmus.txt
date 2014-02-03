@@ -13,8 +13,9 @@ cmus [*options*]
 @h1 DESCRIPTION
 
 cmus is a small ncurses based music player.  It supports various output
-methods by output-plugins. cmus has completely configurable keybindings and
-can be controlled from the outside via *cmus-remote*(1).
+methods by output-plugins. cmus has completely configurable keybindings,
+can be controlled from the outside via *cmus-remote*(1), and has a D-Bus
+interface.
 
 @h1 OPTIONS
 
@@ -1381,6 +1382,15 @@ USERNAME
 	Fallback for *USER*.
 
 
+@h1 IPC
+
+Unless disabled at compile time, cmus is reachable via D-Bus on the session bus
+under the name *net.sourceforge.cmus* and exposes the object
+*/net/sourceforge/cmus* with the interface *net.sourceforge.cmus*.  See
+`/usr/share/doc/cmus/dbus.md` for the interface documentation and
+`/usr/share/doc/cmus/examples` for example clients.
+
+
 @h1 BUGS
 
 After a crash last lines of `~/cmus-debug.txt` might
@@ -1393,7 +1403,7 @@ Feature requests and bug reports should go to the cmus-devel mailing list:
 
 @h1 SEE ALSO
 
-*cmus-tutorial*(7), *cmus-remote*(1)
+*cmus-tutorial*(7), *cmus-remote*(1), *cmus-remote2*(1)
 
 
 @h1 AUTHORS

@@ -130,7 +130,7 @@ Search works too:
 
 @h1 SEE ALSO
 
-*cmus*(1)
+*cmus*(1), *cmus-remote2*(1)
 
 @h1 AUTHOR
 

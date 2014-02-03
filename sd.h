@@ -1,6 +1,5 @@
 /*
- * Copyright 2008-2013 Various Authors
- * Copyright 2004-2005 Timo Hirvonen
+ * Copyright 2013-2014 Various Authors
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -16,25 +15,31 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _SERVER_H
-#define _SERVER_H
+#ifndef _SD_H_
+#define _SD_H_
 
-#include "list.h"
-#include <stdio.h>
+#include "config/dbus.h"
 
-struct client {
-	struct list_head node;
-	int fd;
-	unsigned int authenticated : 1;
+#ifdef HAVE_DBUS
+ #define SD_VAR extern
+ #define SD_FUNC(f) f;
+#else
+ #define SD_VAR static __attribute__((unused))
+ #define SD_FUNC(f) static inline f {}
+#endif
+
+enum sd_signal {
+	SD_EXIT,
+	SD_STATUS_CHANGE,
+	SD_TRACK_CHANGE,
+	SD_VOL_CHANGE,
 };
 
-extern int server_socket;
-extern struct list_head client_head;
 
-void server_init(char *address);
-void server_exit(void);
-void server_accept(void);
-void server_serve(struct client *client);
-void server_query(FILE *dest);
+SD_VAR int sd_socket;
+
+SD_FUNC(void sd_init(void))
+SD_FUNC(void sd_handle(void))
+SD_FUNC(void sd_notify(enum sd_signal signal))
 
 #endif

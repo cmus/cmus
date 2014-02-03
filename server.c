@@ -63,7 +63,7 @@ static union {
 
 #define MAX_CLIENTS 10
 
-static int cmd_status(struct client *client)
+void server_query(FILE *dest)
 {
 	const char *export_options[] = {
 		"aaa_mode",
@@ -82,20 +82,19 @@ static int cmd_status(struct client *client)
 	const struct track_info *ti;
 	struct cmus_opt *opt;
 	char optbuf[OPTION_MAX_SIZE];
-	GBUF(buf);
 	int vol_left, vol_right;
-	int i, ret;
+	int i;
 	enum player_status status;
 
 	player_info_lock();
-	gbuf_addf(&buf, "status %s\n", player_status_names[player_info.status]);
+	fprintf(dest, "status %s\n", player_status_names[player_info.status]);
 	ti = player_info.ti;
 	if (ti) {
-		gbuf_addf(&buf, "file %s\n", escape(ti->filename));
-		gbuf_addf(&buf, "duration %d\n", ti->duration);
-		gbuf_addf(&buf, "position %d\n", player_info.pos);
+		fprintf(dest, "file %s\n", escape(ti->filename));
+		fprintf(dest, "duration %d\n", ti->duration);
+		fprintf(dest, "position %d\n", player_info.pos);
 		for (i = 0; ti->comments[i].key; i++)
-			gbuf_addf(&buf, "tag %s %s\n",
+			fprintf(dest, "tag %s %s\n",
 					ti->comments[i].key,
 					escape(ti->comments[i].val));
 	}
@@ -108,10 +107,10 @@ static int cmd_status(struct client *client)
 			free(title_buf);
 			title_buf = to_utf8(title, icecast_default_charset);
 			// we have a stream title (probably artist/track/album info)
-			gbuf_addf(&buf, "stream %s\n", escape(title_buf));
+			fprintf(dest, "stream %s\n", escape(title_buf));
 		} else if (ti->comment != NULL) {
 			// fallback to the radio station name
-			gbuf_addf(&buf, "stream %s\n", escape(ti->comment));
+			fprintf(dest, "stream %s\n", escape(ti->comment));
 		}
 	}
 
@@ -120,7 +119,7 @@ static int cmd_status(struct client *client)
 		opt = option_find(export_options[i]);
 		if (opt) {
 			opt->get(opt->id, optbuf);
-			gbuf_addf(&buf, "set %s %s\n", opt->name, optbuf);
+			fprintf(dest, "set %s %s\n", opt->name, optbuf);
 		}
 	}
 
@@ -136,14 +135,22 @@ static int cmd_status(struct client *client)
 	}
 
 	/* output volume */
-	gbuf_addf(&buf, "set vol_left %d\n", vol_left);
-	gbuf_addf(&buf, "set vol_right %d\n", vol_right);
+	fprintf(dest, "set vol_left %d\n", vol_left);
+	fprintf(dest, "set vol_right %d\n", vol_right);
 
-	gbuf_add_str(&buf, "\n");
+	fprintf(dest, "\n");
+
 	player_info_unlock();
+}
 
-	ret = write_all(client->fd, buf.buffer, buf.len);
-	gbuf_free(&buf);
+static int cmd_status(struct client *client)
+{
+	FILE *file = new_memstream();
+	server_query(file);
+	size_t size;
+	char *buf = close_memstream(file, &size);
+	int ret = write_all(client->fd, buf, size);
+	free(buf);
 	return ret;
 }
 

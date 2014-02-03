@@ -22,6 +22,8 @@
 #include "search.h"
 #include "compiler.h"
 
+#include <stdio.h>
+
 enum ui_input_mode {
 	NORMAL_MODE,
 	COMMAND_MODE,

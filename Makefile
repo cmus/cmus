@@ -21,13 +21,16 @@ CFLAGS += -D_FILE_OFFSET_BITS=64
 FFMPEG_CFLAGS += $(shell pkg-config --cflags libswresample)
 FFMPEG_LIBS += $(shell pkg-config --libs libswresample)
 
-CMUS_LIBS = $(PTHREAD_LIBS) $(NCURSES_LIBS) $(ICONV_LIBS) $(DL_LIBS) $(DISCID_LIBS) $(CUE_LIBS) -lm $(COMPAT_LIBS)
+CMUS_LIBS = $(PTHREAD_LIBS) $(NCURSES_LIBS) $(ICONV_LIBS) $(DL_LIBS) $(DISCID_LIBS) $(CUE_LIBS) -lm $(COMPAT_LIBS) $(DBUS_LIBS)
+CMUS_REMOTE_LIBS = $(COMPAT_LIBS) $(DBUS_LIBS)
 
-input.o main.o ui_curses.o pulse.lo: .version
-input.o main.o ui_curses.o pulse.lo: CFLAGS += -DVERSION=\"$(VERSION)\"
-main.o server.o: CFLAGS += -DDEFAULT_PORT=3000
+input.o cmus_remote_socket.o ui_curses.o pulse.lo: .version
+input.o cmus_remote_socket.o ui_curses.o pulse.lo: CFLAGS += -DVERSION=\"$(VERSION)\"
+cmus_remote_socket.o server.o: CFLAGS += -DDEFAULT_PORT=3000
 discid.o: CFLAGS += $(DISCID_CFLAGS)
 job.o cue_utils.o: CFLAGS += $(CUE_CFLAGS)
+sd.o: CFLAGS += $(DBUS_CFLAGS) -DVERSION=\"$(VERSION)\"
+cmus_remote_dbus.o: CFLAGS += $(DBUS_CFLAGS) -DVERSION=\"$(VERSION)\"
 
 .version: Makefile
 	@test "`cat $@ 2> /dev/null`" = "$(VERSION)" && exit 0; \
@@ -46,14 +49,18 @@ cmus-y := \
 	window.o worker.o xstrjoin.o
 
 cmus-$(CONFIG_CUE) += cue_utils.o
+cmus-$(CONFIG_DBUS) += sd.o
 
 $(cmus-y): CFLAGS += $(PTHREAD_CFLAGS) $(NCURSES_CFLAGS) $(ICONV_CFLAGS) $(DL_CFLAGS)
 
 cmus: $(cmus-y) file.o path.o prog.o xmalloc.o
 	$(call cmd,ld,$(CMUS_LIBS))
 
-cmus-remote: main.o file.o misc.o path.o prog.o xmalloc.o xstrjoin.o
-	$(call cmd,ld,$(COMPAT_LIBS))
+cmus-remote: cmus_remote_socket.o file.o misc.o path.o prog.o xmalloc.o xstrjoin.o
+	$(call cmd,ld,$(CMUS_REMOTE_LIBS))
+
+cmus-remote2: cmus_remote_dbus.o path.o prog.o xmalloc.o
+	$(call cmd,ld,$(CMUS_REMOTE_LIBS))
 
 # cygwin compat
 DLLTOOL=dlltool
@@ -212,7 +219,7 @@ roar.so: $(roar-objs) $(libcmus-y)
 # }}}
 
 # man {{{
-man1	:= Doc/cmus.1 Doc/cmus-remote.1
+man1	:= Doc/cmus.1 Doc/cmus-remote.1 Doc/cmus-remote2.1
 man7	:= Doc/cmus-tutorial.7
 
 $(man1): Doc/ttman
@@ -236,15 +243,19 @@ quiet_cmd_ttman = MAN    $@
 
 data		= $(wildcard data/*)
 
-clean		+= *.o *.lo *.so cmus libcmus.a cmus.def cmus.base cmus.exp cmus-remote Doc/*.o Doc/ttman Doc/*.1 Doc/*.7 .install.log
+clean		+= *.o *.lo *.so cmus libcmus.a cmus.def cmus.base cmus.exp cmus-remote cmus-remote2 Doc/*.o Doc/ttman Doc/*.1 Doc/*.7 .install.log
 distclean	+= .version config.mk config/*.h tags
 
-main: cmus cmus-remote
+main-$(CONFIG_DBUS) += cmus-remote2
+main: cmus cmus-remote $(main-y)
 plugins: $(ip-y) $(op-y)
 man: $(man1) $(man7)
 
 install-main: main
 	$(INSTALL) -m755 $(bindir) cmus cmus-remote
+ifeq ($(CONFIG_DBUS),y)
+	$(INSTALL) -m755 $(bindir) cmus-remote2
+endif
 
 install-plugins: plugins
 	$(INSTALL) -m755 $(libdir)/cmus/ip $(ip-y)
@@ -254,7 +265,9 @@ install-data: man
 	$(INSTALL) -m644 $(datadir)/cmus $(data)
 	$(INSTALL) -m644 $(mandir)/man1 $(man1)
 	$(INSTALL) -m644 $(mandir)/man7 $(man7)
-	$(INSTALL) -m755 $(exampledir) cmus-status-display
+	$(INSTALL) -m644 $(docdir) dbus/dbus.md
+	$(INSTALL) -m644 $(exampledir) $(wildcard dbus/examples/*.c)
+	$(INSTALL) -m755 $(exampledir) $(wildcard dbus/examples/*.rb) $(wildcard dbus/examples/*.py) cmus-status-display
 
 install: all install-main install-plugins install-data
 
