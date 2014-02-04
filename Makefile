@@ -78,6 +78,7 @@ modplug-objs		:= modplug.lo
 mpc-objs		:= mpc.lo
 vorbis-objs		:= vorbis.lo
 opus-objs		:= opus.lo
+mpg123-objs		:= mpg.lo
 wavpack-objs		:= wavpack.lo
 wav-objs		:= wav.lo
 mp4-objs		:= mp4.lo
@@ -92,6 +93,7 @@ ip-$(CONFIG_MIKMOD)	+= mikmod.so
 ip-$(CONFIG_MODPLUG)	+= modplug.so
 ip-$(CONFIG_MPC)	+= mpc.so
 ip-$(CONFIG_VORBIS)	+= vorbis.so
+ip-$(CONFIG_MPG123)	+= mpg.so
 ip-$(CONFIG_OPUS)	+= opus.so
 ip-$(CONFIG_WAVPACK)	+= wavpack.so
 ip-$(CONFIG_WAV)	+= wav.so
@@ -107,6 +109,7 @@ $(mikmod-objs):		CFLAGS += $(MIKMOD_CFLAGS)
 $(modplug-objs):	CFLAGS += $(MODPLUG_CFLAGS)
 $(mpc-objs):		CFLAGS += $(MPC_CFLAGS)
 $(vorbis-objs):		CFLAGS += $(VORBIS_CFLAGS)
+$(mpg123-objs):		CFLAGS += $(MPG123_CFLAGS)
 $(opus-objs):		CFLAGS += $(OPUS_CFLAGS)
 $(wavpack-objs):	CFLAGS += $(WAVPACK_CFLAGS)
 $(mp4-objs):		CFLAGS += $(MP4_CFLAGS)
@@ -134,6 +137,9 @@ mpc.so: $(mpc-objs) $(libcmus-y)
 
 vorbis.so: $(vorbis-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(VORBIS_LIBS))
+
+mpg.so: $(mpg123-objs) $(libcmus-y)
+	$(call cmd,ld_dl,$(MPG123_LIBS))
 
 opus.so: $(opus-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(OPUS_LIBS))
