@@ -38,23 +38,44 @@
 
 
 #define CHANNELS 2
-#define BUFFER_SIZE 16384 
+#define BUFFER_MULTIPLYER (sizeof(jack_default_audio_sample_t) * 4)
 
 struct {
 	char* client_name;
 	char* server_name;
 } cfg;
 
-jack_client_t *client;
-jack_port_t *output_ports [CHANNELS];
-jack_ringbuffer_t *ringbuf [CHANNELS];
+jack_client_t *client = NULL;
+jack_port_t *output_ports[CHANNELS];
+jack_ringbuffer_t *ringbuffer[CHANNELS];
+
+size_t buffer_size = 0;
 sample_format_t sample_format;
 /* bytes per sample */
 unsigned int sample_stride = 0;
+jack_nframes_t jack_sample_rate = 0;
 const channel_position_t* channel_map;
-volatile int paused = 0;
+volatile int paused = 1;
+/* fail on the next call */
+int fail = 0;
 
+/* function pointer to appropriate read function */
 float (*read_sample) (const char* buff);
+
+static int op_jack_init(void);
+static int op_jack_exit(void);
+static int op_jack_open(sample_format_t sf, const channel_position_t* cm);
+static int op_jack_close(void);
+static int op_jack_write(const char* buffer, int count);
+static int op_jack_drop(void);
+static int op_jack_buffer_space(void);
+static int op_jack_set_option(const int key, const char* val);
+static int op_jack_get_option(const int key, char** val);
+static int op_jack_pause(void);
+static int op_jack_unpause(void);
+
+
+/* read functions for various sample formats */
 
 static jack_default_audio_sample_t read_sample_le16(const char *buffer) {
 	union c {
@@ -106,8 +127,9 @@ static jack_default_audio_sample_t read_sample_le32u(const char *buffer) {
 	return res;
 }
 
-static int op_jack_callback(jack_nframes_t frames, void* arg)
-{
+/* jack callbacks */
+
+static int op_jack_cb(jack_nframes_t frames, void* arg) {
 	int i = 0;
 	size_t bytes_read = 0;
 	size_t bytes_want = 0;
@@ -120,7 +142,7 @@ static int op_jack_callback(jack_nframes_t frames, void* arg)
 		if (!paused) {
 			bytes_want = frames * sizeof(jack_default_audio_sample_t);
 			bytes_read = jack_ringbuffer_read(
-				ringbuf[i], 
+				ringbuffer[i], 
 				(char*) jack_buf, 
 				bytes_want
 			);
@@ -144,37 +166,124 @@ static int op_jack_callback(jack_nframes_t frames, void* arg)
 	return 0;
 }
 
-static int op_jack_init(void)
-{
+/* init or resize buffers if needed */
+static int op_jack_buffer_init(jack_nframes_t samples, void* arg) {
+	int i;
+	jack_ringbuffer_t* new_buffer;
+	char* tmp = NULL;
+	size_t length;
+
+	if (buffer_size > samples * BUFFER_MULTIPLYER) {
+		/* we just don't shrink buffers, since this could result
+		 * in gaps and they won't get that big anyway
+		 */
+		return 0;
+	}
+	buffer_size = samples * BUFFER_MULTIPLYER;
+	d_print("new buffer size %d\n", buffer_size);
+
+	for (i = 0; i < CHANNELS; i++) {
+		new_buffer = jack_ringbuffer_create(buffer_size);
+
+		if (!new_buffer) {
+			d_print("ringbuffer alloc failed\n");
+			if (tmp != NULL) {
+				free(tmp);
+			}
+			fail = 1;
+			return 1;
+		}
+		if (ringbuffer[i] != NULL) {
+			if (tmp == NULL) {
+				tmp = xmalloc(buffer_size);
+				if (!tmp) {
+					d_print("xalloc failed\n");
+					op_jack_exit();
+					return 1;
+				}
+			}
+			length = jack_ringbuffer_read_space(ringbuffer[i]);
+			
+			/* actualy this could both read/write less than length.
+			 * In that case, which should not happen[TM], there will 
+			 * be a gap in playback. 
+			 */
+			jack_ringbuffer_read(
+				ringbuffer[i], 
+				tmp, 
+				length
+			);
+			jack_ringbuffer_write(
+				new_buffer, 
+				tmp, 
+				length
+			);
+
+			jack_ringbuffer_free(ringbuffer[i]);
+		}
+
+		ringbuffer[i] = new_buffer;
+	}
+	free(tmp);
+	return 0;
+}
+
+static int op_jack_sample_rate_cb(jack_nframes_t samples, void* arg) {
+	if (jack_sample_rate != samples) {
+		//just fail for now
+		fail = 1; 
+		return 1;
+	}
+	return 0;
+}
+
+static void op_jack_shutdown_cb(void* arg) {
+	d_print("jackd went away");
+	/* calling op_jack_exit() will cause a segfault if op_jack_write or
+	 * anything else is in the middle of something...
+	 * the fail flag is checked by op_jack_write and op_jack_buffer_space
+	 *
+	 * op_jack_open will try to reinitialize jack
+	 */
+	fail = 1;
+}
+
+/* cmus callbacks */
+
+static int op_jack_init(void) {
 	const char** ports;
 	char port_name[20];
 	jack_options_t options = JackNullOption;
 	jack_status_t status;
+	size_t jack_buffer_size = 0;
 	int i;
 
-
-
+	if (fail) {
+		/* since jackd failed, it will not be autostarted. Either jackd 
+		 * was killed intentionaly or it died by heartattack.
+		 * Until it is restarted, init will happily fail again 
+		 * and again and again..
+		 */
+		options |= JackNoStartServer;
+	}
 	client = jack_client_open("cmus", options, &status, cfg.server_name);
 	if (client == NULL) {
 		d_print("jack_client_new failed status = 0x%2.0x\n", status);
 		return -OP_ERROR_INTERNAL;	
 	}
 	if (status & JackServerStarted) {
-		d_print("jack_server started\n");
+		d_print("jackd started\n");
 	}
 
-	for (i = 0; i < CHANNELS; i++) {
-		ringbuf[i] = jack_ringbuffer_create(BUFFER_SIZE);
-		if (ringbuf[i] == NULL) {
-			d_print("failed to create output buffer\n");
-			while (--i >= 0) {
-				jack_ringbuffer_free(ringbuf[i]);
-			}
-			return -OP_ERROR_INTERNAL;
-		}
-	}
+	jack_buffer_size = jack_get_buffer_size(client);
+	jack_sample_rate = jack_get_sample_rate(client);
+	op_jack_buffer_init(jack_buffer_size, NULL);
 
-	jack_set_process_callback(client, op_jack_callback, NULL);
+	jack_set_process_callback(client, op_jack_cb, NULL);
+	jack_set_sample_rate_callback(client, op_jack_sample_rate_cb, NULL);
+	jack_set_buffer_size_callback(client, op_jack_buffer_init, NULL);
+	jack_on_shutdown(client, op_jack_shutdown_cb, NULL);
+
 
 	for (i = 0; i < CHANNELS; i++) {
 		snprintf(port_name, sizeof(port_name)-1, "output %d", i);
@@ -217,24 +326,38 @@ static int op_jack_init(void)
 	}
 	free(ports);
 
+	fail = 0;
+
 	return OP_ERROR_SUCCESS;
 }
 
-static int op_jack_exit(void) 
-{
+static int op_jack_exit(void) {
 	int i;
 	for (i = 0; i < CHANNELS; i++) {
-		jack_ringbuffer_free(ringbuf[i]);
-		ringbuf[i] = NULL;
+		if (ringbuffer[i] != NULL) {
+			jack_ringbuffer_free(ringbuffer[i]);
+		}
+		ringbuffer[i] = NULL;
 	}
 	jack_client_close(client);
+	buffer_size = 0;
+	client = NULL;
 	return OP_ERROR_SUCCESS;
 }
 
-static int op_jack_open(sample_format_t sf, const channel_position_t *cm)
-{
+static int op_jack_open(sample_format_t sf, const channel_position_t *cm) {
 	int bits;
 	sample_format = sf;
+
+	if (fail) {
+		//jack went away so lets see if we can recover
+		if (client != NULL) {
+			op_jack_exit();
+		}
+		if (op_jack_init() != OP_ERROR_SUCCESS) {
+			return -OP_ERROR_INTERNAL;
+		}
+	}
 
 	if (cm == NULL) {
 		d_print("no channel_map\n");
@@ -242,14 +365,8 @@ static int op_jack_open(sample_format_t sf, const channel_position_t *cm)
 	}
 	channel_map = cm;
 
-	d_print("big edian = %d\n", sf_get_bigendian(sf));
-	d_print("channels = %d\n", sf_get_channels(sf));
-	d_print("rate = %d\n", sf_get_rate(sf));
-	d_print("signed = %d\n", sf_get_signed(sf));
-	d_print("bits = %d\n", sf_get_bits(sf));
-	d_print("frame_size = %d\n", sf_get_frame_size(sf));
-	
-	if (jack_get_sample_rate (client) != sf_get_rate(sf)) {
+	/*
+	if (jack_sample_rate != sf_get_rate(sf)) {
 		d_print(
 			"jack sample rate of %d does not match %d\n", 
 			jack_get_sample_rate(client),
@@ -257,6 +374,7 @@ static int op_jack_open(sample_format_t sf, const channel_position_t *cm)
 		);
 		return -OP_ERROR_SAMPLE_FORMAT;
 	}
+	*/
 
 	if (sf_get_channels(sf) < CHANNELS) {
 		d_print(
@@ -295,26 +413,50 @@ static int op_jack_open(sample_format_t sf, const channel_position_t *cm)
 	return OP_ERROR_SUCCESS;
 }
 
-static int op_jack_close(void)
-{
+static int op_jack_close(void) {
 	paused = 1;
 	return OP_ERROR_SUCCESS;
 }
 
-static int op_jack_drop(void)
-{
-	d_print("drop called");
+static int op_jack_drop(void) {
+	int i;
+	for (i = 0; i < CHANNELS; i++) {
+		jack_ringbuffer_reset(ringbuffer[i]);
+	}
 	return -OP_ERROR_NOT_SUPPORTED;
 }
 
-static int op_jack_write(const char *buffer, int count)
-{
-	int idx, c, pos, frame_size, channels, frame;
-	jack_default_audio_sample_t buf[CHANNELS][BUFFER_SIZE];
+static int op_jack_write(const char *buffer, int count) {
+	int idx, i, c, pos, frame_size, channels, frame, byte_length;
+	size_t frames, frames_min, frames_available;
+	jack_default_audio_sample_t buf[CHANNELS][buffer_size];
+
+	if (fail) {
+		op_jack_exit();
+		return -OP_ERROR_INTERNAL;
+	}
 
 	frame_size = sf_get_frame_size(sample_format);
 	channels = sf_get_channels(sample_format);
 
+	frames = count / frame_size;
+
+	/* since this is the only place where the ringbuffers get
+	 * written, available space will only grow, therefore frames_min 
+	 * is safe.
+	 */
+	frames_min = SIZE_MAX;
+	for (i = 0; i < CHANNELS; i++) {
+		frames_available = jack_ringbuffer_write_space(ringbuffer[i])
+			/ sizeof(jack_default_audio_sample_t);
+		if (frames_available < frames_min) {
+			frames_min = frames_available;
+		}
+	}
+
+	if (frames > frames_min) {
+		frames = frames_min;
+	}
 	
 	//demux and convert to float
 	pos = 0;
@@ -338,23 +480,28 @@ static int op_jack_write(const char *buffer, int count)
 		pos += frame_size;
 	}
 
+	byte_length = frames * sizeof(jack_default_audio_sample_t);
 	for (c = 0; c < CHANNELS; c++) {
 		jack_ringbuffer_write(
-			ringbuf[c], 
+			ringbuffer[c], 
 			(const char*) buf[c], 
-			sizeof(jack_default_audio_sample_t) * (count / frame_size)
-		);
+			byte_length
+		); 
 	}
-	return count;
+	return frames * frame_size;
 }
 
-static int op_jack_buffer_space(void)
-{
+static int op_jack_buffer_space(void) {
 	int frame_size;
 	int bytes;
 	int frames;
 
-	bytes = jack_ringbuffer_write_space(ringbuf[0]);
+	if (fail) {
+		op_jack_exit();
+		return -OP_ERROR_INTERNAL;
+	}
+
+	bytes = jack_ringbuffer_write_space(ringbuffer[0]);
 	frames = bytes / sizeof(jack_default_audio_sample_t);
 	frame_size = sf_get_frame_size(sample_format);
 	return frames * frame_size;
@@ -370,10 +517,7 @@ static int op_jack_unpause(void) {
 	return OP_ERROR_SUCCESS;
 }
 
-static int op_jack_set_option(int key, const char *val) 
-{
-	d_print("set option %d = %s\n", key, val);
-
+static int op_jack_set_option(int key, const char *val) {
 	switch (key) {
 	case 0:
 		if (cfg.server_name != NULL) {
@@ -385,15 +529,13 @@ static int op_jack_set_option(int key, const char *val)
 		}
 	break;
 	default:
-		d_print("unknown uption %d\n", key);
 		return -OP_ERROR_NOT_OPTION;
 
 	}
 	return OP_ERROR_SUCCESS;
 }
 
-static int op_jack_get_option(int key, char **val)
-{
+static int op_jack_get_option(int key, char **val) {
 	switch (key) {
 	case 0: 
 		if (cfg.server_name == NULL) {
