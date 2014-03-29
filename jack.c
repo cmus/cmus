@@ -371,11 +371,11 @@ static int op_jack_init(void)
 		}
 		if (jack_connect(client, jack_port_name(output_ports[i]), ports[i])) {
 			d_print("connot connect port %s\n", ports[i]);
-			free(ports);
+			jack_free(ports);
 			return -OP_ERROR_INTERNAL;
 		}
 	}
-	free(ports);
+	jack_free(ports);
 
 	fail = 0;
 
