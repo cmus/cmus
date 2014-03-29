@@ -26,7 +26,6 @@
 #include <jack/jack.h>
 #include <jack/ringbuffer.h>
 #include <string.h>
-//#include <stdlib.h>
 #include <stdio.h>
 
 #include "op.h"
@@ -37,7 +36,7 @@
 
 
 #define CHANNELS 2
-#define BUFFER_MULTIPLYER (sizeof(jack_default_audio_sample_t) * 4)
+#define BUFFER_MULTIPLYER (sizeof(jack_default_audio_sample_t) * 8)
 
 struct {
 	char* client_name;
@@ -47,6 +46,7 @@ struct {
 jack_client_t *client = NULL;
 jack_port_t *output_ports[CHANNELS];
 jack_ringbuffer_t *ringbuffer[CHANNELS];
+size_t buffer_pos[CHANNELS];
 jack_nframes_t jack_sample_rate = 0;
 
 size_t buffer_size = 0;
@@ -147,18 +147,23 @@ static int op_jack_cb(jack_nframes_t frames, void* arg)
 	char *fill_offset = NULL;
 	jack_default_audio_sample_t *jack_buf;
 
-	for (i = 0; i < CHANNELS; i++) {
-		jack_buf = jack_port_get_buffer(output_ports[i], frames);
-		if (!paused) {
-			bytes_want = frames * sizeof(jack_default_audio_sample_t);
+	bytes_want = frames * sizeof(jack_default_audio_sample_t);
+
+	if (!paused) {
+		for (i = 0; i < CHANNELS; i++) {
+			jack_buf = jack_port_get_buffer(output_ports[i], frames);
+
 			bytes_read = jack_ringbuffer_read(
 				ringbuffer[i], 
 				(char*) jack_buf, 
 				bytes_want
 			);
 
+			buffer_pos[i] += bytes_read;
+
 			if (bytes_read < bytes_want) {
-				d_print("underrun got %lu bytes, needed %lu\n", 
+				d_print("channel %d underrun got %lu bytes, needed %lu\n", 
+					i,
 					bytes_read, 
 					bytes_want
 				);
@@ -167,9 +172,11 @@ static int op_jack_cb(jack_nframes_t frames, void* arg)
 				fill_offset = ((char*) jack_buf) + bytes_read;
 				memset(fill_offset, 0, fill_length);
 			}
-		} else {
-			fill_length = sizeof(jack_default_audio_sample_t) * frames;
-			memset(jack_buf, 0, fill_length);
+		}
+	} else {
+		for (i = 0; i < CHANNELS; i++) {
+			jack_buf = jack_port_get_buffer(output_ports[i], frames);
+			memset((char*) jack_buf, 0, bytes_want);
 		}
 	}
 
@@ -191,7 +198,7 @@ static int op_jack_buffer_init(jack_nframes_t samples, void* arg)
 		return 0;
 	}
 	buffer_size = samples * BUFFER_MULTIPLYER;
-	d_print("new buffer size %d\n", buffer_size);
+	d_print("new buffer size %lu\n", buffer_size);
 
 	for (i = 0; i < CHANNELS; i++) {
 		new_buffer = jack_ringbuffer_create(buffer_size);
@@ -235,6 +242,7 @@ static int op_jack_buffer_init(jack_nframes_t samples, void* arg)
 			jack_ringbuffer_free(ringbuffer[i]);
 		}
 
+		buffer_pos[i] = 0;
 		ringbuffer[i] = new_buffer;
 	}
 	free(tmp);
@@ -383,7 +391,6 @@ static int op_jack_open(sample_format_t sf, const channel_position_t *cm)
 	}
 	channel_map = cm;
 
-	/*
 	if (jack_sample_rate != sf_get_rate(sf)) {
 		d_print(
 			"jack sample rate of %d does not match %d\n", 
@@ -392,7 +399,6 @@ static int op_jack_open(sample_format_t sf, const channel_position_t *cm)
 		);
 		return -OP_ERROR_SAMPLE_FORMAT;
 	}
-	*/
 
 	if (sf_get_channels(sf) < CHANNELS) {
 		d_print(
@@ -449,7 +455,6 @@ static int op_jack_drop(void)
 static int op_jack_write(const char *buffer, int count) 
 {
 	int idx;
-	int i;
 	int c;
 	int pos;
 	int frame_size;
@@ -476,8 +481,8 @@ static int op_jack_write(const char *buffer, int count)
 	 * is safe.
 	 */
 	frames_min = SIZE_MAX;
-	for (i = 0; i < CHANNELS; i++) {
-		frames_available = jack_ringbuffer_write_space(ringbuffer[i])
+	for (c = 0; c < CHANNELS; c++) {
+		frames_available = jack_ringbuffer_write_space(ringbuffer[c])
 			/ sizeof(jack_default_audio_sample_t);
 		if (frames_available < frames_min) {
 			frames_min = frames_available;
@@ -526,13 +531,22 @@ static int op_jack_buffer_space(void)
 	int frame_size;
 	int bytes;
 	int frames;
+	int tmp;
+	int c;
 
 	if (fail) {
 		op_jack_exit();
 		return -OP_ERROR_INTERNAL;
 	}
 
+
 	bytes = jack_ringbuffer_write_space(ringbuffer[0]);
+	for (c = 1; c < CHANNELS; c++) {
+		tmp = jack_ringbuffer_write_space(ringbuffer[0]);
+		if (bytes > tmp) {
+			bytes = tmp;
+		}
+	}
 	frames = bytes / sizeof(jack_default_audio_sample_t);
 	frame_size = sf_get_frame_size(sample_format);
 	return frames * frame_size;
