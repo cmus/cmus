@@ -18,10 +18,9 @@
 
 /* TODO
  *
- * - handle server went away
- * - handle server changed sample rate
  * - resample to match server sample rate
  *    libsamplerate
+ * - handle server changed sample rate
  * - configurable maping of channels to ports
  */
 #include <jack/jack.h>
@@ -48,14 +47,14 @@ struct {
 jack_client_t *client = NULL;
 jack_port_t *output_ports[CHANNELS];
 jack_ringbuffer_t *ringbuffer[CHANNELS];
+jack_nframes_t jack_sample_rate = 0;
 
 size_t buffer_size = 0;
 sample_format_t sample_format;
-/* bytes per sample */
-unsigned int sample_stride = 0;
-jack_nframes_t jack_sample_rate = 0;
+unsigned int sample_bytes = 0;
 const channel_position_t* channel_map;
 volatile int paused = 1;
+
 /* fail on the next call */
 int fail = 0;
 
@@ -77,7 +76,8 @@ static int op_jack_unpause(void);
 
 /* read functions for various sample formats */
 
-static jack_default_audio_sample_t read_sample_le16(const char *buffer) {
+static jack_default_audio_sample_t read_sample_le16(const char *buffer) 
+{
 	union c {
 		uint16_t u;
 		int16_t s;
@@ -86,14 +86,17 @@ static jack_default_audio_sample_t read_sample_le16(const char *buffer) {
 
 	c.u = read_le16(buffer);
 	if (c.s > 0) {
-		res = ((jack_default_audio_sample_t) c.s) / ((jack_default_audio_sample_t) INT16_MAX);
+		res = ((jack_default_audio_sample_t) c.s) 
+			/ ((jack_default_audio_sample_t) INT16_MAX);
 	} else {
-		res = ((jack_default_audio_sample_t) c.s) / (- (jack_default_audio_sample_t) INT16_MIN);
+		res = ((jack_default_audio_sample_t) c.s) 
+			/ (- (jack_default_audio_sample_t) INT16_MIN);
 	}
 	return res;
 }
 
-static jack_default_audio_sample_t read_sample_le32(const char *buffer) {
+static jack_default_audio_sample_t read_sample_le32(const char *buffer) 
+{
 	union c {
 		uint32_t u;
 		int32_t s;
@@ -102,34 +105,41 @@ static jack_default_audio_sample_t read_sample_le32(const char *buffer) {
 
 	c.u = read_le16(buffer);
 	if (c.s > 0) {
-		res = ((jack_default_audio_sample_t) c.s) / ((jack_default_audio_sample_t) INT32_MAX);
+		res = ((jack_default_audio_sample_t) c.s) 
+			/ ((jack_default_audio_sample_t) INT32_MAX);
 	} else {
-		res = ((jack_default_audio_sample_t) c.s) / (- (jack_default_audio_sample_t) INT32_MIN);
+		res = ((jack_default_audio_sample_t) c.s) 
+			/ (- (jack_default_audio_sample_t) INT32_MIN);
 	}
 	return res;
 }
 
-static jack_default_audio_sample_t read_sample_le16u(const char *buffer) {
+static jack_default_audio_sample_t read_sample_le16u(const char *buffer) 
+{
 	jack_default_audio_sample_t res;
 	uint32_t u;
 
 	u = read_le16(buffer);
-	res = (((jack_default_audio_sample_t) u) / ((jack_default_audio_sample_t) UINT16_MAX)) * 2.0 - 2.0;
+	res = (((jack_default_audio_sample_t) u) 
+		/ ((jack_default_audio_sample_t) UINT16_MAX)) * 2.0 - 2.0;
 	return res;
 }
 
-static jack_default_audio_sample_t read_sample_le32u(const char *buffer) {
+static jack_default_audio_sample_t read_sample_le32u(const char *buffer) 
+{
 	jack_default_audio_sample_t res;
 	uint32_t u;
 
 	u = read_le16(buffer);
-	res = (((jack_default_audio_sample_t) u) / ((jack_default_audio_sample_t) UINT32_MAX)) * 2.0 - 2.0;
+	res = (((jack_default_audio_sample_t) u) 
+		/ ((jack_default_audio_sample_t) UINT32_MAX)) * 2.0 - 2.0;
 	return res;
 }
 
 /* jack callbacks */
 
-static int op_jack_cb(jack_nframes_t frames, void* arg) {
+static int op_jack_cb(jack_nframes_t frames, void* arg) 
+{
 	int i = 0;
 	size_t bytes_read = 0;
 	size_t bytes_want = 0;
@@ -167,7 +177,8 @@ static int op_jack_cb(jack_nframes_t frames, void* arg) {
 }
 
 /* init or resize buffers if needed */
-static int op_jack_buffer_init(jack_nframes_t samples, void* arg) {
+static int op_jack_buffer_init(jack_nframes_t samples, void* arg) 
+{
 	int i;
 	jack_ringbuffer_t* new_buffer;
 	char* tmp = NULL;
@@ -191,6 +202,7 @@ static int op_jack_buffer_init(jack_nframes_t samples, void* arg) {
 				free(tmp);
 			}
 			fail = 1;
+			op_jack_exit();
 			return 1;
 		}
 		if (ringbuffer[i] != NULL) {
@@ -198,6 +210,7 @@ static int op_jack_buffer_init(jack_nframes_t samples, void* arg) {
 				tmp = xmalloc(buffer_size);
 				if (!tmp) {
 					d_print("xalloc failed\n");
+					fail = 1;
 					op_jack_exit();
 					return 1;
 				}
@@ -228,7 +241,8 @@ static int op_jack_buffer_init(jack_nframes_t samples, void* arg) {
 	return 0;
 }
 
-static int op_jack_sample_rate_cb(jack_nframes_t samples, void* arg) {
+static int op_jack_sample_rate_cb(jack_nframes_t samples, void* arg) 
+{
 	if (jack_sample_rate != samples) {
 		//just fail for now
 		fail = 1; 
@@ -237,7 +251,8 @@ static int op_jack_sample_rate_cb(jack_nframes_t samples, void* arg) {
 	return 0;
 }
 
-static void op_jack_shutdown_cb(void* arg) {
+static void op_jack_shutdown_cb(void* arg) 
+{
 	d_print("jackd went away");
 	/* calling op_jack_exit() will cause a segfault if op_jack_write or
 	 * anything else is in the middle of something...
@@ -250,7 +265,8 @@ static void op_jack_shutdown_cb(void* arg) {
 
 /* cmus callbacks */
 
-static int op_jack_init(void) {
+static int op_jack_init(void) 
+{
 	const char** ports;
 	char port_name[20];
 	jack_options_t options = JackNullOption;
@@ -315,7 +331,7 @@ static int op_jack_init(void) {
 
 	for (i = 0; i < CHANNELS; i++) {
 		if (ports[i] == NULL) {
-			d_print("could not connect output %d. to few playback ports.\n", i);
+			d_print("could not connect output %d. too few ports.\n", i);
 			break;
 		}
 		if (jack_connect(client, jack_port_name(output_ports[i]), ports[i])) {
@@ -331,7 +347,8 @@ static int op_jack_init(void) {
 	return OP_ERROR_SUCCESS;
 }
 
-static int op_jack_exit(void) {
+static int op_jack_exit(void) 
+{
 	int i;
 	for (i = 0; i < CHANNELS; i++) {
 		if (ringbuffer[i] != NULL) {
@@ -339,13 +356,14 @@ static int op_jack_exit(void) {
 		}
 		ringbuffer[i] = NULL;
 	}
-	jack_client_close(client);
+	if (client != NULL) jack_client_close(client);
 	buffer_size = 0;
 	client = NULL;
 	return OP_ERROR_SUCCESS;
 }
 
-static int op_jack_open(sample_format_t sf, const channel_position_t *cm) {
+static int op_jack_open(sample_format_t sf, const channel_position_t *cm) 
+{
 	int bits;
 	sample_format = sf;
 
@@ -387,7 +405,7 @@ static int op_jack_open(sample_format_t sf, const channel_position_t *cm) {
 	bits = sf_get_bits(sf);
 	
 	if (bits == 16) {
-		sample_stride = 2;
+		sample_bytes = 2;
 
 		if (sf_get_signed(sf)) {
 			read_sample = &read_sample_le16;
@@ -395,7 +413,7 @@ static int op_jack_open(sample_format_t sf, const channel_position_t *cm) {
 			read_sample = &read_sample_le16u;
 		}
 	} else if (bits == 32) {
-		sample_stride = 4;
+		sample_bytes = 4;
 		if (sf_get_signed(sf)) {
 			read_sample = &read_sample_le32;
 		} else {
@@ -413,12 +431,14 @@ static int op_jack_open(sample_format_t sf, const channel_position_t *cm) {
 	return OP_ERROR_SUCCESS;
 }
 
-static int op_jack_close(void) {
+static int op_jack_close(void) 
+{
 	paused = 1;
 	return OP_ERROR_SUCCESS;
 }
 
-static int op_jack_drop(void) {
+static int op_jack_drop(void) 
+{
 	int i;
 	for (i = 0; i < CHANNELS; i++) {
 		jack_ringbuffer_reset(ringbuffer[i]);
@@ -426,9 +446,19 @@ static int op_jack_drop(void) {
 	return -OP_ERROR_NOT_SUPPORTED;
 }
 
-static int op_jack_write(const char *buffer, int count) {
-	int idx, i, c, pos, frame_size, channels, frame, byte_length;
-	size_t frames, frames_min, frames_available;
+static int op_jack_write(const char *buffer, int count) 
+{
+	int idx;
+	int i;
+	int c;
+	int pos;
+	int frame_size;
+	int channels;
+	int frame;
+	int byte_length;
+	size_t frames;
+	size_t frames_min;
+	size_t frames_available;
 	jack_default_audio_sample_t buf[CHANNELS][buffer_size];
 
 	if (fail) {
@@ -463,7 +493,7 @@ static int op_jack_write(const char *buffer, int count) {
 	for (pos = 0; pos < count; ) {
 		frame = pos / frame_size;
 		for (c = 0; c < channels; c++)	{
-			idx = pos + c * sample_stride;
+			idx = pos + c * sample_bytes;
 			//for now, only 2 channels and mono are supported
 			if (
 				channel_map[c] == CHANNEL_POSITION_LEFT
@@ -491,7 +521,8 @@ static int op_jack_write(const char *buffer, int count) {
 	return frames * frame_size;
 }
 
-static int op_jack_buffer_space(void) {
+static int op_jack_buffer_space(void) 
+{
 	int frame_size;
 	int bytes;
 	int frames;
@@ -507,17 +538,20 @@ static int op_jack_buffer_space(void) {
 	return frames * frame_size;
 }
 
-static int op_jack_pause(void) {
+static int op_jack_pause(void) 
+{
 	paused = 1;
 	return OP_ERROR_SUCCESS;
 }
 
-static int op_jack_unpause(void) {
+static int op_jack_unpause(void) 
+{
 	paused = 0;
 	return OP_ERROR_SUCCESS;
 }
 
-static int op_jack_set_option(int key, const char *val) {
+static int op_jack_set_option(int key, const char *val) 
+{
 	switch (key) {
 	case 0:
 		if (cfg.server_name != NULL) {
@@ -527,7 +561,7 @@ static int op_jack_set_option(int key, const char *val) {
 		if (val[0] != '\0') {
 			cfg.server_name = xstrdup(val);
 		}
-	break;
+		break;
 	default:
 		return -OP_ERROR_NOT_OPTION;
 
@@ -535,7 +569,8 @@ static int op_jack_set_option(int key, const char *val) {
 	return OP_ERROR_SUCCESS;
 }
 
-static int op_jack_get_option(int key, char **val) {
+static int op_jack_get_option(int key, char **val) 
+{
 	switch (key) {
 	case 0: 
 		if (cfg.server_name == NULL) {
