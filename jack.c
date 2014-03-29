@@ -47,6 +47,9 @@ jack_client_t *client = NULL;
 jack_port_t *output_ports[CHANNELS];
 jack_ringbuffer_t *ringbuffer[CHANNELS];
 size_t buffer_pos[CHANNELS];
+size_t buffer_pos_max = 0;
+int underrun = 0;
+
 jack_nframes_t jack_sample_rate = 0;
 
 size_t buffer_size = 0;
@@ -54,6 +57,7 @@ sample_format_t sample_format;
 unsigned int sample_bytes = 0;
 const channel_position_t* channel_map;
 volatile int paused = 1;
+
 
 /* fail on the next call */
 int fail = 0;
@@ -141,14 +145,38 @@ static jack_default_audio_sample_t read_sample_le32u(const char *buffer)
 static int op_jack_cb(jack_nframes_t frames, void* arg) 
 {
 	int i = 0;
+	int pos_diff = 0;
 	size_t bytes_read = 0;
 	size_t bytes_want = 0;
 	size_t fill_length = 0;
 	char *fill_offset = NULL;
+	char trash[frames * sizeof(jack_default_audio_sample_t)];
+
 	jack_default_audio_sample_t *jack_buf;
 
 	bytes_want = frames * sizeof(jack_default_audio_sample_t);
 
+	if (underrun) {
+		/* if there is an underrun channels may be out of sync. */
+		underrun = 0;
+		for (i = 0; i < CHANNELS; i++) {
+			/* trash pos_diff bytes */
+			pos_diff = buffer_pos_max - buffer_pos[i];
+			if (pos_diff > 0) {
+				bytes_read = jack_ringbuffer_read(
+					ringbuffer[i], 
+					(char*) trash, 
+					pos_diff
+				);
+				buffer_pos[i] += bytes_read;
+				if (buffer_pos_max > buffer_pos[i]) {
+					/* still not synced */
+					d_print("channel %d still out of sync", i);
+					underrun = 1;
+				}
+			}
+		}
+	}
 	if (!paused) {
 		for (i = 0; i < CHANNELS; i++) {
 			jack_buf = jack_port_get_buffer(output_ports[i], frames);
@@ -160,13 +188,12 @@ static int op_jack_cb(jack_nframes_t frames, void* arg)
 			);
 
 			buffer_pos[i] += bytes_read;
+			if (bytes_read > buffer_pos_max) {
+				buffer_pos_max = bytes_read;
+			}
 
 			if (bytes_read < bytes_want) {
-				d_print("channel %d underrun got %lu bytes, needed %lu\n", 
-					i,
-					bytes_read, 
-					bytes_want
-				);
+				underrun = 1;
 
 				fill_length = bytes_want - bytes_read;
 				fill_offset = ((char*) jack_buf) + bytes_read;
