@@ -253,6 +253,20 @@ check_alsa()
 	return $?
 }
 
+check_jack()
+{
+	# the alsa.pc file should be always available
+	pkg_config JACK "jack"
+	return $?
+}
+
+check_samplerate()
+{
+	# the alsa.pc file should be always available
+	pkg_config SAMPLERATE "samplerate" && HAVE_SAMPLERATE=1
+	return $?
+}
+
 check_ao()
 {
 	pkg_config AO "ao" "" "-lao"
@@ -441,6 +455,8 @@ Optional Features: y/n
   CONFIG_ROAR           native RoarAudio output                         [auto]
   CONFIG_PULSE    	native PulseAudio output                        [auto]
   CONFIG_ALSA     	ALSA                                            [auto]
+  CONFIG_JACK     	JACK                                            [auto]
+  CONFIG_SAMPLERATE	Use libsamplerate to resample to JACK's rate    [auto]
   CONFIG_AO       	Libao cross-platform audio library              [auto]
   CONFIG_ARTS     	ARTS                                            [auto]
   CONFIG_OSS      	Open Sound System                               [auto]
@@ -503,6 +519,8 @@ check true          CONFIG_TREMOR
 check true          CONFIG_WAV
 check check_pulse   CONFIG_PULSE
 check check_alsa    CONFIG_ALSA
+check check_jack    CONFIG_JACK
+check check_samplerate CONFIG_SAMPLERATE
 check check_ao      CONFIG_AO
 check check_arts    CONFIG_ARTS
 check check_oss     CONFIG_OSS
@@ -536,6 +554,7 @@ config_header config/curses.h HAVE_RESIZETERM HAVE_USE_DEFAULT_COLORS
 config_header config/ffmpeg.h HAVE_FFMPEG_AVCODEC_H USE_FALLBACK_IP
 config_header config/utils.h HAVE_BYTESWAP_H
 config_header config/iconv.h HAVE_ICONV
+config_header config/samplerate.h HAVE_SAMPLERATE
 config_header config/xmalloc.h HAVE_STRDUP HAVE_STRNDUP
 config_header config/cue.h CONFIG_CUE
 
@@ -543,6 +562,6 @@ CFLAGS="${CFLAGS} -DHAVE_CONFIG"
 
 makefile_vars bindir datadir libdir mandir exampledir
 makefile_vars CONFIG_CDIO CONFIG_FLAC CONFIG_MAD CONFIG_MIKMOD CONFIG_MODPLUG CONFIG_MPC CONFIG_VORBIS CONFIG_OPUS CONFIG_WAVPACK CONFIG_WAV CONFIG_MP4 CONFIG_AAC CONFIG_FFMPEG CONFIG_CUE
-makefile_vars CONFIG_ROAR CONFIG_PULSE CONFIG_ALSA CONFIG_AO CONFIG_ARTS CONFIG_OSS CONFIG_SUN CONFIG_WAVEOUT
+makefile_vars CONFIG_ROAR CONFIG_PULSE CONFIG_ALSA CONFIG_JACK CONFIG_SAMPLERATE CONFIG_AO CONFIG_ARTS CONFIG_OSS CONFIG_SUN CONFIG_WAVEOUT
 
 generate_config_mk
