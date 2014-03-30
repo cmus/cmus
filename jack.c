@@ -18,15 +18,17 @@
 
 /* TODO
  *
- * - resample to match server sample rate
- *    libsamplerate
- * - handle server changed sample rate
  * - configurable maping of channels to ports
  */
 #include <jack/jack.h>
 #include <jack/ringbuffer.h>
 #include <string.h>
 #include <stdio.h>
+
+#include "config/samplerate.h"
+#ifdef HAVE_SAMPLERATE
+#include <samplerate.h>
+#endif
 
 #include "op.h"
 #include "utils.h"
@@ -51,6 +53,12 @@ size_t buffer_pos_max = 0;
 int underrun = 0;
 
 jack_nframes_t jack_sample_rate = 0;
+
+#ifdef HAVE_SAMPLERATE
+SRC_STATE* src_state[CHANNELS];
+#endif
+
+float resample_ratio = 1.0f;
 
 size_t buffer_size = 0;
 sample_format_t sample_format;
@@ -139,6 +147,15 @@ static jack_default_audio_sample_t read_sample_le32u(const char *buffer)
 		/ ((jack_default_audio_sample_t) UINT32_MAX)) * 2.0 - 2.0;
 	return res;
 }
+
+#ifdef HAVE_SAMPLERATE
+static void op_jack_reset_src(void) {
+	int c;
+	for (c = 0; c < CHANNELS; c++) {
+		src_reset(src_state[c]);
+	}
+}
+#endif
 
 /* jack callbacks */
 
@@ -278,11 +295,15 @@ static int op_jack_buffer_init(jack_nframes_t samples, void* arg)
 
 static int op_jack_sample_rate_cb(jack_nframes_t samples, void* arg) 
 {
+#ifdef HAVE_SAMPLERATE
+	resample_ratio = (float) sf_get_rate(sample_format) / (float) samples;
+#else
 	if (jack_sample_rate != samples) {
-		//just fail for now
+		/* this cannot be handled */
 		fail = 1; 
 		return 1;
 	}
+#endif
 	return 0;
 }
 
@@ -308,6 +329,19 @@ static int op_jack_init(void)
 	jack_status_t status;
 	size_t jack_buffer_size = 0;
 	int i;
+
+#ifdef HAVE_SAMPLERATE
+	for (i = 0; i < CHANNELS; i++) {
+		src_state[i] = src_new(SRC_SINC_BEST_QUALITY, 1, NULL);
+		if (src_state[i] == NULL) {
+			d_print("src_new failed");
+			for (; i >= 0; i--) {
+				src_delete(src_state[i]);
+			}
+			return -OP_ERROR_INTERNAL;
+		}
+	}
+#endif
 
 	if (fail) {
 		/* since jackd failed, it will not be autostarted. Either jackd 
@@ -418,6 +452,7 @@ static int op_jack_open(sample_format_t sf, const channel_position_t *cm)
 	}
 	channel_map = cm;
 
+#ifndef HAVE_SAMPLERATE
 	if (jack_sample_rate != sf_get_rate(sf)) {
 		d_print(
 			"jack sample rate of %d does not match %d\n", 
@@ -426,6 +461,10 @@ static int op_jack_open(sample_format_t sf, const channel_position_t *cm)
 		);
 		return -OP_ERROR_SAMPLE_FORMAT;
 	}
+#else
+	op_jack_reset_src();
+	resample_ratio = (float) jack_sample_rate / (float) sf_get_rate(sf);
+#endif
 
 	if (sf_get_channels(sf) < CHANNELS) {
 		d_print(
@@ -492,6 +531,11 @@ static int op_jack_write(const char *buffer, int count)
 	size_t frames_min;
 	size_t frames_available;
 	jack_default_audio_sample_t buf[CHANNELS][buffer_size];
+#ifdef HAVE_SAMPLERATE
+	int err;
+	jack_default_audio_sample_t converted[buffer_size];
+	SRC_DATA src_data;
+#endif
 
 	if (fail) {
 		op_jack_exit();
@@ -542,6 +586,31 @@ static int op_jack_write(const char *buffer, int count)
 		pos += frame_size;
 	}
 
+#ifdef HAVE_SAMPLERATE
+	for (c = 0; c < CHANNELS; c++) {
+		src_data.data_in = buf[c];
+		src_data.data_out = converted;
+		src_data.input_frames = frames; 
+		src_data.output_frames = frames_min; 
+		src_data.src_ratio = resample_ratio;
+		src_data.end_of_input = 0;
+
+		err = src_process(src_state[c], &src_data);
+		if (err) {
+			d_print("libsamplerate err %s\n", src_strerror(err));
+		}
+
+		byte_length = src_data.output_frames_gen
+			* sizeof(jack_default_audio_sample_t);
+		jack_ringbuffer_write(
+			ringbuffer[c],
+			(const char*) converted,
+			byte_length
+		);
+	}
+	return src_data.input_frames_used * frame_size;
+#else
+
 	byte_length = frames * sizeof(jack_default_audio_sample_t);
 	for (c = 0; c < CHANNELS; c++) {
 		jack_ringbuffer_write(
@@ -551,6 +620,7 @@ static int op_jack_write(const char *buffer, int count)
 		); 
 	}
 	return frames * frame_size;
+#endif
 }
 
 static int op_jack_buffer_space(void) 
@@ -576,7 +646,11 @@ static int op_jack_buffer_space(void)
 	}
 	frames = bytes / sizeof(jack_default_audio_sample_t);
 	frame_size = sf_get_frame_size(sample_format);
+#ifdef HAVE_SAMPLERATE
+	return (int) ((float) (frames) / resample_ratio) * frame_size;
+#else
 	return frames * frame_size;
+#endif
 }
 
 static int op_jack_pause(void) 
@@ -587,6 +661,9 @@ static int op_jack_pause(void)
 
 static int op_jack_unpause(void) 
 {
+#ifdef HAVE_SAMPLERATE
+	op_jack_reset_src();
+#endif
 	paused = 0;
 	return OP_ERROR_SUCCESS;
 }
@@ -604,6 +681,7 @@ static int op_jack_set_option(int key, const char *val)
 		}
 		break;
 	default:
+		d_print("unknown key %d = %s\n", key, val);
 		return -OP_ERROR_NOT_OPTION;
 
 	}

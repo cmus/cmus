@@ -196,7 +196,7 @@ alsa.so: $(alsa-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(ALSA_LIBS))
 
 jack.so: $(jack-objs) $(libcmus-y)
-	$(call cmd,ld_dl,$(JACK_LIBS))
+	$(call cmd,ld_dl,$(JACK_LIBS) $(SAMPLERATE_LIBS))
 
 arts.so: $(arts-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(ARTS_LIBS))
