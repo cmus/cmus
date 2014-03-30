@@ -161,6 +161,7 @@ cue.so: $(cue-objs) $(libcmus-y)
 # output plugins {{{
 pulse-objs		:= pulse.lo
 alsa-objs		:= alsa.lo mixer_alsa.lo
+jack-objs		:= jack.lo
 arts-objs		:= arts.lo
 oss-objs		:= oss.lo mixer_oss.lo
 sun-objs		:= sun.lo mixer_sun.lo
@@ -170,6 +171,7 @@ roar-objs               := roar.lo
 
 op-$(CONFIG_PULSE)	+= pulse.so
 op-$(CONFIG_ALSA)	+= alsa.so
+op-$(CONFIG_JACK)	+= jack.so
 op-$(CONFIG_ARTS)	+= arts.so
 op-$(CONFIG_OSS)	+= oss.so
 op-$(CONFIG_SUN)	+= sun.so
@@ -179,6 +181,7 @@ op-$(CONFIG_ROAR)       += roar.so
 
 $(pulse-objs): CFLAGS	+= $(PULSE_CFLAGS)
 $(alsa-objs): CFLAGS	+= $(ALSA_CFLAGS)
+$(jack-objs): CFLAGS	+= $(JACK_CFLAGS)
 $(arts-objs): CFLAGS	+= $(ARTS_CFLAGS)
 $(oss-objs):  CFLAGS	+= $(OSS_CFLAGS)
 $(sun-objs):  CFLAGS	+= $(SUN_CFLAGS)
@@ -191,6 +194,9 @@ pulse.so: $(pulse-objs) $(libcmus-y)
 
 alsa.so: $(alsa-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(ALSA_LIBS))
+
+jack.so: $(jack-objs) $(libcmus-y)
+	$(call cmd,ld_dl,$(JACK_LIBS) $(SAMPLERATE_LIBS))
 
 arts.so: $(arts-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(ARTS_LIBS))
