@@ -224,5 +224,4 @@ static inline uint16_t read_le16(const char *buf)
 	return b[0] | (b[1] << 8);
 }
 
-
 #endif
