@@ -115,7 +115,7 @@ static jack_default_audio_sample_t read_sample_le32(const char *buffer)
 	} c;
 	jack_default_audio_sample_t res;
 
-	c.u = read_le16(buffer);
+	c.u = read_le32(buffer);
 	if (c.s > 0) {
 		res = ((jack_default_audio_sample_t) c.s) 
 			/ ((jack_default_audio_sample_t) INT32_MAX);
@@ -142,7 +142,7 @@ static jack_default_audio_sample_t read_sample_le32u(const char *buffer)
 	jack_default_audio_sample_t res;
 	uint32_t u;
 
-	u = read_le16(buffer);
+	u = read_le32(buffer);
 	res = (((jack_default_audio_sample_t) u) 
 		/ ((jack_default_audio_sample_t) UINT32_MAX)) * 2.0 - 2.0;
 	return res;
