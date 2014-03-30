@@ -90,62 +90,30 @@ static int op_jack_unpause(void);
 
 static jack_default_audio_sample_t read_sample_le16(const char *buffer) 
 {
-	union c {
-		uint16_t u;
-		int16_t s;
-	} c;
-	jack_default_audio_sample_t res;
-
-	c.u = read_le16(buffer);
-	if (c.s > 0) {
-		res = ((jack_default_audio_sample_t) c.s) 
-			/ ((jack_default_audio_sample_t) INT16_MAX);
-	} else {
-		res = ((jack_default_audio_sample_t) c.s) 
-			/ (- (jack_default_audio_sample_t) INT16_MIN);
-	}
-	return res;
+        int16_t s = (int16_t)read_le16(buffer);
+	uint16_t upper_bound = (uint16_t)INT16_MAX + (s <= 0);
+        return (jack_default_audio_sample_t)s / (jack_default_audio_sample_t)upper_bound;
 }
 
 static jack_default_audio_sample_t read_sample_le32(const char *buffer) 
 {
-	union c {
-		uint32_t u;
-		int32_t s;
-	} c;
-	jack_default_audio_sample_t res;
-
-	c.u = read_le32(buffer);
-	if (c.s > 0) {
-		res = ((jack_default_audio_sample_t) c.s) 
-			/ ((jack_default_audio_sample_t) INT32_MAX);
-	} else {
-		res = ((jack_default_audio_sample_t) c.s) 
-			/ (- (jack_default_audio_sample_t) INT32_MIN);
-	}
-	return res;
+        int32_t s = (int32_t)read_le32(buffer);
+	uint32_t upper_bound = (uint32_t)INT32_MAX + (s <= 0);
+        return (jack_default_audio_sample_t)s / (jack_default_audio_sample_t)upper_bound;
 }
 
 static jack_default_audio_sample_t read_sample_le16u(const char *buffer) 
 {
-	jack_default_audio_sample_t res;
-	uint32_t u;
-
-	u = read_le16(buffer);
-	res = (((jack_default_audio_sample_t) u) 
+	uint32_t u = read_le16(buffer);
+	return (((jack_default_audio_sample_t) u) 
 		/ ((jack_default_audio_sample_t) UINT16_MAX)) * 2.0 - 2.0;
-	return res;
 }
 
 static jack_default_audio_sample_t read_sample_le32u(const char *buffer) 
 {
-	jack_default_audio_sample_t res;
-	uint32_t u;
-
-	u = read_le32(buffer);
-	res = (((jack_default_audio_sample_t) u) 
+	uint32_t u = read_le32(buffer);
+	return (((jack_default_audio_sample_t) u) 
 		/ ((jack_default_audio_sample_t) UINT32_MAX)) * 2.0 - 2.0;
-	return res;
 }
 
 #ifdef HAVE_SAMPLERATE
