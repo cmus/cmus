@@ -255,14 +255,12 @@ check_alsa()
 
 check_jack()
 {
-	# the alsa.pc file should be always available
 	pkg_config JACK "jack"
 	return $?
 }
 
 check_samplerate()
 {
-	# the alsa.pc file should be always available
 	pkg_config SAMPLERATE "samplerate" && HAVE_SAMPLERATE=1
 	return $?
 }
