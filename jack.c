@@ -38,7 +38,7 @@
 
 
 #define CHANNELS 2
-#define BUFFER_MULTIPLYER (sizeof(jack_default_audio_sample_t) * 8)
+#define BUFFER_MULTIPLYER (sizeof(jack_default_audio_sample_t) * 16)
 
 struct {
 	char* client_name;
