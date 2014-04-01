@@ -261,7 +261,7 @@ check_jack()
 
 check_samplerate()
 {
-	pkg_config SAMPLERATE "samplerate" && HAVE_SAMPLERATE=1
+	pkg_config SAMPLERATE "samplerate" && HAVE_SAMPLERATE=y
 	return $?
 }
 
@@ -420,6 +420,7 @@ USE_FALLBACK_IP=n
 HAVE_BYTESWAP_H=n
 HAVE_STRDUP=n
 HAVE_STRNDUP=n
+HAVE_SAMPLERATE=n
 # unset CONFIG_* variables: if check succeeds 'y', otherwise 'n'
 
 USAGE="

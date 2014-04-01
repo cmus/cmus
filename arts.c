@@ -131,4 +131,4 @@ const char * const op_pcm_options[] = {
 	NULL
 };
 
-const int op_priority = 2;
+const int op_priority = 4;

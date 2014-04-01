@@ -9,6 +9,8 @@ before_install:
     - sudo apt-get install -qq libasound2-dev
     - sudo apt-get install -qq libroar-dev
     - sudo apt-get install -qq libao-dev
+    - sudo apt-get install -qq libjack-dev
+    - sudo apt-get install -qq libsamplerate0-dev
     - sudo apt-get install -qq libcdio-dev
     - sudo apt-get install -qq libcdio-cdda-dev
     - sudo apt-get install -qq libcddb2-dev
