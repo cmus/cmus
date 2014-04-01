@@ -672,4 +672,4 @@ const char * const op_pcm_options[] = {
 	NULL
 };
 
-const int op_priority = 99;
+const int op_priority = 1;
