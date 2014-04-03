@@ -8,8 +8,7 @@ check_cflags()
 		-Wwrite-strings -Wundef -Wmissing-prototypes -Wredundant-decls \
 		-Wextra -Wno-sign-compare -Wformat-security
 
-	for i in -Wdeclaration-after-statement \
-		-Wold-style-definition \
+	for i in -Wold-style-definition \
 		-Wno-pointer-sign \
 		-Werror-implicit-function-declaration \
 		-Wno-unused-parameter
