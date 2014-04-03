@@ -131,6 +131,7 @@ static int op_jack_cb(jack_nframes_t frames, void* arg)
 
 	if (underrun) {
 		/* if there is an underrun channels may be out of sync. */
+		underrun = 0;
 		for (int i = 0; i < CHANNELS; i++) {
 			int pos_diff = buffer_pos_max - buffer_pos[i];
 			if (pos_diff <= 0) {
@@ -148,7 +149,6 @@ static int op_jack_cb(jack_nframes_t frames, void* arg)
 				underrun = 1;
 			}
 		}
-		underrun = 0;
 	}
 
 	if (paused) {
