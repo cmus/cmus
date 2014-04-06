@@ -15,7 +15,6 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-
 /* TODO
  *
  * - configurable maping of channels to ports
@@ -37,10 +36,8 @@
 #include "xmalloc.h"
 #include "debug.h"
 
-
 #define CHANNELS 2
 #define BUFFER_MULTIPLYER (sizeof(jack_default_audio_sample_t) * 16)
-
 
 static struct {
 	char* server_name;
@@ -83,7 +80,6 @@ static int op_jack_set_option(const int key, const char* val);
 static int op_jack_get_option(const int key, char** val);
 static int op_jack_pause(void);
 static int op_jack_unpause(void);
-
 
 /* read functions for various sample formats */
 
@@ -480,34 +476,36 @@ static int op_jack_write(const char *buffer, int count)
 	}
 
 #ifdef HAVE_SAMPLERATE
-	jack_default_audio_sample_t converted[buffer_size];
-	SRC_DATA src_data;
+	if (resample_ratio > 1.01f || resample_ratio < 0.99) {
+		jack_default_audio_sample_t converted[buffer_size];
+		SRC_DATA src_data;
+		for (int c = 0; c < CHANNELS; c++) {
+			src_data.data_in = buf[c];
+			src_data.data_out = converted;
+			src_data.input_frames = frames;
+			src_data.output_frames = frames_min;
+			src_data.src_ratio = resample_ratio;
+			src_data.end_of_input = 0;
 
-	for (int c = 0; c < CHANNELS; c++) {
-		src_data.data_in = buf[c];
-		src_data.data_out = converted;
-		src_data.input_frames = frames;
-		src_data.output_frames = frames_min;
-		src_data.src_ratio = resample_ratio;
-		src_data.end_of_input = 0;
+			int err = src_process(src_state[c], &src_data);
+			if (err) {
+				d_print("libsamplerate err %s\n", src_strerror(err));
+			}
 
-		int err = src_process(src_state[c], &src_data);
-		if (err) {
-			d_print("libsamplerate err %s\n", src_strerror(err));
+			int byte_length = src_data.output_frames_gen * sizeof(jack_default_audio_sample_t);
+			jack_ringbuffer_write(ringbuffer[c], (const char*) converted, byte_length);
+		}
+		return src_data.input_frames_used * frame_size;
+	} else {
+#endif
+		int byte_length = frames * sizeof(jack_default_audio_sample_t);
+		for (int c = 0; c < CHANNELS; c++) {
+			jack_ringbuffer_write(ringbuffer[c], (const char*) buf[c], byte_length);
 		}
 
-		int byte_length = src_data.output_frames_gen * sizeof(jack_default_audio_sample_t);
-		jack_ringbuffer_write(ringbuffer[c], (const char*) converted, byte_length);
+		return frames * frame_size;
+#ifdef HAVE_SAMPLERATE
 	}
-
-	return src_data.input_frames_used * frame_size;
-#else
-	int byte_length = frames * sizeof(jack_default_audio_sample_t);
-	for (int c = 0; c < CHANNELS; c++) {
-		jack_ringbuffer_write(ringbuffer[c], (const char*) buf[c], byte_length);
-	}
-
-	return frames * frame_size;
 #endif
 }
 
@@ -599,4 +597,3 @@ const char * const op_pcm_options[] = {
 };
 
 const int op_priority = 2;
-
