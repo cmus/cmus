@@ -572,13 +572,13 @@ static int op_jack_set_option(int key, const char *val)
 		}
 		switch (val[0]) {
 		default:
-		case '2': 
+		case '2':
 			src_quality = SRC_SINC_BEST_QUALITY;
 			break;
-		case '1': 
+		case '1':
 			src_quality = SRC_SINC_MEDIUM_QUALITY;
 			break;
-		case '0': 
+		case '0':
 			src_quality = SRC_SINC_FASTEST;
 			break;
 		}
@@ -600,13 +600,13 @@ static int op_jack_get_option(int key, char **val)
 #ifdef HAVE_SAMPLERATE
 	case 1:
 		switch (src_quality) {
-		case SRC_SINC_BEST_QUALITY: 
+		case SRC_SINC_BEST_QUALITY:
 			*val = xstrdup("2");
 			break;
-		case SRC_SINC_MEDIUM_QUALITY: 
+		case SRC_SINC_MEDIUM_QUALITY:
 			*val = xstrdup("1");
 			break;
-		case SRC_SINC_FASTEST: 
+		case SRC_SINC_FASTEST:
 			*val = xstrdup("0");
 			break;
 		}
