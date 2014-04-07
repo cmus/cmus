@@ -426,9 +426,6 @@ static int op_jack_close(void)
 
 static int op_jack_drop(void)
 {
-	for (int i = 0; i < CHANNELS; i++) {
-		jack_ringbuffer_reset(ringbuffer[i]);
-	}
 	return -OP_ERROR_NOT_SUPPORTED;
 }
 
