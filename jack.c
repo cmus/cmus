@@ -54,6 +54,7 @@ static jack_nframes_t     jack_sample_rate;
 
 #ifdef HAVE_SAMPLERATE
 static SRC_STATE*         src_state[CHANNELS];
+static int                src_quality = SRC_SINC_BEST_QUALITY;
 static float              resample_ratio = 1.0f;
 #endif
 
@@ -259,7 +260,7 @@ static int op_jack_init(void)
 {
 #ifdef HAVE_SAMPLERATE
 	for (int i = 0; i < CHANNELS; i++) {
-		src_state[i] = src_new(SRC_SINC_BEST_QUALITY, 1, NULL);
+		src_state[i] = src_new(src_quality, 1, NULL);
 		if (src_state[i] == NULL) {
 			d_print("src_new failed");
 			for (i = i - 1; i >= 0; i--) {
@@ -556,11 +557,29 @@ static int op_jack_set_option(int key, const char *val)
 		free(cfg.server_name);
 		cfg.server_name = val[0] != '\0' ? xstrdup(val) : NULL;
 		break;
+#ifdef HAVE_SAMPLERATE
+	case 1:
+		if (strlen(val) != 1) {
+			return -OP_ERROR_NOT_SUPPORTED;
+		}
+		switch (val[0]) {
+		default:
+		case '2': 
+			src_quality = SRC_SINC_BEST_QUALITY;
+			break;
+		case '1': 
+			src_quality = SRC_SINC_MEDIUM_QUALITY;
+			break;
+		case '0': 
+			src_quality = SRC_SINC_FASTEST;
+			break;
+		}
+		break;
+#endif
 	default:
 		d_print("unknown key %d = %s\n", key, val);
 		return -OP_ERROR_NOT_OPTION;
 	}
-
 	return OP_ERROR_SUCCESS;
 }
 
@@ -570,6 +589,21 @@ static int op_jack_get_option(int key, char **val)
 	case 0:
 		*val = xstrdup(cfg.server_name != NULL ? cfg.server_name : "");
 		break;
+#ifdef HAVE_SAMPLERATE
+	case 1:
+		switch (src_quality) {
+		case SRC_SINC_BEST_QUALITY: 
+			*val = xstrdup("2");
+			break;
+		case SRC_SINC_MEDIUM_QUALITY: 
+			*val = xstrdup("1");
+			break;
+		case SRC_SINC_FASTEST: 
+			*val = xstrdup("0");
+			break;
+		}
+		break;
+#endif
 	default:
 		return -OP_ERROR_NOT_OPTION;
 	}
@@ -593,6 +627,9 @@ const struct output_plugin_ops op_pcm_ops = {
 
 const char * const op_pcm_options[] = {
 	"server_name",
+#ifdef HAVE_SAMPLERATE
+	"conversion_quality",
+#endif
 	NULL
 };
 
