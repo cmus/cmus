@@ -121,6 +121,10 @@ static void op_jack_reset_src(void) {
 #endif
 
 /* jack callbacks */
+static void op_jack_error_cb(const char* msg) {
+	d_print("jackd error: %s\n", msg);
+	fail = 1;
+}
 
 static int op_jack_cb(jack_nframes_t frames, void* arg)
 {
@@ -270,6 +274,7 @@ static int op_jack_init(void)
 		}
 	}
 #endif
+	jack_set_error_function(op_jack_error_cb);
 
 	jack_options_t options = JackNullOption;
 	if (fail) {
@@ -349,15 +354,21 @@ static int op_jack_init(void)
 
 static int op_jack_exit(void)
 {
+	if (client != NULL) {
+		jack_deactivate(client);
+		for (int i = 0; i < CHANNELS; i++) {
+			if (output_ports[i] != NULL) {
+				jack_port_unregister(client, output_ports[i]);
+			}
+		}
+		jack_client_close(client);
+	}
+
 	for (int i = 0; i < CHANNELS; i++) {
 		if (ringbuffer[i] != NULL) {
 			jack_ringbuffer_free(ringbuffer[i]);
 		}
 		ringbuffer[i] = NULL;
-	}
-
-	if (client != NULL) {
-		jack_client_close(client);
 	}
 
 	buffer_size = 0;
