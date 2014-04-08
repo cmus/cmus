@@ -15,7 +15,6 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-
 /* TODO
  *
  * - configurable maping of channels to ports
@@ -37,10 +36,8 @@
 #include "xmalloc.h"
 #include "debug.h"
 
-
 #define CHANNELS 2
 #define BUFFER_MULTIPLYER (sizeof(jack_default_audio_sample_t) * 16)
-
 
 static struct {
 	char* server_name;
@@ -57,6 +54,7 @@ static jack_nframes_t     jack_sample_rate;
 
 #ifdef HAVE_SAMPLERATE
 static SRC_STATE*         src_state[CHANNELS];
+static int                src_quality = SRC_SINC_BEST_QUALITY;
 static float              resample_ratio = 1.0f;
 #endif
 
@@ -83,7 +81,6 @@ static int op_jack_set_option(const int key, const char* val);
 static int op_jack_get_option(const int key, char** val);
 static int op_jack_pause(void);
 static int op_jack_unpause(void);
-
 
 /* read functions for various sample formats */
 
@@ -124,6 +121,10 @@ static void op_jack_reset_src(void) {
 #endif
 
 /* jack callbacks */
+static void op_jack_error_cb(const char* msg) {
+	d_print("jackd error: %s\n", msg);
+	fail = 1;
+}
 
 static int op_jack_cb(jack_nframes_t frames, void* arg)
 {
@@ -263,7 +264,7 @@ static int op_jack_init(void)
 {
 #ifdef HAVE_SAMPLERATE
 	for (int i = 0; i < CHANNELS; i++) {
-		src_state[i] = src_new(SRC_SINC_BEST_QUALITY, 1, NULL);
+		src_state[i] = src_new(src_quality, 1, NULL);
 		if (src_state[i] == NULL) {
 			d_print("src_new failed");
 			for (i = i - 1; i >= 0; i--) {
@@ -273,6 +274,7 @@ static int op_jack_init(void)
 		}
 	}
 #endif
+	jack_set_error_function(op_jack_error_cb);
 
 	jack_options_t options = JackNullOption;
 	if (fail) {
@@ -352,15 +354,21 @@ static int op_jack_init(void)
 
 static int op_jack_exit(void)
 {
+	if (client != NULL) {
+		jack_deactivate(client);
+		for (int i = 0; i < CHANNELS; i++) {
+			if (output_ports[i] != NULL) {
+				jack_port_unregister(client, output_ports[i]);
+			}
+		}
+		jack_client_close(client);
+	}
+
 	for (int i = 0; i < CHANNELS; i++) {
 		if (ringbuffer[i] != NULL) {
 			jack_ringbuffer_free(ringbuffer[i]);
 		}
 		ringbuffer[i] = NULL;
-	}
-
-	if (client != NULL) {
-		jack_client_close(client);
 	}
 
 	buffer_size = 0;
@@ -429,9 +437,6 @@ static int op_jack_close(void)
 
 static int op_jack_drop(void)
 {
-	for (int i = 0; i < CHANNELS; i++) {
-		jack_ringbuffer_reset(ringbuffer[i]);
-	}
 	return -OP_ERROR_NOT_SUPPORTED;
 }
 
@@ -480,34 +485,36 @@ static int op_jack_write(const char *buffer, int count)
 	}
 
 #ifdef HAVE_SAMPLERATE
-	jack_default_audio_sample_t converted[buffer_size];
-	SRC_DATA src_data;
+	if (resample_ratio > 1.01f || resample_ratio < 0.99) {
+		jack_default_audio_sample_t converted[buffer_size];
+		SRC_DATA src_data;
+		for (int c = 0; c < CHANNELS; c++) {
+			src_data.data_in = buf[c];
+			src_data.data_out = converted;
+			src_data.input_frames = frames;
+			src_data.output_frames = frames_min;
+			src_data.src_ratio = resample_ratio;
+			src_data.end_of_input = 0;
 
-	for (int c = 0; c < CHANNELS; c++) {
-		src_data.data_in = buf[c];
-		src_data.data_out = converted;
-		src_data.input_frames = frames;
-		src_data.output_frames = frames_min;
-		src_data.src_ratio = resample_ratio;
-		src_data.end_of_input = 0;
+			int err = src_process(src_state[c], &src_data);
+			if (err) {
+				d_print("libsamplerate err %s\n", src_strerror(err));
+			}
 
-		int err = src_process(src_state[c], &src_data);
-		if (err) {
-			d_print("libsamplerate err %s\n", src_strerror(err));
+			int byte_length = src_data.output_frames_gen * sizeof(jack_default_audio_sample_t);
+			jack_ringbuffer_write(ringbuffer[c], (const char*) converted, byte_length);
+		}
+		return src_data.input_frames_used * frame_size;
+	} else {
+#endif
+		int byte_length = frames * sizeof(jack_default_audio_sample_t);
+		for (int c = 0; c < CHANNELS; c++) {
+			jack_ringbuffer_write(ringbuffer[c], (const char*) buf[c], byte_length);
 		}
 
-		int byte_length = src_data.output_frames_gen * sizeof(jack_default_audio_sample_t);
-		jack_ringbuffer_write(ringbuffer[c], (const char*) converted, byte_length);
+		return frames * frame_size;
+#ifdef HAVE_SAMPLERATE
 	}
-
-	return src_data.input_frames_used * frame_size;
-#else
-	int byte_length = frames * sizeof(jack_default_audio_sample_t);
-	for (int c = 0; c < CHANNELS; c++) {
-		jack_ringbuffer_write(ringbuffer[c], (const char*) buf[c], byte_length);
-	}
-
-	return frames * frame_size;
 #endif
 }
 
@@ -558,11 +565,29 @@ static int op_jack_set_option(int key, const char *val)
 		free(cfg.server_name);
 		cfg.server_name = val[0] != '\0' ? xstrdup(val) : NULL;
 		break;
+#ifdef HAVE_SAMPLERATE
+	case 1:
+		if (strlen(val) != 1) {
+			return -OP_ERROR_NOT_SUPPORTED;
+		}
+		switch (val[0]) {
+		default:
+		case '2':
+			src_quality = SRC_SINC_BEST_QUALITY;
+			break;
+		case '1':
+			src_quality = SRC_SINC_MEDIUM_QUALITY;
+			break;
+		case '0':
+			src_quality = SRC_SINC_FASTEST;
+			break;
+		}
+		break;
+#endif
 	default:
 		d_print("unknown key %d = %s\n", key, val);
 		return -OP_ERROR_NOT_OPTION;
 	}
-
 	return OP_ERROR_SUCCESS;
 }
 
@@ -572,6 +597,21 @@ static int op_jack_get_option(int key, char **val)
 	case 0:
 		*val = xstrdup(cfg.server_name != NULL ? cfg.server_name : "");
 		break;
+#ifdef HAVE_SAMPLERATE
+	case 1:
+		switch (src_quality) {
+		case SRC_SINC_BEST_QUALITY:
+			*val = xstrdup("2");
+			break;
+		case SRC_SINC_MEDIUM_QUALITY:
+			*val = xstrdup("1");
+			break;
+		case SRC_SINC_FASTEST:
+			*val = xstrdup("0");
+			break;
+		}
+		break;
+#endif
 	default:
 		return -OP_ERROR_NOT_OPTION;
 	}
@@ -595,8 +635,10 @@ const struct output_plugin_ops op_pcm_ops = {
 
 const char * const op_pcm_options[] = {
 	"server_name",
+#ifdef HAVE_SAMPLERATE
+	"conversion_quality",
+#endif
 	NULL
 };
 
 const int op_priority = 2;
-
