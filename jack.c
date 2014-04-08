@@ -38,7 +38,7 @@
 
 #define CHANNELS 2
 #define BUFFER_MULTIPLYER (sizeof(jack_default_audio_sample_t) * 16)
-#define BUFFER_SIZE_MIN 8192
+#define BUFFER_SIZE_MIN 16384
 
 static struct {
 	char* server_name;
