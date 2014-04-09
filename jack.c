@@ -139,7 +139,9 @@ static int op_jack_cb(jack_nframes_t frames, void* arg)
 			if (pos_diff <= 0) {
 				continue;
 			}
-
+			if (pos_diff > frames) {
+				pos_diff = frames;
+			}
 			/* trash pos_diff bytes */
 			char trash[frames * sizeof(jack_default_audio_sample_t)];
 			size_t bytes_read = jack_ringbuffer_read(ringbuffer[i], (char*) trash, pos_diff);
@@ -147,7 +149,7 @@ static int op_jack_cb(jack_nframes_t frames, void* arg)
 			buffer_pos[i] += bytes_read;
 			if (buffer_pos_max > buffer_pos[i]) {
 				/* still not synced */
-				d_print("channel %d still out of sync", i);
+				d_print("channel %d still out of sync %zu > %zu\n", i, buffer_pos_max, buffer_pos[i]);
 				underrun = 1;
 			}
 		}
@@ -166,8 +168,8 @@ static int op_jack_cb(jack_nframes_t frames, void* arg)
 		size_t bytes_read = jack_ringbuffer_read(ringbuffer[i], (char*) jack_buf, bytes_want);
 
 		buffer_pos[i] += bytes_read;
-		if (bytes_read > buffer_pos_max) {
-			buffer_pos_max = bytes_read;
+		if (buffer_pos[i] > buffer_pos_max) {
+			buffer_pos_max = buffer_pos[i];
 		}
 
 		if (bytes_read < bytes_want) {
