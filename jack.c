@@ -38,6 +38,7 @@
 
 #define CHANNELS 2
 #define BUFFER_MULTIPLYER (sizeof(jack_default_audio_sample_t) * 16)
+#define BUFFER_SIZE_MIN 16384
 
 static struct {
 	char* server_name;
@@ -194,6 +195,9 @@ static int op_jack_buffer_init(jack_nframes_t samples, void* arg)
 	}
 
 	buffer_size = samples * BUFFER_MULTIPLYER;
+	if (buffer_size < BUFFER_SIZE_MIN) {
+		buffer_size = BUFFER_SIZE_MIN;
+	}
 	d_print("new buffer size %zu\n", buffer_size);
 
 	for (int i = 0; i < CHANNELS; i++) {
