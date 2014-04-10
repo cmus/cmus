@@ -1173,8 +1173,8 @@ dsp.jack.server_name
 
 dsp.jack.resampling_quality 
 	Sets the quality of the re-sampling. 0 is low quality but fast, 1 is
-	medium quality, 2 (default) is high quality more CPU intensiv.  This
-	option is only available, if cmus was compiled with libsamplerate
+	medium quality, 2 (default) is high quality but more CPU intensiv. This
+	option is only available if cmus was compiled with libsamplerate
 	support.
 
 input.cdio.cddb_url
