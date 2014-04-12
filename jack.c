@@ -25,6 +25,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <stdbool.h>
 
 #if HAVE_CONFIG
 #include "config/samplerate.h"
@@ -61,9 +62,9 @@ static size_t                    buffer_size;
 static sample_format_t           sample_format;
 static unsigned int              sample_bytes;
 static const channel_position_t  *channel_map;
-static volatile int              paused = 1;
-static volatile int              drop = 0;
-static volatile int              drop_done = 0;
+static volatile bool             paused = true;
+static volatile bool             drop = false;
+static volatile bool             drop_done = false;
 
 /* fail on the next call */
 static int fail;
@@ -135,8 +136,8 @@ static int op_jack_cb(jack_nframes_t frames, void *arg)
 		for (int i = 0; i < CHANNELS; i++) {
 			jack_ringbuffer_reset(ringbuffer[i]);
 		}
-		drop = 0;
-		drop_done = 1;
+		drop = false;
+		drop_done = true;
 	}
 
 	size_t bytes_min = SIZE_MAX;
@@ -416,20 +417,20 @@ static int op_jack_open(sample_format_t sf, const channel_position_t *cm)
 		return -OP_ERROR_SAMPLE_FORMAT;
 	}
 
-	paused = 0;
+	paused = false;
 	return OP_ERROR_SUCCESS;
 }
 
 static int op_jack_close(void)
 {
-	paused = 1;
+	paused = true;
 	return OP_ERROR_SUCCESS;
 }
 
 static int op_jack_drop(void)
 {
-	drop_done = 0;
-	drop = 1;
+	drop_done = false;
+	drop = true;
 	while (!drop_done) {
 		/* wait till op_jack_cb is done with dropping */
 		usleep(1000);
@@ -542,7 +543,7 @@ static int op_jack_buffer_space(void)
 
 static int op_jack_pause(void)
 {
-	paused = 1;
+	paused = true;
 	return OP_ERROR_SUCCESS;
 }
 
@@ -551,7 +552,7 @@ static int op_jack_unpause(void)
 #ifdef HAVE_SAMPLERATE
 	op_jack_reset_src();
 #endif
-	paused = 0;
+	paused = false;
 	return OP_ERROR_SUCCESS;
 }
 
