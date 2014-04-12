@@ -24,10 +24,14 @@
 #include <jack/ringbuffer.h>
 #include <string.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <stdbool.h>
 
+#if HAVE_CONFIG
 #include "config/samplerate.h"
 #ifdef HAVE_SAMPLERATE
 #include <samplerate.h>
+#endif
 #endif
 
 #include "op.h"
@@ -46,16 +50,11 @@
 #define CFG_RESAMPLING_QUALITY 1
 #endif
 
-static struct {
-	char* server_name;
-} cfg;
+char* server_name;
 
-static jack_client_t*     client;
-static jack_port_t*       output_ports[CHANNELS];
-static jack_ringbuffer_t* ringbuffer[CHANNELS];
-static size_t             buffer_pos[CHANNELS];
-static size_t             buffer_pos_max;
-static int                underrun;
+static jack_client_t      *client;
+static jack_port_t        *output_ports[CHANNELS];
+static jack_ringbuffer_t  *ringbuffer[CHANNELS];
 
 static jack_nframes_t     jack_sample_rate;
 
@@ -68,20 +67,22 @@ static float              resample_ratio = 1.0f;
 static size_t                    buffer_size;
 static sample_format_t           sample_format;
 static unsigned int              sample_bytes;
-static const channel_position_t* channel_map;
-static volatile int              paused = 1;
+static const channel_position_t  *channel_map;
+static volatile bool             paused = true;
+static volatile bool             drop = false;
+static volatile bool             drop_done = true;
 
 /* fail on the next call */
 static int fail;
 
 /* function pointer to appropriate read function */
-static float (*read_sample) (const char* buff);
+static float (*read_sample) (const char *buff);
 
 static int op_jack_init(void);
 static int op_jack_exit(void);
 static int op_jack_open(sample_format_t sf, const channel_position_t* cm);
 static int op_jack_close(void);
-static int op_jack_write(const char* buffer, int count);
+static int op_jack_write(const char *buffer, int count);
 static int op_jack_drop(void);
 static int op_jack_buffer_space(void);
 static int op_jack_set_option(const int key, const char* val);
@@ -128,43 +129,36 @@ static void op_jack_reset_src(void) {
 #endif
 
 /* jack callbacks */
-static void op_jack_error_cb(const char* msg) {
+static void op_jack_error_cb(const char *msg) {
 	d_print("jackd error: %s\n", msg);
 	fail = 1;
 }
 
-static int op_jack_cb(jack_nframes_t frames, void* arg)
+static int op_jack_cb(jack_nframes_t frames, void *arg)
 {
 	size_t bytes_want = frames * sizeof(jack_default_audio_sample_t);
 
-	if (underrun) {
-		/* if there is an underrun channels may be out of sync. */
-		underrun = 0;
+	if (drop) {
 		for (int i = 0; i < CHANNELS; i++) {
-			int pos_diff = buffer_pos_max - buffer_pos[i];
-			if (pos_diff <= 0) {
-				continue;
-			}
-			if (pos_diff > frames) {
-				pos_diff = frames;
-			}
-			/* trash pos_diff bytes */
-			char trash[frames * sizeof(jack_default_audio_sample_t)];
-			size_t bytes_read = jack_ringbuffer_read(ringbuffer[i], (char*) trash, pos_diff);
+			jack_ringbuffer_reset(ringbuffer[i]);
+		}
+		drop = false;
+		drop_done = true;
+	}
 
-			buffer_pos[i] += bytes_read;
-			if (buffer_pos_max > buffer_pos[i]) {
-				/* still not synced */
-				d_print("channel %d still out of sync %zu > %zu\n", i, buffer_pos_max, buffer_pos[i]);
-				underrun = 1;
-			}
+	size_t bytes_min = SIZE_MAX;
+	for (int i = 0; i < CHANNELS; i++) {
+		size_t bytes_available = jack_ringbuffer_read_space(ringbuffer[i]);
+		if (bytes_available < bytes_min) {
+			bytes_min = bytes_available;
 		}
 	}
 
-	if (paused) {
+	/* if there is less than frames awaylable play silence */
+	if (paused || bytes_min < bytes_want) {
 		for (int i = 0; i < CHANNELS; i++) {
 			jack_default_audio_sample_t* jack_buf = jack_port_get_buffer(output_ports[i], frames);
-			memset((char*) jack_buf, 0, bytes_want);
+			memset(jack_buf, 0, bytes_want);
 		}
 		return 0;
 	}
@@ -173,17 +167,10 @@ static int op_jack_cb(jack_nframes_t frames, void* arg)
 		jack_default_audio_sample_t* jack_buf = jack_port_get_buffer(output_ports[i], frames);
 		size_t bytes_read = jack_ringbuffer_read(ringbuffer[i], (char*) jack_buf, bytes_want);
 
-		buffer_pos[i] += bytes_read;
-		if (buffer_pos[i] > buffer_pos_max) {
-			buffer_pos_max = buffer_pos[i];
-		}
-
 		if (bytes_read < bytes_want) {
-			underrun = 1;
-
-			size_t fill_length = bytes_want - bytes_read;
-			char* fill_offset = ((char*) jack_buf) + bytes_read;
-			memset(fill_offset, 0, fill_length);
+			/* This should not happen[TM] - just in case set fail = 1 */
+			d_print("underrun! wanted %zu only got %zu bytes\n", bytes_want, bytes_read);
+			fail = 1;
 		}
 	}
 
@@ -191,10 +178,8 @@ static int op_jack_cb(jack_nframes_t frames, void* arg)
 }
 
 /* init or resize buffers if needed */
-static int op_jack_buffer_init(jack_nframes_t samples, void* arg)
+static int op_jack_buffer_init(jack_nframes_t samples, void *arg)
 {
-	char* tmp = NULL;
-
 	if (buffer_size > samples * BUFFER_MULTIPLYER) {
 		/* we just don't shrink buffers, since this could result
 		 * in gaps and they won't get that big anyway
@@ -208,8 +193,10 @@ static int op_jack_buffer_init(jack_nframes_t samples, void* arg)
 	}
 	d_print("new buffer size %zu\n", buffer_size);
 
+	char *tmp = xmalloc(buffer_size);
+
 	for (int i = 0; i < CHANNELS; i++) {
-		jack_ringbuffer_t* new_buffer = jack_ringbuffer_create(buffer_size);
+		jack_ringbuffer_t *new_buffer = jack_ringbuffer_create(buffer_size);
 
 		if (!new_buffer) {
 			d_print("ringbuffer alloc failed\n");
@@ -219,10 +206,6 @@ static int op_jack_buffer_init(jack_nframes_t samples, void* arg)
 			return 1;
 		}
 		if (ringbuffer[i] != NULL) {
-			if (tmp == NULL) {
-				tmp = xmalloc(buffer_size);
-			}
-
 			size_t length = jack_ringbuffer_read_space(ringbuffer[i]);
 
 			/* actualy this could both read/write less than length.
@@ -235,7 +218,6 @@ static int op_jack_buffer_init(jack_nframes_t samples, void* arg)
 			jack_ringbuffer_free(ringbuffer[i]);
 		}
 
-		buffer_pos[i] = 0;
 		ringbuffer[i] = new_buffer;
 	}
 
@@ -243,7 +225,7 @@ static int op_jack_buffer_init(jack_nframes_t samples, void* arg)
 	return 0;
 }
 
-static int op_jack_sample_rate_cb(jack_nframes_t samples, void* arg)
+static int op_jack_sample_rate_cb(jack_nframes_t samples, void *arg)
 {
 #ifdef HAVE_SAMPLERATE
 	resample_ratio = (float) sf_get_rate(sample_format) / (float) samples;
@@ -257,7 +239,7 @@ static int op_jack_sample_rate_cb(jack_nframes_t samples, void* arg)
 	return 0;
 }
 
-static void op_jack_shutdown_cb(void* arg)
+static void op_jack_shutdown_cb(void *arg)
 {
 	d_print("jackd went away");
 
@@ -299,9 +281,9 @@ static int op_jack_init(void)
 	}
 
 	jack_status_t status;
-	client = jack_client_open("cmus", options, &status, cfg.server_name);
+	client = jack_client_open("cmus", options, &status, server_name);
 	if (client == NULL) {
-		d_print("jack_client_new failed status = 0x%2.0x\n", status);
+		d_print("jack_client_new failed\n");
 		return -OP_ERROR_INTERNAL;
 	}
 
@@ -309,7 +291,7 @@ static int op_jack_init(void)
 		d_print("jackd started\n");
 	}
 
-	size_t jack_buffer_size = jack_get_buffer_size(client);
+	jack_nframes_t jack_buffer_size = jack_get_buffer_size(client);
 	jack_sample_rate = jack_get_sample_rate(client);
 	op_jack_buffer_init(jack_buffer_size, NULL);
 
@@ -340,7 +322,7 @@ static int op_jack_init(void)
 		return -OP_ERROR_INTERNAL;
 	}
 
-	const char** ports = jack_get_ports(client, NULL, NULL, JackPortIsPhysical | JackPortIsInput);
+	const char **ports = jack_get_ports(client, NULL, NULL, JackPortIsPhysical | JackPortIsInput);
 	if (ports == NULL) {
 		d_print("cannot get playback ports\n");
 		return -OP_ERROR_INTERNAL;
@@ -437,19 +419,28 @@ static int op_jack_open(sample_format_t sf, const channel_position_t *cm)
 		return -OP_ERROR_SAMPLE_FORMAT;
 	}
 
-	paused = 0;
+	paused = false;
 	return OP_ERROR_SUCCESS;
 }
 
 static int op_jack_close(void)
 {
-	paused = 1;
+	paused = true;
 	return OP_ERROR_SUCCESS;
 }
 
 static int op_jack_drop(void)
 {
-	return -OP_ERROR_NOT_SUPPORTED;
+	if (!drop_done) {
+		return OP_ERROR_SUCCESS;
+	}
+	drop_done = false;
+	drop = true;
+	while (!drop_done) {
+		/* wait till op_jack_cb is done with dropping */
+		usleep(1000);
+	}
+	return OP_ERROR_SUCCESS;
 }
 
 static int op_jack_write(const char *buffer, int count)
@@ -457,6 +448,10 @@ static int op_jack_write(const char *buffer, int count)
 	if (fail) {
 		op_jack_exit();
 		return -OP_ERROR_INTERNAL;
+	}
+
+	if (!drop_done) {
+		return 0;
 	}
 
 	int frame_size = sf_get_frame_size(sample_format);
@@ -557,7 +552,7 @@ static int op_jack_buffer_space(void)
 
 static int op_jack_pause(void)
 {
-	paused = 1;
+	paused = true;
 	return OP_ERROR_SUCCESS;
 }
 
@@ -566,7 +561,7 @@ static int op_jack_unpause(void)
 #ifdef HAVE_SAMPLERATE
 	op_jack_reset_src();
 #endif
-	paused = 0;
+	paused = false;
 	return OP_ERROR_SUCCESS;
 }
 
@@ -574,8 +569,8 @@ static int op_jack_set_option(int key, const char *val)
 {
 	switch (key) {
 	case CFG_SERVER_NAME:
-		free(cfg.server_name);
-		cfg.server_name = val[0] != '\0' ? xstrdup(val) : NULL;
+		free(server_name);
+		server_name = val[0] != '\0' ? xstrdup(val) : NULL;
 		break;
 #ifdef HAVE_SAMPLERATE
 	case CFG_RESAMPLING_QUALITY:
@@ -607,7 +602,7 @@ static int op_jack_get_option(int key, char **val)
 {
 	switch (key) {
 	case CFG_SERVER_NAME:
-		*val = xstrdup(cfg.server_name != NULL ? cfg.server_name : "");
+		*val = xstrdup(server_name != NULL ? server_name : "");
 		break;
 #ifdef HAVE_SAMPLERATE
 	case CFG_RESAMPLING_QUALITY:
