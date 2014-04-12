@@ -24,6 +24,7 @@
 #include <jack/ringbuffer.h>
 #include <string.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include "config/samplerate.h"
 #ifdef HAVE_SAMPLERATE
@@ -53,9 +54,6 @@ static struct {
 static jack_client_t*     client;
 static jack_port_t*       output_ports[CHANNELS];
 static jack_ringbuffer_t* ringbuffer[CHANNELS];
-static size_t             buffer_pos[CHANNELS];
-static size_t             buffer_pos_max;
-static int                underrun;
 
 static jack_nframes_t     jack_sample_rate;
 
@@ -70,6 +68,8 @@ static sample_format_t           sample_format;
 static unsigned int              sample_bytes;
 static const channel_position_t* channel_map;
 static volatile int              paused = 1;
+static volatile int              drop = 0;
+static volatile int              drop_done = 0;
 
 /* fail on the next call */
 static int fail;
@@ -137,31 +137,24 @@ static int op_jack_cb(jack_nframes_t frames, void* arg)
 {
 	size_t bytes_want = frames * sizeof(jack_default_audio_sample_t);
 
-	if (underrun) {
-		/* if there is an underrun channels may be out of sync. */
-		underrun = 0;
+	if (drop) {
 		for (int i = 0; i < CHANNELS; i++) {
-			int pos_diff = buffer_pos_max - buffer_pos[i];
-			if (pos_diff <= 0) {
-				continue;
-			}
-			if (pos_diff > frames) {
-				pos_diff = frames;
-			}
-			/* trash pos_diff bytes */
-			char trash[frames * sizeof(jack_default_audio_sample_t)];
-			size_t bytes_read = jack_ringbuffer_read(ringbuffer[i], (char*) trash, pos_diff);
+			jack_ringbuffer_reset(ringbuffer[i]);
+		}
+		drop = 0;
+		drop_done = 1;
+	}
 
-			buffer_pos[i] += bytes_read;
-			if (buffer_pos_max > buffer_pos[i]) {
-				/* still not synced */
-				d_print("channel %d still out of sync %zu > %zu\n", i, buffer_pos_max, buffer_pos[i]);
-				underrun = 1;
-			}
+	size_t bytes_min = SIZE_MAX;
+	for (int i = 0; i < CHANNELS; i++) {
+		size_t bytes_available = jack_ringbuffer_read_space(ringbuffer[i]);
+		if (bytes_available < bytes_min) {
+			bytes_min = bytes_available;
 		}
 	}
 
-	if (paused) {
+	/* if there is less than frames awaylable play silence */
+	if (paused || bytes_min < bytes_want) {
 		for (int i = 0; i < CHANNELS; i++) {
 			jack_default_audio_sample_t* jack_buf = jack_port_get_buffer(output_ports[i], frames);
 			memset((char*) jack_buf, 0, bytes_want);
@@ -173,17 +166,10 @@ static int op_jack_cb(jack_nframes_t frames, void* arg)
 		jack_default_audio_sample_t* jack_buf = jack_port_get_buffer(output_ports[i], frames);
 		size_t bytes_read = jack_ringbuffer_read(ringbuffer[i], (char*) jack_buf, bytes_want);
 
-		buffer_pos[i] += bytes_read;
-		if (buffer_pos[i] > buffer_pos_max) {
-			buffer_pos_max = buffer_pos[i];
-		}
-
 		if (bytes_read < bytes_want) {
-			underrun = 1;
-
-			size_t fill_length = bytes_want - bytes_read;
-			char* fill_offset = ((char*) jack_buf) + bytes_read;
-			memset(fill_offset, 0, fill_length);
+			/* This should not happen[TM] - just in case set fail = 1 */
+			d_print("underrun! wanted %zu only got %zu bytes\n", bytes_want, bytes_read);
+			fail = 1;
 		}
 	}
 
@@ -235,7 +221,6 @@ static int op_jack_buffer_init(jack_nframes_t samples, void* arg)
 			jack_ringbuffer_free(ringbuffer[i]);
 		}
 
-		buffer_pos[i] = 0;
 		ringbuffer[i] = new_buffer;
 	}
 
@@ -449,7 +434,13 @@ static int op_jack_close(void)
 
 static int op_jack_drop(void)
 {
-	return -OP_ERROR_NOT_SUPPORTED;
+	drop_done = 0;
+	drop = 1;
+	while (!drop_done) {
+		/* wait till op_jack_cb is done with dropping */
+		usleep(100);
+	}
+	return OP_ERROR_SUCCESS;
 }
 
 static int op_jack_write(const char *buffer, int count)
