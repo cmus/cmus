@@ -43,9 +43,7 @@
 #define BUFFER_MULTIPLYER (sizeof(jack_default_audio_sample_t) * 16)
 #define BUFFER_SIZE_MIN 16384
 
-static struct {
-	char* server_name;
-} cfg;
+char* server_name;
 
 static jack_client_t      *client;
 static jack_port_t        *output_ports[CHANNELS];
@@ -280,7 +278,7 @@ static int op_jack_init(void)
 	}
 
 	jack_status_t status;
-	client = jack_client_open("cmus", options, &status, cfg.server_name);
+	client = jack_client_open("cmus", options, &status, server_name);
 	if (client == NULL) {
 		d_print("jack_client_new failed\n");
 		return -OP_ERROR_INTERNAL;
@@ -561,8 +559,8 @@ static int op_jack_set_option(int key, const char *val)
 {
 	switch (key) {
 	case 0:
-		free(cfg.server_name);
-		cfg.server_name = val[0] != '\0' ? xstrdup(val) : NULL;
+		free(server_name);
+		server_name = val[0] != '\0' ? xstrdup(val) : NULL;
 		break;
 #ifdef HAVE_SAMPLERATE
 	case 1:
@@ -594,7 +592,7 @@ static int op_jack_get_option(int key, char **val)
 {
 	switch (key) {
 	case 0:
-		*val = xstrdup(cfg.server_name != NULL ? cfg.server_name : "");
+		*val = xstrdup(server_name != NULL ? server_name : "");
 		break;
 #ifdef HAVE_SAMPLERATE
 	case 1:
