@@ -185,6 +185,7 @@ static int op_jack_buffer_init(jack_nframes_t samples, void *arg)
 	if (buffer_size < BUFFER_SIZE_MIN) {
 		buffer_size = BUFFER_SIZE_MIN;
 	}
+	d_print("new buffer size %zu\n", buffer_size);
 
 	char *tmp = xmalloc(buffer_size);
 
@@ -284,7 +285,7 @@ static int op_jack_init(void)
 		d_print("jackd started\n");
 	}
 
-	size_t jack_buffer_size = jack_get_buffer_size(client);
+	jack_nframes_t jack_buffer_size = jack_get_buffer_size(client);
 	jack_sample_rate = jack_get_sample_rate(client);
 	op_jack_buffer_init(jack_buffer_size, NULL);
 
