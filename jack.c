@@ -174,8 +174,6 @@ static int op_jack_cb(jack_nframes_t frames, void *arg)
 /* init or resize buffers if needed */
 static int op_jack_buffer_init(jack_nframes_t samples, void *arg)
 {
-	char *tmp = NULL;
-
 	if (buffer_size > samples * BUFFER_MULTIPLYER) {
 		/* we just don't shrink buffers, since this could result
 		 * in gaps and they won't get that big anyway
@@ -187,7 +185,8 @@ static int op_jack_buffer_init(jack_nframes_t samples, void *arg)
 	if (buffer_size < BUFFER_SIZE_MIN) {
 		buffer_size = BUFFER_SIZE_MIN;
 	}
-	d_print("new buffer size %zu\n", buffer_size);
+
+	char *tmp = xmalloc(buffer_size);
 
 	for (int i = 0; i < CHANNELS; i++) {
 		jack_ringbuffer_t *new_buffer = jack_ringbuffer_create(buffer_size);
@@ -200,10 +199,6 @@ static int op_jack_buffer_init(jack_nframes_t samples, void *arg)
 			return 1;
 		}
 		if (ringbuffer[i] != NULL) {
-			if (tmp == NULL) {
-				tmp = xmalloc(buffer_size);
-			}
-
 			size_t length = jack_ringbuffer_read_space(ringbuffer[i]);
 
 			/* actualy this could both read/write less than length.
