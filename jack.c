@@ -50,7 +50,7 @@
 #define CFG_RESAMPLING_QUALITY 1
 #endif
 
-char* server_name;
+static char               *server_name;
 
 static jack_client_t      *client;
 static jack_port_t        *output_ports[CHANNELS];
