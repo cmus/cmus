@@ -64,7 +64,7 @@ static unsigned int              sample_bytes;
 static const channel_position_t  *channel_map;
 static volatile bool             paused = true;
 static volatile bool             drop = false;
-static volatile bool             drop_done = false;
+static volatile bool             drop_done = true;
 
 /* fail on the next call */
 static int fail;
@@ -425,6 +425,9 @@ static int op_jack_close(void)
 
 static int op_jack_drop(void)
 {
+	if (!drop_done) {
+		return OP_ERROR_SUCCESS;
+	}
 	drop_done = false;
 	drop = true;
 	while (!drop_done) {
@@ -439,6 +442,10 @@ static int op_jack_write(const char *buffer, int count)
 	if (fail) {
 		op_jack_exit();
 		return -OP_ERROR_INTERNAL;
+	}
+
+	if (!drop_done) {
+		return 0;
 	}
 
 	int frame_size = sf_get_frame_size(sample_format);
