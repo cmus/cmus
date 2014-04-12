@@ -282,7 +282,7 @@ static int op_jack_init(void)
 	jack_status_t status;
 	client = jack_client_open("cmus", options, &status, cfg.server_name);
 	if (client == NULL) {
-		d_print("jack_client_new failed status = 0x%2.0x\n", status);
+		d_print("jack_client_new failed\n");
 		return -OP_ERROR_INTERNAL;
 	}
 
