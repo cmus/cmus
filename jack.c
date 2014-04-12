@@ -40,6 +40,12 @@
 #define BUFFER_MULTIPLYER (sizeof(jack_default_audio_sample_t) * 16)
 #define BUFFER_SIZE_MIN 16384
 
+#define CFG_SERVER_NAME 0
+
+#ifdef HAVE_SAMPLERATE
+#define CFG_RESAMPLING_QUALITY 1
+#endif
+
 static struct {
 	char* server_name;
 } cfg;
@@ -567,12 +573,12 @@ static int op_jack_unpause(void)
 static int op_jack_set_option(int key, const char *val)
 {
 	switch (key) {
-	case 0:
+	case CFG_SERVER_NAME:
 		free(cfg.server_name);
 		cfg.server_name = val[0] != '\0' ? xstrdup(val) : NULL;
 		break;
 #ifdef HAVE_SAMPLERATE
-	case 1:
+	case CFG_RESAMPLING_QUALITY:
 		if (strlen(val) != 1) {
 			return -OP_ERROR_NOT_SUPPORTED;
 		}
@@ -600,11 +606,11 @@ static int op_jack_set_option(int key, const char *val)
 static int op_jack_get_option(int key, char **val)
 {
 	switch (key) {
-	case 0:
+	case CFG_SERVER_NAME:
 		*val = xstrdup(cfg.server_name != NULL ? cfg.server_name : "");
 		break;
 #ifdef HAVE_SAMPLERATE
-	case 1:
+	case CFG_RESAMPLING_QUALITY:
 		switch (src_quality) {
 		case SRC_SINC_BEST_QUALITY:
 			*val = xstrdup("2");
@@ -640,9 +646,9 @@ const struct output_plugin_ops op_pcm_ops = {
 };
 
 const char * const op_pcm_options[] = {
-	"server_name",
+	[CFG_SERVER_NAME] = "server_name",
 #ifdef HAVE_SAMPLERATE
-	"conversion_quality",
+	[CFG_RESAMPLING_QUALITY] = "resampling_quality",
 #endif
 	NULL
 };
