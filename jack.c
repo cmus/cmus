@@ -152,7 +152,7 @@ static int op_jack_cb(jack_nframes_t frames, void *arg)
 	if (paused || bytes_min < bytes_want) {
 		for (int i = 0; i < CHANNELS; i++) {
 			jack_default_audio_sample_t* jack_buf = jack_port_get_buffer(output_ports[i], frames);
-			memset((char*) jack_buf, 0, bytes_want);
+			memset(jack_buf, 0, bytes_want);
 		}
 		return 0;
 	}
