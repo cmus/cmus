@@ -1665,6 +1665,20 @@ static struct window *current_win(void)
 	}
 }
 
+static void cmd_win_scroll_down(char *arg)
+{
+	editable_lock();
+	window_scroll_down(current_win());
+	editable_unlock();
+}
+
+static void cmd_win_scroll_up(char *arg)
+{
+	editable_lock();
+	window_scroll_up(current_win());
+	editable_unlock();
+}
+
 static void cmd_win_bottom(char *arg)
 {
 	editable_lock();
@@ -2565,6 +2579,8 @@ struct command commands[] = {
 	{ "win-page-top",	cmd_win_pg_top,	0, 0, NULL,		  0, 0 },
 	{ "win-page-up",	cmd_win_pg_up,	0, 0, NULL,		  0, 0 },
 	{ "win-remove",		cmd_win_remove,	0, 0, NULL,		  0, CMD_UNSAFE },
+	{ "win-scroll-down",	cmd_win_scroll_down,0, 0, NULL,		  0, 0 },
+	{ "win-scroll-up",	cmd_win_scroll_up,0, 0, NULL,		  0, 0 },
 	{ "win-sel-cur",	cmd_win_sel_cur,0, 0, NULL,		  0, 0 },
 	{ "win-toggle",		cmd_win_toggle,	0, 0, NULL,		  0, 0 },
 	{ "win-top",		cmd_win_top,	0, 0, NULL,		  0, 0 },
