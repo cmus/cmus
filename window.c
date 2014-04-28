@@ -527,21 +527,14 @@ void window_scroll_down(struct window *win)
 void window_scroll_up(struct window *win)
 {
 	struct iter top = win->top;
-	struct iter bot = win->top;
-	int dist = 0;
 	if (!win->get_prev(&top)) return;
-	while (!iters_equal(&bot, &win->sel)) {
-		dist++;
-		if (!win->get_next(&bot))
-			break; /* XXX dead code?  Probably safer though. */
-	}
-	if (dist == win->nr_rows - 1)
+	struct iter bot = window_bottom(win);
+	/* keep selected row on screen: */
+	if (iters_equal(&bot, &win->sel))
 		win->get_prev(&win->sel);
 	win->top = top;
 	while (!selectable(win, &win->sel))
 		win->get_prev(&win->sel);
-	/* XXX risk of infinite loop? any guarantee that *something* will
-	 * always be selectable? */
 	sel_changed(win);
 }
 
