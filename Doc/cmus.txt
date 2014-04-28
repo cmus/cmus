@@ -242,6 +242,8 @@ P              win-mv-before
 tab            win-next
 ^F, page_down  win-page-down
 ^B, page_up    win-page-up
+^E             win-scroll-down
+^Y             win-scroll-up
 D, delete      win-remove
 i              win-sel-cur
 space          win-toggle
@@ -696,6 +698,12 @@ win-remove (*D*, *delete*)
 	Remove the selected entry.  For tracks no confirmations are made.  For
 	files (view 5), filters (view 6) and bindings (view 7) user has to
 	confirm the action.
+
+win-scroll-down (*^E*)
+	Scroll current window one row downwards.
+
+win-scroll-up (*^Y*)
+	Scroll current window one row upwards.
 
 win-sel-cur (*i*)
 	Select the current track (position in library or playlist, not
