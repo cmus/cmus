@@ -90,6 +90,8 @@ void window_goto_top(struct window *win);
 void window_goto_bottom(struct window *win);
 void window_page_up(struct window *win);
 void window_page_down(struct window *win);
+void window_scroll_down(struct window *win);
+void window_scroll_up(struct window *win);
 void window_page_top(struct window *win);
 void window_page_bottom(struct window *win);
 void window_page_middle(struct window *win);

@@ -29,9 +29,11 @@ bind common [ vol +1% +0
 bind common ] vol +0 +1%
 bind common ^B win-page-up
 bind common ^C echo Type :quit<enter> to exit cmus.
+bind common ^E win-scroll-down
 bind common ^F win-page-down
 bind common ^L refresh
 bind common ^R toggle repeat_current
+bind common ^Y win-scroll-up
 bind common a win-add-l
 bind common b player-next
 bind common c player-pause
