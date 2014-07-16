@@ -25,11 +25,10 @@
 #include "command_mode.h"
 #include "xmalloc.h"
 
-#if defined(__sun__)
-#include <ncurses.h>
-#else
-#include <curses.h>
-#endif
+#include "window.h"
+#include "options.h"
+#include "editable.h"
+#include "lib.h"
 
 const char * const key_context_names[NR_CTXS + 1] = {
 	"browser",
@@ -56,10 +55,18 @@ static const enum key_context view_to_context[] = {
 
 #define KEY_IS_CHAR -255
 
+#define KEY_MLB_CLICK			0
+#define KEY_MLB_CLICK_SEL		1
+#define KEY_MRB_CLICK 			2
+#define KEY_MRB_CLICK_SEL 		3
+#define KEY_MSCRL_UP	 		4
+#define KEY_MSCRL_DOWN			5
+
 /* key_table {{{
  *
  * key: KEY_IS_CHAR, not a key
  * ch:  0, not a char
+ * key: KEY_MOUSE, neither key, nor char
  */
 const struct key key_table[] = {
 	{ "!",			KEY_IS_CHAR,		33	},
@@ -411,6 +418,12 @@ const struct key key_table[] = {
 	{ "|",			KEY_IS_CHAR,		124	},
 	{ "}",			KEY_IS_CHAR,		125	},
 	{ "~",			KEY_IS_CHAR,		126	},
+	{ "mlb_click",		KEY_MOUSE,		KEY_MLB_CLICK		},
+	{ "mlb_click_selected",	KEY_MOUSE,		KEY_MLB_CLICK_SEL	},
+	{ "mrb_click",		KEY_MOUSE,		KEY_MRB_CLICK		},
+	{ "mrb_click_selected",	KEY_MOUSE,		KEY_MRB_CLICK_SEL	},
+	{ "mouse_scroll_up",	KEY_MOUSE,		KEY_MSCRL_UP		},
+	{ "mouse_scroll_down",	KEY_MOUSE,		KEY_MSCRL_DOWN		},
 	{ NULL,			0,			0	}
 };
 /* }}} */
@@ -588,7 +601,7 @@ static const struct key *ch_to_key(uchar ch)
 	int i;
 
 	for (i = 0; key_table[i].name; i++) {
-		if (key_table[i].ch == ch)
+		if (key_table[i].key != KEY_MOUSE && key_table[i].ch == ch)
 			return &key_table[i];
 	}
 	return NULL;
@@ -599,11 +612,42 @@ static const struct key *keycode_to_key(int key)
 	int i;
 
 	for (i = 0; key_table[i].name; i++) {
-		if (key_table[i].key != KEY_IS_CHAR && key_table[i].key == key)
+		if (key_table[i].key != KEY_IS_CHAR &&
+			key_table[i].key != KEY_MOUSE && key_table[i].key == key)
 			return &key_table[i];
 	}
 	return NULL;
 }
+
+#define DEF_ME_START if (event->bstate == 0) { return NULL; }
+#define DEF_ME_KEY(s, k) else if (event->bstate & s) { key = k; *sel = 0; }
+#define DEF_ME_KEY_S(s, k) else if (event->bstate & s) { key = k + is_sel; *sel = 1; }
+#define DEF_ME_END else { return NULL; }
+
+static const struct key *mevent_to_key(MEVENT *event, int is_sel, int *sel)
+{
+	int i, key = -255;
+
+	DEF_ME_START
+	DEF_ME_KEY_S(BUTTON1_CLICKED, KEY_MLB_CLICK)
+	DEF_ME_KEY_S(BUTTON1_PRESSED, KEY_MLB_CLICK)
+	DEF_ME_KEY_S(BUTTON3_CLICKED, KEY_MRB_CLICK)
+	DEF_ME_KEY_S(BUTTON3_PRESSED, KEY_MRB_CLICK)
+	DEF_ME_KEY(BUTTON4_PRESSED, KEY_MSCRL_UP)
+	DEF_ME_KEY(BUTTON5_PRESSED, KEY_MSCRL_DOWN)
+	DEF_ME_END
+
+	for (i = 0; key_table[i].name; i++) {
+		if (key_table[i].key == KEY_MOUSE && key_table[i].ch == key)
+			return &key_table[i];
+	}
+	return NULL;
+}
+
+#undef DEF_ME_START
+#undef DEF_ME_KEY
+#undef DEF_ME_KEY_S
+#undef DEF_ME_END
 
 void normal_mode_ch(uchar ch)
 {
@@ -647,6 +691,68 @@ void normal_mode_key(int key)
 	if (k == NULL) {
 		return;
 	}
+
+	/* view-specific key */
+	if (handle_key(key_bindings[c], k))
+		return;
+
+	/* common key */
+	handle_key(key_bindings[CTX_COMMON], k);
+}
+
+static const struct key *normal_mode_mouse_handle(MEVENT* event)
+{
+	int track_win_x = get_track_win_x(), i = event->y - 1, need_sel, is_sel;
+	struct window* win = NULL;
+	struct iter it, sel;
+
+	if (cur_view == TREE_VIEW) {
+		if (event->x >= track_win_x)
+			win = lib_track_win;
+		else if (event->x < track_win_x - 1)
+			win = lib_tree_win;
+		else
+			return NULL;
+		is_sel = (lib_cur_win == win);
+	} else {
+		win = current_win();
+		is_sel = 1;
+	}
+
+	if (event->y < 1 || event->y > window_get_nr_rows(win))
+		return NULL;
+	if (!window_get_top(win, &it) || !window_get_sel(win, &sel))
+		return NULL;
+	while (i-- > 0)
+		if (!window_get_next(win, &it))
+			return NULL;
+	while (win->selectable && !win->selectable(&it))
+		if (!window_get_next(win, &it))
+			return NULL;
+
+	is_sel = is_sel && iters_equal(&sel, &it);
+
+	const struct key *k = mevent_to_key(event, is_sel, &need_sel);
+	if (k == NULL)
+		return NULL;
+
+	if (cur_view == TREE_VIEW && lib_cur_win != win)
+		tree_toggle_active_window();
+	if (need_sel && !iters_equal(&sel, &it))
+		window_set_sel(win, &it);
+
+	return k;
+}
+
+void normal_mode_mouse(MEVENT *event)
+{
+	enum key_context c = view_to_context[cur_view];
+	editable_lock();
+	const struct key *k = normal_mode_mouse_handle(event);
+	editable_unlock();
+
+	if (k == NULL)
+		return;
 
 	/* view-specific key */
 	if (handle_key(key_bindings[c], k))

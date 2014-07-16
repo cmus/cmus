@@ -25,14 +25,10 @@
 #include "xstrjoin.h"
 #include "misc.h"
 #include "lib.h"
+#include "command_mode.h"
+#include "keys.h"
 
 #include <ctype.h>
-
-#if defined(__sun__)
-#include <ncurses.h>
-#else
-#include <curses.h>
-#endif
 
 /* this is set in ui_curses.c */
 enum search_direction search_direction = SEARCH_FORWARD;
@@ -285,6 +281,35 @@ void search_mode_key(int key)
 		return;
 	}
 	reset_history_search();
+}
+
+void search_mode_mouse(MEVENT *event)
+{
+	if ((event->bstate & BUTTON1_PRESSED) || (event->bstate & BUTTON3_PRESSED)) {
+		const char *text;
+		int restricted;
+		if (event->y <= window_get_nr_rows(current_win()) + 2) {
+			parse_line(&text, &restricted);
+			if (text[0]) {
+				history_add_line(&search_history, text);
+				cmdline_clear();
+			}
+			input_mode = NORMAL_MODE;
+			normal_mode_mouse(event);
+			return;
+		}
+		if (event->x == 0)
+			return;
+		int i = event->x > cmdline.clen ? cmdline.clen : event->x - 1;
+		while (i < cmdline.cpos)
+			cmdline_move_left();
+		while (i > cmdline.cpos)
+			cmdline_move_right();
+	} else if (event->bstate & BUTTON4_PRESSED) {
+		search_mode_key(KEY_UP);
+	} else if (event->bstate & BUTTON5_PRESSED) {
+		search_mode_key(KEY_DOWN);
+	}
 }
 
 void search_mode_init(void)

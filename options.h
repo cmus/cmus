@@ -139,6 +139,7 @@ extern int smart_artist_sort;
 extern int scroll_offset;
 extern int rewind_offset;
 extern int skip_track_info;
+extern int mouse;
 
 extern const char * const aaa_mode_names[];
 extern const char * const view_names[NR_VIEWS + 1];
@@ -188,5 +189,7 @@ void option_add(const char *name, unsigned int id, opt_get_cb get,
 struct cmus_opt *option_find(const char *name);
 void option_set(const char *name, const char *value);
 int parse_enum(const char *buf, int minval, int maxval, const char * const names[], int *val);
+
+void update_mouse(void);
 
 #endif
