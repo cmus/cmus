@@ -23,6 +23,14 @@
 
 #include "uchar.h"
 
+#if defined(__sun__) || defined(__CYGWIN__)
+/* TIOCGWINSZ */
+#include <termios.h>
+#include <ncurses.h>
+#else
+#include <curses.h>
+#endif
+
 enum key_context {
 	CTX_BROWSER,
 	CTX_COMMON,
@@ -33,6 +41,10 @@ enum key_context {
 	CTX_SETTINGS,
 };
 #define NR_CTXS (CTX_SETTINGS + 1)
+
+#if NCURSES_MOUSE_VERSION <= 1
+#define BUTTON5_PRESSED ((REPORT_MOUSE_POSITION) | (BUTTON2_PRESSED))
+#endif
 
 struct key {
 	const char *name;
@@ -57,5 +69,6 @@ int key_unbind(const char *context, const char *key, int force);
 
 void normal_mode_ch(uchar ch);
 void normal_mode_key(int key);
+void normal_mode_mouse(MEVENT *event);
 
 #endif

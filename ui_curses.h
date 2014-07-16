@@ -66,4 +66,6 @@ int track_format_valid(const char *format);
 /* lock player_info ! */
 const char *get_stream_title(void);
 
+int get_track_win_x(void);
+
 #endif

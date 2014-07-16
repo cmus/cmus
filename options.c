@@ -79,6 +79,7 @@ int rewind_offset = 5;
 int skip_track_info = 0;
 int auto_expand_albums = 1;
 int show_all_tracks = 1;
+int mouse = 0;
 
 int colors[NR_COLORS] = {
 	-1,
@@ -1074,6 +1075,44 @@ static void toggle_skip_track_info(unsigned int id)
 	skip_track_info ^= 1;
 }
 
+void update_mouse(void)
+{
+	if (mouse) {
+		mouseinterval(25);
+		mousemask(BUTTON_CTRL | BUTTON_ALT
+		  | BUTTON1_PRESSED | BUTTON1_RELEASED | BUTTON1_CLICKED
+		  | BUTTON1_DOUBLE_CLICKED | BUTTON1_TRIPLE_CLICKED
+		  | BUTTON2_PRESSED | BUTTON2_RELEASED | BUTTON2_CLICKED
+		  | BUTTON3_PRESSED | BUTTON3_RELEASED | BUTTON3_CLICKED
+		  | BUTTON3_DOUBLE_CLICKED | BUTTON3_TRIPLE_CLICKED
+		  | BUTTON4_PRESSED | BUTTON4_RELEASED | BUTTON4_CLICKED
+		  | BUTTON4_DOUBLE_CLICKED | BUTTON4_TRIPLE_CLICKED
+#if NCURSES_MOUSE_VERSION >= 2
+		  | BUTTON5_PRESSED | BUTTON5_RELEASED | BUTTON5_CLICKED
+		  | BUTTON5_DOUBLE_CLICKED | BUTTON5_TRIPLE_CLICKED
+#endif
+		  , NULL);
+	} else {
+		mousemask(0, NULL);
+	}
+}
+
+static void get_mouse(unsigned int id, char *buf)
+{
+	strcpy(buf, bool_names[mouse]);
+}
+
+static void set_mouse(unsigned int id, const char *buf)
+{
+	parse_bool(buf, &mouse);
+	update_mouse();
+}
+
+static void toggle_mouse(unsigned int id)
+{
+	mouse ^= 1;
+	update_mouse();
+}
 
 /* }}} */
 
@@ -1278,6 +1317,7 @@ static const struct {
 	DN_FLAGS(status_display_program, OPT_PROGRAM_PATH)
 	DT(wrap_search)
 	DT(skip_track_info)
+	DT(mouse)
 	{ NULL, NULL, NULL, NULL, 0 }
 };
 
