@@ -56,12 +56,6 @@
 #include <sys/wait.h>
 #include <dirent.h>
 
-#if defined(__sun__)
-#include <ncurses.h>
-#else
-#include <curses.h>
-#endif
-
 static struct history cmd_history;
 static char *cmd_history_filename;
 static char *history_search_text = NULL;
@@ -1644,7 +1638,7 @@ static void cmd_win_toggle(char *arg)
 	}
 }
 
-static struct window *current_win(void)
+struct window *current_win(void)
 {
 	switch (cur_view) {
 	case TREE_VIEW:
@@ -3017,6 +3011,32 @@ void command_mode_key(int key)
 		d_print("key = %c (%d)\n", key, key);
 	}
 	reset_history_search();
+}
+
+void command_mode_mouse(MEVENT *event)
+{
+	if (event->bstate & BUTTON1_PRESSED || event->bstate & BUTTON3_PRESSED) {
+		if (event->y <= window_get_nr_rows(current_win()) + 2) {
+			if (cmdline.blen) {
+				history_add_line(&cmd_history, cmdline.line);
+				cmdline_clear();
+			}
+			input_mode = NORMAL_MODE;
+			normal_mode_mouse(event);
+			return;
+		}
+		if (event->x == 0)
+			return;
+		int i = event->x > cmdline.clen ? cmdline.clen : event->x - 1;
+		while (i < cmdline.cpos)
+			cmdline_move_left();
+		while (i > cmdline.cpos)
+			cmdline_move_right();
+	} else if (event->bstate & BUTTON4_PRESSED) {
+		command_mode_key(KEY_UP);
+	} else if (event->bstate & BUTTON5_PRESSED) {
+		command_mode_key(KEY_DOWN);
+	}
 }
 
 void commands_init(void)

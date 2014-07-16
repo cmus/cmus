@@ -71,6 +71,7 @@
 #include <signal.h>
 #include <stdarg.h>
 #include <math.h>
+#include <sys/time.h>
 
 #if defined(__sun__) || defined(__CYGWIN__)
 /* TIOCGWINSZ */
@@ -354,6 +355,13 @@ static struct format_option status_fopts[NR_SFS + 1] = {
 	DEF_FO_INT('B', NULL, 0),
 	DEF_FO_END
 };
+
+static int last_mevent = 0;
+
+int get_track_win_x(void)
+{
+	return track_win_x;
+}
 
 int track_format_valid(const char *format)
 {
@@ -2031,6 +2039,25 @@ static void handle_key(int key)
 	}
 }
 
+static void handle_mouse(MEVENT *event)
+{
+#if NCURSES_MOUSE_VERSION <= 1
+	if (last_mevent & BUTTON1_PRESSED && event->bstate & REPORT_MOUSE_POSITION)
+		event->bstate = BUTTON1_RELEASED;
+	last_mevent = event->bstate;
+#endif
+	clear_error();
+	if (input_mode == NORMAL_MODE) {
+		normal_mode_mouse(event);
+	} else if (input_mode == COMMAND_MODE) {
+		command_mode_mouse(event);
+		update_commandline();
+	} else if (input_mode == SEARCH_MODE) {
+		search_mode_mouse(event);
+		update_commandline();
+	}
+}
+
 static void u_getch(void)
 {
 	int key;
@@ -2041,6 +2068,13 @@ static void u_getch(void)
 	key = getch();
 	if (key == ERR || key == 0)
 		return;
+
+	if (key == KEY_MOUSE) {
+		MEVENT event;
+		if(getmouse(&event) == OK)
+			handle_mouse(&event);
+		return;
+	}
 
 	if (key > 255) {
 		handle_key(key);
@@ -2318,6 +2352,7 @@ static void init_curses(void)
 			t_fs = "\007";
 		}
 	}
+	update_mouse();
 }
 
 static void notify_init(void)
