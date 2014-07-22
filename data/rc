@@ -2,6 +2,9 @@ bind browser backspace browser-up
 bind browser space win-activate
 bind browser i toggle show_hidden
 bind browser u win-update
+bind common mouse_scroll_up win-up
+bind common mouse_scroll_down win-down
+bind common mlb_click_selected win-activate
 bind common ! push shell 
 bind common + vol +10%
 bind common , seek -1m
