@@ -285,7 +285,7 @@ void search_mode_key(int key)
 
 void search_mode_mouse(MEVENT *event)
 {
-	if (event->bstate & BUTTON1_PRESSED || event->bstate & BUTTON3_PRESSED) {
+	if ((event->bstate & BUTTON1_PRESSED) || (event->bstate & BUTTON3_PRESSED)) {
 		const char *text;
 		int restricted;
 		if (event->y <= window_get_nr_rows(current_win()) + 2) {

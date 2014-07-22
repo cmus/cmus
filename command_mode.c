@@ -3015,7 +3015,7 @@ void command_mode_key(int key)
 
 void command_mode_mouse(MEVENT *event)
 {
-	if (event->bstate & BUTTON1_PRESSED || event->bstate & BUTTON3_PRESSED) {
+	if ((event->bstate & BUTTON1_PRESSED) || (event->bstate & BUTTON3_PRESSED)) {
 		if (event->y <= window_get_nr_rows(current_win()) + 2) {
 			if (cmdline.blen) {
 				history_add_line(&cmd_history, cmdline.line);

@@ -2042,7 +2042,7 @@ static void handle_key(int key)
 static void handle_mouse(MEVENT *event)
 {
 #if NCURSES_MOUSE_VERSION <= 1
-	if (last_mevent & BUTTON1_PRESSED && event->bstate & REPORT_MOUSE_POSITION)
+	if ((last_mevent & BUTTON1_PRESSED) && (event->bstate & REPORT_MOUSE_POSITION))
 		event->bstate = BUTTON1_RELEASED;
 	last_mevent = event->bstate;
 #endif

@@ -645,6 +645,11 @@ static const struct key *mevent_to_key(MEVENT *event, int is_sel, int *sel)
 	return NULL;
 }
 
+#undef DEF_ME_START
+#undef DEF_ME_KEY
+#undef DEF_ME_KEY_S
+#undef DEF_ME_END
+
 void normal_mode_ch(uchar ch)
 {
 	enum key_context c;
