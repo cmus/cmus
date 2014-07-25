@@ -150,6 +150,8 @@ static int cursor_y;
 
 static char *title_buf = NULL;
 
+static char year_range_buffer[16];
+
 enum {
 	CURSED_WIN,
 	CURSED_WIN_CUR,
@@ -251,6 +253,8 @@ enum {
 	TF_TRACK,
 	TF_TITLE,
 	TF_YEAR,
+	TF_MAX_YEAR,
+	TF_YEAR_RANGE,
 	TF_ORIGINALYEAR,
 	TF_GENRE,
 	TF_COMMENT,
@@ -289,6 +293,8 @@ static struct format_option track_fopts[NR_TFS + 1] = {
 	DEF_FO_INT('n', "tracknumber", 1),
 	DEF_FO_STR('t', "title", 0),
 	DEF_FO_INT('y', "date", 1),
+	DEF_FO_INT('\0', "maxdate", 1),
+	DEF_FO_STR('\0', "daterange", 0),
 	DEF_FO_INT('\0', "originaldate", 1),
 	DEF_FO_STR('g', "genre", 0),
 	DEF_FO_STR('c', "comment", 0),
@@ -606,12 +612,41 @@ static void fill_track_fopts_track_info(struct track_info *info)
 	}
 }
 
+static int print_date(char *buf, int num)
+{
+	char stack[8];
+	int i = 0, s = 0;
+
+	do {
+		stack[i++] = num % 10 + '0';
+		num /= 10;
+	} while (num);
+
+	while (--i >= 0)
+		buf[s++] = stack[i];
+
+	return s;
+}
+
 static void fill_track_fopts_album(struct album *album)
 {
+	int min_date = album->min_date / 10000;
+	int date = album->date / 10000;
+	int pos = 0;
+	if (min_date == date && date > 0) {
+		pos += print_date(year_range_buffer, date);	
+	} else if (date > 0) {
+		pos += print_date(year_range_buffer, min_date);
+		year_range_buffer[pos++] = '-';
+		pos += print_date(year_range_buffer + pos, date);
+	} 
+	year_range_buffer[pos++] = 0;
 	fopt_set_str(&track_fopts[TF_ALBUMARTIST], album->artist->name);
 	fopt_set_str(&track_fopts[TF_ARTIST], album->artist->name);
 	fopt_set_str(&track_fopts[TF_ALBUM], album->name);
-	fopt_set_int(&track_fopts[TF_YEAR], album->date / 10000, album->date <= 0);
+	fopt_set_int(&track_fopts[TF_YEAR], min_date, album->min_date <= 0);
+	fopt_set_int(&track_fopts[TF_MAX_YEAR], date, album->date <= 0);
+	fopt_set_str(&track_fopts[TF_YEAR_RANGE], year_range_buffer);
 }
 
 static void fill_track_fopts_artist(struct artist *artist)

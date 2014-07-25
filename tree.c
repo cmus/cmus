@@ -552,6 +552,7 @@ static struct album *album_new(struct artist *artist, const char *name,
 	album->collkey_name = u_strcasecoll_key(name);
 	album->collkey_sort_name = u_strcasecoll_key0(sort_name);
 	album->date = date;
+	album->min_date = date;
 	rb_root_init(&album->track_root);
 	album->artist = artist;
 
@@ -995,6 +996,16 @@ void tree_add_track(struct tree_track *track)
 			if (artist->expanded)
 				window_changed(lib_tree_win);
 		}
+
+		if (album->min_date <= 0 || (album->min_date > date && date > 0)) {
+			album->min_date = date;
+
+			remove_album(album);
+			add_album(album);
+			if (artist->expanded)
+				window_changed(lib_tree_win);
+		}
+
 	} else if (artist) {
 		add_album(new_album);
 		album_add_track(new_album, track);
