@@ -736,6 +736,7 @@ static void print_track(struct window *win, int row, struct iter *iter)
 			(void) mvaddch(track_win_y + row + 1, pos, ACS_HLINE);
 			pos++;
 		}
+
 		return;
 	}
 
