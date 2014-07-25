@@ -523,52 +523,6 @@ static void sprint_ascii(int row, int col, const char *str, int len)
 	(void) mvaddstr(row, col, print_buffer);
 }
 
-static void print_tree(struct window *win, int row, struct iter *iter)
-{
-	const char *str;
-	struct artist *artist;
-	struct album *album;
-	struct iter sel;
-	int current, selected, active, pos;
-
-	artist = iter_to_artist(iter);
-	album = iter_to_album(iter);
-	current = 0;
-	if (lib_cur_track) {
-		if (album) {
-			current = CUR_ALBUM == album;
-		} else {
-			current = CUR_ARTIST == artist;
-		}
-	}
-	window_get_sel(win, &sel);
-	selected = iters_equal(iter, &sel);
-	active = lib_cur_win == lib_tree_win;
-	bkgdset(pairs[(active << 2) | (selected << 1) | current]);
-
-	if (active && selected) {
-		cursor_x = 0;
-		cursor_y = 1 + row;
-	}
-
-	pos = 0;
-	print_buffer[pos++] = ' ';
-	if (album) {
-		print_buffer[pos++] = ' ';
-		print_buffer[pos++] = ' ';
-		str = album->name;
-	} else {
-		if (display_artist_sort_name)
-			str = artist_sort_name(artist);
-		else
-			str = artist->name;
-	}
-	pos += format_str(print_buffer + pos, str, tree_win_w - pos - 1);
-	print_buffer[pos++] = ' ';
-	print_buffer[pos++] = 0;
-	dump_print_buffer(tree_win_y + row + 1, tree_win_x);
-}
-
 static inline void fopt_set_str(struct format_option *fopt, const char *str)
 {
 	BUG_ON(fopt->type != FO_STR);
@@ -652,6 +606,61 @@ static void fill_track_fopts_track_info(struct track_info *info)
 	}
 }
 
+static void fill_track_fopts_album(struct album *album)
+{
+	fopt_set_str(&track_fopts[TF_ALBUMARTIST], album->artist->name);
+	fopt_set_str(&track_fopts[TF_ARTIST], album->artist->name);
+	fopt_set_str(&track_fopts[TF_ALBUM], album->name);
+	fopt_set_int(&track_fopts[TF_YEAR], album->date / 10000, album->date <= 0);
+}
+
+static void fill_track_fopts_artist(struct artist *artist)
+{
+	const char *name = display_artist_sort_name ? artist_sort_name(artist) : artist->name;
+	fopt_set_str(&track_fopts[TF_ARTIST], name);
+}
+
+static void print_tree(struct window *win, int row, struct iter *iter)
+{
+	struct artist *artist;
+	struct album *album;
+	struct iter sel;
+	int current, selected, active, pos;
+
+	artist = iter_to_artist(iter);
+	album = iter_to_album(iter);
+	current = 0;
+	if (lib_cur_track) {
+		if (album) {
+			current = CUR_ALBUM == album;
+		} else {
+			current = CUR_ARTIST == artist;
+		}
+	}
+	window_get_sel(win, &sel);
+	selected = iters_equal(iter, &sel);
+	active = lib_cur_win == lib_tree_win;
+	bkgdset(pairs[(active << 2) | (selected << 1) | current]);
+
+	if (active && selected) {
+		cursor_x = 0;
+		cursor_y = 1 + row;
+	}
+
+	print_buffer[0] = ' ';
+	if (album) {
+		fill_track_fopts_album(album);
+		format_print(print_buffer + 1, tree_win_w - 2, tree_win_format, track_fopts);
+	} else {
+		fill_track_fopts_artist(artist);
+		format_print(print_buffer + 1, tree_win_w - 2, tree_win_artist_format, track_fopts);
+	}
+	pos = strlen(print_buffer);
+	print_buffer[pos++] = ' ';
+	print_buffer[pos++] = 0;
+	dump_print_buffer(tree_win_y + row + 1, tree_win_x);
+}
+
 static void print_track(struct window *win, int row, struct iter *iter)
 {
 	struct tree_track *track;
@@ -665,24 +674,22 @@ static void print_track(struct window *win, int row, struct iter *iter)
 	album = iter_to_album(iter);
 
 	if (track == (struct tree_track*)album) {
-		int pos;
+		int pos = track_win_x;
 
 		/* FIXME:
 		 * replace A_BOLD by something useful */
 		bkgdset(A_BOLD);
-		print_buffer[0] = ' ';
-		pos = format_str(print_buffer + 1, album->name, track_win_w - 2);
-		print_buffer[++pos] = ' ';
-		print_buffer[++pos] = 0;
-		dump_print_buffer(track_win_y + row + 1, track_win_x);
 
+		fill_track_fopts_album(album);
+
+		pos += format_print(print_buffer, track_win_w, track_win_album_format, track_fopts);
+		dump_print_buffer(track_win_y + row + 1, track_win_x);
+		
 		bkgdset(pairs[CURSED_SEPARATOR]);
-		pos = track_win_x + u_str_width(album->name) + 2;
 		while (pos < COLS) {
 			(void) mvaddch(track_win_y + row + 1, pos, ACS_HLINE);
 			pos++;
 		}
-
 		return;
 	}
 

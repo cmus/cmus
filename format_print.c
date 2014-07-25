@@ -329,7 +329,7 @@ int format_print(char *str, int str_width, const char *format, const struct form
 	int lsize, rsize;
 	int eq_pos = -1;
 	int s = 0;
-
+	
 	while (format[s]) {
 		const struct format_option *fo;
 		int nlen, long_len = 0;
@@ -485,7 +485,7 @@ int format_print(char *str, int str_width, const char *format, const struct form
 		}
 		strcpy(str + pos, r_str + idx);
 	}
-	return 0;
+	return rlen == 0 ? llen : str_width;
 }
 
 int format_valid(const char *format, const struct format_option *fopts)
