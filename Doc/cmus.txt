@@ -909,10 +909,19 @@ format_title [`Format String`]
 format_trackwin [`Format String`]
 	Format string for the tree view's (1) track window.
 
+format_trackwin_album [`Format String`]
+	Format string for albums in tree view's (1) track window.
+
 format_trackwin_va [`Format String`]
 	Format string for the tree view's (1) track window, if a track
 	is assumed to be a part of compilation (see `LIBRARY VIEW SORTING`
 	for details).
+
+format_treewin [`Format String`]
+	Format string for the tree view's (1) tree window.
+
+format_treewin_artist [`Format String`]
+	Format string for artists in tree view's (1) tree window.
 
 smart_artist_sort (true)
 	If enabled, makes tree view sorting ignore "The" in front of artist
@@ -1083,6 +1092,8 @@ Special Keys:
 	%f  %{path}		@br
 	%F  %{filename}		@br
 	    %{originaldate}	@br
+	    %{maxdate}		@br
+	    %{daterange}	@br
 	    %{bitrate}		@br
 	    %{codec}		@br
 	    %{codec_profile}	@br
