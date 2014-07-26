@@ -51,7 +51,12 @@ struct format_option {
 #define DEF_FO_DOUBLE(c, s, z) { UNION_INIT(fo_double, 0.), .type = FO_DOUBLE, .pad_zero = z, .ch = c, .str = s }
 #define DEF_FO_END             { .type = 0 }
 
-int format_print(char *str, int width, const char *format, const struct format_option *fopts);
+struct fp_len {
+	int llen;
+	int rlen;
+};
+
+struct fp_len format_print(char *str, int width, const char *format, const struct format_option *fopts);
 int format_valid(const char *format, const struct format_option *fopts);
 
 #endif

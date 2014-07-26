@@ -709,7 +709,8 @@ static void print_track(struct window *win, int row, struct iter *iter)
 	album = iter_to_album(iter);
 
 	if (track == (struct tree_track*)album) {
-		int pos = track_win_x;
+		int pos;
+		struct fp_len len;
 
 		/* FIXME:
 		 * replace A_BOLD by something useful */
@@ -717,14 +718,12 @@ static void print_track(struct window *win, int row, struct iter *iter)
 
 		fill_track_fopts_album(album);
 
-		pos += format_print(print_buffer, track_win_w, track_win_album_format, track_fopts);
+		len = format_print(print_buffer, track_win_w, track_win_album_format, track_fopts);
 		dump_print_buffer(track_win_y + row + 1, track_win_x);
-		
+
 		bkgdset(pairs[CURSED_SEPARATOR]);
-		while (pos < COLS) {
+		for(pos = track_win_x + len.llen; pos < COLS - len.rlen; ++pos)
 			(void) mvaddch(track_win_y + row + 1, pos, ACS_HLINE);
-			pos++;
-		}
 
 		return;
 	}

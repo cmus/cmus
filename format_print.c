@@ -320,7 +320,7 @@ static char *r_str = NULL;
 static int l_str_size = -1;
 static int r_str_size = -1;
 
-int format_print(char *str, int str_width, const char *format, const struct format_option *fopts)
+struct fp_len format_print(char *str, int str_width, const char *format, const struct format_option *fopts)
 {
 	/* lengths of left and right aligned texts */
 	int llen = 0;
@@ -485,7 +485,8 @@ int format_print(char *str, int str_width, const char *format, const struct form
 		}
 		strcpy(str + pos, r_str + idx);
 	}
-	return rlen == 0 ? llen : str_width;
+	struct fp_len res = { .llen = llen, .rlen = rlen };
+	return res;
 }
 
 int format_valid(const char *format, const struct format_option *fopts)
