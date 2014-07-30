@@ -138,6 +138,8 @@ static struct token *get_int_or_key(const char *str, int *idxp)
 	while (str[e]) {
 		int i, c = str[e];
 
+		if (isspace(c))
+			goto out;
 		for (i = 0; i < NR_SPECIALS; i++) {
 			if (c == specials[i])
 				goto out;
@@ -208,6 +210,8 @@ static int tokenize(struct list_head *head, const char *str)
 	int idx = 0;
 
 	while (1) {
+		while (isspace(str[idx]))
+			++idx;
 		if (str[idx] == 0)
 			break;
 		tok = get_token(str, &idx);
@@ -311,6 +315,13 @@ static int parse_one(struct expr **exprp, struct list_head *head, struct list_he
 			new->key = xstrdup(key);
 			new->eint.val = val;
 			new->eint.op = op;
+			*exprp = new;
+			return 0;
+		} else if (type == TOK_KEY) {
+			new = expr_new(EXPR_ID);
+			new->key = xstrdup(key);
+			new->eid.key = xstrdup(tok->str);
+			new->eid.op = op;
 			*exprp = new;
 			return 0;
 		}
@@ -720,6 +731,11 @@ int expr_is_short(const char *str)
 
 struct expr *expr_parse(const char *str)
 {
+	return expr_parse_i(str, "filter contains control characters", 1);
+}
+
+struct expr *expr_parse_i(const char *str, const char *err_msg, int check_short)
+{
 	LIST_HEAD(head);
 	struct expr *root = NULL;
 	struct list_head *item;
@@ -729,7 +745,7 @@ struct expr *expr_parse(const char *str)
 	for (i = 0; str[i]; i++) {
 		unsigned char c = str[i];
 		if (c < 0x20) {
-			set_error("filter contains control characters");
+			set_error(err_msg);
 			goto out;
 		}
 	}
@@ -741,7 +757,7 @@ struct expr *expr_parse(const char *str)
 		goto out;
 	}
 
-	if (expr_is_short(str)) {
+	if (check_short && expr_is_short(str)) {
 		str = long_str = expand_short_expr(str);
 		if (!str)
 			goto out;
@@ -791,6 +807,7 @@ int expr_check_leaves(struct expr **exprp, const char *(*get_filter)(const char 
 		}
 		return 0;
 	}
+
 	if (expr->type != EXPR_BOOL) {
 		/* unknown key */
 		set_error("unknown key %s", expr->key);
@@ -865,7 +882,70 @@ int expr_is_harmless(const struct expr *expr)
 			return 1;
 		}
 	}
+	if (expr->type == EXPR_ID)
+		return 0;
 	return 1;
+}
+
+static const char *str_val(const char *key, struct track_info *ti, char **need_free)
+{
+	const char *val;
+	*need_free = NULL;
+	if (strcmp(key, "filename") == 0) {
+		val = ti->filename;
+		if (!using_utf8 && utf8_encode(val, charset, need_free) == 0) {
+			val = *need_free;
+		}
+	} else if (strcmp(key, "codec") == 0) {
+		val = ti->codec;
+	} else if (strcmp(key, "codec_profile") == 0) {
+		val = ti->codec_profile;
+	} else {
+		val = keyvals_get_val(ti->comments, key);
+	}
+	if (!val)
+		val = "";
+	return val;
+}
+
+static int int_val(const char *key, struct track_info *ti)
+{
+	int val;
+	if (strcmp(key, "duration") == 0) {
+		val = ti->duration;
+		/* duration of a stream is infinite (well, almost) */
+		if (is_http_url(ti->filename))
+			val = INT_MAX;
+	} else if (strcmp(key, "date") == 0) {
+		val = (ti->date >= 0) ? (ti->date / 10000) : -1;
+	} else if (strcmp(key, "originaldate") == 0) {
+		val = (ti->originaldate >= 0) ? (ti->originaldate / 10000) : -1;
+	} else if (strcmp(key, "bitrate") == 0) {
+		val = (ti->bitrate >= 0) ? (int) (ti->bitrate / 1000. + 0.5) : -1;
+	} else {
+		val = comments_get_int(ti->comments, key);
+	}
+	return val;
+}
+
+int expr_op_to_bool(int res, int op)
+{
+	switch (op) {
+	case OP_LT:
+		return res < 0;
+	case OP_LE:
+		return res <= 0;
+	case OP_EQ:
+		return res == 0;
+	case OP_GE:
+		return res >= 0;
+	case OP_GT:
+		return res > 0;
+	case OP_NE:
+		return res != 0;
+	default:
+		return 0;
+	}
 }
 
 int expr_eval(struct expr *expr, struct track_info *ti)
@@ -886,46 +966,17 @@ int expr_eval(struct expr *expr, struct track_info *ti)
 
 	key = expr->key;
 	if (type == EXPR_STR) {
-		const char *val;
-		char *uval = NULL;
 		int res;
-
-		if (strcmp(key, "filename") == 0) {
-			val = ti->filename;
-			if (!using_utf8 && utf8_encode(val, charset, &uval) == 0)
-				val = uval;
-		} else if (strcmp(key, "codec") == 0) {
-			val = ti->codec;
-		} else if (strcmp(key, "codec_profile") == 0) {
-			val = ti->codec_profile;
-		} else {
-			val = keyvals_get_val(ti->comments, key);
-		}
-		/* non-existing string tag equals to "" */
-		if (!val)
-			val = "";
+		char *need_free;
+		const char *val = str_val(key, ti, &need_free);
 		res = glob_match(&expr->estr.glob_head, val);
-		free(uval);
+		free(need_free);
 		if (expr->estr.op == SOP_EQ)
 			return res;
 		return !res;
 	} else if (type == EXPR_INT) {
-		int val, res;
-
-		if (strcmp(key, "duration") == 0) {
-			val = ti->duration;
-			/* duration of a stream is infinite (well, almost) */
-			if (is_http_url(ti->filename))
-				val = INT_MAX;
-		} else if (strcmp(key, "date") == 0) {
-			val = (ti->date >= 0) ? (ti->date / 10000) : -1;
-		} else if (strcmp(key, "originaldate") == 0) {
-			val = (ti->originaldate >= 0) ? (ti->originaldate / 10000) : -1;
-		} else if (strcmp(key, "bitrate") == 0) {
-			val = (ti->bitrate >= 0) ? (int) (ti->bitrate / 1000. + 0.5) : -1;
-		} else {
-			val = comments_get_int(ti->comments, key);
-		}
+		int val = int_val(key, ti);
+		int res;
 		if (expr->eint.val == -1) {
 			/* -1 is "not set"
 			 * doesn't make sense to do 123 < "not set"
@@ -941,20 +992,37 @@ int expr_eval(struct expr *expr, struct track_info *ti)
 			return 0;
 		}
 		res = val - expr->eint.val;
-		switch (expr->eint.op) {
-		case IOP_LT:
-			return res < 0;
-		case IOP_LE:
-			return res <= 0;
-		case IOP_EQ:
-			return res == 0;
-		case IOP_GE:
-			return res >= 0;
-		case IOP_GT:
-			return res > 0;
-		case IOP_NE:
-			return res != 0;
+		return expr_op_to_bool(res, expr->eint.op);
+	} else if (type == EXPR_ID) {
+		int a = 0, b = 0;
+		const char *sa, *sb;
+		char *fa, *fb;
+		int res = 0;
+		if ((sa = str_val(key, ti, &fa))) {
+			if ((sb = str_val(expr->eid.key, ti, &fb))) {
+				res = strcmp(sa, sb);
+				free(fa);
+				free(fb);
+				return expr_op_to_bool(res, expr->eid.op);
+			}
+			free(fa);
+		} else {
+			a = int_val(key, ti);
+			b = int_val(key, ti);
+			res = a - b;
+			if (a == -1 || b == -1) {
+				switch (expr->eid.op) {
+				case KOP_EQ:
+					return res == 0;
+				case KOP_NE:
+					return res != 0;
+				default:
+					return 0;
+				}
+			}
+			return expr_op_to_bool(res, expr->eid.op);
 		}
+		return res;
 	}
 	if (strcmp(key, "stream") == 0)
 		return is_http_url(ti->filename);
@@ -971,6 +1039,8 @@ void expr_free(struct expr *expr)
 	free(expr->key);
 	if (expr->type == EXPR_STR)
 		glob_free(&expr->estr.glob_head);
+	else if (expr->type == EXPR_ID)
+		free(expr->eid.key);
 	free(expr);
 }
 
