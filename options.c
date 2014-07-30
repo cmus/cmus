@@ -1351,14 +1351,10 @@ void option_add(const char *name, unsigned int id, opt_get_cb get,
 
 struct cmus_opt *option_find(const char *name)
 {
-	struct cmus_opt *opt;
-
-	list_for_each_entry(opt, &option_head, node) {
-		if (strcmp(name, opt->name) == 0)
-			return opt;
-	}
-	error_msg("no such option %s", name);
-	return NULL;
+	struct cmus_opt *opt = option_find_silent(name);
+	if (opt == NULL)
+		error_msg("no such option %s", name);
+	return opt;
 }
 
 struct cmus_opt *option_find_silent(const char *name)
