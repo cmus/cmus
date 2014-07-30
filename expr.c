@@ -731,48 +731,10 @@ int expr_is_short(const char *str)
 
 struct expr *expr_parse(const char *str)
 {
-	LIST_HEAD(head);
-	struct expr *root = NULL;
-	struct list_head *item;
-	char *long_str = NULL, *u_str = NULL;
-	int i;
-
-	for (i = 0; str[i]; i++) {
-		unsigned char c = str[i];
-		if (c < 0x20) {
-			set_error("filter contains control characters");
-			goto out;
-		}
-	}
-	if (!using_utf8 && utf8_encode(str, charset, &u_str) == 0) {
-		str = u_str;
-	}
-	if (!u_is_valid(str)) {
-		set_error("invalid UTF-8");
-		goto out;
-	}
-
-	if (expr_is_short(str)) {
-		str = long_str = expand_short_expr(str);
-		if (!str)
-			goto out;
-	}
-
-	if (tokenize(&head, str))
-		goto out;
-
-	item = head.next;
-	if (parse(&root, &head, &item, 0))
-		root = NULL;
-	free_tokens(&head);
-
-out:
-	free(u_str);
-	free(long_str);
-	return root;
+	return expr_parse_i(str, "filter contains control characters", 1);
 }
 
-struct expr *expr_parse_format(const char *str)
+struct expr *expr_parse_i(const char *str, const char *err_msg, int check_short)
 {
 	LIST_HEAD(head);
 	struct expr *root = NULL;
@@ -783,7 +745,7 @@ struct expr *expr_parse_format(const char *str)
 	for (i = 0; str[i]; i++) {
 		unsigned char c = str[i];
 		if (c < 0x20) {
-			set_error("condition contains control characters");
+			set_error(err_msg);
 			goto out;
 		}
 	}
@@ -793,6 +755,12 @@ struct expr *expr_parse_format(const char *str)
 	if (!u_is_valid(str)) {
 		set_error("invalid UTF-8");
 		goto out;
+	}
+
+	if (check_short && expr_is_short(str)) {
+		str = long_str = expand_short_expr(str);
+		if (!str)
+			goto out;
 	}
 
 	if (tokenize(&head, str))

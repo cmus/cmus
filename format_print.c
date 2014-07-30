@@ -406,7 +406,7 @@ static struct expr *format_parse_cond(const char* format, int size)
 		cond_buffer.buffer = xmalloc(cond_buffer.alloc);
 	cond_buffer.len = 0;
 	gbuf_add_bytes(&cond_buffer, format, size);
-	return expr_parse_format(cond_buffer.buffer);
+	return expr_parse_i(cond_buffer.buffer, "condition contains control characters", 0);
 }
 
 static uchar format_skip_cond_expr(const char *format, int *s)
