@@ -187,6 +187,7 @@ void resume_exit(void);
 void option_add(const char *name, unsigned int id, opt_get_cb get,
 		opt_set_cb set, opt_toggle_cb toggle, unsigned int flags);
 struct cmus_opt *option_find(const char *name);
+struct cmus_opt *option_find_silent(const char *name);
 void option_set(const char *name, const char *value);
 int parse_enum(const char *buf, int minval, int maxval, const char * const names[], int *val);
 

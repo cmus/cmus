@@ -33,6 +33,7 @@ enum expr_type {
 
 	EXPR_STR,
 	EXPR_INT,
+	EXPR_ID,
 	EXPR_BOOL
 };
 #define NR_EXPRS (EXPR_BOOL + 1)
@@ -60,11 +61,24 @@ struct expr {
 				IOP_NE = OP_NE
 			} op;
 		} eint;
+		struct {
+			char* key;
+			enum {
+				KOP_LT = OP_LT,
+				KOP_LE = OP_LE,
+				KOP_EQ = OP_EQ,
+				KOP_GE = OP_GE,
+				KOP_GT = OP_GT,
+				KOP_NE = OP_NE
+			} op;
+		} eid;
 	};
 };
 
 struct expr *expr_parse(const char *str);
+struct expr* expr_parse_i(const char *str, const char *err_msg, int check_short);
 int expr_check_leaves(struct expr **exprp, const char *(*get_filter)(const char *name));
+int expr_op_to_bool(int res, int op);
 int expr_eval(struct expr *expr, struct track_info *ti);
 void expr_free(struct expr *expr);
 const char *expr_error(void);

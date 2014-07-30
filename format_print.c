@@ -17,6 +17,11 @@
  */
 
 #include "format_print.h"
+#include "gbuf.h"
+#include "expr.h"
+#include "glob.h"
+#include "utils.h"
+#include "options.h"
 #include "uchar.h"
 #include "xmalloc.h"
 #include "debug.h"
@@ -29,23 +34,19 @@ static int width;
 static int align_left;
 static int pad;
 
-static int numlen(int num)
-{
-	int digits;
+static struct gbuf cond_buffer = {0, 64, 0};
+static struct gbuf l_str = {0, 256, 0};
+static struct gbuf r_str = {0, 256, 0};
+static struct fp_len str_len = {0, 0};
+static int *len = &str_len.llen;
+static struct gbuf* str = &l_str;
 
-	if (num < 0)
-		return 1; /* '?' */
-	digits = 0;
-	do {
-		num /= 10;
-		digits++;
-	} while (num);
-	return digits;
-}
-
-static int stack_print(char *buf, char *stack, int stack_len)
+static void stack_print(char *stack, int stack_len)
 {
 	int i = 0;
+
+	gbuf_grow(str, width ? width : stack_len);
+	char* buf = str->buffer + str->len;
 
 	if (width) {
 		if (align_left) {
@@ -68,10 +69,11 @@ static int stack_print(char *buf, char *stack, int stack_len)
 		while (stack_len)
 			buf[i++] = stack[--stack_len];
 	}
-	return i;
+	str->len += i;
+	*len += i;
 }
 
-static int print_num(char *buf, int num)
+static void print_num(int num)
 {
 	char stack[20];
 	int i, p;
@@ -80,8 +82,9 @@ static int print_num(char *buf, int num)
 		if (width == 0)
 			width = 1;
 		for (i = 0; i < width; i++)
-			buf[i] = '?';
-		return width;
+			gbuf_add_ch(str, '?');
+		len += width;
+		return;
 	}
 	p = 0;
 	do {
@@ -89,27 +92,21 @@ static int print_num(char *buf, int num)
 		num /= 10;
 	} while (num);
 
-	return stack_print(buf, stack, p);
+	stack_print(stack, p);
 }
 
 #define DBL_MAX_LEN (20)
 
 static int format_double(char *buf, int buflen, double num)
 {
-	int len = snprintf(buf, buflen, "%f", num);
+	int l = snprintf(buf, buflen, "%f", num);
 	/* skip trailing zeros */
-	while (len > 0 && buf[len-1] == '0')
-		len--;
-	return len;
+	while (l > 0 && buf[l-1] == '0')
+		l--;
+	return l;
 }
 
-static int double_len(double num)
-{
-	char buf[DBL_MAX_LEN];
-	return format_double(buf, DBL_MAX_LEN, num);
-}
-
-static int print_double(char *buf, double num)
+static void print_double(double num)
 {
 	char stack[DBL_MAX_LEN], b[DBL_MAX_LEN];
 	int i, p = 0;
@@ -119,11 +116,11 @@ static int print_double(char *buf, double num)
 		stack[p++] = b[i];
 		i--;
 	}
-	return stack_print(buf, stack, p);
+	stack_print(stack, p);
 }
 
 /* print '{,-}{h:,}mm:ss' */
-static int print_time(char *buf, int t)
+static void print_time(int t)
 {
 	int h, m, s;
 	char stack[32];
@@ -155,12 +152,14 @@ static int print_time(char *buf, int t)
 	if (neg)
 		stack[p++] = '-';
 
-	return stack_print(buf, stack, p);
+	stack_print(stack, p);
 }
 
-static void print_str(char *buf, int *idx, const char *str)
+static void print_str(const char *src)
 {
-	int d = *idx;
+	int str_width = u_str_width(src);
+	gbuf_grow(str, (width ? width : str_width) * 4);
+	*len += (width ? width : str_width);
 
 	if (width) {
 		int ws_len;
@@ -168,19 +167,19 @@ static void print_str(char *buf, int *idx, const char *str)
 
 		if (align_left) {
 			i = width;
-			d += u_copy_chars(buf + d, str, &i);
+			str->len += u_copy_chars(str->buffer + str->len, src, &i);
 
 			ws_len = width - i;
-			memset(buf + d, ' ', ws_len);
-			d += ws_len;
+			memset(str->buffer + str->len, ' ', ws_len);
+			str->len += ws_len;
 		} else {
 			int s = 0;
 
-			ws_len = width - u_str_width(str);
+			ws_len = width - str_width;
 
 			if (ws_len > 0) {
-				memset(buf + d, ' ', ws_len);
-				d += ws_len;
+				memset(str->buffer + str->len, ' ', ws_len);
+				str->len += ws_len;
 				i += ws_len;
 			}
 
@@ -189,7 +188,7 @@ static void print_str(char *buf, int *idx, const char *str)
 				uchar u;
 
 				while (c > 0) {
-					u = u_get_char(str, &s);
+					u = u_get_char(src, &s);
 					w = u_char_width(u);
 					c -= w;
 				}
@@ -197,14 +196,14 @@ static void print_str(char *buf, int *idx, const char *str)
 					/* gaah, skipped too much */
 					if (u_char_width(u) == 2) {
 						/* double-byte */
-						buf[d++] = ' ';
+						str->buffer[str->len++] = ' ';
 					} else {
 						/* <xx> */
 						if (c == -3)
-							buf[d++] = hex_tab[(u >> 4) & 0xf];
+							str->buffer[str->len++] = hex_tab[(u >> 4) & 0xf];
 						if (c <= -2)
-							buf[d++] = hex_tab[u & 0xf];
-						buf[d++] = '>';
+							str->buffer[str->len++] = hex_tab[u & 0xf];
+						str->buffer[str->len++] = '>';
 					}
 				}
 			}
@@ -212,21 +211,23 @@ static void print_str(char *buf, int *idx, const char *str)
 			if (width - i > 0) {
 				int w = width - i;
 
-				d += u_copy_chars(buf + d, str + s, &w);
+				str->len += u_copy_chars(str->buffer + str->len, src + s, &w);
 			}
+
 		}
 	} else {
-		int s = 0;
+		int s = 0, d = 0;
 		uchar u;
 
 		while (1) {
-			u = u_get_char(str, &s);
+			u = u_get_char(src, &s);
 			if (u == 0)
 				break;
-			u_set_char(buf, &d, u);
+			u_set_char(str->buffer + str->len, &d, u);
 		}
+
+		str->len += d;
 	}
-	*idx = d;
 }
 
 static inline int strnequal(const char *a, const char *b, size_t b_len)
@@ -234,32 +235,307 @@ static inline int strnequal(const char *a, const char *b, size_t b_len)
 	return a && (strlen(a) == b_len) && (memcmp(a, b, b_len) == 0);
 }
 
-static void print(char *str, int str_width, const char *format, const struct format_option *fopts)
+static const struct format_option *find_fopt(const struct format_option *fopts, const char *key)
 {
-	/* format and str indices */
-	int s = 0, d = 0;
+	const struct format_option *fo;
+	char ch = strlen(key) == 1 ? *key : 0;
+	for (fo = fopts; fo->type != 0; fo++) {
+		if ((ch != 0 && fo->ch == ch) || strnequal(fo->str, key, strlen(key))) {
+			return fo;
+		}
+	}
+	return NULL;
+}
 
-	while (format[s]) {
+static const char *str_val(const char *key, const struct format_option *fopts, char *buf)
+{
+	const struct format_option *fo;
+	const struct cmus_opt *opt;
+	const char *val = NULL;
+
+	fo = find_fopt(fopts, key);
+	if (fo && !fo->empty) {
+		if (fo->type == FO_STR)
+			val = fo->fo_str;
+	} else {
+		opt = option_find_silent(key);
+		if (opt) {
+			opt->get(opt->id, buf);
+			val = buf;
+		}
+	}
+	if (!val)
+		val = "";
+	return val;
+}
+
+static int int_val(const char *key, const struct format_option *fopts, char *buf)
+{
+	const struct format_option *fo;
+	int val = -1;
+
+	fo = find_fopt(fopts, key);
+	if (fo && !fo->empty) {
+		if (fo->type == FO_INT)
+			val = fo->fo_int;
+	}
+	return val;
+}
+
+static int format_eval_cond(struct expr* expr, const struct format_option *fopts)
+{
+	if (!expr)
+		return -1;
+	enum expr_type type = expr->type;
+	const char *key;
+	const struct format_option *fo;
+	const struct cmus_opt *opt;
+	/* FIXME:
+	 * it can be overflowed in theory, but we can't find out option's size */
+	char buf[512];
+
+	if (expr->left) {
+		int left = format_eval_cond(expr->left, fopts);
+
+		if (type == EXPR_AND)
+			return left && format_eval_cond(expr->right, fopts);
+		if (type == EXPR_OR)
+			return left || format_eval_cond(expr->right, fopts);
+		/* EXPR_NOT */
+		return !left;
+	}
+
+	key = expr->key;
+	if (type == EXPR_STR) {
+		const char *val = str_val(key, fopts, buf);
+		int res;
+
+		res = glob_match(&expr->estr.glob_head, val);
+		if (expr->estr.op == SOP_EQ)
+			return res;
+		return !res;
+	} else if (type == EXPR_INT) {
+		int val = int_val(key, fopts, buf);
+		int res = val - expr->eint.val;
+		if (val == -1 || expr->eint.val == -1) {
+			switch (expr->eid.op) {
+			case KOP_EQ:
+				return res == 0;
+			case KOP_NE:
+				return res != 0;
+			default:
+				return 0;
+			}
+		}
+		return expr_op_to_bool(res, expr->eint.op);
+	} else if (type == EXPR_ID) {
+		int a = 0, b = 0;
+		const char *sa, *sb;
+		int res = 0;
+		if ((sa = str_val(key, fopts, buf)) && (sb = str_val(expr->eid.key, fopts, buf))) {
+			res = strcmp(sa, sb);
+			return expr_op_to_bool(res, expr->eid.op);
+		} else {
+			a = int_val(key, fopts, buf);
+			b = int_val(key, fopts, buf);
+			res = a - b;
+			if (a == -1 || b == -1) {
+				switch (expr->eid.op) {
+				case KOP_EQ:
+					return res == 0;
+				case KOP_NE:
+					return res != 0;
+				default:
+					return 0;
+				}
+			}
+			return expr_op_to_bool(res, expr->eid.op);
+		}
+		return res;
+	}
+	if (strcmp(key, "stream") == 0) {
+		fo = find_fopt(fopts, "filename");
+		return fo && is_http_url(fo->fo_str);
+	}
+	fo = find_fopt(fopts, key);
+	if (fo)
+		return !fo->empty;
+	opt = option_find_silent(key);
+	if (opt) {
+		opt->get(opt->id, buf);
+		if (strcmp(buf, "false") != 0 && strlen(buf) != 0)
+			return 1;
+	}
+	return 0;
+}
+
+static struct expr *format_parse_cond(const char* format, int size)
+{
+	if (!cond_buffer.buffer)
+		cond_buffer.buffer = xmalloc(cond_buffer.alloc);
+	cond_buffer.len = 0;
+	gbuf_add_bytes(&cond_buffer, format, size);
+	return expr_parse_i(cond_buffer.buffer, "condition contains control characters", 0);
+}
+
+static uchar format_skip_cond_expr(const char *format, int *s)
+{
+	int i = *s;
+	uchar r = 0;
+	int start_of_token = 1;
+	while (format[i]) {
+		uchar u = u_get_char(format, &i);
+		if (start_of_token && u == 't') {
+			if (strncmp("hen ", format + i, strlen("hen ")) == 0) {
+				i += strlen("hen ");
+				r = 't';
+				break;
+			}
+		}
+		if (start_of_token && u == 'e') {
+			if (strncmp("lse ", format + i, strlen("lse ")) == 0) {
+				i += strlen("lse ");
+				r = 'e';
+				break;
+			}
+		}
+		if (u == '}') {
+			r = u;
+			break;
+		}
+		if (u == '"' || u == '\'') {
+			uchar q = u;
+			while (1) {
+				u = u_get_char(format, &i);
+				if (u == '%')
+					u = u_get_char(format, &i);
+				else if (u == q || u == 0)
+					break;
+			}
+			if (u == 0)
+				break;
+			start_of_token = 1;
+			continue;
+		}
+		if (isspace(u)) {
+			start_of_token = 1;
+			continue;
+		}
+		if (u != '%') {
+			start_of_token = 0;
+			continue;
+		}
+		u = u_get_char(format, &i);
+		if (u == '%' || u == '"' || u == '\'') {
+			start_of_token = 0;
+			continue;
+		}
+		if (u == '=') {
+			start_of_token = 1;
+			continue;
+		}
+		if (u == '-') {
+			u = u_get_char(format, &i);
+		}
+		while (isdigit(u)) {
+			u = u_get_char(format, &i);
+		}
+		if (u == '{') {
+			while (1) {
+				u = format_skip_cond_expr(format, &i);
+				if (u == '}' || u == 0)
+					break;
+			}
+			if (u == 0)
+				break;
+		}
+		start_of_token = 1;
+	}
+	*s = i;
+	return r;
+}
+
+static void format_parse(int str_width, const char *format, const struct format_option *fopts, int f_size);
+
+static void format_parse_if(int str_width, const char *format, const struct format_option *fopts, int *s)
+{
+	int cond_pos = *s, then_pos = -1, else_pos = -1, end_pos = -1, cond_res = -1;
+	uchar t = format_skip_cond_expr(format, s);
+	BUG_ON(t != 't');
+	then_pos = *s;
+	t = format_skip_cond_expr(format, s);
+	BUG_ON(t == 't' || t == 0);
+	if (t == 'e') {
+		else_pos = *s;
+		t = format_skip_cond_expr(format, s);
+		BUG_ON(t != '}');
+		end_pos = *s;
+	} else {
+		end_pos = *s;
+	}
+
+	struct expr *cond = format_parse_cond(format + cond_pos, then_pos - cond_pos - strlen("then "));
+	cond_res = format_eval_cond(cond, fopts);
+	expr_free(cond);
+
+	BUG_ON(cond_res < 0);
+	if (cond_res) {
+		format_parse(str_width, format + then_pos, fopts,
+				(else_pos > 0 ? else_pos - strlen("else ") : end_pos - 1) - then_pos);
+	} else if (else_pos > 0) {
+		format_parse(str_width, format + else_pos, fopts, end_pos - 1 - else_pos);
+	}
+
+	*s = end_pos;
+}
+
+static void format_parse(int str_width, const char *format, const struct format_option *fopts, int f_size)
+{
+	int s = 0;
+	uchar in_quotes = 0;
+
+	if (f_size > 0) {
+		while (s < f_size && isspace(format[s]))
+			++s;
+		while (f_size > 0 && isspace(format[f_size - 1]))
+			--f_size;
+	}
+
+	while ((f_size > 0 && s < f_size) || (f_size < 0 && format[s])) {
 		const struct format_option *fo;
 		int long_len = 0;
 		const char *long_begin = NULL;
 		uchar u;
 
 		u = u_get_char(format, &s);
+		if (f_size > 0 && (u == '"' || u == '\'')) {
+			if (!in_quotes) {
+				in_quotes = u;
+				continue;
+			} else if (in_quotes == u) {
+				in_quotes = 0;
+				continue;
+			}
+		}
+
 		if (u != '%') {
-			u_set_char(str, &d, u);
+			gbuf_grow(str, 4);
+			u_set_char(str->buffer, (int *)&str->len, u);
+			(*len) += u_char_width(u);
 			continue;
 		}
 		u = u_get_char(format, &s);
-		if (u == '%') {
-			u_set_char(str, &d, u);
+		if (u == '%' || u == '"' || u == '\'') {
+			gbuf_add_ch(str, u);
+			++(*len);
 			continue;
 		}
-
 		if (u == '=') {
-			break;
+			/* right aligned text starts */
+			str = &r_str;
+			len = &str_len.rlen;
+			continue;
 		}
-
 		align_left = 0;
 		if (u == '-') {
 			align_left = 1;
@@ -272,6 +548,7 @@ static void print(char *str, int str_width, const char *format, const struct for
 		}
 		width = 0;
 		while (isdigit(u)) {
+			/* minimum length of this field */
 			width *= 10;
 			width += u - '0';
 			u = u_get_char(format, &s);
@@ -282,94 +559,14 @@ static void print(char *str, int str_width, const char *format, const struct for
 		}
 		if (u == '{') {
 			long_begin = format + s;
-			while (1) {
-				u = u_get_char(format, &s);
-				BUG_ON(u == 0);
-				if (u == '}')
-					break;
-				long_len++;
+			if (strncmp("if ", long_begin, strlen("if ")) == 0) {
+				s += strlen("if ");
+				format_parse_if(str_width, format, fopts, &s);
+				continue;
 			}
-		}
-		for (fo = fopts; fo->type; fo++) {
-			if (long_len ? strnequal(fo->str, long_begin, long_len)
-				     : (fo->ch == u)) {
-				int type = fo->type;
-
-				if (fo->empty) {
-					memset(str + d, ' ', width);
-					d += width;
-				} else if (type == FO_STR) {
-					print_str(str, &d, fo->fo_str);
-				} else if (type == FO_INT) {
-					d += print_num(str + d, fo->fo_int);
-				} else if (type == FO_TIME) {
-					d += print_time(str + d, fo->fo_time);
-				} else if (type == FO_DOUBLE) {
-					d += print_double(str + d, fo->fo_double);
-				}
-				break;
-			}
-		}
-	}
-	str[d] = 0;
-}
-
-static char *l_str = NULL;
-static char *r_str = NULL;
-/* sizes in bytes. not counting the terminating 0! */
-static int l_str_size = -1;
-static int r_str_size = -1;
-
-int format_print(char *str, int str_width, const char *format, const struct format_option *fopts)
-{
-	/* lengths of left and right aligned texts */
-	int llen = 0;
-	int rlen = 0;
-	int *len = &llen;
-	int lsize, rsize;
-	int eq_pos = -1;
-	int s = 0;
-
-	while (format[s]) {
-		const struct format_option *fo;
-		int nlen, long_len = 0;
-		const char *long_begin = NULL;
-		uchar u;
-
-		u = u_get_char(format, &s);
-		if (u != '%') {
-			(*len) += u_char_width(u);
-			continue;
-		}
-		u = u_get_char(format, &s);
-		if (u == '%') {
-			(*len)++;
-			continue;
-		}
-		if (u == '=') {
-			/* right aligned text starts */
-			len = &rlen;
-			eq_pos = s - 1;
-			continue;
-		}
-		if (u == '-')
-			u = u_get_char(format, &s);
-		nlen = 0;
-		while (isdigit(u)) {
-			/* minimum length of this field */
-			nlen *= 10;
-			nlen += u - '0';
-			u = u_get_char(format, &s);
-		}
-		if (u == '%') {
-			nlen = (nlen * str_width) / 100.0 + 0.5;
-			u = u_get_char(format, &s);
-		}
-		if (u == '{') {
-			long_begin = format + s;
 			while (1) {
+				BUG_ON(u == 0 || s >= f_size);
 				u = u_get_char(format, &s);
-				BUG_ON(u == 0);
 				if (u == '}')
 					break;
 				long_len++;
@@ -379,120 +576,143 @@ int format_print(char *str, int str_width, const char *format, const struct form
 			BUG_ON(fo->type == 0);
 			if (long_len ? strnequal(fo->str, long_begin, long_len)
 				     : (fo->ch == u)) {
+
 				int type = fo->type;
-				int l = 0;
 
 				if (fo->empty) {
-					/* nothing */
+					gbuf_grow(str, width);
+					memset(str->buffer + str->len, ' ', width);
+					str->len += width;
+					*len += width;
 				} else if (type == FO_STR) {
-					l = u_str_width(fo->fo_str);
+					print_str(fo->fo_str);
 				} else if (type == FO_INT) {
-					l = numlen(fo->fo_int);
+					print_num(fo->fo_int);
 				} else if (type == FO_TIME) {
-					int t = fo->fo_time;
-
-					if (t < 0) {
-						t *= -1;
-						l++;
-					}
-					if (t >= 3600) {
-						l += numlen(t / 3600) + 6;
-					} else {
-						l += 5;
-					}
+					print_time(fo->fo_time);
 				} else if (type == FO_DOUBLE) {
-					l = double_len(fo->fo_double);
-				}
-				if (nlen) {
-					*len += nlen;
-				} else {
-					*len += l;
+					print_double(fo->fo_double);
 				}
 				break;
 			}
 		}
 	}
+}
 
-	/* max utf-8 char len is 4 */
-	lsize = llen * 4;
-	rsize = rlen * 4;
+struct fp_len format_print(char *buf, int str_width, const char *format, const struct format_option *fopts)
+{
+	if (!l_str.buffer)
+		l_str.buffer = xmalloc(l_str.alloc);
+	if (!r_str.buffer)
+		r_str.buffer = xmalloc(r_str.alloc);
+	str_len.llen = 0;
+	str_len.rlen = 0;
+	str = &l_str;
+	len = &str_len.llen;
+	l_str.len = 0;
+	r_str.len = 0;
+	*l_str.buffer = 0;
+	*r_str.buffer = 0;
+	format_parse(str_width, format, fopts, -1);
 
-	if (l_str_size < lsize) {
-		free(l_str);
-		l_str_size = lsize;
-		l_str = xnew(char, l_str_size + 1);
-		l_str[l_str_size] = 0;
-	}
-	if (r_str_size < rsize) {
-		free(r_str);
-		r_str_size = rsize;
-		r_str = xnew(char, r_str_size + 1);
-		r_str[r_str_size] = 0;
-	}
-	l_str[0] = 0;
-	r_str[0] = 0;
+	gbuf_grow(&l_str, 1);
+	gbuf_grow(&r_str, 1);
+	l_str.buffer[l_str.len] = 0;
+	r_str.buffer[r_str.len] = 0;
 
-	if (lsize > 0) {
-		print(l_str, str_width, format, fopts);
 #if DEBUG > 1
-		{
-			int ul = u_str_width(l_str);
-			if (ul != llen)
-				d_print("L %d != %d: size=%d '%s'\n", ul, llen, lsize, l_str);
-		}
-#endif
+	if (str_len.llen > 0) {
+		int ul = u_str_width(l_str.buffer);
+		if (ul != str_len.llen)
+			d_print("L %d != %d: size=%zu '%s'\n", ul, str_len.llen, l_str.len, l_str.buffer);
 	}
-	if (rsize > 0) {
-		print(r_str, str_width, format + eq_pos + 1, fopts);
-#if DEBUG > 1
-		{
-			int ul = u_str_width(r_str);
-			if (ul != rlen)
-				d_print("R %d != %d: size=%d '%s'\n", ul, rlen, rsize, r_str);
-		}
-#endif
+
+	if (str_len.rlen > 0) {
+		int ul = u_str_width(r_str.buffer);
+		if (ul != str_len.rlen)
+			d_print("R %d != %d: size=%zu '%s'\n", ul, str_len.rlen, r_str.len, r_str.buffer);
 	}
+#endif
 
 	/* NOTE: any invalid UTF-8 bytes have already been converted to <xx>
 	 *       (ASCII) where x is hex digit
 	 */
 
-	if (llen + rlen <= str_width) {
+	if (str_len.llen + str_len.rlen <= str_width) {
 		/* both fit */
-		int ws_len = str_width - llen - rlen;
+		int ws_len = str_width - str_len.llen - str_len.rlen;
 		int pos = 0;
 
 		/* I would use strcpy if it returned anything useful */
-		while (l_str[pos]) {
-			str[pos] = l_str[pos];
+		while (l_str.buffer[pos]) {
+			buf[pos] = l_str.buffer[pos];
 			pos++;
 		}
-		memset(str + pos, ' ', ws_len);
-		strcpy(str + pos + ws_len, r_str);
+		memset(buf + pos, ' ', ws_len);
+		strcpy(buf + pos + ws_len, r_str.buffer);
 	} else {
-		int l_space = str_width - rlen;
+		int l_space = str_width - str_len.rlen;
 		int pos = 0;
 		int idx = 0;
 
 		if (l_space > 0)
-			pos = u_copy_chars(str, l_str, &l_space);
+			pos = u_copy_chars(buf, l_str.buffer, &l_space);
 		if (l_space < 0) {
 			int w = -l_space;
 
-			idx = u_skip_chars(r_str, &w);
+			idx = u_skip_chars(r_str.buffer, &w);
 			if (w != -l_space)
-				str[pos++] = ' ';
+				buf[pos++] = ' ';
 		}
-		strcpy(str + pos, r_str + idx);
+		strcpy(buf + pos, r_str.buffer + idx);
 	}
-	return 0;
+	return str_len;
 }
 
-int format_valid(const char *format, const struct format_option *fopts)
+static int format_valid_sub(const char *format, const struct format_option *fopts, int f_size);
+
+static int format_valid_if(const char *format, const struct format_option *fopts, int *s)
+{
+	int cond_pos = *s, then_pos = -1, else_pos = -1, end_pos = -1;
+	uchar t = format_skip_cond_expr(format, s);
+	if (t != 't')
+		return 0;
+	then_pos = *s;
+	t = format_skip_cond_expr(format, s);
+	if (t == 't' || t == 0)
+		return 0;
+	if (t == 'e') {
+		else_pos = *s;
+		t = format_skip_cond_expr(format, s);
+		if (t != '}')
+			return 0;
+		end_pos = *s;
+	} else {
+		end_pos = *s;
+	}
+
+	struct expr *cond = format_parse_cond(format + cond_pos, then_pos - cond_pos - strlen("then "));
+	if (cond == NULL) {
+		expr_free(cond);
+		return 0;
+	}
+	expr_free(cond);
+
+	if (!format_valid_sub(format + then_pos, fopts, (else_pos > 0 ? else_pos - strlen("else ") : end_pos - 1) - then_pos))
+		return 0;
+	if (else_pos > 0)
+		if (!format_valid_sub(format + else_pos, fopts, end_pos - 1 - else_pos))
+			return 0;
+
+	*s = end_pos;
+	return 1;
+}
+
+static int format_valid_sub(const char *format, const struct format_option *fopts, int f_size)
 {
 	int s = 0;
 
-	while (format[s]) {
+	while ((f_size > 0 && s < f_size) || (f_size < 0 && format[s])) {
 		uchar u;
 
 		u = u_get_char(format, &s);
@@ -502,7 +722,7 @@ int format_valid(const char *format, const struct format_option *fopts)
 			const char *long_begin = NULL;
 
 			u = u_get_char(format, &s);
-			if (u == '%' || u == '=')
+			if (u == '%' || u == '=' || u == '\'' || u == '"')
 				continue;
 			if (u == '-')
 				u = u_get_char(format, &s);
@@ -516,10 +736,18 @@ int format_valid(const char *format, const struct format_option *fopts)
 				u = u_get_char(format, &s);
 			if (u == '{') {
 				long_begin = format + s;
-				while (1) {
-					u = u_get_char(format, &s);
-					if (!u)
+				if (strncmp("if ", long_begin, strlen("if ")) == 0) {
+					s += strlen("if ");
+					if (!format_valid_if(format, fopts, &s))
 						return 0;
+					else
+						continue;
+				}
+
+				while (1) {
+					if (!u || s >= f_size)
+						return 0;
+					u = u_get_char(format, &s);
 					if (u == '}')
 						break;
 					long_len++;
@@ -538,4 +766,9 @@ int format_valid(const char *format, const struct format_option *fopts)
 		}
 	}
 	return 1;
+}
+
+int format_valid(const char *format, const struct format_option *fopts)
+{
+	return format_valid_sub(format, fopts, -1);
 }
