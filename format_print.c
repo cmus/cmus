@@ -247,6 +247,41 @@ static const struct format_option *find_fopt(const struct format_option *fopts, 
 	return NULL;
 }
 
+static const char *str_val(const char *key, const struct format_option *fopts, char *buf)
+{
+	const struct format_option *fo;
+	const struct cmus_opt *opt;
+	const char *val = NULL;
+
+	fo = find_fopt(fopts, key);
+	if (fo) {
+		if (fo->type == FO_STR)
+			val = fo->fo_str;
+	} else {
+		opt = option_find_silent(key);
+		if (opt) {
+			opt->get(opt->id, buf);
+			val = buf;
+		}
+	}
+	if (!val)
+		val = "";
+	return val;
+}
+
+static int int_val(const char *key, const struct format_option *fopts, char *buf)
+{
+	const struct format_option *fo;
+	int val = -1;
+
+	fo = find_fopt(fopts, key);
+	if (fo) {
+		if (fo->type == FO_INT)
+			val = fo->fo_int;
+	}
+	return val;
+}
+
 static int format_eval_cond(struct expr* expr, const struct format_option *fopts) 
 {
 	if (!expr)
@@ -270,38 +305,16 @@ static int format_eval_cond(struct expr* expr, const struct format_option *fopts
 
 	key = expr->key;
 	if (type == EXPR_STR) {
-		const char *val = NULL;
-		char *uval = NULL;
+		const char *val = str_val(key, fopts, buf);
 		int res;
-
-		fo = find_fopt(fopts, key);
-		if (fo) {
-			if (fo->type == FO_STR)
-				val = fo->fo_str;
-		} else {
-			opt = option_find_silent(key);
-			if (opt) {
-				opt->get(opt->id, buf);
-				val = buf;
-			}
-
-		}
-		/* non-existing string tag equals to "" */
-		if (!val)
-			val = "";
+		
 		res = glob_match(&expr->estr.glob_head, val);
-		free(uval);
 		if (expr->estr.op == SOP_EQ)
 			return res;
 		return !res;
 	} else if (type == EXPR_INT) {
-		int val = -1, res;
-
-		fo = find_fopt(fopts, key);
-		if (fo) {
-			if (fo->type == FO_INT)
-				val = fo->fo_int;
-		}
+		int val = int_val(key, fopts, buf); 
+		int res;
 
 		res = val - expr->eint.val;
 		switch (expr->eint.op) {
@@ -318,6 +331,58 @@ static int format_eval_cond(struct expr* expr, const struct format_option *fopts
 		case IOP_NE:
 			return res != 0;
 		}
+	} else if (type == EXPR_ID) {
+		int a = 0, b = 0;
+		const char *sa, *sb;
+		int res = 0;
+		if ( (sa = str_val(key, fopts, buf)) ) {
+			if ( (sb = str_val(expr->eid.key, fopts, buf)) ) {
+				res = strcmp(sa, sb);
+				switch (expr->eid.op) {
+				case KOP_LT:
+					return res < 0;
+				case KOP_LE:
+					return res <= 0;
+				case KOP_EQ:
+					return res == 0;
+				case KOP_GE:
+					return res >= 0;
+				case KOP_GT:
+					return res > 0;
+				case KOP_NE:
+					return res != 0;
+				}
+			}
+		} else {
+			a = int_val(key, fopts, buf);
+			b = int_val(key, fopts, buf);
+			res = a - b;
+			if (a == -1 || b == -1) {
+				switch (expr->eid.op) {
+				case KOP_EQ:
+					return res == 0;
+				case KOP_NE:
+					return res != 0;
+				default:
+					return 0;
+				}								
+			}
+			switch (expr->eid.op) {
+			case KOP_LT:
+				return res < 0;
+			case KOP_LE:
+				return res <= 0;
+			case KOP_EQ:
+				return res == 0;
+			case KOP_GE:
+				return res >= 0;
+			case KOP_GT:
+				return res > 0;
+			case KOP_NE:
+				return res != 0;
+			}
+		}
+		return res;
 	}
 	if (strcmp(key, "stream") == 0) {
 		fo = find_fopt(fopts, "filename");
