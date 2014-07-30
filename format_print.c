@@ -526,11 +526,7 @@ static void format_parse(int str_width, const char *format, const struct format_
 	if (f_size > 0) {
 		while (s < f_size && isspace(format[s]))
 			++s;
-		if (s < f_size && (format[s] == '"' || format[s] == '\''))
-			++s;
 		while (f_size > 0 && isspace(format[f_size - 1]))
-			--f_size;
-		if (s > 0 && s < f_size && f_size > 0 && format[f_size - 1] == format[s - 1])
 			--f_size;
 	}
 
@@ -541,6 +537,9 @@ static void format_parse(int str_width, const char *format, const struct format_
 		uchar u;
 
 		u = u_get_char(format, &s);
+		if (f_size > 0 && (u == '"' || u == '\''))
+			continue;
+
 		if (u != '%') {
 			gbuf_grow(str, 4);
 			u_set_char(str->buffer, &str->len, u);
