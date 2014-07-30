@@ -1361,6 +1361,17 @@ struct cmus_opt *option_find(const char *name)
 	return NULL;
 }
 
+struct cmus_opt *option_find_silent(const char *name)
+{
+	struct cmus_opt *opt;
+
+	list_for_each_entry(opt, &option_head, node) {
+		if (strcmp(name, opt->name) == 0)
+			return opt;
+	}
+	return NULL;	
+}
+
 void option_set(const char *name, const char *value)
 {
 	struct cmus_opt *opt = option_find(name);

@@ -64,6 +64,7 @@ struct expr {
 };
 
 struct expr *expr_parse(const char *str);
+struct expr* expr_parse_format(const char *str);
 int expr_check_leaves(struct expr **exprp, const char *(*get_filter)(const char *name));
 int expr_eval(struct expr *expr, struct track_info *ti);
 void expr_free(struct expr *expr);

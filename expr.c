@@ -138,6 +138,8 @@ static struct token *get_int_or_key(const char *str, int *idxp)
 	while (str[e]) {
 		int i, c = str[e];
 
+		if (isspace(c))
+			goto out;
 		for (i = 0; i < NR_SPECIALS; i++) {
 			if (c == specials[i])
 				goto out;
@@ -208,6 +210,8 @@ static int tokenize(struct list_head *head, const char *str)
 	int idx = 0;
 
 	while (1) {
+		while (isspace(str[idx]))
+			++idx;
 		if (str[idx] == 0)
 			break;
 		tok = get_token(str, &idx);
@@ -745,6 +749,43 @@ struct expr *expr_parse(const char *str)
 		str = long_str = expand_short_expr(str);
 		if (!str)
 			goto out;
+	}
+
+	if (tokenize(&head, str))
+		goto out;
+
+	item = head.next;
+	if (parse(&root, &head, &item, 0))
+		root = NULL;
+	free_tokens(&head);
+
+out:
+	free(u_str);
+	free(long_str);
+	return root;
+}
+
+struct expr *expr_parse_format(const char *str)
+{
+	LIST_HEAD(head);
+	struct expr *root = NULL;
+	struct list_head *item;
+	char *long_str = NULL, *u_str = NULL;
+	int i;
+
+	for (i = 0; str[i]; i++) {
+		unsigned char c = str[i];
+		if (c < 0x20) {
+			set_error("condition contains control characters");
+			goto out;
+		}
+	}
+	if (!using_utf8 && utf8_encode(str, charset, &u_str) == 0) {
+		str = u_str;
+	}
+	if (!u_is_valid(str)) {
+		set_error("invalid UTF-8");
+		goto out;
 	}
 
 	if (tokenize(&head, str))

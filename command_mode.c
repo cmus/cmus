@@ -353,6 +353,27 @@ static int flag_to_view(int flag)
 	}
 }
 
+static struct window *current_win(void)
+{
+	switch (cur_view) {
+	case TREE_VIEW:
+		return lib_cur_win;
+	case SORTED_VIEW:
+		return lib_editable.win;
+	case PLAYLIST_VIEW:
+		return pl_editable.win;
+	case QUEUE_VIEW:
+		return pq_editable.win;
+	case BROWSER_VIEW:
+		return browser_win;
+	case HELP_VIEW:
+		return help_win;
+	case FILTERS_VIEW:
+	default:
+		return filters_win;
+	}
+}
+
 static void cmd_add(char *arg)
 {
 	int flag = parse_flags((const char **)&arg, "lpqQ");
@@ -425,6 +446,14 @@ static void cmd_set(char *arg)
 	if (value) {
 		option_set(arg, value);
 		help_win->changed = 1;
+		if (cur_view == TREE_VIEW) {
+			lib_track_win->changed = 1;
+			lib_tree_win->changed = 1;	
+		} else {
+			current_win()->changed = 1;
+		}
+		update_titleline();
+		update_statusline();
 	} else {
 		struct cmus_opt *opt;
 		char buf[OPTION_MAX_SIZE];
@@ -455,6 +484,14 @@ static void cmd_toggle(char *arg)
 	}
 	opt->toggle(opt->id);
 	help_win->changed = 1;
+	if (cur_view == TREE_VIEW) {
+		lib_track_win->changed = 1;
+		lib_tree_win->changed = 1;	
+	} else {
+		current_win()->changed = 1;
+	}
+	update_titleline();
+	update_statusline();
 }
 
 static int get_number(char *str, char **end)
@@ -1641,27 +1678,6 @@ static void cmd_win_toggle(char *arg)
 	case HELP_VIEW:
 		help_toggle();
 		break;
-	}
-}
-
-static struct window *current_win(void)
-{
-	switch (cur_view) {
-	case TREE_VIEW:
-		return lib_cur_win;
-	case SORTED_VIEW:
-		return lib_editable.win;
-	case PLAYLIST_VIEW:
-		return pl_editable.win;
-	case QUEUE_VIEW:
-		return pq_editable.win;
-	case BROWSER_VIEW:
-		return browser_win;
-	case HELP_VIEW:
-		return help_win;
-	case FILTERS_VIEW:
-	default:
-		return filters_win;
 	}
 }
 
