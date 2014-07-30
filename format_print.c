@@ -536,16 +536,15 @@ static void format_parse(int str_width, const char *format, const struct format_
 
 	while ( (f_size > 0 && s < f_size) || (f_size < 0 && format[s]) ) {
 		const struct format_option *fo;
-		int cw, long_len = 0;
+		int long_len = 0;
 		const char *long_begin = NULL;
 		uchar u;
 
 		u = u_get_char(format, &s);
 		if (u != '%') {
-			cw = u_char_width(u);
-			gbuf_grow(str, cw);
+			gbuf_grow(str, 4);
 			u_set_char(str->buffer, &str->len, u);
-			(*len) += cw;
+			(*len) += u_char_width(u);
 			continue;
 		}
 		u = u_get_char(format, &s);
