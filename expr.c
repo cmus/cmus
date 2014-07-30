@@ -1090,6 +1090,8 @@ void expr_free(struct expr *expr)
 	free(expr->key);
 	if (expr->type == EXPR_STR)
 		glob_free(&expr->estr.glob_head);
+	else if (expr->type == EXPR_ID)
+		free(expr->eid.key);
 	free(expr);
 }
 
