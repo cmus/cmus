@@ -440,10 +440,11 @@ static uchar format_skip_cond_expr(const char *format, int *s)
 			uchar q = u;
 			while (1) {
 				u = u_get_char(format, &i);
-				BUG_ON(u == 0);
-				if (u == q)
+				if (u == q || u == 0)
 					break;
 			}
+			if (u == 0)
+				break;
 			start_of_token = 1;
 			continue;
 		}
@@ -473,14 +474,14 @@ static uchar format_skip_cond_expr(const char *format, int *s)
 		if (u == '{') {
 			while (1) {
 				u = u_get_char(format, &i);
-				BUG_ON(u == 0);
-				if (u == '}')
+				if (u == '}' || u == 0)
 					break;
 			}
+			if (u == 0)
+				break;
 		}
 		start_of_token = 1;
 	}
-	BUG_ON(r == 0);
 	*s = i;
 	return r;
 }
@@ -494,7 +495,7 @@ static void format_parse_if(int str_width, const char *format, const struct form
 	BUG_ON(t != 't');
 	then_pos = *s;
 	t = format_skip_cond_expr(format, s);
-	BUG_ON(t == 't');
+	BUG_ON(t == 't' || t == 0);
 	if (t == 'e') {
 		else_pos = *s;
 		t = format_skip_cond_expr(format, s);
@@ -701,7 +702,7 @@ static int format_valid_if(const char *format, const struct format_option *fopts
 		return 0;
 	then_pos = *s;
 	t = format_skip_cond_expr(format, s);
-	if (t == 't')
+	if (t == 't' || t == 0)
 		return 0;
 	if (t == 'e') {
 		else_pos = *s;
