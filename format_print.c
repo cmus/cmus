@@ -440,7 +440,9 @@ static uchar format_skip_cond_expr(const char *format, int *s)
 			uchar q = u;
 			while (1) {
 				u = u_get_char(format, &i);
-				if (u == q || u == 0)
+				if (u == '%')
+					u = u_get_char(format, &i);
+				else if (u == q || u == 0)
 					break;
 			}
 			if (u == 0)
@@ -523,6 +525,7 @@ static void format_parse_if(int str_width, const char *format, const struct form
 static void format_parse(int str_width, const char *format, const struct format_option *fopts, int f_size)
 {
 	int s = 0;
+	uchar in_quotes = 0;
 
 	if (f_size > 0) {
 		while (s < f_size && isspace(format[s]))
@@ -538,8 +541,15 @@ static void format_parse(int str_width, const char *format, const struct format_
 		uchar u;
 
 		u = u_get_char(format, &s);
-		if (f_size > 0 && (u == '"' || u == '\''))
-			continue;
+		if (f_size > 0 && (u == '"' || u == '\'')) {
+			if (!in_quotes) {
+				in_quotes = u;
+				continue;
+			} else if (in_quotes == u) {
+				in_quotes = 0;
+				continue;
+			} 
+		}
 
 		if (u != '%') {
 			gbuf_grow(str, 4);
