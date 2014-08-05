@@ -616,13 +616,13 @@ struct fp_len format_print(char *buf, int str_width, const char *format, const s
 	if (str_len.llen > 0) {
 		int ul = u_str_width(l_str.buffer);
 		if (ul != str_len.llen)
-			d_print("L %d != %d: size=%d '%s'\n", ul, str_len.llen, l_str.len, l_str.buffer);
+			d_print("L %d != %d: size=%zu '%s'\n", ul, str_len.llen, l_str.len, l_str.buffer);
 	}
 
 	if (str_len.rlen > 0) {
 		int ul = u_str_width(r_str.buffer);
 		if (ul != str_len.rlen)
-			d_print("R %d != %d: size=%d '%s'\n", ul, str_len.rlen, r_str.len, r_str.buffer);
+			d_print("R %d != %d: size=%zu '%s'\n", ul, str_len.rlen, r_str.len, r_str.buffer);
 	}
 #endif
 
