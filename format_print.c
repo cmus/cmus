@@ -514,7 +514,7 @@ static void format_parse(int str_width, const char *format, const struct format_
 
 		if (u != '%') {
 			gbuf_grow(str, 4);
-			u_set_char(str->buffer, &str->len, u);
+			u_set_char(str->buffer, (int *)&str->len, u);
 			(*len) += u_char_width(u);
 			continue;
 		}
