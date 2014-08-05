@@ -322,11 +322,9 @@ static int format_eval_cond(struct expr* expr, const struct format_option *fopts
 		int a = 0, b = 0;
 		const char *sa, *sb;
 		int res = 0;
-		if ( (sa = str_val(key, fopts, buf)) ) {
-			if ( (sb = str_val(expr->eid.key, fopts, buf)) ) {
-				res = strcmp(sa, sb);
-				return expr_op_to_bool(res, expr->eid.op);
-			}
+		if ( (sa = str_val(key, fopts, buf)) && (sb = str_val(expr->eid.key, fopts, buf)) ) {
+			res = strcmp(sa, sb);
+			return expr_op_to_bool(res, expr->eid.op);
 		} else {
 			a = int_val(key, fopts, buf);
 			b = int_val(key, fopts, buf);
