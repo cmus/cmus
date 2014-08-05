@@ -378,20 +378,18 @@ static uchar format_skip_cond_expr(const char *format, int *s)
 	while (format[i]) {
 		uchar u = u_get_char(format, &i);
 		if (start_of_token && u == 't') {
-			if (strcmp("hen ", format + i)) {
-				i += 4;
+			if (strncmp("hen ", format + i, strlen("hen ")) == 0) {
+				i += strlen("hen ");
 				r = 't';
 				break;
 			}
-			start_of_token = 0;
 		}
 		if (start_of_token && u == 'e') {
-			if (strcmp("lse ", format + i)) {
-				i += 4;
+			if (strncmp("lse ", format + i, strlen("lse ")) == 0) {
+				i += strlen("lse ");
 				r = 'e';
 				break;
 			}
-			start_of_token = 0;
 		}
 		if (u == '}') {
 			r = u;
@@ -495,7 +493,7 @@ static void format_parse(int str_width, const char *format, const struct format_
 			--f_size;
 	}
 
-	while ( (f_size > 0 && s < f_size) || (f_size < 0 && format[s]) ) {
+	while ((f_size > 0 && s < f_size) || (f_size < 0 && format[s])) {
 		const struct format_option *fo;
 		int long_len = 0;
 		const char *long_begin = NULL;
@@ -553,8 +551,8 @@ static void format_parse(int str_width, const char *format, const struct format_
 		}
 		if (u == '{') {
 			long_begin = format + s;
-			if (f_size < 0 && strcmp("if ", format + s)) {
-				s += 3;
+			if (f_size < 0 && strncmp("if ", long_begin, strlen("if ")) == 0) {
+				s += strlen("if ");
 				format_parse_if(str_width, format, fopts, &s);
 				continue;
 			}
@@ -685,17 +683,17 @@ static int format_valid_if(const char *format, const struct format_option *fopts
 		end_pos = *s;
 	}
 
-	struct expr *cond = format_parse_cond(format + cond_pos, then_pos - cond_pos - 5);
+	struct expr *cond = format_parse_cond(format + cond_pos, then_pos - cond_pos - strlen("then "));
 	if (cond == NULL) {
 		expr_free(cond);
 		return 0;
 	}
 	expr_free(cond);
 
-	if (!format_valid_sub(format + then_pos, fopts, (else_pos > 0 ? else_pos : end_pos) - then_pos - 5))
+	if (!format_valid_sub(format + then_pos, fopts, (else_pos > 0 ? else_pos - strlen("else ") : end_pos - 1) - then_pos))
 		return 0;
 	if (else_pos > 0)
-		if (!format_valid_sub(format + else_pos, fopts, end_pos - else_pos - 5))
+		if (!format_valid_sub(format + else_pos, fopts, end_pos - 1 - else_pos))	
 			return 0;
 
 	*s = end_pos;
@@ -706,7 +704,7 @@ static int format_valid_sub(const char *format, const struct format_option *fopt
 {
 	int s = 0;
 
-	while ( (f_size > 0 && s < f_size) || (f_size < 0 && format[s]) ) {
+	while ((f_size > 0 && s < f_size) || (f_size < 0 && format[s])) {
 		uchar u;
 
 		u = u_get_char(format, &s);
@@ -730,8 +728,8 @@ static int format_valid_sub(const char *format, const struct format_option *fopt
 				u = u_get_char(format, &s);
 			if (u == '{') {
 				long_begin = format + s;
-				if (f_size < 0 && strcmp("if ", format + s)) {
-					s += 3;
+				if (f_size < 0 && strncmp("if ", long_begin, strlen("if ")) == 0) {
+					s += strlen("if ");
 					if (!format_valid_if(format, fopts, &s))
 						return 0;
 					else
