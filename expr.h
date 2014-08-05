@@ -78,6 +78,7 @@ struct expr {
 struct expr *expr_parse(const char *str);
 struct expr* expr_parse_i(const char *str, const char *err_msg, int check_short);
 int expr_check_leaves(struct expr **exprp, const char *(*get_filter)(const char *name));
+int expr_op_to_bool(int res, int op);
 int expr_eval(struct expr *expr, struct track_info *ti);
 void expr_free(struct expr *expr);
 const char *expr_error(void);

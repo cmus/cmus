@@ -317,20 +317,7 @@ static int format_eval_cond(struct expr* expr, const struct format_option *fopts
 		int res;
 
 		res = val - expr->eint.val;
-		switch (expr->eint.op) {
-		case IOP_LT:
-			return res < 0;
-		case IOP_LE:
-			return res <= 0;
-		case IOP_EQ:
-			return res == 0;
-		case IOP_GE:
-			return res >= 0;
-		case IOP_GT:
-			return res > 0;
-		case IOP_NE:
-			return res != 0;
-		}
+		return expr_op_to_bool(res, expr->eint.op);
 	} else if (type == EXPR_ID) {
 		int a = 0, b = 0;
 		const char *sa, *sb;
@@ -338,20 +325,7 @@ static int format_eval_cond(struct expr* expr, const struct format_option *fopts
 		if ( (sa = str_val(key, fopts, buf)) ) {
 			if ( (sb = str_val(expr->eid.key, fopts, buf)) ) {
 				res = strcmp(sa, sb);
-				switch (expr->eid.op) {
-				case KOP_LT:
-					return res < 0;
-				case KOP_LE:
-					return res <= 0;
-				case KOP_EQ:
-					return res == 0;
-				case KOP_GE:
-					return res >= 0;
-				case KOP_GT:
-					return res > 0;
-				case KOP_NE:
-					return res != 0;
-				}
+				return expr_op_to_bool(res, expr->eid.op);
 			}
 		} else {
 			a = int_val(key, fopts, buf);
@@ -367,20 +341,7 @@ static int format_eval_cond(struct expr* expr, const struct format_option *fopts
 					return 0;
 				}								
 			}
-			switch (expr->eid.op) {
-			case KOP_LT:
-				return res < 0;
-			case KOP_LE:
-				return res <= 0;
-			case KOP_EQ:
-				return res == 0;
-			case KOP_GE:
-				return res >= 0;
-			case KOP_GT:
-				return res > 0;
-			case KOP_NE:
-				return res != 0;
-			}
+			return expr_op_to_bool(res, expr->eid.op);
 		}
 		return res;
 	}

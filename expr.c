@@ -928,6 +928,26 @@ static int int_val(const char *key, struct track_info *ti)
 	return val;
 }
 
+int expr_op_to_bool(int res, int op)
+{
+	switch (op) {
+	case OP_LT:
+		return res < 0;
+	case OP_LE:
+		return res <= 0;
+	case OP_EQ:
+		return res == 0;
+	case OP_GE:
+		return res >= 0;
+	case OP_GT:
+		return res > 0;
+	case OP_NE:
+		return res != 0;
+	default:
+		return 0;
+	}
+}
+
 int expr_eval(struct expr *expr, struct track_info *ti)
 {
 	enum expr_type type = expr->type;
@@ -972,20 +992,7 @@ int expr_eval(struct expr *expr, struct track_info *ti)
 			return 0;
 		}
 		res = val - expr->eint.val;
-		switch (expr->eint.op) {
-		case IOP_LT:
-			return res < 0;
-		case IOP_LE:
-			return res <= 0;
-		case IOP_EQ:
-			return res == 0;
-		case IOP_GE:
-			return res >= 0;
-		case IOP_GT:
-			return res > 0;
-		case IOP_NE:
-			return res != 0;
-		}
+		return expr_op_to_bool(res, expr->eint.op);
 	} else if (type == EXPR_ID) {
 		int a = 0, b = 0;
 		const char *sa, *sb;
@@ -996,20 +1003,7 @@ int expr_eval(struct expr *expr, struct track_info *ti)
 				res = strcmp(sa, sb);
 				free(fa);
 				free(fb);
-				switch (expr->eid.op) {
-				case KOP_LT:
-					return res < 0;
-				case KOP_LE:
-					return res <= 0;
-				case KOP_EQ:
-					return res == 0;
-				case KOP_GE:
-					return res >= 0;
-				case KOP_GT:
-					return res > 0;
-				case KOP_NE:
-					return res != 0;
-				}
+				return expr_op_to_bool(res, expr->eid.op);
 			}
 			free(fa);
 		} else {
@@ -1026,20 +1020,7 @@ int expr_eval(struct expr *expr, struct track_info *ti)
 					return 0;
 				}								
 			}
-			switch (expr->eid.op) {
-			case KOP_LT:
-				return res < 0;
-			case KOP_LE:
-				return res <= 0;
-			case KOP_EQ:
-				return res == 0;
-			case KOP_GE:
-				return res >= 0;
-			case KOP_GT:
-				return res > 0;
-			case KOP_NE:
-				return res != 0;
-			}
+			return expr_op_to_bool(res, expr->eid.op);
 		}
 		return res;
 	}
