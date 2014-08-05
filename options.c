@@ -1365,7 +1365,7 @@ struct cmus_opt *option_find_silent(const char *name)
 		if (strcmp(name, opt->name) == 0)
 			return opt;
 	}
-	return NULL;	
+	return NULL;
 }
 
 void option_set(const char *name, const char *value)

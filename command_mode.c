@@ -448,7 +448,7 @@ static void cmd_set(char *arg)
 		help_win->changed = 1;
 		if (cur_view == TREE_VIEW) {
 			lib_track_win->changed = 1;
-			lib_tree_win->changed = 1;	
+			lib_tree_win->changed = 1;
 		} else {
 			current_win()->changed = 1;
 		}
@@ -486,7 +486,7 @@ static void cmd_toggle(char *arg)
 	help_win->changed = 1;
 	if (cur_view == TREE_VIEW) {
 		lib_track_win->changed = 1;
-		lib_tree_win->changed = 1;	
+		lib_tree_win->changed = 1;
 	} else {
 		current_win()->changed = 1;
 	}

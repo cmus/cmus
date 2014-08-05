@@ -323,7 +323,7 @@ static int parse_one(struct expr **exprp, struct list_head *head, struct list_he
 			new->eid.key = xstrdup(tok->str);
 			new->eid.op = op;
 			*exprp = new;
-			return 0;			
+			return 0;
 		}
 		if (op == OP_EQ || op == OP_NE) {
 			set_error("integer or string expected");
@@ -807,7 +807,7 @@ int expr_check_leaves(struct expr **exprp, const char *(*get_filter)(const char 
 		}
 		return 0;
 	}
-	
+
 	if (expr->type != EXPR_BOOL) {
 		/* unknown key */
 		set_error("unknown key %s", expr->key);
@@ -968,7 +968,7 @@ int expr_eval(struct expr *expr, struct track_info *ti)
 	if (type == EXPR_STR) {
 		int res;
 		char *need_free;
-		const char *val = str_val(key, ti, &need_free);			
+		const char *val = str_val(key, ti, &need_free);
 		res = glob_match(&expr->estr.glob_head, val);
 		free(need_free);
 		if (expr->estr.op == SOP_EQ)
@@ -1018,7 +1018,7 @@ int expr_eval(struct expr *expr, struct track_info *ti)
 					return res != 0;
 				default:
 					return 0;
-				}								
+				}
 			}
 			return expr_op_to_bool(res, expr->eid.op);
 		}

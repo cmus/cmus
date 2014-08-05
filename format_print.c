@@ -47,7 +47,7 @@ static void stack_print(char *stack, int stack_len)
 
 	gbuf_grow(str, width ? width : stack_len);
 	char* buf = str->buffer + str->len;
-	
+
 	if (width) {
 		if (align_left) {
 			while (i < width && stack_len)
@@ -282,7 +282,7 @@ static int int_val(const char *key, const struct format_option *fopts, char *buf
 	return val;
 }
 
-static int format_eval_cond(struct expr* expr, const struct format_option *fopts) 
+static int format_eval_cond(struct expr* expr, const struct format_option *fopts)
 {
 	if (!expr)
 		return -1;
@@ -309,13 +309,13 @@ static int format_eval_cond(struct expr* expr, const struct format_option *fopts
 	if (type == EXPR_STR) {
 		const char *val = str_val(key, fopts, buf);
 		int res;
-		
+
 		res = glob_match(&expr->estr.glob_head, val);
 		if (expr->estr.op == SOP_EQ)
 			return res;
 		return !res;
 	} else if (type == EXPR_INT) {
-		int val = int_val(key, fopts, buf); 
+		int val = int_val(key, fopts, buf);
 		int res;
 
 		res = val - expr->eint.val;
@@ -339,7 +339,7 @@ static int format_eval_cond(struct expr* expr, const struct format_option *fopts
 					return res != 0;
 				default:
 					return 0;
-				}								
+				}
 			}
 			return expr_op_to_bool(res, expr->eid.op);
 		}
@@ -347,7 +347,7 @@ static int format_eval_cond(struct expr* expr, const struct format_option *fopts
 	}
 	if (strcmp(key, "stream") == 0) {
 		fo = find_fopt(fopts, "filename");
-		return fo && is_http_url(fo->fo_str);		
+		return fo && is_http_url(fo->fo_str);
 	}
 	fo = find_fopt(fopts, key);
 	if (fo)
@@ -382,7 +382,7 @@ static uchar format_skip_cond_expr(const char *format, int *s)
 				i += 4;
 				r = 't';
 				break;
-			}	
+			}
 			start_of_token = 0;
 		}
 		if (start_of_token && u == 'e') {
@@ -468,13 +468,13 @@ static void format_parse_if(int str_width, const char *format, const struct form
 		end_pos = *s;
 	}
 
-	struct expr *cond = format_parse_cond(format + cond_pos, then_pos - cond_pos - strlen("then "));	
+	struct expr *cond = format_parse_cond(format + cond_pos, then_pos - cond_pos - strlen("then "));
 	cond_res = format_eval_cond(cond, fopts);
 	expr_free(cond);
 
 	BUG_ON(cond_res < 0);
 	if (cond_res) {
-		format_parse(str_width, format + then_pos, fopts, 
+		format_parse(str_width, format + then_pos, fopts,
 				(else_pos > 0 ? else_pos - strlen("else ") : end_pos - 1) - then_pos);
 	} else if (else_pos > 0) {
 		format_parse(str_width, format + else_pos, fopts, end_pos - 1 - else_pos);
@@ -509,7 +509,7 @@ static void format_parse(int str_width, const char *format, const struct format_
 			} else if (in_quotes == u) {
 				in_quotes = 0;
 				continue;
-			} 
+			}
 		}
 
 		if (u != '%') {
@@ -684,14 +684,14 @@ static int format_valid_if(const char *format, const struct format_option *fopts
 	} else {
 		end_pos = *s;
 	}
-	
+
 	struct expr *cond = format_parse_cond(format + cond_pos, then_pos - cond_pos - 5);
 	if (cond == NULL) {
 		expr_free(cond);
 		return 0;
 	}
 	expr_free(cond);
-	
+
 	if (!format_valid_sub(format + then_pos, fopts, (else_pos > 0 ? else_pos : end_pos) - then_pos - 5))
 		return 0;
 	if (else_pos > 0)
@@ -734,7 +734,7 @@ static int format_valid_sub(const char *format, const struct format_option *fopt
 					s += 3;
 					if (!format_valid_if(format, fopts, &s))
 						return 0;
-					else 
+					else
 						continue;
 				}
 
