@@ -240,7 +240,7 @@ static const struct format_option *find_fopt(const struct format_option *fopts, 
 	const struct format_option *fo;
 	char ch = strlen(key) == 1 ? *key : 0;
 	for (fo = fopts; fo->type != 0; fo++) {
-		if ( (ch != 0 && fo->ch == ch) || strnequal(fo->str, key, strlen(key)) ) {
+		if ((ch != 0 && fo->ch == ch) || strnequal(fo->str, key, strlen(key))) {
 			return fo;
 		}
 	}
@@ -254,7 +254,7 @@ static const char *str_val(const char *key, const struct format_option *fopts, c
 	const char *val = NULL;
 
 	fo = find_fopt(fopts, key);
-	if (fo) {
+	if (fo && !fo->empty) {
 		if (fo->type == FO_STR)
 			val = fo->fo_str;
 	} else {
@@ -275,7 +275,7 @@ static int int_val(const char *key, const struct format_option *fopts, char *buf
 	int val = -1;
 
 	fo = find_fopt(fopts, key);
-	if (fo) {
+	if (fo && !fo->empty) {
 		if (fo->type == FO_INT)
 			val = fo->fo_int;
 	}
