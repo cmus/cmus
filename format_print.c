@@ -466,14 +466,14 @@ static void format_parse_if(int str_width, const char *format, const struct form
 		end_pos = *s;
 	}
 
-	struct expr *cond = format_parse_cond(format + cond_pos, then_pos - cond_pos - 5);	
+	struct expr *cond = format_parse_cond(format + cond_pos, then_pos - cond_pos - strlen("then "));	
 	cond_res = format_eval_cond(cond, fopts);
 	expr_free(cond);
 
 	BUG_ON(cond_res < 0);
 	if (cond_res) {
 		format_parse(str_width, format + then_pos, fopts, 
-				(else_pos > 0 ? else_pos - 5 : end_pos - 1) - then_pos);
+				(else_pos > 0 ? else_pos - strlen("else ") : end_pos - 1) - then_pos);
 	} else if (else_pos > 0) {
 		format_parse(str_width, format + else_pos, fopts, end_pos - 1 - else_pos);
 	}
