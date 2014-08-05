@@ -290,6 +290,8 @@ static int format_eval_cond(struct expr* expr, const struct format_option *fopts
 	const char *key;
 	const struct format_option *fo;
 	const struct cmus_opt *opt;
+	/* FIXME:
+	 * it can be overflowed in theory, but we can't find out option's size */
 	char buf[512];
 
 	if (expr->left) {
