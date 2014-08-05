@@ -998,8 +998,8 @@ int expr_eval(struct expr *expr, struct track_info *ti)
 		const char *sa, *sb;
 		char *fa, *fb;
 		int res = 0;
-		if ( (sa = str_val(key, ti, &fa)) ) {
-			if ( (sb = str_val(expr->eid.key, ti, &fb)) ) {
+		if ((sa = str_val(key, ti, &fa))) {
+			if ((sb = str_val(expr->eid.key, ti, &fb))) {
 				res = strcmp(sa, sb);
 				free(fa);
 				free(fb);
