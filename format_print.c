@@ -686,7 +686,10 @@ static int format_valid_if(const char *format, const struct format_option *fopts
 	}
 	
 	struct expr *cond = format_parse_cond(format + cond_pos, then_pos - cond_pos - 5);
-	BUG_ON(cond == NULL);
+	if (cond == NULL) {
+		expr_free(cond);
+		return 0;
+	}
 	expr_free(cond);
 	
 	if (!format_valid_sub(format + then_pos, fopts, (else_pos > 0 ? else_pos : end_pos) - then_pos - 5))
