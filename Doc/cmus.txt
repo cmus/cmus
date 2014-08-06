@@ -1102,6 +1102,10 @@ Special Keys:
 		start align right (use at most once)
 	%%
 		literal *%*
+	%"
+		literal *"*
+	%'
+		literal *'*
 
 You can use printf style formatting (width, alignment, padding). As an
 extension, the width can have a %-suffix, to specify a percentage of the
@@ -1111,10 +1115,20 @@ To see current value of an option type *:set option=<TAB>*.
 Note: With %{bitrate}, you'll have to append the unit yourself, as mentioned
 in the example below.
 
+You can use conditional operator *%{if CONDITION then A [else B] }*.
+CONDITION has the same syntax as `filters`, except for short or simple 
+expresssions. Its keys are:
+	format strings' special keys @br
+	configuration options @br
+	keyword *stream* [boolean] (returns true if track is a stream) @br
+	keyword *va* [boolean] (returns true if track's album is compilation)
+Else part can be skipped. A and B can contain string literal in *"* or *'*.
+A and B can be empty.
+
 Examples:
 
 	@pre
-	:set format_trackwin= %02n. %t (%y)%= %d
+	:set format_trackwin= %02n. %t %{if y then (%y)}%= %d
 	:set format_current= %n. %-30t %40F (%y)%= %d
 	:set format_current= %a - %l - %02n. %t%= %{bitrate}Kbps %g %y
 	:set format_playlist= %f%= %6{rg_track_gain} dB  %8{rg_track_peak}
@@ -1293,6 +1307,12 @@ Comparators: *<*, *<=*, *=*, *>=*, *>*, *!=*
 Comparators: *<*, *>*
 @br
 Ranges: *a-b* (>=a&<=b), *-b* (<=b), *a-* (>=a)
+
+@h2 Keys
+
+All keys mentioned above. If types of keys don't match, returns false.
+@br
+Comparators: *<*, *<=*, *=*, *>=*, *>*, *!=*
 
 @h2 Booleans
 
