@@ -50,6 +50,7 @@ struct track_info *track_info_new(const char *filename)
 	ti = xnew(struct track_info, 1);
 	ti->filename = xstrdup(filename);
 	ti->ref = 1;
+	ti->play_count = 0;
 	ti->comments = NULL;
 	ti->codec = NULL;
 	ti->codec_profile = NULL;
