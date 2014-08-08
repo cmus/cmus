@@ -51,6 +51,7 @@ struct cache_entry {
 	int duration;
 	long bitrate;
 	time_t mtime;
+	long play_count;
 
 	// filename, codec, codec_profile and N * (key, val)
 	char strings[];
@@ -62,8 +63,6 @@ struct cache_entry {
 static struct track_info *hash_table[HASH_SIZE];
 static char *cache_filename;
 static int total;
-static int removed;
-static int new;
 
 pthread_mutex_t cache_mutex = CMUS_MUTEX_INITIALIZER;
 
@@ -113,6 +112,7 @@ static struct track_info *cache_entry_to_ti(struct cache_entry *e)
 	ti->duration = e->duration;
 	ti->bitrate = e->bitrate;
 	ti->mtime = e->mtime;
+	ti->play_count = e->play_count;
 
 	// count strings (filename + codec + codec_profile + key/val pairs)
 	count = 0;
@@ -173,7 +173,6 @@ static void do_cache_remove_ti(struct track_info *ti, unsigned int hash)
 				hash_table[pos] = next;
 			}
 			total--;
-			removed++;
 			track_info_unref(ti);
 			return;
 		}
@@ -253,7 +252,7 @@ int cache_init(void)
 	cache_header[4] = flags & 0xff;
 
 	/* assumed version */
-	cache_header[3] = 0x09;
+	cache_header[3] = 0x0a;
 
 	cache_filename = xstrjoin(cmus_config_dir, "/cache");
 	return read_cache();
@@ -308,6 +307,7 @@ static void write_ti(int fd, struct gbuf *buf, struct track_info *ti, unsigned i
 	e.duration = ti->duration;
 	e.bitrate = ti->bitrate;
 	e.mtime = ti->mtime;
+	e.play_count = ti->play_count;
 	len[count] = strlen(ti->filename) + 1;
 	e.size += len[count++];
 	len[count] = (ti->codec ? strlen(ti->codec) : 0) + 1;
@@ -352,9 +352,6 @@ int cache_close(void)
 	unsigned int offset;
 	int i, fd, rc;
 	char *tmp;
-
-	if (!new && !removed)
-		return 0;
 
 	tmp = xstrjoin(cmus_config_dir, "/cache.tmp");
 	fd = open(tmp, O_WRONLY | O_CREAT | O_TRUNC, 0666);
@@ -438,7 +435,6 @@ struct track_info *cache_get_ti(const char *filename, int force)
 		if (!ti)
 			return NULL;
 		add_ti(ti, hash);
-		new++;
 	}
 	track_info_ref(ti);
 	return ti;
@@ -491,7 +487,6 @@ struct track_info **cache_refresh(int *count, int force)
 			new_ti = ip_get_ti(ti->filename);
 			if (new_ti) {
 				add_ti(new_ti, hash);
-				new++;
 
 				if (ti->ref == 1) {
 					track_info_unref(ti);

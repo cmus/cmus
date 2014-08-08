@@ -816,6 +816,9 @@ static void __consumer_handle_eof(void)
 		return;
 	}
 
+	if (player_info.ti)
+		player_info.ti->play_count++;
+
 	if (get_next(&ti) == 0) {
 		__producer_unload();
 		ip = ip_new(ti->filename);

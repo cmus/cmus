@@ -423,6 +423,7 @@ static const struct {
 	{ 'g',	"genre"		},
 	{ 'l',	"album"		},
 	{ 'n',	"tracknumber"	},
+	{ 'X',	"play_count"	},
 	{ 's',	"stream"	},
 	{ 't',	"title"		},
 	{ 'y',	"date"		},
@@ -447,6 +448,7 @@ static const struct {
 	{ "genre",	EXPR_STR	},
 	{ "media",	EXPR_STR	},
 	{ "originaldate",EXPR_INT	},
+	{ "play_count", EXPR_INT	},
 	{ "stream",	EXPR_BOOL	},
 	{ "tag",	EXPR_BOOL	},
 	{ "title",	EXPR_STR	},
@@ -922,6 +924,8 @@ static int int_val(const char *key, struct track_info *ti)
 		val = (ti->originaldate >= 0) ? (ti->originaldate / 10000) : -1;
 	} else if (strcmp(key, "bitrate") == 0) {
 		val = (ti->bitrate >= 0) ? (int) (ti->bitrate / 1000. + 0.5) : -1;
+	} else if (strcmp(key, "play_count") == 0) {
+		val = ti->play_count;
 	} else {
 		val = comments_get_int(ti->comments, key);
 	}
