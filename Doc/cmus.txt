@@ -1087,7 +1087,6 @@ Special Keys:
 	%F  %{filename}		@br
 	    %{originaldate}	@br
 	    %{maxdate}		@br
-	    %{daterange}	@br
 	    %{bitrate}		@br
 	    %{codec}		@br
 	    %{codec_profile}	@br
