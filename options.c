@@ -124,6 +124,9 @@ int attrs[NR_ATTRS] = {
 };
 
 /* uninitialized option variables */
+char *tree_win_format = NULL;
+char *tree_win_artist_format = NULL;
+char *track_win_album_format = NULL;
 char *track_win_format = NULL;
 char *track_win_format_va = NULL;
 char *track_win_alt_format = NULL;
@@ -196,8 +199,11 @@ enum format_id {
 	FMT_TITLE,
 	FMT_TITLE_ALT,
 	FMT_TRACKWIN,
+	FMT_TRACKWIN_ALBUM,
 	FMT_TRACKWIN_ALT,
 	FMT_TRACKWIN_VA,
+	FMT_TREEWIN,
+	FMT_TREEWIN_ARTIST,
 
 	NR_FMTS
 };
@@ -215,9 +221,12 @@ static const struct {
 	[FMT_PLAYLIST_VA]	= { "format_playlist_va", " %-25%A %3n. %t (%a)%= %y %d "	},
 	[FMT_TITLE_ALT]		= { "altformat_title"	, "%f"					},
 	[FMT_TITLE]		= { "format_title"	, "%a - %l - %t (%y)"			},
+	[FMT_TRACKWIN_ALBUM]	= { "format_trackwin_album"	,	" %l "},
 	[FMT_TRACKWIN_ALT]	= { "altformat_trackwin", " %f%= %d "				},
 	[FMT_TRACKWIN]		= { "format_trackwin"	, "%3n. %t%= %y %d "			},
 	[FMT_TRACKWIN_VA]	= { "format_trackwin_va", "%3n. %t (%a)%= %y %d "		},
+	[FMT_TREEWIN]	= { "format_treewin"	, "  %l"	},
+	[FMT_TREEWIN_ARTIST]	= { "format_treewin_artist"	, "%a"	},
 
 	[NR_FMTS] =
 
@@ -1198,8 +1207,14 @@ static char **id_to_fmt(enum format_id id)
 		return &window_title_format;
 	case FMT_TRACKWIN:
 		return &track_win_format;
+	case FMT_TRACKWIN_ALBUM:
+		return &track_win_album_format;
 	case FMT_TRACKWIN_VA:
 		return &track_win_format_va;
+	case FMT_TREEWIN:
+		return &tree_win_format;
+	case FMT_TREEWIN_ARTIST:
+		return &tree_win_artist_format;
 	default:
 		die("unhandled format code: %d\n", id);
 	}
