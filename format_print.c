@@ -476,7 +476,8 @@ static void format_parse_if(int str_width, const char *format, const struct form
 
 	struct expr *cond = format_parse_cond(format + cond_pos, then_pos - cond_pos - strlen("then "));
 	cond_res = format_eval_cond(cond, fopts);
-	expr_free(cond);
+	if (cond)
+		expr_free(cond);
 
 	BUG_ON(cond_res < 0);
 	if (cond_res) {
@@ -565,7 +566,7 @@ static void format_parse(int str_width, const char *format, const struct format_
 				continue;
 			}
 			while (1) {
-				BUG_ON(u == 0 || s >= f_size);
+				BUG_ON(u == 0 || (f_size > 0 && s >= f_size));
 				u = u_get_char(format, &s);
 				if (u == '}')
 					break;
@@ -692,10 +693,8 @@ static int format_valid_if(const char *format, const struct format_option *fopts
 	}
 
 	struct expr *cond = format_parse_cond(format + cond_pos, then_pos - cond_pos - strlen("then "));
-	if (cond == NULL) {
-		expr_free(cond);
+	if (cond == NULL)
 		return 0;
-	}
 	expr_free(cond);
 
 	if (!format_valid_sub(format + then_pos, fopts, (else_pos > 0 ? else_pos - strlen("else ") : end_pos - 1) - then_pos))
@@ -745,7 +744,7 @@ static int format_valid_sub(const char *format, const struct format_option *fopt
 				}
 
 				while (1) {
-					if (!u || s >= f_size)
+					if (!u || (f_size > 0 && s >= f_size))
 						return 0;
 					u = u_get_char(format, &s);
 					if (u == '}')
