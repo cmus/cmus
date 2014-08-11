@@ -57,8 +57,10 @@ struct album {
 	char *sort_name;
 	char *collkey_name;
 	char *collkey_sort_name;
-	/* date of the first track added to this album */
+	/* max date of the tracks added to this album */
 	int date;
+	/* min date of the tracks added to this album */
+	int min_date;
 };
 
 struct artist {

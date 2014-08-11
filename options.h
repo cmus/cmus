@@ -147,7 +147,12 @@ extern const char * const view_names[NR_VIEWS + 1];
 extern int colors[NR_COLORS];
 extern int attrs[NR_ATTRS];
 
+/* format string for tree window (tree view) */
+extern char *tree_win_format;
+extern char *tree_win_artist_format;
+
 /* format string for track window (tree view) */
+extern char *track_win_album_format;
 extern char *track_win_format;
 extern char *track_win_format_va;
 extern char *track_win_alt_format;
