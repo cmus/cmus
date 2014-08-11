@@ -163,7 +163,8 @@ static int cmd_format_print(struct client *client, char *arg)
 	player_info_lock();
 	const struct format_option *fopts = get_global_fopts();
 	for (i = 0; i < ac; ++i) {
-		format_print_gbuf(&buf, 0, args[i], fopts);
+		if (format_valid(args[i], fopts))
+			format_print_gbuf(&buf, 0, args[i], fopts);
 		gbuf_add_ch(&buf, '\n');
 		free(args[i]);
 	}
