@@ -924,6 +924,8 @@ static int int_val(const char *key, struct track_info *ti)
 		val = (ti->originaldate >= 0) ? (ti->originaldate / 10000) : -1;
 	} else if (strcmp(key, "bitrate") == 0) {
 		val = (ti->bitrate >= 0) ? (int) (ti->bitrate / 1000. + 0.5) : -1;
+	} else if (strcmp(key, "play_count") == 0) {
+		val = ti->play_count;
 	} else {
 		val = comments_get_int(ti->comments, key);
 	}
