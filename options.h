@@ -166,6 +166,9 @@ extern char *list_win_alt_format;
 extern char *current_format;
 extern char *current_alt_format;
 
+/* format string for status line */
+extern char *statusline_format;
+
 /* format string for window title */
 extern char *window_title_format;
 extern char *window_title_alt_format;
