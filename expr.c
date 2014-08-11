@@ -423,6 +423,7 @@ static const struct {
 	{ 'g',	"genre"		},
 	{ 'l',	"album"		},
 	{ 'n',	"tracknumber"	},
+	{ 'X',	"play_count"	},
 	{ 's',	"stream"	},
 	{ 't',	"title"		},
 	{ 'y',	"date"		},
@@ -447,10 +448,11 @@ static const struct {
 	{ "genre",	EXPR_STR	},
 	{ "media",	EXPR_STR	},
 	{ "originaldate",EXPR_INT	},
+	{ "play_count", EXPR_INT },
 	{ "stream",	EXPR_BOOL	},
 	{ "tag",	EXPR_BOOL	},
 	{ "title",	EXPR_STR	},
-	{ "tracknumber",EXPR_INT	},
+	{ "tracknumber",EXPR_INT },
 	{ NULL,		-1		},
 };
 

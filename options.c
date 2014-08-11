@@ -231,7 +231,7 @@ static const struct {
 
 	[NR_FMTS] =
 
-	{ "lib_sort", "albumartist date album discnumber tracknumber title filename" },
+	{ "lib_sort", "albumartist date album discnumber tracknumber title filename play_count" },
 	{ "pl_sort", "" },
 	{ "id3_default_charset", "ISO-8859-1" },
 	{ "icecast_default_charset", "ISO-8859-1" },
@@ -341,6 +341,7 @@ static const struct {
 	{ "-artist",		REV_SORT_ARTIST		},
 	{ "-album",		REV_SORT_ALBUM		},
 	{ "-title",		REV_SORT_TITLE		},
+	{ "-play_count", REV_SORT_PLAY_COUNT },
 	{ "-tracknumber",	REV_SORT_TRACKNUMBER	},
 	{ "-discnumber",	REV_SORT_DISCNUMBER	},
 	{ "-date",		REV_SORT_DATE		},

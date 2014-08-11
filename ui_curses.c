@@ -583,7 +583,7 @@ static void fill_track_fopts_track_info(struct track_info *info)
 	fopt_set_str(&track_fopts[TF_ALBUMARTIST], info->albumartist);
 	fopt_set_str(&track_fopts[TF_ARTIST], info->artist);
 	fopt_set_str(&track_fopts[TF_ALBUM], info->album);
-	fopt_set_int(&track_fopts[TF_PLAY_COUNT], info->play_count, 0);
+	fopt_set_int(&track_fopts[TF_PLAY_COUNT], info->play_count, info->play_count == -1);
 	fopt_set_int(&track_fopts[TF_DISC], info->discnumber, info->discnumber == -1);
 	fopt_set_int(&track_fopts[TF_TRACK], info->tracknumber, info->tracknumber == -1);
 	fopt_set_str(&track_fopts[TF_TITLE], info->title);

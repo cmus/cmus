@@ -94,6 +94,7 @@ typedef size_t sort_key_t;
 #define REV_SORT_ARTIST		(REV_SORT__START + offsetof(struct track_info, collkey_artist))
 #define REV_SORT_ALBUM          (REV_SORT__START + offsetof(struct track_info, collkey_album))
 #define REV_SORT_TITLE          (REV_SORT__START + offsetof(struct track_info, collkey_title))
+#define REV_SORT_PLAY_COUNT   	(REV_SORT__START + offsetof(struct track_info, play_count))
 #define REV_SORT_TRACKNUMBER    (REV_SORT__START + offsetof(struct track_info, tracknumber))
 #define REV_SORT_DISCNUMBER     (REV_SORT__START + offsetof(struct track_info, discnumber))
 #define REV_SORT_DATE           (REV_SORT__START + offsetof(struct track_info, date))
