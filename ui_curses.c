@@ -34,7 +34,6 @@
 #include "xmalloc.h"
 #include "xstrjoin.h"
 #include "window.h"
-#include "format_print.h"
 #include "comment.h"
 #include "misc.h"
 #include "prog.h"
@@ -632,6 +631,12 @@ static void fill_track_fopts_artist(struct artist *artist)
 {
 	const char *name = display_artist_sort_name ? artist_sort_name(artist) : artist->name;
 	fopt_set_str(&track_fopts[TF_ARTIST], name);
+}
+
+const struct format_option *get_global_fopts(void)
+{
+	fill_track_fopts_track_info(player_info.ti);
+	return track_fopts;
 }
 
 static void print_tree(struct window *win, int row, struct iter *iter)
