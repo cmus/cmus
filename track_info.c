@@ -203,6 +203,7 @@ int track_info_cmp(const struct track_info *a, const struct track_info *b, const
 		case SORT_DISCNUMBER:
 		case SORT_DATE:
 		case SORT_ORIGINALDATE:
+		case SORT_PLAY_COUNT:
 			res = getentry(a, key, int) - getentry(b, key, int);
 			break;
 		case SORT_FILEMTIME:
