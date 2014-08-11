@@ -19,6 +19,8 @@
 #ifndef _FORMAT_PRINT_H
 #define _FORMAT_PRINT_H
 
+#include "gbuf.h"
+
 struct format_option {
 	union {
 		/* NULL is treated like "" */
@@ -56,7 +58,8 @@ struct fp_len {
 	int rlen;
 };
 
-struct fp_len format_print(char *str, int width, const char *format, const struct format_option *fopts);
+struct fp_len format_print(char *buf, int str_width, const char *format, const struct format_option *fopts);
+struct fp_len format_print_gbuf(struct gbuf *buf, int str_width, const char *format, const struct format_option *fopts);
 int format_valid(const char *format, const struct format_option *fopts);
 
 #endif

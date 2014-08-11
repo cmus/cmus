@@ -17,7 +17,6 @@
  */
 
 #include "format_print.h"
-#include "gbuf.h"
 #include "expr.h"
 #include "glob.h"
 #include "utils.h"
@@ -600,7 +599,7 @@ static void format_parse(int str_width, const char *format, const struct format_
 	}
 }
 
-struct fp_len format_print(char *buf, int str_width, const char *format, const struct format_option *fopts)
+static void format_read(int str_width, const char *format, const struct format_option *fopts)
 {
 	if (!l_str.buffer)
 		l_str.buffer = xmalloc(l_str.alloc);
@@ -620,20 +619,12 @@ struct fp_len format_print(char *buf, int str_width, const char *format, const s
 	gbuf_grow(&r_str, 1);
 	l_str.buffer[l_str.len] = 0;
 	r_str.buffer[r_str.len] = 0;
+}
 
-#if DEBUG > 1
-	if (str_len.llen > 0) {
-		int ul = u_str_width(l_str.buffer);
-		if (ul != str_len.llen)
-			d_print("L %d != %d: size=%zu '%s'\n", ul, str_len.llen, l_str.len, l_str.buffer);
-	}
-
-	if (str_len.rlen > 0) {
-		int ul = u_str_width(r_str.buffer);
-		if (ul != str_len.rlen)
-			d_print("R %d != %d: size=%zu '%s'\n", ul, str_len.rlen, r_str.len, r_str.buffer);
-	}
-#endif
+static void format_write(char *buf, int str_width)
+{
+	if (str_width == 0)
+		str_width = str_len.llen + str_len.rlen + (str_len.rlen > 0);
 
 	/* NOTE: any invalid UTF-8 bytes have already been converted to <xx>
 	 *       (ASCII) where x is hex digit
@@ -667,6 +658,52 @@ struct fp_len format_print(char *buf, int str_width, const char *format, const s
 		}
 		strcpy(buf + pos, r_str.buffer + idx);
 	}
+}
+
+struct fp_len format_print(char *buf, int str_width, const char *format, const struct format_option *fopts)
+{
+	format_read(str_width, format, fopts);
+
+#if DEBUG > 1
+	if (str_len.llen > 0) {
+		int ul = u_str_width(l_str.buffer);
+		if (ul != str_len.llen)
+			d_print("L %d != %d: size=%zu '%s'\n", ul, str_len.llen, l_str.len, l_str.buffer);
+	}
+
+	if (str_len.rlen > 0) {
+		int ul = u_str_width(r_str.buffer);
+		if (ul != str_len.rlen)
+			d_print("R %d != %d: size=%zu '%s'\n", ul, str_len.rlen, r_str.len, r_str.buffer);
+	}
+#endif
+
+	format_write(buf, str_width);
+	return str_len;
+}
+
+struct fp_len format_print_gbuf(struct gbuf *buf, int str_width, const char *format, const struct format_option *fopts)
+{
+	format_read(str_width, format, fopts);
+	int ws_len = str_width - str_len.llen - str_len.rlen;
+	gbuf_grow(buf, l_str.len + (ws_len > 0 ? ws_len : 0) + r_str.len);
+
+#if DEBUG > 1
+	if (str_len.llen > 0) {
+		int ul = u_str_width(l_str.buffer);
+		if (ul != str_len.llen)
+			d_print("L %d != %d: size=%zu '%s'\n", ul, str_len.llen, l_str.len, l_str.buffer);
+	}
+
+	if (str_len.rlen > 0) {
+		int ul = u_str_width(r_str.buffer);
+		if (ul != str_len.rlen)
+			d_print("R %d != %d: size=%zu '%s'\n", ul, str_len.rlen, r_str.len, r_str.buffer);
+	}
+#endif
+
+	format_write(buf->buffer + buf->len, str_width);
+	buf->len = strlen(buf->buffer);
 	return str_len;
 }
 
