@@ -941,7 +941,7 @@ error:
 	return NULL;
 }
 
-static char **parse_cmd(const char *cmd, int *args_idx, int *ac)
+char **parse_cmd(const char *cmd, int *args_idx, int *ac)
 {
 	char **av = NULL;
 	int nr = 0;
