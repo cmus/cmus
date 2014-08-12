@@ -795,7 +795,7 @@ static int change_sf(int drop)
 
 static void __consumer_handle_eof(void)
 {
-	struct track_info *ti = NULL;
+	struct track_info *ti;
 
 	if (ip_is_remote(ip)) {
 		__producer_stop();
@@ -816,7 +816,6 @@ static void __consumer_handle_eof(void)
 		return;
 	}
 
-	/* increment the track's play count */
 	if (player_info.ti) 
 		player_info.ti->play_count++;
 
