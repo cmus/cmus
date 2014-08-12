@@ -150,6 +150,11 @@ static int cmd_status(struct client *client)
 
 static int cmd_format_print(struct client *client, char *arg)
 {
+	if (run_only_safe_commands) {
+		d_print("trying to execute unsafe command over net\n");
+		return 0;
+	}
+
 	int args_idx, ac, i, ret;
 	char **args = parse_cmd(arg, &args_idx, &ac);
 
