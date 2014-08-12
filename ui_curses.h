@@ -21,6 +21,7 @@
 
 #include "search.h"
 #include "compiler.h"
+#include "format_print.h"
 
 enum ui_input_mode {
 	NORMAL_MODE,
@@ -65,6 +66,7 @@ int track_format_valid(const char *format);
 
 /* lock player_info ! */
 const char *get_stream_title(void);
+const struct format_option *get_global_fopts(void);
 
 int get_track_win_x(void);
 

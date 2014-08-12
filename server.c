@@ -33,6 +33,7 @@
 #include "misc.h"
 #include "keyval.h"
 #include "convert.h"
+#include "format_print.h"
 
 #include <stdarg.h>
 #include <unistd.h>
@@ -147,6 +148,40 @@ static int cmd_status(struct client *client)
 	return ret;
 }
 
+static int cmd_format_print(struct client *client, char *arg)
+{
+	if (run_only_safe_commands) {
+		d_print("trying to execute unsafe command over net\n");
+		return 0;
+	}
+
+	int args_idx, ac, i, ret;
+	char **args = parse_cmd(arg, &args_idx, &ac);
+
+	if (args == NULL) {
+		error_msg("not enough arguments\n");
+		return 0;
+	}
+
+	GBUF(buf);
+
+	player_info_lock();
+	const struct format_option *fopts = get_global_fopts();
+	for (i = 0; i < ac; ++i) {
+		if (format_valid(args[i], fopts))
+			format_print_gbuf(&buf, 0, args[i], fopts);
+		gbuf_add_ch(&buf, '\n');
+		free(args[i]);
+	}
+	gbuf_add_ch(&buf, '\n');
+	player_info_unlock();
+
+	ret = write_all(client->fd, buf.buffer, buf.len);
+	gbuf_free(&buf);
+	free(args);
+	return ret;
+}
+
 static ssize_t send_answer(int fd, const char *format, ...)
 {
 	char buf[512];
@@ -240,6 +275,8 @@ static void read_commands(struct client *client)
 			} else if (parse_command(line, &cmd, &arg)) {
 				if (!strcmp(cmd, "status")) {
 					ret = cmd_status(client);
+				} else if (!strcmp(cmd, "format_print")) {
+					ret = cmd_format_print(client, arg);
 				} else {
 					if (strcmp(cmd, "passwd") != 0) {
 						set_client_fd(client->fd);

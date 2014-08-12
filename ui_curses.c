@@ -34,7 +34,6 @@
 #include "xmalloc.h"
 #include "xstrjoin.h"
 #include "window.h"
-#include "format_print.h"
 #include "comment.h"
 #include "misc.h"
 #include "prog.h"
@@ -258,6 +257,7 @@ enum {
 	TF_GENRE,
 	TF_COMMENT,
 	TF_DURATION,
+	TF_DURATION_SEC,
 	TF_BITRATE,
 	TF_CODEC,
 	TF_CODEC_PROFILE,
@@ -282,6 +282,20 @@ enum {
 	TF_SUBTITLE,
 	TF_MEDIA,
 	TF_VA,
+	TF_STATUS,
+	TF_POSITION,
+	TF_POSITION_SEC,
+	TF_TOTAL,
+	TF_VOLUME,
+	TF_LVOLUME,
+	TF_RVOLUME,
+	TF_BUFFER,
+	TF_REPEAT,
+	TF_CONTINUE,
+	TF_FOLLOW,
+	TF_SHUFFLE,
+	TF_PLAYLISTMODE,
+
 	NR_TFS
 };
 
@@ -299,6 +313,7 @@ static struct format_option track_fopts[NR_TFS + 1] = {
 	DEF_FO_STR('g', "genre", 0),
 	DEF_FO_STR('c', "comment", 0),
 	DEF_FO_TIME('d', "duration", 0),
+	DEF_FO_INT('\0', "duration_sec", 1),
 	DEF_FO_INT('\0', "bitrate", 0),
 	DEF_FO_STR('\0', "codec", 0),
 	DEF_FO_STR('\0', "codec_profile", 0),
@@ -323,6 +338,19 @@ static struct format_option track_fopts[NR_TFS + 1] = {
 	DEF_FO_STR('\0', "subtitle", 0),
 	DEF_FO_STR('\0', "media", 0),
 	DEF_FO_INT('\0', "va", 0),
+	DEF_FO_STR('\0', "status", 0),
+	DEF_FO_TIME('\0', "position", 0),
+	DEF_FO_INT('\0', "position_sec", 1),
+	DEF_FO_TIME('\0', "total", 0),
+	DEF_FO_INT('\0', "volume", 1),
+	DEF_FO_INT('\0', "lvolume", 1),
+	DEF_FO_INT('\0', "rvolume", 1),
+	DEF_FO_INT('\0', "buffer", 1),
+	DEF_FO_STR('\0', "repeat", 0),
+	DEF_FO_STR('\0', "continue", 0),
+	DEF_FO_STR('\0', "follow", 0),
+	DEF_FO_STR('\0', "shuffle", 0),
+	DEF_FO_STR('\0', "playlist_mode", 0),
 	DEF_FO_END
 };
 
@@ -591,6 +619,7 @@ static void fill_track_fopts_track_info(struct track_info *info)
 	fopt_set_str(&track_fopts[TF_GENRE], info->genre);
 	fopt_set_str(&track_fopts[TF_COMMENT], info->comment);
 	fopt_set_time(&track_fopts[TF_DURATION], info->duration, info->duration == -1);
+	fopt_set_int(&track_fopts[TF_DURATION_SEC], info->duration, info->duration == -1);
 	fopt_set_double(&track_fopts[TF_RG_TRACK_GAIN], info->rg_track_gain, isnan(info->rg_track_gain));
 	fopt_set_double(&track_fopts[TF_RG_TRACK_PEAK], info->rg_track_peak, isnan(info->rg_track_peak));
 	fopt_set_double(&track_fopts[TF_RG_ALBUM_GAIN], info->rg_album_gain, isnan(info->rg_album_gain));
@@ -635,6 +664,63 @@ static void fill_track_fopts_artist(struct artist *artist)
 {
 	const char *name = display_artist_sort_name ? artist_sort_name(artist) : artist->name;
 	fopt_set_str(&track_fopts[TF_ARTIST], name);
+}
+
+const struct format_option *get_global_fopts(void)
+{
+	fill_track_fopts_track_info(player_info.ti);
+
+	static const char *status_strs[] = { ".", ">", "|" };
+	static const char *cont_strs[] = { " ", "C" };
+	static const char *follow_strs[] = { " ", "F" };
+	static const char *repeat_strs[] = { " ", "R" };
+	static const char *shuffle_strs[] = { " ", "S" };
+	int buffer_fill, vol, vol_left, vol_right;
+	int duration = -1;
+
+	editable_lock();
+	fopt_set_time(&track_fopts[TF_TOTAL], play_library ? lib_editable.total_time :
+			pl_editable.total_time, 0);
+	editable_unlock();
+
+	fopt_set_str(&track_fopts[TF_FOLLOW], follow_strs[follow]);
+	fopt_set_str(&track_fopts[TF_REPEAT], repeat_strs[repeat]);
+	fopt_set_str(&track_fopts[TF_SHUFFLE], shuffle_strs[shuffle]);
+	fopt_set_str(&track_fopts[TF_PLAYLISTMODE], aaa_mode_names[aaa_mode]);
+
+	if (player_info.ti)
+		duration = player_info.ti->duration;
+
+	vol_left = vol_right = vol = -1;
+	if (soft_vol) {
+		vol_left = soft_vol_l;
+		vol_right = soft_vol_r;
+		vol = (vol_left + vol_right + 1) / 2;
+	} else if (volume_max && volume_l >= 0 && volume_r >= 0) {
+		vol_left = scale_to_percentage(volume_l, volume_max);
+		vol_right = scale_to_percentage(volume_r, volume_max);
+		vol = (vol_left + vol_right + 1) / 2;
+	}
+	buffer_fill = scale_to_percentage(player_info.buffer_fill, player_info.buffer_size);
+
+	fopt_set_str(&track_fopts[TF_STATUS], status_strs[player_info.status]);
+
+	if (show_remaining_time && duration != -1) {
+		fopt_set_time(&track_fopts[TF_POSITION], player_info.pos - duration, 0);
+	} else {
+		fopt_set_time(&track_fopts[TF_POSITION], player_info.pos, 0);
+	}
+
+	fopt_set_int(&track_fopts[TF_POSITION_SEC], player_info.pos, 0);
+	fopt_set_time(&track_fopts[TF_DURATION], duration, 0);
+	fopt_set_int(&track_fopts[TF_VOLUME], vol, 0);
+	fopt_set_int(&track_fopts[TF_LVOLUME], vol_left, 0);
+	fopt_set_int(&track_fopts[TF_RVOLUME], vol_right, 0);
+	fopt_set_int(&track_fopts[TF_BUFFER], buffer_fill, 0);
+	fopt_set_str(&track_fopts[TF_CONTINUE], cont_strs[player_cont]);
+	fopt_set_int(&track_fopts[TF_BITRATE], player_info.current_bitrate / 1000. + 0.5, 0);
+
+	return track_fopts;
 }
 
 static void print_tree(struct window *win, int row, struct iter *iter)

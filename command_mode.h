@@ -61,6 +61,7 @@ void command_mode_mouse(MEVENT *event);
 void commands_init(void);
 void commands_exit(void);
 int parse_command(const char *buf, char **cmdp, char **argp);
+char **parse_cmd(const char *cmd, int *args_idx, int *ac);
 void run_parsed_command(char *cmd, char *arg);
 void run_command(const char *buf);
 
