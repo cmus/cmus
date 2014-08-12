@@ -81,6 +81,16 @@ When *-C* is given all command line arguments are treated as raw commands.
 -C, --raw
 	Treat arguments (instead of stdin) as raw commands.
 
+@h1 REMOTE COMMANDS
+
+Special commands only available to cmus-remote.
+
+status
+	Print information about currently playing track.
+
+format_print
+	Print arguments as `Format Strings`. Each argument starts a new line.
+
 @h1 EXAMPLES
 
 Add playlists/files/directories/URLs to library view (1 & 2):
