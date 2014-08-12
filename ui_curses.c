@@ -916,7 +916,7 @@ static void print_help(struct window *win, int row, struct iter *iter)
 	int selected;
 	int pos;
 	int active = 1;
-	char buf[512];
+	char buf[OPTION_MAX_SIZE];
 	const struct help_entry *e = iter_to_help_entry(iter);
 	const struct cmus_opt *opt;
 

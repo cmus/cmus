@@ -207,7 +207,7 @@ void help_select(void)
 {
 	struct iter sel;
 	struct help_entry *ent;
-	char buf[512];
+	char buf[OPTION_MAX_SIZE];
 
 	if (!window_get_sel(help_win, &sel))
 		return;
