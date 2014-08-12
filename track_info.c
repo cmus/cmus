@@ -50,6 +50,7 @@ struct track_info *track_info_new(const char *filename)
 	ti = xnew(struct track_info, 1);
 	ti->filename = xstrdup(filename);
 	ti->ref = 1;
+	ti->play_count = 0;
 	ti->comments = NULL;
 	ti->codec = NULL;
 	ti->codec_profile = NULL;
@@ -202,6 +203,7 @@ int track_info_cmp(const struct track_info *a, const struct track_info *b, const
 		case SORT_DISCNUMBER:
 		case SORT_DATE:
 		case SORT_ORIGINALDATE:
+		case SORT_PLAY_COUNT:
 			res = getentry(a, key, int) - getentry(b, key, int);
 			break;
 		case SORT_FILEMTIME:

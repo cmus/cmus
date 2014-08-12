@@ -51,6 +51,7 @@ struct cache_entry {
 	int duration;
 	long bitrate;
 	time_t mtime;
+	unsigned int play_count;
 
 	// filename, codec, codec_profile and N * (key, val)
 	char strings[];
@@ -113,6 +114,7 @@ static struct track_info *cache_entry_to_ti(struct cache_entry *e)
 	ti->duration = e->duration;
 	ti->bitrate = e->bitrate;
 	ti->mtime = e->mtime;
+	ti->play_count = e->play_count;
 
 	// count strings (filename + codec + codec_profile + key/val pairs)
 	count = 0;
@@ -253,7 +255,7 @@ int cache_init(void)
 	cache_header[4] = flags & 0xff;
 
 	/* assumed version */
-	cache_header[3] = 0x09;
+	cache_header[3] = 0x0a;
 
 	cache_filename = xstrjoin(cmus_config_dir, "/cache");
 	return read_cache();
@@ -308,6 +310,7 @@ static void write_ti(int fd, struct gbuf *buf, struct track_info *ti, unsigned i
 	e.duration = ti->duration;
 	e.bitrate = ti->bitrate;
 	e.mtime = ti->mtime;
+	e.play_count = ti->play_count;
 	len[count] = strlen(ti->filename) + 1;
 	e.size += len[count++];
 	len[count] = (ti->codec ? strlen(ti->codec) : 0) + 1;

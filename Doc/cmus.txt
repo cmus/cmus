@@ -1084,6 +1084,7 @@ Special Keys:
 	%l  %{album}		@br
 	%D  %{discnumber}	@br
 	%n  %{tracknumber}	@br
+	%X  %{play_count}	@br
 	%t  %{title}		@br
 	%g  %{genre}		@br
 	%c  %{comment}		@br
@@ -1157,10 +1158,10 @@ Examples:
 Sort option (lib_sort, pl_sort) value is space separated list of the following
 sort keys:
 
-	artist, album, title, tracknumber, discnumber, date, originaldate,
-	genre, comment, albumartist, filename, filemtime, bitrate, codec,
-	media, codec_profile, rg_track_gain, rg_track_peak, rg_album_gain,
-	rg_album_peak
+	artist, album, title, tracknumber, play_count, discnumber, date,
+	originaldate, genre, comment, albumartist, filename, filemtime,
+	bitrate, codec, media, codec_profile, rg_track_gain, rg_track_peak,
+	rg_album_gain, rg_album_peak
 
 Note: Adding a '-' in front of the key will sort in reverse order
 
@@ -1376,7 +1377,10 @@ Filter all artists/albums/titles containing "sleepwalking"
 Mark (select) all tracks with duration less than 2 minutes
 	:mark duration<120
 
-This command works in views 2-4.
+Mark (select) all tracks which has been played at least once
+	:mark play_count>=1
+
+These commands work in views 2-4.
 
 
 @h1 FILES

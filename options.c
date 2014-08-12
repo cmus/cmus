@@ -218,7 +218,7 @@ static const struct {
 	[FMT_CURRENT_ALT]	= { "altformat_current"		, " %F "				},
 	[FMT_CURRENT]		= { "format_current"		, " %a - %l -%3n. %t%= %y "		},
 	[FMT_PLAYLIST_ALT]	= { "altformat_playlist"	, " %f%= %d "				},
-	[FMT_PLAYLIST]		= { "format_playlist"		, " %-25%a %3n. %t%= %y %d "		},
+	[FMT_PLAYLIST]		= { "format_playlist"		, " %-22%a %3n. %t%= %y %d %X "		},
 	[FMT_PLAYLIST_VA]	= { "format_playlist_va"	, " %-25%A %3n. %t (%a)%= %y %d "	},
 	[FMT_TITLE_ALT]		= { "altformat_title"		, "%f"					},
 	[FMT_TITLE]		= { "format_title"		, "%a - %l - %t (%y)"			},
@@ -231,7 +231,7 @@ static const struct {
 
 	[NR_FMTS] =
 
-	{ "lib_sort", "albumartist date album discnumber tracknumber title filename" },
+	{ "lib_sort", "albumartist date album discnumber tracknumber title filename play_count" },
 	{ "pl_sort", "" },
 	{ "id3_default_charset", "ISO-8859-1" },
 	{ "icecast_default_charset", "ISO-8859-1" },
@@ -320,6 +320,7 @@ static const struct {
 	{ "artist",		SORT_ARTIST		},
 	{ "album",		SORT_ALBUM		},
 	{ "title",		SORT_TITLE		},
+	{ "play_count",		SORT_PLAY_COUNT		},
 	{ "tracknumber",	SORT_TRACKNUMBER	},
 	{ "discnumber",		SORT_DISCNUMBER		},
 	{ "date",		SORT_DATE		},
@@ -340,6 +341,7 @@ static const struct {
 	{ "-artist",		REV_SORT_ARTIST		},
 	{ "-album",		REV_SORT_ALBUM		},
 	{ "-title",		REV_SORT_TITLE		},
+	{ "-play_count", 	REV_SORT_PLAY_COUNT	},
 	{ "-tracknumber",	REV_SORT_TRACKNUMBER	},
 	{ "-discnumber",	REV_SORT_DISCNUMBER	},
 	{ "-date",		REV_SORT_DATE		},
