@@ -21,7 +21,7 @@
 
 #include "list.h"
 
-#define OPTION_MAX_SIZE	256
+#define OPTION_MAX_SIZE	4096
 
 typedef void (*opt_get_cb)(unsigned int id, char *buf);
 typedef void (*opt_set_cb)(unsigned int id, const char *buf);
@@ -165,6 +165,9 @@ extern char *list_win_alt_format;
 /* format string for currently playing track */
 extern char *current_format;
 extern char *current_alt_format;
+
+/* format string for status line */
+extern char *statusline_format;
 
 /* format string for window title */
 extern char *window_title_format;

@@ -354,42 +354,6 @@ static struct format_option track_fopts[NR_TFS + 1] = {
 	DEF_FO_END
 };
 
-enum {
-	SF_STATUS,
-	SF_POSITION,
-	SF_DURATION,
-	SF_TOTAL,
-	SF_VOLUME,
-	SF_LVOLUME,
-	SF_RVOLUME,
-	SF_BUFFER,
-	SF_REPEAT,
-	SF_CONTINUE,
-	SF_FOLLOW,
-	SF_SHUFFLE,
-	SF_PLAYLISTMODE,
-	SF_BITRATE,
-	NR_SFS
-};
-
-static struct format_option status_fopts[NR_SFS + 1] = {
-	DEF_FO_STR('s', NULL, 0),
-	DEF_FO_TIME('p', NULL, 0),
-	DEF_FO_TIME('d', NULL, 0),
-	DEF_FO_TIME('t', NULL, 0),
-	DEF_FO_INT('v', NULL, 0),
-	DEF_FO_INT('l', NULL, 0),
-	DEF_FO_INT('r', NULL, 0),
-	DEF_FO_INT('b', NULL, 0),
-	DEF_FO_STR('R', NULL, 0),
-	DEF_FO_STR('C', NULL, 0),
-	DEF_FO_STR('F', NULL, 0),
-	DEF_FO_STR('S', NULL, 0),
-	DEF_FO_STR('L', NULL, 0),
-	DEF_FO_INT('B', NULL, 0),
-	DEF_FO_END
-};
-
 static int last_mevent = 0;
 
 int get_track_win_x(void)
@@ -952,7 +916,7 @@ static void print_help(struct window *win, int row, struct iter *iter)
 	int selected;
 	int pos;
 	int active = 1;
-	char buf[512];
+	char buf[OPTION_MAX_SIZE];
 	const struct help_entry *e = iter_to_help_entry(iter);
 	const struct cmus_opt *opt;
 
@@ -1191,102 +1155,10 @@ static void do_update_view(int full)
 
 static void do_update_statusline(void)
 {
-	static const char *status_strs[] = { ".", ">", "|" };
-	static const char *cont_strs[] = { " ", "C" };
-	static const char *follow_strs[] = { " ", "F" };
-	static const char *repeat_strs[] = { " ", "R" };
-	static const char *shuffle_strs[] = { " ", "S" };
-	int buffer_fill, vol, vol_left, vol_right;
-	int duration = -1;
-	char *msg;
-	char format[80];
-
-	editable_lock();
-	fopt_set_time(&status_fopts[SF_TOTAL], play_library ? lib_editable.total_time :
-			pl_editable.total_time, 0);
-	editable_unlock();
-
-	fopt_set_str(&status_fopts[SF_FOLLOW], follow_strs[follow]);
-	fopt_set_str(&status_fopts[SF_REPEAT], repeat_strs[repeat]);
-	fopt_set_str(&status_fopts[SF_SHUFFLE], shuffle_strs[shuffle]);
-	fopt_set_str(&status_fopts[SF_PLAYLISTMODE], aaa_mode_names[aaa_mode]);
-
 	player_info_lock();
+	format_print(print_buffer, COLS, statusline_format, get_global_fopts());
 
-	if (player_info.ti)
-		duration = player_info.ti->duration;
-
-	vol_left = vol_right = vol = -1;
-	if (soft_vol) {
-		vol_left = soft_vol_l;
-		vol_right = soft_vol_r;
-		vol = (vol_left + vol_right + 1) / 2;
-	} else if (volume_max && volume_l >= 0 && volume_r >= 0) {
-		vol_left = scale_to_percentage(volume_l, volume_max);
-		vol_right = scale_to_percentage(volume_r, volume_max);
-		vol = (vol_left + vol_right + 1) / 2;
-	}
-	buffer_fill = scale_to_percentage(player_info.buffer_fill, player_info.buffer_size);
-
-	fopt_set_str(&status_fopts[SF_STATUS], status_strs[player_info.status]);
-
-	if (show_remaining_time && duration != -1) {
-		fopt_set_time(&status_fopts[SF_POSITION], player_info.pos - duration, 0);
-	} else {
-		fopt_set_time(&status_fopts[SF_POSITION], player_info.pos, 0);
-	}
-
-	fopt_set_time(&status_fopts[SF_DURATION], duration, 0);
-	fopt_set_int(&status_fopts[SF_VOLUME], vol, 0);
-	fopt_set_int(&status_fopts[SF_LVOLUME], vol_left, 0);
-	fopt_set_int(&status_fopts[SF_RVOLUME], vol_right, 0);
-	fopt_set_int(&status_fopts[SF_BUFFER], buffer_fill, 0);
-	fopt_set_str(&status_fopts[SF_CONTINUE], cont_strs[player_cont]);
-	fopt_set_int(&status_fopts[SF_BITRATE], player_info.current_bitrate / 1000. + 0.5, 0);
-
-	if (show_playback_position) {
-		strcpy(format, " %s %p ");
-		if (duration != -1)
-			strcat(format, "/ %d ");
-	} else {
-		strcpy(format, " %s ");
-		if (duration != -1)
-			strcat(format, "%d ");
-	}
-	strcat(format, "- %t ");
-	if (vol >= 0) {
-		if (vol_left != vol_right) {
-			strcat(format, "vol: %l,%r ");
-		} else {
-			strcat(format, "vol: %v ");
-		}
-	}
-	if (player_info.ti) {
-		if (is_http_url(player_info.ti->filename))
-			strcat(format, "buf: %b ");
-		if (show_current_bitrate && player_info.current_bitrate >= 0)
-			strcat(format, " %B kbps ");
-	}
-	strcat(format, "%=");
-	if (player_repeat_current) {
-		strcat(format, "repeat current");
-	} else if (play_library) {
-		/* artist/album modes work only in lib */
-		if (shuffle) {
-			/* shuffle overrides sorted mode */
-			strcat(format, "%L from library");
-		} else if (play_sorted) {
-			strcat(format, "%L from sorted library");
-		} else {
-			strcat(format, "%L from library");
-		}
-	} else {
-		strcat(format, "playlist");
-	}
-	strcat(format, " | %1C%1F%1R%1S ");
-	format_print(print_buffer, COLS, format, status_fopts);
-
-	msg = player_info.error_msg;
+	char *msg = player_info.error_msg;
 	player_info.error_msg = NULL;
 
 	player_info_unlock();

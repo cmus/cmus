@@ -136,6 +136,7 @@ char *list_win_format_va = NULL;
 char *list_win_alt_format = NULL;
 char *current_format = NULL;
 char *current_alt_format = NULL;
+char *statusline_format = NULL;
 char *window_title_format = NULL;
 char *window_title_alt_format = NULL;
 char *id3_default_charset = NULL;
@@ -194,6 +195,7 @@ static int parse_bool(const char *buf, int *val)
 enum format_id {
 	FMT_CURRENT,
 	FMT_CURRENT_ALT,
+	FMT_STATUSLINE,
 	FMT_PLAYLIST,
 	FMT_PLAYLIST_ALT,
 	FMT_PLAYLIST_VA,
@@ -217,6 +219,16 @@ static const struct {
 } str_defaults[] = {
 	[FMT_CURRENT_ALT]	= { "altformat_current"		, " %F "								},
 	[FMT_CURRENT]		= { "format_current"		, " %a - %l -%3n. %t%= %y "						},
+	[FMT_STATUSLINE]	= { "format_statusline"		,
+		" %{status} %{if show_playback_position then '%{position} '%{if duration then '/ %{duration} '} else %{if duration then '%{duration} '}}"
+		" - %{total} "
+		"%{if volume>=0 then 'vol: '%{if lvolume!=rvolume then '%{lvolume},%{rvolume} ' else '%{volume} '}}"
+		"%{if stream then 'buf: %{buffer} '}"
+		"%{if show_current_bitrate & bitrate>=0 then ' %{bitrate} kbps '}"
+		"%="
+		"%{if repeat_current then repeat current else %{if play_library then %{playlist_mode} from %{if play_sorted then 'sorted '}library else playlist}}"
+		" | %1{continue}%1{follow}%1{repeat}%1{shuffle} "
+	},
 	[FMT_PLAYLIST_ALT]	= { "altformat_playlist"	, " %f%= %d "								},
 	[FMT_PLAYLIST]		= { "format_playlist"		, " %-21%a %3n. %t%= %y %d %{if X!=0 then '%3X ' else '    '}"		},
 	[FMT_PLAYLIST_VA]	= { "format_playlist_va"	, " %-21%A %3n. %t (%a)%= %y %d %{if X!=0 then '%3X ' else '    '}"	},
@@ -1256,6 +1268,8 @@ static char **id_to_fmt(enum format_id id)
 		return &tree_win_format;
 	case FMT_TREEWIN_ARTIST:
 		return &tree_win_artist_format;
+	case FMT_STATUSLINE:
+		return &statusline_format;
 	default:
 		die("unhandled format code: %d\n", id);
 	}
