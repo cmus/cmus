@@ -47,7 +47,7 @@ struct format_option {
 #define UNION_INIT(f, v) .f = v
 #endif
 
-#define DEF_FO_STR(c, s, z)    { UNION_INIT(fo_str,  NULL), .type = FO_STR,    .pad_zero = z, .ch = c, .str = s }
+#define DEF_FO_STR(c, s, z)    { UNION_INIT(fo_str,  ""),   .type = FO_STR,    .pad_zero = z, .ch = c, .str = s }
 #define DEF_FO_INT(c, s, z)    { UNION_INIT(fo_int,  0),    .type = FO_INT,    .pad_zero = z, .ch = c, .str = s }
 #define DEF_FO_TIME(c, s, z)   { UNION_INIT(fo_time, 0),    .type = FO_TIME,   .pad_zero = z, .ch = c, .str = s }
 #define DEF_FO_DOUBLE(c, s, z) { UNION_INIT(fo_double, 0.), .type = FO_DOUBLE, .pad_zero = z, .ch = c, .str = s }
