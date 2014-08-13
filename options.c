@@ -224,7 +224,7 @@ static const struct {
 		" - %{total} "
 		"%{if volume>=0 then 'vol: '%{if lvolume!=rvolume then '%{lvolume},%{rvolume} ' else '%{volume} '}}"
 		"%{if stream then 'buf: %{buffer} '}"
-		"%{if show_current_bitrate & bitrate>=0 then ' %{buffer} kbps '}"
+		"%{if show_current_bitrate & bitrate>=0 then ' %{bitrate} kbps '}"
 		"%="
 		"%{if repeat_current then repeat current else %{if play_library then %{playlist_mode} from %{if play_sorted then 'sorted '}library else playlist}}"
 		" | %1{continue}%1{follow}%1{repeat}%1{shuffle} "
