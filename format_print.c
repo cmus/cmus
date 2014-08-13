@@ -377,42 +377,56 @@ static struct expr *format_parse_cond(const char* format, int size)
 	return expr_parse_i(cond_buffer.buffer, "condition contains control characters", 0);
 }
 
-static uchar format_skip_cond_expr(const char *format, int *s)
+enum {
+	FT_NULL		= 0,
+	FT_THEN 	= 1,
+	FT_ELSE 	= 2,
+	FT_END 		= 4,
+	FT_SHORT_COND 	= 8
+};
+
+static int format_skip_cond_expr(const char *format, int *s, unsigned skip)
 {
 	int i = *s;
-	uchar r = 0;
+	unsigned r = FT_NULL;
 	int start_of_token = 1;
-	while (format[i]) {
+	while (r == FT_NULL || (skip & r)) {
 		uchar u = u_get_char(format, &i);
-		if (start_of_token && u == 't') {
-			if (strncmp("hen ", format + i, strlen("hen ")) == 0) {
-				i += strlen("hen ");
-				r = 't';
-				break;
-			}
+		if (u == 0) {
+			r = FT_NULL;
+			break;
 		}
-		if (start_of_token && u == 'e') {
-			if (strncmp("lse ", format + i, strlen("lse ")) == 0) {
-				i += strlen("lse ");
-				r = 'e';
-				break;
-			}
+		if (start_of_token && u == 't' && strncmp("hen ", format + i, strlen("hen ")) == 0) {
+			i += strlen("hen ");
+			r = FT_THEN;
+			continue;
+		}
+		if (start_of_token && u == 'e' && strncmp("lse ", format + i, strlen("lse ")) == 0) {
+			i += strlen("lse ");
+			r = FT_ELSE;
+			continue;
 		}
 		if (u == '}') {
-			r = u;
-			break;
+			r = FT_END;
+			start_of_token = 1;
+			continue;
+		}
+		if (u == '?') {
+			r = FT_SHORT_COND;
+			start_of_token = 1;
+			continue;
 		}
 		if (u == '"' || u == '\'') {
 			uchar q = u;
-			while (1) {
+			do {
 				u = u_get_char(format, &i);
 				if (u == '%')
 					u = u_get_char(format, &i);
-				else if (u == q || u == 0)
-					break;
-			}
-			if (u == 0)
+			} while (u != q && u != 0);
+			if (u == 0) {
+				r = FT_NULL;
 				break;
+			}
 			start_of_token = 1;
 			continue;
 		}
@@ -440,12 +454,8 @@ static uchar format_skip_cond_expr(const char *format, int *s)
 			u = u_get_char(format, &i);
 		}
 		if (u == '{') {
-			while (1) {
-				u = format_skip_cond_expr(format, &i);
-				if (u == '}' || u == 0)
-					break;
-			}
-			if (u == 0)
+			u = format_skip_cond_expr(format, &i, ~FT_END);
+			if (u == FT_NULL)
 				break;
 		}
 		start_of_token = 1;
@@ -456,32 +466,45 @@ static uchar format_skip_cond_expr(const char *format, int *s)
 
 static void format_parse(int str_width, const char *format, const struct format_option *fopts, int f_size);
 
+#define EXPECT(A) BUG_ON(!(A))
+
 static void format_parse_if(int str_width, const char *format, const struct format_option *fopts, int *s)
 {
 	int cond_pos = *s, then_pos = -1, else_pos = -1, end_pos = -1, cond_res = -1;
-	uchar t = format_skip_cond_expr(format, s);
-	BUG_ON(t != 't');
+	int is_short = 0;
+	int t = format_skip_cond_expr(format, s, 0);
+	EXPECT(t == FT_THEN || t == FT_SHORT_COND);
 	then_pos = *s;
-	t = format_skip_cond_expr(format, s);
-	BUG_ON(t == 't' || t == 0);
-	if (t == 'e') {
-		else_pos = *s;
-		t = format_skip_cond_expr(format, s);
-		BUG_ON(t != '}');
-		end_pos = *s;
+	if (t == FT_SHORT_COND) {
+		is_short = 1;
+		t = format_skip_cond_expr(format, s, FT_THEN | FT_ELSE);
+		EXPECT(t == FT_SHORT_COND || t == FT_END);
+		if (t == FT_SHORT_COND) {
+			else_pos = *s;
+			t = format_skip_cond_expr(format, s, FT_THEN | FT_ELSE);
+		}
 	} else {
-		end_pos = *s;
+		t = format_skip_cond_expr(format, s, FT_SHORT_COND);
+		EXPECT(t == FT_ELSE || t == FT_END);
+		if (t == FT_ELSE) {
+			else_pos = *s;
+			t = format_skip_cond_expr(format, s, FT_SHORT_COND);
+		}
 	}
+	EXPECT(t == FT_END);
+	end_pos = *s;
 
-	struct expr *cond = format_parse_cond(format + cond_pos, then_pos - cond_pos - strlen("then "));
+	struct expr *cond = format_parse_cond(format + cond_pos, then_pos - cond_pos -
+						(is_short ? 1 : strlen("then ")));
 	cond_res = format_eval_cond(cond, fopts);
 	if (cond)
 		expr_free(cond);
 
-	BUG_ON(cond_res < 0);
+	EXPECT(cond_res >= 0);
 	if (cond_res) {
 		format_parse(str_width, format + then_pos, fopts,
-				(else_pos > 0 ? else_pos - strlen("else ") : end_pos - 1) - then_pos);
+				(else_pos > 0 ? else_pos - (is_short ? 1 : strlen("else "))
+						: end_pos - 1) - then_pos);
 	} else if (else_pos > 0) {
 		format_parse(str_width, format + else_pos, fopts, end_pos - 1 - else_pos);
 	}
@@ -559,8 +582,8 @@ static void format_parse(int str_width, const char *format, const struct format_
 		}
 		if (u == '{') {
 			long_begin = format + s;
-			if (strncmp("if ", long_begin, strlen("if ")) == 0) {
-				s += strlen("if ");
+			if (strncmp("if ", long_begin, strlen("if ")) == 0 || *long_begin == '?') {
+				s += *long_begin == '?' ? 1 : strlen("if ");
 				format_parse_if(str_width, format, fopts, &s);
 				continue;
 			}
@@ -615,8 +638,6 @@ static void format_read(int str_width, const char *format, const struct format_o
 	*r_str.buffer = 0;
 	format_parse(str_width, format, fopts, -1);
 
-	gbuf_grow(&l_str, 1);
-	gbuf_grow(&r_str, 1);
 	l_str.buffer[l_str.len] = 0;
 	r_str.buffer[r_str.len] = 0;
 }
@@ -709,32 +730,44 @@ struct fp_len format_print_gbuf(struct gbuf *buf, int str_width, const char *for
 
 static int format_valid_sub(const char *format, const struct format_option *fopts, int f_size);
 
+#undef EXPECT
+#define EXPECT(A) if (!(A)) return 0
+
 static int format_valid_if(const char *format, const struct format_option *fopts, int *s)
 {
 	int cond_pos = *s, then_pos = -1, else_pos = -1, end_pos = -1;
-	uchar t = format_skip_cond_expr(format, s);
-	if (t != 't')
-		return 0;
+	int is_short = 0;
+	int t = format_skip_cond_expr(format, s, 0);
+	EXPECT(t == FT_THEN || t == FT_SHORT_COND);
 	then_pos = *s;
-	t = format_skip_cond_expr(format, s);
-	if (t == 't' || t == 0)
-		return 0;
-	if (t == 'e') {
-		else_pos = *s;
-		t = format_skip_cond_expr(format, s);
-		if (t != '}')
-			return 0;
-		end_pos = *s;
+	if (t == FT_SHORT_COND) {
+		is_short = 1;
+		t = format_skip_cond_expr(format, s, FT_THEN | FT_ELSE);
+		EXPECT(t == FT_SHORT_COND || t == FT_END);
+		if (t == FT_SHORT_COND) {
+			else_pos = *s;
+			t = format_skip_cond_expr(format, s, FT_THEN | FT_ELSE);
+		}
 	} else {
-		end_pos = *s;
+		t = format_skip_cond_expr(format, s, FT_SHORT_COND);
+		EXPECT(t == FT_ELSE || t == FT_END);
+		if (t == FT_ELSE) {
+			else_pos = *s;
+			t = format_skip_cond_expr(format, s, FT_SHORT_COND);
+		}
 	}
+	EXPECT(t == FT_END);
+	end_pos = *s;
 
-	struct expr *cond = format_parse_cond(format + cond_pos, then_pos - cond_pos - strlen("then "));
+	struct expr *cond = format_parse_cond(format + cond_pos, then_pos - cond_pos -
+						(is_short ? 1 : strlen("then ")));
 	if (cond == NULL)
 		return 0;
 	expr_free(cond);
 
-	if (!format_valid_sub(format + then_pos, fopts, (else_pos > 0 ? else_pos - strlen("else ") : end_pos - 1) - then_pos))
+	if (!format_valid_sub(format + then_pos, fopts,
+				(else_pos > 0 ? else_pos - (is_short ? 1 : strlen("else "))
+						: end_pos - 1) - then_pos))
 		return 0;
 	if (else_pos > 0)
 		if (!format_valid_sub(format + else_pos, fopts, end_pos - 1 - else_pos))
@@ -743,6 +776,8 @@ static int format_valid_if(const char *format, const struct format_option *fopts
 	*s = end_pos;
 	return 1;
 }
+
+#undef EXPECT
 
 static int format_valid_sub(const char *format, const struct format_option *fopts, int f_size)
 {
@@ -772,8 +807,8 @@ static int format_valid_sub(const char *format, const struct format_option *fopt
 				u = u_get_char(format, &s);
 			if (u == '{') {
 				long_begin = format + s;
-				if (strncmp("if ", long_begin, strlen("if ")) == 0) {
-					s += strlen("if ");
+				if (strncmp("if ", long_begin, strlen("if ")) == 0 || *long_begin == '?') {
+					s += *long_begin == '?' ? 1 : strlen("if ");
 					if (!format_valid_if(format, fopts, &s))
 						return 0;
 					else
