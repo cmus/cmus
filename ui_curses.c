@@ -632,7 +632,8 @@ static void fill_track_fopts_artist(struct artist *artist)
 
 const struct format_option *get_global_fopts(void)
 {
-	fill_track_fopts_track_info(player_info.ti);
+	if (player_info.ti)
+		fill_track_fopts_track_info(player_info.ti);
 
 	static const char *status_strs[] = { ".", ">", "|" };
 	static const char *cont_strs[] = { " ", "C" };
