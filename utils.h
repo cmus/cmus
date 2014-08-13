@@ -23,6 +23,8 @@
 #include "config/utils.h"
 #endif
 
+#include "compiler.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
@@ -34,12 +36,20 @@
 #include <byteswap.h>
 #endif
 
+
 #define N_ELEMENTS(array) (sizeof(array) / sizeof((array)[0]))
 
 #define STRINGIZE_HELPER(x) #x
 #define STRINGIZE(x) STRINGIZE_HELPER(x)
 
+#define CONCATENATE_HELPER(x,y) x##y
+#define CONCATENATE(x,y) CONCATENATE_HELPER(x,y)
+
 #define getentry(ptr, offset, type) (*((type *) ((void *) ((char *) (ptr) + (offset)))))
+
+#define STATIC_ASSERT(__cond) \
+	static uint8_t CONCATENATE(__cmus_unused_, __LINE__)[2*(__cond) - 1] UNUSED
+
 
 static inline int min(int a, int b)
 {
