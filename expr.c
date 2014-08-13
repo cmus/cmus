@@ -905,8 +905,6 @@ static const char *str_val(const char *key, struct track_info *ti, char **need_f
 	} else {
 		val = keyvals_get_val(ti->comments, key);
 	}
-	if (!val)
-		val = "";
 	return val;
 }
 
@@ -973,6 +971,8 @@ int expr_eval(struct expr *expr, struct track_info *ti)
 		int res;
 		char *need_free;
 		const char *val = str_val(key, ti, &need_free);
+		if (!val)
+			val = "";
 		res = glob_match(&expr->estr.glob_head, val);
 		free(need_free);
 		if (expr->estr.op == SOP_EQ)
@@ -1012,7 +1012,7 @@ int expr_eval(struct expr *expr, struct track_info *ti)
 			free(fa);
 		} else {
 			a = int_val(key, ti);
-			b = int_val(key, ti);
+			b = int_val(expr->eid.key, ti);
 			res = a - b;
 			if (a == -1 || b == -1) {
 				switch (expr->eid.op) {
