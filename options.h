@@ -21,7 +21,7 @@
 
 #include "list.h"
 
-#define OPTION_MAX_SIZE	1024
+#define OPTION_MAX_SIZE	4096
 
 typedef void (*opt_get_cb)(unsigned int id, char *buf);
 typedef void (*opt_set_cb)(unsigned int id, const char *buf);
