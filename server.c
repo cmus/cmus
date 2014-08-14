@@ -152,15 +152,18 @@ static int cmd_format_print(struct client *client, char *arg)
 {
 	if (run_only_safe_commands) {
 		d_print("trying to execute unsafe command over net\n");
-		return 0;
+		return write_all(client->fd, "\n", strlen("\n"));
 	}
 
 	int args_idx, ac, i, ret;
-	char **args = parse_cmd(arg, &args_idx, &ac);
+	char **args = NULL;
+
+	if (arg)
+		args = parse_cmd(arg, &args_idx, &ac);
 
 	if (args == NULL) {
 		error_msg("not enough arguments\n");
-		return 0;
+		return write_all(client->fd, "\n", strlen("\n"));
 	}
 
 	GBUF(buf);
