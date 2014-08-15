@@ -23,6 +23,8 @@
 #include "config/utils.h"
 #endif
 
+#include "compiler.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
@@ -32,14 +34,6 @@
 #include <stdint.h>
 #ifdef HAVE_BYTESWAP_H
 #include <byteswap.h>
-#endif
-
-#ifndef UNUSED
-#ifdef __GNUC__
-#define UNUSED __attribute__((unused))
-#else
-#define UNUSED
-#endif
 #endif
 
 #define N_ELEMENTS(array) (sizeof(array) / sizeof((array)[0]))
