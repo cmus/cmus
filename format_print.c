@@ -263,8 +263,6 @@ static const char *str_val(const char *key, const struct format_option *fopts, c
 			val = buf;
 		}
 	}
-	if (!val)
-		val = "";
 	return val;
 }
 
@@ -309,6 +307,8 @@ static int format_eval_cond(struct expr* expr, const struct format_option *fopts
 		const char *val = str_val(key, fopts, buf);
 		int res;
 
+		if (!val)
+			val = "";
 		res = glob_match(&expr->estr.glob_head, val);
 		if (expr->estr.op == SOP_EQ)
 			return res;
@@ -336,7 +336,7 @@ static int format_eval_cond(struct expr* expr, const struct format_option *fopts
 			return expr_op_to_bool(res, expr->eid.op);
 		} else {
 			a = int_val(key, fopts, buf);
-			b = int_val(key, fopts, buf);
+			b = int_val(expr->eid.key, fopts, buf);
 			res = a - b;
 			if (a == -1 || b == -1) {
 				switch (expr->eid.op) {
@@ -377,170 +377,99 @@ static struct expr *format_parse_cond(const char* format, int size)
 	return expr_parse_i(cond_buffer.buffer, "condition contains control characters", 0);
 }
 
-enum {
-	FT_NULL		= 0,
-	FT_THEN 	= 1,
-	FT_ELSE 	= 2,
-	FT_END 		= 4,
-	FT_SHORT_COND 	= 8
-};
-
-static int format_skip_cond_expr(const char *format, int *s, unsigned skip)
+static uchar format_skip_cond_expr(const char *format, int *s)
 {
-	int i = *s;
-	unsigned r = FT_NULL;
-	int start_of_token = 1;
-	while (r == FT_NULL || (skip & r)) {
-		uchar u = u_get_char(format, &i);
-		if (u == 0) {
-			r = FT_NULL;
-			break;
-		}
-		if (start_of_token && u == 't' && strncmp("hen ", format + i, strlen("hen ")) == 0) {
-			i += strlen("hen ");
-			r = FT_THEN;
-			continue;
-		}
-		if (start_of_token && u == 'e' && strncmp("lse ", format + i, strlen("lse ")) == 0) {
-			i += strlen("lse ");
-			r = FT_ELSE;
-			continue;
-		}
-		if (u == '}') {
-			r = FT_END;
-			start_of_token = 1;
-			continue;
-		}
-		if (u == '?') {
-			r = FT_SHORT_COND;
-			start_of_token = 1;
-			continue;
-		}
-		if (u == '"' || u == '\'') {
-			uchar q = u;
-			do {
-				u = u_get_char(format, &i);
-				if (u == '%')
-					u = u_get_char(format, &i);
-			} while (u != q && u != 0);
-			if (u == 0) {
-				r = FT_NULL;
-				break;
-			}
-			start_of_token = 1;
-			continue;
-		}
-		if (isspace(u)) {
-			start_of_token = 1;
-			continue;
+	uchar r = 0;
+	while (*format) {
+		uchar u = u_get_char(format, s);
+		if (u == '}' || u == '?') {
+			return u;
 		}
 		if (u != '%') {
-			start_of_token = 0;
 			continue;
 		}
-		u = u_get_char(format, &i);
-		if (u == '%' || u == '"' || u == '\'') {
-			start_of_token = 0;
-			continue;
-		}
-		if (u == '=') {
-			start_of_token = 1;
+		u = u_get_char(format, s);
+		if (u == '%' || u == '?' || u == '=') {
 			continue;
 		}
 		if (u == '-') {
-			u = u_get_char(format, &i);
+			u = u_get_char(format, s);
 		}
 		while (isdigit(u)) {
-			u = u_get_char(format, &i);
+			u = u_get_char(format, s);
 		}
 		if (u == '{') {
-			u = format_skip_cond_expr(format, &i, ~FT_END);
-			if (u == FT_NULL)
-				break;
+			unsigned level = 1;
+			while (level) {
+				u = u_get_char(format, s);
+				if (u == 0)
+					return 0;
+				if (u == '}')
+					--level;
+				if (u != '%')
+					continue;
+				u = u_get_char(format, s);
+				if (u == '{')
+					++level;
+			}
 		}
-		start_of_token = 1;
 	}
-	*s = i;
 	return r;
+}
+
+static int format_read_cond(const char *format, int *s, int *a, int *b, int *end)
+{
+	uchar t = format_skip_cond_expr(format, s);
+	if (t != '?')
+		return 1;
+	*a = *s - 1;
+	t = format_skip_cond_expr(format, s);
+	if (t == 0)
+		return 1;
+	if (t == '?') {
+		*b = *s - 1;
+		t = format_skip_cond_expr(format, s);
+		if (t != '}')
+			return 1;
+	}
+	*end = *s - 1;
+	return 0;
 }
 
 static void format_parse(int str_width, const char *format, const struct format_option *fopts, int f_size);
 
-#define EXPECT(A) BUG_ON(!(A))
-
 static void format_parse_if(int str_width, const char *format, const struct format_option *fopts, int *s)
 {
 	int cond_pos = *s, then_pos = -1, else_pos = -1, end_pos = -1, cond_res = -1;
-	int is_short = 0;
-	int t = format_skip_cond_expr(format, s, 0);
-	EXPECT(t == FT_THEN || t == FT_SHORT_COND);
-	then_pos = *s;
-	if (t == FT_SHORT_COND) {
-		is_short = 1;
-		t = format_skip_cond_expr(format, s, FT_THEN | FT_ELSE);
-		EXPECT(t == FT_SHORT_COND || t == FT_END);
-		if (t == FT_SHORT_COND) {
-			else_pos = *s;
-			t = format_skip_cond_expr(format, s, FT_THEN | FT_ELSE);
-		}
-	} else {
-		t = format_skip_cond_expr(format, s, FT_SHORT_COND);
-		EXPECT(t == FT_ELSE || t == FT_END);
-		if (t == FT_ELSE) {
-			else_pos = *s;
-			t = format_skip_cond_expr(format, s, FT_SHORT_COND);
-		}
-	}
-	EXPECT(t == FT_END);
-	end_pos = *s;
+	BUG_ON(format_read_cond(format, s, &then_pos, &else_pos, &end_pos) != 0);
 
-	struct expr *cond = format_parse_cond(format + cond_pos, then_pos - cond_pos -
-						(is_short ? 1 : strlen("then ")));
+	struct expr *cond = format_parse_cond(format + cond_pos, then_pos - cond_pos);
 	cond_res = format_eval_cond(cond, fopts);
 	if (cond)
 		expr_free(cond);
 
-	EXPECT(cond_res >= 0);
+	BUG_ON(cond_res < 0);
 	if (cond_res) {
-		format_parse(str_width, format + then_pos, fopts,
-				(else_pos > 0 ? else_pos - (is_short ? 1 : strlen("else "))
-						: end_pos - 1) - then_pos);
+		format_parse(str_width, format + then_pos + 1, fopts,
+				(else_pos > 0 ? else_pos : end_pos) - then_pos - 1);
 	} else if (else_pos > 0) {
-		format_parse(str_width, format + else_pos, fopts, end_pos - 1 - else_pos);
+		format_parse(str_width, format + else_pos + 1, fopts, end_pos - else_pos - 1);
 	}
 
-	*s = end_pos;
+	*s = end_pos + 1;
 }
 
 static void format_parse(int str_width, const char *format, const struct format_option *fopts, int f_size)
 {
 	int s = 0;
-	uchar in_quotes = 0;
 
-	if (f_size > 0) {
-		while (s < f_size && isspace(format[s]))
-			++s;
-		while (f_size > 0 && isspace(format[f_size - 1]))
-			--f_size;
-	}
-
-	while ((f_size > 0 && s < f_size) || (f_size < 0 && format[s])) {
+	while (s < f_size) {
 		const struct format_option *fo;
 		int long_len = 0;
 		const char *long_begin = NULL;
 		uchar u;
 
 		u = u_get_char(format, &s);
-		if (f_size > 0 && (u == '"' || u == '\'')) {
-			if (!in_quotes) {
-				in_quotes = u;
-				continue;
-			} else if (in_quotes == u) {
-				in_quotes = 0;
-				continue;
-			}
-		}
-
 		if (u != '%') {
 			gbuf_grow(str, 4);
 			u_set_char(str->buffer, (int *)&str->len, u);
@@ -548,7 +477,7 @@ static void format_parse(int str_width, const char *format, const struct format_
 			continue;
 		}
 		u = u_get_char(format, &s);
-		if (u == '%' || u == '"' || u == '\'') {
+		if (u == '%' || u == '?') {
 			gbuf_add_ch(str, u);
 			++(*len);
 			continue;
@@ -582,13 +511,14 @@ static void format_parse(int str_width, const char *format, const struct format_
 		}
 		if (u == '{') {
 			long_begin = format + s;
-			if (strncmp("if ", long_begin, strlen("if ")) == 0 || *long_begin == '?') {
-				s += *long_begin == '?' ? 1 : strlen("if ");
+			if (*long_begin == '?') {
+				++s;
 				format_parse_if(str_width, format, fopts, &s);
+				BUG_ON(s > f_size);
 				continue;
 			}
 			while (1) {
-				BUG_ON(u == 0 || (f_size > 0 && s >= f_size));
+				BUG_ON(s >= f_size);
 				u = u_get_char(format, &s);
 				if (u == '}')
 					break;
@@ -636,7 +566,7 @@ static void format_read(int str_width, const char *format, const struct format_o
 	r_str.len = 0;
 	*l_str.buffer = 0;
 	*r_str.buffer = 0;
-	format_parse(str_width, format, fopts, -1);
+	format_parse(str_width, format, fopts, strlen(format));
 
 	l_str.buffer[l_str.len] = 0;
 	r_str.buffer[r_str.len] = 0;
@@ -730,60 +660,33 @@ struct fp_len format_print_gbuf(struct gbuf *buf, int str_width, const char *for
 
 static int format_valid_sub(const char *format, const struct format_option *fopts, int f_size);
 
-#undef EXPECT
-#define EXPECT(A) if (!(A)) return 0
-
 static int format_valid_if(const char *format, const struct format_option *fopts, int *s)
 {
 	int cond_pos = *s, then_pos = -1, else_pos = -1, end_pos = -1;
-	int is_short = 0;
-	int t = format_skip_cond_expr(format, s, 0);
-	EXPECT(t == FT_THEN || t == FT_SHORT_COND);
-	then_pos = *s;
-	if (t == FT_SHORT_COND) {
-		is_short = 1;
-		t = format_skip_cond_expr(format, s, FT_THEN | FT_ELSE);
-		EXPECT(t == FT_SHORT_COND || t == FT_END);
-		if (t == FT_SHORT_COND) {
-			else_pos = *s;
-			t = format_skip_cond_expr(format, s, FT_THEN | FT_ELSE);
-		}
-	} else {
-		t = format_skip_cond_expr(format, s, FT_SHORT_COND);
-		EXPECT(t == FT_ELSE || t == FT_END);
-		if (t == FT_ELSE) {
-			else_pos = *s;
-			t = format_skip_cond_expr(format, s, FT_SHORT_COND);
-		}
-	}
-	EXPECT(t == FT_END);
-	end_pos = *s;
+	if (format_read_cond(format, s, &then_pos, &else_pos, &end_pos) != 0)
+		return 0;
 
-	struct expr *cond = format_parse_cond(format + cond_pos, then_pos - cond_pos -
-						(is_short ? 1 : strlen("then ")));
+	struct expr *cond = format_parse_cond(format + cond_pos, then_pos - cond_pos);
 	if (cond == NULL)
 		return 0;
 	expr_free(cond);
 
-	if (!format_valid_sub(format + then_pos, fopts,
-				(else_pos > 0 ? else_pos - (is_short ? 1 : strlen("else "))
-						: end_pos - 1) - then_pos))
+	if (!format_valid_sub(format + then_pos + 1, fopts,
+				(else_pos > 0 ? else_pos : end_pos) - then_pos - 1))
 		return 0;
 	if (else_pos > 0)
-		if (!format_valid_sub(format + else_pos, fopts, end_pos - 1 - else_pos))
+		if (!format_valid_sub(format + else_pos + 1, fopts, end_pos - else_pos - 1))
 			return 0;
 
-	*s = end_pos;
+	*s = end_pos + 1;
 	return 1;
 }
-
-#undef EXPECT
 
 static int format_valid_sub(const char *format, const struct format_option *fopts, int f_size)
 {
 	int s = 0;
 
-	while ((f_size > 0 && s < f_size) || (f_size < 0 && format[s])) {
+	while (s < f_size) {
 		uchar u;
 
 		u = u_get_char(format, &s);
@@ -793,7 +696,7 @@ static int format_valid_sub(const char *format, const struct format_option *fopt
 			const char *long_begin = NULL;
 
 			u = u_get_char(format, &s);
-			if (u == '%' || u == '=' || u == '\'' || u == '"')
+			if (u == '%' || u == '=' || u == '?')
 				continue;
 			if (u == '-')
 				u = u_get_char(format, &s);
@@ -807,16 +710,17 @@ static int format_valid_sub(const char *format, const struct format_option *fopt
 				u = u_get_char(format, &s);
 			if (u == '{') {
 				long_begin = format + s;
-				if (strncmp("if ", long_begin, strlen("if ")) == 0 || *long_begin == '?') {
-					s += *long_begin == '?' ? 1 : strlen("if ");
+				if (*long_begin == '?') {
+					++s;
 					if (!format_valid_if(format, fopts, &s))
 						return 0;
-					else
-						continue;
+					if (s > f_size)
+						return 0;
+					continue;
 				}
 
 				while (1) {
-					if (!u || (f_size > 0 && s >= f_size))
+					if (s >= f_size)
 						return 0;
 					u = u_get_char(format, &s);
 					if (u == '}')

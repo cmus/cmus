@@ -217,29 +217,29 @@ static const struct {
 	const char *name;
 	const char *value;
 } str_defaults[] = {
-	[FMT_CURRENT_ALT]	= { "altformat_current"		, " %F "							},
-	[FMT_CURRENT]		= { "format_current"		, " %a - %l -%3n. %t%= %y "					},
+	[FMT_CURRENT_ALT]	= { "altformat_current"		, " %F "						},
+	[FMT_CURRENT]		= { "format_current"		, " %a - %l -%3n. %t%= %y "				},
 	[FMT_STATUSLINE]	= { "format_statusline"		,
-		" %{status} %{?show_playback_position then %{position} %{?duration?'/ %{duration} '} else %{?duration?'%{duration} '}}"
+		" %{status} %{?show_playback_position?%{position} %{?duration?/ %{duration} }?%{?duration?%{duration} }}"
 		" - %{total} "
-		"%{?volume>=0 then 'vol: '%{?lvolume!=rvolume?'%{lvolume},%{rvolume} '?'%{volume} '}}"
-		"%{?stream ? 'buf: %{buffer} '}"
-		"%{if show_current_bitrate & bitrate>=0 ? ' %{bitrate} kbps '}"
+		"%{?volume>=0?vol: %{?lvolume!=rvolume?%{lvolume},%{rvolume} ?%{volume} }}"
+		"%{?stream?buf: %{buffer} }"
+		"%{?show_current_bitrate & bitrate>=0? %{bitrate} kbps }"
 		"%="
-		"%{if repeat_current then repeat current else %{?play_library ? %{playlist_mode} from %{?play_sorted?'sorted '}library ? playlist}}"
+		"%{?repeat_current?repeat current?%{?play_library?%{playlist_mode} from %{?play_sorted?sorted }library?playlist}}"
 		" | %1{continue}%1{follow}%1{repeat}%1{shuffle} "
 	},
-	[FMT_PLAYLIST_ALT]	= { "altformat_playlist"	, " %f%= %d "							},
-	[FMT_PLAYLIST]		= { "format_playlist"		, " %-21%a %3n. %t%= %y %d %{?X!=0?'%3X '?'    '}"		},
-	[FMT_PLAYLIST_VA]	= { "format_playlist_va"	, " %-21%A %3n. %t (%a)%= %y %d %{?X!=0?'%3X '?'    '}"		},
-	[FMT_TITLE_ALT]		= { "altformat_title"		, "%f"								},
-	[FMT_TITLE]		= { "format_title"		, "%a - %l - %t (%y)"						},
-	[FMT_TRACKWIN_ALBUM]	= { "format_trackwin_album"	, " %l "							},
-	[FMT_TRACKWIN_ALT]	= { "altformat_trackwin"	, " %f%= %d "							},
-	[FMT_TRACKWIN]		= { "format_trackwin"		, "%3n. %t%= %y %d "						},
-	[FMT_TRACKWIN_VA]	= { "format_trackwin_va"	, "%3n. %t (%a)%= %y %d "					},
-	[FMT_TREEWIN]		= { "format_treewin"		, "  %l"							},
-	[FMT_TREEWIN_ARTIST]	= { "format_treewin_artist"	, "%a"								},
+	[FMT_PLAYLIST_ALT]	= { "altformat_playlist"	, " %f%= %d "						},
+	[FMT_PLAYLIST]		= { "format_playlist"		, " %-21%a %3n. %t%= %y %d %{?X!=0?%3X ?    }"		},
+	[FMT_PLAYLIST_VA]	= { "format_playlist_va"	, " %-21%A %3n. %t (%a)%= %y %d %{?X!=0?%3X ?    }"	},
+	[FMT_TITLE_ALT]		= { "altformat_title"		, "%f"							},
+	[FMT_TITLE]		= { "format_title"		, "%a - %l - %t (%y)"					},
+	[FMT_TRACKWIN_ALBUM]	= { "format_trackwin_album"	, " %l "						},
+	[FMT_TRACKWIN_ALT]	= { "altformat_trackwin"	, " %f%= %d "						},
+	[FMT_TRACKWIN]		= { "format_trackwin"		, "%3n. %t%= %y %d "					},
+	[FMT_TRACKWIN_VA]	= { "format_trackwin_va"	, "%3n. %t (%a)%= %y %d "				},
+	[FMT_TREEWIN]		= { "format_treewin"		, "  %l"						},
+	[FMT_TREEWIN_ARTIST]	= { "format_treewin_artist"	, "%a"							},
 
 	[NR_FMTS] =
 
