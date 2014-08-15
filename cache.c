@@ -43,7 +43,17 @@
 #define CACHE_BE	0x02
 
 #define CACHE_RESERVED_PATTERN  0xff
-#define CACHE_RESERVED_SIZE     0x30
+
+// represents the size of all fields used in the struct cache_entry
+// when adding new fields increment it accordingly to their size
+#define CACHE_ENTRY_USED_SIZE	24
+
+// represents the amount of padding data introduced to the structure
+// when adding new fields decrement it accordingly to their size
+#define CACHE_RESERVED_SIZE	56
+
+// defines the total size of the cache_entry structure
+#define CACHE_ENTRY_TOTAL_SIZE	(CACHE_RESERVED_SIZE + CACHE_ENTRY_USED_SIZE)
 
 // Cmus Track Cache version X + 4 bytes flags
 static char cache_header[8] = "CTC\0\0\0\0\0";
@@ -55,15 +65,13 @@ struct cache_entry {
 	// NOTE: size does not include padding bytes
 	uint32_t size;
 	int32_t duration;
-	uint64_t bitrate;
+	uint32_t bitrate;
+	uint32_t play_count;
 	int64_t mtime;
-	uint64_t play_count;
 
-        /*
-         * reserved space for future purposes
-         * When introducing new fields to the structure
-         * decrease the reserved space accordingly
-         */
+        // reserved space for future purposes
+        // When introducing new fields to the structure
+        // decrease the reserved space accordingly
         uint8_t __reserved[CACHE_RESERVED_SIZE];
 
 	// filename, codec, codec_profile and N * (key, val)
@@ -73,11 +81,22 @@ struct cache_entry {
 #define ALIGN(size) (((size) + sizeof(long) - 1) & ~(sizeof(long) - 1))
 #define HASH_SIZE 1023
 
+#define STATIC_ASSERT(__id, __cond) \
+	static uint8_t __cmus_unused_##__id[2*(__cond) - 1] __attribute__((unused))
+
 static struct track_info *hash_table[HASH_SIZE];
 static char *cache_filename;
 static int total;
 
 pthread_mutex_t cache_mutex = CMUS_MUTEX_INITIALIZER;
+
+// during the compilation be sure that the compiler didn't add
+// any extra padding to the cache_entry structure and
+// that there is no gap between the strings field and the rest of 
+// the structure
+STATIC_ASSERT(1, CACHE_ENTRY_TOTAL_SIZE == sizeof(struct cache_entry));
+STATIC_ASSERT(2, CACHE_ENTRY_TOTAL_SIZE == offsetof(struct cache_entry, strings));
+
 
 static void add_ti(struct track_info *ti, unsigned int hash)
 {
