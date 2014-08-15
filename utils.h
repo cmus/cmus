@@ -34,6 +34,14 @@
 #include <byteswap.h>
 #endif
 
+#ifndef UNUSED
+#ifdef __GNUC__
+#define UNUSED __attribute__((unused))
+#else
+#define UNUSED
+#endif
+#endif
+
 #define N_ELEMENTS(array) (sizeof(array) / sizeof((array)[0]))
 
 #define STRINGIZE_HELPER(x) #x
@@ -45,7 +53,7 @@
 // __id: unique id across a compilation unit
 // __cond: the condition to be checked
 #define STATIC_ASSERT(__id, __cond) \
-	static uint8_t __cmus_unused_##__id[2*(__cond) - 1] __attribute__((unused))
+	static uint8_t __cmus_unused_##__id[2*(__cond) - 1] UNUSED
 
 
 static inline int min(int a, int b)
