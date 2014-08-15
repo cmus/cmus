@@ -65,7 +65,7 @@ struct cache_entry {
 	// NOTE: size does not include padding bytes
 	uint32_t size;
 	int32_t duration;
-	uint32_t bitrate;
+	int32_t bitrate;
 	uint32_t play_count;
 	int64_t mtime;
 
