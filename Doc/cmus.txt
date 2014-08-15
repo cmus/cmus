@@ -1135,7 +1135,8 @@ To see current value of an option type *:set option=<TAB>*.
 Note: With %{bitrate}, you'll have to append the unit yourself, as mentioned
 in the example below.
 
-You can use conditional operator *%{if CONDITION then A [else B]}*.
+You can use conditional operators *%{if|? CONDITION then A [else B]}* and
+*%{if|? CONDITION ? A [? B]}*.
 CONDITION has the same syntax as `filters`, except for unsupported short and
 simple expressions and supported keys comparison (e.g. artist=albumartist).
 Its keys are:
