@@ -40,14 +40,15 @@
 
 #define STRINGIZE_HELPER(x) #x
 #define STRINGIZE(x) STRINGIZE_HELPER(x)
+#define CONCATENATE_HELPER(x,y) x##y
+#define __CONCATENATE_HELPER(x,y) CONCATENATE_HELPER(x,y)
 
 #define getentry(ptr, offset, type) (*((type *) ((void *) ((char *) (ptr) + (offset)))))
 
 // compilation time assertion
-// __id: unique id across a compilation unit
 // __cond: the condition to be checked
-#define STATIC_ASSERT(__id, __cond) \
-	static uint8_t __cmus_unused_##__id[2*(__cond) - 1] UNUSED
+#define STATIC_ASSERT(__cond) \
+	static uint8_t __CONCATENATE_HELPER(__cmus_unused_, __LINE__)[2*(__cond) - 1] UNUSED
 
 
 static inline int min(int a, int b)

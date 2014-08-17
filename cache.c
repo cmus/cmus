@@ -91,8 +91,8 @@ pthread_mutex_t cache_mutex = CMUS_MUTEX_INITIALIZER;
 // any extra padding to the cache_entry structure and
 // that there is no gap between the strings field and the rest of 
 // the structure
-STATIC_ASSERT(1, CACHE_ENTRY_TOTAL_SIZE == sizeof(struct cache_entry));
-STATIC_ASSERT(2, CACHE_ENTRY_TOTAL_SIZE == offsetof(struct cache_entry, strings));
+STATIC_ASSERT(CACHE_ENTRY_TOTAL_SIZE == sizeof(struct cache_entry));
+STATIC_ASSERT(CACHE_ENTRY_TOTAL_SIZE == offsetof(struct cache_entry, strings));
 
 
 static void add_ti(struct track_info *ti, unsigned int hash)
