@@ -37,10 +37,15 @@
 /* Optimization: Condition @x is unlikely */
 #define unlikely(x)	__builtin_expect(!!(x), 0)
 
+#ifndef UNUSED
+#define UNUSED __attribute__((unused))
+#endif
+
 #else
 
 #define likely(x)	(x)
 #define unlikely(x)	(x)
+#define UNUSED
 
 #endif
 

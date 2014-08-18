@@ -29,6 +29,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -36,8 +37,23 @@
 #include <errno.h>
 #include <sys/mman.h>
 
+#define CACHE_VERSION   0x0b
+
 #define CACHE_64_BIT	0x01
 #define CACHE_BE	0x02
+
+#define CACHE_RESERVED_PATTERN  	0xff
+
+// represents the size of all fields used in the struct cache_entry
+// when adding new fields increment it accordingly to their size
+#define CACHE_ENTRY_USED_SIZE		24
+
+// represents the amount of padding data introduced to the structure
+// when adding new fields decrement it accordingly to their size
+#define CACHE_ENTRY_RESERVED_SIZE	56
+
+// defines the total size of the cache_entry structure
+#define CACHE_ENTRY_TOTAL_SIZE	(CACHE_ENTRY_RESERVED_SIZE + CACHE_ENTRY_USED_SIZE)
 
 // Cmus Track Cache version X + 4 bytes flags
 static char cache_header[8] = "CTC\0\0\0\0\0";
@@ -47,11 +63,16 @@ static char cache_header[8] = "CTC\0\0\0\0\0";
 struct cache_entry {
 	// size of this struct including size itself
 	// NOTE: size does not include padding bytes
-	unsigned int size;
-	int duration;
-	long bitrate;
-	time_t mtime;
-	long play_count;
+	uint32_t size;
+	int32_t duration;
+	int32_t bitrate;
+	uint32_t play_count;
+	int64_t mtime;
+
+        // reserved space for future purposes
+        // When introducing new fields to the structure
+        // decrease the reserved space accordingly
+        uint8_t __reserved[CACHE_ENTRY_RESERVED_SIZE];
 
 	// filename, codec, codec_profile and N * (key, val)
 	char strings[];
@@ -65,6 +86,14 @@ static char *cache_filename;
 static int total;
 
 pthread_mutex_t cache_mutex = CMUS_MUTEX_INITIALIZER;
+
+// during the compilation be sure that the compiler didn't add
+// any extra padding to the cache_entry structure and
+// that there is no gap between the strings field and the rest of 
+// the structure
+STATIC_ASSERT(CACHE_ENTRY_TOTAL_SIZE == sizeof(struct cache_entry));
+STATIC_ASSERT(CACHE_ENTRY_TOTAL_SIZE == offsetof(struct cache_entry, strings));
+
 
 static void add_ti(struct track_info *ti, unsigned int hash)
 {
@@ -252,7 +281,7 @@ int cache_init(void)
 	cache_header[4] = flags & 0xff;
 
 	/* assumed version */
-	cache_header[3] = 0x0a;
+	cache_header[3] = CACHE_VERSION;
 
 	cache_filename = xstrjoin(cmus_config_dir, "/cache");
 	return read_cache();
@@ -300,6 +329,8 @@ static void write_ti(int fd, struct gbuf *buf, struct track_info *ti, unsigned i
 	unsigned int pad;
 	struct cache_entry e;
 	int *len, alloc = 64, count, i;
+
+	memset(e.__reserved, CACHE_RESERVED_PATTERN, sizeof(e.__reserved));
 
 	count = 0;
 	len = xnew(int, alloc);
