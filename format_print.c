@@ -745,5 +745,5 @@ static int format_valid_sub(const char *format, const struct format_option *fopt
 
 int format_valid(const char *format, const struct format_option *fopts)
 {
-	return format_valid_sub(format, fopts, -1);
+	return format_valid_sub(format, fopts, strlen(format));
 }
