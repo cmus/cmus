@@ -759,15 +759,24 @@ altformat_current [`Format String`]
 	Alternative format string for the line displaying currently playing
 	track.
 
+	NOTE: if it is empty, *format_current* is used.
+
 altformat_playlist [`Format String`]
 	Alternative format string for the list views (2-4).
 
+	NOTE: if it is empty, *format_playlist* is used.
+
 altformat_title [`Format String`]
-	Alternative format string for terminal title.  NOTE: not all
-	terminals support changing window title.
+	Alternative format string for terminal title.
+
+	NOTE: not all terminals support changing window title.
+
+	NOTE: if it is empty, *format_title* is used.
 
 altformat_trackwin [`Format String`]
 	Alternative format string for the tree view's (1) track window.
+
+	NOTE: if it is empty, *format_trackwin* is used.
 
 buffer_seconds (10) [1-300]
 	Size of player buffer in seconds.
@@ -901,6 +910,8 @@ format_playlist_va [`Format String`]
 	Format string for the list views (2-4), if a track is assumed to be a
 	part of compilation (see `LIBRARY VIEW SORTING` for details).
 
+	NOTE: if it is empty, *format_playlist* is used.
+
 format_statusline [`Format String`]
 	Format string for status line.
 
@@ -919,6 +930,8 @@ format_trackwin_va [`Format String`]
 	Format string for the tree view's (1) track window, if a track
 	is assumed to be a part of compilation (see `LIBRARY VIEW SORTING`
 	for details).
+
+	NOTE: if it is empty, *format_trackwin* is used.
 
 format_treewin [`Format String`]
 	Format string for the tree view's (1) tree window.

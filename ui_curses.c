@@ -775,16 +775,14 @@ static void print_track(struct window *win, int row, struct iter *iter)
 	ti = tree_track_info(track);
 	fill_track_fopts_track_info(ti);
 
+	format = track_win_format;
 	if (track_info_has_tag(ti)) {
-		if (track_is_compilation(ti->comments))
+		if (*track_win_format_va && track_is_compilation(ti->comments))
 			format = track_win_format_va;
-		else
-			format = track_win_format;
-
-		format_print(print_buffer, track_win_w, format, track_fopts);
-	} else {
-		format_print(print_buffer, track_win_w, track_win_alt_format, track_fopts);
+	} else if (*track_win_alt_format) {
+		format = track_win_alt_format;
 	}
+	format_print(print_buffer, track_win_w, format, track_fopts);
 	dump_print_buffer(track_win_y + row + 1, track_win_x);
 }
 
@@ -818,16 +816,14 @@ static void print_editable(struct window *win, int row, struct iter *iter)
 
 	fill_track_fopts_track_info(track->info);
 
+	format = list_win_format;
 	if (track_info_has_tag(track->info)) {
-		if (track_is_compilation(track->info->comments))
+		if (*list_win_format_va && track_is_compilation(track->info->comments))
 			format = list_win_format_va;
-		else
-			format = list_win_format;
-
-		format_print(print_buffer, COLS, format, track_fopts);
-	} else {
-		format_print(print_buffer, COLS, list_win_alt_format, track_fopts);
+	} else if (*list_win_alt_format) {
+		format = list_win_alt_format;
 	}
+	format_print(print_buffer, COLS, format, track_fopts);
 	dump_print_buffer(row + 1, 0);
 }
 
@@ -1319,7 +1315,7 @@ static void do_update_titleline(void)
 			}
 		}
 
-		if (use_alt_format) {
+		if (use_alt_format && *current_alt_format) {
 			format_print(print_buffer, COLS, current_alt_format, track_fopts);
 		} else {
 			format_print(print_buffer, COLS, current_format, track_fopts);
@@ -1327,7 +1323,7 @@ static void do_update_titleline(void)
 		dump_print_buffer(LINES - 3, 0);
 
 		/* set window title */
-		if (use_alt_format) {
+		if (use_alt_format && *window_title_alt_format) {
 			format_print(print_buffer, print_buffer_max_width,
 					window_title_alt_format, track_fopts);
 		} else {
