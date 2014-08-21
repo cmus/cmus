@@ -20,6 +20,7 @@
 #include "editable.h"
 #include "track.h"
 #include "xmalloc.h"
+#include "lib.h"
 
 struct editable pq_editable;
 
@@ -61,6 +62,17 @@ struct track_info *play_queue_remove(void)
 		editable_remove_track(&pq_editable, t);
 	}
 
+	return info;
+}
+
+struct track_info *play_queue_goto_next(void) {
+	struct track_info *info = NULL;
+	info = play_queue_remove();
+	if (info) {
+		struct tree_track *track = NULL;
+		track = lib_find_track(info);
+		if (track) lib_set_track(track);
+	}
 	return info;
 }
 

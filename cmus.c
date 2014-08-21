@@ -75,7 +75,7 @@ void cmus_next(void)
 	struct track_info *info;
 
 	editable_lock();
-	info = play_queue_remove();
+	info = play_queue_goto_next();
 	if (info == NULL) {
 		if (play_library) {
 			info = lib_goto_next();
