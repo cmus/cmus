@@ -676,11 +676,11 @@ const struct format_option *get_global_fopts(void)
 		fopt_set_time(&track_fopts[TF_POSITION], player_info.pos, 0);
 	}
 
-	fopt_set_int(&track_fopts[TF_POSITION_SEC], player_info.pos, 0);
-	fopt_set_time(&track_fopts[TF_DURATION], duration, 0);
-	fopt_set_int(&track_fopts[TF_VOLUME], vol, 0);
-	fopt_set_int(&track_fopts[TF_LVOLUME], vol_left, 0);
-	fopt_set_int(&track_fopts[TF_RVOLUME], vol_right, 0);
+	fopt_set_int(&track_fopts[TF_POSITION_SEC], player_info.pos, player_info.pos < 0);
+	fopt_set_time(&track_fopts[TF_DURATION], duration, duration < 0);
+	fopt_set_int(&track_fopts[TF_VOLUME], vol, vol < 0);
+	fopt_set_int(&track_fopts[TF_LVOLUME], vol_left, vol_left < 0);
+	fopt_set_int(&track_fopts[TF_RVOLUME], vol_right, vol_right < 0);
 	fopt_set_int(&track_fopts[TF_BUFFER], buffer_fill, 0);
 	fopt_set_str(&track_fopts[TF_CONTINUE], cont_strs[player_cont]);
 	fopt_set_int(&track_fopts[TF_BITRATE], player_info.current_bitrate / 1000. + 0.5, 0);
