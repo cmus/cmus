@@ -181,6 +181,10 @@ int u_char_width(uchar u)
 	if (unlikely(u < 0x20))
 		goto control;
 
+	/* Combining Diacritical Marks */
+	if (u >= 0x300U && u <= 0x36fU)
+		goto zero;
+
 	if (u < 0x1100U)
 		goto narrow;
 
