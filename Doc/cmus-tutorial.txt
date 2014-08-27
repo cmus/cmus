@@ -74,7 +74,7 @@ should see something like this:
 
 Now, use the arrow keys, Enter and Backspace to navigate to where you have
 audio files stored. To add music to your cmus library, use the arrow keys to
-hilight a file or folder, and press *a*. When you press *a* cmus will move you
+highlight a file or folder, and press *a*. When you press *a* cmus will move you
 to the next line down (so that it is easy to add a bunch of files/folders in a
 row) and start adding the file/folder you pressed *a* on to your library. This
 can take a while if you added a folder with a lot in it. As files are added,
@@ -151,7 +151,7 @@ to the song you want to hear next (in any of the views) and press *e*. The
 queue is FIFO, meaning if you queue up another track, it will play after the
 one you already had queued up.
 
-Note: The queue is not effected by the "shuffle" option described above.
+Note: The queue is not affected by the "shuffle" option described above.
 
 Press *4* to view/edit the queue. This view works and looks a lot like the
 simple library view. The main difference is that you can change the order of
@@ -174,7 +174,7 @@ library".
 The playlist is on view *3*. But before we go there, lets add some tracks.
 Press *2* to go to the simple library view, go to a track you want and press
 *y* to add it to the playlist. The only visual feedback you'll get that
-anything happened is that the hilight will move down one row. Add a few more so
+anything happened is that the highlight will move down one row. Add a few more so
 you have something to work with.
 
 Now press *3* to go to the playlist.
