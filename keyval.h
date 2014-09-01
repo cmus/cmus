@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef KEYVAL_H
-#define KEYVAL_H
+#ifndef CMUS_KEYVAL_H_D30F7B28EEC248318B7775120EA9E72B
+#define CMUS_KEYVAL_H_D30F7B28EEC248318B7775120EA9E72B
 
 struct keyval {
 	char *key;

@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef U_COLLATE_H
-#define U_COLLATE_H
+#ifndef CMUS_U_COLLATE_H_C1F33C678C544C59AD3835707E6DFA3D
+#define CMUS_U_COLLATE_H_C1F33C678C544C59AD3835707E6DFA3D
 
 /*
  * @str1  valid, normalized, null-terminated UTF-8 string

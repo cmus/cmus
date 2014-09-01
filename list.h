@@ -15,8 +15,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _LINUX_LIST_H
-#define _LINUX_LIST_H
+#ifndef CMUS_LIST_H_7E3DCCD2551B45E3925BD92893401D4F
+#define CMUS_LIST_H_7E3DCCD2551B45E3925BD92893401D4F
 
 #include "compiler.h" /* container_of */
 

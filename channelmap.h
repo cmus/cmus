@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _CHANNELMAP_H
-#define _CHANNELMAP_H
+#ifndef CMUS_CHANNELMAP_H_FE64A966D3C24BE4AEF801777093DC20
+#define CMUS_CHANNELMAP_H_FE64A966D3C24BE4AEF801777093DC20
 
 #include <string.h>
 

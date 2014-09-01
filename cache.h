@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef CACHE_H
-#define CACHE_H
+#ifndef CMUS_CACHE_H_F799FA14890F4D9E9AFAAEA5A89AEDE0
+#define CMUS_CACHE_H_F799FA14890F4D9E9AFAAEA5A89AEDE0
 
 #include "track_info.h"
 #include "locking.h"

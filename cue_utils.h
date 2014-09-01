@@ -16,9 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-
-#ifndef __CUE_UTILS_H__
-#define __CUE_UTILS_H__
+#ifndef CMUS_CUE_UTILS_H_4009262D52824998907151AF45207E0D
+#define CMUS_CUE_UTILS_H_4009262D52824998907151AF45207E0D
 
 #include <stdio.h>
 

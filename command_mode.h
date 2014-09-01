@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _COMMAND_MODE_H
-#define _COMMAND_MODE_H
+#ifndef CMUS_COMMAND_MODE_H_447DEFF98FA14BF687C28268611DC931
+#define CMUS_COMMAND_MODE_H_447DEFF98FA14BF687C28268611DC931
 
 #include "uchar.h"
 

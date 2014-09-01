@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _DISCID_H
-#define _DISCID_H
+#ifndef CMUS_DISCID_H_5CFDB695BB9443CDB9281FD9DBBF913D
+#define CMUS_DISCID_H_5CFDB695BB9443CDB9281FD9DBBF913D
 
 char *get_default_cdda_device(void);
 int parse_cdda_url(const char *url, char **disc_id, int *start_track, int *end_track);

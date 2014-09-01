@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _CMUS_H
-#define _CMUS_H
+#ifndef CMUS_API_H_04B8A8FCB95E4752A841BC6B657B4B4B
+#define CMUS_API_H_04B8A8FCB95E4752A841BC6B657B4B4B
 
 #include "track_info.h"
 

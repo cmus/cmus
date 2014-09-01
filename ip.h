@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _IP_H
-#define _IP_H
+#ifndef CMUS_IP_H_DAEF091F7C5942FDA2E318CE8C411558
+#define CMUS_IP_H_DAEF091F7C5942FDA2E318CE8C411558
 
 #include "keyval.h"
 #include "sf.h"

@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _TABEXP_FILE_H
-#define _TABEXP_FILE_H
+#ifndef CMUS_TABEXP_FILE_H_CE2B5B0B09734FD8AA4487390BA54981
+#define CMUS_TABEXP_FILE_H_CE2B5B0B09734FD8AA4487390BA54981
 
 #include <sys/stat.h>
 

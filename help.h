@@ -18,8 +18,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef HELP_H
-#define HELP_H
+#ifndef CMUS_HELP_H_2A78353F297E48368B05D25B00E407A0
+#define CMUS_HELP_H_2A78353F297E48368B05D25B00E407A0
 
 #include "list.h"
 #include "window.h"

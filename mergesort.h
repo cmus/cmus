@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _MERGESORT_H
-#define _MERGESORT_H
+#ifndef CMUS_MERGESORT_H_7AD94AC5D50944AA9F870B8949BFD09F
+#define CMUS_MERGESORT_H_7AD94AC5D50944AA9F870B8949BFD09F
 
 #include "list.h"
 

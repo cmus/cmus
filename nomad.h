@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _NOMAD_H
-#define _NOMAD_H
+#ifndef CMUS_NOMAD_H_C8655BECF90743299B97A852970B0A5C
+#define CMUS_NOMAD_H_C8655BECF90743299B97A852970B0A5C
 
 #include <sys/types.h>
 

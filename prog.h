@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef PROG_H
-#define PROG_H
+#ifndef CMUS_PROG_H_ED27AB5826F0424FADB7A149A6B9A8CE
+#define CMUS_PROG_H_ED27AB5826F0424FADB7A149A6B9A8CE
 
 #include "compiler.h"
 

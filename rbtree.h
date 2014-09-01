@@ -92,8 +92,8 @@ static inline struct page * rb_insert_page_cache(struct inode * inode,
 -----------------------------------------------------------------------
 */
 
-#ifndef	_LINUX_RBTREE_H
-#define	_LINUX_RBTREE_H
+#ifndef CMUS_RBTREE_H_9A00D3E0C35846FA8CBE0837F71B92C7
+#define CMUS_RBTREE_H_9A00D3E0C35846FA8CBE0837F71B92C7
 
 #include "compiler.h" /* container_of */
 #include <stddef.h>

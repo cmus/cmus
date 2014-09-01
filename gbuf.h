@@ -18,8 +18,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef GBUF_H
-#define GBUF_H
+#ifndef CMUS_GBUF_H_717FB009AE6E4351ADEB61493BF30FCA
+#define CMUS_GBUF_H_717FB009AE6E4351ADEB61493BF30FCA
 
 #include "compiler.h"
 
