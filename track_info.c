@@ -193,9 +193,9 @@ int track_info_cmp(const struct track_info *a, const struct track_info *b, const
 		const char *av, *bv;
 
 		rev = 0;
-		if (key >= REV_SORT__START) {
+		if (key >= REV_SORT_START_) {
 			rev = 1;
-			key -= REV_SORT__START;
+			key -= REV_SORT_START_;
 		}
 
 		switch (key) {

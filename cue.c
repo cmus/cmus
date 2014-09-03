@@ -112,7 +112,7 @@ static int cue_open(struct input_plugin_data *ip_data)
 		goto cue_open_failed;
 	}
 
-	cd = cue_parse_file__no_stderr_garbage(cue);
+	cd = cue_parse_file_no_stderr_garbage(cue);
 	if (cd == NULL) {
 		rc = -IP_ERROR_FILE_FORMAT;
 		goto cue_parse_failed;
@@ -263,7 +263,7 @@ static int cue_read_comments(struct input_plugin_data *ip_data, struct keyval **
 		goto cue_open_failed;
 	}
 
-	cd = cue_parse_file__no_stderr_garbage(cue);
+	cd = cue_parse_file_no_stderr_garbage(cue);
 	if (cd == NULL) {
 		rc = -IP_ERROR_FILE_FORMAT;
 		goto cue_parse_failed;
