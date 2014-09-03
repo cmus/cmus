@@ -26,7 +26,7 @@
 #include <unistd.h>
 
 
-Cd *cue_parse_file__no_stderr_garbage(FILE *f)
+Cd *cue_parse_file_no_stderr_garbage(FILE *f)
 {
 	int stderr_fd;
 	int devnull_fd;
@@ -88,7 +88,7 @@ int cue_get_ntracks(const char *filename)
 	if (cue == NULL)
 		return -1;
 
-	cd = cue_parse_file__no_stderr_garbage(cue);
+	cd = cue_parse_file_no_stderr_garbage(cue);
 	if (cd == NULL) {
 		fclose(cue);
 		return -1;

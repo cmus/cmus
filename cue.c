@@ -40,7 +40,7 @@ struct cue_private {
 };
 
 
-static int __parse_cue_url(const char *url, char **filename, int *track_n)
+static int parse_cue_url(const char *url, char **filename, int *track_n)
 {
 	const char *slash;
 	long n;
@@ -63,7 +63,7 @@ static int __parse_cue_url(const char *url, char **filename, int *track_n)
 }
 
 
-static double __to_seconds(long v)
+static double to_seconds(long v)
 {
 	const int FRAMES_IN_SECOND = 75;
 
@@ -71,7 +71,7 @@ static double __to_seconds(long v)
 }
 
 
-static char *__make_absolute_path(const char *abs_filename, const char *rel_filename)
+static char *make_absolute_path(const char *abs_filename, const char *rel_filename)
 {
 	char *s;
 	const char *slash;
@@ -100,7 +100,7 @@ static int cue_open(struct input_plugin_data *ip_data)
 
 	priv = xnew(struct cue_private, 1);
 
-	rc = __parse_cue_url(ip_data->filename, &priv->cue_filename, &priv->track_n);
+	rc = parse_cue_url(ip_data->filename, &priv->cue_filename, &priv->track_n);
 	if (rc) {
 		rc = -IP_ERROR_INVALID_URI;
 		goto url_parse_failed;
@@ -112,7 +112,7 @@ static int cue_open(struct input_plugin_data *ip_data)
 		goto cue_open_failed;
 	}
 
-	cd = cue_parse_file__no_stderr_garbage(cue);
+	cd = cue_parse_file_no_stderr_garbage(cue);
 	if (cd == NULL) {
 		rc = -IP_ERROR_FILE_FORMAT;
 		goto cue_parse_failed;
@@ -129,7 +129,7 @@ static int cue_open(struct input_plugin_data *ip_data)
 		rc = -IP_ERROR_FILE_FORMAT;
 		goto cue_read_failed;
 	}
-	child_filename = __make_absolute_path(priv->cue_filename, child_filename);
+	child_filename = make_absolute_path(priv->cue_filename, child_filename);
 
 	priv->child = ip_new(child_filename);
 	free(child_filename);
@@ -140,7 +140,7 @@ static int cue_open(struct input_plugin_data *ip_data)
 
 	ip_setup(priv->child);
 
-	priv->start_offset = __to_seconds(track_get_start(t));
+	priv->start_offset = to_seconds(track_get_start(t));
 	priv->current_offset = priv->start_offset;
 
 	rc = ip_seek(priv->child, priv->start_offset);
@@ -148,7 +148,7 @@ static int cue_open(struct input_plugin_data *ip_data)
 		goto ip_open_failed;
 
 	if (track_get_length(t) != 0)
-		priv->end_offset = priv->start_offset + __to_seconds(track_get_length(t));
+		priv->end_offset = priv->start_offset + to_seconds(track_get_length(t));
 	else
 		priv->end_offset = ip_duration(priv->child);
 
@@ -263,7 +263,7 @@ static int cue_read_comments(struct input_plugin_data *ip_data, struct keyval **
 		goto cue_open_failed;
 	}
 
-	cd = cue_parse_file__no_stderr_garbage(cue);
+	cd = cue_parse_file_no_stderr_garbage(cue);
 	if (cd == NULL) {
 		rc = -IP_ERROR_FILE_FORMAT;
 		goto cue_parse_failed;

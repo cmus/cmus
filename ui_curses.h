@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _UI_CURSES_H
-#define _UI_CURSES_H
+#ifndef CMUS_UI_CURSES_H_27A5DB2178384A8BB8749A7C6715CFA6
+#define CMUS_UI_CURSES_H_27A5DB2178384A8BB8749A7C6715CFA6
 
 #include "search.h"
 #include "compiler.h"
@@ -53,9 +53,9 @@ void update_statusline(void);
 void update_filterline(void);
 void update_colors(void);
 void update_full(void);
-void info_msg(const char *format, ...) __FORMAT(1, 2);
-void error_msg(const char *format, ...) __FORMAT(1, 2);
-int yes_no_query(const char *format, ...) __FORMAT(1, 2);
+void info_msg(const char *format, ...) CMUS_FORMAT(1, 2);
+void error_msg(const char *format, ...) CMUS_FORMAT(1, 2);
+int yes_no_query(const char *format, ...) CMUS_FORMAT(1, 2);
 void search_not_found(void);
 void set_view(int view);
 void set_client_fd(int fd);

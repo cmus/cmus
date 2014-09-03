@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _SERVER_H
-#define _SERVER_H
+#ifndef CMUS_SERVER_H_A1F984D6CC44427C9A13372465B7C48E
+#define CMUS_SERVER_H_A1F984D6CC44427C9A13372465B7C48E
 
 #include "list.h"
 

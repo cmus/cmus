@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef OPTIONS_H
-#define OPTIONS_H
+#ifndef CMUS_OPTIONS_H_B658A2C3575D410D9A5AB75D37C06E4C
+#define CMUS_OPTIONS_H_B658A2C3575D410D9A5AB75D37C06E4C
 
 #include "list.h"
 

@@ -48,7 +48,7 @@ void warn_errno(const char *format, ...)
 	fprintf(stderr, ": %s\n", strerror(e));
 }
 
-void __NORETURN die(const char *format, ...)
+void CMUS_NORETURN die(const char *format, ...)
 {
 	va_list ap;
 
@@ -59,7 +59,7 @@ void __NORETURN die(const char *format, ...)
 	exit(1);
 }
 
-void __NORETURN die_errno(const char *format, ...)
+void CMUS_NORETURN die_errno(const char *format, ...)
 {
 	int e = errno;
 	va_list ap;

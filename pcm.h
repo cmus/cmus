@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _PCM_H
-#define _PCM_H
+#ifndef CMUS_PCM_H_CD7CFCACFBB54EFFB79199DECA0210D9
+#define CMUS_PCM_H_CD7CFCACFBB54EFFB79199DECA0210D9
 
 typedef void (*pcm_conv_func)(void *dst, const void *src, int count);
 typedef void (*pcm_conv_in_place_func)(void *buf, int count);

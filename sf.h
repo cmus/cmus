@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _SF_H
-#define	_SF_H
+#ifndef CMUS_SF_H_1283D6671CE944D990A316D706C96097
+#define CMUS_SF_H_1283D6671CE944D990A316D706C96097
 
 /*
  *  0     1 big_endian 0-1

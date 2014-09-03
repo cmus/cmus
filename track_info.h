@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _TRACK_INFO_H
-#define _TRACK_INFO_H
+#ifndef CMUS_TRACK_INFO_H_9A0881C658264C5EB082150BA30D12FF
+#define CMUS_TRACK_INFO_H_9A0881C658264C5EB082150BA30D12FF
 
 #include <time.h>
 #include <stddef.h>
@@ -90,28 +90,28 @@ typedef size_t sort_key_t;
 #define SORT_CODEC         	offsetof(struct track_info, codec)
 #define SORT_CODEC_PROFILE 	offsetof(struct track_info, codec_profile)
 #define SORT_MEDIA		offsetof(struct track_info, media)
-#define REV_SORT__START		sizeof(struct track_info)
-#define REV_SORT_ARTIST		(REV_SORT__START + offsetof(struct track_info, collkey_artist))
-#define REV_SORT_ALBUM          (REV_SORT__START + offsetof(struct track_info, collkey_album))
-#define REV_SORT_TITLE          (REV_SORT__START + offsetof(struct track_info, collkey_title))
-#define REV_SORT_PLAY_COUNT   	(REV_SORT__START + offsetof(struct track_info, play_count))
-#define REV_SORT_TRACKNUMBER    (REV_SORT__START + offsetof(struct track_info, tracknumber))
-#define REV_SORT_DISCNUMBER     (REV_SORT__START + offsetof(struct track_info, discnumber))
-#define REV_SORT_DATE           (REV_SORT__START + offsetof(struct track_info, date))
-#define REV_SORT_ORIGINALDATE   (REV_SORT__START + offsetof(struct track_info, originaldate))
-#define REV_SORT_RG_TRACK_GAIN  (REV_SORT__START + offsetof(struct track_info, rg_track_gain))
-#define REV_SORT_RG_TRACK_PEAK  (REV_SORT__START + offsetof(struct track_info, rg_track_peak))
-#define REV_SORT_RG_ALBUM_GAIN  (REV_SORT__START + offsetof(struct track_info, rg_album_gain))
-#define REV_SORT_RG_ALBUM_PEAK  (REV_SORT__START + offsetof(struct track_info, rg_album_peak))
-#define REV_SORT_GENRE          (REV_SORT__START + offsetof(struct track_info, collkey_genre))
-#define REV_SORT_COMMENT        (REV_SORT__START + offsetof(struct track_info, collkey_comment))
-#define REV_SORT_ALBUMARTIST    (REV_SORT__START + offsetof(struct track_info, collkey_albumartist))
-#define REV_SORT_FILENAME       (REV_SORT__START + offsetof(struct track_info, filename))
-#define REV_SORT_FILEMTIME      (REV_SORT__START + offsetof(struct track_info, mtime))
-#define REV_SORT_BITRATE        (REV_SORT__START + offsetof(struct track_info, bitrate))
-#define REV_SORT_CODEC          (REV_SORT__START + offsetof(struct track_info, codec))
-#define REV_SORT_CODEC_PROFILE  (REV_SORT__START + offsetof(struct track_info, codec_profile))
-#define REV_SORT_MEDIA          (REV_SORT__START + offsetof(struct track_info, media))
+#define REV_SORT_START_		sizeof(struct track_info)
+#define REV_SORT_ARTIST		(REV_SORT_START_ + offsetof(struct track_info, collkey_artist))
+#define REV_SORT_ALBUM          (REV_SORT_START_ + offsetof(struct track_info, collkey_album))
+#define REV_SORT_TITLE          (REV_SORT_START_ + offsetof(struct track_info, collkey_title))
+#define REV_SORT_PLAY_COUNT   	(REV_SORT_START_ + offsetof(struct track_info, play_count))
+#define REV_SORT_TRACKNUMBER    (REV_SORT_START_ + offsetof(struct track_info, tracknumber))
+#define REV_SORT_DISCNUMBER     (REV_SORT_START_ + offsetof(struct track_info, discnumber))
+#define REV_SORT_DATE           (REV_SORT_START_ + offsetof(struct track_info, date))
+#define REV_SORT_ORIGINALDATE   (REV_SORT_START_ + offsetof(struct track_info, originaldate))
+#define REV_SORT_RG_TRACK_GAIN  (REV_SORT_START_ + offsetof(struct track_info, rg_track_gain))
+#define REV_SORT_RG_TRACK_PEAK  (REV_SORT_START_ + offsetof(struct track_info, rg_track_peak))
+#define REV_SORT_RG_ALBUM_GAIN  (REV_SORT_START_ + offsetof(struct track_info, rg_album_gain))
+#define REV_SORT_RG_ALBUM_PEAK  (REV_SORT_START_ + offsetof(struct track_info, rg_album_peak))
+#define REV_SORT_GENRE          (REV_SORT_START_ + offsetof(struct track_info, collkey_genre))
+#define REV_SORT_COMMENT        (REV_SORT_START_ + offsetof(struct track_info, collkey_comment))
+#define REV_SORT_ALBUMARTIST    (REV_SORT_START_ + offsetof(struct track_info, collkey_albumartist))
+#define REV_SORT_FILENAME       (REV_SORT_START_ + offsetof(struct track_info, filename))
+#define REV_SORT_FILEMTIME      (REV_SORT_START_ + offsetof(struct track_info, mtime))
+#define REV_SORT_BITRATE        (REV_SORT_START_ + offsetof(struct track_info, bitrate))
+#define REV_SORT_CODEC          (REV_SORT_START_ + offsetof(struct track_info, codec))
+#define REV_SORT_CODEC_PROFILE  (REV_SORT_START_ + offsetof(struct track_info, codec_profile))
+#define REV_SORT_MEDIA          (REV_SORT_START_ + offsetof(struct track_info, media))
 
 #define TI_MATCH_ARTIST       (1 << 0)
 #define TI_MATCH_ALBUM        (1 << 1)

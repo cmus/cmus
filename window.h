@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _WINDOW_H
-#define _WINDOW_H
+#ifndef CMUS_WINDOW_H_5D88D884D7E447F789298C0C16F807E3
+#define CMUS_WINDOW_H_5D88D884D7E447F789298C0C16F807E3
 
 #include "iter.h"
 

@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _SEARCH_H
-#define _SEARCH_H
+#ifndef CMUS_SEARCH_H_59E5D9486D1C40948462416263B2B69C
+#define CMUS_SEARCH_H_59E5D9486D1C40948462416263B2B69C
 
 #include "iter.h"
 

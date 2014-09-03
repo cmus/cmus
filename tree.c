@@ -1333,7 +1333,7 @@ static int artist_for_each_track(struct artist *artist, int (*cb)(void *data, st
 	return rc;
 }
 
-int __tree_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
+int _tree_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
 {
 	int rc = 0;
 
@@ -1363,7 +1363,7 @@ int __tree_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data
 
 int tree_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
 {
-	int rc = __tree_for_each_sel(cb, data, reverse);
+	int rc = _tree_for_each_sel(cb, data, reverse);
 
 	window_down(lib_cur_win, 1);
 	return rc;

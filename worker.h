@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _WORKER_H
-#define _WORKER_H
+#ifndef CMUS_WORKER_H_C883255FAE8D49B0AB8E4E82813BBCDD
+#define CMUS_WORKER_H_C883255FAE8D49B0AB8E4E82813BBCDD
 
 #define JOB_TYPE_NONE	0
 #define JOB_TYPE_ANY	-1

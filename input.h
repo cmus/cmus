@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _INPUT_H
-#define _INPUT_H
+#ifndef CMUS_INPUT_H_6E094F31BAD54B399F3D13A2D589731E
+#define CMUS_INPUT_H_6E094F31BAD54B399F3D13A2D589731E
 
 #include "keyval.h"
 #include "sf.h"

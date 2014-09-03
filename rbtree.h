@@ -52,7 +52,7 @@ static inline struct page * rb_search_page_cache(struct inode * inode,
 	return NULL;
 }
 
-static inline struct page * __rb_insert_page_cache(struct inode * inode,
+static inline struct page * _rb_insert_page_cache(struct inode * inode,
 						   unsigned long offset,
 						   struct rb_node * node)
 {
@@ -83,7 +83,7 @@ static inline struct page * rb_insert_page_cache(struct inode * inode,
 						 struct rb_node * node)
 {
 	struct page * ret;
-	if ((ret = __rb_insert_page_cache(inode, offset, node)))
+	if ((ret = _rb_insert_page_cache(inode, offset, node)))
 		goto out;
 	rb_insert_color(node, &inode->i_rb_page_cache);
  out:
@@ -92,8 +92,8 @@ static inline struct page * rb_insert_page_cache(struct inode * inode,
 -----------------------------------------------------------------------
 */
 
-#ifndef	_LINUX_RBTREE_H
-#define	_LINUX_RBTREE_H
+#ifndef CMUS_RBTREE_H_9A00D3E0C35846FA8CBE0837F71B92C7
+#define CMUS_RBTREE_H_9A00D3E0C35846FA8CBE0837F71B92C7
 
 #include "compiler.h" /* container_of */
 #include <stddef.h>

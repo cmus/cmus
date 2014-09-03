@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _OUTPUT_H
-#define _OUTPUT_H
+#ifndef CMUS_OUTPUT_H_E5BE2ECD3BDF42A9A2380F0DB403FC80
+#define CMUS_OUTPUT_H_E5BE2ECD3BDF42A9A2380F0DB403FC80
 
 #include "sf.h"
 #include "channelmap.h"

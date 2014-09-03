@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef PL_H
-#define PL_H
+#ifndef CMUS_PL_H_67B7F3F3A293483CBFD0237EED2CA84D
+#define CMUS_PL_H_67B7F3F3A293483CBFD0237EED2CA84D
 
 #include "editable.h"
 #include "track_info.h"

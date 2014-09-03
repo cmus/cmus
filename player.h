@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _PLAYER_H
-#define _PLAYER_H
+#ifndef CMUS_PLAYER_H_216A550019EC4A69AE35EF4BF72DD64C
+#define CMUS_PLAYER_H_216A550019EC4A69AE35EF4BF72DD64C
 
 #include "locking.h"
 #include "track_info.h"

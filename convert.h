@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef CONVERT_H
-#define CONVERT_H
+#ifndef CMUS_CONVERT_H_E058FEB266814BFBBDCDC81C28056659
+#define CMUS_CONVERT_H_E058FEB266814BFBBDCDC81C28056659
 
 #include <sys/types.h> /* ssize_t */
 

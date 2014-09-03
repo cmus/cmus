@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _READ_WRAPPER_H
-#define _READ_WRAPPER_H
+#ifndef CMUS_READ_WRAPPER_H_3C5D274EBA9643A5B159148FD407EB5A
+#define CMUS_READ_WRAPPER_H_3C5D274EBA9643A5B159148FD407EB5A
 
 #include "ip.h"
 
