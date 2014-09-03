@@ -47,8 +47,8 @@
 
 #define getentry(ptr, offset, type) (*((type *) ((void *) ((char *) (ptr) + (offset)))))
 
-#define STATIC_ASSERT(__cond) \
-	static uint8_t CONCATENATE(__cmus_unused_, __LINE__)[2*(__cond) - 1] UNUSED
+#define STATIC_ASSERT(cond) \
+	static uint8_t CONCATENATE(_cmus_unused_, __LINE__)[2*(cond) - 1] UNUSED
 
 
 static inline int min(int a, int b)

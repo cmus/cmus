@@ -57,7 +57,7 @@ void editable_remove_matching_tracks(struct editable *e,
 void editable_mark(struct editable *e, const char *filter);
 void editable_unmark(struct editable *e);
 void editable_invert_marks(struct editable *e);
-int __editable_for_each_sel(struct editable *e, int (*cb)(void *data, struct track_info *ti),
+int _editable_for_each_sel(struct editable *e, int (*cb)(void *data, struct track_info *ti),
 		void *data, int reverse);
 int editable_for_each_sel(struct editable *e, int (*cb)(void *data, struct track_info *ti),
 		void *data, int reverse);
