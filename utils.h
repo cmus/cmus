@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _UTILS_H
-#define _UTILS_H
+#ifndef CMUS_UTILS_H
+#define CMUS_UTILS_H
 
 #ifdef HAVE_CONFIG
 #include "config/utils.h"

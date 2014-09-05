@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef TRACK_H
-#define TRACK_H
+#ifndef CMUS_TRACK_H
+#define CMUS_TRACK_H
 
 #include "list.h"
 #include "rbtree.h"

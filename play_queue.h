@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _PLAY_QUEUE_H
-#define _PLAY_QUEUE_H
+#ifndef CMUS_PLAY_QUEUE_H
+#define CMUS_PLAY_QUEUE_H
 
 #include "editable.h"
 #include "track_info.h"

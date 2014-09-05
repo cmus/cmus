@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _XSTRJOIN_H
-#define _XSTRJOIN_H
+#ifndef CMUS_XSTRJOIN_H
+#define CMUS_XSTRJOIN_H
 
 char *xstrjoin(const char *a, const char *b);
 

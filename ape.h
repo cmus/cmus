@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _APE_H
-#define _APE_H
+#ifndef CMUS_APE_H
+#define CMUS_APE_H
 
 #include <stdint.h>
 #include <stdlib.h>

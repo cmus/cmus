@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _LOCKING_H
-#define _LOCKING_H
+#ifndef CMUS_LOCKING_H
+#define CMUS_LOCKING_H
 
 #include <pthread.h>
 

@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef EDITABLE_H
-#define EDITABLE_H
+#ifndef CMUS_EDITABLE_H
+#define CMUS_EDITABLE_H
 
 #include "window.h"
 #include "list.h"

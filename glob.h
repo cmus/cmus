@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef GLOB_H
-#define GLOB_H
+#ifndef CMUS_GLOB_H
+#define CMUS_GLOB_H
 
 #include "list.h"
 

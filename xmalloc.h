@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _XMALLOC_H
-#define _XMALLOC_H
+#ifndef CMUS_XMALLOC_H
+#define CMUS_XMALLOC_H
 
 #include "compiler.h"
 #ifdef HAVE_CONFIG

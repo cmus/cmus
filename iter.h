@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _ITER_H
-#define _ITER_H
+#ifndef CMUS_ITER_H
+#define CMUS_ITER_H
 
 #include <stddef.h> /* NULL */
 

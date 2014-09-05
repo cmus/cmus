@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _FILE_H
-#define _FILE_H
+#ifndef CMUS_FILE_H
+#define CMUS_FILE_H
 
 #include <stddef.h> /* size_t */
 #include <sys/types.h> /* ssize_t */

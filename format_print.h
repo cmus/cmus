@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _FORMAT_PRINT_H
-#define _FORMAT_PRINT_H
+#ifndef CMUS_FORMAT_PRINT_H
+#define CMUS_FORMAT_PRINT_H
 
 #include "gbuf.h"
 

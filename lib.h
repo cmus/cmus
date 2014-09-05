@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LIB_H
-#define LIB_H
+#ifndef CMUS_LIB_H
+#define CMUS_LIB_H
 
 #include "editable.h"
 #include "search.h"

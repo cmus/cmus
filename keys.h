@@ -18,8 +18,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef KEYS_H
-#define KEYS_H
+#ifndef CMUS_KEYS_H
+#define CMUS_KEYS_H
 
 #include "uchar.h"
 
