@@ -79,19 +79,19 @@ static const struct {
 #define BUG() die("BUG in %s\n", __FUNCTION__)
 
 #ifdef __GNUC__
-#define __NORETURN	__attribute__((__noreturn__))
+#define CMUS_NORETURN	__attribute__((__noreturn__))
 #else
-#define __NORETURN
+#define CMUS_NORETURN
 #endif
 
-static __NORETURN void quit(void)
+static CMUS_NORETURN void quit(void)
 {
 	if (tmp_file[0])
 		unlink(tmp_file);
 	exit(1);
 }
 
-static __NORETURN void die(const char *format, ...)
+static CMUS_NORETURN void die(const char *format, ...)
 {
 	va_list ap;
 
@@ -102,7 +102,7 @@ static __NORETURN void die(const char *format, ...)
 	quit();
 }
 
-static __NORETURN void syntax(int line, const char *format, ...)
+static CMUS_NORETURN void syntax(int line, const char *format, ...)
 {
 	va_list ap;
 

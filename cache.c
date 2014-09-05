@@ -63,7 +63,7 @@ struct cache_entry {
 	int32_t bitrate;
 
         // when introducing new fields decrease the reserved space accordingly
-        uint8_t __reserved[CACHE_ENTRY_RESERVED_SIZE];
+        uint8_t _reserved[CACHE_ENTRY_RESERVED_SIZE];
 
 	// filename, codec, codec_profile and N * (key, val)
 	char strings[];
@@ -319,7 +319,7 @@ static void write_ti(int fd, struct gbuf *buf, struct track_info *ti, unsigned i
 	struct cache_entry e;
 	int *len, alloc = 64, count, i;
 
-	memset(e.__reserved, CACHE_RESERVED_PATTERN, sizeof(e.__reserved));
+	memset(e._reserved, CACHE_RESERVED_PATTERN, sizeof(e._reserved));
 
 	count = 0;
 	len = xnew(int, alloc);
