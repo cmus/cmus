@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _OP_H
-#define _OP_H
+#ifndef CMUS_OP_H
+#define CMUS_OP_H
 
 #include "sf.h"
 #include "channelmap.h"

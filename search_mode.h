@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _SEARCH_MODE_H
-#define _SEARCH_MODE_H
+#ifndef CMUS_SEARCH_MODE_H
+#define CMUS_SEARCH_MODE_H
 
 #include "search.h"
 #include "uchar.h"

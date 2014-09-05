@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef DEBUG_H
-#define DEBUG_H
+#ifndef CMUS_DEBUG_H
+#define CMUS_DEBUG_H
 
 #include "compiler.h"
 #ifdef HAVE_CONFIG

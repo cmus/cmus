@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _BUFFER_H
-#define _BUFFER_H
+#ifndef CMUS_BUFFER_H
+#define CMUS_BUFFER_H
 
 /* must be a multiple of any supported frame size */
 #define CHUNK_SIZE (60 * 1024)

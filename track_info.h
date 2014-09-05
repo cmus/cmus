@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _TRACK_INFO_H
-#define _TRACK_INFO_H
+#ifndef CMUS_TRACK_INFO_H
+#define CMUS_TRACK_INFO_H
 
 #include <time.h>
 #include <stddef.h>

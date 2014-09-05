@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef JOB_H
-#define JOB_H
+#ifndef CMUS_JOB_H
+#define CMUS_JOB_H
 
 #include "cmus.h"
 

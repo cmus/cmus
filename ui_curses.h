@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _UI_CURSES_H
-#define _UI_CURSES_H
+#ifndef CMUS_UI_CURSES_H
+#define CMUS_UI_CURSES_H
 
 #include "search.h"
 #include "compiler.h"

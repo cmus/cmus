@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _MIXER_H
-#define _MIXER_H
+#ifndef CMUS_MIXER_H
+#define CMUS_MIXER_H
 
 #ifndef __GNUC__
 #include <fcntl.h>

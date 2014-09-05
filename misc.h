@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _MISC_H
-#define _MISC_H
+#ifndef CMUS_MISC_H
+#define CMUS_MISC_H
 
 extern const char *cmus_config_dir;
 extern const char *cmus_socket_path;
