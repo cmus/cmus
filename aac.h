@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _AAC_H
-#define _AAC_H
+#ifndef CMUS_AAC_H
+#define CMUS_AAC_H
 
 #include "channelmap.h"
 #include <neaacdec.h>

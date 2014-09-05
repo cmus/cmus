@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _UCHAR_H
-#define _UCHAR_H
+#ifndef CMUS_UCHAR_H
+#define CMUS_UCHAR_H
 
 #include <stddef.h> /* size_t */
 

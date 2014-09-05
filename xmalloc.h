@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _XMALLOC_H
-#define _XMALLOC_H
+#ifndef CMUS_XMALLOC_H
+#define CMUS_XMALLOC_H
 
 #include "compiler.h"
 #ifdef HAVE_CONFIG
@@ -27,13 +27,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-void malloc_fail(void) __NORETURN;
+void malloc_fail(void) CMUS_NORETURN;
 
 #define xnew(type, n)		(type *)xmalloc(sizeof(type) * (n))
 #define xnew0(type, n)		(type *)xmalloc0(sizeof(type) * (n))
 #define xrenew(type, mem, n)	(type *)xrealloc(mem, sizeof(type) * (n))
 
-static inline void * __MALLOC xmalloc(size_t size)
+static inline void * CMUS_MALLOC xmalloc(size_t size)
 {
 	void *ptr = malloc(size);
 
@@ -42,7 +42,7 @@ static inline void * __MALLOC xmalloc(size_t size)
 	return ptr;
 }
 
-static inline void * __MALLOC xmalloc0(size_t size)
+static inline void * CMUS_MALLOC xmalloc0(size_t size)
 {
 	void *ptr = calloc(1, size);
 
@@ -51,7 +51,7 @@ static inline void * __MALLOC xmalloc0(size_t size)
 	return ptr;
 }
 
-static inline void * __MALLOC xrealloc(void *ptr, size_t size)
+static inline void * CMUS_MALLOC xrealloc(void *ptr, size_t size)
 {
 	ptr = realloc(ptr, size);
 	if (unlikely(ptr == NULL))
@@ -59,7 +59,7 @@ static inline void * __MALLOC xrealloc(void *ptr, size_t size)
 	return ptr;
 }
 
-static inline char * __MALLOC xstrdup(const char *str)
+static inline char * CMUS_MALLOC xstrdup(const char *str)
 {
 #ifdef HAVE_STRDUP
 	char *s = strdup(str);
@@ -74,7 +74,7 @@ static inline char * __MALLOC xstrdup(const char *str)
 }
 
 #ifdef HAVE_STRNDUP
-static inline char * __MALLOC xstrndup(const char *str, size_t n)
+static inline char * CMUS_MALLOC xstrndup(const char *str, size_t n)
 {
 	char *s = strndup(str, n);
 	if (unlikely(s == NULL))
@@ -82,7 +82,7 @@ static inline char * __MALLOC xstrndup(const char *str, size_t n)
 	return s;
 }
 #else
-char * __MALLOC xstrndup(const char *str, size_t n);
+char * CMUS_MALLOC xstrndup(const char *str, size_t n);
 #endif
 
 static inline void free_str_array(char **array)

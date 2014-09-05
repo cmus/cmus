@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _COMMENT_H
-#define _COMMENT_H
+#ifndef CMUS_COMMENT_H
+#define CMUS_COMMENT_H
 
 #include "keyval.h"
 

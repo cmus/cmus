@@ -18,8 +18,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef GBUF_H
-#define GBUF_H
+#ifndef CMUS_GBUF_H
+#define CMUS_GBUF_H
 
 #include "compiler.h"
 
@@ -53,7 +53,7 @@ void gbuf_free(struct gbuf *buf);
 void gbuf_add_ch(struct gbuf *buf, char ch);
 void gbuf_add_bytes(struct gbuf *buf, const void *data, size_t len);
 void gbuf_add_str(struct gbuf *buf, const char *str);
-void gbuf_addf(struct gbuf *buf, const char *fmt, ...) __FORMAT(2, 3);
+void gbuf_addf(struct gbuf *buf, const char *fmt, ...) CMUS_FORMAT(2, 3);
 void gbuf_set(struct gbuf *buf, int c, size_t count);
 char *gbuf_steal(struct gbuf *buf);
 

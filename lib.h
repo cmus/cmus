@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LIB_H
-#define LIB_H
+#ifndef CMUS_LIB_H
+#define CMUS_LIB_H
 
 #include "editable.h"
 #include "search.h"
@@ -140,7 +140,7 @@ void tree_sel_current(void);
 void tree_sel_first(void);
 void tree_sel_track(struct tree_track *t);
 int tree_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
-int __tree_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
+int _tree_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
 
 struct track_info *sorted_activate_selected(void);
 void sorted_sel_current(void);

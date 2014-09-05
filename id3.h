@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _ID3_H
-#define _ID3_H
+#ifndef CMUS_ID3_H
+#define CMUS_ID3_H
 
 #include <stdint.h>
 

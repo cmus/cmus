@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _HISTORY_H
-#define _HISTORY_H
+#ifndef CMUS_HISTORY_H
+#define CMUS_HISTORY_H
 
 #include "list.h"
 

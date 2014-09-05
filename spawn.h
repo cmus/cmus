@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _SPAWN_H
-#define _SPAWN_H
+#ifndef CMUS_SPAWN_H
+#define CMUS_SPAWN_H
 
 int spawn(char *argv[], int *status, int do_wait);
 

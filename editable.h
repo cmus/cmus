@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef EDITABLE_H
-#define EDITABLE_H
+#ifndef CMUS_EDITABLE_H
+#define CMUS_EDITABLE_H
 
 #include "window.h"
 #include "list.h"
@@ -57,7 +57,7 @@ void editable_remove_matching_tracks(struct editable *e,
 void editable_mark(struct editable *e, const char *filter);
 void editable_unmark(struct editable *e);
 void editable_invert_marks(struct editable *e);
-int __editable_for_each_sel(struct editable *e, int (*cb)(void *data, struct track_info *ti),
+int _editable_for_each_sel(struct editable *e, int (*cb)(void *data, struct track_info *ti),
 		void *data, int reverse);
 int editable_for_each_sel(struct editable *e, int (*cb)(void *data, struct track_info *ti),
 		void *data, int reverse);

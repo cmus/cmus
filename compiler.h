@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef COMPILER_H
-#define COMPILER_H
+#ifndef CMUS_COMPILER_H
+#define CMUS_COMPILER_H
 
 #include <stddef.h>
 
@@ -50,20 +50,20 @@
 #endif
 
 /* Optimization: Function never returns */
-#define __NORETURN	__attribute__((__noreturn__))
+#define CMUS_NORETURN	__attribute__((__noreturn__))
 
 /* Argument at index @fmt_idx is printf compatible format string and
  * argument at index @first_idx is the first format argument */
-#define __FORMAT(fmt_idx, first_idx) __attribute__((format(printf, (fmt_idx), (first_idx))))
+#define CMUS_FORMAT(fmt_idx, first_idx) __attribute__((format(printf, (fmt_idx), (first_idx))))
 
 #if defined(__GNUC__) && (__GNUC__ >= 3)
 
 /* Optimization: Pointer returned can't alias other pointers */
-#define __MALLOC	__attribute__((__malloc__))
+#define CMUS_MALLOC	__attribute__((__malloc__))
 
 #else
 
-#define __MALLOC
+#define CMUS_MALLOC
 
 #endif
 
@@ -81,8 +81,8 @@
 #undef container_of
 #if defined(__GNUC__)
 #define container_of(ptr, type, member) __extension__ ({		\
-	const __typeof__( ((type *)0)->member ) *__mptr = (ptr);	\
-	container_of_portable(__mptr, type, member);})
+	const __typeof__( ((type *)0)->member ) *_mptr = (ptr);	\
+	container_of_portable(_mptr, type, member);})
 #else
 #define container_of(ptr, type, member) container_of_portable(ptr, type, member)
 #endif

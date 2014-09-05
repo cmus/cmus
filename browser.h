@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _BROWSER_H
-#define _BROWSER_H
+#ifndef CMUS_BROWSER_H
+#define CMUS_BROWSER_H
 
 #include "list.h"
 #include "window.h"

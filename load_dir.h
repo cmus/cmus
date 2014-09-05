@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _LOAD_DIR_H
-#define _LOAD_DIR_H
+#ifndef CMUS_LOAD_DIR_H
+#define CMUS_LOAD_DIR_H
 
 #include <sys/stat.h>
 #include <stdlib.h>

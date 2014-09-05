@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _TABEXP_H
-#define _TABEXP_H
+#ifndef CMUS_TABEXP_H
+#define CMUS_TABEXP_H
 
 struct tabexp {
 	char *head;

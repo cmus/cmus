@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _HTTP_H
-#define _HTTP_H
+#ifndef CMUS_HTTP_H
+#define CMUS_HTTP_H
 
 #include "keyval.h"
 

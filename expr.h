@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef EXPR_H
-#define EXPR_H
+#ifndef CMUS_EXPR_H
+#define CMUS_EXPR_H
 
 #include "track_info.h"
 #include "list.h"

@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _PATH_H
-#define _PATH_H
+#ifndef CMUS_PATH_H
+#define CMUS_PATH_H
 
 const char *get_extension(const char *filename);
 const char *path_basename(const char *path);

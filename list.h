@@ -15,8 +15,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef _LINUX_LIST_H
-#define _LINUX_LIST_H
+#ifndef CMUS_LIST_H
+#define CMUS_LIST_H
 
 #include "compiler.h" /* container_of */
 
@@ -35,7 +35,7 @@ static inline void prefetch(const void *x)
 /*
  * Simple doubly linked list implementation.
  *
- * Some of the internal functions ("__xxx") are useful when
+ * Some of the internal functions ("_xxx") are useful when
  * manipulating whole lists rather than single entries, as
  * sometimes we already know the next/prev entries and we can
  * generate better code by using them directly rather than
@@ -63,7 +63,7 @@ static inline void list_init(struct list_head *head)
  * This is only for internal list manipulation where we know
  * the prev/next entries already!
  */
-static inline void __list_add(struct list_head *new,
+static inline void _list_add(struct list_head *new,
 			      struct list_head *prev,
 			      struct list_head *next)
 {
@@ -83,7 +83,7 @@ static inline void __list_add(struct list_head *new,
  */
 static inline void list_add(struct list_head *new, struct list_head *head)
 {
-	__list_add(new, head, head->next);
+	_list_add(new, head, head->next);
 }
 
 /**
@@ -96,7 +96,7 @@ static inline void list_add(struct list_head *new, struct list_head *head)
  */
 static inline void list_add_tail(struct list_head *new, struct list_head *head)
 {
-	__list_add(new, head->prev, head);
+	_list_add(new, head->prev, head);
 }
 
 /*
@@ -106,7 +106,7 @@ static inline void list_add_tail(struct list_head *new, struct list_head *head)
  * This is only for internal list manipulation where we know
  * the prev/next entries already!
  */
-static inline void __list_del(struct list_head *prev, struct list_head *next)
+static inline void _list_del(struct list_head *prev, struct list_head *next)
 {
 	next->prev = prev;
 	prev->next = next;
@@ -120,7 +120,7 @@ static inline void __list_del(struct list_head *prev, struct list_head *next)
  */
 static inline void list_del(struct list_head *entry)
 {
-	__list_del(entry->prev, entry->next);
+	_list_del(entry->prev, entry->next);
 	entry->next = LIST_POISON1;
 	entry->prev = LIST_POISON2;
 }
@@ -131,7 +131,7 @@ static inline void list_del(struct list_head *entry)
  */
 static inline void list_del_init(struct list_head *entry)
 {
-	__list_del(entry->prev, entry->next);
+	_list_del(entry->prev, entry->next);
 	list_init(entry);
 }
 
@@ -142,7 +142,7 @@ static inline void list_del_init(struct list_head *entry)
  */
 static inline void list_move(struct list_head *list, struct list_head *head)
 {
-	__list_del(list->prev, list->next);
+	_list_del(list->prev, list->next);
 	list_add(list, head);
 }
 
@@ -154,7 +154,7 @@ static inline void list_move(struct list_head *list, struct list_head *head)
 static inline void list_move_tail(struct list_head *list,
 				  struct list_head *head)
 {
-	__list_del(list->prev, list->next);
+	_list_del(list->prev, list->next);
 	list_add_tail(list, head);
 }
 
@@ -167,7 +167,7 @@ static inline int list_empty(const struct list_head *head)
 	return head->next == head;
 }
 
-static inline void __list_splice(struct list_head *list,
+static inline void _list_splice(struct list_head *list,
 				 struct list_head *head)
 {
 	struct list_head *first = list->next;
@@ -189,7 +189,7 @@ static inline void __list_splice(struct list_head *list,
 static inline void list_splice(struct list_head *list, struct list_head *head)
 {
 	if (!list_empty(list))
-		__list_splice(list, head);
+		_list_splice(list, head);
 }
 
 /**
@@ -203,7 +203,7 @@ static inline void list_splice_init(struct list_head *list,
 				    struct list_head *head)
 {
 	if (!list_empty(list)) {
-		__list_splice(list, head);
+		_list_splice(list, head);
 		list_init(list);
 	}
 }
@@ -227,7 +227,7 @@ static inline void list_splice_init(struct list_head *list,
 		pos = pos->next, prefetch(pos->next))
 
 /**
- * __list_for_each	-	iterate over a list
+ * _list_for_each	-	iterate over a list
  * @pos:	the &struct list_head to use as a loop counter.
  * @head:	the head for your list.
  *
@@ -236,7 +236,7 @@ static inline void list_splice_init(struct list_head *list,
  * Use this for code that knows the list to be very short (empty
  * or 1 entry) most of the time.
  */
-#define __list_for_each(pos, head) \
+#define _list_for_each(pos, head) \
 	for (pos = (head)->next; pos != (head); pos = pos->next)
 
 /**

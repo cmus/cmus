@@ -262,7 +262,7 @@ void sorted_list_rebuild(struct list_head *head, struct rb_root *tree_root, cons
 		sorted_list_add_track(&tmp_head, &tmp_tree, track, keys, 0);
 	}
 	tree_root->rb_node = tmp_tree.rb_node;
-	__list_add(head, tmp_head.prev, tmp_head.next);
+	_list_add(head, tmp_head.prev, tmp_head.next);
 }
 
 static int compare_rand(const struct rb_node *a, const struct rb_node *b)

@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef FILTERS_H
-#define FILTERS_H
+#ifndef CMUS_FILTERS_H
+#define CMUS_FILTERS_H
 
 #include "list.h"
 #include "window.h"

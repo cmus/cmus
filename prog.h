@@ -16,8 +16,8 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef PROG_H
-#define PROG_H
+#ifndef CMUS_PROG_H
+#define CMUS_PROG_H
 
 #include "compiler.h"
 
@@ -42,9 +42,9 @@ struct option {
  */
 int get_option(char **argv[], const struct option *options, char **arg);
 
-void warn(const char *format, ...) __FORMAT(1, 2);
-void warn_errno(const char *format, ...) __FORMAT(1, 2);
-void die(const char *format, ...) __FORMAT(1, 2) __NORETURN;
-void die_errno(const char *format, ...) __FORMAT(1, 2) __NORETURN;
+void warn(const char *format, ...) CMUS_FORMAT(1, 2);
+void warn_errno(const char *format, ...) CMUS_FORMAT(1, 2);
+void die(const char *format, ...) CMUS_FORMAT(1, 2) CMUS_NORETURN;
+void die_errno(const char *format, ...) CMUS_FORMAT(1, 2) CMUS_NORETURN;
 
 #endif
