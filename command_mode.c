@@ -1024,16 +1024,16 @@ static void cmd_run(char *arg)
 	editable_lock();
 	switch (cur_view) {
 	case TREE_VIEW:
-		__tree_for_each_sel(add_ti, &sel, 0);
+		_tree_for_each_sel(add_ti, &sel, 0);
 		break;
 	case SORTED_VIEW:
-		__editable_for_each_sel(&lib_editable, add_ti, &sel, 0);
+		_editable_for_each_sel(&lib_editable, add_ti, &sel, 0);
 		break;
 	case PLAYLIST_VIEW:
-		__editable_for_each_sel(&pl_editable, add_ti, &sel, 0);
+		_editable_for_each_sel(&pl_editable, add_ti, &sel, 0);
 		break;
 	case QUEUE_VIEW:
-		__editable_for_each_sel(&pq_editable, add_ti, &sel, 0);
+		_editable_for_each_sel(&pq_editable, add_ti, &sel, 0);
 		break;
 	}
 	editable_unlock();
@@ -1162,16 +1162,16 @@ static void cmd_echo(char *arg)
 	editable_lock();
 	switch (cur_view) {
 	case TREE_VIEW:
-		__tree_for_each_sel(get_one_ti, &sel_ti, 0);
+		_tree_for_each_sel(get_one_ti, &sel_ti, 0);
 		break;
 	case SORTED_VIEW:
-		__editable_for_each_sel(&lib_editable, get_one_ti, &sel_ti, 0);
+		_editable_for_each_sel(&lib_editable, get_one_ti, &sel_ti, 0);
 		break;
 	case PLAYLIST_VIEW:
-		__editable_for_each_sel(&pl_editable, get_one_ti, &sel_ti, 0);
+		_editable_for_each_sel(&pl_editable, get_one_ti, &sel_ti, 0);
 		break;
 	case QUEUE_VIEW:
-		__editable_for_each_sel(&pq_editable, get_one_ti, &sel_ti, 0);
+		_editable_for_each_sel(&pq_editable, get_one_ti, &sel_ti, 0);
 		break;
 	}
 	editable_unlock();

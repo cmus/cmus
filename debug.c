@@ -50,7 +50,7 @@ void debug_init(void)
 /* This function must be defined even if debugging is disabled in the program
  * because debugging might still be enabled in some plugin.
  */
-void __debug_bug(const char *function, const char *fmt, ...)
+void _debug_bug(const char *function, const char *fmt, ...)
 {
 	const char *format = "\n%s: BUG: ";
 	va_list ap;
@@ -71,7 +71,7 @@ void __debug_bug(const char *function, const char *fmt, ...)
 	exit(127);
 }
 
-void __debug_print(const char *function, const char *fmt, ...)
+void _debug_print(const char *function, const char *fmt, ...)
 {
 #if DEBUG > 1
 	va_list ap;
@@ -102,6 +102,6 @@ void timer_print(const char *what, uint64_t usec)
 	uint64_t a = usec / 1e6;
 	uint64_t b = usec - a * 1e6;
 
-	__debug_print("TIMER", "%s: %11u.%06u\n", what, (unsigned int)a, (unsigned int)b);
+	_debug_print("TIMER", "%s: %11u.%06u\n", what, (unsigned int)a, (unsigned int)b);
 #endif
 }

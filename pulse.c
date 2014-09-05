@@ -44,7 +44,7 @@ static int pa_restore_volume = 1;
 
 #define ret_pa_last_error() ret_pa_error(pa_context_errno(pa_ctx))
 
-static pa_proplist *__create_app_proplist(void)
+static pa_proplist *_create_app_proplist(void)
 {
 	pa_proplist	*pl;
 	int		 rc;
@@ -61,7 +61,7 @@ static pa_proplist *__create_app_proplist(void)
 	return pl;
 }
 
-static pa_proplist *__create_stream_proplist(void)
+static pa_proplist *_create_stream_proplist(void)
 {
 	pa_proplist	*pl;
 	int		 rc;
@@ -78,7 +78,7 @@ static pa_proplist *__create_stream_proplist(void)
 	return pl;
 }
 
-static const char *__pa_context_state_str(pa_context_state_t s)
+static const char *_pa_context_state_str(pa_context_state_t s)
 {
 	switch (s) {
 	case PA_CONTEXT_AUTHORIZING:
@@ -100,11 +100,11 @@ static const char *__pa_context_state_str(pa_context_state_t s)
 	return "unknown";
 }
 
-static void __pa_context_running_cb(pa_context *c, void *data)
+static void _pa_context_running_cb(pa_context *c, void *data)
 {
 	const pa_context_state_t cs = pa_context_get_state(c);
 
-	d_print("pulse: context state has changed to %s\n", __pa_context_state_str(cs));
+	d_print("pulse: context state has changed to %s\n", _pa_context_state_str(cs));
 
 	switch (cs) {
 	case PA_CONTEXT_READY:
@@ -116,7 +116,7 @@ static void __pa_context_running_cb(pa_context *c, void *data)
 	}
 }
 
-static const char *__pa_stream_state_str(pa_stream_state_t s)
+static const char *_pa_stream_state_str(pa_stream_state_t s)
 {
 	switch (s) {
 	case PA_STREAM_CREATING:
@@ -134,11 +134,11 @@ static const char *__pa_stream_state_str(pa_stream_state_t s)
 	return "unknown";
 }
 
-static void __pa_stream_running_cb(pa_stream *s, void *data)
+static void _pa_stream_running_cb(pa_stream *s, void *data)
 {
 	const pa_stream_state_t ss = pa_stream_get_state(s);
 
-	d_print("pulse: stream state has changed to %s\n", __pa_stream_state_str(ss));
+	d_print("pulse: stream state has changed to %s\n", _pa_stream_state_str(ss));
 
 	switch (ss) {
 	case PA_STREAM_READY:
@@ -150,10 +150,10 @@ static void __pa_stream_running_cb(pa_stream *s, void *data)
 	}
 }
 
-static void __pa_sink_input_info_cb(pa_context *c,
-				    const pa_sink_input_info *i,
-				    int eol,
-				    void *data)
+static void _pa_sink_input_info_cb(pa_context *c,
+				   const pa_sink_input_info *i,
+				   int eol,
+				   void *data)
 {
 	if (i) {
 		memcpy(&pa_vol, &i->volume, sizeof(pa_vol));
@@ -161,12 +161,12 @@ static void __pa_sink_input_info_cb(pa_context *c,
 	}
 }
 
-static void __pa_stream_success_cb(pa_stream *s, int success, void *data)
+static void _pa_stream_success_cb(pa_stream *s, int success, void *data)
 {
 	pa_threaded_mainloop_signal(pa_ml, 0);
 }
 
-static pa_sample_format_t __pa_sample_format(sample_format_t sf)
+static pa_sample_format_t _pa_sample_format(sample_format_t sf)
 {
 	const int signed_	= sf_get_signed(sf);
 	const int big_endian	= sf_get_bigendian(sf);
@@ -189,7 +189,7 @@ static pa_sample_format_t __pa_sample_format(sample_format_t sf)
 	return PA_SAMPLE_INVALID;
 }
 
-static int __pa_wait_unlock(pa_operation *o)
+static int _pa_wait_unlock(pa_operation *o)
 {
 	pa_operation_state_t state;
 
@@ -210,7 +210,7 @@ static int __pa_wait_unlock(pa_operation *o)
 		ret_pa_last_error();
 }
 
-static int __pa_nowait_unlock(pa_operation *o)
+static int _pa_nowait_unlock(pa_operation *o)
 {
 	if (!o) {
 		pa_threaded_mainloop_unlock(pa_ml);
@@ -223,27 +223,27 @@ static int __pa_nowait_unlock(pa_operation *o)
 	return OP_ERROR_SUCCESS;
 }
 
-static int __pa_stream_cork(int pause_)
+static int _pa_stream_cork(int pause_)
 {
 	pa_threaded_mainloop_lock(pa_ml);
 
-	return __pa_wait_unlock(pa_stream_cork(pa_s, pause_, __pa_stream_success_cb, NULL));
+	return _pa_wait_unlock(pa_stream_cork(pa_s, pause_, _pa_stream_success_cb, NULL));
 }
 
-static int __pa_stream_drain(void)
+static int _pa_stream_drain(void)
 {
 	pa_threaded_mainloop_lock(pa_ml);
 
-	return __pa_wait_unlock(pa_stream_drain(pa_s, __pa_stream_success_cb, NULL));
+	return _pa_wait_unlock(pa_stream_drain(pa_s, _pa_stream_success_cb, NULL));
 }
 
-static int __pa_create_context(void)
+static int _pa_create_context(void)
 {
 	pa_mainloop_api	*api;
 	pa_proplist	*pl;
 	int		 rc;
 
-	pl = __create_app_proplist();
+	pl = _create_app_proplist();
 
 	api = pa_threaded_mainloop_get_api(pa_ml);
 	BUG_ON(!api);
@@ -254,7 +254,7 @@ static int __pa_create_context(void)
 	BUG_ON(!pa_ctx);
 	pa_proplist_free(pl);
 
-	pa_context_set_state_callback(pa_ctx, __pa_context_running_cb, NULL);
+	pa_context_set_state_callback(pa_ctx, _pa_context_running_cb, NULL);
 
 	rc = pa_context_connect(pa_ctx, NULL, PA_CONTEXT_NOFAIL, NULL);
 	if (rc)
@@ -338,7 +338,7 @@ static int op_pulse_open(sample_format_t sf, const channel_position_t *channel_m
 	int		 rc, i;
 
 	const pa_sample_spec ss = {
-		.format		= __pa_sample_format(sf),
+		.format		= _pa_sample_format(sf),
 		.rate		= sf_get_rate(sf),
 		.channels	= sf_get_channels(sf)
 	};
@@ -355,11 +355,11 @@ static int op_pulse_open(sample_format_t sf, const channel_position_t *channel_m
 	} else
 		pa_channel_map_init_auto(&pa_cmap, ss.channels, PA_CHANNEL_MAP_ALSA);
 
-	rc = __pa_create_context();
+	rc = _pa_create_context();
 	if (rc)
 		return rc;
 
-	pl = __create_stream_proplist();
+	pl = _create_stream_proplist();
 
 	pa_threaded_mainloop_lock(pa_ml);
 
@@ -370,7 +370,7 @@ static int op_pulse_open(sample_format_t sf, const channel_position_t *channel_m
 		ret_pa_last_error();
 	}
 
-	pa_stream_set_state_callback(pa_s, __pa_stream_running_cb, NULL);
+	pa_stream_set_state_callback(pa_s, _pa_stream_running_cb, NULL);
 
 	rc = pa_stream_connect_playback(pa_s,
 					NULL,
@@ -401,11 +401,11 @@ out_fail:
 static int op_pulse_close(void)
 {
 	/*
-	 * If this __pa_stream_drain() will be moved below following
+	 * If this _pa_stream_drain() will be moved below following
 	 * pa_threaded_mainloop_lock(), PulseAudio 0.9.19 will hang.
 	 */
 	if (pa_s)
-		__pa_stream_drain();
+		_pa_stream_drain();
 
 	pa_threaded_mainloop_lock(pa_ml);
 
@@ -430,7 +430,7 @@ static int op_pulse_drop(void)
 {
 	pa_threaded_mainloop_lock(pa_ml);
 
-	return __pa_wait_unlock(pa_stream_flush(pa_s, __pa_stream_success_cb, NULL));
+	return _pa_wait_unlock(pa_stream_flush(pa_s, _pa_stream_success_cb, NULL));
 }
 
 static int op_pulse_write(const char *buf, int count)
@@ -460,12 +460,12 @@ static int op_pulse_buffer_space(void)
 
 static int op_pulse_pause(void)
 {
-	return __pa_stream_cork(1);
+	return _pa_stream_cork(1);
 }
 
 static int op_pulse_unpause(void)
 {
-	return __pa_stream_cork(0);
+	return _pa_stream_cork(0);
 }
 
 static int op_pulse_set_option(int key, const char *val)
@@ -531,11 +531,11 @@ static int op_pulse_mixer_set_volume(int l, int r)
 	} else {
 		pa_threaded_mainloop_lock(pa_ml);
 
-		return __pa_nowait_unlock(pa_context_set_sink_input_volume(pa_ctx,
-								           pa_stream_get_index(pa_s),
-								           &pa_vol,
-								           NULL,
-								           NULL));
+		return _pa_nowait_unlock(pa_context_set_sink_input_volume(pa_ctx,
+								          pa_stream_get_index(pa_s),
+								          &pa_vol,
+								          NULL,
+								          NULL));
 	}
 }
 
@@ -549,10 +549,10 @@ static int op_pulse_mixer_get_volume(int *l, int *r)
 	if (pa_s) {
 		pa_threaded_mainloop_lock(pa_ml);
 
-		rc = __pa_wait_unlock(pa_context_get_sink_input_info(pa_ctx,
-								     pa_stream_get_index(pa_s),
-								     __pa_sink_input_info_cb,
-								     NULL));
+		rc = _pa_wait_unlock(pa_context_get_sink_input_info(pa_ctx,
+								    pa_stream_get_index(pa_s),
+								    _pa_sink_input_info_cb,
+								    NULL));
 	}
 
 	*l = pa_cvolume_get_position(&pa_vol, &pa_cmap, PA_CHANNEL_POSITION_FRONT_LEFT);
