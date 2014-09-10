@@ -84,6 +84,7 @@ mp4-objs		:= mp4.lo
 aac-objs		:= aac.lo
 ffmpeg-objs		:= ffmpeg.lo
 cue-objs		:= cue.lo
+vtx-objs		:= vtx.lo
 
 ip-$(CONFIG_CDIO)	+= cdio.so
 ip-$(CONFIG_FLAC)	+= flac.so
@@ -99,6 +100,7 @@ ip-$(CONFIG_MP4)	+= mp4.so
 ip-$(CONFIG_AAC)	+= aac.so
 ip-$(CONFIG_FFMPEG)	+= ffmpeg.so
 ip-$(CONFIG_CUE)	+= cue.so
+ip-$(CONFIG_VTX)	+= vtx.so
 
 $(cdio-objs):		CFLAGS += $(CDIO_CFLAGS) $(CDDB_CFLAGS)
 $(flac-objs):		CFLAGS += $(FLAC_CFLAGS)
@@ -113,6 +115,7 @@ $(mp4-objs):		CFLAGS += $(MP4_CFLAGS)
 $(aac-objs):		CFLAGS += $(AAC_CFLAGS)
 $(ffmpeg-objs):		CFLAGS += $(FFMPEG_CFLAGS)
 $(cue-objs):		CFLAGS += $(CUE_CFLAGS)
+$(vtx-objs):		CFLAGS += $(VTX_CFLAGS)
 
 cdio.so: $(cdio-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(CDIO_LIBS) $(CDDB_LIBS))
@@ -155,6 +158,9 @@ ffmpeg.so: $(ffmpeg-objs) $(libcmus-y)
 
 cue.so: $(cue-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(CUE_LIBS))
+
+vtx.so: $(vtx-objs) $(libcmus-y)
+	$(call cmd,ld_dl,$(VTX_LIBS))
 
 # }}}
 
