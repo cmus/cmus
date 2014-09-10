@@ -215,6 +215,13 @@ check_modplug()
 	return 0
 }
 
+check_vtx()
+{
+	check_header ayemu.h &&
+	check_library VTX "" "-layemu"
+	return $?
+}
+
 check_vorbis()
 {
 	if test "$CONFIG_TREMOR" = y
@@ -449,6 +456,7 @@ Optional Features: y/n
   CONFIG_MP4      	MPEG-4 AAC (.mp4, .m4a, .m4b)                   [auto]
   CONFIG_AAC      	AAC (.aac, audio/aac, audio/aacp)               [auto]
   CONFIG_FFMPEG   	FFMPEG (.shn, .wma)                             [auto]
+  CONFIG_VTX    	libayemu (.vtx)                                 [auto]
   CONFIG_CUE    	CUE sheets (.cue)                               [auto]
   CONFIG_ROAR           native RoarAudio output                         [auto]
   CONFIG_PULSE    	native PulseAudio output                        [auto]
@@ -512,6 +520,7 @@ check check_mp4     CONFIG_MP4
 check check_aac     CONFIG_AAC
 check check_ffmpeg  CONFIG_FFMPEG
 check check_cue     CONFIG_CUE
+check check_vtx     CONFIG_VTX
 # nothing to check, just validate the variable values
 check true          CONFIG_TREMOR
 check true          CONFIG_WAV
@@ -560,6 +569,7 @@ CFLAGS="${CFLAGS} -DHAVE_CONFIG"
 
 makefile_vars bindir datadir libdir mandir exampledir
 makefile_vars CONFIG_CDIO CONFIG_FLAC CONFIG_MAD CONFIG_MIKMOD CONFIG_MODPLUG CONFIG_MPC CONFIG_VORBIS CONFIG_OPUS CONFIG_WAVPACK CONFIG_WAV CONFIG_MP4 CONFIG_AAC CONFIG_FFMPEG CONFIG_CUE
+makefile_vars CONFIG_CDIO CONFIG_FLAC CONFIG_MAD CONFIG_MIKMOD CONFIG_MODPLUG CONFIG_MPC CONFIG_VORBIS CONFIG_OPUS CONFIG_WAVPACK CONFIG_WAV CONFIG_MP4 CONFIG_AAC CONFIG_FFMPEG CONFIG_CUE CONFIG_VTX
 makefile_vars CONFIG_ROAR CONFIG_PULSE CONFIG_ALSA CONFIG_JACK CONFIG_SAMPLERATE CONFIG_AO CONFIG_ARTS CONFIG_OSS CONFIG_SUN CONFIG_WAVEOUT
 
 generate_config_mk
