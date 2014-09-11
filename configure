@@ -217,8 +217,9 @@ check_modplug()
 
 check_vtx()
 {
+	check_header ayemu.h &&
 	check_library VTX "" "-layemu"
-	check_header "ayemu.h" || return $?
+	return $?
 }
 
 check_vorbis()

@@ -18,6 +18,7 @@
 #include "comment.h"
 #include "debug.h"
 #include "ip.h"
+#include "utils.h"
 #include "xmalloc.h"
 #include <ayemu.h>
 #include <string.h>
@@ -83,16 +84,16 @@ static int vtx_read(struct input_plugin_data *ip_data, char *buffer, int count)
 
 	while (need > 0) {
 		if (priv->left > 0) {
-			donow = (need > priv->left) ? priv->left : need;
+			donow = min(need, priv->left);
 			buffer = ayemu_gen_sound(&priv->ay, (char *)buffer, donow);
 			priv->left -= donow;
 			need -= donow;
 		} else {
 			if (priv->pos >= priv->vtx->frames)
-			   return 0;	
+				return 0;
 			ayemu_vtx_getframe(priv->vtx, priv->pos++, priv->regs);
 			ayemu_set_regs(&priv->ay, priv->regs);
-			priv->left = sample_rate / priv->vtx->playerFreq * channels * bits / 8;
+			priv->left = (sample_rate / priv->vtx->playerFreq) * (channels * bits / 8);
 		}
 	}
 
@@ -121,21 +122,21 @@ static int vtx_read_comments(struct input_plugin_data *ip_data, struct keyval **
 
 	str = priv->vtx->author;
 	if (str && str[0])
-		comments_add_const(&c, "artist", str);
+		comments_add_const(&c, "artist", xstrdup(str));
 	str = priv->vtx->from;
 	if (str && str[0])
-		comments_add_const(&c, "album", str);
+		comments_add_const(&c, "album", xstrdup(str));
 	str = priv->vtx->title;
 	if (str && str[0])
-		comments_add_const(&c, "title", str);
+		comments_add_const(&c, "title", xstrdup(str));
 	int year = priv->vtx->year;
 	if (year > 0) {
 		sprintf((char *)str, "%d", year);
-		comments_add_const(&c, "date", str);
+		comments_add_const(&c, "date", xstrdup(str));
 	}
 	str = priv->vtx->comment;
 	if (str && str[0])
-		comments_add_const(&c, "comment", str);
+		comments_add_const(&c, "comment", xstrdup(str));
 
 	keyvals_terminate(&c);
 	*comments = c.keyvals;
