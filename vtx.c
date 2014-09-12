@@ -31,9 +31,9 @@ struct vtx_private {
 	int left;
 };
 
-static int sample_rate = 44100;
-static int channels = 2;
-static int bits = 16;
+static const int sample_rate = 44100;
+static const int channels = 2;
+static const int bits = 16;
 
 static int vtx_open(struct input_plugin_data *ip_data)
 {
