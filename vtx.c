@@ -122,21 +122,22 @@ static int vtx_read_comments(struct input_plugin_data *ip_data, struct keyval **
 
 	str = priv->vtx->author;
 	if (str && str[0])
-		comments_add_const(&c, "artist", xstrdup(str));
+		comments_add_const(&c, "artist", str);
 	str = priv->vtx->from;
 	if (str && str[0])
-		comments_add_const(&c, "album", xstrdup(str));
+		comments_add_const(&c, "album", str);
 	str = priv->vtx->title;
 	if (str && str[0])
-		comments_add_const(&c, "title", xstrdup(str));
+		comments_add_const(&c, "title", str);
 	int year = priv->vtx->year;
 	if (year > 0) {
-		sprintf((char *)str, "%d", year);
-		comments_add_const(&c, "date", xstrdup(str));
+		char buf[5] = {0};
+		snprintf(buf, sizeof buf, "%d", year);
+		comments_add_const(&c, "date", buf);
 	}
 	str = priv->vtx->comment;
 	if (str && str[0])
-		comments_add_const(&c, "comment", xstrdup(str));
+		comments_add_const(&c, "comment", str);
 
 	keyvals_terminate(&c);
 	*comments = c.keyvals;
