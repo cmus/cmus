@@ -233,9 +233,17 @@ int u_char_width(uchar u)
 	if (u >= 0xff00U && u <= 0xff60U)
 		goto wide;
 
+	/* Halfwidth Forms */
+	if (u >= 0xff61U && u <= 0xffdfU)
+		goto narrow;
+
 	/* Fullwidth Forms */
 	if (u >= 0xffe0U && u <= 0xffe6U)
 		goto wide;
+
+	/* Halfwidth Forms */
+	if (u >= 0xffe8U && u <= 0xffeeU)
+		goto narrow;
 
 	/* CJK extra stuff */
 	if (u >= 0x20000U && u <= 0x2fffdU)
