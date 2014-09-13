@@ -131,7 +131,7 @@ static int vtx_read_comments(struct input_plugin_data *ip_data, struct keyval **
 		comments_add_const(&c, "title", str);
 	int year = priv->vtx->year;
 	if (year > 0) {
-		char buf[5] = {0};
+		char buf[16] = {0};
 		snprintf(buf, sizeof buf, "%d", year);
 		comments_add_const(&c, "date", buf);
 	}
