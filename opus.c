@@ -1,6 +1,6 @@
 /*
- * Copyright 2008-2013 Various Authors
- * Copyright 2004-2005 Timo Hirvonen
+ * Copyright 2008-2014 Various Authors
+ * Copyright 2012 Tuncer Ayaz
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
