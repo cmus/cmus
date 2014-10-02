@@ -749,7 +749,7 @@ static size_t id3_skiplen(const char *buf, size_t len, int encoding)
 			i += 2;
 		}
 
-		BUG_ON(1);
+		return len;
 	}
 }
 
