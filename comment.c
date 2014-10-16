@@ -40,7 +40,7 @@ int track_is_compilation(const struct keyval *comments)
 	if (c && is_freeform_true(c))
 		return 1;
 
-	aa = keyvals_get_val(comments, "albumartist");
+	aa = comments_get_albumartist(comments);
 	if (aa && is_various_artists(aa))
 		return 1;
 
@@ -55,7 +55,7 @@ int track_is_va_compilation(const struct keyval *comments)
 {
 	const char *c, *aa;
 
-	aa = keyvals_get_val(comments, "albumartist");
+	aa = comments_get_albumartist(comments);
 	if (aa)
 		return is_various_artists(aa);
 
