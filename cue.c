@@ -276,7 +276,7 @@ static int cue_read_comments(struct input_plugin_data *ip_data, struct keyval **
 	}
 
 	snprintf(buf, sizeof buf, "%d", priv->track_n);
-	comments_add(&c, "tracknumber", xstrdup(buf));
+	comments_add_const(&c, "tracknumber", buf);
 
 	cd_rem = cd_get_rem(cd);
 	cd_cdtext = cd_get_cdtext(cd);
@@ -285,27 +285,27 @@ static int cue_read_comments(struct input_plugin_data *ip_data, struct keyval **
 
 	val = cdtext_get(PTI_TITLE, track_cdtext);
 	if (val != NULL)
-		comments_add(&c, "title", xstrdup(val));
+		comments_add_const(&c, "title", val);
 
 	val = cdtext_get(PTI_TITLE, cd_cdtext);
 	if (val != NULL)
-		comments_add(&c, "album", xstrdup(val));
+		comments_add_const(&c, "album", val);
 
 	val = cdtext_get(PTI_PERFORMER, track_cdtext);
 	if (val != NULL)
-		comments_add(&c, "artist", xstrdup(val));
+		comments_add_const(&c, "artist", val);
 
 	val = cdtext_get(PTI_PERFORMER, cd_cdtext);
 	if (val != NULL)
-		comments_add(&c, "albumartist", xstrdup(val));
+		comments_add_const(&c, "albumartist", val);
 
 	val = rem_get(REM_DATE, track_rem);
 	if (val != NULL) {
-		comments_add(&c, "date", xstrdup(val));
+		comments_add_const(&c, "date", val);
 	} else {
 		val = rem_get(REM_DATE, cd_rem);
 		if (val != NULL)
-			comments_add(&c, "date", xstrdup(val));
+			comments_add_const(&c, "date", val);
 	}
 
 	/*
