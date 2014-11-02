@@ -1,0 +1,75 @@
+# bash completion for cmus-remote and cmus
+
+_cmus-remote()
+{
+	local cur prev longopts shortopts
+	cur="${COMP_WORDS[COMP_CWORD]}"
+	prev="${COMP_WORDS[COMP_CWORD-1]}"
+	# maybe we'll differentiate between $cur starting with - or --
+	longopts="--server --passwd --help --version --play --pause --stop
+		--next --prev --file --repeat --shuffle --volume --seek
+		--library --playlist --queue --clear --raw"
+	shortopts="-p -u -s -n -r -f -R -S -v -k -Q -l -P -q -c -C"
+
+	COMPREPLY=()
+
+	case "${prev}" in
+		--server) # can be a hostname[:port] or a filename
+			compopt -o nospace
+			_known_hosts_real -c "${cur}"
+			;&
+		--file|-f)
+			_filedir
+			return 0
+			;;
+		--passwd) # do not attempt to complete anything
+			;&
+		--volume|-v)
+			;&
+		--seek|-k)
+			;&
+		--raw|-C)
+		# supporting completion for raw commands would be nice (TODO)
+			return 0
+			;;
+		*)
+			;;
+	esac
+
+	if [[ ${cur} == -* ]]; then
+		COMPREPLY=(
+			$(compgen -W "${shortopts[*]} ${longopts[*]}" -- ${cur})
+		)
+	else
+		_filedir
+	fi
+}
+
+_cmus()
+{
+	local cur prev opts
+	cur="${COMP_WORDS[COMP_CWORD]}"
+	prev="${COMP_WORDS[COMP_CWORD-1]}"
+	opts="--listen --plugins --show-cursor --help --version"
+
+	COMPREPLY=()
+
+	case "${prev}" in
+		--listen)
+			compopt -o nospace
+			_ip_addresses
+			_filedir
+			return 0;
+			;;
+		--plugins|--help|--version)
+			return 0;
+			;;
+		*)
+			;;
+	esac
+
+	COMPREPLY=($(compgen -W "${opts[*]}" -- ${cur}))
+}
+
+complete -F _cmus-remote cmus-remote
+complete -F _cmus cmus
