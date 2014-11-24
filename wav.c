@@ -37,7 +37,7 @@
 #define WAVE_WRONG_HEADER 1
 
 struct wav_private {
-	unsigned int pcm_start;
+	off_t pcm_start;
 	unsigned int pcm_size;
 	unsigned int pos;
 
@@ -196,17 +196,17 @@ static int wav_open(struct input_plugin_data *ip_data)
 	rc = find_chunk(ip_data->fd, "data", &priv->pcm_size);
 	if (rc)
 		goto error_exit;
-	if (lseek(ip_data->fd, 0, SEEK_CUR) == -1) {
+	priv->pcm_start = lseek(ip_data->fd, 0, SEEK_CUR);
+	if (priv->pcm_start == -1) {
 		rc = -IP_ERROR_ERRNO;
 		goto error_exit;
 	}
-	priv->pcm_start = rc;
 
 	priv->sec_size = sf_get_second_size(ip_data->sf);
 	priv->frame_size = sf_get_frame_size(ip_data->sf);
 	priv->pos = 0;
 
-	d_print("pcm start: %u\n", priv->pcm_start);
+	d_print("pcm start: %u\n", (unsigned int)priv->pcm_start);
 	d_print("pcm size: %u\n", priv->pcm_size);
 	d_print("\n");
 	d_print("sr: %d, ch: %d, bits: %d, signed: %d\n", sf_get_rate(ip_data->sf),
@@ -214,7 +214,7 @@ static int wav_open(struct input_plugin_data *ip_data)
 			sf_get_signed(ip_data->sf));
 
 	/* clamp pcm_size to full frames (file might be corrupt or truncated) */
-	priv->pcm_size = priv->pcm_size & ~((unsigned int)sf_get_frame_size(ip_data->sf) - 1U);
+	priv->pcm_size -= priv->pcm_size % sf_get_frame_size(ip_data->sf);
 	return 0;
 error_exit:
 	save = errno;
