@@ -42,6 +42,7 @@ static int is_wav = 0;
 /* configuration */
 static char *libao_driver = NULL;
 static int libao_buffer_space = 16384;
+static int libao_cur_buffer_space = 0;
 
 
 static int op_ao_init(void)
@@ -167,6 +168,10 @@ static int op_ao_open(sample_format_t sf, const channel_position_t *channel_map)
 		}
 	}
 
+	/* ensure that the buffer size is a multiple of the frame size */
+	libao_cur_buffer_space = is_wav ? 128 * 1024 : libao_buffer_space;
+	libao_cur_buffer_space -= libao_cur_buffer_space % sf_get_frame_size(sf);
+
 #ifdef AO_API_1
 	d_print("channel matrix: %s\n", format.matrix ? format.matrix : "default");
 #endif
@@ -190,9 +195,7 @@ static int op_ao_write(const char *buffer, int count)
 
 static int op_ao_buffer_space(void)
 {
-	if (is_wav)
-		return 128 * 1024;
-	return libao_buffer_space;
+	return libao_cur_buffer_space;
 }
 
 static int op_ao_set_option(int key, const char *val)
