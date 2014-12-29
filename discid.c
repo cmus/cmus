@@ -40,7 +40,7 @@ char *get_default_cdda_device(void)
 	dev = discid_get_default_device();
 #endif
 	if (!dev)
-		dev = "/dev/cdrom";
+		dev = "/dev/rcd0c";
 	return xstrdup(dev);
 }
 
