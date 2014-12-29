@@ -18,6 +18,16 @@ check_cflags()
 	return 0
 }
 
+check_sndio()
+{
+	case `uname -s` in
+	OpenBSD)
+		check_library SNDIO "" "-lsndio"
+		return $?
+	esac
+	return 1
+}
+
 check_compat()
 {
 	COMPAT_LIBS=
@@ -466,6 +476,7 @@ Optional Features: y/n
   CONFIG_AO       	Libao cross-platform audio library              [auto]
   CONFIG_ARTS     	ARTS                                            [auto]
   CONFIG_OSS      	Open Sound System                               [auto]
+  CONFIG_SNDIO    	Sndio                                           [auto]
   CONFIG_SUN      	Sun Audio                                       [auto]
   CONFIG_WAVEOUT  	Windows Wave Out                                [auto]
   USE_FALLBACK_IP	Use a specific IP for every unrecognized	[n]
@@ -531,6 +542,7 @@ check check_samplerate CONFIG_SAMPLERATE
 check check_ao      CONFIG_AO
 check check_arts    CONFIG_ARTS
 check check_oss     CONFIG_OSS
+check check_sndio   CONFIG_SNDIO
 check check_sun     CONFIG_SUN
 check check_waveout CONFIG_WAVEOUT
 check check_roar    CONFIG_ROAR
@@ -569,6 +581,6 @@ CFLAGS="${CFLAGS} -DHAVE_CONFIG"
 
 makefile_vars bindir datadir libdir mandir exampledir
 makefile_vars CONFIG_CDIO CONFIG_FLAC CONFIG_MAD CONFIG_MIKMOD CONFIG_MODPLUG CONFIG_MPC CONFIG_VORBIS CONFIG_OPUS CONFIG_WAVPACK CONFIG_WAV CONFIG_MP4 CONFIG_AAC CONFIG_FFMPEG CONFIG_CUE CONFIG_VTX
-makefile_vars CONFIG_ROAR CONFIG_PULSE CONFIG_ALSA CONFIG_JACK CONFIG_SAMPLERATE CONFIG_AO CONFIG_ARTS CONFIG_OSS CONFIG_SUN CONFIG_WAVEOUT
+makefile_vars CONFIG_ROAR CONFIG_PULSE CONFIG_ALSA CONFIG_JACK CONFIG_SAMPLERATE CONFIG_AO CONFIG_ARTS CONFIG_OSS CONFIG_SNDIO CONFIG_SUN CONFIG_WAVEOUT
 
 generate_config_mk
