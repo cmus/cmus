@@ -1344,6 +1344,14 @@ static void cmd_p_stop(char *arg)
 	player_stop();
 }
 
+static void cmd_pwd(char *arg)
+{
+	char buf[PATH_MAX];
+	if (getcwd(buf, PATH_MAX)) {
+		info_msg("%s", buf);
+	}
+}
+
 static void cmd_search_next(char *arg)
 {
 	if (search_str) {
@@ -2553,6 +2561,7 @@ struct command commands[] = {
 	{ "player-stop",	cmd_p_stop,	0, 0, NULL,		  0, 0 },
 	{ "prev-view",		cmd_prev_view,	0, 0, NULL,		  0, 0 },
 	{ "push",		cmd_push,	1,-1, expand_commands,	  0, 0 },
+	{ "pwd",		cmd_pwd,	0, 0, NULL,		  0, 0 },
 	{ "quit",		cmd_quit,	0, 1, NULL,		  0, 0 },
 	{ "refresh",		cmd_refresh,	0, 0, NULL,		  0, 0 },
 	{ "run",		cmd_run,	1,-1, expand_program_paths, 0, CMD_UNSAFE },

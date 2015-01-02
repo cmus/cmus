@@ -484,6 +484,9 @@ push <text>
 	This command can only be bound to a key but not used in the command
 	line directly.
 
+pwd
+	Prints the current working directory.
+
 quit [-i] (*q*, *:wq*)
 	Exit cmus.
 
