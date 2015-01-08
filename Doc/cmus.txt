@@ -665,8 +665,8 @@ win-add-q (*e*)
 win-bottom (*G*, *end*)
 	Goto bottom of the current window.
 
-win-down (*j*, *down*)
-	Goto down one row in the current window.
+win-down [NUM] (*j*, *down*)
+	Goto down NUM (default 1) rows in the current window.
 
 win-mv-after (*p*)
 	If no tracks are marked, move the selected track down one row. If any
@@ -720,8 +720,8 @@ win-toggle (*space*)
 win-top (*g*, *home*)
 	Goto top of the current window.
 
-win-up (*k*, *up*)
-	Goto up one row in the current window.
+win-up [NUM] (*k*, *up*)
+	Goto up NUM (default 1) rows in the current window.
 
 win-update (*u*)
 	Checks the modification time of the files in the library, and updates

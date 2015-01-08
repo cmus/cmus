@@ -1706,8 +1706,18 @@ static void cmd_win_bottom(char *arg)
 
 static void cmd_win_down(char *arg)
 {
+	unsigned num_rows = 1;
+	char *end;
+
+	if (arg) {
+		if ((num_rows = get_number(arg, &end)) == 0 || *end) {
+			error_msg("invalid argument\n");
+			return;
+		}
+	}
+
 	editable_lock();
-	window_down(current_win(), 1);
+	window_down(current_win(), num_rows);
 	editable_unlock();
 }
 
@@ -1781,8 +1791,18 @@ static void cmd_win_top(char *arg)
 
 static void cmd_win_up(char *arg)
 {
+	unsigned num_rows = 1;
+	char *end;
+
+	if (arg) {
+		if ((num_rows = get_number(arg, &end)) == 0 || *end) {
+			error_msg("invalid argument\n");
+			return;
+		}
+	}
+
 	editable_lock();
-	window_up(current_win(), 1);
+	window_up(current_win(), num_rows);
 	editable_unlock();
 }
 
@@ -2588,7 +2608,7 @@ struct command commands[] = {
 	{ "win-add-Q",		cmd_win_add_Q,	0, 0, NULL,		  0, 0 },
 	{ "win-add-q",		cmd_win_add_q,	0, 0, NULL,		  0, 0 },
 	{ "win-bottom",		cmd_win_bottom,	0, 0, NULL,		  0, 0 },
-	{ "win-down",		cmd_win_down,	0, 0, NULL,		  0, 0 },
+	{ "win-down",		cmd_win_down,	0, 1, NULL,		  0, 0 },
 	{ "win-mv-after",	cmd_win_mv_after,0, 0, NULL,		  0, 0 },
 	{ "win-mv-before",	cmd_win_mv_before,0, 0, NULL,		  0, 0 },
 	{ "win-next",		cmd_win_next,	0, 0, NULL,		  0, 0 },
@@ -2603,7 +2623,7 @@ struct command commands[] = {
 	{ "win-sel-cur",	cmd_win_sel_cur,0, 0, NULL,		  0, 0 },
 	{ "win-toggle",		cmd_win_toggle,	0, 0, NULL,		  0, 0 },
 	{ "win-top",		cmd_win_top,	0, 0, NULL,		  0, 0 },
-	{ "win-up",		cmd_win_up,	0, 0, NULL,		  0, 0 },
+	{ "win-up",		cmd_win_up,	0, 1, NULL,		  0, 0 },
 	{ "win-update",		cmd_win_update,	0, 0, NULL,		  0, 0 },
 	{ "win-update-cache",	cmd_win_update_cache,0, 1, NULL,	  0, 0 },
 	{ "wq",			cmd_quit,	0, 1, NULL,		  0, 0 },
