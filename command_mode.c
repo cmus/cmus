@@ -1346,8 +1346,8 @@ static void cmd_p_stop(char *arg)
 
 static void cmd_pwd(char *arg)
 {
-	char buf[PATH_MAX];
-	if (getcwd(buf, PATH_MAX)) {
+	char buf[4096];
+	if (getcwd(buf, sizeof buf)) {
 		info_msg("%s", buf);
 	}
 }
