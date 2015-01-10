@@ -40,7 +40,8 @@ static void search_unlock(void)
 }
 
 /* returns next matching track (can be current!) or NULL if not found */
-static int do_u_search(struct searchable *s, struct iter *iter, const char *text, int direction)
+static int do_u_search(struct searchable *s, struct iter *iter, const char *text,
+		enum search_direction dir)
 {
 	struct iter start = *iter;
 	const char *msg = NULL;
@@ -51,7 +52,7 @@ static int do_u_search(struct searchable *s, struct iter *iter, const char *text
 				info_msg("%s\n", msg);
 			return 1;
 		}
-		if (direction == SEARCH_FORWARD) {
+		if (dir == SEARCH_FORWARD) {
 			if (!s->ops.get_next(iter)) {
 				if (!wrap_search)
 					return 0;
@@ -76,7 +77,8 @@ static int do_u_search(struct searchable *s, struct iter *iter, const char *text
 	}
 }
 
-static int do_search(struct searchable *s, struct iter *iter, const char *text, int direction)
+static int do_search(struct searchable *s, struct iter *iter, const char *text,
+		enum search_direction dir)
 {
 	char *u_text = NULL;
 	int r;
@@ -85,7 +87,7 @@ static int do_search(struct searchable *s, struct iter *iter, const char *text, 
 	if (!using_utf8 && utf8_encode(text, charset, &u_text) == 0)
 		text = u_text;
 
-	r = do_u_search(s, iter, text, direction);
+	r = do_u_search(s, iter, text, dir);
 
 	free(u_text);
 	return r;
