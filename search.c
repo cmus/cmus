@@ -39,44 +39,58 @@ static void search_unlock(void)
 	editable_unlock();
 }
 
-/* returns next matching track (can be current!) or NULL if not found */
-static int do_u_search(struct searchable *s, struct iter *iter, const char *text, int direction)
+static int advance(struct searchable *s, struct iter *iter,
+		enum search_direction dir, int *wrapped)
 {
-	struct iter start = *iter;
-	const char *msg = NULL;
+	if (dir == SEARCH_FORWARD) {
+		if (!s->ops.get_next(iter)) {
+			if (!wrap_search)
+				return 0;
+			*iter = s->head;
+			if (!s->ops.get_next(iter))
+				return 0;
+			*wrapped = 1;
+		}
+	} else {
+		if (!s->ops.get_prev(iter)) {
+			if (!wrap_search)
+				return 0;
+			*iter = s->head;
+			if (!s->ops.get_prev(iter))
+				return 0;
+			*wrapped = 1;
+		}
+	}
+	return 1;
+}
 
+/* returns next matching item or NULL if not found
+ * result can be the current item unless skip_current is set */
+static int do_u_search(struct searchable *s, struct iter *iter, const char *text,
+		enum search_direction dir, int skip_current)
+{
+	struct iter start;
+	int wrapped = 0;
+
+	if (skip_current && !advance(s, iter, dir, &wrapped))
+		return 0;
+
+	start = *iter;
 	while (1) {
 		if (s->ops.matches(s->data, iter, text)) {
-			if (msg)
-				info_msg("%s\n", msg);
+			if (wrapped)
+				info_msg(dir == SEARCH_FORWARD ?
+					 "search hit BOTTOM, continuing at TOP" :
+					 "search hit TOP, continuing at BOTTOM");
 			return 1;
 		}
-		if (direction == SEARCH_FORWARD) {
-			if (!s->ops.get_next(iter)) {
-				if (!wrap_search)
-					return 0;
-				*iter = s->head;
-				if (!s->ops.get_next(iter))
-					return 0;
-				msg = "search hit BOTTOM, continuing at TOP";
-			}
-		} else {
-			if (!s->ops.get_prev(iter)) {
-				if (!wrap_search)
-					return 0;
-				*iter = s->head;
-				if (!s->ops.get_prev(iter))
-					return 0;
-				msg = "search hit TOP, continuing at BOTTOM";
-			}
-		}
-		if (iters_equal(iter, &start)) {
+		if (!advance(s, iter, dir, &wrapped) || iters_equal(iter, &start))
 			return 0;
-		}
 	}
 }
 
-static int do_search(struct searchable *s, struct iter *iter, const char *text, int direction)
+static int do_search(struct searchable *s, struct iter *iter, const char *text,
+		enum search_direction dir, int skip_current)
 {
 	char *u_text = NULL;
 	int r;
@@ -85,7 +99,7 @@ static int do_search(struct searchable *s, struct iter *iter, const char *text, 
 	if (!using_utf8 && utf8_encode(text, charset, &u_text) == 0)
 		text = u_text;
 
-	r = do_u_search(s, iter, text, direction);
+	r = do_u_search(s, iter, text, dir, skip_current);
 
 	free(u_text);
 	return r;
@@ -126,7 +140,7 @@ int search(struct searchable *s, const char *text, enum search_direction dir, in
 		ret = s->ops.get_current(s->data, &iter);
 	}
 	if (ret)
-		ret = do_search(s, &iter, text, dir);
+		ret = do_search(s, &iter, text, dir, 0);
 	search_unlock();
 	return ret;
 }
@@ -141,13 +155,7 @@ int search_next(struct searchable *s, const char *text, enum search_direction di
 		search_unlock();
 		return 0;
 	}
-	if (dir == SEARCH_FORWARD) {
-		ret = s->ops.get_next(&iter);
-	} else {
-		ret = s->ops.get_prev(&iter);
-	}
-	if (ret)
-		ret = do_search(s, &iter, text, dir);
+	ret = do_search(s, &iter, text, dir, 1);
 	search_unlock();
 	return ret;
 }
