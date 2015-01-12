@@ -35,7 +35,7 @@
 
 static sample_format_t sndio_sf;
 static struct sio_par par;
-static struct sio_hdl *hdl = NULL;
+static struct sio_hdl *hdl;
 static int sndio_volume = 100;
 static int sndio_paused;
 
@@ -43,17 +43,20 @@ static int sndio_mixer_set_volume(int l, int r)
 {
 	sndio_volume = l > r ? l : r;
 
-	if (hdl != NULL)
-		sio_setvol(hdl, sndio_volume * SIO_MAXVOL / 100);
+	if (hdl == NULL)
+		return -OP_ERROR_NOT_INITIALIZED;
 
-	return 0;
+	if (!sio_setvol(hdl, sndio_volume * SIO_MAXVOL / 100))
+		return -OP_ERROR_INTERNAL;
+
+	return OP_ERROR_SUCCESS;
 }
 
 static int sndio_mixer_get_volume(int *l, int *r)
 {
 	*l = *r = sndio_volume;
 
-	return 0;
+	return OP_ERROR_SUCCESS;
 }
 
 static int sndio_set_sf(sample_format_t sf)
@@ -86,39 +89,39 @@ static int sndio_set_sf(sample_format_t sf)
 		par.bits = 8;
 		break;
 	default:
-		return -1;
+		return -OP_ERROR_SAMPLE_FORMAT;
 	}
 
 	par.appbufsz = par.rate * 300 / 1000;
 	apar = par;
 
 	if (!sio_setpar(hdl, &par))
-		return -1;
+		return -OP_ERROR_INTERNAL;
 
 	if (!sio_getpar(hdl, &par))
-		return -1;
+		return -OP_ERROR_INTERNAL;
 
 	if (apar.rate != par.rate || apar.pchan != par.pchan ||
 	    apar.bits != par.bits || (par.bits > 8 && apar.le != par.le) ||
 	    apar.sig != par.sig)
-		return -1;
+		return -OP_ERROR_INTERNAL;
 
 	sndio_mixer_set_volume(sndio_volume, sndio_volume);
 
 	if (!sio_start(hdl))
-		return -1;
+		return -OP_ERROR_INTERNAL;
 
-	return 0;
+	return OP_ERROR_SUCCESS;
 }
 
 static int sndio_init(void)
 {
-	return 0;
+	return OP_ERROR_SUCCESS;
 }
 
 static int sndio_exit(void)
 {
-	return 0;
+	return OP_ERROR_SUCCESS;
 }
 
 static int sndio_close(void)
@@ -128,21 +131,23 @@ static int sndio_close(void)
 		hdl = NULL;
 	}
 
-	return 0;
+	return OP_ERROR_SUCCESS;
 }
 
 static int sndio_open(sample_format_t sf, const channel_position_t *channel_map)
 {
+	int ret = 0;
+
 	hdl = sio_open(NULL, SIO_PLAY, 0);
 	if (hdl == NULL)
-		return -1;
+		return -OP_ERROR_INTERNAL;
 
-	if (sndio_set_sf(sf) == -1) {
+	if ((ret = sndio_set_sf(sf)) < 0) {
 		sndio_close();
-		return -1;
+		return ret;
 	}
 
-	return 0;
+	return OP_ERROR_SUCCESS;
 }
 
 static int sndio_write(const char *buf, int cnt)
@@ -151,7 +156,7 @@ static int sndio_write(const char *buf, int cnt)
 
 	rc = sio_write(hdl, buf, cnt);
 	if (rc == 0)
-		return -1;
+		return -OP_ERROR_INTERNAL;
 
 	return rc;
 }
@@ -169,21 +174,23 @@ static int op_sndio_get_option(int key, char **val)
 static int sndio_pause(void)
 {
 	if (!sndio_paused) {
-		sio_stop(hdl);
+		if(!sio_stop(hdl))
+			return -OP_ERROR_INTERNAL;
 		sndio_paused = 1;
 	}
 
-	return 0;
+	return OP_ERROR_SUCCESS;
 }
 
 static int sndio_unpause(void)
 {
 	if (sndio_paused) {
-		sio_start(hdl);
+		if (!sio_start(hdl))
+			return -OP_ERROR_INTERNAL;
 		sndio_paused = 0;
 	}
 
-	return 0;
+	return OP_ERROR_SUCCESS;
 }
 
 static int sndio_buffer_space(void)
@@ -206,7 +213,7 @@ static int sndio_mixer_exit(void)
 
 static int sndio_mixer_open(int *volume_max)
 {
-	*volume_max = 100; 
+	*volume_max = 100;
 
 	return OP_ERROR_SUCCESS;
 }
