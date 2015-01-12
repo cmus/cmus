@@ -171,6 +171,7 @@ jack-objs		:= jack.lo
 arts-objs		:= arts.lo
 oss-objs		:= oss.lo mixer_oss.lo
 sun-objs		:= sun.lo mixer_sun.lo
+sndio-objs		:= sndio.lo
 ao-objs			:= ao.lo
 waveout-objs		:= waveout.lo
 roar-objs               := roar.lo
@@ -180,6 +181,7 @@ op-$(CONFIG_ALSA)	+= alsa.so
 op-$(CONFIG_JACK)	+= jack.so
 op-$(CONFIG_ARTS)	+= arts.so
 op-$(CONFIG_OSS)	+= oss.so
+op-$(CONFIG_SNDIO)	+= sndio.so
 op-$(CONFIG_SUN)	+= sun.so
 op-$(CONFIG_AO)		+= ao.so
 op-$(CONFIG_WAVEOUT)	+= waveout.so
@@ -190,6 +192,7 @@ $(alsa-objs): CFLAGS	+= $(ALSA_CFLAGS)
 $(jack-objs): CFLAGS	+= $(JACK_CFLAGS)
 $(arts-objs): CFLAGS	+= $(ARTS_CFLAGS)
 $(oss-objs):  CFLAGS	+= $(OSS_CFLAGS)
+$(sndio-objs): CFLAGS	+= $(SNDIO_CFLAGS)
 $(sun-objs):  CFLAGS	+= $(SUN_CFLAGS)
 $(ao-objs):   CFLAGS	+= $(AO_CFLAGS)
 $(waveout-objs): CFLAGS += $(WAVEOUT_CFLAGS)
@@ -209,6 +212,9 @@ arts.so: $(arts-objs) $(libcmus-y)
 
 oss.so: $(oss-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(OSS_LIBS))
+
+sndio.so: $(sndio-objs) $(libcmus-y)
+	$(call cmd,ld_dl,$(SNDIO_LIBS))
 
 sun.so: $(sun-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(SUN_LIBS))
