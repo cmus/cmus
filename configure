@@ -5,7 +5,7 @@
 check_cflags()
 {
 	check_cc_flag -std=gnu99 -pipe -Wall -Wshadow -Wcast-align -Wpointer-arith \
-		-Wwrite-strings -Wundef -Wmissing-prototypes \
+		-Wwrite-strings -Wundef -Wmissing-prototypes -Wredundant-decls \
 		-Wextra -Wno-sign-compare -Wformat-security
 
 	for i in -Wold-style-definition \
