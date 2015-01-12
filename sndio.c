@@ -36,7 +36,7 @@
 static sample_format_t sndio_sf;
 static struct sio_par par;
 static struct sio_hdl *hdl;
-static int sndio_volume = 100;
+static int sndio_volume = SIO_MAXVOL;
 static int sndio_paused;
 
 static int sndio_mixer_set_volume(int l, int r)
@@ -46,7 +46,7 @@ static int sndio_mixer_set_volume(int l, int r)
 	if (hdl == NULL)
 		return -OP_ERROR_NOT_INITIALIZED;
 
-	if (!sio_setvol(hdl, sndio_volume * SIO_MAXVOL / 100))
+	if (!sio_setvol(hdl, sndio_volume))
 		return -OP_ERROR_INTERNAL;
 
 	return OP_ERROR_SUCCESS;
@@ -213,7 +213,7 @@ static int sndio_mixer_exit(void)
 
 static int sndio_mixer_open(int *volume_max)
 {
-	*volume_max = 100;
+	*volume_max = SIO_MAXVOL;
 
 	return OP_ERROR_SUCCESS;
 }
