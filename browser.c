@@ -332,7 +332,15 @@ void browser_up(void)
 	len = strlen(ptr);
 	pos = xstrdup(ptr);
 
+	errno = 0;
 	if (browser_load(new)) {
+		if (errno == ENOENT) {
+			free(pos);
+			free(browser_dir);
+			browser_dir = new;
+			browser_up();
+			return;
+		}
 		error_msg("could not open directory '%s': %s\n", new, strerror(errno));
 		free(new);
 		free(pos);
