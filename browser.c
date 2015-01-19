@@ -334,6 +334,7 @@ void browser_up(void)
 
 	if (browser_load(new)) {
 		if (errno == ENOENT) {
+			free(browser_dir);
 			browser_dir = new;
 			free(pos);
 			browser_up();
