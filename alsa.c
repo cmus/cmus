@@ -19,31 +19,31 @@
 
 /*
  * snd_pcm_state_t:
- * 
+ *
  * Open
  * SND_PCM_STATE_OPEN = 0,
- * 
+ *
  * Setup installed
  * SND_PCM_STATE_SETUP = 1,
- * 
+ *
  * Ready to start
  * SND_PCM_STATE_PREPARED = 2,
- * 
+ *
  * Running
  * SND_PCM_STATE_RUNNING = 3,
- * 
+ *
  * Stopped: underrun (playback) or overrun (capture) detected
  * SND_PCM_STATE_XRUN = 4,
- * 
+ *
  * Draining: running (playback) or stopped (capture)
  * SND_PCM_STATE_DRAINING = 5,
- * 
+ *
  * Paused
  * SND_PCM_STATE_PAUSED = 6,
- * 
+ *
  * Hardware is suspended
  * SND_PCM_STATE_SUSPENDED = 7,
- * 
+ *
  * Hardware is disconnected
  * SND_PCM_STATE_DISCONNECTED = 8,
  */
