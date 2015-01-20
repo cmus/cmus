@@ -102,7 +102,7 @@ static enum consumer_status consumer_status = CS_STOPPED;
 static unsigned long consumer_pos = 0;
 
 /* for replay gain and soft vol
- * usually same as consumer_pos, sometimes less than consumer_pos
+ * usually same as consumer_pos, sometimes more than consumer_pos
  */
 static unsigned long scale_pos;
 static double replaygain_scale = 1.0;
