@@ -2091,7 +2091,9 @@ static void u_getch(void)
 void ui_curses_notify(void)
 {
 	char c;
-	write(notify_in, &c, 1);
+	if (write(notify_in, &c, 1) == -1) {
+		d_print("write failed: %s\n", strerror(errno));
+	}
 }
 
 static void main_loop(void)
@@ -2207,7 +2209,9 @@ static void main_loop(void)
 
 		if (FD_ISSET(notify_out, &set)) {
 			char buf[128];
-			read(notify_out, buf, sizeof(buf));
+			if (read(notify_out, buf, sizeof(buf)) == -1) {
+				d_print("read failed: %s\n", strerror(errno));
+			}
 		}
 	}
 }
@@ -2329,7 +2333,7 @@ static void init_curses(void)
 static void notify_init(void)
 {
 	int fildes[2];
-	pipe(fildes);
+	BUG_ON(pipe(fildes) == -1);
 	notify_out = fildes[0];
 	notify_in = fildes[1];
 	int flags = fcntl(notify_in, F_GETFL, 0);
