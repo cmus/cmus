@@ -77,7 +77,9 @@ int smart_artist_sort = 1;
 int scroll_offset = 2;
 int rewind_offset = 5;
 int skip_track_info = 0;
-int auto_expand_albums = 1;
+int auto_expand_albums_follow = 1;
+int auto_expand_albums_search = 1;
+int auto_expand_albums_selcur = 1;
 int show_all_tracks = 1;
 int mouse = 0;
 
@@ -899,31 +901,80 @@ static void toggle_show_hidden(unsigned int id)
 	browser_reload();
 }
 
-static void get_auto_expand_albums(unsigned int id, char *buf)
-{
-	strcpy(buf, bool_names[auto_expand_albums]);
-}
-
 static void set_show_all_tracks_int(int); /* defined below */
 
-static void set_auto_expand_albums_int(int value)
+static void get_auto_expand_albums_follow(unsigned int id, char *buf)
 {
-	auto_expand_albums = !!value;
-	if (!auto_expand_albums && !show_all_tracks)
+	strcpy(buf, bool_names[auto_expand_albums_follow]);
+}
+
+static void set_auto_expand_albums_follow_int(int value)
+{
+	auto_expand_albums_follow = !!value;
+	if (!auto_expand_albums_follow && !show_all_tracks)
 		set_show_all_tracks_int(1);
 }
 
-static void set_auto_expand_albums(unsigned int id, const char *buf)
+static void set_auto_expand_albums_follow(unsigned int id, const char *buf)
 {
 	int tmp;
 	parse_bool(buf, &tmp);
-	set_auto_expand_albums_int(tmp);
+	set_auto_expand_albums_follow_int(tmp);
 }
 
-static void toggle_auto_expand_albums(unsigned int id)
+static void toggle_auto_expand_albums_follow(unsigned int id)
 {
-	set_auto_expand_albums_int(!auto_expand_albums);
+	set_auto_expand_albums_follow_int(!auto_expand_albums_follow);
 }
+
+static void get_auto_expand_albums_search(unsigned int id, char *buf)
+{
+	strcpy(buf, bool_names[auto_expand_albums_search]);
+}
+
+static void set_auto_expand_albums_search_int(int value)
+{
+	auto_expand_albums_search = !!value;
+	if (!auto_expand_albums_search && !show_all_tracks)
+		set_show_all_tracks_int(1);
+}
+
+static void set_auto_expand_albums_search(unsigned int id, const char *buf)
+{
+	int tmp;
+	parse_bool(buf, &tmp);
+	set_auto_expand_albums_search_int(tmp);
+}
+
+static void toggle_auto_expand_albums_search(unsigned int id)
+{
+	set_auto_expand_albums_search_int(!auto_expand_albums_search);
+}
+
+static void get_auto_expand_albums_selcur(unsigned int id, char *buf)
+{
+	strcpy(buf, bool_names[auto_expand_albums_selcur]);
+}
+
+static void set_auto_expand_albums_selcur_int(int value)
+{
+	auto_expand_albums_selcur = !!value;
+	if (!auto_expand_albums_selcur && !show_all_tracks)
+		set_show_all_tracks_int(1);
+}
+
+static void set_auto_expand_albums_selcur(unsigned int id, const char *buf)
+{
+	int tmp;
+	parse_bool(buf, &tmp);
+	set_auto_expand_albums_selcur_int(tmp);
+}
+
+static void toggle_auto_expand_albums_selcur(unsigned int id)
+{
+	set_auto_expand_albums_selcur_int(!auto_expand_albums_selcur);
+}
+
 
 static void get_show_all_tracks(unsigned int id, char *buf)
 {
@@ -936,8 +987,14 @@ static void set_show_all_tracks_int(int value)
 	if (show_all_tracks == value)
 		return;
 	show_all_tracks = value;
-	if (!show_all_tracks && !auto_expand_albums)
-		set_auto_expand_albums_int(1);
+	if (!show_all_tracks) {
+		if  (!auto_expand_albums_follow)
+			set_auto_expand_albums_follow_int(1);
+		if  (!auto_expand_albums_search)
+			set_auto_expand_albums_search_int(1);
+		if  (!auto_expand_albums_selcur)
+			set_auto_expand_albums_selcur_int(1);
+	}
 	tree_sel_update(0);
 }
 
@@ -1335,7 +1392,9 @@ static const struct {
 	DN(replaygain_preamp)
 	DT(resume)
 	DT(show_hidden)
-	DT(auto_expand_albums)
+	DT(auto_expand_albums_follow)
+	DT(auto_expand_albums_search)
+	DT(auto_expand_albums_selcur)
 	DT(show_all_tracks)
 	DT(show_current_bitrate)
 	DT(show_playback_position)
