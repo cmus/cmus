@@ -2443,7 +2443,7 @@ static const char *usage =
 "Usage: %s [OPTION]...\n"
 "Curses based music player.\n"
 "\n"
-"      --listen ADDR   listen on ADDR instead of $XDG_RUNTIME_DIR/cmus-socket\n"
+"      --listen ADDR   listen on ADDR instead of $CMUS_SOCKET or $XDG_RUNTIME_DIR/cmus-socket\n"
 "                      ADDR is either a UNIX socket or host[:port]\n"
 "                      WARNING: using TCP/IP is insecure!\n"
 "      --plugins       list available plugins and exit\n"
