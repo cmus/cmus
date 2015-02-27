@@ -231,7 +231,7 @@ static const char *usage =
 "   or: %s\n"
 "Control cmus through socket.\n"
 "\n"
-"      --server ADDR    connect using ADDR instead of $XDG_RUNTIME_DIR/cmus-socket\n"
+"      --server ADDR    connect using ADDR instead of $CMUS_SOCKET or $XDG_RUNTIME_DIR/cmus-socket\n"
 "                       ADDR is either a UNIX socket or host[:port]\n"
 "                       WARNING: using TCP/IP is insecure!\n"
 "      --passwd PASSWD  password to use for TCP/IP connection\n"

@@ -218,10 +218,13 @@ int misc_init(void)
 	}
 	make_dir(cmus_config_dir);
 
-	if (xdg_runtime_dir == NULL) {
-		cmus_socket_path = xstrjoin(cmus_config_dir, "/socket");
-	} else {
-		cmus_socket_path = xstrjoin(xdg_runtime_dir, "/cmus-socket");
+	cmus_socket_path = get_non_empty_env("CMUS_SOCKET");
+	if (cmus_socket_path == NULL) {
+		if (xdg_runtime_dir == NULL) {
+			cmus_socket_path = xstrjoin(cmus_config_dir, "/socket");
+		} else {
+			cmus_socket_path = xstrjoin(xdg_runtime_dir, "/cmus-socket");
+		}
 	}
 	return 0;
 }

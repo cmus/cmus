@@ -19,7 +19,8 @@ can be controlled from the outside via *cmus-remote*(1).
 @h1 OPTIONS
 
 --listen ADDR
-	Listen to ADDR (UNIX socket) instead of `$XDG_RUNTIME_DIR/cmus-socket`.
+	Listen to ADDR (UNIX socket) instead of `$CMUS_SOCKET` or 
+	`$XDG_RUNTIME_DIR/cmus-socket`.
 	ADDR is either a UNIX socket or host[:port].
 
 	*WARNING*: Using host[:port] is insecure even with password!
@@ -1436,6 +1437,9 @@ CMUS_CHARSET
 
 CMUS_HOME
 	Override cmus config directory (default: $XDG_CONFIG_HOME/cmus).
+
+CMUS_SOCKET
+	Override cmus socket path (default: $XDG_RUNTIME_DIR/cmus-socket).
 
 HOME
 	Full path of the user's home directory.
