@@ -804,6 +804,9 @@ static void _consumer_handle_eof(void)
 		return;
 	}
 
+	if (player_info.ti)
+		player_info.ti->play_count++;
+
 	if (player_repeat_current) {
 		if (player_cont) {
 			ip_seek(ip, 0);
@@ -815,9 +818,6 @@ static void _consumer_handle_eof(void)
 		}
 		return;
 	}
-
-	if (player_info.ti)
-		player_info.ti->play_count++;
 
 	if (get_next(&ti) == 0) {
 		_producer_unload();
