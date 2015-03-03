@@ -146,7 +146,7 @@ prepend tracks to the play queue (4)
 
 @h2 Moving Tracks
 
-In views 2-4 you can move tracks withing the list. Note that moving is
+In views 2-4 you can move tracks within the list. Note that moving is
 disabled if the view is auto-sorted (see *lib_sort* and *pl_sort* options).
 
 Pressing *p* moves marked tracks to the position immediately after the
