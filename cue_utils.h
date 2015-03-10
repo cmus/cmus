@@ -27,12 +27,6 @@
 #include <libcue/libcue.h>
 
 
-/*
- * libcue developers think that printing parsing errors to stderr is a good idea
- * they are wrong
- */
-Cd *cue_parse_file__no_stderr_garbage(FILE *f);
-
 char *associated_cue(const char *filename);
 int cue_get_ntracks(const char *filename);
 char *construct_cue_url(const char *cue_filename, int track_n);

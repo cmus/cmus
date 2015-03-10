@@ -17,40 +17,11 @@
  */
 
 #include "path.h"
+#include "utils.h"
 #include "cue_utils.h"
 #include "xmalloc.h"
 
-
 #include <stdio.h>
-#include <fcntl.h>
-#include <unistd.h>
-
-
-Cd *cue_parse_file__no_stderr_garbage(FILE *f)
-{
-	int stderr_fd;
-	int devnull_fd;
-	Cd *ret;
-
-	stderr_fd = dup(2);
-	devnull_fd = open("/dev/null", O_WRONLY);
-
-	if (devnull_fd != -1)
-		dup2(devnull_fd, 2);
-
-	ret = cue_parse_file(f);
-
-	if (stderr_fd != -1) {
-		dup2(stderr_fd, 2);
-		close(stderr_fd);
-	}
-
-	if (devnull_fd != -1)
-		close(devnull_fd);
-
-	return ret;
-}
-
 
 char *associated_cue(const char *filename)
 {
@@ -88,7 +59,9 @@ int cue_get_ntracks(const char *filename)
 	if (cue == NULL)
 		return -1;
 
-	cd = cue_parse_file__no_stderr_garbage(cue);
+	disable_stdio();
+	cd = cue_parse_file(cue);
+	enable_stdio();
 	if (cd == NULL) {
 		fclose(cue);
 		return -1;
