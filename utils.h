@@ -30,6 +30,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <stdio.h>
 #include <time.h>
 #include <stdint.h>
 #ifdef HAVE_BYTESWAP_H
@@ -232,6 +235,33 @@ static inline uint16_t read_le16(const char *buf)
 	const unsigned char *b = (const unsigned char *)buf;
 
 	return b[0] | (b[1] << 8);
+}
+
+static int _saved_stdout;
+static int _saved_stderr;
+
+static inline void disable_stdio(void)
+{
+	_saved_stdout = dup(1);
+	_saved_stderr = dup(2);
+	if (_saved_stdout == -1 || _saved_stderr == -1) {
+		return;
+	}
+
+	int devnull = open("/dev/null", O_WRONLY);
+	dup2(devnull, 1);
+	dup2(devnull, 2);
+	close(devnull);
+}
+
+static inline void enable_stdio(void)
+{
+	fflush(stdout);
+	fflush(stderr);
+	while (dup2(_saved_stdout, 1) == -1 && errno == EINTR) { }
+	while (dup2(_saved_stderr, 2) == -1 && errno == EINTR) { }
+	close(_saved_stdout);
+	close(_saved_stderr);
 }
 
 #endif

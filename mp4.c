@@ -21,6 +21,7 @@
 #include "debug.h"
 #include "id3.h"
 #include "file.h"
+#include "utils.h"
 #ifdef HAVE_CONFIG
 #include "config/mp4.h"
 #endif
@@ -168,11 +169,13 @@ static int mp4_open(struct input_plugin_data *ip_data)
 	NeAACDecSetConfiguration(priv->decoder, neaac_cfg);
 
 	/* open mpeg-4 file */
+	disable_stdio();
 #ifdef MP4_DETAILS_ALL
 	priv->mp4.handle = MP4Read(ip_data->filename, 0);
 #else
 	priv->mp4.handle = MP4Read(ip_data->filename);
 #endif
+	enable_stdio();
 	if (!priv->mp4.handle) {
 		d_print("MP4Read failed\n");
 		goto out;
