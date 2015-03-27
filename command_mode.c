@@ -1629,7 +1629,7 @@ static void cmd_win_sel_cur(char *arg)
 	editable_lock();
 	switch (cur_view) {
 	case TREE_VIEW:
-		tree_sel_current();
+		tree_sel_current(auto_expand_albums_selcur);
 		break;
 	case SORTED_VIEW:
 		sorted_sel_current();

@@ -1247,14 +1247,9 @@ void tree_sort_artists(void)
 	}
 }
 
-void tree_sel_current(void)
+void tree_sel_current(int auto_expand_albums)
 {
-	tree_sel_track(lib_cur_track, auto_expand_albums_selcur);
-}
-
-void tree_sel_current_follow(void)
-{
-	tree_sel_track(lib_cur_track, auto_expand_albums_follow);
+	tree_sel_track(lib_cur_track, auto_expand_albums);
 }
 
 void tree_sel_first(void)

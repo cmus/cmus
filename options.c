@@ -1703,7 +1703,7 @@ void resume_load(void)
 			if (ti) {
 				BUG_ON(ti != old);
 				track_info_unref(ti);
-				tree_sel_current();
+				tree_sel_current(auto_expand_albums_follow);
 				sorted_sel_current();
 			}
 			editable_unlock();
