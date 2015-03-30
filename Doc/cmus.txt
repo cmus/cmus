@@ -744,11 +744,12 @@ This section describes cmus' options that can be altered with the *set* and
 *toggle* commands. Default values are in parenthesis, possible values in
 brackets.
 
-auto_expand_albums (true)
-	When disabled, cmus will always select the artist instead of the album
-	when actions such as "search" or "go to current track" are executed.
-	This option is tightly coupled to the show_all_tracks option.
-	"auto_expand_albums = false" implies "show_all_tracks = true".
+auto_expand_albums_follow, auto_expand_albums_search, auto_expand_albums_selcur (true)
+	When enabled, cmus will always open an artist and select the album when
+	following the currently played track or performing actions such as "search"
+	or "go to current track". This option is tightly coupled to the
+	show_all_tracks option. Any "auto_expand_albums_* = false" implies
+	"show_all_tracks = true".
 
 auto_reshuffle (true)
 	Reshuffle playlist when end of shuffle list is reached.
@@ -1010,9 +1011,9 @@ scroll_offset (2) [0-9999]
 	Minimal number of screen lines to keep above and below the cursor.
 
 show_all_tracks (true)
-	Display all tracks of the artist when the artist is selected in the tree view.
-	This option is tightly coupled to the auto_expand_albums option.
-	"show_all_tracks = false" implies "auto_expand_albums = true".
+	Display all tracks of the artist when the artist is selected in the tree 
+	view. This option is tightly coupled to the auto_expand_albums_* options.
+	"show_all_tracks = false" implies "auto_expand_albums_* = true".
 
 show_hidden (false)
 	Display hidden files in browser.

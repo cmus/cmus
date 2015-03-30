@@ -336,7 +336,7 @@ struct track_info *lib_set_track(struct tree_track *track)
 		ti = tree_track_info(track);
 		track_info_ref(ti);
 		if (follow) {
-			tree_sel_current();
+			tree_sel_current(auto_expand_albums_follow);
 			sorted_sel_current();
 		}
 		all_wins_changed();
@@ -519,7 +519,7 @@ static void set_sel_track(struct tree_track *tt)
 
 	switch (cur_view) {
 	case TREE_VIEW:
-		tree_sel_track(tt);
+		tree_sel_track(tt, auto_expand_albums_selcur);
 		break;
 	case SORTED_VIEW:
 		sorted_track_to_iter(tt, &iter);
