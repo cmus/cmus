@@ -1,4 +1,4 @@
-#C*Mus Tutorial
+#C Music Player Tutorial
 
 ##Contents
 
