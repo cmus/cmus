@@ -105,23 +105,14 @@ cmus has some great options to control what plays next (if anything) when the tr
 
 ##Step 4: Managing The Queue
 
-Lets say you're listening to a song, and you want to select which song will
-play next, without interrupting the currently playing song. No problem! Just go
-to the song you want to hear next (in any of the views) and press *e*. The
-queue is FIFO, meaning if you queue up another track, it will play after the
-one you already had queued up.
+Lets say you're listening to a song, and you want to select which song will play next, without interrupting the currently playing song. No problem! Just go to the song you want to hear next (in any of the views) and press <kbd>e</kbd>. The
+queue is FIFO, meaning if you queue up another track, it will play after the one you already had queued up.
 
-Note: The queue is not affected by the "shuffle" option described above.
+>**Note**: The queue is not affected by the **shuffle** option described above.
 
-Press *4* to view/edit the queue. This view works and looks a lot like the
-simple library view. The main difference is that you can change the order of
-the tracks with the *p* and *P* keys. You can press *shift-D* to remove a track
-from the queue.
+Press <kbd>4</kbd> to view/edit the queue. This view works and looks a lot like the simple library view. The main difference is that you can change the order of the tracks with the <kbd>p</kbd> and <kbd>P</kbd> keys. You can press <kbd>Shift-D</kbd> to remove a track from the queue.
 
-When cmus is ready to play another track (it's reached the end of a track and
-the "continue" setting is on) it will remove the top entry from the queue and
-start playing it.
-
+When cmus is ready to play another track (it's reached the end of a track and the "continue" setting is on) it will remove the top entry from the queue and start playing it.
 
 ##Step 5: The Playlist
 
