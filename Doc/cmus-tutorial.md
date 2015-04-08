@@ -14,10 +14,10 @@
 
 ##Step 1: Starting Cmus
 
-When you first launch cmus (just type `cmus` in a terminal and press Enter) it
+When you first launch cmus (just type `cmus` in a terminal and press <kbd>Enter</kbd>) it
 will open to the album/artist view, which looks something like this:
 
-@pre
+```
 +---------------------------------------------------------------------+
 | Artist / Album             Track                            Library |
 |                          |                                          |
@@ -31,7 +31,7 @@ will open to the album/artist view, which looks something like this:
 | . 00:00 - 00:00 vol: 100                     all from library | C   |
 |                                                                     |
 +---------------------------------------------------------------------+
-@endpre
+```
 
 This is the view where your artists and albums will be displayed.
 
