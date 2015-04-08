@@ -138,19 +138,13 @@ This step shows various ways you can find track(s) you're looking for.
 
 ##Step 7: Customization
 
-Cmus has some very cool settings you can tweak, like changing the way tracks
-are displayed (e.g. to display disk numbers), enabling replaygain support or
-changing the keybindings.
+Cmus has some very cool settings you can tweak, like changing the way tracks are displayed (e.g. to display disk numbers), enabling replaygain support or changing the keybindings.
 
-Press *7* for a quick overview of the current keybindings and settings.
+Press <kbd>7</kbd> for a quick overview of the current keybindings and settings.
 
-To change a setting or keybind, just select it (up/down keys) and press enter.
-This will put the command for the current setting in the command now (bottom
-left of your screen), which you can edit to put in a new value/key.
+To change a setting or keybind, just select it (:arrow_up:/:arrow_down: keys) and press <kbd>Enter</kbd>. This will put the command for the current setting in the command now (bottom left of your screen), which you can edit to put in a new value/key.
 
-Please see the reference manual (see Further Reading below) for a detailed
-description of all the commands and settings available.
-
+Please see the reference manual (see Further Reading below) for a detailed description of all the commands and settings available.
 
 ##Step 8: Quit
 
