@@ -152,13 +152,7 @@ When you're done, type <kbd>:q</kbd> and press <kbd>Enter</kbd> to quit. This wi
 
 ##Step 9: Further Reading
 
-Cmus comes with a great reference manual. Now that you've got the basics down
-it should be intelligible. Try *man cmus* in a terminal. If that's not
-installed, try opening up `cmus.txt` from the `Doc` directory, or read the latest
-version online:
+Cmus comes with a great reference manual. Now that you've got the basics down it should be intelligible. Try `man cmus` in a terminal. If that's not installed, try opening up `cmus.txt` from the `Doc` directory, or read the latest version online in [here](https://github.com/cmus/cmus/tree/master/Doc).
 
-`https://github.com/cmus/cmus/blob/master/Doc/cmus.txt`
-
-There are more commands and features not covered here like loading and saving
-playlists, controlling cmus remotely with `cmus-remote`, etc.
+There are more commands and features not covered here like loading and saving playlists, controlling cmus remotely with `cmus-remote`, etc.
 
