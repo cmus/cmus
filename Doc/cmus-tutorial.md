@@ -1,33 +1,18 @@
-@title cmus-tutorial 7 14/02/2010 cmus
+#C*Mus Tutorial
 
+##Contents
 
-@h1 NAME
+1. Starting Cmus
+2. Adding Music
+3. Playing Tracks From The Library
+4. Managing The Queue
+5. The Playlist
+6. Find that track
+7. Customization
+8. Quit
+9. Further Reading
 
-cmus - C\* Music Player tutorial
-
-
-@h1 CONTENTS
-
-Step 1: Starting Cmus
-
-Step 2: Adding Music
-
-Step 3: Playing Tracks From The Library
-
-Step 4: Managing The Queue
-
-Step 5: The Playlist
-
-Step 6: Find that track
-
-Step 7: Customization
-
-Step 8: Quit
-
-Step 9: Further Reading
-
-
-@h1 Step 1: Starting Cmus
+##Step 1: Starting Cmus
 
 When you first launch cmus (just type `cmus` in a terminal and press Enter) it
 will open to the album/artist view, which looks something like this:
@@ -51,7 +36,7 @@ will open to the album/artist view, which looks something like this:
 This is the view where your artists and albums will be displayed.
 
 
-@h1 Step 2: Adding Music
+##Step 2: Adding Music
 
 Press *5* to switch to the file-browser view so we can add some music. You
 should see something like this:
@@ -90,7 +75,7 @@ Note: Cmus automatically saves your settings and library and everything when
 you quit, so you probably won't use the save command much.
 
 
-@h1 Step 3: Playing Tracks From The Library
+##Step 3: Playing Tracks From The Library
 
 Press *2* to go to the simple library view. You should see something like
 this:
@@ -143,7 +128,7 @@ the beginning. Press *r* to toggle this setting.
 once. Press *s* to toggle this option.
 
 
-@h1 Step 4: Managing The Queue
+##Step 4: Managing The Queue
 
 Lets say you're listening to a song, and you want to select which song will
 play next, without interrupting the currently playing song. No problem! Just go
@@ -163,7 +148,7 @@ the "continue" setting is on) it will remove the top entry from the queue and
 start playing it.
 
 
-@h1 Step 5: The Playlist
+##Step 5: The Playlist
 
 The playlist works like another library (like view *2*) except that (like
 the queue) you manually set the order of the tracks. This can be quite useful
@@ -188,7 +173,7 @@ of the tracks in the playlist. To switch modes without interrupting the
 currently-playing song, you can press *shift-M*.
 
 
-@h1 Step 6: Find that track
+##Step 6: Find that track
 
 This step shows various ways you can find track(s) you're looking for.
 
@@ -206,7 +191,7 @@ Filters: See the reference manual (see Further Reading below) for a detailed
 description on how to quickly (and temporarily) hide most of your music.
 
 
-@h1 Step 7: Customization
+##Step 7: Customization
 
 Cmus has some very cool settings you can tweak, like changing the way tracks
 are displayed (e.g. to display disk numbers), enabling replaygain support or
@@ -222,13 +207,13 @@ Please see the reference manual (see Further Reading below) for a detailed
 description of all the commands and settings available.
 
 
-@h1 Step 8: Quit
+##Step 8: Quit
 
 When you're done, type *:q* and press Enter to quit. This will save your
 settings, library, playlist and queue.
 
 
-@h1 Step 9: Further Reading
+##Step 9: Further Reading
 
 Cmus comes with a great reference manual. Now that you've got the basics down
 it should be intelligible. Try *man cmus* in a terminal. If that's not
