@@ -116,28 +116,15 @@ When cmus is ready to play another track (it's reached the end of a track and th
 
 ##Step 5: The Playlist
 
-The playlist works like another library (like view *2*) except that (like
-the queue) you manually set the order of the tracks. This can be quite useful
-if you want to create a mix of specific tracks or if you want to listen to an
-audio book without having the chapters play when you're playing "all from
-library".
+The playlist works like another library (like view <kbd>2</kbd>) except that (like the queue) you manually set the order of the tracks. This can be quite useful if you want to create a mix of specific tracks or if you want to listen to an audio book without having the chapters play when you're playing "all from library".
 
-The playlist is on view *3*. But before we go there, lets add some tracks.
-Press *2* to go to the simple library view, go to a track you want and press
-*y* to add it to the playlist. The only visual feedback you'll get that
-anything happened is that the highlight will move down one row. Add a few more so
-you have something to work with.
+The playlist is on view <kbd>3</kbd>. But before we go there, lets add some tracks. Press <kbd>2</kbd> to go to the simple library view, go to a track you want and press <kbd>y</kbd> to add it to the playlist. The only visual feedback you'll get that anything happened is that the highlight will move down one row. Add a few more so you have something to work with.
 
-Now press *3* to go to the playlist.
+Now press <kbd>3</kbd> to go to the playlist.
 
-Just like the queue, you can use the *p*, *P* and *D* keys to move and delete
-tracks from the playlist.
+Just like the queue, you can use the <kbd>p</kbd>, <kbd>P</kbd> and <kbd>D</kbd> keys to move and delete tracks from the playlist.
 
-Note: Changing the view (e.g. by pressing *3*) does not affect what cmus will
-play next. To put cmus into "play from the playlist" mode, press Enter on one
-of the tracks in the playlist. To switch modes without interrupting the
-currently-playing song, you can press *shift-M*.
-
+>**Note**: Changing the view (e.g. by pressing <kbd>3</kbd>) does not affect what cmus will play next. To put cmus into "play from the playlist" mode, press <kbd>Enter</kbd> on one of the tracks in the playlist. To switch modes without interrupting the currently-playing song, you can press <kbd>Shift-M</kbd>.
 
 ##Step 6: Find that track
 
