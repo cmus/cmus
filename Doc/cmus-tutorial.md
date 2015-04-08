@@ -148,9 +148,7 @@ Please see the reference manual (see Further Reading below) for a detailed descr
 
 ##Step 8: Quit
 
-When you're done, type *:q* and press Enter to quit. This will save your
-settings, library, playlist and queue.
-
+When you're done, type <kbd>:q</kbd> and press <kbd>Enter</kbd> to quit. This will save your settings, library, playlist and queue.
 
 ##Step 9: Further Reading
 
