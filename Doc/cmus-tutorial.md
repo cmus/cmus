@@ -2,15 +2,15 @@
 
 ##Contents
 
-1. Starting Cmus
-2. Adding Music
-3. Playing Tracks From The Library
-4. Managing The Queue
-5. The Playlist
-6. Find that track
-7. Customization
-8. Quit
-9. Further Reading
+1. [Starting Cmus](#step-1-starting-cmus)
+2. [Adding Music](#step-2-adding-music)
+3. [Playing Tracks From The Library](#step-3-playing-tracks-from-the-library)
+4. [Managing The Queue](#step-4-managing-the-queue)
+5. [The Playlist](#step-5-the-playlist)
+6. [Find that track](#step-6-find-that-track)
+7. [Customization](#step-7-customization)
+8. [Quit](#step-8-quit)
+9. [Further Reading](#step-9-further-reading)
 
 ##Step 1: Starting Cmus
 
