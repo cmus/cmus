@@ -1,5 +1,4 @@
-cmus — C\* Music Player
-=======================
+#cmus — C\* Music Player
 
 https://cmus.github.io/
 
@@ -10,8 +9,7 @@ Copyright © 2004-2008 Timo Hirvonen <tihirvon@gmail.com>
 Copyright © 2008-2015 Various Authors
 
 
-Configuration
--------------
+##Configuration
 
 List available optional features
 
@@ -43,8 +41,7 @@ script:
 The Tremor library is supposed to be used on hardware that has no FPU.
 
 
-Building
---------
+##Building
 
     $ make
 
@@ -53,9 +50,9 @@ Or on some BSD systems you need to explicitly use GNU make:
     $ gmake
 
 
-Installation
-------------
+##Installation
 
+####Copiling
     $ make install
 
 Or to install to a temporary directory:
@@ -66,9 +63,13 @@ This is useful when creating binary packages.
 
 Remember to replace `make` with `gmake` if needed.
 
+####Authomatic
 
-Manuals
--------
+- Debian Like: `sudo apt-get install cmus`
+- Arch Linux: `sudo pacman -S cmus`
+- OS X: `brew install cmus`
+
+##Manuals
 
     $ man cmus-tutorial
 
@@ -77,8 +78,7 @@ And
     $ man cmus
 
 
-Mailing List
-------------
+##Mailing List
 
 To subscribe to cmus-devel@lists.sourceforge.net visit
 http://lists.sourceforge.net/lists/listinfo/cmus-devel
@@ -88,24 +88,21 @@ subscribing but it's not recommended because I have to accept each email
 from non-subscribed users).  Traffic of the list is extremely low.
 Please use the [issues](https://github.com/cmus/cmus/issues) page for any problems, suggestions, or bug reports.
 
-Reporting Bugs
---------------
+##Reporting Bugs
 
 After a crash send bug report with last lines of `~/cmus-debug.txt` to
 cmus-devel@lists.sourceforge.net.  The file exists only if you
 configured cmus with maximum debug level (`./configure DEBUG=2`).
 
 
-Git Repository
---------------
+##Git Repository
 
 https://github.com/cmus/cmus
 
     $ git clone https://github.com/cmus/cmus.git
 
 
-Hacking
--------
+##Hacking
 
 cmus uses the [Linux kernel coding style](http://www.kernel.org/doc/Documentation/CodingStyle).
 Use hard tabs.  Tabs are _always_ 8 characters wide.  Keep the style consistent with rest of the
