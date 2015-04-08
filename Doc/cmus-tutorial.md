@@ -130,19 +130,11 @@ Just like the queue, you can use the <kbd>p</kbd>, <kbd>P</kbd> and <kbd>D</kbd>
 
 This step shows various ways you can find track(s) you're looking for.
 
-Search: Press *2* to be sure you're on the simple library view, then press */*
-to start a search. Type a word or two from the track you're looking for. cmus
-will search for tracks that have all those words in them. Press enter to get
-the keyboard out of the search command, and *n* to find the next match.
+**Search**: Press <kbd>2</kbd> to be sure you're on the simple library view, then press <kbd>/</kbd> to start a search. Type a word or two from the track you're looking for. cmus will search for tracks that have all those words in them. Press <kbd>Enter</kbd> to get the keyboard out of the search command, and <kbd>n</kbd> to find the next match.
 
-Tree View: Press *1* to select the tree view. Scroll to the artist, press
-*space* to show their albums, scroll to the album you want, then press tab so
-the keyboard controls the right column. Press tab again to get back to the left
-column.
+**Tree View**: Press <kbd>1</kbd> to select the tree view. Scroll to the artist, press <kbd>Space</kbd> to show their albums, scroll to the album you want, then press <kbd>TAB</kbd> so the keyboard controls the right column. Press <kbd>TAB</kbd> again to get back to the left column.
 
-Filters: See the reference manual (see Further Reading below) for a detailed
-description on how to quickly (and temporarily) hide most of your music.
-
+**Filters**: See the reference manual (see Further Reading below) for a detailed description on how to quickly (and temporarily) hide most of your music.
 
 ##Step 7: Customization
 
