@@ -54,7 +54,7 @@ Press <kbd>5</kbd> to switch to the file-browser view so we can add some music. 
 +---------------------------------------------------------------------+
 ```
 
-Now, use the <kbd>arrow keys</kbd>, <kbd>Enter</kbd> and <kbd>Backspace</kbd> to navigate to where you have audio files stored. To add music to your cmus library, use the arrow keys to highlight a file or folder, and press <kbd>a</kbd>. When you press </kbd>a</kbd> cmus will move you to the next line down (so that it is easy to add a bunch of files/folders in a
+Now, use the :arrow_up: and :arrow_down: keys, <kbd>Enter</kbd> and <kbd>Backspace</kbd> to navigate to where you have audio files stored. To add music to your cmus library, use the arrow keys to highlight a file or folder, and press <kbd>a</kbd>. When you press </kbd>a</kbd> cmus will move you to the next line down (so that it is easy to add a bunch of files/folders in a
 row) and start adding the file/folder you pressed <kbd>a</kbd> on to your library. This can take a while if you added a folder with a lot in it. As files are added, you will see the second time in the bottom right go up. This is the total
 duration of all the music in the cmus library.
 
@@ -66,10 +66,10 @@ Just to be on the safe side, lets save. Type `:save` and press <kbd>Enter</kbd>.
 
 ##Step 3: Playing Tracks From The Library
 
-Press *2* to go to the simple library view. You should see something like
+Press <kbd>2</kbd> to go to the simple library view. You should see something like
 this:
 
-@pre
+```
 +---------------------------------------------------------------------+
 | Library ~/.config/cmus/lib.pl - 31 tracks sorted by artist album di |
 | Flying Lizards         . Money (That's What I Want)           02:31 |
@@ -83,39 +83,25 @@ this:
 | . 00:00 - 2:16:25 vol: 100                   all from library | C   |
 |                                                                     |
 +---------------------------------------------------------------------+
-@endpre
+```
 
-Use the up and down arrow keys to select a track you'd like to hear, and press
-Enter to play it. Here's some keys to control play:
+Use the :arrow_up: and :arrow_down: keys to select a track you'd like to hear, and press
+<kbd>Enter</kbd> to play it. Here's some keys to control play:
 
-Press *c* to pause/unpause
-Press right/left to seek by 10 seconds
-Press *<*/*>* seek by one minute
+- Press <kbd>c</kbd> to pause/unpause
+- Press :arrow_right:/:arrow_left: to seek by 10 seconds
+- Press <kbd>Ctrl+<</kbd>/<kbd>Ctrl+></kbd> seek by one minute
 
-cmus has some great options to control what plays next (if anything) when the
-track ends. The state of these settings are shown in the bottom right corner.
-The first of these shows what collection of tracks (currently "all from
-library") we are playing. Press *m* to cycle through the different options for
-this setting. To the right of that (past the "|") cmus shows the state of three
-toggles. Only toggles which are "on" are shown, so now we only see the *C*.
-Here are the toggles:
+cmus has some great options to control what plays next (if anything) when the track ends. The state of these settings are shown in the bottom right corner. The first of these shows what collection of tracks (currently "all from library") we are playing. Press <kbd>m</kbd> to cycle through the different options for this setting. To the right of that (past the "|") cmus shows the state of three toggles. Only toggles which are "on" are shown, so now we only see the <kbd>C</kbd>. Here are the toggles:
 
-[C]ontinue
+>**<kbd>C</kbd> - _Continue_**: 
+>When this is off, cmus will always stop at the end of the track. You can toggle this setting by pressing <kb>Shift-C</kbd>.
 
-    When this is off, cmus will always stop at the end of the track. You can
-toggle this setting by pressing *shift-C*.
+>**<kbd>R</kbd> - _Repeat_**: 
+>If this is on (and continue is on), when cmus reaches the end of the group of tracks you're playing (selected with the <kbd>m</kbd> key) it will start again from the beginning. Press <kbd>r</kbd> to toggle this setting.
 
-[R]epeat
-
-    If this is on (and continue is on), when cmus reaches the end of the group
-of tracks you're playing (selected with the *m* key) it will start again from
-the beginning. Press *r* to toggle this setting.
-
-[S]huffle
-
-    When this is on, cmus will choose a random order to play all the tracks
-once. Press *s* to toggle this option.
-
+>**<kbd>S</kbd> - _Shuffle_**:
+>When this is on, cmus will choose a random order to play all the tracks once. Press <kbd>s</kbd> to toggle this option.
 
 ##Step 4: Managing The Queue
 
