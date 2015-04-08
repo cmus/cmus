@@ -14,8 +14,7 @@
 
 ##Step 1: Starting Cmus
 
-When you first launch cmus (just type `cmus` in a terminal and press <kbd>Enter</kbd>) it
-will open to the album/artist view, which looks something like this:
+When you first launch cmus (just type `cmus` in a terminal and press <kbd>Enter</kbd>) it will open to the album/artist view, which looks something like this:
 
 ```
 +---------------------------------------------------------------------+
@@ -35,13 +34,11 @@ will open to the album/artist view, which looks something like this:
 
 This is the view where your artists and albums will be displayed.
 
-
 ##Step 2: Adding Music
 
-Press *5* to switch to the file-browser view so we can add some music. You
-should see something like this:
+Press <kbd>5</kbd> to switch to the file-browser view so we can add some music. You should see something like this:
 
-@pre
+```
 +---------------------------------------------------------------------+
 | Browser - /home/jasonwoof                                           |
 | ../                                                                 |
@@ -55,25 +52,17 @@ should see something like this:
 | . 00:00 - 00:00 vol: 100                     all from library | C   |
 |                                                                     |
 +---------------------------------------------------------------------+
-@endpre
+```
 
-Now, use the arrow keys, Enter and Backspace to navigate to where you have
-audio files stored. To add music to your cmus library, use the arrow keys to
-highlight a file or folder, and press *a*. When you press *a* cmus will move you
-to the next line down (so that it is easy to add a bunch of files/folders in a
-row) and start adding the file/folder you pressed *a* on to your library. This
-can take a while if you added a folder with a lot in it. As files are added,
-you will see the second time in the bottom right go up. This is the total
+Now, use the <kbd>arrow keys</kbd>, <kbd>Enter</kbd> and <kbd>Backspace</kbd> to navigate to where you have audio files stored. To add music to your cmus library, use the arrow keys to highlight a file or folder, and press <kbd>a</kbd>. When you press </kbd>a</kbd> cmus will move you to the next line down (so that it is easy to add a bunch of files/folders in a
+row) and start adding the file/folder you pressed <kbd>a</kbd> on to your library. This can take a while if you added a folder with a lot in it. As files are added, you will see the second time in the bottom right go up. This is the total
 duration of all the music in the cmus library.
 
-Note: cmus does not move, duplicate or change your files. It just remembers
-where they are and caches the metadata (duration, artist, etc.)
+>**Note**: cmus does not move, duplicate or change your files. It just remembers where they are and caches the metadata (duration, artist, etc.)
 
-Just to be on the safe side, lets save. Type *:save* and press Enter.
+Just to be on the safe side, lets save. Type `:save` and press <kbd>Enter</kbd>.
 
-Note: Cmus automatically saves your settings and library and everything when
-you quit, so you probably won't use the save command much.
-
+>**Note**: Cmus automatically saves your settings and library and everything when you quit, so you probably won't use the save command much.
 
 ##Step 3: Playing Tracks From The Library
 
