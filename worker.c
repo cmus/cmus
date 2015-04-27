@@ -53,6 +53,8 @@ static struct worker_job *cur_job = NULL;
 
 static void *worker_loop(void *arg)
 {
+	srand(time(NULL));
+
 	worker_lock();
 	while (1) {
 		if (list_empty(&worker_job_head)) {
