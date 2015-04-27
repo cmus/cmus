@@ -92,6 +92,7 @@ static int read_header(int fd, struct ape_header *h)
 
 	if (read_all(fd, buf, sizeof(buf)) != sizeof(buf))
 		return 0;
+
 	return ape_parse_header(buf, h);
 }
 
@@ -142,12 +143,12 @@ static int ape_parse_one(const char *buf, int size, char **keyp, char **valp)
 	while (size - pos > 8) {
 		uint32_t val_len, flags;
 		char *key, *val;
-		int max_key_len, key_len;
+		int64_t max_key_len, key_len;
 
 		val_len = read_le32(buf + pos); pos += 4;
 		flags = read_le32(buf + pos); pos += 4;
 
-		max_key_len = size - pos - val_len - 1;
+		max_key_len = size - pos - (int64_t)val_len - 1;
 		if (max_key_len < 0) {
 			/* corrupt */
 			break;
