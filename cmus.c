@@ -83,6 +83,8 @@ void cmus_next(void)
 			info = pl_goto_next();
 		}
 	}
+	else if (circular)
+		play_queue_append(info);
 	editable_unlock();
 
 	if (info)

@@ -2229,6 +2229,8 @@ static int get_next(struct track_info **ti)
 			info = pl_goto_next();
 		}
 	}
+	else if (circular)
+		play_queue_append(info);
 	editable_unlock();
 
 	if (info == NULL)

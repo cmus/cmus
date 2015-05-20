@@ -786,6 +786,9 @@ altformat_trackwin [`Format String`]
 buffer_seconds (10) [1-300]
 	Size of player buffer in seconds.
 
+circular (false)
+	Play queue in circular mode when true.
+
 color_cmdline_bg (default) [`Color`]
 	Command line background color.
 
