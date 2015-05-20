@@ -141,6 +141,7 @@ extern int smart_artist_sort;
 extern int scroll_offset;
 extern int rewind_offset;
 extern int skip_track_info;
+extern int circular;
 extern int mouse;
 
 extern const char * const aaa_mode_names[];

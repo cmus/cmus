@@ -81,6 +81,7 @@ int auto_expand_albums_follow = 1;
 int auto_expand_albums_search = 1;
 int auto_expand_albums_selcur = 1;
 int show_all_tracks = 1;
+int circular = 0;
 int mouse = 0;
 
 int colors[NR_COLORS] = {
@@ -1155,6 +1156,21 @@ static void toggle_skip_track_info(unsigned int id)
 	skip_track_info ^= 1;
 }
 
+static void get_circular(unsigned int id, char *buf)
+{
+	strcpy(buf, bool_names[circular]);
+}
+
+static void set_circular(unsigned int id, const char *buf)
+{
+	parse_bool(buf, &circular);
+}
+
+static void toggle_circular(unsigned int id)
+{
+	circular ^= 1;
+}
+
 void update_mouse(void)
 {
 	if (mouse) {
@@ -1407,6 +1423,7 @@ static const struct {
 	DN_FLAGS(status_display_program, OPT_PROGRAM_PATH)
 	DT(wrap_search)
 	DT(skip_track_info)
+	DT(circular)
 	DT(mouse)
 	{ NULL, NULL, NULL, NULL, 0 }
 };
