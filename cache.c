@@ -62,8 +62,8 @@ struct cache_entry {
 	int32_t duration;
 	int32_t bitrate;
 
-        // when introducing new fields decrease the reserved space accordingly
-        uint8_t _reserved[CACHE_ENTRY_RESERVED_SIZE];
+	// when introducing new fields decrease the reserved space accordingly
+	uint8_t _reserved[CACHE_ENTRY_RESERVED_SIZE];
 
 	// filename, codec, codec_profile and N * (key, val)
 	char strings[];

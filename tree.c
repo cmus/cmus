@@ -732,7 +732,7 @@ static int tree_search_matches(void *data, struct iter *iter, const char *text)
 	if (!track_info_matches(tree_track_info(track), text, flags))
 		return 0;
 
-	if(auto_expand_albums_search) {
+	if (auto_expand_albums_search) {
 		/* collapse old search result */
 		if (collapse_artist) {
 			struct artist *artist = do_find_artist(collapse_artist, &lib_artist_root, NULL, NULL);

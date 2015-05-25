@@ -174,7 +174,7 @@ static int op_sndio_get_option(int key, char **val)
 static int sndio_pause(void)
 {
 	if (!sndio_paused) {
-		if(!sio_stop(hdl))
+		if (!sio_stop(hdl))
 			return -OP_ERROR_INTERNAL;
 		sndio_paused = 1;
 	}
