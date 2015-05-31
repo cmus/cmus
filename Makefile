@@ -181,7 +181,7 @@ op-$(CONFIG_ROAR)       += roar.so
 
 $(pulse-objs): CFLAGS	+= $(PULSE_CFLAGS)
 $(alsa-objs): CFLAGS	+= $(ALSA_CFLAGS)
-$(jack-objs): CFLAGS	+= $(JACK_CFLAGS)
+$(jack-objs): CFLAGS	+= $(JACK_CFLAGS) $(SAMPLERATE_CFLAGS)
 $(arts-objs): CFLAGS	+= $(ARTS_CFLAGS)
 $(oss-objs):  CFLAGS	+= $(OSS_CFLAGS)
 $(sun-objs):  CFLAGS	+= $(SUN_CFLAGS)
