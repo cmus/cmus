@@ -21,7 +21,6 @@
 #include "debug.h"
 #include "id3.h"
 #include "file.h"
-#include "utils.h"
 #ifdef HAVE_CONFIG
 #include "config/mp4.h"
 #endif
@@ -155,6 +154,9 @@ static int mp4_open(struct input_plugin_data *ip_data)
 	if (ip_data->remote)
 		return -IP_ERROR_FUNCTION_NOT_SUPPORTED;
 
+	/* kindly ask mp4v2 to not spam stderr */
+	MP4LogSetLevel(MP4_LOG_NONE);
+
 	/* init private struct */
 	priv = xnew(struct mp4_private, 1);
 	*priv = priv_init;
@@ -169,13 +171,11 @@ static int mp4_open(struct input_plugin_data *ip_data)
 	NeAACDecSetConfiguration(priv->decoder, neaac_cfg);
 
 	/* open mpeg-4 file */
-	disable_stdio();
 #ifdef MP4_DETAILS_ALL
 	priv->mp4.handle = MP4Read(ip_data->filename, 0);
 #else
 	priv->mp4.handle = MP4Read(ip_data->filename);
 #endif
-	enable_stdio();
 	if (!priv->mp4.handle) {
 		d_print("MP4Read failed\n");
 		goto out;
