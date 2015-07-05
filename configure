@@ -102,10 +102,10 @@ int main(void)
 
 check_ncurses()
 {
-	if check_library NCURSES "" -lncursesw
+	if pkg_config NCURSES "ncursesw" "" "-lncursesw"
 	then
 		widechars=y
-	elif check_library NCURSES "" -lncurses || check_library NCURSES "" -lcurses
+	elif pkg_config NCURSES "ncurses" "" "-lncurses" || pkg_config NCURSES "curses" "" "-lcurses"
 	then
 		widechars=n
 		msg_error "Your ncurses does not support wide characters!"
@@ -174,14 +174,11 @@ check_cdio()
 
 check_flac()
 {
-	if pkg_config FLAC "flac" "" "-lFLAC -lm"
-	then
-		# Make sure the FLAC_CFLAGS value is sane, strip trailing '/FLAC'.
-		FLAC_CFLAGS=`echo $FLAC_CFLAGS | sed "s/FLAC$//"`
-		return 0
-	fi
-	check_library FLAC "" "-lFLAC -lvorbisfile -lm"
-	return $?
+	pkg_config FLAC "flac" "" "-lFLAC -lm" || return $?
+
+	# Make sure the FLAC_CFLAGS value is sane, strip trailing '/FLAC'.
+	FLAC_CFLAGS=`echo $FLAC_CFLAGS | sed "s/FLAC$//"`
+	return 0
 }
 
 check_mad()
