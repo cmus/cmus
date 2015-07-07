@@ -45,6 +45,9 @@ int track_is_compilation(const struct keyval *comments)
 		return 1;
 
 	a = keyvals_get_val(comments, "artist");
+	if (a && is_various_artists(a))
+		return 1;
+
 	if (aa && a && !u_strcase_equal(aa, a))
 		return 1;
 
@@ -53,15 +56,21 @@ int track_is_compilation(const struct keyval *comments)
 
 int track_is_va_compilation(const struct keyval *comments)
 {
-	const char *c, *aa;
+	const char *c, *a, *aa;
 
 	aa = keyvals_get_val(comments, "albumartist");
 	if (aa)
 		return is_various_artists(aa);
 
-	c = keyvals_get_val(comments, "compilation");
+	a = keyvals_get_val(comments, "artist");
+	if (a && is_various_artists(a))
+		return 1;
 
-	return c && is_freeform_true(c);
+	c = keyvals_get_val(comments, "compilation");
+	if (c && is_freeform_true(c))
+		return 1;
+
+	return 0;
 }
 
 const char *comments_get_albumartist(const struct keyval *comments)
