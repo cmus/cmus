@@ -26,6 +26,7 @@
 #include "debug.h"
 #include "compiler.h"
 #include "options.h"
+#include "track_info.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -521,17 +522,29 @@ static void _producer_buffer_fill_update(void)
  */
 static void _consumer_position_update(void)
 {
-	static unsigned int old_pos = -1;
-	unsigned int pos = 0;
+	static double old_pos = -1;
+	double pos = 0;
 	long bitrate;
 
 	if (consumer_status == CS_PLAYING || consumer_status == CS_PAUSED)
-		pos = consumer_pos / buffer_second_size();
+		pos = (double) consumer_pos / (double) buffer_second_size();
+
 	if (pos != old_pos) {
 		old_pos = pos;
 
 		player_info_lock();
-		player_info.pos = pos;
+		player_info.pos = (int) pos;
+
+		if (player_info.ti->count_total_lyrics && player_info.ti->lastLyric <= player_info.ti->count_total_lyrics) {
+			if (player_info.ti->lastLyric > 0 && player_info.ti->lyric[player_info.ti->lastLyric - 1].timeEnd <= pos)
+				player_info.ti->showTextLyric = noneLyric;
+
+			if (player_info.ti->lyric[player_info.ti->lastLyric].timeStart <= pos) {
+				player_info.ti->currentTextLyric = player_info.ti->lyric[player_info.ti->lastLyric].messageText;
+				player_info.ti->lastLyric++;
+				player_info.ti->showTextLyric = newLyric;
+			}
+		}
 
 		if (show_current_bitrate) {
 			bitrate = ip_current_bitrate(ip);

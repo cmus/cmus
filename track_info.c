@@ -44,6 +44,16 @@ static void track_info_free(struct track_info *ti)
 	free(ti);
 }
 
+int getTime(char buffer[], unsigned int start, unsigned int end) {
+	int length = end - start;
+	char timeChar[length];
+	memcpy(timeChar, buffer + start, end);
+	int temp1;
+	sscanf(timeChar, "%d", &temp1);
+
+	return temp1;
+}
+
 struct track_info *track_info_new(const char *filename)
 {
 	struct track_info *ti;
@@ -54,6 +64,80 @@ struct track_info *track_info_new(const char *filename)
 	ti->comments = NULL;
 	ti->codec = NULL;
 	ti->codec_profile = NULL;
+
+	// Find SRT
+	int filename_length = strlen(filename);
+	int position_extension;
+
+	//Find begin of extension
+	for (position_extension = filename_length; position_extension >= 0; position_extension--) {
+		if (filename[position_extension - 1] == '.')
+			break;
+	}
+
+	if (position_extension <= 0)
+		return ti;
+
+	//Creating name of lyrics
+	char filename_str[position_extension + 4];
+	memcpy(filename_str, filename, sizeof(char) * position_extension);
+	memcpy(filename_str + position_extension, "srt", sizeof(char) * 4);
+
+	// Read SRT
+	ti->count_total_lyrics = 0;
+	if (access(filename_str, F_OK) != -1) {
+		ti->showTextLyric = noneLyric;
+		ti->lastLyric = 0;
+
+		int tempStrFileSize = 30;
+		ti->lyric = malloc(sizeof(struct sLyric) * tempStrFileSize);
+
+		FILE *fp;
+		fp = fopen(filename_str, "r");
+
+		enum {lCounter, lTime, lText, lBlank} currentTypeLine = lCounter;
+
+		char buffer[256];
+		int bufferCount = 0;
+		while ((buffer[bufferCount] = getc(fp)) != EOF) {
+			if (buffer[bufferCount] == '\n') {
+				buffer[bufferCount - 1] = '\0';
+				if (currentTypeLine == lCounter) {
+					if (ti->count_total_lyrics == tempStrFileSize) {
+						tempStrFileSize += 5;
+						ti->lyric = realloc(ti->lyric, sizeof(struct sLyric) * tempStrFileSize);
+					}
+				} else if (currentTypeLine == lTime) {
+					int startHour = getTime(buffer, 0, 1);
+					int startMinutes = getTime(buffer, 3, 4);
+					int startSeconds = getTime(buffer, 6, 7);
+					int startHundredths = getTime(buffer, 9, 11);
+					ti->lyric[ti->count_total_lyrics].timeStart = (startHour * 3600) + (startMinutes * 60) + (startSeconds) + ((double) startHundredths / 1000);
+
+					int endHour = getTime(buffer, 17, 18);
+					int endMinutes = getTime(buffer, 20, 21);
+					int endSeconds = getTime(buffer, 23, 24);
+					int endHundredths = getTime(buffer, 26, 28);
+					ti->lyric[ti->count_total_lyrics].timeEnd = (endHour * 3600) + (endMinutes * 60) + (endSeconds) + ((double) endHundredths / 1000);
+				} else if (currentTypeLine == lText) {
+					strcpy(ti->lyric[ti->count_total_lyrics].messageText, buffer);
+					ti->count_total_lyrics++;
+				}
+
+				if (currentTypeLine == lBlank) {
+					currentTypeLine = lCounter;
+				} else {
+					currentTypeLine++;
+				}
+
+				bufferCount = 0;
+				buffer[bufferCount] = '\0';
+			} else {
+				bufferCount++;
+			}
+		}
+	}
+
 	return ti;
 }
 

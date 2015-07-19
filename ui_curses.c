@@ -289,6 +289,7 @@ enum {
 	TF_VOLUME,
 	TF_LVOLUME,
 	TF_RVOLUME,
+	TF_LYRICS,
 	TF_BUFFER,
 	TF_REPEAT,
 	TF_CONTINUE,
@@ -345,6 +346,7 @@ static struct format_option track_fopts[NR_TFS + 1] = {
 	DEF_FO_INT('\0', "volume", 1),
 	DEF_FO_INT('\0', "lvolume", 1),
 	DEF_FO_INT('\0', "rvolume", 1),
+	DEF_FO_STR('\0', "lyrics", 0),
 	DEF_FO_INT('\0', "buffer", 1),
 	DEF_FO_STR('\0', "repeat", 0),
 	DEF_FO_STR('\0', "continue", 0),
@@ -653,8 +655,17 @@ const struct format_option *get_global_fopts(void)
 	fopt_set_str(&track_fopts[TF_SHUFFLE], shuffle_strs[shuffle]);
 	fopt_set_str(&track_fopts[TF_PLAYLISTMODE], aaa_mode_names[aaa_mode]);
 
-	if (player_info.ti)
+	if (player_info.ti) {
 		duration = player_info.ti->duration;
+
+		if (player_info.ti->count_total_lyrics && player_info.ti->showTextLyric == newLyric) {
+			fopt_set_str(&track_fopts[TF_LYRICS], player_info.ti->currentTextLyric);
+			player_info.ti->showTextLyric = oldLyric;
+			refresh();
+		} else if (player_info.ti->showTextLyric == noneLyric) {
+			fopt_set_str(&track_fopts[TF_LYRICS], "");
+		}
+	}
 
 	vol_left = vol_right = vol = -1;
 	if (soft_vol) {
