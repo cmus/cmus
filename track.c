@@ -24,6 +24,7 @@
 #include "uchar.h"
 #include "xmalloc.h"
 #include "debug.h"
+#include "misc.h"
 
 #include <string.h>
 
@@ -248,6 +249,37 @@ void sorted_list_remove_track(struct list_head *head, struct rb_root *tree_root,
 			rb_erase(&track->tree_node, tree_root);
 	}
 	list_del(&track->node);
+}
+
+void rand_list_rebuild(struct list_head *head, struct rb_root *tree_root)
+{
+	struct list_head *item, *tmp;
+	struct rb_root tmp_tree = RB_ROOT;
+	struct simple_track **track_array;
+	static const sort_key_t empty_sort_keys[] = { SORT_INVALID };
+
+	unsigned int len = 0, track_cnt = 0;
+
+	list_for_each(item, head) {
+		len++;
+	}
+	track_array = xmalloc(len * sizeof(track_array[0]));
+
+	LIST_HEAD(tmp_head);
+	list_for_each_safe(item, tmp, head) {
+		struct simple_track *track = to_simple_track(item);
+		sorted_list_remove_track(head, tree_root, track);
+		track_array[track_cnt] = track;
+		track_cnt++;
+	}
+	shuffle_array(track_array, len, sizeof(track_array[0]));
+	for (unsigned int i=0; i<len; i++) {
+		sorted_list_add_track(&tmp_head, &tmp_tree, track_array[i], empty_sort_keys, 0);
+	}
+	free(track_array);
+
+	tree_root->rb_node = tmp_tree.rb_node;
+	_list_add(head, tmp_head.prev, tmp_head.next);
 }
 
 void sorted_list_rebuild(struct list_head *head, struct rb_root *tree_root, const sort_key_t *keys)
