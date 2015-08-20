@@ -1352,6 +1352,26 @@ static void cmd_pwd(char *arg)
 	}
 }
 
+static void cmd_rand(char *arg)
+{
+	editable_lock();
+	switch (cur_view) {
+	case TREE_VIEW:
+		break;
+	case SORTED_VIEW:
+		editable_rand(&lib_editable);
+		break;
+	case PLAYLIST_VIEW:
+		editable_rand(&pl_editable);
+		break;
+	case QUEUE_VIEW:
+		editable_rand(&pq_editable);
+		break;
+	}
+	editable_unlock();
+}
+
+
 static void cmd_search_next(char *arg)
 {
 	if (search_str) {
@@ -2582,6 +2602,7 @@ struct command commands[] = {
 	{ "prev-view",		cmd_prev_view,	0, 0, NULL,		  0, 0 },
 	{ "push",		cmd_push,	1,-1, expand_commands,	  0, 0 },
 	{ "pwd",		cmd_pwd,	0, 0, NULL,		  0, 0 },
+	{ "rand",		cmd_rand,	0, 0, NULL,		  0, 0 },
 	{ "quit",		cmd_quit,	0, 1, NULL,		  0, 0 },
 	{ "refresh",		cmd_refresh,	0, 0, NULL,		  0, 0 },
 	{ "run",		cmd_run,	1,-1, expand_program_paths, 0, CMD_UNSAFE },

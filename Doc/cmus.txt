@@ -494,6 +494,9 @@ quit [-i] (*q*, *:wq*)
 	@li -i
 	ask before exiting
 
+rand
+	Randomizes (shuffles) the tracks in the library, playlist or queue view.
+
 refresh (*^L*)
 	Redraw the terminal window.
 
