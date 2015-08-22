@@ -11,10 +11,10 @@
 # All keys contain only chars a-z. Values are UTF-8 strings.
 #
 # Keys: status file url artist album discnumber tracknumber title date
-#   - status (stopped, playing, paused) is always given
+#   - status (stopped, playing, paused, exiting) is always given
 #   - file or url is given only if track is 'loaded' in cmus
 #   - other keys/values are given only if they are available
-#  
+#
 
 output()
 {
