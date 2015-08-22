@@ -153,4 +153,11 @@ int track_info_matches_full(const struct track_info *ti, const char *text, unsig
 
 int track_info_cmp(const struct track_info *a, const struct track_info *b, const sort_key_t *keys);
 
+/**
+ * compare naturally (i.e. 1 is less than 10)
+ *
+ * @returns difference between strings as int
+ */
+int strnatcmp(const char *, const char *);
+
 #endif

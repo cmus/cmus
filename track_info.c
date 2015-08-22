@@ -28,6 +28,9 @@
 
 #include <string.h>
 #include <math.h>
+#include <ctype.h>
+#include <inttypes.h>
+
 
 static void track_info_free(struct track_info *ti)
 {
@@ -183,6 +186,60 @@ static int doublecmp0(double a, double b)
 	return (x > 0) - (x < 0);
 }
 
+int strnatcmp(const char * str1, const char * str2)
+{
+	int result;
+	char * o_ptr1, * o_ptr2, * strcpy1, * strcpy2;
+
+	o_ptr1 = malloc(sizeof(char) * (strlen(str1) + 1));
+	o_ptr2 = malloc(sizeof(char) * (strlen(str2) + 1));
+	strcpy1 = strcpy(o_ptr1, str1);
+	strcpy2 = strcpy(o_ptr2, str2);
+
+
+	while (*strcpy1 != '\0' && isspace(*strcpy1)) {
+		strcpy1++;
+	}
+
+	while (*strcpy2 != '\0' && isspace(*strcpy2)) {
+		strcpy2++;
+	}
+
+	unsigned int pos = 0;
+	int num1 = 0, num2 = 0;
+
+	while ((size_t)(strcpy1 - o_ptr1 + pos) < strlen(strcpy1) &&
+		(size_t)(strcpy2 - o_ptr2 + pos) < strlen(strcpy2) &&
+		!isdigit(*(strcpy1+pos)) && !isdigit(*(strcpy2+pos))) {
+		pos++;
+	}
+
+	result = strcoll(strcpy1, strcpy2);
+
+	if (pos) {
+		int cmp = strncmp(strcpy1, strcpy2, pos);
+
+		if (0 == cmp) {
+			char * maxptr1, * maxptr2;
+			maxptr1 = &o_ptr1[strlen(o_ptr1)];
+			maxptr2 = &o_ptr2[strlen(o_ptr2)];
+			num1 = strtoimax(&strcpy1[pos], &maxptr1, 10);
+			num2 = strtoimax(&strcpy2[pos], &maxptr2, 10);
+
+			if (num1 != num2) {
+				result = num1 - num2;
+			}
+		} else {
+			result = cmp;
+		}
+	}
+
+	free(o_ptr1);
+	free(o_ptr2);
+
+	return result;
+}
+
 /* this function gets called *alot*, it must be very fast */
 int track_info_cmp(const struct track_info *a, const struct track_info *b, const sort_key_t *keys)
 {
@@ -211,7 +268,7 @@ int track_info_cmp(const struct track_info *a, const struct track_info *b, const
 			break;
 		case SORT_FILENAME:
 			/* NOTE: filenames are not necessarily UTF-8 */
-			res = strcoll(a->filename, b->filename);
+			res = strnatcmp(a->filename, b->filename);
 			break;
 		case SORT_RG_TRACK_GAIN:
 		case SORT_RG_TRACK_PEAK:
