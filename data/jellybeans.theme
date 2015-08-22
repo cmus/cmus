@@ -1,0 +1,34 @@
+# Jellybeans colorscheme
+# based on: https://github.com/nanotech/jellybeans.vim
+# term codes from: http://vim.wikia.com/wiki/Xterm256_color_names_for_console_Vim
+
+# Colors sorted as they appear in man pages (alphabetically)
+set color_cmdline_bg=233
+set color_cmdline_fg=188
+set color_error=167
+set color_info=186
+set color_separator=186
+set color_statusline_bg=242
+set color_statusline_fg=254
+set color_statusline_attr=254
+set color_titleline_bg=186
+set color_titleline_fg=237
+set color_titleline_attr=default
+set color_win_bg=default
+# Uncomment the following line to set theme's background color
+# set color_win_bg=233
+set color_win_cur=110
+set color_win_cur_sel_bg=186
+set color_win_cur_sel_fg=237
+set color_win_cur_sel_attr=default
+set color_win_dir=186
+set color_win_fg=default
+set color_win_attr=default
+set color_win_inactive_cur_sel_bg=242
+set color_win_inactive_cur_sel_fg=186
+set color_win_inactive_sel_bg=237
+set color_win_inactive_sel_fg=145
+set color_win_sel_bg=254
+set color_win_sel_fg=237
+set color_win_title_bg=237
+set color_win_title_fg=254
