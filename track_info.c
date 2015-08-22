@@ -189,12 +189,10 @@ static int doublecmp0(double a, double b)
 int strnatcmp(const char * str1, const char * str2)
 {
 	int result;
-	char *o_ptr1, *o_ptr2, *strcpy1, *strcpy2;
+	char *strcpy1, *strcpy2;
 
-	o_ptr1 = xstrndup(str1, strlen(str1) + 1);
-	o_ptr2 = xstrndup(str2, strlen(str2) + 1);
-	strcpy1 = o_ptr1;
-	strcpy2 = o_ptr2;
+	strcpy1 = (char*)str1;
+	strcpy2 = (char*)str2;
 
 	while (*strcpy1 != '\0' && isspace(*strcpy1))
 		strcpy1++;
@@ -204,9 +202,11 @@ int strnatcmp(const char * str1, const char * str2)
 
 	unsigned int pos = 0;
 	int num1 = 0, num2 = 0;
+	size_t strlen1 = strlen(strcpy1);
+	size_t strlen2 = strlen(strcpy2);
 
-	while ((unsigned int)(strcpy1 - o_ptr1 + pos) < strlen(strcpy1) &&
-	       (unsigned int)(strcpy2 - o_ptr2 + pos) < strlen(strcpy2) &&
+	while ((size_t)(strcpy1 - str1 + pos) < strlen1 &&
+	       (size_t)(strcpy2 - str2 + pos) < strlen2 &&
 		!isdigit(*(strcpy1+pos)) && !isdigit(*(strcpy2+pos)))
 		pos++;
 
@@ -215,10 +215,10 @@ int strnatcmp(const char * str1, const char * str2)
 	if (pos) {
 		int cmp = strncmp(strcpy1, strcpy2, pos);
 
-		if (0 == cmp) {
+		if (cmp == 0) {
 			char *maxptr1, *maxptr2;
-			maxptr1 = &o_ptr1[strlen(o_ptr1)];
-			maxptr2 = &o_ptr2[strlen(o_ptr2)];
+			maxptr1 = (char*)&str1[strlen(str1)];
+			maxptr2 = (char*)&str2[strlen(str2)];
 			num1 = strtoimax(&strcpy1[pos], &maxptr1, 10);
 			num2 = strtoimax(&strcpy2[pos], &maxptr2, 10);
 
@@ -228,9 +228,6 @@ int strnatcmp(const char * str1, const char * str2)
 			result = cmp;
 		}
 	}
-
-	free(o_ptr1);
-	free(o_ptr2);
 
 	return result;
 }
