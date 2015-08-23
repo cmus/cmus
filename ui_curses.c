@@ -1749,7 +1749,17 @@ static void spawn_status_program(void)
 		stream_title = get_stream_title();
 
 	i = 0;
-	argv[i++] = xstrdup(status_display_program);
+
+	// Status display program maybe have multiple arguments
+	const char program_delim = ' ';
+	char *program = xstrdup(status_display_program);
+	char *program_start = program;
+	char *program_token = strtok(program, &program_delim);
+	while (program_token) {
+		argv[i++] = xstrdup(program_token);
+		program_token = strtok(0, &program_delim);
+	}
+	free(program_start);
 
 	argv[i++] = xstrdup("status");
 	argv[i++] = xstrdup(player_status_names[status]);
