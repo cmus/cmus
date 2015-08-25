@@ -1371,7 +1371,6 @@ static void cmd_rand(char *arg)
 	editable_unlock();
 }
 
-
 static void cmd_search_next(char *arg)
 {
 	if (search_str) {

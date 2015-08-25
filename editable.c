@@ -403,7 +403,6 @@ void editable_update_track(struct editable *e, struct track_info *old, struct tr
 		e->win->changed = changed;
 }
 
-
 void editable_rand(struct editable *e)
 {
 	if (e->nr_tracks <=1)
@@ -412,4 +411,3 @@ void editable_rand(struct editable *e)
 	window_changed(e->win);
 	window_goto_top(e->win);
 }
-

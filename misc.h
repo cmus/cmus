@@ -19,6 +19,8 @@
 #ifndef CMUS_MISC_H
 #define CMUS_MISC_H
 
+#include <stddef.h>
+
 extern const char *cmus_config_dir;
 extern const char *cmus_socket_path;
 extern const char *home_dir;
@@ -44,5 +46,6 @@ const char *unescape(const char *str);
 int replaygain_decode(unsigned int field, int *gain);
 
 char *expand_filename(const char *name);
+void shuffle_array(void *array, size_t n, size_t size);
 
 #endif
