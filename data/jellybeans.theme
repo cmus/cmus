@@ -1,0 +1,53 @@
+# Jellybeans colorscheme
+# by: Daniel Rivas (https://github.com/DanielRS)
+# based on: https://github.com/nanotech/jellybeans.vim
+# term codes from: http://vim.wikia.com/wiki/Xterm256_color_names_for_console_Vim
+
+# Window
+set color_cmdline_bg=233
+set color_cmdline_fg=188
+set color_cmdline_attr=default
+
+set color_win_title_bg=237
+set color_win_title_fg=110
+set color_win_title_attr=default
+
+set color_win_fg=188
+set color_win_bg=233
+set color_win_attr=default
+
+set color_separator=107
+
+# Bottom status
+set color_titleline_bg=186
+set color_titleline_fg=237
+set color_titleline_attr=default
+
+set color_statusline_bg=237
+set color_statusline_fg=145
+set color_statusline_attr=default
+
+# Text
+set color_win_cur=183
+set color_win_dir=186
+
+# Menu
+set color_win_sel_bg=254
+set color_win_sel_fg=237
+set color_win_sel_attr=default
+
+set color_win_inactive_sel_bg=237
+set color_win_inactive_sel_fg=145
+set color_win_inactive_sel_attr=default
+
+set color_win_cur_sel_bg=186
+set color_win_cur_sel_fg=237
+set color_win_cur_sel_attr=default
+
+set color_win_inactive_cur_sel_bg=242
+set color_win_inactive_cur_sel_fg=186
+set color_win_inactive_cur_sel_attr=default
+
+# Messages
+set color_error=167
+set color_info=186
