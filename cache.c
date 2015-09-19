@@ -37,15 +37,15 @@
 #include <errno.h>
 #include <sys/mman.h>
 
-#define CACHE_VERSION   0x0c
+#define CACHE_VERSION   0x0d
 
 #define CACHE_64_BIT	0x01
 #define CACHE_BE	0x02
 
 #define CACHE_RESERVED_PATTERN  	0xff
 
-#define CACHE_ENTRY_USED_SIZE		24
-#define CACHE_ENTRY_RESERVED_SIZE	56
+#define CACHE_ENTRY_USED_SIZE		28
+#define CACHE_ENTRY_RESERVED_SIZE	52
 #define CACHE_ENTRY_TOTAL_SIZE	(CACHE_ENTRY_RESERVED_SIZE + CACHE_ENTRY_USED_SIZE)
 
 // Cmus Track Cache version X + 4 bytes flags
@@ -61,6 +61,7 @@ struct cache_entry {
 	int64_t mtime;
 	int32_t duration;
 	int32_t bitrate;
+	int32_t bpm;
 
 	// when introducing new fields decrease the reserved space accordingly
 	uint8_t _reserved[CACHE_ENTRY_RESERVED_SIZE];
@@ -131,6 +132,7 @@ static struct track_info *cache_entry_to_ti(struct cache_entry *e)
 	ti->bitrate = e->bitrate;
 	ti->mtime = e->mtime;
 	ti->play_count = e->play_count;
+	ti->bpm = e->bpm;
 
 	// count strings (filename + codec + codec_profile + key/val pairs)
 	count = 0;
@@ -328,6 +330,7 @@ static void write_ti(int fd, struct gbuf *buf, struct track_info *ti, unsigned i
 	e.bitrate = ti->bitrate;
 	e.mtime = ti->mtime;
 	e.play_count = ti->play_count;
+	e.bpm = ti->bpm;
 	len[count] = strlen(ti->filename) + 1;
 	e.size += len[count++];
 	len[count] = (ti->codec ? strlen(ti->codec) : 0) + 1;

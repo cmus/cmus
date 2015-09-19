@@ -223,7 +223,7 @@ static const struct {
 	[FMT_CURRENT]		= { "format_current"		, " %a - %l -%3n. %t%= %y "				},
 	[FMT_STATUSLINE]	= { "format_statusline"		,
 		" %{status} %{?show_playback_position?%{position} %{?duration?/ %{duration} }?%{?duration?%{duration} }}"
-		"- %{total} "
+		"- %{total} %{?bpm>0?at %{bpm} BPM }"
 		"%{?volume>=0?vol: %{?lvolume!=rvolume?%{lvolume},%{rvolume} ?%{volume} }}"
 		"%{?stream?buf: %{buffer} }"
 		"%{?show_current_bitrate & bitrate>=0? %{bitrate} kbps }"
@@ -352,6 +352,7 @@ static const struct {
 	{ "codec",		SORT_CODEC		},
 	{ "codec_profile",	SORT_CODEC_PROFILE	},
 	{ "media",		SORT_MEDIA		},
+	{ "bpm",		SORT_BPM		},
 	{ "-artist",		REV_SORT_ARTIST		},
 	{ "-album",		REV_SORT_ALBUM		},
 	{ "-title",		REV_SORT_TITLE		},
@@ -373,6 +374,7 @@ static const struct {
 	{ "-codec",		REV_SORT_CODEC		},
 	{ "-codec_profile",	REV_SORT_CODEC_PROFILE	},
 	{ "-media",		REV_SORT_MEDIA		},
+	{ "-bpm",		REV_SORT_BPM		},
 	{ NULL,                 SORT_INVALID            }
 };
 

@@ -438,11 +438,12 @@ static const struct {
 	{ "albumartist",EXPR_STR	},
 	{ "artist",	EXPR_STR	},
 	{ "bitrate",	EXPR_INT	},
+	{ "bpm",	EXPR_INT	},
 	{ "codec",	EXPR_STR	},
 	{ "codec_profile",EXPR_STR	},
 	{ "comment",	EXPR_STR	},
 	{ "date",	EXPR_INT	},
-	{ "discnumber",	EXPR_INT	},
+	{ "discnumber", EXPR_INT	},
 	{ "duration",	EXPR_INT	},
 	{ "filename",	EXPR_STR	},
 	{ "genre",	EXPR_STR	},
@@ -924,6 +925,8 @@ static int int_val(const char *key, struct track_info *ti)
 		val = (ti->bitrate >= 0) ? (int) (ti->bitrate / 1000. + 0.5) : -1;
 	} else if (strcmp(key, "play_count") == 0) {
 		val = ti->play_count;
+	} else if (strcmp(key, "bpm") == 0) {
+		val = ti->bpm;
 	} else {
 		val = comments_get_int(ti->comments, key);
 	}

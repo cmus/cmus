@@ -1118,6 +1118,7 @@ Special Keys:
 	%F  %{filename}		@br
 	    %{originaldate}	@br
 	    %{maxdate}		@br
+	    %{bpm}		@br
 	    %{bitrate}		@br
 	    %{codec}		@br
 	    %{codec_profile}	@br
@@ -1181,7 +1182,7 @@ Sort option (lib_sort, pl_sort) value is space separated list of the following
 sort keys:
 
 	artist, album, title, tracknumber, play_count, discnumber, date,
-	originaldate, genre, comment, albumartist, filename, filemtime,
+	originaldate, genre, comment, albumartist, filename, filemtime, bpm,
 	bitrate, codec, media, codec_profile, rg_track_gain, rg_track_peak,
 	rg_album_gain, rg_album_peak
 

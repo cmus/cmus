@@ -53,6 +53,7 @@ struct track_info *track_info_new(const char *filename)
 	ti->ref = 1;
 	ti->play_count = 0;
 	ti->comments = NULL;
+	ti->bpm = -1;
 	ti->codec = NULL;
 	ti->codec_profile = NULL;
 	return ti;
@@ -74,6 +75,11 @@ void track_info_set_comments(struct track_info *ti, struct keyval *comments) {
 	ti->albumsort = keyvals_get_val(comments, "albumsort");
 	ti->is_va_compilation = track_is_va_compilation(comments);
 	ti->media = keyvals_get_val(comments, "media");
+
+	int bpm = comments_get_int(comments, "bpm");
+	if (ti->bpm == 0 || ti->bpm == -1) {
+		ti->bpm = bpm;
+	}
 
 	if (ti->artist == NULL && ti->albumartist != NULL) {
 		/* best guess */
@@ -205,6 +211,7 @@ int track_info_cmp(const struct track_info *a, const struct track_info *b, const
 		case SORT_DATE:
 		case SORT_ORIGINALDATE:
 		case SORT_PLAY_COUNT:
+		case SORT_BPM:
 			res = getentry(a, key, int) - getentry(b, key, int);
 			break;
 		case SORT_FILEMTIME:
