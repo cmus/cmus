@@ -44,8 +44,8 @@
 
 #define CACHE_RESERVED_PATTERN  	0xff
 
-#define CACHE_ENTRY_USED_SIZE		24
-#define CACHE_ENTRY_RESERVED_SIZE	56
+#define CACHE_ENTRY_USED_SIZE		28
+#define CACHE_ENTRY_RESERVED_SIZE	52
 #define CACHE_ENTRY_TOTAL_SIZE	(CACHE_ENTRY_RESERVED_SIZE + CACHE_ENTRY_USED_SIZE)
 
 // Cmus Track Cache version X + 4 bytes flags
@@ -61,6 +61,7 @@ struct cache_entry {
 	int64_t mtime;
 	int32_t duration;
 	int32_t bitrate;
+	int32_t bpm;
 
 	// when introducing new fields decrease the reserved space accordingly
 	uint8_t _reserved[CACHE_ENTRY_RESERVED_SIZE];
@@ -131,6 +132,7 @@ static struct track_info *cache_entry_to_ti(struct cache_entry *e)
 	ti->bitrate = e->bitrate;
 	ti->mtime = e->mtime;
 	ti->play_count = e->play_count;
+        ti->bpm = e->bpm;
 
 	// count strings (filename + codec + codec_profile + key/val pairs)
 	count = 0;
