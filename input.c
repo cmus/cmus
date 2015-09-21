@@ -171,6 +171,7 @@ static int do_http_get(struct http_get *hg, const char *uri, int redirections)
 
 	hg->headers = NULL;
 	hg->reason = NULL;
+	hg->proxy = NULL;
 	hg->code = -1;
 	hg->fd = -1;
 	if (http_parse_uri(uri, &hg->uri))

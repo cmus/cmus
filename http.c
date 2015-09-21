@@ -69,7 +69,7 @@ int http_parse_uri(const char *uri, struct http_uri *u)
 
 	/* [user[:pass]@] */
 	at = strchr(str, '@');
-	if (at) {
+	if (at && (!slash || at < slash)) {
 		/* user[:pass]@ */
 		host_start = at + 1;
 		colon = strchr(str, ':');
@@ -85,7 +85,7 @@ int http_parse_uri(const char *uri, struct http_uri *u)
 
 	/* host[:port] */
 	colon = strchr(host_start, ':');
-	if (colon) {
+	if (colon && (!slash || colon < slash)) {
 		/* host:port */
 		const char *start;
 		int port;
