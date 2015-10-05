@@ -505,6 +505,16 @@ static int set_comment(struct keyval *comment, int i, const char *key, const cha
 }
 #endif
 
+static void ffmpeg_read_metadata(struct growing_keyvals *c, AVDictionary *metadata)
+{
+	AVDictionaryEntry *tag = NULL;
+
+	while ((tag = av_dict_get(metadata, "", tag, AV_DICT_IGNORE_SUFFIX))) {
+		if (tag->value[0])
+			comments_add_const(c, tag->key, tag->value);
+	}
+}
+
 static int ffmpeg_read_comments(struct input_plugin_data *ip_data, struct keyval **comments)
 {
 	struct ffmpeg_private *priv = ip_data->private;
@@ -532,11 +542,10 @@ static int ffmpeg_read_comments(struct input_plugin_data *ip_data, struct keyval
 	}
 #else
 	GROWING_KEYVALS(c);
-	AVDictionaryEntry *tag = NULL;
 
-	while ((tag = av_dict_get(ic->metadata, "", tag, AV_DICT_IGNORE_SUFFIX))) {
-		if (tag && tag->value[0])
-			comments_add_const(&c, tag->key, tag->value);
+	ffmpeg_read_metadata(&c, ic->metadata);
+	for (unsigned i = 0; i < ic->nb_streams; i++) {
+		ffmpeg_read_metadata(&c, ic->streams[i]->metadata);
 	}
 
 	keyvals_terminate(&c);
