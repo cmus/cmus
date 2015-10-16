@@ -30,6 +30,7 @@
 #include <math.h>
 #include <ctype.h>
 #include <inttypes.h>
+#include <wctype.h>
 
 
 static void track_info_free(struct track_info *ti)
@@ -186,50 +187,81 @@ static int doublecmp0(double a, double b)
 	return (x > 0) - (x < 0);
 }
 
-int strnatcmp(const char * str1, const char * str2)
+int strnatcmp(const char *str1, const char *str2)
 {
-	int result;
-	char *strcpy1, *strcpy2;
+  	int result = 0;
 
-	strcpy1 = (char*)str1;
-	strcpy2 = (char*)str2;
+        if (str1 == NULL)
+	        return -1;
 
-	while (*strcpy1 != '\0' && isspace(*strcpy1))
+        if (str2 == NULL)
+	        return 1;
+
+        const char *strcpy1 = str1;
+	const char *strcpy2 = str2;
+
+	while (*strcpy1 != '\0' && (isspace(*strcpy1) || iscntrl(*strcpy2) || !isprint(*strcpy2)))
 		strcpy1++;
 
-	while (*strcpy2 != '\0' && isspace(*strcpy2))
+	while (*strcpy2 != '\0' && (isspace(*strcpy2) || iscntrl(*strcpy2) || !isprint(*strcpy2)))
 		strcpy2++;
 
-	unsigned int pos = 0;
-	int num1 = 0, num2 = 0;
-	size_t strlen1 = strlen(strcpy1);
-	size_t strlen2 = strlen(strcpy2);
+	const size_t strlen1 = strlen(strcpy1);
+        const size_t strlen2 = strlen(strcpy2);
 
-	while ((size_t)(strcpy1 - str1 + pos) < strlen1 &&
-	       (size_t)(strcpy2 - str2 + pos) < strlen2 &&
-		!isdigit(*(strcpy1+pos)) && !isdigit(*(strcpy2+pos)))
-		pos++;
+        if (strlen1 == 0 || strlen2 == 0)
+        	return strlen1 - strlen2;
 
-	result = strcoll(strcpy1, strcpy2);
+	uint8_t have_num_only = 0;
+        int32_t is_alpha1, is_alpha2;
+        char pos = 0;
 
-	if (pos) {
-		int cmp = strncmp(strcpy1, strcpy2, pos);
+	while ((str1 + strlen1 - strcpy1 - pos) > 0 && /* must not deref. foreign memory */
+               (str2 + strlen2 - strcpy2 - pos) > 0) {
+        	is_alpha1 = !isdigit(*(strcpy1+pos));
+                is_alpha2 = !isdigit(*(strcpy2+pos));
 
-		if (cmp == 0) {
-			char *maxptr1, *maxptr2;
-			maxptr1 = (char*)&str1[strlen(str1)];
-			maxptr2 = (char*)&str2[strlen(str2)];
-			num1 = strtoimax(&strcpy1[pos], &maxptr1, 10);
-			num2 = strtoimax(&strcpy2[pos], &maxptr2, 10);
-
-			if (num1 != num2)
-				result = num1 - num2;
-		} else {
-			result = cmp;
-		}
+                if (*(strcpy1+pos) != '\0' &&
+                    *(strcpy2+pos) != '\0' &&
+                    is_alpha1 && is_alpha2) {
+                	have_num_only = 0;
+                	pos++;
+                        continue;
+                } else if (pos == 0 &&
+                           (str1 + strlen1 - strcpy1 - pos) > 0 &&
+                           (str2 + strlen2 - strcpy2 - pos) > 0) {
+                	have_num_only = 1;
+                }
+		break;
 	}
 
-	return result;
+        if (pos != 0 || have_num_only == 1) {
+         	const int cmp = strncasecmp(strcpy1, strcpy2, pos);
+                if (cmp == 0) {
+	                char *maxptr1 = strcpy1+pos;
+                        char *maxptr2 = strcpy2+pos;
+
+                        while (*maxptr1 != '\0' && isdigit(*maxptr1))
+                        	maxptr1++;
+
+                        while (*maxptr2 != '\0' && isdigit(*maxptr2))
+	                        maxptr2++;
+
+                        const int num1 = strtoimax(strcpy1+pos, &maxptr1, 10);
+                        const int num2 = strtoimax(strcpy2+pos, &maxptr2, 10);
+
+                        if (num1 != num2)
+	                        result = num1 - num2;
+                        else
+                        	result = strnatcmp(maxptr1, maxptr2);
+
+                } else {
+                	result = cmp;
+                }
+        } else {
+        	result = strcoll(strcpy1, strcpy2);
+        }
+       	return result;
 }
 
 /* this function gets called *alot*, it must be very fast */
@@ -260,8 +292,8 @@ int track_info_cmp(const struct track_info *a, const struct track_info *b, const
 			break;
 		case SORT_FILENAME:
 			/* NOTE: filenames are not necessarily UTF-8 */
-			res = strnatcmp(a->filename, b->filename);
-			break;
+                	res = strnatcmp(a->filename, b->filename);
+                        break;
 		case SORT_RG_TRACK_GAIN:
 		case SORT_RG_TRACK_PEAK:
 		case SORT_RG_ALBUM_GAIN:
