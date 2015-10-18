@@ -25,12 +25,12 @@
 #include "utils.h"
 #include "debug.h"
 #include "path.h"
+#include "strnatcmp.h"
 
 #include <string.h>
 #include <math.h>
 #include <ctype.h>
 #include <inttypes.h>
-#include <wctype.h>
 
 
 static void track_info_free(struct track_info *ti)
@@ -185,83 +185,6 @@ static int doublecmp0(double a, double b)
 		return r;
 	x = a - b;
 	return (x > 0) - (x < 0);
-}
-
-int strnatcmp(const char *str1, const char *str2)
-{
-  	int result = 0;
-
-        if (str1 == NULL)
-	        return -1;
-
-        if (str2 == NULL)
-	        return 1;
-
-        const char *strcpy1 = str1;
-	const char *strcpy2 = str2;
-
-	while (*strcpy1 != '\0' && (isspace(*strcpy1) || iscntrl(*strcpy2) || !isprint(*strcpy2)))
-		strcpy1++;
-
-	while (*strcpy2 != '\0' && (isspace(*strcpy2) || iscntrl(*strcpy2) || !isprint(*strcpy2)))
-		strcpy2++;
-
-	const size_t strlen1 = strlen(strcpy1);
-        const size_t strlen2 = strlen(strcpy2);
-
-        if (strlen1 == 0 || strlen2 == 0)
-        	return strlen1 - strlen2;
-
-	uint8_t have_num_only = 0;
-        int32_t is_alpha1, is_alpha2;
-        char pos = 0;
-
-	while ((str1 + strlen1 - strcpy1 - pos) > 0 && /* must not deref. foreign memory */
-               (str2 + strlen2 - strcpy2 - pos) > 0) {
-        	is_alpha1 = !isdigit(*(strcpy1+pos));
-                is_alpha2 = !isdigit(*(strcpy2+pos));
-
-                if (*(strcpy1+pos) != '\0' &&
-                    *(strcpy2+pos) != '\0' &&
-                    is_alpha1 && is_alpha2) {
-                	have_num_only = 0;
-                	pos++;
-                        continue;
-                } else if (pos == 0 &&
-                           (str1 + strlen1 - strcpy1 - pos) > 0 &&
-                           (str2 + strlen2 - strcpy2 - pos) > 0) {
-                	have_num_only = 1;
-                }
-		break;
-	}
-
-        if (pos != 0 || have_num_only == 1) {
-         	const int cmp = strncasecmp(strcpy1, strcpy2, pos);
-                if (cmp == 0) {
-	                char *maxptr1 = strcpy1+pos;
-                        char *maxptr2 = strcpy2+pos;
-
-                        while (*maxptr1 != '\0' && isdigit(*maxptr1))
-                        	maxptr1++;
-
-                        while (*maxptr2 != '\0' && isdigit(*maxptr2))
-	                        maxptr2++;
-
-                        const int num1 = strtoimax(strcpy1+pos, &maxptr1, 10);
-                        const int num2 = strtoimax(strcpy2+pos, &maxptr2, 10);
-
-                        if (num1 != num2)
-	                        result = num1 - num2;
-                        else
-                        	result = strnatcmp(maxptr1, maxptr2);
-
-                } else {
-                	result = cmp;
-                }
-        } else {
-        	result = strcoll(strcpy1, strcpy2);
-        }
-       	return result;
 }
 
 /* this function gets called *alot*, it must be very fast */
