@@ -29,8 +29,6 @@
 
 #include <string.h>
 #include <math.h>
-#include <ctype.h>
-#include <inttypes.h>
 
 
 static void track_info_free(struct track_info *ti)
