@@ -24,6 +24,7 @@
 #endif
 
 #include "compiler.h"
+#include "strnatcmp.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -109,7 +110,7 @@ static inline int strcmp0(const char *str1, const char *str2)
 	if (!str2)
 		return 1;
 
-	return strcmp(str1, str2);
+	return strnatcmp(str1, str2);
 }
 
 static inline int ends_with(const char *str, const char *suffix)

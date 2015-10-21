@@ -30,7 +30,6 @@
 #include <string.h>
 #include <math.h>
 
-
 static void track_info_free(struct track_info *ti)
 {
 	keyvals_free(ti->comments);
