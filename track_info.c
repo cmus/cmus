@@ -226,7 +226,7 @@ int track_info_cmp(const struct track_info *a, const struct track_info *b, const
 		default:
 			av = getentry(a, key, const char *);
 			bv = getentry(b, key, const char *);
-			res = strcmp0(av, bv);
+			res = strnatcmp0(av, bv);
 			break;
 		}
 

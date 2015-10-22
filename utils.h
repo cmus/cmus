@@ -110,6 +110,16 @@ static inline int strcmp0(const char *str1, const char *str2)
 	if (!str2)
 		return 1;
 
+	return strcmp(str1, str2);
+}
+
+static inline int strnatcmp0(const char *str1, const char *str2)
+{
+	if (!str1)
+		return str2 ? -1 : 0;
+	if (!str2)
+		return 1;
+
 	return strnatcmp(str1, str2);
 }
 
