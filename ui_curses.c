@@ -1874,8 +1874,8 @@ static void update(void)
 			h = LINES - 3;
 			if (w < 16)
 				w = 16;
-			if (h < 8)
-				h = 8;
+			if (h < 2)
+				h = 2;
 			editable_lock();
 			resize_tree_view(w, h);
 			window_set_nr_rows(lib_editable.win, h - 1);
