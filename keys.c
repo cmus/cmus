@@ -311,6 +311,8 @@ const struct key key_table[] = {
 	{ "^F",			KEY_IS_CHAR,		6	},
 	{ "^G",			KEY_IS_CHAR,		7	},
 	{ "^H",			KEY_IS_CHAR,		8	},
+	{ "^I",			KEY_IS_CHAR,		9	},
+	{ "^J",			KEY_IS_CHAR,		10	},
 	{ "^K",			KEY_IS_CHAR,		11	},
 	{ "^L",			KEY_IS_CHAR,		12	},
 	{ "^M",			KEY_IS_CHAR,		13	},
