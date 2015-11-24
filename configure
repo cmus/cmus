@@ -378,7 +378,7 @@ check_aac()
 check_ffmpeg()
 {
 	HAVE_FFMPEG_AVCODEC_H=y
-	pkg_config FFMPEG "libavformat" || return $?
+	pkg_config FFMPEG "libavformat libavcodec" || return $?
 	if check_header "libavcodec/avcodec.h" $FFMPEG_CFLAGS
 	then
 		HAVE_FFMPEG_AVCODEC_H=n
