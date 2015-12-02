@@ -13,7 +13,7 @@ VERSION	= $(or $(_ver0),$(_ver1),$(_ver2),$(_ver3))
 
 all: main plugins man
 
-include config.mk
+-include config.mk
 include scripts/lib.mk
 
 CFLAGS += -D_FILE_OFFSET_BITS=64
