@@ -296,15 +296,17 @@ static int mpc_read(struct input_plugin_data *ip_data, char *buffer, int count)
 static int mpc_seek(struct input_plugin_data *ip_data, double offset)
 {
 	struct mpc_private *priv = ip_data->private;
-
+	int mpc_test;
+	
 	priv->samples_pos = 0;
 	priv->samples_avail = 0;
 
 #if MPC_SV8
-	if (mpc_demux_seek_second(priv->decoder, offset) == MPC_STATUS_OK)
+	mpc_test = mpc_demux_seek_second(priv->decoder, offset) == MPC_STATUS_OK;
 #else
-	if (mpc_decoder_seek_seconds(&priv->decoder, offset))
+	mpc_test = mpc_decoder_seek_seconds(&priv->decoder, offset);
 #endif
+	if (mpc_test)
 		return 0;
 	return -1;
 }
