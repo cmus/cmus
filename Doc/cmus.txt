@@ -971,7 +971,7 @@ mouse (false)
 	NOTE: Mouse wheel scrolling can lag if cmus is compiled with
 	old version of Ncurses.
 
-output_plugin [roar, pulse, alsa, arts, oss, sndio, sun]
+output_plugin [roar, pulse, alsa, arts, oss, sndio, sun, coreaudio]
 	Name of output plugin.
 
 pl_sort () [`Sort Keys`]
