@@ -173,6 +173,7 @@ oss-objs		:= oss.lo mixer_oss.lo
 sun-objs		:= sun.lo mixer_sun.lo
 sndio-objs		:= sndio.lo
 ao-objs			:= ao.lo
+coreaudio-objs		:= coreaudio.lo
 waveout-objs		:= waveout.lo
 roar-objs               := roar.lo
 
@@ -183,20 +184,22 @@ op-$(CONFIG_ARTS)	+= arts.so
 op-$(CONFIG_OSS)	+= oss.so
 op-$(CONFIG_SNDIO)	+= sndio.so
 op-$(CONFIG_SUN)	+= sun.so
+op-$(CONFIG_COREAUDIO)	+= coreaudio.so
 op-$(CONFIG_AO)		+= ao.so
 op-$(CONFIG_WAVEOUT)	+= waveout.so
 op-$(CONFIG_ROAR)       += roar.so
 
-$(pulse-objs): CFLAGS	+= $(PULSE_CFLAGS)
-$(alsa-objs): CFLAGS	+= $(ALSA_CFLAGS)
-$(jack-objs): CFLAGS	+= $(JACK_CFLAGS) $(SAMPLERATE_CFLAGS)
-$(arts-objs): CFLAGS	+= $(ARTS_CFLAGS)
-$(oss-objs):  CFLAGS	+= $(OSS_CFLAGS)
-$(sndio-objs): CFLAGS	+= $(SNDIO_CFLAGS)
-$(sun-objs):  CFLAGS	+= $(SUN_CFLAGS)
-$(ao-objs):   CFLAGS	+= $(AO_CFLAGS)
-$(waveout-objs): CFLAGS += $(WAVEOUT_CFLAGS)
-$(roar-objs): CFLAGS	+= $(ROAR_CFLAGS)
+$(pulse-objs): CFLAGS		+= $(PULSE_CFLAGS)
+$(alsa-objs): CFLAGS		+= $(ALSA_CFLAGS)
+$(jack-objs): CFLAGS		+= $(JACK_CFLAGS) $(SAMPLERATE_CFLAGS)
+$(arts-objs): CFLAGS		+= $(ARTS_CFLAGS)
+$(oss-objs):  CFLAGS		+= $(OSS_CFLAGS)
+$(sndio-objs): CFLAGS		+= $(SNDIO_CFLAGS)
+$(sun-objs):  CFLAGS		+= $(SUN_CFLAGS)
+$(ao-objs):   CFLAGS		+= $(AO_CFLAGS)
+$(coreaudio-objs): CFLAGS	+= $(COREAUDIO_CFLAGS)
+$(waveout-objs): CFLAGS 	+= $(WAVEOUT_CFLAGS)
+$(roar-objs): CFLAGS		+= $(ROAR_CFLAGS)
 
 pulse.so: $(pulse-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(PULSE_LIBS))
@@ -221,6 +224,9 @@ sun.so: $(sun-objs) $(libcmus-y)
 
 ao.so: $(ao-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(AO_LIBS))
+
+coreaudio.so: $(coreaudio-objs) $(libcmus-y)
+	$(call cmd,ld_dl,$(COREAUDIO_LIBS))
 
 waveout.so: $(waveout-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(WAVEOUT_LIBS))
