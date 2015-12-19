@@ -1209,6 +1209,11 @@ dsp.ao.buffer_size
 	Buffer size, default is 16kB (but you may want to try bigger values if
 	you experience buffer under-runs).
 
+dsp.ao.device_interface
+	Device interface for libao plugin to request a specific playback
+	device/sink/output.  This name will be in a format determined by the
+	specific driver backend.
+
 dsp.ao.driver
 	Output driver for libao plugin.  Example values: "alsa09", "esd",
 	"irix", "oss", "sun", "aixs", "wav".
