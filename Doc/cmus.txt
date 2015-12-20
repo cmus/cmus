@@ -1230,6 +1230,12 @@ dsp.ao.wav_dir
 	Output directory for libao plugin, default is your home directory.
 	Used only if *dsp.ao.driver* is "wav".
 
+dsp.coreaudio.device
+	Device for Core Audio output. Leave empty for default.
+
+dsp.coreaudio.enable_hog_mode
+	Set true to set the device to hog mode. The default value is false.
+
 dsp.jack.server_name
 	Connect to jackd with this name. Leave empty for default.
 
