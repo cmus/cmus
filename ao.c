@@ -43,6 +43,7 @@ static int is_wav = 0;
 static char *libao_driver = NULL;
 static int libao_buffer_space = 16384;
 static int libao_cur_buffer_space = 0;
+static char *libao_device_interface = NULL;
 
 
 static int op_ao_init(void)
@@ -142,7 +143,11 @@ static int op_ao_open(sample_format_t sf, const channel_position_t *channel_map)
 		snprintf(file, sizeof(file), "%s/%02d.wav", wav_dir, wav_counter);
 		libao_device = ao_open_file(driver, file, 0, &format, NULL);
 	} else {
-		libao_device = ao_open_live(driver, &format, NULL);
+		ao_option *ao_options = NULL;
+		if (libao_device_interface) {
+			ao_append_option(&ao_options, "dev", libao_device_interface);
+		}
+		libao_device = ao_open_live(driver, &format, ao_options);
 	}
 
 	if (libao_device == NULL) {
@@ -227,6 +232,12 @@ static int op_ao_set_option(int key, const char *val)
 		free(wav_dir);
 		wav_dir = xstrdup(val);
 		break;
+	case 4:
+		free(libao_device_interface);
+		libao_device_interface = NULL;
+		if (val[0])
+			libao_device_interface = xstrdup(val);
+		break;
 	default:
 		return -OP_ERROR_NOT_OPTION;
 	}
@@ -253,6 +264,10 @@ static int op_ao_get_option(int key, char **val)
 			wav_dir = xstrdup(home_dir);
 		*val = expand_filename(wav_dir);
 		break;
+	case 4:
+		if (libao_device_interface)
+			*val = xstrdup(libao_device_interface);
+		break;
 	default:
 		return -OP_ERROR_NOT_OPTION;
 	}
@@ -275,6 +290,7 @@ const char * const op_pcm_options[] = {
 	"driver",
 	"wav_counter",
 	"wav_dir",
+	"device_interface",
 	NULL
 };
 
