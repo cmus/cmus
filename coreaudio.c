@@ -22,6 +22,9 @@
 #include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
+#include <libkern/OSAtomic.h>
+#include <AudioUnit/AudioUnit.h>
+#include <CoreAudio/CoreAudio.h>
 
 #include "debug.h"
 #include "op.h"
@@ -29,9 +32,203 @@
 #include "sf.h"
 #include "xmalloc.h"
 
-#include <CoreAudio/CoreAudio.h>
-#include <AudioUnit/AudioUnit.h>
 
+// Ring buffer utility from the PortAudio project.
+// Original licence information is listed below.
+
+/*
+ * Portable Audio I/O Library
+ * Ring Buffer utility.
+ *
+ * Author: Phil Burk, http://www.softsynth.com
+ * modified for SMP safety on Mac OS X by Bjorn Roche
+ * modified for SMP safety on Linux by Leland Lucius
+ * also, allowed for const where possible
+ * Note that this is safe only for a single-thread reader and a
+ * single-thread writer.
+ *
+ * This program uses the PortAudio Portable Audio Library.
+ * For more information see: http://www.portaudio.com
+ * Copyright (c) 1999-2000 Ross Bencina and Phil Burk
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files
+ * (the "Software"), to deal in the Software without restriction,
+ * including without limitation the rights to use, copy, modify, merge,
+ * publish, distribute, sublicense, and/or sell copies of the Software,
+ * and to permit persons to whom the Software is furnished to do so,
+ * subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR
+ * ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+ * CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+ * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
+
+/*
+ * The text above constitutes the entire PortAudio license; however, 
+ * the PortAudio community also makes the following non-binding requests:
+ *
+ * Any person wishing to distribute modifications to the Software is
+ * requested to send the modifications to the original developer so that
+ * they can be incorporated into the canonical version. It is also 
+ * requested that these non-binding requests be included along with the 
+ * license above.
+ */
+
+typedef struct coreaudio_ring_buffer_t {
+	size_t buffer_size;
+	size_t write_index;
+	size_t read_index;
+	size_t big_mask;
+	size_t small_mask;
+	char *buffer;
+} coreaudio_ring_buffer_t;
+
+int coreaudio_ring_buffer_init(coreaudio_ring_buffer_t *rbuf, size_t num_of_bytes);
+void coreaudio_ring_buffer_destroy(coreaudio_ring_buffer_t *rbuf);
+void coreaudio_ring_buffer_flush(coreaudio_ring_buffer_t *rbuf);
+size_t coreaudio_ring_buffer_write_available(coreaudio_ring_buffer_t *rbuf);
+size_t coreaudio_ring_buffer_read_available(coreaudio_ring_buffer_t *rbuf);
+size_t coreaudio_ring_buffer_write(coreaudio_ring_buffer_t *rbuf, const char *data, size_t num_of_bytes);
+size_t coreaudio_ring_buffer_read(coreaudio_ring_buffer_t *rbuf, char *data, size_t num_of_bytes);
+size_t coreaudio_ring_buffer_write_regions(coreaudio_ring_buffer_t *rbuf, size_t num_of_bytes, char **data_ptr1, size_t *size_ptr1, char **data_ptr2, size_t *size_ptr2);
+size_t coreaudio_ring_buffer_advance_write_index(coreaudio_ring_buffer_t *rbuf, size_t num_of_bytes);
+size_t coreaudio_ring_buffer_read_regions(coreaudio_ring_buffer_t *rbuf, size_t num_of_bytes, char **data_ptr1, size_t *size_ptr1, char **data_ptr2, size_t *size_ptr2);
+size_t coreaudio_ring_buffer_advance_read_index(coreaudio_ring_buffer_t *rbuf, size_t num_of_bytes);
+
+int coreaudio_ring_buffer_init(coreaudio_ring_buffer_t *rbuf, size_t num_of_bytes)
+{
+	if (((num_of_bytes - 1) & num_of_bytes) != 0)
+		return -1;				/*Not Power of two. */
+	rbuf->buffer_size = num_of_bytes;
+	rbuf->buffer = (char *)malloc(num_of_bytes);
+	coreaudio_ring_buffer_flush(rbuf);
+	rbuf->big_mask = (num_of_bytes *2) - 1;
+	rbuf->small_mask = (num_of_bytes) - 1;
+	return 0;
+}
+
+void coreaudio_ring_buffer_destroy(coreaudio_ring_buffer_t *rbuf)
+{
+	if (rbuf->buffer)
+		free(rbuf->buffer);
+	rbuf->buffer = NULL;
+}
+
+size_t coreaudio_ring_buffer_read_available(coreaudio_ring_buffer_t *rbuf)
+{
+	OSMemoryBarrier();
+	return ((rbuf->write_index - rbuf->read_index) & rbuf->big_mask);
+}
+
+size_t coreaudio_ring_buffer_write_available(coreaudio_ring_buffer_t *rbuf)
+{
+	return (rbuf->buffer_size - coreaudio_ring_buffer_read_available(rbuf));
+}
+
+void coreaudio_ring_buffer_flush(coreaudio_ring_buffer_t *rbuf)
+{
+	rbuf->write_index = rbuf->read_index = 0;
+}
+
+size_t coreaudio_ring_buffer_write_regions(coreaudio_ring_buffer_t *rbuf, size_t num_of_bytes, char **data_ptr1, size_t *size_ptr1, char **data_ptr2, size_t *size_ptr2)
+{
+	size_t index;
+	size_t available = coreaudio_ring_buffer_write_available(rbuf);
+	if (num_of_bytes > available)
+		num_of_bytes = available;
+	index = rbuf->write_index & rbuf->small_mask;
+	if ((index + num_of_bytes) > rbuf->buffer_size) {
+		size_t first_half = rbuf->buffer_size - index;
+		*data_ptr1 = &rbuf->buffer[index];
+		*size_ptr1 = first_half;
+		*data_ptr2 = &rbuf->buffer[0];
+		*size_ptr2 = num_of_bytes - first_half;
+	} else {
+		*data_ptr1 = &rbuf->buffer[index];
+		*size_ptr1 = num_of_bytes;
+		*data_ptr2 = NULL;
+		*size_ptr2 = 0;
+	}
+	return num_of_bytes;
+}
+
+size_t coreaudio_ring_buffer_advance_write_index(coreaudio_ring_buffer_t *rbuf, size_t num_of_bytes)
+{
+	OSMemoryBarrier();
+	return rbuf->write_index = (rbuf->write_index + num_of_bytes) & rbuf->big_mask;
+}
+
+size_t coreaudio_ring_buffer_read_regions(coreaudio_ring_buffer_t *rbuf, size_t num_of_bytes, char **data_ptr1, size_t *size_ptr1, char **data_ptr2, size_t *size_ptr2)
+{
+	size_t index;
+	size_t available = coreaudio_ring_buffer_read_available(rbuf);
+	if (num_of_bytes > available)
+		num_of_bytes = available;
+	index = rbuf->read_index & rbuf->small_mask;
+	if ((index + num_of_bytes) > rbuf->buffer_size) {
+		size_t first_half = rbuf->buffer_size - index;
+		*data_ptr1 = &rbuf->buffer[index];
+		*size_ptr1 = first_half;
+		*data_ptr2 = &rbuf->buffer[0];
+		*size_ptr2 = num_of_bytes - first_half;
+	} else {
+		*data_ptr1 = &rbuf->buffer[index];
+		*size_ptr1 = num_of_bytes;
+		*data_ptr2 = NULL;
+		*size_ptr2 = 0;
+	}
+	return num_of_bytes;
+}
+
+size_t coreaudio_ring_buffer_advance_read_index(coreaudio_ring_buffer_t *rbuf, size_t num_of_bytes)
+{
+	OSMemoryBarrier();
+	return rbuf->read_index = (rbuf->read_index + num_of_bytes) & rbuf->big_mask;
+}
+
+size_t coreaudio_ring_buffer_write(coreaudio_ring_buffer_t *rbuf, const char *data, size_t num_of_bytes)
+{
+	size_t size1, size2, num_write;
+	char *data1, *data2;
+	num_write = coreaudio_ring_buffer_write_regions(rbuf, num_of_bytes, &data1, &size1, &data2, &size2);
+	if (size2 > 0) {
+		memcpy(data1, data, size1);
+		data = ((char *) data) + size1;
+		memcpy(data2, data, size2);
+	} else {
+		memcpy(data1, data, size1);
+	}
+	coreaudio_ring_buffer_advance_write_index(rbuf, num_write);
+	return num_write;
+}
+
+size_t coreaudio_ring_buffer_read(coreaudio_ring_buffer_t *rbuf, char *data, size_t num_of_bytes)
+{
+	size_t size1, size2, num_read;
+	char *data1, *data2;
+	num_read = coreaudio_ring_buffer_read_regions(rbuf, num_of_bytes, &data1, &size1, &data2, &size2);
+	if (size2 > 0) {
+		memcpy(data, data1, size1);
+		data = ((char *) data) + size1;
+		memcpy(data, data2, size2);
+	} else {
+		memcpy(data, data1, size1);
+	}
+	coreaudio_ring_buffer_advance_read_index(rbuf, num_read);
+	return num_read;
+}
+
+// End of ring buffer utility from the PortAudio project.
+
+// Plugin settings.
 static int coreaudio_max_volume = 100;
 static AudioDeviceID coreaudio_device_id;
 static AudioStreamBasicDescription coreaudio_format_description ;
@@ -39,21 +236,15 @@ static AudioUnit coreaudio_audio_unit = NULL;
 static char *coreaudio_device_name = NULL;
 static bool coreaudio_enable_hog_mode = false;
 static UInt32 coreaudio_buffer_frame_size = 0;
-static int (^write_block)(char* buffer, int count) = NULL;
+static coreaudio_ring_buffer_t coreaudio_ring_buffer;
 
 static OSStatus play_callback(
 	void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
         const AudioTimeStamp *inTimeStamp, UInt32 inBusNumber,
         UInt32 inNumberFrames, AudioBufferList *ioData)
 {
-//	int count = inNumberFrames * coreaudio_format_description.mBytesPerFrame;
-	int count = ioData->mBuffers[0].mDataByteSize;
-
-	if (write_block) {
-		int (^block)(char* buffer, int count) = write_block;
-		write_block = NULL;
-		ioData->mBuffers[0].mDataByteSize = block(ioData->mBuffers[0].mData, count);
-	}
+	int count = inNumberFrames * coreaudio_format_description.mBytesPerFrame;
+	ioData->mBuffers[0].mDataByteSize = coreaudio_ring_buffer_read(&coreaudio_ring_buffer, ioData->mBuffers[0].mData, count);
  	return noErr;
 }
 
@@ -75,6 +266,7 @@ static int coreaudio_close(void)
 	AudioUnitUninitialize(coreaudio_audio_unit);
 	AudioComponentInstanceDispose(coreaudio_audio_unit);
 	coreaudio_device_id = kAudioDeviceUnknown;
+	coreaudio_ring_buffer_destroy(&coreaudio_ring_buffer);
 	return OP_ERROR_SUCCESS;
 }
 
@@ -136,6 +328,7 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 		}
 
 	}
+
 	// Initialize Audio Unit.
 	AudioComponentDescription desc = {
 		kAudioUnitType_Output,
@@ -235,7 +428,7 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 	if (err != noErr)
 		return -OP_ERROR_SAMPLE_FORMAT;
 
-	// Configure the buffer.
+	// Get the default buffer size.
 
 	AudioValueRange value_range = { 0, 0 };
 	property_size = sizeof(AudioValueRange);
@@ -280,10 +473,12 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 	if (err != noErr)
 		return -OP_ERROR_SAMPLE_FORMAT;
 
+	coreaudio_ring_buffer_init(&coreaudio_ring_buffer, coreaudio_buffer_frame_size);
 
 	err = AudioOutputUnitStart(coreaudio_audio_unit);
 	if (err != noErr) {
 		errno = ENODEV;
+		coreaudio_ring_buffer_destroy(&coreaudio_ring_buffer);
 		return -OP_ERROR_ERRNO;
 	}
 
@@ -292,21 +487,7 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 
 static int coreaudio_write(const char *buf, int cnt)
 {
-	__block int written = 0;
-	__block int count = cnt;
-	__block const char *src = buf;
-	dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-	write_block = ^(char *out_buf, int out_cnt) {
-		written = count > out_cnt ? out_cnt : count;
-		if (written)
-			memcpy(out_buf, src, written);
-		count -= written;
-		src += written;
-		dispatch_semaphore_signal(semaphore);
-		return written;
-	};
-	dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
-	dispatch_release(semaphore);
+	int written = coreaudio_ring_buffer_write(&coreaudio_ring_buffer, buf, cnt);
 	return written;
 }
 
@@ -424,7 +605,7 @@ static int coreaudio_unpause(void)
 
 static int coreaudio_buffer_space(void)
 {
-	return coreaudio_buffer_frame_size;
+	return coreaudio_ring_buffer_write_available(&coreaudio_ring_buffer);
 }
 
 const struct output_plugin_ops op_pcm_ops = {
