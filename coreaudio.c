@@ -20,10 +20,8 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <pthread.h>
 #include <string.h>
 #include <unistd.h>
-#include <pthread.h>
 
 #include "debug.h"
 #include "op.h"
@@ -50,8 +48,11 @@ static OSStatus play_callback(
 {
 //	int count = inNumberFrames * coreaudio_format_description.mBytesPerFrame;
 	int count = ioData->mBuffers[0].mDataByteSize;
+
 	if (write_block) {
-		ioData->mBuffers[0].mDataByteSize = write_block(ioData->mBuffers[0].mData, count);
+		int (^block)(char* buffer, int count) = write_block;
+		write_block = NULL;
+		ioData->mBuffers[0].mDataByteSize = block(ioData->mBuffers[0].mData, count);
 	}
  	return noErr;
 }
@@ -296,7 +297,7 @@ static int coreaudio_write(const char *buf, int cnt)
 	__block const char *src = buf;
 	dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
 	write_block = ^(char *out_buf, int out_cnt) {
-		written = count > cnt ? cnt : count;
+		written = count > out_cnt ? out_cnt : count;
 		if (written)
 			memcpy(out_buf, src, written);
 		count -= written;
