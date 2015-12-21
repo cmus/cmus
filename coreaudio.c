@@ -20,10 +20,11 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <pthread.h>
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
 
-#include "coreaudio.h"
 #include "debug.h"
 #include "op.h"
 #include "mixer.h"
@@ -37,26 +38,21 @@ static int coreaudio_max_volume = 100;
 static AudioDeviceID coreaudio_device_id;
 static AudioStreamBasicDescription coreaudio_format_description ;
 static AudioUnit coreaudio_audio_unit = NULL;
-static coreaudio_ringbuffer_t *coreaudio_ring_buffer = NULL;
 static char *coreaudio_device_name = NULL;
 static bool coreaudio_enable_hog_mode = false;
-
-static int coreaudio_pause(void);
+static UInt32 coreaudio_buffer_frame_size = 0;
+static int (^write_block)(char* buffer, int count) = NULL;
 
 static OSStatus play_callback(
 	void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
         const AudioTimeStamp *inTimeStamp, UInt32 inBusNumber,
         UInt32 inNumberFrames, AudioBufferList *ioData)
 {
-	int amt = coreaudio_ringbuffer_read_space(coreaudio_ring_buffer);
-	int req=inNumberFrames * coreaudio_format_description.mBytesPerFrame;
-	if(amt>req)
- 		amt=req;
-	if(amt)
-		coreaudio_ringbuffer_read(coreaudio_ring_buffer, ioData->mBuffers[0].mData, amt);
-	else
-		coreaudio_pause();
-	ioData->mBuffers[0].mDataByteSize = amt;
+//	int count = inNumberFrames * coreaudio_format_description.mBytesPerFrame;
+	int count = ioData->mBuffers[0].mDataByteSize;
+	if (write_block) {
+		ioData->mBuffers[0].mDataByteSize = write_block(ioData->mBuffers[0].mData, count);
+	}
  	return noErr;
 }
 
@@ -78,9 +74,6 @@ static int coreaudio_close(void)
 	AudioUnitUninitialize(coreaudio_audio_unit);
 	AudioComponentInstanceDispose(coreaudio_audio_unit);
 	coreaudio_device_id = kAudioDeviceUnknown;
-	AudioHardwareUnload();
-	coreaudio_ringbuffer_free(coreaudio_ring_buffer);
-	coreaudio_ring_buffer = NULL;
 	return OP_ERROR_SUCCESS;
 }
 
@@ -265,7 +258,8 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 	if (err != noErr) {
 		return -OP_ERROR_SAMPLE_FORMAT;
 	}
-
+	buffer_frame_size *= coreaudio_format_description.mBytesPerFrame;
+	coreaudio_buffer_frame_size = buffer_frame_size;
 
 	if (coreaudio_enable_hog_mode)
 	{
@@ -285,12 +279,9 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 	if (err != noErr)
 		return -OP_ERROR_SAMPLE_FORMAT;
 
-	buffer_frame_size *= coreaudio_format_description.mBytesPerFrame;
-	coreaudio_ring_buffer = coreaudio_ringbuffer_create(buffer_frame_size);
 
 	err = AudioOutputUnitStart(coreaudio_audio_unit);
 	if (err != noErr) {
-	        coreaudio_ringbuffer_free(coreaudio_ring_buffer);
 		errno = ENODEV;
 		return -OP_ERROR_ERRNO;
 	}
@@ -300,8 +291,22 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 
 static int coreaudio_write(const char *buf, int cnt)
 {
-	int wrote=coreaudio_ringbuffer_write(coreaudio_ring_buffer, buf, cnt);
-	return wrote;
+	__block int written = 0;
+	__block int count = cnt;
+	__block const char *src = buf;
+	dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+	write_block = ^(char *out_buf, int out_cnt) {
+		written = count > cnt ? cnt : count;
+		if (written)
+			memcpy(out_buf, src, written);
+		count -= written;
+		src += written;
+		dispatch_semaphore_signal(semaphore);
+		return written;
+	};
+	dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
+	dispatch_release(semaphore);
+	return written;
 }
 
 static int coreaudio_mixer_set_volume(int l, int r)
@@ -418,7 +423,7 @@ static int coreaudio_unpause(void)
 
 static int coreaudio_buffer_space(void)
 {
-	return coreaudio_ringbuffer_write_space(coreaudio_ring_buffer);
+	return coreaudio_buffer_frame_size;
 }
 
 const struct output_plugin_ops op_pcm_ops = {
