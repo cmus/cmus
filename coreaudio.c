@@ -231,12 +231,15 @@ size_t coreaudio_ring_buffer_read(coreaudio_ring_buffer_t *rbuf, char *data, siz
 // Plugin settings.
 static int coreaudio_max_volume = 100;
 static AudioDeviceID coreaudio_device_id;
+static AudioDeviceIOProcID coreaudio_proc_id = NULL;
 static AudioStreamBasicDescription coreaudio_format_description ;
 static AudioUnit coreaudio_audio_unit = NULL;
 static char *coreaudio_device_name = NULL;
 static bool coreaudio_enable_hog_mode = false;
+static bool coreaudio_use_direct_output = false;
 static UInt32 coreaudio_buffer_frame_size = 1;
 static coreaudio_ring_buffer_t coreaudio_ring_buffer;
+
 
 static OSStatus play_callback(
 	void *inRefCon, AudioUnitRenderActionFlags *ioActionFlags,
@@ -246,6 +249,19 @@ static OSStatus play_callback(
 	int count = inNumberFrames * coreaudio_format_description.mBytesPerFrame;
 	ioData->mBuffers[0].mDataByteSize = coreaudio_ring_buffer_read(&coreaudio_ring_buffer, ioData->mBuffers[0].mData, count);
  	return noErr;
+}
+
+static OSStatus direct_callback(AudioDeviceID inDevice,
+	const AudioTimeStamp *inNow,
+	const AudioBufferList *inInputData,
+	const AudioTimeStamp *inInputTime,
+	AudioBufferList *outOutputData,
+	const AudioTimeStamp *inOutputTime,
+	void *inClientData)
+{
+	int count = outOutputData->mBuffers[0].mDataByteSize;
+	outOutputData->mBuffers[0].mDataByteSize = coreaudio_ring_buffer_read(&coreaudio_ring_buffer, outOutputData->mBuffers[0].mData, count);
+	return noErr;
 }
 
 static int coreaudio_init(void)
@@ -262,9 +278,17 @@ static int coreaudio_exit(void)
 
 static int coreaudio_close(void)
 {
-	AudioOutputUnitStop(coreaudio_audio_unit);
-	AudioUnitUninitialize(coreaudio_audio_unit);
-	AudioComponentInstanceDispose(coreaudio_audio_unit);
+	if (coreaudio_use_direct_output)
+	{
+		AudioOutputUnitStop(coreaudio_audio_unit);
+		AudioUnitUninitialize(coreaudio_audio_unit);
+		AudioComponentInstanceDispose(coreaudio_audio_unit);
+	}
+	else
+	{
+		AudioDeviceDestroyIOProcID(coreaudio_device_id, coreaudio_proc_id);
+	}
+	coreaudio_proc_id = NULL;
 	coreaudio_device_id = kAudioDeviceUnknown;
 	coreaudio_ring_buffer_destroy(&coreaudio_ring_buffer);
 	return OP_ERROR_SUCCESS;
@@ -302,7 +326,7 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 		{
 			property_address.mSelector = kAudioHardwarePropertyDevices;
 			int device_count = property_size / sizeof(AudioDeviceID);
-			AudioDeviceID devices[property_size];
+			AudioDeviceID devices[device_count];
 			property_size = sizeof(devices);
 			err = AudioObjectGetPropertyData(
 				kAudioObjectSystemObject,
@@ -329,44 +353,7 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 
 	}
 
-	// Initialize Audio Unit.
-	AudioComponentDescription desc = {
-		kAudioUnitType_Output,
-		kAudioUnitSubType_DefaultOutput,
-		kAudioUnitManufacturer_Apple,
-		0,
-		0
-	};
-	if (found_device) 
-		desc.componentSubType = kAudioUnitSubType_HALOutput;
-
-	AudioComponent comp = AudioComponentFindNext(0, &desc);
-	if (!comp) {
-		errno = ENODEV;
-		return -OP_ERROR_ERRNO;
-	}
-	err = AudioComponentInstanceNew(comp, &coreaudio_audio_unit);
-	if (err != noErr) {
-		errno = ENODEV;
-		return -OP_ERROR_ERRNO;
-	}
-
-	if (found_device)
-	{
-		err = AudioUnitSetProperty(
-			coreaudio_audio_unit,
-			kAudioOutputUnitProperty_CurrentDevice,
-			kAudioUnitScope_Global,
-			0,
-			&coreaudio_device_id,
-			sizeof(coreaudio_device_id));
-		if (err != noErr) {
-			errno = ENODEV;
-			return -OP_ERROR_ERRNO;
-		}
-	}
-		
-	// Set the output stream format.
+	// setting the format description.
 	coreaudio_format_description.mSampleRate = (Float64)sf_get_rate(sf);
 	coreaudio_format_description.mFormatID = kAudioFormatLinearPCM;
 	coreaudio_format_description.mFormatFlags = kAudioFormatFlagIsPacked;
@@ -379,58 +366,57 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 	coreaudio_format_description.mChannelsPerFrame = sf_get_channels(sf);
 	coreaudio_format_description.mBitsPerChannel = sf_get_bits(sf);
 	coreaudio_format_description.mBytesPerFrame = sf_get_frame_size(sf);
-	UInt32 desc_size = sizeof(coreaudio_format_description);
-
-	err = AudioUnitSetProperty(
-		coreaudio_audio_unit, kAudioUnitProperty_StreamFormat, 
-		kAudioUnitScope_Input, 0, &coreaudio_format_description, desc_size);
-	if (err != noErr) {
-		return -OP_ERROR_SAMPLE_FORMAT;
-	}
-
-	// Setup callback.
-	AURenderCallbackStruct callback;
-	callback.inputProc = play_callback;
-	callback.inputProcRefCon = NULL;
-	err = AudioUnitSetProperty(
-		coreaudio_audio_unit, kAudioUnitProperty_SetRenderCallback,
-		kAudioUnitScope_Input, 0, &callback, sizeof(callback));
-	if (err != noErr)
-		return -OP_ERROR_SAMPLE_FORMAT;
-
-	// Get the default buffer size.
-
-	AudioValueRange value_range = { 0, 0 };
-	property_size = sizeof(AudioValueRange);
-	err = AudioUnitGetProperty(
-		coreaudio_audio_unit, kAudioDevicePropertyBufferFrameSizeRange,
-		kAudioUnitScope_Global, 0, &value_range, &property_size);
-	if (err != noErr) {
-		return -OP_ERROR_SAMPLE_FORMAT;
-	}
-
-	UInt32 buffer_frame_size = value_range.mMaximum;
-	property_size = sizeof(buffer_frame_size);
-	err = AudioUnitSetProperty(
-		coreaudio_audio_unit, kAudioDevicePropertyBufferFrameSize,
-		kAudioUnitScope_Global, 0, &buffer_frame_size, property_size);
-	// Doesn't matter if it cannot set it.
-
-	err = AudioUnitGetProperty(
-		coreaudio_audio_unit, kAudioDevicePropertyBufferFrameSize,
-		kAudioUnitScope_Global, 0, &buffer_frame_size, &property_size);
-	if (err != noErr) {
-		return -OP_ERROR_SAMPLE_FORMAT;
-	}
+	d_print("format: %f, %d, %d, %d, %d, %d, %d, %d\n",
+		coreaudio_format_description.mSampleRate,
+		coreaudio_format_description.mFormatID,
+		coreaudio_format_description.mFormatFlags,
+		coreaudio_format_description.mBytesPerPacket,
+		coreaudio_format_description.mFramesPerPacket,
+		coreaudio_format_description.mChannelsPerFrame,
+		coreaudio_format_description.mBitsPerChannel,
+		coreaudio_format_description.mBytesPerFrame);
 	
-	buffer_frame_size *= coreaudio_format_description.mBytesPerFrame;
-
-	// We set the coreaudio_buffer_frame_size to a power of two integer that
-	// is larger than buffer_frame_size. This way we can have the optimal
-	// ring buffer.
-	while (coreaudio_buffer_frame_size < buffer_frame_size + 1)
+	property_address.mSelector = kAudioDevicePropertyStreams;
+	AudioObjectGetPropertyDataSize(coreaudio_device_id, &property_address, 0, NULL, &property_size);
+	int stream_count = property_size/sizeof(AudioStreamID);
+	AudioStreamID streams[stream_count];
+	property_size = sizeof(streams);
+	AudioObjectGetPropertyData(coreaudio_device_id,
+            &property_address, 0, NULL, &property_size, &streams);
+	coreaudio_use_direct_output = false;
+	for (int i = 0; i < stream_count; i++)
 	{
-		coreaudio_buffer_frame_size <<= 1;
+		AudioStreamID stream = streams[i];
+		property_address.mSelector = kAudioStreamPropertyPhysicalFormats;
+		AudioObjectGetPropertyDataSize(stream, &property_address, 0, NULL, &property_size);
+		int format_count = property_size / sizeof (AudioStreamBasicDescription);
+		AudioStreamBasicDescription descs[format_count];
+		property_size = sizeof(descs);
+		AudioObjectGetPropertyData(stream, &property_address, 0, NULL, &property_size, &descs);
+		d_print("Hardware native format:");
+		for (int j = 0; j < format_count; j++)
+		{
+			d_print("physical: %f, %d, %d, %d, %d, %d, %d, %d\n",
+				descs[j].mSampleRate,
+				descs[j].mFormatID,
+				descs[j].mFormatFlags,
+				descs[j].mBytesPerPacket,
+				descs[j].mFramesPerPacket,
+				descs[j].mChannelsPerFrame,
+				descs[j].mBitsPerChannel,
+				descs[j].mBytesPerFrame);
+			if (coreaudio_format_description.mSampleRate == descs[j].mSampleRate
+				&& coreaudio_format_description.mFormatID == descs[j].mFormatID
+				&& coreaudio_format_description.mFormatFlags == descs[j].mFormatFlags
+				&& coreaudio_format_description.mBytesPerPacket == descs[j].mBytesPerPacket
+				&& coreaudio_format_description.mFramesPerPacket == descs[j].mFramesPerPacket
+				&& coreaudio_format_description.mChannelsPerFrame == descs[j].mChannelsPerFrame
+				&& coreaudio_format_description.mBitsPerChannel == descs[j].mBitsPerChannel
+				&& coreaudio_format_description.mBytesPerFrame == descs[j].mBytesPerFrame)
+			{
+				coreaudio_use_direct_output = true;
+			}
+		}
 	}
 
 	if (coreaudio_enable_hog_mode)
@@ -447,19 +433,218 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 		}
 	}
 
-	err = AudioUnitInitialize(coreaudio_audio_unit);
-	if (err != noErr)
-		return -OP_ERROR_SAMPLE_FORMAT;
-
-	coreaudio_ring_buffer_init(&coreaudio_ring_buffer, coreaudio_buffer_frame_size);
-
-	err = AudioOutputUnitStart(coreaudio_audio_unit);
-	if (err != noErr) {
-		errno = ENODEV;
-		coreaudio_ring_buffer_destroy(&coreaudio_ring_buffer);
-		return -OP_ERROR_ERRNO;
+	if (coreaudio_use_direct_output)
+	{
+		property_address.mSelector = kAudioDevicePropertyStreamFormat;
+		err = AudioObjectSetPropertyData(
+			coreaudio_device_id, &property_address, 0, 0,
+			sizeof(coreaudio_format_description), &coreaudio_format_description);
+		if (err != noErr) {
+			d_print("Failed to use direct output");
+			coreaudio_use_direct_output = false;
+		}
+	}
+	if (coreaudio_use_direct_output)
+	{
+		property_address.mSelector = kAudioDevicePropertyStreamFormat;
+		AudioStreamBasicDescription desc;
+		property_size = sizeof(desc);
+		AudioObjectGetPropertyData(
+			coreaudio_device_id, &property_address, 0, NULL,
+			&property_size, &desc);
+		if (err != noErr) {
+			d_print("Failed to get stream format. Disable direct output");
+			coreaudio_use_direct_output = false;
+		}
+		if (!(coreaudio_format_description.mSampleRate == desc.mSampleRate
+			&& coreaudio_format_description.mFormatID == desc.mFormatID
+			&& coreaudio_format_description.mFormatFlags == desc.mFormatFlags
+			&& coreaudio_format_description.mBytesPerPacket == desc.mBytesPerPacket
+			&& coreaudio_format_description.mFramesPerPacket == desc.mFramesPerPacket
+			&& coreaudio_format_description.mChannelsPerFrame == desc.mChannelsPerFrame
+			&& coreaudio_format_description.mBitsPerChannel == desc.mBitsPerChannel
+			&& coreaudio_format_description.mBytesPerFrame == desc.mBytesPerFrame))
+		{
+			d_print("Failed to set stream format. Disable direct output");
+			coreaudio_use_direct_output = false;
+		}
+	}
+	if (coreaudio_use_direct_output)
+	{
+		property_address.mSelector = kAudioDevicePropertySupportsMixing;
+		Boolean mixing = 0;
+		err = AudioObjectSetPropertyData(
+			coreaudio_device_id, &property_address, 0, 0,
+			sizeof(mixing), &mixing);
+		if (err != noErr) {
+			d_print("Failed to disable mixing");
+			coreaudio_use_direct_output = false;
+		}
+	
 	}
 
+	if (coreaudio_use_direct_output)
+	{
+		AudioValueRange value_range = { 0, 0 };
+		property_size = sizeof(AudioValueRange);
+		property_address.mSelector = kAudioDevicePropertyBufferFrameSizeRange;
+		err = AudioObjectGetPropertyData(
+			coreaudio_device_id, &property_address, 0, 0,
+			&property_size, &value_range);
+		if (err != noErr) {
+			return -OP_ERROR_SAMPLE_FORMAT;
+		}
+
+		property_address.mSelector = kAudioDevicePropertyBufferFrameSize;
+		UInt32 buffer_frame_size = value_range.mMaximum;
+		property_size = sizeof(buffer_frame_size);
+		err = AudioObjectSetPropertyData(
+			coreaudio_device_id, &property_address, 0, 0,
+			property_size, &buffer_frame_size);
+		// Doesn't matter if it cannot set it.
+
+
+		property_size = sizeof(buffer_frame_size);
+		err = AudioObjectGetPropertyData(
+			coreaudio_device_id, &property_address, 0, 0,
+			&property_size, &buffer_frame_size);
+		if (err != kAudioHardwareNoError) {
+			return -OP_ERROR_SAMPLE_FORMAT;
+		}
+
+		buffer_frame_size *= coreaudio_format_description.mBytesPerFrame;
+
+		// We set the coreaudio_buffer_frame_size to a power of two integer that
+		// is larger than buffer_frame_size. This way we can have the optimal
+		// ring buffer.
+		while (coreaudio_buffer_frame_size < buffer_frame_size + 1)
+		{
+			coreaudio_buffer_frame_size <<= 1;
+		}
+
+		coreaudio_ring_buffer_init(&coreaudio_ring_buffer, coreaudio_buffer_frame_size);
+		err = AudioDeviceCreateIOProcID(coreaudio_device_id, direct_callback, NULL, &coreaudio_proc_id);
+		if (err != kAudioHardwareNoError || !coreaudio_proc_id) {
+			errno = ENODEV;
+			coreaudio_ring_buffer_destroy(&coreaudio_ring_buffer);
+			return -OP_ERROR_ERRNO;
+		}
+		err = AudioDeviceStart(coreaudio_device_id, direct_callback);
+		if (err != kAudioHardwareNoError) {
+			coreaudio_ring_buffer_destroy(&coreaudio_ring_buffer);
+			errno = ENODEV;
+			return -OP_ERROR_ERRNO;
+		}
+
+	}
+	else
+	{
+		// Initialize Audio Unit.
+		AudioComponentDescription desc = {
+			kAudioUnitType_Output,
+			kAudioUnitSubType_DefaultOutput,
+			kAudioUnitManufacturer_Apple,
+			0,
+			0
+		};
+		if (found_device) 
+			desc.componentSubType = kAudioUnitSubType_HALOutput;
+
+		AudioComponent comp = AudioComponentFindNext(0, &desc);
+		if (!comp) {
+			errno = ENODEV;
+			return -OP_ERROR_ERRNO;
+		}
+		err = AudioComponentInstanceNew(comp, &coreaudio_audio_unit);
+		if (err != noErr) {
+			errno = ENODEV;
+			return -OP_ERROR_ERRNO;
+		}
+
+		if (found_device)
+		{
+			err = AudioUnitSetProperty(
+				coreaudio_audio_unit,
+				kAudioOutputUnitProperty_CurrentDevice,
+				kAudioUnitScope_Global,
+				0,
+				&coreaudio_device_id,
+				sizeof(coreaudio_device_id));
+			if (err != noErr) {
+				errno = ENODEV;
+				return -OP_ERROR_ERRNO;
+			}
+		}
+			
+		// Set the output stream format.
+		UInt32 desc_size = sizeof(coreaudio_format_description);
+
+		err = AudioUnitSetProperty(
+			coreaudio_audio_unit, kAudioUnitProperty_StreamFormat, 
+			kAudioUnitScope_Input, 0, &coreaudio_format_description, desc_size);
+		if (err != noErr) {
+			return -OP_ERROR_SAMPLE_FORMAT;
+		}
+
+		// Setup callback.
+		AURenderCallbackStruct callback;
+		callback.inputProc = play_callback;
+		callback.inputProcRefCon = NULL;
+		err = AudioUnitSetProperty(
+			coreaudio_audio_unit, kAudioUnitProperty_SetRenderCallback,
+			kAudioUnitScope_Input, 0, &callback, sizeof(callback));
+		if (err != noErr)
+			return -OP_ERROR_SAMPLE_FORMAT;
+
+		// Get the default buffer size.
+
+		AudioValueRange value_range = { 0, 0 };
+		property_size = sizeof(AudioValueRange);
+		err = AudioUnitGetProperty(
+			coreaudio_audio_unit, kAudioDevicePropertyBufferFrameSizeRange,
+			kAudioUnitScope_Global, 0, &value_range, &property_size);
+		if (err != noErr) {
+			return -OP_ERROR_SAMPLE_FORMAT;
+		}
+
+		UInt32 buffer_frame_size = value_range.mMaximum;
+		property_size = sizeof(buffer_frame_size);
+		err = AudioUnitSetProperty(
+			coreaudio_audio_unit, kAudioDevicePropertyBufferFrameSize,
+			kAudioUnitScope_Global, 0, &buffer_frame_size, property_size);
+		// Doesn't matter if it cannot set it.
+
+		property_size = sizeof(buffer_frame_size);
+		err = AudioUnitGetProperty(
+			coreaudio_audio_unit, kAudioDevicePropertyBufferFrameSize,
+			kAudioUnitScope_Global, 0, &buffer_frame_size, &property_size);
+		if (err != noErr) {
+			return -OP_ERROR_SAMPLE_FORMAT;
+		}
+		
+		buffer_frame_size *= coreaudio_format_description.mBytesPerFrame;
+
+		// We set the coreaudio_buffer_frame_size to a power of two integer that
+		// is larger than buffer_frame_size. This way we can have the optimal
+		// ring buffer.
+		while (coreaudio_buffer_frame_size < buffer_frame_size + 1)
+		{
+			coreaudio_buffer_frame_size <<= 1;
+		}
+		err = AudioUnitInitialize(coreaudio_audio_unit);
+		if (err != noErr)
+			return -OP_ERROR_SAMPLE_FORMAT;
+
+		coreaudio_ring_buffer_init(&coreaudio_ring_buffer, coreaudio_buffer_frame_size);
+
+		err = AudioOutputUnitStart(coreaudio_audio_unit);
+		if (err != noErr) {
+			errno = ENODEV;
+			coreaudio_ring_buffer_destroy(&coreaudio_ring_buffer);
+			return -OP_ERROR_ERRNO;
+		}
+
+	}
 	return OP_ERROR_SUCCESS;
 }
 
@@ -477,8 +662,23 @@ static int coreaudio_mixer_set_volume(int l, int r)
 		vol = 1.0f;
 	if (vol < 0.0f)
 		vol = 0.0f;
-	OSStatus err = AudioUnitSetParameter(coreaudio_audio_unit, kHALOutputParam_Volume,
-		kAudioUnitScope_Global, 0, vol, 0);
+	OSStatus err;
+	if (coreaudio_use_direct_output)
+	{
+		AudioObjectPropertyAddress property_address = {
+			kAudioDevicePropertyVolumeScalar,
+			kAudioDevicePropertyScopeOutput,
+			kAudioObjectPropertyElementMaster
+		}; 
+		UInt32 size = sizeof(vol);
+		err = AudioObjectSetPropertyData(coreaudio_device_id,
+			&property_address, 0, NULL, size, &vol);
+	}
+	else
+	{
+		err = AudioUnitSetParameter(coreaudio_audio_unit, kHALOutputParam_Volume,
+			kAudioUnitScope_Global, 0, vol, 0);
+	}
 
 	if (err != noErr) {
 		errno = ENODEV;
@@ -490,8 +690,23 @@ static int coreaudio_mixer_set_volume(int l, int r)
 static int coreaudio_mixer_get_volume(int *l, int *r)
 {
 	Float32 vol;
-	OSStatus err = AudioUnitGetParameter(coreaudio_audio_unit, kHALOutputParam_Volume,
-		kAudioUnitScope_Global, 0, &vol);
+	OSStatus err;
+	if (coreaudio_use_direct_output)
+	{
+		AudioObjectPropertyAddress property_address = {
+			kAudioDevicePropertyVolumeScalar,
+			kAudioDevicePropertyScopeOutput,
+			kAudioObjectPropertyElementMaster
+		}; 
+		UInt32 size = sizeof(vol);
+		err = AudioObjectGetPropertyData(coreaudio_device_id,
+			&property_address, 0, NULL, &size, &vol);
+	}
+	else
+	{
+		err = AudioUnitGetParameter(coreaudio_audio_unit, kHALOutputParam_Volume,
+			kAudioUnitScope_Global, 0, &vol);
+	}
 	int volume = vol * coreaudio_max_volume;
 	if (volume > coreaudio_max_volume)
 		volume = coreaudio_max_volume;
@@ -563,6 +778,15 @@ static int op_coreaudio_get_option(int key, char **val)
 
 static int coreaudio_pause(void)
 {
+        if (coreaudio_use_direct_output)
+	{
+		OSStatus err = AudioDeviceStop(coreaudio_device_id, direct_callback);
+		if (err != kAudioHardwareNoError) {
+			errno = ENODEV;
+			return -OP_ERROR_ERRNO;
+		}
+		return OP_ERROR_SUCCESS;
+	}
 	OSStatus err = AudioOutputUnitStop(coreaudio_audio_unit);
 	if (err != noErr) {
 		errno = ENODEV;
@@ -573,6 +797,15 @@ static int coreaudio_pause(void)
 
 static int coreaudio_unpause(void)
 {
+        if (coreaudio_use_direct_output)
+	{
+		OSStatus err = AudioDeviceStart(coreaudio_device_id, direct_callback);
+		if (err != kAudioHardwareNoError) {
+			errno = ENODEV;
+			return -OP_ERROR_ERRNO;
+		}
+		return OP_ERROR_SUCCESS;
+	}
 	OSStatus err = AudioOutputUnitStart(coreaudio_audio_unit);
 	if (err != noErr) {
 		errno = ENODEV;
