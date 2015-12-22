@@ -235,7 +235,7 @@ static AudioStreamBasicDescription coreaudio_format_description ;
 static AudioUnit coreaudio_audio_unit = NULL;
 static char *coreaudio_device_name = NULL;
 static bool coreaudio_enable_hog_mode = false;
-static UInt32 coreaudio_buffer_frame_size = 0;
+static UInt32 coreaudio_buffer_frame_size = 1;
 static coreaudio_ring_buffer_t coreaudio_ring_buffer;
 
 static OSStatus play_callback(
@@ -452,8 +452,16 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 	if (err != noErr) {
 		return -OP_ERROR_SAMPLE_FORMAT;
 	}
+	
 	buffer_frame_size *= coreaudio_format_description.mBytesPerFrame;
-	coreaudio_buffer_frame_size = buffer_frame_size;
+
+	// We set the coreaudio_buffer_frame_size to a power of two integer that
+	// is larger than buffer_frame_size. This way we can have the optimal
+	// ring buffer.
+	while (coreaudio_buffer_frame_size < buffer_frame_size + 1)
+	{
+		coreaudio_buffer_frame_size <<= 1;
+	}
 
 	if (coreaudio_enable_hog_mode)
 	{
@@ -605,7 +613,8 @@ static int coreaudio_unpause(void)
 
 static int coreaudio_buffer_space(void)
 {
-	return coreaudio_ring_buffer_write_available(&coreaudio_ring_buffer);
+	int space = coreaudio_ring_buffer_write_available(&coreaudio_ring_buffer);
+	return space;
 }
 
 const struct output_plugin_ops op_pcm_ops = {
