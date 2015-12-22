@@ -274,7 +274,7 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 {
 	OSStatus err;
 	UInt32 property_size;
-	Boolean using_auhal = false;
+	Boolean found_device = false;
 
 	AudioObjectPropertyAddress property_address = {
 		kAudioHardwarePropertyDefaultOutputDevice,
@@ -320,7 +320,7 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 				if (err == noErr && strncmp(name,coreaudio_device_name, strlen(coreaudio_device_name)) == 0)
 				{
 					coreaudio_device_id = devices[i];
-					using_auhal = true;
+					found_device = true;
 					break;
 				}
 			}
@@ -337,7 +337,7 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 		0,
 		0
 	};
-	if (using_auhal) 
+	if (found_device) 
 		desc.componentSubType = kAudioUnitSubType_HALOutput;
 
 	AudioComponent comp = AudioComponentFindNext(0, &desc);
@@ -351,7 +351,7 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 		return -OP_ERROR_ERRNO;
 	}
 
-	if (using_auhal)
+	if (found_device)
 	{
 		err = AudioUnitSetProperty(
 			coreaudio_audio_unit,
@@ -360,32 +360,6 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 			0,
 			&coreaudio_device_id,
 			sizeof(coreaudio_device_id));
-		if (err != noErr) {
-			errno = ENODEV;
-			return -OP_ERROR_ERRNO;
-		}
-
-		// Disable input on the AUHAL.
-		UInt32 enableIO = 0;
-		err = AudioUnitSetProperty(
-			coreaudio_audio_unit, kAudioOutputUnitProperty_EnableIO,
-			kAudioUnitScope_Input,
-			1,          // input element 1
-			&enableIO,  // disable
-			sizeof(enableIO));
-		if (err != noErr) {
-			errno = ENODEV;
-			return -OP_ERROR_ERRNO;
-		}
-
-		// Enable output on the AUHAL.
-		enableIO = 1;
-		err = AudioUnitSetProperty(
-			coreaudio_audio_unit, kAudioOutputUnitProperty_EnableIO,
-			kAudioUnitScope_Output,
-			0,          // output element 0
-			&enableIO,  // enable
-			sizeof(enableIO));
 		if (err != noErr) {
 			errno = ENODEV;
 			return -OP_ERROR_ERRNO;
@@ -406,10 +380,6 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 	coreaudio_format_description.mBitsPerChannel = sf_get_bits(sf);
 	coreaudio_format_description.mBytesPerFrame = sf_get_frame_size(sf);
 	UInt32 desc_size = sizeof(coreaudio_format_description);
-	err = AudioUnitSetProperty(
-		coreaudio_audio_unit, kAudioUnitProperty_StreamFormat, 
-		kAudioUnitScope_Output, 0, &coreaudio_format_description, desc_size);
-	// Doesn't matter if it cannot set it.
 
 	err = AudioUnitSetProperty(
 		coreaudio_audio_unit, kAudioUnitProperty_StreamFormat, 
