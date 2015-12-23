@@ -971,7 +971,7 @@ mouse (false)
 	NOTE: Mouse wheel scrolling can lag if cmus is compiled with
 	old version of Ncurses.
 
-output_plugin [roar, pulse, alsa, arts, oss, sndio, sun]
+output_plugin [roar, pulse, alsa, arts, oss, sndio, sun, coreaudio]
 	Name of output plugin.
 
 pl_sort () [`Sort Keys`]
@@ -1234,6 +1234,16 @@ dsp.ao.wav_counter
 dsp.ao.wav_dir
 	Output directory for libao plugin, default is your home directory.
 	Used only if *dsp.ao.driver* is "wav".
+
+dsp.coreaudio.device
+	Device for Core Audio output. Leave empty for default.
+
+dsp.coreaudio.enable_hog_mode
+	Set true to set the device to hog mode. The default value is false.
+
+dsp.coreaudio.sync_sample_rate
+	Synchonize the device sample rate with the player, so no interpolation
+	will be applied to the stream.
 
 dsp.jack.server_name
 	Connect to jackd with this name. Leave empty for default.

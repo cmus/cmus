@@ -28,6 +28,17 @@ check_sndio()
 	return 1
 }
 
+check_coreaudio()
+{
+	case `uname -s` in
+	Darwin)
+		check_library COREAUDIO "" "-framework CoreAudio"
+		return $?
+	esac
+	return 1
+}
+
+
 check_compat()
 {
 	COMPAT_LIBS=
@@ -471,6 +482,7 @@ Optional Features: y/n
   CONFIG_JACK     	JACK                                            [auto]
   CONFIG_SAMPLERATE	Use libsamplerate to resample to JACK's rate    [auto]
   CONFIG_AO       	Libao cross-platform audio library              [auto]
+  CONFIG_COREAUDIO    	CoreAudio                                       [auto]
   CONFIG_ARTS     	ARTS                                            [auto]
   CONFIG_OSS      	Open Sound System                               [auto]
   CONFIG_SNDIO    	Sndio                                           [auto]
@@ -537,6 +549,7 @@ check check_alsa    CONFIG_ALSA
 check check_jack    CONFIG_JACK
 check check_samplerate CONFIG_SAMPLERATE
 check check_ao      CONFIG_AO
+check check_coreaudio   CONFIG_COREAUDIO
 check check_arts    CONFIG_ARTS
 check check_oss     CONFIG_OSS
 check check_sndio   CONFIG_SNDIO
@@ -578,6 +591,6 @@ CFLAGS="${CFLAGS} -DHAVE_CONFIG"
 
 makefile_vars bindir datadir libdir mandir exampledir
 makefile_vars CONFIG_CDIO CONFIG_FLAC CONFIG_MAD CONFIG_MIKMOD CONFIG_MODPLUG CONFIG_MPC CONFIG_VORBIS CONFIG_OPUS CONFIG_WAVPACK CONFIG_WAV CONFIG_MP4 CONFIG_AAC CONFIG_FFMPEG CONFIG_CUE CONFIG_VTX
-makefile_vars CONFIG_ROAR CONFIG_PULSE CONFIG_ALSA CONFIG_JACK CONFIG_SAMPLERATE CONFIG_AO CONFIG_ARTS CONFIG_OSS CONFIG_SNDIO CONFIG_SUN CONFIG_WAVEOUT
+makefile_vars CONFIG_ROAR CONFIG_PULSE CONFIG_ALSA CONFIG_JACK CONFIG_SAMPLERATE CONFIG_AO CONFIG_COREAUDIO CONFIG_ARTS CONFIG_OSS CONFIG_SNDIO CONFIG_SUN CONFIG_WAVEOUT
 
 generate_config_mk
