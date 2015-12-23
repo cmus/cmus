@@ -236,7 +236,7 @@ static AudioStreamBasicDescription coreaudio_format_description ;
 static AudioUnit coreaudio_audio_unit = NULL;
 static char *coreaudio_device_name = NULL;
 static bool coreaudio_enable_hog_mode = false;
-static bool coreaudio_use_direct_output = false;
+static bool coreaudio_use_digital = false;
 static UInt32 coreaudio_buffer_frame_size = 1;
 static coreaudio_ring_buffer_t coreaudio_ring_buffer;
 
@@ -278,16 +278,28 @@ static int coreaudio_exit(void)
 
 static int coreaudio_close(void)
 {
-	if (coreaudio_use_direct_output)
+	if (coreaudio_use_digital)
 	{
 		AudioOutputUnitStop(coreaudio_audio_unit);
 		AudioUnitUninitialize(coreaudio_audio_unit);
 		AudioComponentInstanceDispose(coreaudio_audio_unit);
-	}
-	else
-	{
+	} else {
 		AudioDeviceDestroyIOProcID(coreaudio_device_id, coreaudio_proc_id);
 	}
+	AudioObjectPropertyAddress property_address = {
+		kAudioDevicePropertyHogMode,
+		kAudioObjectPropertyScopeOutput,
+		kAudioObjectPropertyElementMaster
+	};
+
+	// unhog the device.
+	pid_t hog_pid = -1;
+	UInt32 property_size = sizeof(hog_pid);
+	AudioObjectSetPropertyData(
+		coreaudio_device_id, &property_address, 0, NULL,
+		property_size, &hog_pid);
+	// Doesn't matter if we don't own the access.
+
 	coreaudio_proc_id = NULL;
 	coreaudio_device_id = kAudioDeviceUnknown;
 	coreaudio_ring_buffer_destroy(&coreaudio_ring_buffer);
@@ -353,6 +365,11 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 
 	}
 
+	if (!found_device)
+	{
+		coreaudio_enable_hog_mode = false;
+	}
+
 	// setting the format description.
 	coreaudio_format_description.mSampleRate = (Float64)sf_get_rate(sf);
 	coreaudio_format_description.mFormatID = kAudioFormatLinearPCM;
@@ -375,47 +392,6 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 		coreaudio_format_description.mChannelsPerFrame,
 		coreaudio_format_description.mBitsPerChannel,
 		coreaudio_format_description.mBytesPerFrame);
-	
-	property_address.mSelector = kAudioDevicePropertyStreams;
-	AudioObjectGetPropertyDataSize(coreaudio_device_id, &property_address, 0, NULL, &property_size);
-	int stream_count = property_size/sizeof(AudioStreamID);
-	AudioStreamID streams[stream_count];
-	property_size = sizeof(streams);
-	AudioObjectGetPropertyData(coreaudio_device_id,
-            &property_address, 0, NULL, &property_size, &streams);
-	if (stream_count)
-		coreaudio_use_direct_output = true;
-	for (int i = 0; i < stream_count; i++)
-	{
-		bool stream_support_direct_output = false;
-		AudioStreamID stream = streams[i];
-		property_address.mSelector = kAudioStreamPropertyPhysicalFormats;
-		AudioObjectGetPropertyDataSize(stream, &property_address, 0, NULL, &property_size);
-		int format_count = property_size / sizeof (AudioStreamBasicDescription);
-		AudioStreamBasicDescription descs[format_count];
-		property_size = sizeof(descs);
-		AudioObjectGetPropertyData(stream, &property_address, 0, NULL, &property_size, &descs);
-		for (int j = 0; j < format_count; j++)
-		{
-			if (fabs(coreaudio_format_description.mSampleRate - descs[j].mSampleRate) < 1.0
-				&& coreaudio_format_description.mFormatID == descs[j].mFormatID
-				&& coreaudio_format_description.mFormatFlags == descs[j].mFormatFlags
-				&& coreaudio_format_description.mBytesPerPacket == descs[j].mBytesPerPacket
-				&& coreaudio_format_description.mFramesPerPacket == descs[j].mFramesPerPacket
-				&& coreaudio_format_description.mChannelsPerFrame == descs[j].mChannelsPerFrame
-				&& coreaudio_format_description.mBitsPerChannel == descs[j].mBitsPerChannel
-				&& coreaudio_format_description.mBytesPerFrame == descs[j].mBytesPerFrame)
-			{
-				stream_support_direct_output = true;
-			}
-		}
-		if (!stream_support_direct_output)
-		{
-			d_print("Stream does not support direct output.\n");
-			coreaudio_use_direct_output = false;
-			break;
-		}
-	}
 
 	if (coreaudio_enable_hog_mode)
 	{
@@ -427,16 +403,55 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 			property_size, &hog_pid);
 		if (err != noErr)
 		{
-			coreaudio_use_direct_output = false;
+			coreaudio_use_digital = false;
 			d_print("Cannot hog the device.\n");
 		}
 	} else {
-		coreaudio_use_direct_output = false;
+		coreaudio_use_digital = false;
 		d_print("Direct output requires hogging the device.\n");
 	}
 
-	if (coreaudio_use_direct_output)
+	if (coreaudio_use_digital)
 	{
+		property_address.mSelector = kAudioDevicePropertyStreams;
+		AudioObjectGetPropertyDataSize(coreaudio_device_id, &property_address, 0, NULL, &property_size);
+		int stream_count = property_size/sizeof(AudioStreamID);
+		AudioStreamID streams[stream_count];
+		property_size = sizeof(streams);
+		AudioObjectGetPropertyData(coreaudio_device_id,
+		    &property_address, 0, NULL, &property_size, &streams);
+			if (stream_count)
+		for (int i = 0; i < stream_count; i++)
+		{
+			bool stream_support_direct_output = false;
+			AudioStreamID stream = streams[i];
+			property_address.mSelector = kAudioStreamPropertyPhysicalFormats;
+			AudioObjectGetPropertyDataSize(stream, &property_address, 0, NULL, &property_size);
+			int format_count = property_size / sizeof (AudioStreamBasicDescription);
+			AudioStreamBasicDescription descs[format_count];
+			property_size = sizeof(descs);
+			AudioObjectGetPropertyData(stream, &property_address, 0, NULL, &property_size, &descs);
+			for (int j = 0; j < format_count; j++)
+			{
+				if (fabs(coreaudio_format_description.mSampleRate - descs[j].mSampleRate) < 1.0
+					&& coreaudio_format_description.mFormatID == descs[j].mFormatID
+					&& coreaudio_format_description.mFormatFlags == descs[j].mFormatFlags
+					&& coreaudio_format_description.mBytesPerPacket == descs[j].mBytesPerPacket
+					&& coreaudio_format_description.mFramesPerPacket == descs[j].mFramesPerPacket
+					&& coreaudio_format_description.mChannelsPerFrame == descs[j].mChannelsPerFrame
+					&& coreaudio_format_description.mBitsPerChannel == descs[j].mBitsPerChannel
+					&& coreaudio_format_description.mBytesPerFrame == descs[j].mBytesPerFrame)
+				{
+					stream_support_direct_output = true;
+				}
+			}
+			if (!stream_support_direct_output)
+			{
+				d_print("Stream does not support direct output.\n");
+				coreaudio_use_digital = false;
+				break;
+			}
+		}
 		for (int i = 0; i < stream_count; i++)
 		{
 			AudioStreamID stream = streams[i];
@@ -446,7 +461,7 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 				stream, &property_address, 0, NULL,
 				property_size, &coreaudio_format_description);
 			if (err) {
-				coreaudio_use_direct_output = false;
+				coreaudio_use_digital = false;
 				break;
 			}
 			AudioStreamBasicDescription desc;
@@ -455,7 +470,7 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 				stream, &property_address, 0, NULL,
 				&property_size, &desc);
 			if (err) {
-				coreaudio_use_direct_output = false;
+				coreaudio_use_digital = false;
 				break;
 			}
 			d_print("current physical stream [%d]: %f, %d, %d, %d, %d, %d, %d, %d\n",
@@ -477,35 +492,39 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 				&& coreaudio_format_description.mBitsPerChannel == desc.mBitsPerChannel
 				&& coreaudio_format_description.mBytesPerFrame == desc.mBytesPerFrame))
 			{
-				coreaudio_use_direct_output = false;
+				coreaudio_use_digital = false;
 				break;
 			}
 		}
 	}
 
-	if (coreaudio_use_direct_output)
+	if (coreaudio_use_digital)
 	{
 		property_address.mSelector = kAudioDevicePropertySupportsMixing;
 		Boolean settable;
-		AudioObjectIsPropertySettable(coreaudio_device_id, &property_address, &settable);
-		if (!settable || err != noErr) {
-			d_print("Disable mixing is not supported");
-			coreaudio_use_direct_output = false;
-		} else {
-
-			Boolean mixing = 0;
-			err = AudioObjectSetPropertyData(
-				coreaudio_device_id, &property_address, 0, 0,
-				sizeof(mixing), &mixing);
-			if (err != noErr)
-			{
-				d_print("Failed to disable mixing. Error %d\n", err);
-				coreaudio_use_direct_output = false;
+		Boolean mixing;
+		AudioObjectGetPropertyData(coreaudio_device_id, &property_address, 0, 0,
+			&property_size, &mixing);
+		if (mixing) {
+			AudioObjectIsPropertySettable(coreaudio_device_id, &property_address, &settable);
+			if (!settable || err != noErr) {
+				d_print("Disable mixing is not supported, Err: %d", noErr);
+				coreaudio_use_digital = false;
+			} else {
+				mixing = 0;
+				err = AudioObjectSetPropertyData(
+					coreaudio_device_id, &property_address, 0, 0,
+					sizeof(mixing), &mixing);
+				if (err != noErr)
+				{
+					d_print("Failed to disable mixing. Error %d\n", err);
+					coreaudio_use_digital = false;
+				}
 			}
 		}
 	}
 
-	if (coreaudio_use_direct_output)
+	if (coreaudio_use_digital)
 	{
 		AudioValueRange value_range = { 0, 0 };
 		property_size = sizeof(AudioValueRange);
@@ -561,8 +580,10 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 		return OP_ERROR_SUCCESS;
 	}
 
+
 	d_print("Use AUHAL\n");
 	// Initialize Audio Unit.
+
 	AudioComponentDescription desc = {
 		kAudioUnitType_Output,
 		kAudioUnitSubType_DefaultOutput,
@@ -599,11 +620,11 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 	}
 		
 	// Set the output stream format.
-	UInt32 desc_size = sizeof(coreaudio_format_description);
+	property_size = sizeof(coreaudio_format_description);
 
 	err = AudioUnitSetProperty(
 		coreaudio_audio_unit, kAudioUnitProperty_StreamFormat, 
-		kAudioUnitScope_Input, 0, &coreaudio_format_description, desc_size);
+		kAudioUnitScope_Input, 0, &coreaudio_format_description, property_size);
 	if (err != noErr) {
 		return -OP_ERROR_SAMPLE_FORMAT;
 	}
@@ -619,7 +640,6 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 		return -OP_ERROR_SAMPLE_FORMAT;
 
 	// Get the default buffer size.
-
 	AudioValueRange value_range = { 0, 0 };
 	property_size = sizeof(AudioValueRange);
 	err = AudioUnitGetProperty(
@@ -655,9 +675,11 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 	{
 		coreaudio_buffer_frame_size <<= 1;
 	}
+
 	err = AudioUnitInitialize(coreaudio_audio_unit);
 	if (err != noErr)
 		return -OP_ERROR_SAMPLE_FORMAT;
+	d_print("buffer frame size %d", coreaudio_buffer_frame_size);
 
 	coreaudio_ring_buffer_init(&coreaudio_ring_buffer, coreaudio_buffer_frame_size);
 
@@ -679,31 +701,55 @@ static int coreaudio_write(const char *buf, int cnt)
 
 static int coreaudio_mixer_set_volume(int l, int r)
 {
-	int volume = l > r ? l : r;
-	Float32 vol = volume * 1.0f / coreaudio_max_volume;
-	if (vol > 1.0f)
-		vol = 1.0f;
-	if (vol < 0.0f)
-		vol = 0.0f;
+	Float32 vol_l = l * 1.0f / coreaudio_max_volume;
+	if (vol_l > 1.0f)
+		vol_l = 1.0f;
+	if (vol_l < 0.0f)
+		vol_l = 0.0f;
+	Float32 vol_r = r * 1.0f / coreaudio_max_volume;
+	if (vol_r > 1.0f)
+		vol_r = 1.0f;
+	if (vol_r < 0.0f)
+		vol_r = 0.0f;
+
 	OSStatus err;
-	if (coreaudio_use_direct_output)
+	if (coreaudio_use_digital)
 	{
 		AudioObjectPropertyAddress property_address = {
 			kAudioDevicePropertyVolumeScalar,
 			kAudioDevicePropertyScopeOutput,
-			kAudioObjectPropertyElementMaster
+			1
 		}; 
-		UInt32 size = sizeof(vol);
-		err = AudioObjectSetPropertyData(coreaudio_device_id,
-			&property_address, 0, NULL, size, &vol);
-	}
-	else
-	{
+		Boolean settable;
+		if (!AudioObjectHasProperty(coreaudio_device_id, &property_address)
+			|| AudioObjectIsPropertySettable(coreaudio_device_id, &property_address, &settable)
+			|| !settable)
+		{
+			d_print("The device cannot set volume.");
+			return -OP_ERROR_NOT_OPTION;
+		}
+		UInt32 size = sizeof(vol_l);
+		err = AudioObjectSetPropertyData(coreaudio_device_id, &property_address, 0, NULL, size, &vol_l);
+
+		property_address.mElement = 2;
+		if (!AudioObjectHasProperty(coreaudio_device_id, &property_address)
+			|| AudioObjectIsPropertySettable(coreaudio_device_id, &property_address, &settable)
+			|| !settable)
+		{
+			d_print("The device cannot set volume.");
+			return -OP_ERROR_NOT_OPTION;
+		}
+	
+		size = sizeof(vol_r);
+		err = AudioObjectSetPropertyData(coreaudio_device_id, &property_address, 0, NULL, size, &vol_r);
+	} else {
+		Float32 vol = vol_l > vol_r ? vol_r : vol_l;
 		err = AudioUnitSetParameter(coreaudio_audio_unit, kHALOutputParam_Volume,
 			kAudioUnitScope_Global, 0, vol, 0);
 	}
 
 	if (err != noErr) {
+		d_print("Error on set volume.");
 		errno = ENODEV;
 		return -OP_ERROR_ERRNO;
 	}
@@ -712,34 +758,74 @@ static int coreaudio_mixer_set_volume(int l, int r)
 
 static int coreaudio_mixer_get_volume(int *l, int *r)
 {
-	Float32 vol;
 	OSStatus err;
-	if (coreaudio_use_direct_output)
+	if (coreaudio_use_digital)
 	{
+		Float32 vol_l, vol_r;
 		AudioObjectPropertyAddress property_address = {
 			kAudioDevicePropertyVolumeScalar,
 			kAudioDevicePropertyScopeOutput,
-			kAudioObjectPropertyElementMaster
+			1
 		}; 
-		UInt32 size = sizeof(vol);
-		err = AudioObjectGetPropertyData(coreaudio_device_id,
-			&property_address, 0, NULL, &size, &vol);
+		if (!AudioObjectHasProperty(coreaudio_device_id, &property_address))
+		{
+			d_print("The device cannot get volume.\n");
+			return -OP_ERROR_NOT_OPTION;
+		}
+
+		UInt32 size = sizeof(vol_l);
+		err = AudioObjectGetPropertyData(coreaudio_device_id, &property_address, 0, NULL, &size, &vol_l);
+		if (err != noErr) {
+			d_print("Error on get volume. Error: %d", err);
+			errno = ENODEV;
+			return -OP_ERROR_ERRNO;
+		}
+
+
+		property_address.mElement = 2;
+		if (!AudioObjectHasProperty(coreaudio_device_id, &property_address))
+		{
+			d_print("The device cannot get volume.\n");
+			return -OP_ERROR_NOT_OPTION;
+		}
+		size = sizeof(vol_r);
+		err = AudioObjectGetPropertyData(coreaudio_device_id, &property_address, 0, NULL, &size, &vol_r);
+		if (err != noErr) {
+			d_print("Error on get volume. Error: %d", err);
+			errno = ENODEV;
+			return -OP_ERROR_ERRNO;
+		}
+
+
+		*l = vol_l * coreaudio_max_volume;
+		*r = vol_r * coreaudio_max_volume;
+		if (*l > coreaudio_max_volume)
+			*l = coreaudio_max_volume;
+		if (*l < 0)
+			*l = 0;
+		if (*r > coreaudio_max_volume)
+			*r = coreaudio_max_volume;
+		if (*r < 0)
+			*r = 0;
 	}
 	else
 	{
+		Float32 vol;
 		err = AudioUnitGetParameter(coreaudio_audio_unit, kHALOutputParam_Volume,
 			kAudioUnitScope_Global, 0, &vol);
-	}
-	int volume = vol * coreaudio_max_volume;
-	if (volume > coreaudio_max_volume)
-		volume = coreaudio_max_volume;
-	if (volume < 0)
-		volume = 0;
-	*l = volume;
-	*r = volume;
-	if (err != noErr) {
-		errno = ENODEV;
-		return -OP_ERROR_ERRNO;
+		int volume = vol * coreaudio_max_volume;
+		if (volume > coreaudio_max_volume)
+			volume = coreaudio_max_volume;
+		if (volume < 0)
+			volume = 0;
+		*l = volume;
+		*r = volume;
+		if (err != noErr) {
+			d_print("Error on get volume. Error: %d", err);
+			errno = ENODEV;
+			return -OP_ERROR_ERRNO;
+		}
+
 	}
 	return OP_ERROR_SUCCESS;
 }
@@ -777,6 +863,9 @@ static int op_coreaudio_set_option(int key, const char *val)
 	case 1:
 		coreaudio_enable_hog_mode = strcmp(val, "true") ? false : true;
 		break;
+	case 2:
+		coreaudio_use_digital = strcmp(val, "true") ? false : true;
+		break;
 	default:
 		return -OP_ERROR_NOT_OPTION;
 	}
@@ -793,6 +882,9 @@ static int op_coreaudio_get_option(int key, char **val)
 	case 1:
 		*val = xstrdup(coreaudio_enable_hog_mode ? "true" : "false");
 		break;
+	case 2:
+		*val = xstrdup(coreaudio_use_digital ? "true" : "false");
+		break;
  	default:
  		return -OP_ERROR_NOT_OPTION;
 	}
@@ -801,7 +893,7 @@ static int op_coreaudio_get_option(int key, char **val)
 
 static int coreaudio_pause(void)
 {
-        if (coreaudio_use_direct_output)
+        if (coreaudio_use_digital)
 	{
 		OSStatus err = AudioDeviceStop(coreaudio_device_id, direct_callback);
 		if (err != kAudioHardwareNoError) {
@@ -820,7 +912,7 @@ static int coreaudio_pause(void)
 
 static int coreaudio_unpause(void)
 {
-        if (coreaudio_use_direct_output)
+        if (coreaudio_use_digital)
 	{
 		OSStatus err = AudioDeviceStart(coreaudio_device_id, direct_callback);
 		if (err != kAudioHardwareNoError) {
@@ -856,6 +948,7 @@ const struct output_plugin_ops op_pcm_ops = {
 	.get_option = op_coreaudio_get_option
 };
 
+
 const struct mixer_plugin_ops op_mixer_ops = {
 	.init = coreaudio_mixer_dummy,
 	.exit = coreaudio_mixer_dummy,
@@ -870,6 +963,7 @@ const struct mixer_plugin_ops op_mixer_ops = {
 const char * const op_pcm_options[] = {
 	"device",
 	"enable_hog_mode",
+	"use_digital",
 	NULL
 };
 
