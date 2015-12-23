@@ -365,9 +365,10 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 
 	}
 
+	bool enable_hog_mode = coreaudio_enable_hog_mode;
 	if (!found_device)
 	{
-		coreaudio_enable_hog_mode = false;
+		enable_hog_mode = false;
 	}
 
 	// setting the format description.
@@ -393,7 +394,7 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 		coreaudio_format_description.mBitsPerChannel,
 		coreaudio_format_description.mBytesPerFrame);
 
-	if (coreaudio_enable_hog_mode)
+	if (enable_hog_mode)
 	{
 		pid_t hog_pid = getpid();
 		property_size = sizeof(hog_pid);
