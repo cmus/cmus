@@ -1236,12 +1236,9 @@ dsp.coreaudio.device
 dsp.coreaudio.enable_hog_mode
 	Set true to set the device to hog mode. The default value is false.
 
-dsp.coreaudio.use_digital
-	An experimental setting to stream audio data directly to device without
-	any potential conversion, if the device can consume such digital data.
-	The default value is false. Hog mode must be enabled to enable this
-	feature. This feature is not fully ready, and generally you shuold
-	refrain from using it.
+dsp.coreaudio.sync_sample_rate
+	Synchonize the device sample rate with the player, so no interpolation
+	will be applied to the stream.
 
 dsp.jack.server_name
 	Connect to jackd with this name. Leave empty for default.
