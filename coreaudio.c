@@ -331,33 +331,33 @@ static AudioDeviceID coreaudio_find_device(const char *dev_name)
 }
 
 static const struct {
-        channel_position_t pos;
-        const AudioChannelLabel label;
+	channel_position_t pos;
+	const AudioChannelLabel label;
 } coreaudio_channel_mapping[] = {
-        { CHANNEL_POSITION_LEFT,                        kAudioChannelLabel_Left },
-        { CHANNEL_POSITION_RIGHT,                       kAudioChannelLabel_Right },
-        { CHANNEL_POSITION_CENTER,                      kAudioChannelLabel_Center },
-        { CHANNEL_POSITION_LFE,                         kAudioChannelLabel_LFEScreen },
-        { CHANNEL_POSITION_SIDE_LEFT,                   kAudioChannelLabel_LeftSurround },
-        { CHANNEL_POSITION_SIDE_RIGHT,                  kAudioChannelLabel_RightSurround },
-        { CHANNEL_POSITION_MONO,                        kAudioChannelLabel_Mono },
-        { CHANNEL_POSITION_FRONT_LEFT_OF_CENTER,        kAudioChannelLabel_LeftCenter },
-        { CHANNEL_POSITION_FRONT_RIGHT_OF_CENTER,       kAudioChannelLabel_RightCenter },
-        { CHANNEL_POSITION_REAR_LEFT,                   kAudioChannelLabel_LeftSurroundDirect },
-        { CHANNEL_POSITION_REAR_RIGHT,                  kAudioChannelLabel_RightSurroundDirect },
-        { CHANNEL_POSITION_REAR_CENTER,                 kAudioChannelLabel_CenterSurround },
-        { CHANNEL_POSITION_INVALID,                     kAudioChannelLabel_Unknown },
+	{ CHANNEL_POSITION_LEFT,                        kAudioChannelLabel_Left },
+	{ CHANNEL_POSITION_RIGHT,                       kAudioChannelLabel_Right },
+	{ CHANNEL_POSITION_CENTER,                      kAudioChannelLabel_Center },
+	{ CHANNEL_POSITION_LFE,                         kAudioChannelLabel_LFEScreen },
+	{ CHANNEL_POSITION_SIDE_LEFT,                   kAudioChannelLabel_LeftSurround },
+	{ CHANNEL_POSITION_SIDE_RIGHT,                  kAudioChannelLabel_RightSurround },
+	{ CHANNEL_POSITION_MONO,                        kAudioChannelLabel_Mono },
+	{ CHANNEL_POSITION_FRONT_LEFT_OF_CENTER,        kAudioChannelLabel_LeftCenter },
+	{ CHANNEL_POSITION_FRONT_RIGHT_OF_CENTER,       kAudioChannelLabel_RightCenter },
+	{ CHANNEL_POSITION_REAR_LEFT,                   kAudioChannelLabel_LeftSurroundDirect },
+	{ CHANNEL_POSITION_REAR_RIGHT,                  kAudioChannelLabel_RightSurroundDirect },
+	{ CHANNEL_POSITION_REAR_CENTER,                 kAudioChannelLabel_CenterSurround },
+	{ CHANNEL_POSITION_INVALID,                     kAudioChannelLabel_Unknown },
 };
 
 static void coreaudio_set_channel_position(AudioUnit au,
 					    int channels,
 					    const channel_position_t *map)
 {
-        AudioObjectPropertyAddress aopa = {
+	AudioObjectPropertyAddress aopa = {
 		kAudioDevicePropertyPreferredChannelLayout,
-                kAudioObjectPropertyScopeOutput,
-                kAudioObjectPropertyElementMaster
-        };
+		kAudioObjectPropertyScopeOutput,
+		kAudioObjectPropertyElementMaster
+	};
 	AudioChannelLayout *layout = NULL;
 	size_t layout_size = (size_t) &layout->mChannelDescriptions[channels];
 	layout = (AudioChannelLayout*)malloc(layout_size);
@@ -421,11 +421,11 @@ static void coreaudio_sync_device_sample_rate(AudioDeviceID dev_id, AudioStreamB
 	};
 
 	UInt32 property_size;
-        OSStatus err = AudioObjectGetPropertyDataSize(dev_id,
-                                                      &aopa,
-                                                      0,
-                                                      NULL,
-                                                      &property_size);
+	OSStatus err = AudioObjectGetPropertyDataSize(dev_id,
+						      &aopa,
+						      0,
+						      NULL,
+						      &property_size);
 
 	int count = property_size/sizeof(AudioValueRange);
 	AudioValueRange ranges[count];
@@ -639,7 +639,7 @@ static int coreaudio_exit(void)
 	AudioComponentInstanceDispose(coreaudio_audio_unit);
 	coreaudio_audio_unit = NULL;
 	coreaudio_hog_device(coreaudio_device_id, false);
-        AudioHardwareUnload();
+	AudioHardwareUnload();
 	coreaudio_device_id = kAudioDeviceUnknown;
 	coreaudio_unit_subtype = kAudioDeviceUnknown;
 	return OP_ERROR_SUCCESS;
