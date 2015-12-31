@@ -244,7 +244,7 @@ static int coreaudio_max_volume = 100;
 static AudioDeviceID coreaudio_device_id = kAudioDeviceUnknown;
 static AudioStreamBasicDescription coreaudio_format_description;
 static AudioUnit coreaudio_audio_unit = NULL;
-static OSType coreaudio_unit_subtype = kAudioDeviceUnknown;
+static OSType coreaudio_unit_subtype = kAudioUnitSubType_DefaultOutput;
 static UInt32 coreaudio_buffer_frame_size = 1;
 static coreaudio_ring_buffer_t coreaudio_ring_buffer = {0, 0, 0, 0, 0, NULL};
 
@@ -641,7 +641,7 @@ static int coreaudio_exit(void)
 	coreaudio_hog_device(coreaudio_device_id, false);
 	AudioHardwareUnload();
 	coreaudio_device_id = kAudioDeviceUnknown;
-	coreaudio_unit_subtype = kAudioDeviceUnknown;
+	coreaudio_unit_subtype = kAudioUnitSubType_DefaultOutput;
 	return OP_ERROR_SUCCESS;
 }
 
