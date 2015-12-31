@@ -244,7 +244,6 @@ static int coreaudio_max_volume = 100;
 static AudioDeviceID coreaudio_device_id = kAudioDeviceUnknown;
 static AudioStreamBasicDescription coreaudio_format_description;
 static AudioUnit coreaudio_audio_unit = NULL;
-static OSType coreaudio_unit_subtype = kAudioUnitSubType_DefaultOutput;
 static UInt32 coreaudio_buffer_frame_size = 1;
 static coreaudio_ring_buffer_t coreaudio_ring_buffer = {0, 0, 0, 0, 0, NULL};
 
@@ -528,7 +527,7 @@ static OSStatus coreaudio_set_buffer_size(AudioUnit au, AudioStreamBasicDescript
 		d_print("Cannot get the buffer frame size: %d\n", err);
 		return err;
 	}
-	
+
 	buffer_frame_size *= desc.mBytesPerFrame;
 
 	// We set the frame size to a power of two integer that
@@ -543,9 +542,7 @@ static OSStatus coreaudio_set_buffer_size(AudioUnit au, AudioStreamBasicDescript
 static OSStatus coreaudio_init_audio_unit(AudioUnit *au,
 					  int *frame_size,
 					  OSType os_type,
-					  AudioDeviceID dev_id,
-					  AudioStreamBasicDescription desc,
-					  const channel_position_t *map)
+					  AudioDeviceID dev_id)
 {
 	OSStatus err;	
 	AudioComponentDescription comp_desc = {
@@ -575,7 +572,17 @@ static OSStatus coreaudio_init_audio_unit(AudioUnit *au,
 		if (err != noErr)
 			return err;
 	}
-		
+
+	return err;
+}
+
+static OSStatus coreaudio_start_audio_unit(AudioUnit *au,
+					   int *frame_size,
+					   AudioStreamBasicDescription desc,
+					   const channel_position_t *map)
+{
+	
+	OSStatus err;
 	err = AudioUnitSetProperty(*au,
 				   kAudioUnitProperty_StreamFormat,
 				   kAudioUnitScope_Input,
@@ -628,9 +635,17 @@ static int coreaudio_init(void)
 	if (named_dev_id != kAudioDeviceUnknown && coreaudio_opt_enable_hog_mode)
 		coreaudio_hog_device(coreaudio_device_id, true);
 
-	coreaudio_unit_subtype = named_dev_id != kAudioDeviceUnknown ?
+	OSType unit_subtype = named_dev_id != kAudioDeviceUnknown ?
 					kAudioUnitSubType_HALOutput :
 					kAudioUnitSubType_DefaultOutput;
+	OSStatus err = coreaudio_init_audio_unit(&coreaudio_audio_unit,
+						 &coreaudio_buffer_frame_size,
+						 unit_subtype,
+						 coreaudio_device_id);
+	if (err != noErr) {
+		errno = ENODEV;
+		return -OP_ERROR_ERRNO;
+	}
 	return OP_ERROR_SUCCESS;
 }
 
@@ -641,7 +656,6 @@ static int coreaudio_exit(void)
 	coreaudio_hog_device(coreaudio_device_id, false);
 	AudioHardwareUnload();
 	coreaudio_device_id = kAudioDeviceUnknown;
-	coreaudio_unit_subtype = kAudioUnitSubType_DefaultOutput;
 	return OP_ERROR_SUCCESS;
 }
 
@@ -651,12 +665,10 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 	coreaudio_format_description = coreaudio_fill_format_description(sf);
 	if (coreaudio_opt_sync_rate)
 		coreaudio_sync_device_sample_rate(coreaudio_device_id, coreaudio_format_description);
-	OSStatus err = coreaudio_init_audio_unit(&coreaudio_audio_unit,
-						 &coreaudio_buffer_frame_size,
-						 coreaudio_unit_subtype,
-						 coreaudio_device_id,
-						 coreaudio_format_description,
-						 channel_map);
+	OSStatus err = coreaudio_start_audio_unit(&coreaudio_audio_unit,
+						  &coreaudio_buffer_frame_size,
+						  coreaudio_format_description,
+						  channel_map);
 	if (err)
 		return -OP_ERROR_SAMPLE_FORMAT;
 	coreaudio_ring_buffer_init(&coreaudio_ring_buffer, coreaudio_buffer_frame_size);
