@@ -604,7 +604,8 @@ static OSStatus coreaudio_start_audio_unit(AudioUnit *au,
 	if (err != noErr)
 		return err;
 
-	coreaudio_set_channel_position(*au, desc.mChannelsPerFrame, map);
+	if (map)
+		coreaudio_set_channel_position(*au, desc.mChannelsPerFrame, map);
 
 	err = AudioUnitInitialize(*au);
 	if (err != noErr)
