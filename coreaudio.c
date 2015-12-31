@@ -540,7 +540,6 @@ static OSStatus coreaudio_set_buffer_size(AudioUnit au, AudioStreamBasicDescript
 }
 
 static OSStatus coreaudio_init_audio_unit(AudioUnit *au,
-					  int *frame_size,
 					  OSType os_type,
 					  AudioDeviceID dev_id)
 {
@@ -639,7 +638,6 @@ static int coreaudio_init(void)
 					kAudioUnitSubType_HALOutput :
 					kAudioUnitSubType_DefaultOutput;
 	OSStatus err = coreaudio_init_audio_unit(&coreaudio_audio_unit,
-						 &coreaudio_buffer_frame_size,
 						 unit_subtype,
 						 coreaudio_device_id);
 	if (err != noErr) {
