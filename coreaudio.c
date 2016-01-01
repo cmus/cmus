@@ -443,11 +443,17 @@ static void coreaudio_sync_device_sample_rate(AudioDeviceID dev_id, AudioStreamB
 	}
 
 	// Now try to see if the device support our format sample rate.
-	for (int i = 0; i < count; i++) {
-		if (ranges[i].mMinimum <= desc.mSampleRate
-		   && desc.mSampleRate <= ranges[i].mMaximum) {
-			sample_rate = desc.mSampleRate;
-			break;
+	// For some high quality media samples, the frame rate may exceed
+	// device capability. In this case, we let CoreAudio downsample
+	// by decimation with an integer factor ranging from 1 to 4.
+	for (int f = 4; f > 0; f--) {
+		Float64 rate = desc.mSampleRate / f;
+		for (int i = 0; i < count; i++) {
+			if (ranges[i].mMinimum <= rate
+			   && rate <= ranges[i].mMaximum) {
+				sample_rate = rate;
+				break;
+			}
 		}
 	}
 
