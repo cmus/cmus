@@ -468,7 +468,7 @@ static void coreaudio_sync_device_sample_rate(AudioDeviceID dev_id, AudioStreamB
 	if (err != noErr)
 		d_print("Failed to synchronize the sample rate: %d\n", err);
 
-	aopa.mSelector = kAudioDevicePropertyStreamFormat;
+	aopa.mSelector = kAudioStreamPropertyPhysicalFormat;
 	err = AudioObjectSetPropertyData(dev_id,
 					 &aopa,
 					 0,
