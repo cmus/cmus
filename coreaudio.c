@@ -348,7 +348,7 @@ static const struct {
 	{ CHANNEL_POSITION_INVALID,                     kAudioChannelLabel_Unknown },
 };
 
-static void coreaudio_set_channel_position(AudioUnit au,
+static void coreaudio_set_channel_position(AudioDeviceID dev_id,
 					    int channels,
 					    const channel_position_t *map)
 {
@@ -380,7 +380,7 @@ static void coreaudio_set_channel_position(AudioUnit au,
 		descriptions[i].mCoordinates[2] = 0;
 	}
 	OSStatus err =
-		AudioObjectSetPropertyData(coreaudio_device_id,
+		AudioObjectSetPropertyData(dev_id,
 				&aopa,
 			 0, NULL, layout_size, layout);
 	if (err != noErr)
@@ -612,8 +612,7 @@ static OSStatus coreaudio_init_audio_unit(AudioUnit *au,
 
 static OSStatus coreaudio_start_audio_unit(AudioUnit *au,
 					   int *frame_size,
-					   AudioStreamBasicDescription desc,
-					   const channel_position_t *map)
+					   AudioStreamBasicDescription desc)
 {
 	
 	OSStatus err;
@@ -638,9 +637,6 @@ static OSStatus coreaudio_start_audio_unit(AudioUnit *au,
 				   sizeof(cb));
 	if (err != noErr)
 		return err;
-
-	if (map)
-		coreaudio_set_channel_position(*au, desc.mChannelsPerFrame, map);
 
 	err = AudioUnitInitialize(*au);
 	if (err != noErr)
@@ -699,10 +695,13 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 	coreaudio_format_description = coreaudio_fill_format_description(sf);
 	if (coreaudio_opt_sync_rate)
 		coreaudio_sync_device_sample_rate(coreaudio_device_id, coreaudio_format_description);
+	if (channel_map)
+		coreaudio_set_channel_position(coreaudio_device_id,
+					       coreaudio_format_description.mChannelsPerFrame,
+					       channel_map);
 	OSStatus err = coreaudio_start_audio_unit(&coreaudio_audio_unit,
 						  &coreaudio_buffer_frame_size,
-						  coreaudio_format_description,
-						  channel_map);
+						  coreaudio_format_description);
 	if (err)
 		return -OP_ERROR_SAMPLE_FORMAT;
 	coreaudio_ring_buffer_init(&coreaudio_ring_buffer, coreaudio_buffer_frame_size);
