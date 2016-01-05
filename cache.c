@@ -330,6 +330,7 @@ static void write_ti(int fd, struct gbuf *buf, struct track_info *ti, unsigned i
 	e.bitrate = ti->bitrate;
 	e.mtime = ti->mtime;
 	e.play_count = ti->play_count;
+        e.bpm = ti->bpm;
 	len[count] = strlen(ti->filename) + 1;
 	e.size += len[count++];
 	len[count] = (ti->codec ? strlen(ti->codec) : 0) + 1;
