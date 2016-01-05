@@ -511,19 +511,42 @@ static void coreaudio_sync_device_sample_rate(AudioDeviceID dev_id, AudioStreamB
 
 static void coreaudio_hog_device(AudioDeviceID dev_id, bool hog)
 {
-	pid_t hog_pid = hog ? getpid() : -1;
+	pid_t hog_pid;
 	AudioObjectPropertyAddress aopa = {
 		kAudioDevicePropertyHogMode,
 		kAudioObjectPropertyScopeOutput,
 		kAudioObjectPropertyElementMaster
 	};
-
-	OSStatus err = AudioObjectSetPropertyData(dev_id,
+	UInt32 size = sizeof(hog_pid);
+	OSStatus err = AudioObjectGetPropertyData(dev_id,
 						  &aopa,
 						  0,
 						  NULL,
-						  sizeof(hog_pid),
+						  &size,
 						  &hog_pid);
+	if (err != noErr) {
+		d_print("Cannot get hog information: %d\n", err);
+		return;
+	}
+	if (hog) {
+		if (hog_pid != -1) {
+			d_print("Device is already hogged.\n");
+			return;
+		}
+	} else {
+		if (hog_pid != getpid()) {
+			d_print("Device is not owned by this process.\n");
+			return;
+		}
+	}
+	hog_pid = hog ? getpid() : -1;
+	size = sizeof(hog_pid);
+	err = AudioObjectSetPropertyData(dev_id,
+					 &aopa,
+					 0,
+					 NULL,
+					 size,
+					 &hog_pid);
 	if (err != noErr)
 		d_print("Cannot hog the device: %d\n", err);
 }
