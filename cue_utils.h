@@ -21,10 +21,16 @@
 
 #include <stdio.h>
 
+#include "config/cue.h"
+
 /*
  * warning: this header does not contain include guards!
  */
+#ifdef CONFIG_CUE2
+#include <libcue.h>
+#else
 #include <libcue/libcue.h>
+#endif
 
 
 char *associated_cue(const char *filename);
