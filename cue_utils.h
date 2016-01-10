@@ -24,7 +24,7 @@
 /*
  * warning: this header does not contain include guards!
  */
-#include <libcue/libcue.h>
+#include <libcue.h>
 
 
 char *associated_cue(const char *filename);
