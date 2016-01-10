@@ -95,6 +95,8 @@ static int cue_open(struct input_plugin_data *ip_data)
 	FILE *cue;
 	Cd *cd;
 	Track *t;
+	const char *child_filename;
+	char *path;
 	struct cue_private *priv;
 
 	priv = xnew(struct cue_private, 1);
@@ -125,12 +127,12 @@ static int cue_open(struct input_plugin_data *ip_data)
 		goto cue_read_failed;
 	}
 
-	const char *child_filename = track_get_filename(t);
+	child_filename = track_get_filename(t);
 	if (child_filename == NULL) {
 		rc = -IP_ERROR_FILE_FORMAT;
 		goto cue_read_failed;
 	}
-	char *path = _make_absolute_path(priv->cue_filename, child_filename);
+	path = _make_absolute_path(priv->cue_filename, child_filename);
 
 	priv->child = ip_new(path);
 	free(path);
@@ -148,11 +150,7 @@ static int cue_open(struct input_plugin_data *ip_data)
 	if (rc)
 		goto ip_open_failed;
 
-#ifdef CONFIG_CUE2
 	if (track_get_length(t) != -1)
-#else
-	if (track_get_length(t) != 0)
-#endif
 		priv->end_offset = priv->start_offset + _to_seconds(track_get_length(t));
 	else
 		priv->end_offset = ip_duration(priv->child);
@@ -257,6 +255,7 @@ static int cue_read_comments(struct input_plugin_data *ip_data, struct keyval **
 	Track *t;
 	Rem *track_rem;
 	Cdtext *track_cdtext;
+	const char *val;
 	char buf[32] = {0};
 	GROWING_KEYVALS(c);
 	struct cue_private *priv = ip_data->private;
@@ -289,29 +288,29 @@ static int cue_read_comments(struct input_plugin_data *ip_data, struct keyval **
 	track_rem = track_get_rem(t);
 	track_cdtext = track_get_cdtext(t);
 
-	const char *title = cdtext_get(PTI_TITLE, track_cdtext);
-	if (title != NULL)
-		comments_add_const(&c, "title", title);
+	val = cdtext_get(PTI_TITLE, track_cdtext);
+	if (val != NULL)
+		comments_add_const(&c, "title", val);
 
-	const char *album = cdtext_get(PTI_TITLE, cd_cdtext);
-	if (album != NULL)
-		comments_add_const(&c, "album", album);
+	val = cdtext_get(PTI_TITLE, cd_cdtext);
+	if (val != NULL)
+		comments_add_const(&c, "album", val);
 
-	const char *artist = cdtext_get(PTI_PERFORMER, track_cdtext);
-	if (artist != NULL)
-		comments_add_const(&c, "artist", artist);
+	val = cdtext_get(PTI_PERFORMER, track_cdtext);
+	if (val != NULL)
+		comments_add_const(&c, "artist", val);
 
-	const char *albumartist = cdtext_get(PTI_PERFORMER, cd_cdtext);
-	if (albumartist != NULL)
-		comments_add_const(&c, "albumartist", albumartist);
+	val = cdtext_get(PTI_PERFORMER, cd_cdtext);
+	if (val != NULL)
+		comments_add_const(&c, "albumartist", val);
 
-	const char *date = rem_get(REM_DATE, track_rem);
-	if (date != NULL) {
-		comments_add_const(&c, "date", date);
+	val = rem_get(REM_DATE, track_rem);
+	if (val != NULL) {
+		comments_add_const(&c, "date", val);
 	} else {
-		const char *cd_date = rem_get(REM_DATE, cd_rem);
-		if (cd_date != NULL)
-			comments_add_const(&c, "date", cd_date);
+		val = rem_get(REM_DATE, cd_rem);
+		if (val != NULL)
+			comments_add_const(&c, "date", val);
 	}
 
 	/*
