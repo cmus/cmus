@@ -30,6 +30,7 @@
 #include "op.h"
 #include "mixer.h"
 #include "sf.h"
+#include "utils.h"
 #include "xmalloc.h"
 
 
@@ -260,17 +261,6 @@ static OSStatus coreaudio_play_callback(void *user_data,
  	return noErr;
 }
 
-static int coreaudio_init(void)
-{
-	return OP_ERROR_SUCCESS;
-}
-
-static int coreaudio_exit(void)
-{
-	AudioHardwareUnload();
-	return OP_ERROR_SUCCESS;
-}
-
 static AudioDeviceID coreaudio_get_default_device()
 {
 	AudioObjectPropertyAddress aopa = {
@@ -339,6 +329,66 @@ static AudioDeviceID coreaudio_find_device(const char *dev_name)
 	return kAudioDeviceUnknown;
 }
 
+static const struct {
+	channel_position_t pos;
+	const AudioChannelLabel label;
+} coreaudio_channel_mapping[] = {
+	{ CHANNEL_POSITION_LEFT,                        kAudioChannelLabel_Left },
+	{ CHANNEL_POSITION_RIGHT,                       kAudioChannelLabel_Right },
+	{ CHANNEL_POSITION_CENTER,                      kAudioChannelLabel_Center },
+	{ CHANNEL_POSITION_LFE,                         kAudioChannelLabel_LFEScreen },
+	{ CHANNEL_POSITION_SIDE_LEFT,                   kAudioChannelLabel_LeftSurround },
+	{ CHANNEL_POSITION_SIDE_RIGHT,                  kAudioChannelLabel_RightSurround },
+	{ CHANNEL_POSITION_MONO,                        kAudioChannelLabel_Mono },
+	{ CHANNEL_POSITION_FRONT_LEFT_OF_CENTER,        kAudioChannelLabel_LeftCenter },
+	{ CHANNEL_POSITION_FRONT_RIGHT_OF_CENTER,       kAudioChannelLabel_RightCenter },
+	{ CHANNEL_POSITION_REAR_LEFT,                   kAudioChannelLabel_LeftSurroundDirect },
+	{ CHANNEL_POSITION_REAR_RIGHT,                  kAudioChannelLabel_RightSurroundDirect },
+	{ CHANNEL_POSITION_REAR_CENTER,                 kAudioChannelLabel_CenterSurround },
+	{ CHANNEL_POSITION_INVALID,                     kAudioChannelLabel_Unknown },
+};
+
+static void coreaudio_set_channel_position(AudioDeviceID dev_id,
+					    int channels,
+					    const channel_position_t *map)
+{
+	AudioObjectPropertyAddress aopa = {
+		kAudioDevicePropertyPreferredChannelLayout,
+		kAudioObjectPropertyScopeOutput,
+		kAudioObjectPropertyElementMaster
+	};
+	AudioChannelLayout *layout = NULL;
+	size_t layout_size = (size_t) &layout->mChannelDescriptions[channels];
+	layout = (AudioChannelLayout*)malloc(layout_size);
+	layout->mChannelLayoutTag = kAudioChannelLayoutTag_UseChannelDescriptions ;
+	layout->mChannelBitmap = 0;
+	layout->mNumberChannelDescriptions = channels;
+	AudioChannelDescription *descriptions = layout->mChannelDescriptions;
+	for (int i = 0; i < channels; i++) {
+		const channel_position_t pos = map[i];
+		AudioChannelLabel label = kAudioChannelLabel_Mono;
+		for (int j = 0; j < N_ELEMENTS(coreaudio_channel_mapping); j++) {
+			if (pos == coreaudio_channel_mapping[j].pos) {
+				label = coreaudio_channel_mapping[j].label;
+				break;
+			}
+		}
+		descriptions[channels - 1 - i].mChannelLabel = label;
+		descriptions[i].mChannelFlags = kAudioChannelFlags_AllOff;
+		descriptions[i].mCoordinates[0] = 0;
+		descriptions[i].mCoordinates[1] = 0;
+		descriptions[i].mCoordinates[2] = 0;
+	}
+	OSStatus err =
+		AudioObjectSetPropertyData(dev_id,
+				&aopa,
+			 0, NULL, layout_size, layout);
+	if (err != noErr)
+		d_print("Cannot set the channel layout successfully.\n");
+	free(layout);
+}
+
+
 static AudioStreamBasicDescription coreaudio_fill_format_description(sample_format_t sf)
 {
 	AudioStreamBasicDescription desc = {
@@ -352,6 +402,7 @@ static AudioStreamBasicDescription coreaudio_fill_format_description(sample_form
 		.mBytesPerFrame    = sf_get_frame_size(sf),
 	};
 
+	d_print("Bits:%d\n", sf_get_bits(sf));
 	if (sf_get_bigendian(sf))
 		desc.mFormatFlags |= kAudioFormatFlagIsBigEndian;
 	if (sf_get_signed(sf))
@@ -363,47 +414,139 @@ static AudioStreamBasicDescription coreaudio_fill_format_description(sample_form
 static void coreaudio_sync_device_sample_rate(AudioDeviceID dev_id, AudioStreamBasicDescription desc)
 {
 	AudioObjectPropertyAddress aopa = {
-		kAudioDevicePropertyNominalSampleRate,
+		kAudioDevicePropertyAvailableNominalSampleRates,
 		kAudioObjectPropertyScopeOutput,
 		kAudioObjectPropertyElementMaster
 	};
 
-	OSStatus err = AudioObjectSetPropertyData(dev_id,
-						  &aopa,
-						  0,
-						  NULL,
-						  sizeof(&desc.mSampleRate),
-						  &desc.mSampleRate);
-	if (err != noErr)
-		d_print("Failed to synchronize the sample rate: %d\n", err);
+	UInt32 property_size;
+	OSStatus err = AudioObjectGetPropertyDataSize(dev_id,
+						      &aopa,
+						      0,
+						      NULL,
+						      &property_size);
 
-	aopa.mSelector = kAudioDevicePropertyStreamFormat;
+	int count = property_size/sizeof(AudioValueRange);
+	AudioValueRange ranges[count];
+	property_size = sizeof(ranges);
+	err = AudioObjectGetPropertyData(dev_id,
+					 &aopa,
+					 0,
+					 NULL,
+					 &property_size,
+					 &ranges);
+	// Get the maximum sample rate as fallback.
+	Float64 sample_rate = .0;
+	for (int i = 0; i < count; i++) {
+		if (ranges[i].mMaximum > sample_rate)
+			sample_rate = ranges[i].mMaximum;
+	}
+
+	// Now try to see if the device support our format sample rate.
+	// For some high quality media samples, the frame rate may exceed
+	// device capability. In this case, we let CoreAudio downsample
+	// by decimation with an integer factor ranging from 1 to 4.
+	for (int f = 4; f > 0; f--) {
+		Float64 rate = desc.mSampleRate / f;
+		for (int i = 0; i < count; i++) {
+			if (ranges[i].mMinimum <= rate
+			   && rate <= ranges[i].mMaximum) {
+				sample_rate = rate;
+				break;
+			}
+		}
+	}
+
+	aopa.mSelector = kAudioDevicePropertyNominalSampleRate,
+
 	err = AudioObjectSetPropertyData(dev_id,
 					 &aopa,
 					 0,
 					 NULL,
-					 sizeof(desc),
-					 &desc);
+					 sizeof(&desc.mSampleRate),
+					 &sample_rate);
+	if (err != noErr)
+		d_print("Failed to synchronize the sample rate: %d\n", err);
+
+	aopa.mSelector = kAudioDevicePropertyStreams;
+	err = AudioObjectGetPropertyDataSize(dev_id, &aopa, 0, NULL, &property_size);
 	if (err != noErr) {
-		d_print("Failed to change the stream format: %d\n", err);
+		d_print("Cannot get number of streams: %d\n", err);
+		return;
+	}
+
+	int n_streams = property_size / sizeof(AudioStreamID);
+	AudioStreamID streams[n_streams];
+	err = AudioObjectGetPropertyData(dev_id, &aopa, 0, NULL, &property_size, streams);
+	if (err != noErr) {
+		d_print("Cannot get streams: %d\n", err);
+		return;
+	}
+
+	for (int i = 0; i < n_streams; i++) {
+		UInt32 direction;
+		aopa.mSelector = kAudioStreamPropertyDirection;
+		property_size = sizeof(direction);
+		err = AudioObjectGetPropertyData(streams[i],
+						 &aopa,
+						 0,
+						 NULL,
+						 &property_size,
+						 &direction);
+		if (err == noErr && direction == 0) {
+			aopa.mSelector = kAudioStreamPropertyPhysicalFormat;
+			err = AudioObjectSetPropertyData(streams[i],
+							 &aopa,
+							 0,
+							 NULL,
+							 sizeof(desc),
+							 &desc);
+			if (err != noErr) {
+				d_print("Failed to change the stream format: %d\n", err);
+			}
+		}
+
 	}
 }
 
 static void coreaudio_hog_device(AudioDeviceID dev_id, bool hog)
 {
-	pid_t hog_pid = hog ? getpid() : -1;
+	pid_t hog_pid;
 	AudioObjectPropertyAddress aopa = {
 		kAudioDevicePropertyHogMode,
 		kAudioObjectPropertyScopeOutput,
 		kAudioObjectPropertyElementMaster
 	};
-
-	OSStatus err = AudioObjectSetPropertyData(dev_id,
+	UInt32 size = sizeof(hog_pid);
+	OSStatus err = AudioObjectGetPropertyData(dev_id,
 						  &aopa,
 						  0,
 						  NULL,
-						  sizeof(hog_pid),
+						  &size,
 						  &hog_pid);
+	if (err != noErr) {
+		d_print("Cannot get hog information: %d\n", err);
+		return;
+	}
+	if (hog) {
+		if (hog_pid != -1) {
+			d_print("Device is already hogged.\n");
+			return;
+		}
+	} else {
+		if (hog_pid != getpid()) {
+			d_print("Device is not owned by this process.\n");
+			return;
+		}
+	}
+	hog_pid = hog ? getpid() : -1;
+	size = sizeof(hog_pid);
+	err = AudioObjectSetPropertyData(dev_id,
+					 &aopa,
+					 0,
+					 NULL,
+					 size,
+					 &hog_pid);
 	if (err != noErr)
 		d_print("Cannot hog the device: %d\n", err);
 }
@@ -442,7 +585,7 @@ static OSStatus coreaudio_set_buffer_size(AudioUnit au, AudioStreamBasicDescript
 		d_print("Cannot get the buffer frame size: %d\n", err);
 		return err;
 	}
-	
+
 	buffer_frame_size *= desc.mBytesPerFrame;
 
 	// We set the frame size to a power of two integer that
@@ -455,10 +598,8 @@ static OSStatus coreaudio_set_buffer_size(AudioUnit au, AudioStreamBasicDescript
 }
 
 static OSStatus coreaudio_init_audio_unit(AudioUnit *au,
-					  int *frame_size,
 					  OSType os_type,
-					  AudioDeviceID dev_id,
-					  AudioStreamBasicDescription desc)
+					  AudioDeviceID dev_id)
 {
 	OSStatus err;	
 	AudioComponentDescription comp_desc = {
@@ -488,7 +629,16 @@ static OSStatus coreaudio_init_audio_unit(AudioUnit *au,
 		if (err != noErr)
 			return err;
 	}
-		
+
+	return err;
+}
+
+static OSStatus coreaudio_start_audio_unit(AudioUnit *au,
+					   int *frame_size,
+					   AudioStreamBasicDescription desc)
+{
+	
+	OSStatus err;
 	err = AudioUnitSetProperty(*au,
 				   kAudioUnitProperty_StreamFormat,
 				   kAudioUnitScope_Input,
@@ -522,7 +672,7 @@ static OSStatus coreaudio_init_audio_unit(AudioUnit *au,
 	return AudioOutputUnitStart(*au);
 }
 
-static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_map)
+static int coreaudio_init(void)
 {
 	AudioDeviceID default_dev_id = coreaudio_get_default_device();
 	if (default_dev_id == kAudioDeviceUnknown) {
@@ -536,10 +686,6 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 
 	coreaudio_device_id = named_dev_id != kAudioDeviceUnknown ? named_dev_id : default_dev_id;
 
-	coreaudio_format_description = coreaudio_fill_format_description(sf);
-	if (coreaudio_opt_sync_rate)
-		coreaudio_sync_device_sample_rate(coreaudio_device_id, coreaudio_format_description);
-
 	if (named_dev_id != kAudioDeviceUnknown && coreaudio_opt_enable_hog_mode)
 		coreaudio_hog_device(coreaudio_device_id, true);
 
@@ -547,15 +693,41 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 					kAudioUnitSubType_HALOutput :
 					kAudioUnitSubType_DefaultOutput;
 	OSStatus err = coreaudio_init_audio_unit(&coreaudio_audio_unit,
-						 &coreaudio_buffer_frame_size,
 						 unit_subtype,
-						 coreaudio_device_id,
-						 coreaudio_format_description);
+						 coreaudio_device_id);
+	if (err != noErr) {
+		errno = ENODEV;
+		return -OP_ERROR_ERRNO;
+	}
+	return OP_ERROR_SUCCESS;
+}
+
+static int coreaudio_exit(void)
+{
+	AudioComponentInstanceDispose(coreaudio_audio_unit);
+	coreaudio_audio_unit = NULL;
+	coreaudio_hog_device(coreaudio_device_id, false);
+	AudioHardwareUnload();
+	coreaudio_device_id = kAudioDeviceUnknown;
+	return OP_ERROR_SUCCESS;
+}
+
+static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_map)
+{
+
+	coreaudio_format_description = coreaudio_fill_format_description(sf);
+	if (coreaudio_opt_sync_rate)
+		coreaudio_sync_device_sample_rate(coreaudio_device_id, coreaudio_format_description);
+	if (channel_map)
+		coreaudio_set_channel_position(coreaudio_device_id,
+					       coreaudio_format_description.mChannelsPerFrame,
+					       channel_map);
+	OSStatus err = coreaudio_start_audio_unit(&coreaudio_audio_unit,
+						  &coreaudio_buffer_frame_size,
+						  coreaudio_format_description);
 	if (err)
 		return -OP_ERROR_SAMPLE_FORMAT;
-
 	coreaudio_ring_buffer_init(&coreaudio_ring_buffer, coreaudio_buffer_frame_size);
-
 	return OP_ERROR_SUCCESS;
 }
 
@@ -563,14 +735,7 @@ static int coreaudio_close(void)
 {
 	AudioOutputUnitStop(coreaudio_audio_unit);
 	AudioUnitUninitialize(coreaudio_audio_unit);
-	AudioComponentInstanceDispose(coreaudio_audio_unit);
-	coreaudio_audio_unit = NULL;
-
-	coreaudio_hog_device(coreaudio_device_id, false);
-	coreaudio_device_id = kAudioDeviceUnknown;
-
 	coreaudio_ring_buffer_destroy(&coreaudio_ring_buffer);
-
 	return OP_ERROR_SUCCESS;
 }
 
@@ -638,12 +803,12 @@ static int coreaudio_mixer_get_option(int key, char **val)
 static int coreaudio_mixer_open(int *volume_max)
 {
 	*volume_max = coreaudio_max_volume;
-	return 0;
+	return OP_ERROR_SUCCESS;
 }
 
 static int coreaudio_mixer_dummy(void)
 {
-	return 0;
+	return OP_ERROR_SUCCESS;
 }
 
 static int op_coreaudio_set_option(int key, const char *val)
