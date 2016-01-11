@@ -95,7 +95,8 @@ static int cue_open(struct input_plugin_data *ip_data)
 	FILE *cue;
 	Cd *cd;
 	Track *t;
-	char *child_filename;
+	const char *child_filename;
+	char *path;
 	struct cue_private *priv;
 
 	priv = xnew(struct cue_private, 1);
@@ -131,10 +132,10 @@ static int cue_open(struct input_plugin_data *ip_data)
 		rc = -IP_ERROR_FILE_FORMAT;
 		goto cue_read_failed;
 	}
-	child_filename = _make_absolute_path(priv->cue_filename, child_filename);
+	path = _make_absolute_path(priv->cue_filename, child_filename);
 
-	priv->child = ip_new(child_filename);
-	free(child_filename);
+	priv->child = ip_new(path);
+	free(path);
 
 	rc = ip_open(priv->child);
 	if (rc)
@@ -258,7 +259,7 @@ static int cue_read_comments(struct input_plugin_data *ip_data, struct keyval **
 	Track *t;
 	Rem *track_rem;
 	Cdtext *track_cdtext;
-	char *val;
+	const char *val;
 	char buf[32] = {0};
 	GROWING_KEYVALS(c);
 	struct cue_private *priv = ip_data->private;
