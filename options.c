@@ -223,7 +223,7 @@ static const struct {
 	[FMT_CURRENT]		= { "format_current"		, " %a - %l -%3n. %t%= %y "				},
 	[FMT_STATUSLINE]	= { "format_statusline"		,
 		" %{status} %{?show_playback_position?%{position} %{?duration?/ %{duration} }?%{?duration?%{duration} }}"
-		"- %{total} "
+		"- %{total} %{?bpm>0?at %{bpm} BPM }"
 		"%{?volume>=0?vol: %{?lvolume!=rvolume?%{lvolume},%{rvolume} ?%{volume} }}"
 		"%{?stream?buf: %{buffer} }"
 		"%{?show_current_bitrate & bitrate>=0? %{bitrate} kbps }"
