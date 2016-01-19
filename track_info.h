@@ -22,6 +22,14 @@
 #include <time.h>
 #include <stddef.h>
 
+enum states_lyric {noneLyric, newLyric, oldLyric};
+
+struct sLyric {
+	double timeStart;
+	double timeEnd;
+	char messageText[100];
+};
+
 struct track_info {
 	struct keyval *comments;
 
@@ -64,6 +72,12 @@ struct track_info {
 	unsigned int play_count;
 
 	int is_va_compilation : 1;
+
+	int count_total_lyrics;
+	struct sLyric *lyric;
+	int lastLyric;
+	enum states_lyric showTextLyric;
+	char *currentTextLyric;
 };
 
 typedef size_t sort_key_t;
