@@ -39,7 +39,11 @@
 #include <libavformat/avio.h>
 #include <libswresample/swresample.h>
 #include <libavutil/opt.h>
+#if LIBAVUTIL_VERSION_MAJOR >= 53
+#include <libavutil/channel_layout.h>
+#else
 #include <libavutil/audioconvert.h>
+#endif
 #ifndef AVUTIL_MATHEMATICS_H
 #include <libavutil/mathematics.h>
 #endif
@@ -115,7 +119,11 @@ static struct ffmpeg_input *ffmpeg_input_create(void)
 
 static void ffmpeg_input_free(struct ffmpeg_input *input)
 {
+#if LIBAVCODEC_VERSION_MAJOR >= 56
+	av_packet_unref(&input->pkt);
+#else
 	av_free_packet(&input->pkt);
+#endif
 	free(input);
 }
 
@@ -235,7 +243,11 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 
 		codec = avcodec_find_decoder(cc->codec_id);
 		if (!codec) {
+#if LIBAVCODEC_VERSION_MAJOR >= 54
+			d_print("codec not found: %d, %s\n", cc->codec_id, avcodec_get_name(cc->codec_id));
+#else
 			d_print("codec not found: %d, %s\n", cc->codec_id, cc->codec_name);
+#endif
 			err = -IP_ERROR_UNSUPPORTED_FILE_TYPE;
 			break;
 		}
@@ -248,7 +260,11 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 #else
 		if (avcodec_open2(cc, codec, NULL) < 0) {
 #endif
+#if LIBAVCODEC_VERSION_MAJOR >= 54
+			d_print("could not open codec: %d, %s\n", cc->codec_id, avcodec_get_name(cc->codec_id));
+#else
 			d_print("could not open codec: %d, %s\n", cc->codec_id, cc->codec_name);
+#endif
 			err = -IP_ERROR_UNSUPPORTED_FILE_TYPE;
 			break;
 		}
@@ -347,7 +363,11 @@ static int ffmpeg_fill_buffer(AVFormatContext *ic, AVCodecContext *cc, struct ff
 			      struct ffmpeg_output *output, SwrContext *swr)
 {
 #if (LIBAVCODEC_VERSION_INT >= ((53<<16) + (25<<8) + 0))
+#if LIBAVCODEC_VERSION_MAJOR >= 56
+	AVFrame *frame = av_frame_alloc();
+#else
 	AVFrame *frame = avcodec_alloc_frame();
+#endif
 	int got_frame;
 #endif
 	while (1) {
@@ -359,10 +379,16 @@ static int ffmpeg_fill_buffer(AVFormatContext *ic, AVCodecContext *cc, struct ff
 		int len;
 
 		if (input->curr_pkt_size <= 0) {
+#if LIBAVCODEC_VERSION_MAJOR >= 56
+			av_packet_unref(&input->pkt);
+#else
 			av_free_packet(&input->pkt);
+#endif
 			if (av_read_frame(ic, &input->pkt) < 0) {
 				/* Force EOF once we can read no longer. */
-#if (LIBAVCODEC_VERSION_INT >= ((53<<16) + (25<<8) + 0))
+#if LIBAVCODEC_VERSION_MAJOR >= 56
+				av_frame_free(&frame);
+#elif (LIBAVCODEC_VERSION_INT >= ((53<<16) + (25<<8) + 0))
 				avcodec_free_frame(&frame);
 #endif
 				return 0;
@@ -399,7 +425,11 @@ static int ffmpeg_fill_buffer(AVFormatContext *ic, AVCodecContext *cc, struct ff
 			av_new_packet(&avpkt, input->curr_pkt_size);
 			memcpy(avpkt.data, input->curr_pkt_buf, input->curr_pkt_size);
 			len = avcodec_decode_audio4(cc, frame, &got_frame, &avpkt);
+#if LIBAVCODEC_VERSION_MAJOR >= 56
+			av_packet_unref(&avpkt);
+#else
 			av_free_packet(&avpkt);
+#endif
 		}
 #endif
 		if (len < 0) {
@@ -426,7 +456,11 @@ static int ffmpeg_fill_buffer(AVFormatContext *ic, AVCodecContext *cc, struct ff
 				res = 0;
 			output->buffer_pos = output->buffer;
 			output->buffer_used_len = res * cc->channels * sizeof(int16_t);
+#if LIBAVCODEC_VERSION_MAJOR >= 56
+			av_frame_free(&frame);
+#else
 			avcodec_free_frame(&frame);
+#endif
 			return output->buffer_used_len;
 		}
 #endif
@@ -575,7 +609,11 @@ static long ffmpeg_current_bitrate(struct input_plugin_data *ip_data)
 	long bitrate = -1;
 #if (LIBAVFORMAT_VERSION_INT > ((51<<16)+(43<<8)+0))
 	/* ape codec returns silly numbers */
+#if LIBAVCODEC_VERSION_MAJOR >= 55
+	if (priv->codec->id == AV_CODEC_ID_APE)
+#else
 	if (priv->codec->id == CODEC_ID_APE)
+#endif
 		return -1;
 #endif
 	if (priv->input->curr_duration > 0) {
