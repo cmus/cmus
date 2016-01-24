@@ -37,7 +37,7 @@
 #include <errno.h>
 #include <sys/mman.h>
 
-#define CACHE_VERSION   0x0c
+#define CACHE_VERSION   0x0d
 
 #define CACHE_64_BIT	0x01
 #define CACHE_BE	0x02
