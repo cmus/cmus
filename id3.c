@@ -550,7 +550,6 @@ static struct {
 	{ "TDOR", ID3_ORIGINALDATE }, // original release date
 	{ "TSOP", ID3_ARTISTSORT },
 	{ "TSOA", ID3_ALBUMSORT },
-        { "TBPM", ID3_BPM },
 
 	/* >= 2.3.0 */
 	{ "TPE1", ID3_ARTIST },
