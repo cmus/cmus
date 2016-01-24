@@ -295,7 +295,7 @@ enum {
 	TF_FOLLOW,
 	TF_SHUFFLE,
 	TF_PLAYLISTMODE,
-        TF_BPM,
+	TF_BPM,
 
 	NR_TFS
 };
@@ -352,7 +352,7 @@ static struct format_option track_fopts[NR_TFS + 1] = {
 	DEF_FO_STR('\0', "follow", 0),
 	DEF_FO_STR('\0', "shuffle", 0),
 	DEF_FO_STR('\0', "playlist_mode", 0),
-        DEF_FO_INT('\0', "bpm", 0),
+	DEF_FO_INT('\0', "bpm", 0),
 	DEF_FO_END
 };
 
@@ -615,7 +615,7 @@ static void fill_track_fopts_track_info(struct track_info *info)
 	} else {
 		fopt_set_str(&track_fopts[TF_FILE], path_basename(filename));
 	}
-        fopt_set_int(&track_fopts[TF_BPM], info->bpm, info->bpm == -1);
+	fopt_set_int(&track_fopts[TF_BPM], info->bpm, info->bpm == -1);
 }
 
 static void fill_track_fopts_album(struct album *album)

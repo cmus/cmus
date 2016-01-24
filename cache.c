@@ -132,7 +132,7 @@ static struct track_info *cache_entry_to_ti(struct cache_entry *e)
 	ti->bitrate = e->bitrate;
 	ti->mtime = e->mtime;
 	ti->play_count = e->play_count;
-        ti->bpm = e->bpm;
+	ti->bpm = e->bpm;
 
 	// count strings (filename + codec + codec_profile + key/val pairs)
 	count = 0;
@@ -330,7 +330,7 @@ static void write_ti(int fd, struct gbuf *buf, struct track_info *ti, unsigned i
 	e.bitrate = ti->bitrate;
 	e.mtime = ti->mtime;
 	e.play_count = ti->play_count;
-        e.bpm = ti->bpm;
+	e.bpm = ti->bpm;
 	len[count] = strlen(ti->filename) + 1;
 	e.size += len[count++];
 	len[count] = (ti->codec ? strlen(ti->codec) : 0) + 1;

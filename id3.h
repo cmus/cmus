@@ -53,7 +53,7 @@ enum id3_key {
 	ID3_COMMENT,
 	ID3_MUSICBRAINZ_TRACKID,
 	ID3_MEDIA,
-        ID3_BPM,
+	ID3_BPM,
 
 	NUM_ID3_KEYS
 };

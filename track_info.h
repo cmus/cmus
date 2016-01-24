@@ -114,7 +114,7 @@ typedef size_t sort_key_t;
 #define REV_SORT_CODEC          (REV_SORT__START + offsetof(struct track_info, codec))
 #define REV_SORT_CODEC_PROFILE  (REV_SORT__START + offsetof(struct track_info, codec_profile))
 #define REV_SORT_MEDIA          (REV_SORT__START + offsetof(struct track_info, media))
-#define REV_SORT_BPM	        (REV_SORT__START + offsetof(struct track_info, bpm))
+#define REV_SORT_BPM            (REV_SORT__START + offsetof(struct track_info, bpm))
 
 #define TI_MATCH_ARTIST       (1 << 0)
 #define TI_MATCH_ALBUM        (1 << 1)

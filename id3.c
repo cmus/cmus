@@ -264,7 +264,7 @@ const char * const id3_key_names[NUM_ID3_KEYS] = {
 	"comment",
 	"musicbrainz_trackid",
 	"media",
-        "bpm",
+	"bpm",
 };
 
 static int utf16_is_lsurrogate(uchar uch)
@@ -572,7 +572,7 @@ static struct {
 	{ "TPUB", ID3_PUBLISHER }, // TPUB can be both publisher or label
 	{ "TIT3", ID3_SUBTITLE },
 	{ "TMED", ID3_MEDIA },
-        { "TBPM", ID3_BPM},
+	{ "TBPM", ID3_BPM},
 
 	/* obsolete frames (2.2.0) */
 	{ "TP1",  ID3_ARTIST },
@@ -587,7 +587,7 @@ static struct {
 	{ "TS2",  ID3_ALBUMARTISTSORT },
 	{ "TSA",  ID3_ALBUMSORT },
 	{ "TCP",  ID3_COMPILATION },
-        { "TBP",  ID3_BPM },
+	{ "TBP",  ID3_BPM },
 };
 
 static int frame_tab_index(const char *id)
