@@ -427,7 +427,6 @@ static const struct {
 	{ 's',	"stream"	},
 	{ 't',	"title"		},
 	{ 'y',	"date"		},
-	{ 'b',  "bpm"           },
 	{ '\0',	NULL		},
 };
 
