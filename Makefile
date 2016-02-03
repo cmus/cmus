@@ -43,7 +43,7 @@ cmus-y := \
 	rbtree.o read_wrapper.o server.o search.o \
 	search_mode.o spawn.o tabexp.o tabexp_file.o \
 	track.o track_info.o tree.o u_collate.o uchar.o ui_curses.o \
-	window.o worker.o xstrjoin.o
+	window.o worker.o xstrjoin.o strnatcmp.o
 
 cmus-$(CONFIG_CUE) += cue_utils.o
 

@@ -971,6 +971,12 @@ mouse (false)
 	NOTE: Mouse wheel scrolling can lag if cmus is compiled with
 	old version of Ncurses.
 
+natural_sort (false)
+    Enable natural sorting.
+
+    If enabled, `1a` is sorted before `10a`. The sorting order of non-ascii
+    strings is unpredictable.
+
 output_plugin [roar, pulse, alsa, arts, oss, sndio, sun, coreaudio]
 	Name of output plugin.
 

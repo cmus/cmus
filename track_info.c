@@ -24,7 +24,9 @@
 #include "xmalloc.h"
 #include "utils.h"
 #include "debug.h"
+#include "options.h"
 #include "path.h"
+#include "strnatcmp.h"
 
 #include <string.h>
 #include <math.h>
@@ -189,6 +191,21 @@ static int doublecmp0(double a, double b)
 	return (x > 0) - (x < 0);
 }
 
+/* maps a COLL_ key either to the equivalent SORT_COLL_ or SORT_ key
+ * depending on whether natural_sort is set as natural_sort does not work with
+ * collated keys.
+ */
+#define MAP_ENTRY(NAME) \
+	[COLL_SORT_ ## NAME - COLL_SORT__START] = SORT_COLL_ ## NAME, \
+	[COLL_REV_SORT_ ## NAME - COLL_SORT__START] = REV_SORT_COLL_ ## NAME, \
+	[COLL_SORT_ ## NAME - COLL_SORT__START + COLL_SORT__NUM] = SORT_ ## NAME, \
+	[COLL_REV_SORT_ ## NAME - COLL_SORT__START + COLL_SORT__NUM] = REV_SORT_ ## NAME,
+static sort_key_t coll_map[] = {
+	MAP_ENTRY(ARTIST) MAP_ENTRY(ALBUM) MAP_ENTRY(TITLE)
+	MAP_ENTRY(GENRE) MAP_ENTRY(COMMENT) MAP_ENTRY(ALBUMARTIST)
+};
+#undef MAP_ENTRY
+
 /* this function gets called *alot*, it must be very fast */
 int track_info_cmp(const struct track_info *a, const struct track_info *b, const sort_key_t *keys)
 {
@@ -199,6 +216,10 @@ int track_info_cmp(const struct track_info *a, const struct track_info *b, const
 		const char *av, *bv;
 
 		rev = 0;
+		if (key >= COLL_SORT__START) {
+			key = coll_map[key - COLL_SORT__START +
+					natural_sort * COLL_SORT__NUM];
+		}
 		if (key >= REV_SORT__START) {
 			rev = 1;
 			key -= REV_SORT__START;
@@ -218,7 +239,10 @@ int track_info_cmp(const struct track_info *a, const struct track_info *b, const
 			break;
 		case SORT_FILENAME:
 			/* NOTE: filenames are not necessarily UTF-8 */
-			res = strcoll(a->filename, b->filename);
+			if (natural_sort)
+				res = strnatcmp(a->filename, b->filename);
+			else
+				res = strcoll(a->filename, b->filename);
 			break;
 		case SORT_RG_TRACK_GAIN:
 		case SORT_RG_TRACK_PEAK:
@@ -232,7 +256,10 @@ int track_info_cmp(const struct track_info *a, const struct track_info *b, const
 		default:
 			av = getentry(a, key, const char *);
 			bv = getentry(b, key, const char *);
-			res = strcmp0(av, bv);
+			if (natural_sort)
+				res = strnatcmp(av, bv);
+			else
+				res = strcmp0(av, bv);
 			break;
 		}
 
