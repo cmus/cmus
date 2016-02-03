@@ -75,6 +75,7 @@ int follow = 0;
 int display_artist_sort_name;
 int smart_artist_sort = 1;
 int scroll_offset = 2;
+int natural_sort = 0;
 int rewind_offset = 5;
 int skip_track_info = 0;
 int auto_expand_albums_follow = 1;
@@ -331,51 +332,51 @@ static const struct {
 	const char *str;
 	sort_key_t key;
 } sort_key_map[] = {
-	{ "artist",		SORT_ARTIST		},
-	{ "album",		SORT_ALBUM		},
-	{ "title",		SORT_TITLE		},
-	{ "play_count",		SORT_PLAY_COUNT		},
-	{ "tracknumber",	SORT_TRACKNUMBER	},
-	{ "discnumber",		SORT_DISCNUMBER		},
-	{ "date",		SORT_DATE		},
-	{ "originaldate",	SORT_ORIGINALDATE	},
-	{ "genre",		SORT_GENRE		},
-	{ "comment",		SORT_COMMENT		},
-	{ "albumartist",	SORT_ALBUMARTIST	},
-	{ "filename",		SORT_FILENAME		},
-	{ "filemtime",		SORT_FILEMTIME		},
-	{ "rg_track_gain",	SORT_RG_TRACK_GAIN	},
-	{ "rg_track_peak",	SORT_RG_TRACK_PEAK	},
-	{ "rg_album_gain",	SORT_RG_ALBUM_GAIN	},
-	{ "rg_album_peak",	SORT_RG_ALBUM_PEAK	},
-	{ "bitrate",		SORT_BITRATE		},
-	{ "codec",		SORT_CODEC		},
-	{ "codec_profile",	SORT_CODEC_PROFILE	},
-	{ "media",		SORT_MEDIA		},
-	{ "bpm",		SORT_BPM		},
-	{ "-artist",		REV_SORT_ARTIST		},
-	{ "-album",		REV_SORT_ALBUM		},
-	{ "-title",		REV_SORT_TITLE		},
-	{ "-play_count", 	REV_SORT_PLAY_COUNT	},
-	{ "-tracknumber",	REV_SORT_TRACKNUMBER	},
-	{ "-discnumber",	REV_SORT_DISCNUMBER	},
-	{ "-date",		REV_SORT_DATE		},
-	{ "-originaldate",	REV_SORT_ORIGINALDATE	},
-	{ "-genre",		REV_SORT_GENRE		},
-	{ "-comment",		REV_SORT_COMMENT	},
-	{ "-albumartist",	REV_SORT_ALBUMARTIST	},
-	{ "-filename",		REV_SORT_FILENAME	},
-	{ "-filemtime",		REV_SORT_FILEMTIME	},
-	{ "-rg_track_gain",	REV_SORT_RG_TRACK_GAIN	},
-	{ "-rg_track_peak",	REV_SORT_RG_TRACK_PEAK	},
-	{ "-rg_album_gain",	REV_SORT_RG_ALBUM_GAIN	},
-	{ "-rg_album_peak",	REV_SORT_RG_ALBUM_PEAK	},
-	{ "-bitrate",		REV_SORT_BITRATE	},
-	{ "-codec",		REV_SORT_CODEC		},
-	{ "-codec_profile",	REV_SORT_CODEC_PROFILE	},
-	{ "-media",		REV_SORT_MEDIA		},
-	{ "-bpm",		REV_SORT_BPM		},
-	{ NULL,                 SORT_INVALID            }
+	{ "artist",		COLL_SORT_ARTIST		},
+	{ "album",		COLL_SORT_ALBUM			},
+	{ "title",		COLL_SORT_TITLE			},
+	{ "play_count",		SORT_PLAY_COUNT			},
+	{ "tracknumber",	SORT_TRACKNUMBER		},
+	{ "discnumber",		SORT_DISCNUMBER			},
+	{ "date",		SORT_DATE			},
+	{ "originaldate",	SORT_ORIGINALDATE		},
+	{ "genre",		COLL_SORT_GENRE			},
+	{ "comment",		COLL_SORT_COMMENT		},
+	{ "albumartist",	COLL_SORT_ALBUMARTIST		},
+	{ "filename",		SORT_FILENAME			},
+	{ "filemtime",		SORT_FILEMTIME			},
+	{ "rg_track_gain",	SORT_RG_TRACK_GAIN		},
+	{ "rg_track_peak",	SORT_RG_TRACK_PEAK		},
+	{ "rg_album_gain",	SORT_RG_ALBUM_GAIN		},
+	{ "rg_album_peak",	SORT_RG_ALBUM_PEAK		},
+	{ "bitrate",		SORT_BITRATE			},
+	{ "codec",		SORT_CODEC			},
+	{ "codec_profile",	SORT_CODEC_PROFILE		},
+	{ "media",		SORT_MEDIA			},
+	{ "bpm",		SORT_BPM			},
+	{ "-artist",		COLL_REV_SORT_ARTIST		},
+	{ "-album",		COLL_REV_SORT_ALBUM		},
+	{ "-title",		COLL_REV_SORT_TITLE		},
+	{ "-play_count", 	REV_SORT_PLAY_COUNT		},
+	{ "-tracknumber",	REV_SORT_TRACKNUMBER		},
+	{ "-discnumber",	REV_SORT_DISCNUMBER		},
+	{ "-date",		REV_SORT_DATE			},
+	{ "-originaldate",	REV_SORT_ORIGINALDATE		},
+	{ "-genre",		COLL_REV_SORT_GENRE		},
+	{ "-comment",		COLL_REV_SORT_COMMENT		},
+	{ "-albumartist",	COLL_REV_SORT_ALBUMARTIST	},
+	{ "-filename",		REV_SORT_FILENAME		},
+	{ "-filemtime",		REV_SORT_FILEMTIME		},
+	{ "-rg_track_gain",	REV_SORT_RG_TRACK_GAIN		},
+	{ "-rg_track_peak",	REV_SORT_RG_TRACK_PEAK		},
+	{ "-rg_album_gain",	REV_SORT_RG_ALBUM_GAIN		},
+	{ "-rg_album_peak",	REV_SORT_RG_ALBUM_PEAK		},
+	{ "-bitrate",		REV_SORT_BITRATE		},
+	{ "-codec",		REV_SORT_CODEC			},
+	{ "-codec_profile",	REV_SORT_CODEC_PROFILE		},
+	{ "-media",		REV_SORT_MEDIA			},
+	{ "-bpm",		REV_SORT_BPM			},
+	{ NULL,                 SORT_INVALID            	}
 };
 
 static sort_key_t *parse_sort_keys(const char *value)
@@ -601,6 +602,21 @@ static void set_status_display_program(unsigned int id, const char *buf)
 /* }}} */
 
 /* callbacks for toggle options {{{ */
+
+static void get_natural_sort(unsigned int id, char *buf)
+{
+	strcpy(buf, bool_names[natural_sort]);
+}
+
+static void set_natural_sort(unsigned int id, const char *buf)
+{
+	parse_bool(buf, &natural_sort);
+}
+
+static void toggle_natural_sort(unsigned int id)
+{
+	natural_sort ^= 1;
+}
 
 static void get_auto_reshuffle(unsigned int id, char *buf)
 {
@@ -1374,6 +1390,7 @@ static const struct {
 	DN_FLAGS(device, OPT_PROGRAM_PATH)
 	DN(buffer_seconds)
 	DN(scroll_offset)
+	DT(natural_sort)
 	DN(rewind_offset)
 	DT(confirm_run)
 	DT(continue)
