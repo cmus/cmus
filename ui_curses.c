@@ -356,8 +356,6 @@ static struct format_option track_fopts[NR_TFS + 1] = {
 	DEF_FO_END
 };
 
-static int last_mevent = 0;
-
 int get_track_win_x(void)
 {
 	return track_win_x;
@@ -2016,10 +2014,13 @@ static void handle_key(int key)
 static void handle_mouse(MEVENT *event)
 {
 #if NCURSES_MOUSE_VERSION <= 1
+	static int last_mevent;
+
 	if ((last_mevent & BUTTON1_PRESSED) && (event->bstate & REPORT_MOUSE_POSITION))
 		event->bstate = BUTTON1_RELEASED;
 	last_mevent = event->bstate;
 #endif
+
 	clear_error();
 	if (input_mode == NORMAL_MODE) {
 		normal_mode_mouse(event);
