@@ -25,7 +25,6 @@
 #include "utils.h"
 #include "debug.h"
 #include "path.h"
-#include "strnatcmp.h"
 
 #include <string.h>
 #include <math.h>
@@ -219,7 +218,7 @@ int track_info_cmp(const struct track_info *a, const struct track_info *b, const
 			break;
 		case SORT_FILENAME:
 			/* NOTE: filenames are not necessarily UTF-8 */
-			res = strnatcmp(a->filename, b->filename);
+			res = strcoll(a->filename, b->filename);
 			break;
 		case SORT_RG_TRACK_GAIN:
 		case SORT_RG_TRACK_PEAK:
@@ -233,7 +232,7 @@ int track_info_cmp(const struct track_info *a, const struct track_info *b, const
 		default:
 			av = getentry(a, key, const char *);
 			bv = getentry(b, key, const char *);
-			res = strnatcmp(av, bv);
+			res = strcmp0(av, bv);
 			break;
 		}
 

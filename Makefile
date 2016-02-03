@@ -41,7 +41,7 @@ cmus-y := \
 	keys.o keyval.o lib.o load_dir.o locking.o mergesort.o misc.o options.o \
 	output.o pcm.o pl.o play_queue.o player.o \
 	rbtree.o read_wrapper.o server.o search.o \
-	search_mode.o spawn.o strnatcmp.o tabexp.o tabexp_file.o \
+	search_mode.o spawn.o tabexp.o tabexp_file.o \
 	track.o track_info.o tree.o u_collate.o uchar.o ui_curses.o \
 	window.o worker.o xstrjoin.o
 

@@ -25,7 +25,6 @@
 #include "misc.h"
 #include "options.h"
 #include "uchar.h"
-#include "strnatcmp.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -79,11 +78,11 @@ static int entry_cmp(const struct browser_entry *a, const struct browser_entry *
 			return -1;
 		if (!strcmp(b->name, "../"))
 			return 1;
-		return strnatcmp(a->name, b->name);
+		return strcmp(a->name, b->name);
 	}
 	if (b->type == BROWSER_ENTRY_DIR)
 		return 1;
-	return strnatcmp(a->name, b->name);
+	return strcmp(a->name, b->name);
 }
 
 static char *fullname(const char *path, const char *name)
