@@ -678,6 +678,12 @@ win-bottom (*G*, *end*)
 win-down [NUM] (*j*, *down*)
 	Goto down NUM (default 1) rows in the current window.
 
+win-half-page-down
+	Goto down half a page in the current window.
+
+win-half-page-up
+	Goto up half a page in the current window.
+
 win-mv-after (*p*)
 	If no tracks are marked, move the selected track down one row. If any
 	tracks are marked, move the marked tracks after the currently selected
@@ -705,7 +711,7 @@ win-page-top
 	Goto the top of the visible part of the current window.
 
 win-page-up (*^B*, *page_up*)
-	Goto up one page in the current window.
+	Go up one page in the current window.
 
 win-remove (*D*, *delete*)
 	Remove the selected entry.  For tracks no confirmations are made.  For

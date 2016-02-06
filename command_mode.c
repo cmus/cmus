@@ -1776,6 +1776,20 @@ static void cmd_win_pg_up(char *arg)
 	editable_unlock();
 }
 
+static void cmd_win_hf_pg_down(char *arg)
+{
+	editable_lock();
+	window_half_page_down(current_win());
+	editable_unlock();
+}
+
+static void cmd_win_hf_pg_up(char *arg)
+{
+	editable_lock();
+	window_half_page_up(current_win());
+	editable_unlock();
+}
+
 static void cmd_win_pg_top(char *arg)
 {
 	editable_lock();
@@ -2644,6 +2658,8 @@ struct command commands[] = {
 	{ "win-add-q",		cmd_win_add_q,	0, 0, NULL,		  0, 0 },
 	{ "win-bottom",		cmd_win_bottom,	0, 0, NULL,		  0, 0 },
 	{ "win-down",		cmd_win_down,	0, 1, NULL,		  0, 0 },
+	{ "win-half-page-down",	cmd_win_hf_pg_down,	0, 0, NULL,		  0, 0 },
+	{ "win-half-page-up",	cmd_win_hf_pg_up,	0, 0, NULL,		  0, 0 },
 	{ "win-mv-after",	cmd_win_mv_after,0, 0, NULL,		  0, 0 },
 	{ "win-mv-before",	cmd_win_mv_before,0, 0, NULL,		  0, 0 },
 	{ "win-next",		cmd_win_next,	0, 0, NULL,		  0, 0 },

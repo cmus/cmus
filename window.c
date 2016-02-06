@@ -475,6 +475,24 @@ void window_page_up(struct window *win)
 	sel_changed(win);
 }
 
+void window_half_page_up(struct window *win)
+{
+	struct iter sel = win->sel;
+	struct iter top = win->top;
+	int up;
+
+	for (up = 0; up < (win->nr_rows - 1) / 2; up++) {
+		if (!win->get_prev(&sel) || !win->get_prev(&top))
+			break;
+		if (selectable(win, &sel)) {
+			win->sel = sel;
+			win->top = top;
+		}
+	}
+
+	sel_changed(win);
+}
+
 static struct iter window_bottom(struct window *win)
 {
 	struct iter bottom = win->top;
@@ -509,6 +527,27 @@ void window_page_down(struct window *win)
 
 	sel_changed(win);
 }
+
+void window_half_page_down(struct window *win)
+{
+	struct iter sel = win->sel;
+	struct iter bot = window_bottom(win);
+	struct iter top = win->top;
+	int down;
+
+	for (down = 0; down < (win-> nr_rows - 1) / 2; down++) {
+		if (!win->get_next(&sel) || !win->get_next(&bot))
+			break;
+		win->get_next(&top);
+		if (selectable(win, &sel)) {
+			win->sel = sel;
+			win->top = top;
+		}
+	}
+
+	sel_changed(win);
+}
+
 
 void window_scroll_down(struct window *win)
 {
