@@ -476,6 +476,12 @@ player-stop (*v*)
 prev-view
 	Go to previously used view.
 
+left-view
+	To move the views 1-7 from the current view in the left order.
+
+right-view
+	To move the views 1-7 from the current view in the right order.
+
 push <text>
 	Enter command mode with the command line pre-set to text. Example:
 

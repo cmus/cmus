@@ -1295,6 +1295,37 @@ static void cmd_prev_view(char *arg)
 	}
 }
 
+static void cmd_left_view(char *arg)
+{
+	if (cur_view == TREE_VIEW) {
+		set_view(HELP_VIEW);
+		prev_view = TREE_VIEW;
+	} else {
+		if (prev_view == -1){
+			set_view(HELP_VIEW);
+			prev_view = TREE_VIEW;
+		} else {
+			int tmp;
+			tmp = cur_view;
+			set_view(cur_view - 1);
+			prev_view = tmp;
+		}
+	}
+}
+
+static void cmd_right_view(char *arg)
+{
+	if (cur_view == HELP_VIEW) {
+		set_view(TREE_VIEW);
+		prev_view = HELP_VIEW;
+	} else {
+		int tmp;
+		tmp = cur_view;
+		set_view(cur_view + 1);
+		prev_view = tmp;
+	}
+}
+
 static void cmd_view(char *arg)
 {
 	int view;
@@ -2599,6 +2630,8 @@ struct command commands[] = {
 	{ "player-prev",	cmd_p_prev,	0, 0, NULL,		  0, 0 },
 	{ "player-stop",	cmd_p_stop,	0, 0, NULL,		  0, 0 },
 	{ "prev-view",		cmd_prev_view,	0, 0, NULL,		  0, 0 },
+	{ "left-view",		cmd_left_view,	0, 0, NULL,		0, 0 },
+	{ "right-view",		cmd_right_view, 0, 0, NULL,		0, 0 },
 	{ "push",		cmd_push,	1,-1, expand_commands,	  0, 0 },
 	{ "pwd",		cmd_pwd,	0, 0, NULL,		  0, 0 },
 	{ "rand",		cmd_rand,	0, 0, NULL,		  0, 0 },
