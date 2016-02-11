@@ -477,10 +477,10 @@ prev-view
 	Go to previously used view.
 
 left-view
-    Go from current view to left view.
+        Go from current view to left view.
 
 right-view
-    Go from current view to right view.
+        Go from current view to right view.
 
 push <text>
 	Enter command mode with the command line pre-set to text. Example:
