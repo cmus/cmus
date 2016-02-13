@@ -60,7 +60,6 @@ static struct history cmd_history;
 static char *cmd_history_filename;
 static char *history_search_text = NULL;
 static int arg_expand_cmd = -1;
-static int prev_view = -1;
 
 /* view {{{ */
 
@@ -1287,11 +1286,8 @@ err:
 
 static void cmd_prev_view(char *arg)
 {
-	int tmp;
 	if (prev_view >= 0) {
-		tmp = cur_view;
 		set_view(prev_view);
-		prev_view = tmp;
 	}
 }
 
@@ -1299,17 +1295,8 @@ static void cmd_left_view(char *arg)
 {
 	if (cur_view == TREE_VIEW) {
 		set_view(HELP_VIEW);
-		prev_view = TREE_VIEW;
 	} else {
-		if (prev_view == -1){
-			set_view(HELP_VIEW);
-			prev_view = TREE_VIEW;
-		} else {
-			int tmp;
-			tmp = cur_view;
-			set_view(cur_view - 1);
-			prev_view = tmp;
-		}
+		set_view(cur_view - 1);
 	}
 }
 
@@ -1317,12 +1304,8 @@ static void cmd_right_view(char *arg)
 {
 	if (cur_view == HELP_VIEW) {
 		set_view(TREE_VIEW);
-		prev_view = HELP_VIEW;
 	} else {
-		int tmp;
-		tmp = cur_view;
 		set_view(cur_view + 1);
-		prev_view = tmp;
 	}
 }
 
@@ -1331,7 +1314,6 @@ static void cmd_view(char *arg)
 	int view;
 
 	if (parse_enum(arg, 1, NR_VIEWS, view_names, &view) && (view - 1) != cur_view) {
-		prev_view = cur_view;
 		set_view(view - 1);
 	}
 }

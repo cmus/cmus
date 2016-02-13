@@ -477,10 +477,10 @@ prev-view
 	Go to previously used view.
 
 left-view
-	To move the views 1-7 from the current view in the left order.
+	Go to view "to the left" of current one, e.g. view 4 -> view 3.
 
 right-view
-	To move the views 1-7 from the current view in the right order.
+	Go to view "to the right" of current one, e.g. view 3 -> view 4.
 
 push <text>
 	Enter command mode with the command line pre-set to text. Example:

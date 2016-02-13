@@ -35,6 +35,7 @@ extern sig_atomic_t cmus_running;
 extern int ui_initialized;
 extern enum ui_input_mode input_mode;
 extern int cur_view;
+extern int prev_view;
 extern struct searchable *searchable;
 
 extern char *lib_filename;
