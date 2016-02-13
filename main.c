@@ -293,7 +293,7 @@ int main(int argc, char *argv[])
 		case FLAG_VERSION:
 			printf("cmus " VERSION
 			       "\nCopyright 2004-2006 Timo Hirvonen"
-			       "\nCopyright 2008-2015 Various Authors\n");
+			       "\nCopyright 2008-2016 Various Authors\n");
 			return 0;
 		case FLAG_SERVER:
 			server = arg;

@@ -7,7 +7,7 @@ https://cmus.github.io/
 
 Copyright © 2004-2008 Timo Hirvonen <tihirvon@gmail.com>
 
-Copyright © 2008-2015 Various Authors
+Copyright © 2008-2016 Various Authors
 
 
 Configuration
