@@ -705,7 +705,7 @@ win-page-top
 	Goto the top of the visible part of the current window.
 
 win-page-up (*^B*, *page_up*)
-	Goto up one page in the current window.
+	Go up one page in the current window.
 
 win-remove (*D*, *delete*)
 	Remove the selected entry.  For tracks no confirmations are made.  For
