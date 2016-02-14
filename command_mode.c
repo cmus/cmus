@@ -1766,7 +1766,7 @@ static void cmd_win_pg_up(char *arg)
 static void cmd_win_hf_pg_down(char *arg)
 {
 	editable_lock();
-  window_half_page_down(current_win());
+	window_half_page_down(current_win());
 	editable_unlock();
 }
 
