@@ -681,7 +681,7 @@ static char *expand_short_expr(const char *expr_short)
 			}
 			break;
 		case ST_IN_QUOTE_STR:
-			if (c == '"' && expr_short[i-1] != '\\') {
+			if (c == '"' && i > 0 && expr_short[i-1] != '\\') {
 				stack4_pop(&state_stack);
 			}
 			out[k++] = c;
