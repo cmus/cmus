@@ -209,7 +209,7 @@ void cache_remove_ti(struct track_info *ti)
 static int read_cache(void)
 {
 	unsigned int size, offset = 0;
-	struct stat st;
+	struct stat st = {};
 	char *buf;
 	int fd;
 
@@ -219,7 +219,7 @@ static int read_cache(void)
 			return 0;
 		return -1;
 	}
-	fstat(fd,  &st);
+	fstat(fd, &st);
 	if (st.st_size < sizeof(cache_header))
 		goto close;
 	size = st.st_size;
