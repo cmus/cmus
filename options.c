@@ -385,7 +385,6 @@ static sort_key_t *parse_sort_keys(const char *value)
 	int size = 4;
 	int pos = 0;
 
-	size = 4;
 	keys = xnew(sort_key_t, size);
 
 	s = value;
