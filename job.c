@@ -331,7 +331,7 @@ void do_update_job(void *data)
 
 	for (i = 0; i < d->used; i++) {
 		struct track_info *ti = d->ti[i];
-		struct stat s;
+		struct stat s = {};
 		int rc;
 
 		/* stat follows symlinks, lstat does not */
