@@ -230,8 +230,8 @@ int misc_init(void)
 			cmus_socket_path = xstrjoin(xdg_runtime_dir, "/cmus-socket");
 		}
 	}
-
-	free(xdg_runtime_dir);
+	if (xdg_runtime_dir)
+		free(xdg_runtime_dir);
 	return 0;
 }
 
