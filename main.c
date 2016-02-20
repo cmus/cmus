@@ -349,8 +349,10 @@ int main(int argc, char *argv[])
 	if (server == NULL)
 		server = xstrdup(cmus_socket_path);
 
-	if (!remote_connect(server))
+	if (!remote_connect(server)){
+		free(server);
 		return 1;
+	}
 
 	if (raw_args) {
 		while (*argv)
