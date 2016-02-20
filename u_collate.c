@@ -35,7 +35,7 @@ int u_strcoll(const char *str1, const char *str2)
 	if (using_utf8) {
 		result = strcoll(str1, str2);
 	} else {
-		char *str1_locale, *str2_locale;
+		char *str1_locale = NULL, *str2_locale = NULL;
 
 		convert(str1, -1, &str1_locale, -1, charset, "UTF-8");
 		convert(str2, -1, &str2_locale, -1, charset, "UTF-8");
