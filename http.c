@@ -511,6 +511,6 @@ char *base64_encode(const char *str)
 	case 0:
 		break;
 	}
-	buf[d++] = 0;
+	buf[d] = 0;
 	return buf;
 }
