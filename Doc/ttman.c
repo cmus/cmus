@@ -835,7 +835,7 @@ static void dump(void)
 
 static void process(void)
 {
-	struct stat s;
+	struct stat s = {};
 	const char *buf;
 	int fd;
 
