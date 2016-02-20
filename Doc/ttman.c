@@ -851,6 +851,7 @@ static void process(void)
 		tokenize(buf, s.st_size);
 		normalize();
 	}
+	close(fd);
 	dump();
 }
 
