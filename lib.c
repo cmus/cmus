@@ -137,7 +137,7 @@ static void hash_remove(struct track_info *ti)
 		BUG_ON(e == NULL);
 		if (strcmp(e->ti->filename, filename) == 0) {
 			*entryp = e->next;
-			track_info_unref(e->ti);
+			track_info_unref(&e->ti);
 			free(e);
 			break;
 		}
@@ -316,7 +316,7 @@ static void free_lib_track(struct list_head *item)
 	rb_erase(&track->shuffle_track.tree_node, &lib_shuffle_root);
 	tree_remove(track);
 
-	track_info_unref(ti);
+	track_info_unref(&ti);
 	free(track);
 }
 
@@ -433,7 +433,7 @@ struct tree_track *lib_find_track(struct track_info *ti)
 void lib_store_cur_track(struct track_info *ti)
 {
 	if (cur_track_ti)
-		track_info_unref(cur_track_ti);
+		track_info_unref(&cur_track_ti);
 	cur_track_ti = ti;
 	track_info_ref(cur_track_ti);
 }
@@ -543,7 +543,7 @@ static void restore_sel_track(void)
 		struct tree_track *tt = lib_find_track(sel_track_ti);
 		if (tt) {
 			set_sel_track(tt);
-			track_info_unref(sel_track_ti);
+			track_info_unref(&sel_track_ti);
 			sel_track_ti = NULL;
 		}
 	}
@@ -623,7 +623,7 @@ void lib_clear_store(void)
 		e = ti_hash[i];
 		while (e) {
 			next = e->next;
-			track_info_unref(e->ti);
+			track_info_unref(&e->ti);
 			free(e);
 			e = next;
 		}

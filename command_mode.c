@@ -1106,7 +1106,7 @@ static void cmd_run(char *arg)
 	free_str_array(av);
 	free(argv);
 	for (i = 0; sel.tis[i]; i++)
-		track_info_unref(sel.tis[i]);
+		track_info_unref(&sel.tis[i]);
 	free(sel.tis);
 }
 
@@ -1179,7 +1179,7 @@ static void cmd_echo(char *arg)
 		return;
 
 	info_msg("%s%s%s", arg, sel_ti->filename, ptr);
-	track_info_unref(sel_ti);
+	track_info_unref(&sel_ti);
 }
 
 #define VF_RELATIVE	0x01

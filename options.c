@@ -1698,13 +1698,13 @@ void resume_load(void)
 		if (ti) {
 			editable_lock();
 			lib_add_track(ti);
-			track_info_unref(ti);
+			track_info_unref(&ti);
 			lib_store_cur_track(ti);
-			track_info_unref(ti);
+			track_info_unref(&ti);
 			ti = lib_set_track(lib_find_track(ti));
 			if (ti) {
 				BUG_ON(ti != old);
-				track_info_unref(ti);
+				track_info_unref(&ti);
 				tree_sel_current(auto_expand_albums_follow);
 				sorted_sel_current();
 			}

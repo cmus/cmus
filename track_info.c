@@ -29,19 +29,20 @@
 #include <string.h>
 #include <math.h>
 
-static void track_info_free(struct track_info *ti)
+static void track_info_free(struct track_info **ti)
 {
-	keyvals_free(ti->comments);
-	free(ti->filename);
-	free(ti->codec);
-	free(ti->codec_profile);
-	free(ti->collkey_artist);
-	free(ti->collkey_album);
-	free(ti->collkey_title);
-	free(ti->collkey_genre);
-	free(ti->collkey_comment);
-	free(ti->collkey_albumartist);
-	free(ti);
+	keyvals_free((*ti)->comments);
+	free((*ti)->filename);
+	free((*ti)->codec);
+	free((*ti)->codec_profile);
+	free((*ti)->collkey_artist);
+	free((*ti)->collkey_album);
+	free((*ti)->collkey_title);
+	free((*ti)->collkey_genre);
+	free((*ti)->collkey_comment);
+	free((*ti)->collkey_albumartist);
+	free(*ti);
+	*ti = NULL;
 }
 
 struct track_info *track_info_new(const char *filename)
@@ -109,12 +110,13 @@ void track_info_ref(struct track_info *ti)
 	ti->ref++;
 }
 
-void track_info_unref(struct track_info *ti)
+void track_info_unref(struct track_info **ti)
 {
-	BUG_ON(ti->ref < 1);
-	ti->ref--;
-	if (ti->ref == 0)
+	BUG_ON((*ti)->ref < 1);
+	(*ti)->ref--;
+	if ((*ti)->ref == 0) {
 		track_info_free(ti);
+	}
 }
 
 int track_info_has_tag(const struct track_info *ti)
