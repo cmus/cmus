@@ -27,7 +27,7 @@ static void pq_free_track(struct list_head *item)
 {
 	struct simple_track *track = to_simple_track(item);
 
-	track_info_unref(track->info);
+	track_info_unref(&track->info);
 	free(track);
 }
 

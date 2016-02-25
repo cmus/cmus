@@ -34,7 +34,7 @@ static void pl_free_track(struct list_head *item)
 		pl_cur_track = NULL;
 
 	rb_erase(&shuffle_track->tree_node, &pl_shuffle_root);
-	track_info_unref(track->info);
+	track_info_unref(&track->info);
 	free(track);
 }
 

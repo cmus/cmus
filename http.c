@@ -121,7 +121,9 @@ void http_free_uri(struct http_uri *u)
 {
 	free(u->uri);
 	free(u->user);
-	free(u->pass);
+	if (u->pass) {
+		free(u->pass);
+	}
 	free(u->host);
 	free(u->path);
 

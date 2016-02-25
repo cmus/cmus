@@ -57,7 +57,7 @@ static void flush_ti_buffer(void)
 	editable_lock();
 	for (i = 0; i < ti_buffer_fill; i++) {
 		jd->add(ti_buffer[i]);
-		track_info_unref(ti_buffer[i]);
+		track_info_unref(&ti_buffer[i]);
 	}
 	editable_unlock();
 	ti_buffer_fill = 0;
@@ -331,7 +331,7 @@ void do_update_job(void *data)
 
 	for (i = 0; i < d->used; i++) {
 		struct track_info *ti = d->ti[i];
-		struct stat s;
+		struct stat s = {};
 		int rc;
 
 		/* stat follows symlinks, lstat does not */
@@ -354,7 +354,7 @@ void do_update_job(void *data)
 				cmus_add(lib_add_track, ti->filename, FILE_TYPE_FILE, JOB_TYPE_LIB, force);
 			}
 		}
-		track_info_unref(ti);
+		track_info_unref(&ti);
 	}
 }
 
@@ -386,16 +386,17 @@ void do_update_cache_job(void *data)
 		new = old->next;
 		if (lib_remove(old) && new)
 			lib_add_track(new);
-		editable_update_track(&pl_editable, old, new);
-		editable_update_track(&pq_editable, old, new);
+		editable_update_track(&pl_editable, &old, new);
+		if (old)
+			editable_update_track(&pq_editable, &old, new);
 		if (player_info.ti == old && new) {
 			track_info_ref(new);
 			player_file_changed(new);
 		}
 
-		track_info_unref(old);
+		track_info_unref(&old);
 		if (new)
-			track_info_unref(new);
+			track_info_unref(&new);
 	}
 	player_info_unlock();
 	editable_unlock();

@@ -155,7 +155,7 @@ static int cmd_format_print(struct client *client, char *arg)
 		return write_all(client->fd, "\n", strlen("\n"));
 	}
 
-	int args_idx, ac, i, ret;
+	int args_idx = 0, ac, i, ret;
 	char **args = NULL;
 
 	if (arg)

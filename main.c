@@ -1,3 +1,4 @@
+
 /*
  * Copyright 2008-2013 Various Authors
  * Copyright 2005-2006 Timo Hirvonen
@@ -349,8 +350,10 @@ int main(int argc, char *argv[])
 	if (server == NULL)
 		server = xstrdup(cmus_socket_path);
 
-	if (!remote_connect(server))
+	if (!remote_connect(server)){
+		free(server);
 		return 1;
+	}
 
 	if (raw_args) {
 		while (*argv)
@@ -388,7 +391,7 @@ int main(int argc, char *argv[])
 		send_cmd("player-play\n");
 	if (flags[FLAG_PAUSE])
 		send_cmd("player-pause\n");
-	if (flags[FLAG_FILE])
+	if (flags[FLAG_FILE] && play_file)
 		send_cmd("player-play %s\n", file_url_absolute(play_file));
 	if (volume)
 		send_cmd("vol %s\n", volume);

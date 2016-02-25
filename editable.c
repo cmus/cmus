@@ -381,14 +381,14 @@ int editable_for_each_sel(struct editable *e, int (*cb)(void *data, struct track
 	return rc;
 }
 
-void editable_update_track(struct editable *e, struct track_info *old, struct track_info *new)
+void editable_update_track(struct editable *e, struct track_info **old, struct track_info *new)
 {
 	struct list_head *item, *tmp;
 	int changed = 0;
 
 	list_for_each_safe(item, tmp, &e->head) {
 		struct simple_track *track = to_simple_track(item);
-		if (track->info == old) {
+		if (track->info == *old) {
 			if (new) {
 				track_info_unref(old);
 				track_info_ref(new);
