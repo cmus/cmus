@@ -105,6 +105,7 @@ void player_file_changed(struct track_info *ti);
 void player_play(void);
 void player_stop(void);
 void player_pause(void);
+void player_pause_playback(void);
 void player_seek(double offset, int relative, int start_playing);
 void player_set_op(const char *name);
 void player_set_buffer_chunks(unsigned int nr_chunks);

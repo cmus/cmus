@@ -1143,6 +1143,12 @@ void player_pause(void)
 	player_unlock();
 }
 
+void player_pause_playback(void)
+{
+	if (consumer_status == CS_PLAYING)
+		player_pause();
+}
+
 void player_set_file(struct track_info *ti)
 {
 	player_lock();
