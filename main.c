@@ -177,6 +177,7 @@ enum flags {
 
 	FLAG_PLAY,
 	FLAG_PAUSE,
+	FLAG_PAUSE_PLAYBACK,
 	FLAG_STOP,
 	FLAG_NEXT,
 	FLAG_PREV,
@@ -204,6 +205,7 @@ static struct option options[NR_FLAGS + 1] = {
 
 	{ 'p', "play", 0 },
 	{ 'u', "pause", 0 },
+	{ 'U', "pause-playback", 0 },
 	{ 's', "stop", 0 },
 	{ 'n', "next", 0 },
 	{ 'r', "prev", 0 },
@@ -241,6 +243,7 @@ static const char *usage =
 "Cooked mode:\n"
 "  -p, --play           player-play\n"
 "  -u, --pause          player-pause\n"
+"  -U, --pause-playback player-pause-playback\n"
 "  -s, --stop           player-stop\n"
 "  -n, --next           player-next\n"
 "  -r, --prev           player-prev\n"
@@ -328,6 +331,7 @@ int main(int argc, char *argv[])
 			break;
 		case FLAG_PLAY:
 		case FLAG_PAUSE:
+		case FLAG_PAUSE_PLAYBACK:
 		case FLAG_STOP:
 		case FLAG_NEXT:
 		case FLAG_PREV:
@@ -388,6 +392,8 @@ int main(int argc, char *argv[])
 		send_cmd("player-play\n");
 	if (flags[FLAG_PAUSE])
 		send_cmd("player-pause\n");
+	if (flags[FLAG_PAUSE_PLAYBACK])
+		send_cmd("player-pause-playback\n");
 	if (flags[FLAG_FILE])
 		send_cmd("player-play %s\n", file_url_absolute(play_file));
 	if (volume)
