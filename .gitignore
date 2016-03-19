@@ -8,6 +8,7 @@ tags
 cscope.out
 !.gitignore
 !.travis.yml
+!.github
 
 # top-level ignores
 /*.spec
