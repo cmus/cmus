@@ -41,6 +41,9 @@ When *-C* is given all command line arguments are treated as raw commands.
 -u, --pause
 	Toggle pause.
 
+-U, --pause-playback
+	Pause when currently playing.
+
 -s, --stop
 	Stop playing.
 
