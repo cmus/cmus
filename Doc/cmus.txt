@@ -1492,8 +1492,8 @@ After a crash last lines of `~/cmus-debug.txt` might
 contain useful information.  The file exists only if you configured cmus with
 maximum debug level (*./configure DEBUG=2*).
 
-Feature requests and bug reports should go to the cmus-devel mailing list:
-	http://lists.sourceforge.net/lists/listinfo/cmus-devel
+Feature requests and bug reports should go to the github issue tracker:
+	https://github.com/cmus/cmus/issues
 
 
 @h1 SEE ALSO
