@@ -209,7 +209,7 @@ void cache_remove_ti(struct track_info *ti)
 static int read_cache(void)
 {
 	unsigned int size, offset = 0;
-	struct stat st;
+	struct stat st = {};
 	char *buf;
 	int fd;
 
