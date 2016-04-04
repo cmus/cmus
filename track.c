@@ -88,7 +88,7 @@ void shuffle_insert(struct rb_root *root, struct shuffle_track *previous, struct
 }
 
 struct shuffle_track *shuffle_list_get_next(struct rb_root *root, struct shuffle_track *cur,
-		int (*filter)(const struct simple_track *))
+		int (*filter_callback)(const struct simple_track *))
 {
 	struct rb_node *node;
 
@@ -100,7 +100,7 @@ again:
 	while (node) {
 		struct shuffle_track *track = tree_node_to_shuffle_track(node);
 
-		if (filter((struct simple_track *)track))
+		if (filter_callback((struct simple_track *)track))
 			return track;
 		node = rb_next(node);
 	}
@@ -114,7 +114,7 @@ again:
 }
 
 struct shuffle_track *shuffle_list_get_prev(struct rb_root *root, struct shuffle_track *cur,
-		int (*filter)(const struct simple_track *))
+		int (*filter_callback)(const struct simple_track *))
 {
 	struct rb_node *node;
 
@@ -126,7 +126,7 @@ again:
 	while (node) {
 		struct shuffle_track *track = tree_node_to_shuffle_track(node);
 
-		if (filter((struct simple_track *)track))
+		if (filter_callback((struct simple_track *)track))
 			return track;
 		node = rb_prev(node);
 	}
@@ -140,7 +140,7 @@ again:
 }
 
 struct simple_track *simple_list_get_next(struct list_head *head, struct simple_track *cur,
-		int (*filter)(const struct simple_track *))
+		int (*filter_callback)(const struct simple_track *))
 {
 	struct list_head *item;
 
@@ -152,7 +152,7 @@ again:
 	while (item != head) {
 		struct simple_track *track = to_simple_track(item);
 
-		if (filter(track))
+		if (filter_callback(track))
 			return track;
 		item = item->next;
 	}
@@ -163,7 +163,7 @@ again:
 }
 
 struct simple_track *simple_list_get_prev(struct list_head *head, struct simple_track *cur,
-		int (*filter)(const struct simple_track *))
+		int (*filter_callback)(const struct simple_track *))
 {
 	struct list_head *item;
 
@@ -175,7 +175,7 @@ again:
 	while (item != head) {
 		struct simple_track *track = to_simple_track(item);
 
-		if (filter(track))
+		if (filter_callback(track))
 			return track;
 		item = item->prev;
 	}
