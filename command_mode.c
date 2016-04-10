@@ -1334,6 +1334,11 @@ static void cmd_p_pause(char *arg)
 	player_pause();
 }
 
+static void cmd_p_pause_playback(char *arg)
+{
+	player_pause_playback();
+}
+
 static void cmd_p_play(char *arg)
 {
 	if (arg) {
@@ -2622,6 +2627,7 @@ struct command commands[] = {
 	{ "mark",		cmd_mark,	0, 1, NULL,		  0, 0 },
 	{ "player-next",	cmd_p_next,	0, 0, NULL,		  0, 0 },
 	{ "player-pause",	cmd_p_pause,	0, 0, NULL,		  0, 0 },
+	{ "player-pause-playback",	cmd_p_pause_playback, 0, 0, NULL, 0, 0 },
 	{ "player-play",	cmd_p_play,	0, 1, expand_playable,	  0, 0 },
 	{ "player-prev",	cmd_p_prev,	0, 0, NULL,		  0, 0 },
 	{ "player-stop",	cmd_p_stop,	0, 0, NULL,		  0, 0 },
