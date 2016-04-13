@@ -464,7 +464,7 @@ player-pause (*c*)
 	Toggle pause.
 
 player-pause-playback
-	Pause when currently playing.
+	Pause if currently playing.
 
 player-play [filename] (*x*)
 	Play the given track, or, if none is specified, [re]play the current
@@ -763,7 +763,7 @@ This section describes cmus' options that can be altered with the *set* and
 brackets.
 
 auto_expand_albums_follow, auto_expand_albums_search, auto_expand_albums_selcur (true)
-	When enabled, cmus will always open an artist and select the album when
+	If enabled, cmus will always open an artist and select the album when
 	following the currently played track or performing actions such as "search"
 	or "go to current track". This option is tightly coupled to the
 	show_all_tracks option. Any "auto_expand_albums_* = false" implies
@@ -965,7 +965,7 @@ format_treewin_artist [`Format String`]
 smart_artist_sort (true)
 	If enabled, makes tree view sorting ignore "The" in front of artist
 	names, preventing artists starting with "The" from clumping together.
-	Real `artistsort` tags override this option, when present.
+	Real `artistsort` tags override this option, if present.
 
 id3_default_charset (ISO-8859-1)
 	Default character set to use for ID3v1 and broken ID3v2 tags.

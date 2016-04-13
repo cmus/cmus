@@ -22,7 +22,7 @@ commands are used in configuration files and key bindings.  *cmus*(1) contains
 full list of commands.  For consistency also searching is supported:
 *-C /text*.
 
-When *-C* is given all command line arguments are treated as raw commands.
+If *-C* is given, all command line arguments are treated as raw commands.
 
 @h1 OPTIONS
 
@@ -42,7 +42,7 @@ When *-C* is given all command line arguments are treated as raw commands.
 	Toggle pause.
 
 -U, --pause-playback
-	Pause when currently playing.
+	Pause if currently playing.
 
 -s, --stop
 	Stop playing.

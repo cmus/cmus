@@ -128,7 +128,7 @@ Here are the toggles:
 
 [C]ontinue
 
-    When this is off, cmus will always stop at the end of the track. You can
+    If this is off, cmus will always stop at the end of the track. You can
 toggle this setting by pressing *shift-C*.
 
 [R]epeat
@@ -139,7 +139,7 @@ the beginning. Press *r* to toggle this setting.
 
 [S]huffle
 
-    When this is on, cmus will choose a random order to play all the tracks
+    If this is on, cmus will choose a random order to play all the tracks
 once. Press *s* to toggle this option.
 
 
