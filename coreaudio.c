@@ -238,7 +238,7 @@ static size_t coreaudio_ring_buffer_read(coreaudio_ring_buffer_t *rbuf, char *da
 
 static char *coreaudio_opt_device_name     = NULL;
 static bool  coreaudio_opt_enable_hog_mode = false;
-static bool  coreaudio_opt_sync_rate       = true;
+static bool  coreaudio_opt_sync_rate       = false;
 
 static int coreaudio_max_volume = 100;
 static AudioDeviceID coreaudio_device_id = kAudioDeviceUnknown;
