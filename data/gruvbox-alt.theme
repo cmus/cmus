@@ -1,0 +1,53 @@
+# colors from gruvbox: https://github.com/morhetz/gruvbox
+
+# default text color: fg
+set color_win_fg=223
+
+# overall background color: bg
+set color_win_bg=235
+
+# top title area: bg2/light-blue
+set color_win_title_bg=239
+set color_win_title_fg=109
+
+# separator line between windows in view (1): dark-gray
+set color_separator=245
+
+# bottom title line: dark-gray/bg0
+set color_titleline_bg=245
+set color_titleline_fg=235
+
+# bottom status line: bg0_s/dark-aqua
+set color_statusline_bg=236
+set color_statusline_fg=72
+
+# command-line colors: bg/orange/light-red/light-yellow
+set color_cmdline_bg=235
+set color_cmdline_fg=208
+set color_error=167
+set color_info=214
+
+##### playing file colors ######################################################
+# unselected currently playing track's text: light-green
+set color_win_cur=142
+
+# active selection for currently playing track: bg1/light-green
+set color_win_cur_sel_bg=237
+set color_win_cur_sel_fg=142
+
+# inactive selection for currently playing track: bg/light-green
+set color_win_inactive_cur_sel_bg=235
+set color_win_inactive_cur_sel_fg=142
+
+##### non-playing file colors ##################################################
+# active selection: bg1/fg0
+set color_win_sel_bg=237
+set color_win_sel_fg=229
+
+# inactive selection: bg/fg0
+set color_win_inactive_sel_bg=235
+set color_win_inactive_sel_fg=229
+
+##### file browser view colors #################################################
+# directory listing color: fg
+set color_win_dir=223
