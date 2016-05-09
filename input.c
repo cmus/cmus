@@ -37,6 +37,7 @@
 #endif
 
 #include <unistd.h>
+#include <stdbool.h>
 #include <string.h>
 #include <errno.h>
 #include <stdio.h>
@@ -115,6 +116,10 @@ static const struct input_plugin_ops *get_ops_by_extension(const char *ext, stru
 		const char * const *exts = ip->extensions;
 		int i;
 
+		if (ip->priority <= 0) {
+			break;
+		}
+
 		for (i = 0; exts[i]; i++) {
 			if (strcasecmp(ext, exts[i]) == 0 || strcmp("*", exts[i]) == 0) {
 				*headp = node;
@@ -132,6 +137,10 @@ static const struct input_plugin_ops *get_ops_by_mime_type(const char *mime_type
 	list_for_each_entry(ip, &ip_head, node) {
 		const char * const *types = ip->mime_types;
 		int i;
+
+		if (ip->priority <= 0) {
+			break;
+		}
 
 		for (i = 0; types[i]; i++) {
 			if (strcasecmp(mime_type, types[i]) == 0)
@@ -816,6 +825,40 @@ static void get_ip_option(void *data, char *buf)
 	}
 }
 
+static void set_ip_priority(void *data, const char *val)
+{
+	/* warn only once during the lifetime of the program. */
+	static bool warned = false;
+	long tmp;
+	struct ip *ip = data;
+
+	if (str_to_int(val, &tmp) == -1 || tmp < 0 || (long)(int)tmp != tmp) {
+		error_msg("non-negative integer expected");
+		return;
+	}
+	if (ui_initialized) {
+		if (!warned) {
+			static const char *msg =
+				"Metadata might become inconsistent "
+				"after this change. Continue? [y/N]";
+			if (!yes_no_query("%s", msg)) {
+				info_msg("Aborted");
+				return;
+			}
+			warned = true;
+		}
+		info_msg("Run \":update-cache -f\" to refresh the metadata.");
+	}
+	ip->priority = (int)tmp;
+	list_mergesort(&sorted_ip_head, sort_ip);
+}
+
+static void get_ip_priority(void *data, char *val)
+{
+	const struct ip *ip = data;
+	snprintf(val, OPTION_MAX_SIZE, "%d", ip->priority);
+}
+
 void ip_add_options(void)
 {
 	struct ip *ip;
@@ -829,6 +872,8 @@ void ip_add_options(void)
 			option_add(xstrdup(key), ipo, get_ip_option,
 					set_ip_option, NULL, 0);
 		}
+		snprintf(key, sizeof(key), "input.%s.priority", ip->name);
+		option_add(xstrdup(key), ip, get_ip_priority, set_ip_priority, NULL, 0);
 	}
 }
 
