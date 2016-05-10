@@ -147,8 +147,6 @@ static int ffmpeg_send_packet(AVCodecContext *cc, AVPacket *pkt)
 	if (pkt) {
 		input->curr_pkt_size = pkt->size;
 		input->curr_pkt_buf = pkt->data;
-		input->curr_size += pkt->size;
-		input->curr_duration += pkt->duration;
 	}
 
 	return 0;
@@ -397,6 +395,8 @@ again:
 	}
 
 	if (input->pkt.stream_index == input->stream_index) {
+		input->curr_size += input->pkt.size;
+		input->curr_duration += input->pkt.duration;
 		if (ffmpeg_send_packet(cc, &input->pkt)) {
 			res = -IP_ERROR_INTERNAL;
 			goto out;
