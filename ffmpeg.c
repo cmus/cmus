@@ -675,14 +675,9 @@ const struct input_plugin_ops ip_ops = {
 
 const int ip_priority = 30;
 const char *const ip_extensions[] = {
-#if (LIBAVFORMAT_VERSION_INT >= ((56<<16)+(40<<8)+0))
-	"aa",
-#endif
-	"ac3", "aif", "aifc", "aiff", "ape", "au", "mka", "shn", "tak", "tta",
-	"wma", "webm",
-	/* also supported by other plugins */
-	"aac", "fla", "flac", "m4a", "m4b", "mp+", "mp2", "mp3", "mp4", "mpc",
-	"mpp", "ogg", "wav", "wv",
+	"aa", "aac", "ac3", "aif", "aifc", "aiff", "ape", "au", "fla", "flac",
+	"m4a", "m4b", "mka", "mkv", "mp+", "mp2", "mp3", "mp4", "mpc", "mpp",
+	"ogg", "shn", "tak", "tta", "wav", "webm", "wma", "wv",
 #ifdef USE_FALLBACK_IP
 	"*",
 #endif
