@@ -81,6 +81,7 @@ struct ffmpeg_input {
 	AVPacket pkt;
 	int curr_pkt_size;
 	uint8_t *curr_pkt_buf;
+	int stream_index;
 
 	unsigned long curr_size;
 	unsigned long curr_duration;
@@ -98,7 +99,6 @@ struct ffmpeg_private {
 	AVFormatContext *input_context;
 	AVCodec *codec;
 	SwrContext *swr;
-	int stream_index;
 
 	struct ffmpeg_input *input;
 	struct ffmpeg_output *output;
@@ -286,7 +286,6 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 	priv->codec_context = cc;
 	priv->input_context = ic;
 	priv->codec = codec;
-	priv->stream_index = stream_index;
 	priv->input = ffmpeg_input_create();
 	if (priv->input == NULL) {
 		avcodec_close(cc);
@@ -298,6 +297,7 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 		free(priv);
 		return -IP_ERROR_INTERNAL;
 	}
+	priv->input->stream_index = stream_index;
 	priv->output = ffmpeg_output_create();
 
 	/* Prepare for resampling. */
@@ -393,10 +393,12 @@ static int ffmpeg_fill_buffer(AVFormatContext *ic, AVCodecContext *cc, struct ff
 #endif
 				return 0;
 			}
-			input->curr_pkt_size = input->pkt.size;
-			input->curr_pkt_buf = input->pkt.data;
-			input->curr_size += input->pkt.size;
-			input->curr_duration += input->pkt.duration;
+			if (input->pkt.stream_index == input->stream_index) {
+				input->curr_pkt_size = input->pkt.size;
+				input->curr_pkt_buf = input->pkt.data;
+				input->curr_size += input->pkt.size;
+				input->curr_duration += input->pkt.duration;
+			}
 			continue;
 		}
 
@@ -493,7 +495,7 @@ static int ffmpeg_read(struct input_plugin_data *ip_data, char *buffer, int coun
 static int ffmpeg_seek(struct input_plugin_data *ip_data, double offset)
 {
 	struct ffmpeg_private *priv = ip_data->private;
-	AVStream *st = priv->input_context->streams[priv->stream_index];
+	AVStream *st = priv->input_context->streams[priv->input->stream_index];
 	int ret;
 
 	/* There is a bug that was fixed in ffmpeg revision 5099 that affects seeking.
@@ -516,7 +518,7 @@ static int ffmpeg_seek(struct input_plugin_data *ip_data, double offset)
 	}
 #endif
 
-	ret = av_seek_frame(priv->input_context, priv->stream_index, pts, 0);
+	ret = av_seek_frame(priv->input_context, priv->input->stream_index, pts, 0);
 
 	if (ret < 0) {
 		return -IP_ERROR_FUNCTION_NOT_SUPPORTED;
@@ -605,7 +607,7 @@ static long ffmpeg_bitrate(struct input_plugin_data *ip_data)
 static long ffmpeg_current_bitrate(struct input_plugin_data *ip_data)
 {
 	struct ffmpeg_private *priv = ip_data->private;
-	AVStream *st = priv->input_context->streams[priv->stream_index];
+	AVStream *st = priv->input_context->streams[priv->input->stream_index];
 	long bitrate = -1;
 #if (LIBAVFORMAT_VERSION_INT > ((51<<16)+(43<<8)+0))
 	/* ape codec returns silly numbers */
