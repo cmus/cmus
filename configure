@@ -391,17 +391,32 @@ check_aac()
 	return $?
 }
 
-check_ffmpeg()
+check_ffmpeg_new()
+{
+	libs="$LDDLFLAGS $FFMPEG_LIBS"
+	cflags="-std=gnu99 $SOFLAGS $FFMPEG_CFLAGS"
+	topdir=`dirname "$0"`
+	ffmpeg_code=`cat "$topdir"/ffmpeg_new.c | sed 's/\\\n//g'`
+	msg_checking "for successful build of ffmpeg_new.c"
+	if try_compile_link "$ffmpeg_code" $cflags $libs
+	then
+		msg_result yes
+		ln -s ffmpeg_new.c ffmpeg.c
+		return 0
+	fi
+	msg_result no
+	return 1
+}
+
+check_ffmpeg_legacy()
 {
 	HAVE_FFMPEG_AVCODEC_H=y
-	pkg_config FFMPEG "libavformat libavcodec" || return $?
 	if check_header "libavcodec/avcodec.h" $FFMPEG_CFLAGS
 	then
 		HAVE_FFMPEG_AVCODEC_H=n
 	else
 		check_header "ffmpeg/avcodec.h" $FFMPEG_CFLAGS || return $?
 	fi
-	# ffmpeg api changes so frequently that it is best to compile the module
 	libs="$LDDLFLAGS $FFMPEG_LIBS"
 	cflags="-std=gnu99 $SOFLAGS $FFMPEG_CFLAGS"
 	if test "$HAVE_FFMPEG_AVCODEC_H" = y
@@ -409,16 +424,26 @@ check_ffmpeg()
 		cflags="$cflags -DHAVE_FFMPEG_AVCODEC_H"
 	fi
 	topdir=`dirname "$0"`
-	ffmpeg_code=`cat "$topdir"/ffmpeg.c | sed 's/\\\n//g'`
-	msg_checking "for successful build of ffmpeg.c"
+	ffmpeg_code=`cat "$topdir"/ffmpeg_legacy.c | sed 's/\\\n//g'`
+	msg_checking "for successful build of ffmpeg_legacy.c"
 	if try_compile_link "$ffmpeg_code" $cflags $libs
 	then
 		msg_result yes
+		ln -s ffmpeg_legacy.c ffmpeg.c
 		return 0
 	fi
 	msg_result no
 	return 1
 }
+
+check_ffmpeg()
+{
+	rm -f ffmpeg.c
+	pkg_config FFMPEG "libavformat libavcodec" || return $?
+	check_ffmpeg_new || check_ffmpeg_legacy
+	return $?
+}
+
 
 check_string_function()
 {
