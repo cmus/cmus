@@ -1,5 +1,5 @@
 /*
- * Copyright 2008-2013 Various Authors
+ * Copyright 2008-2016 Various Authors
  * Copyright 2007 Kevin Ko <kevin.s.ko@gmail.com>
  *
  * This program is free software; you can redistribute it and/or
@@ -115,8 +115,8 @@ static int ffmpeg_receive_frame(AVCodecContext *cc, AVFrame *frame)
 	struct ffmpeg_private *private = cc->opaque;
 	struct ffmpeg_input *input = private->input;
 
-	int len;
-	int got_frame;
+	int len = 0;
+	int got_fram = 0;
 
  	if (input->curr_pkt_size <= 0) {
 		return -1;
@@ -218,11 +218,11 @@ static void ffmpeg_init(void)
 
 static int ffmpeg_open(struct input_plugin_data *ip_data)
 {
-	struct ffmpeg_private *priv;
+	struct ffmpeg_private *priv = NULL;
 	int err = 0;
 	int stream_index = -1;
 	int64_t channel_layout = 0;
-	AVCodec *codec;
+	AVCodec *codec = NULL;
 	AVCodecContext *cc = NULL;
 	AVFormatContext *ic = NULL;
 	SwrContext *swr = NULL;
@@ -356,56 +356,54 @@ static int ffmpeg_fill_buffer(AVFormatContext *ic, AVCodecContext *cc,
 		struct ffmpeg_input *input, struct ffmpeg_output *output, SwrContext *swr)
 {
 	AVFrame *frame = ffmpeg_frame_alloc();
-	int res;
+	int res = -IP_ERROR_INTERNAL;
 
-again:
-	if (!ffmpeg_receive_frame(cc, frame)) {
-		res = swr_convert(swr,
-				  &output->buffer,
-				  frame->nb_samples,
-				  (const uint8_t **)frame->extended_data,
-				  frame->nb_samples);
-		if (res < 0) {
-			res = -IP_ERROR_INTERNAL;
-			goto out;
+	while (1) {
+		if (!ffmpeg_receive_frame(cc, frame)) {
+			res = swr_convert(swr,
+					  &output->buffer,
+					  frame->nb_samples,
+					  (const uint8_t **)frame->extended_data,
+					  frame->nb_samples);
+			if (res < 0) {
+				res = -IP_ERROR_INTERNAL;
+				break;
+			}
+			output->buffer_pos = output->buffer;
+			output->buffer_used_len = res * cc->channels * sizeof(int16_t);
+			res = output->buffer_used_len;
+			break;
 		}
-		output->buffer_pos = output->buffer;
-		output->buffer_used_len = res * cc->channels * sizeof(int16_t);
-		res = output->buffer_used_len;
-		goto out;
-	}
 
-	if (input->eof) {
-		res = 0;
-		goto out;
-	}
-
-	ffmpeg_packet_unref(&input->pkt);
-	res = av_read_frame(ic, &input->pkt);
-
-	if (res < 0) {
-		if (res == AVERROR_EOF) {
-			ffmpeg_send_packet(cc, NULL);
-			input->eof = true;
-			goto again;
-		} else {
+		if (input->eof) {
 			res = 0;
-			goto out;
+			break;
+		}
+
+		ffmpeg_packet_unref(&input->pkt);
+		res = av_read_frame(ic, &input->pkt);
+
+		if (res < 0) {
+			if (res == AVERROR_EOF) {
+				ffmpeg_send_packet(cc, NULL);
+				input->eof = true;
+				continue;
+			} else {
+				res = 0;
+				break;
+			}
+		}
+
+		if (input->pkt.stream_index == input->stream_index) {
+			input->curr_size += input->pkt.size;
+			input->curr_duration += input->pkt.duration;
+			if (ffmpeg_send_packet(cc, &input->pkt)) {
+				res = -IP_ERROR_INTERNAL;
+				break;
+			}
 		}
 	}
 
-	if (input->pkt.stream_index == input->stream_index) {
-		input->curr_size += input->pkt.size;
-		input->curr_duration += input->pkt.duration;
-		if (ffmpeg_send_packet(cc, &input->pkt)) {
-			res = -IP_ERROR_INTERNAL;
-			goto out;
-		}
-	}
-
-	goto again;
-
-out:
 	ffmpeg_frame_free(&frame);
 	return res;
 }
@@ -414,17 +412,15 @@ static int ffmpeg_read(struct input_plugin_data *ip_data, char *buffer, int coun
 {
 	struct ffmpeg_private *priv = ip_data->private;
 	struct ffmpeg_output *output = priv->output;
-	int rc;
-	int out_size;
 
 	if (output->buffer_used_len == 0) {
-		rc = ffmpeg_fill_buffer(priv->input_context, priv->codec_context,
+		int rc = ffmpeg_fill_buffer(priv->input_context, priv->codec_context,
 				priv->input, priv->output, priv->swr);
 		if (rc <= 0) {
 			return rc;
 		}
 	}
-	out_size = min(output->buffer_used_len, count);
+	int out_size = min(output->buffer_used_len, count);
 	memcpy(buffer, output->buffer_pos, out_size);
 	output->buffer_used_len -= out_size;
 	output->buffer_pos += out_size;
@@ -435,7 +431,6 @@ static int ffmpeg_seek(struct input_plugin_data *ip_data, double offset)
 {
 	struct ffmpeg_private *priv = ip_data->private;
 	AVStream *st = priv->input_context->streams[priv->input->stream_index];
-	int ret;
 
 	int64_t pts = av_rescale_q(offset * AV_TIME_BASE, AV_TIME_BASE_Q, st->time_base);
 
@@ -443,7 +438,7 @@ static int ffmpeg_seek(struct input_plugin_data *ip_data, double offset)
 	/* Force reading a new packet in next ffmpeg_fill_buffer(). */
 	priv->input->curr_pkt_size = 0;
 
-	ret = av_seek_frame(priv->input_context, priv->input->stream_index, pts, 0);
+	int ret = av_seek_frame(priv->input_context, priv->input->stream_index, pts, 0);
 
 	if (ret < 0) {
 		return -IP_ERROR_FUNCTION_NOT_SUPPORTED;
@@ -521,9 +516,9 @@ static char *ffmpeg_codec(struct input_plugin_data *ip_data)
 static char *ffmpeg_codec_profile(struct input_plugin_data *ip_data)
 {
 	struct ffmpeg_private *priv = ip_data->private;
-	const char *profile;
 
-	profile = av_get_profile_name(priv->codec, priv->codec_context->profile);
+	const char *profile = av_get_profile_name(priv->codec,
+			priv->codec_context->profile);
 
 	return profile ? xstrdup(profile) : NULL;
 }
