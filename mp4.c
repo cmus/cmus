@@ -215,9 +215,7 @@ static int mp4_open(struct input_plugin_data *ip_data)
 	d_print("sample rate %luhz, channels %u\n", priv->sample_rate, priv->channels);
 
 	ip_data->sf = sf_rate(priv->sample_rate) | sf_channels(priv->channels) | sf_bits(16) | sf_signed(1);
-#if defined(WORDS_BIGENDIAN)
-	ip_data->sf |= sf_bigendian(1);
-#endif
+	ip_data->sf |= sf_host_endian();
 	mp4_get_channel_map(ip_data);
 
 	return 0;

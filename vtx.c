@@ -55,9 +55,7 @@ static int vtx_open(struct input_plugin_data *ip_data)
 	ayemu_set_stereo(&priv->ay, priv->vtx->stereo, NULL);
 
 	ip_data->sf = sf_bits(bits) | sf_rate(sample_rate) | sf_channels(channels) | sf_signed(1);
-#ifdef WORDS_BIGENDIAN
-	ip_data->sf |= sf_bigendian(1);
-#endif
+	ip_data->sf |= sf_host_endian();
 	channel_map_init_stereo(ip_data->channel_map);
 
 	priv->pos = 0;

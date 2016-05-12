@@ -146,9 +146,7 @@ static void set_buffer_sf(void)
 	if (sf_get_channels(buffer_sf) <= 2 && sf_get_bits(buffer_sf) <= 16) {
 		buffer_sf &= SF_RATE_MASK;
 		buffer_sf |= sf_channels(2) | sf_bits(16) | sf_signed(1);
-#ifdef WORDS_BIGENDIAN
-		buffer_sf |= sf_bigendian(1);
-#endif
+		buffer_sf |= sf_host_endian();
 		channel_map_init_stereo(buffer_channel_map);
 	}
 }
