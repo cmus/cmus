@@ -116,7 +116,7 @@ static int ffmpeg_receive_frame(AVCodecContext *cc, AVFrame *frame)
 	struct ffmpeg_input *input = private->input;
 
 	int len = 0;
-	int got_fram = 0;
+	int got_frame = 0;
 
  	if (input->curr_pkt_size <= 0) {
 		return -1;
