@@ -327,9 +327,7 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 		break;
 	}
 	swr_init(swr);
-#ifdef WORDS_BIGENDIAN
-	ip_data->sf |= sf_bigendian(1);
-#endif
+	ip_data->sf |= sf_host_endian();
 #if (LIBAVCODEC_VERSION_INT > ((52<<16)+(1<<8)+0))
 	channel_layout = cc->channel_layout;
 #endif

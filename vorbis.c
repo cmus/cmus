@@ -172,9 +172,7 @@ static int vorbis_open(struct input_plugin_data *ip_data)
 
 	vi = ov_info(&priv->vf, -1);
 	ip_data->sf = sf_rate(vi->rate) | sf_channels(vi->channels) | sf_bits(16) | sf_signed(1);
-#ifdef WORDS_BIGENDIAN
-	ip_data->sf |= sf_bigendian(1);
-#endif
+	ip_data->sf |= sf_host_endian();
 	channel_map_init_vorbis(vi->channels, ip_data->channel_map);
 	return 0;
 }

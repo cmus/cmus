@@ -103,9 +103,7 @@ static int opus_open(struct input_plugin_data *ip_data)
 		| sf_channels(CHANNELS)
 		| sf_bits(16)
 		| sf_signed(1);
-#ifdef WORDS_BIGENDIAN
-	ip_data->sf |= sf_bigendian(1);
-#endif
+	ip_data->sf |= sf_host_endian();
 	return 0;
 }
 

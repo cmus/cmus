@@ -186,9 +186,7 @@ static int libcdio_open(struct input_plugin_data *ip_data)
 
 	ip_data->private = priv;
 	ip_data->sf = sf_bits(16) | sf_rate(44100) | sf_channels(2) | sf_signed(1);
-#ifdef WORDS_BIGENDIAN
-	ip_data->sf |= sf_bigendian(1);
-#endif
+	ip_data->sf |= sf_host_endian();
 
 end:
 	free(disc_id);
