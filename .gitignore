@@ -6,6 +6,7 @@
 *.so
 tags
 cscope.out
+ffmpeg.c
 !.gitignore
 !.travis.yml
 !.github
