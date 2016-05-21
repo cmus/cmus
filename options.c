@@ -238,7 +238,7 @@ static const struct {
 	[FMT_TITLE]		= { "format_title"		, "%a - %l - %t (%y)"					},
 	[FMT_TRACKWIN_ALBUM]	= { "format_trackwin_album"	, " %l "						},
 	[FMT_TRACKWIN_ALT]	= { "altformat_trackwin"	, " %f%= %d "						},
-	[FMT_TRACKWIN]		= { "format_trackwin"		, "%3n. %t%= %y %d "					},
+	[FMT_TRACKWIN]		= { "format_trackwin"		, "%3n. %t%=%{maxdate} %d "					},
 	[FMT_TRACKWIN_VA]	= { "format_trackwin_va"	, "%3n. %t (%a)%= %y %d "				},
 	[FMT_TREEWIN]		= { "format_treewin"		, "  %l"						},
 	[FMT_TREEWIN_ARTIST]	= { "format_treewin_artist"	, "%a"							},
