@@ -19,7 +19,7 @@ can be controlled from the outside via *cmus-remote*(1).
 @h1 OPTIONS
 
 --listen ADDR
-	Listen to ADDR (UNIX socket) instead of `$CMUS_SOCKET` or 
+	Listen to ADDR (UNIX socket) instead of `$CMUS_SOCKET` or
 	`$XDG_RUNTIME_DIR/cmus-socket`.
 	ADDR is either a UNIX socket or host[:port].
 
@@ -1264,7 +1264,7 @@ dsp.coreaudio.sync_sample_rate
 dsp.jack.server_name
 	Connect to jackd with this name. Leave empty for default.
 
-dsp.jack.resampling_quality 
+dsp.jack.resampling_quality
 	Sets the quality of the re-sampling. 0 is low quality but fast, 1 is
 	medium quality, 2 (default) is high quality but more CPU intensiv. This
 	option is only available if cmus was compiled with libsamplerate
