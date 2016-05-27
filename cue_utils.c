@@ -23,16 +23,26 @@
 
 #include <stdio.h>
 
+int is_cue_url(const char *name)
+{
+	return strncmp(name, "cue://", 6) == 0;
+}
+
+int is_cue_filename(const char *name)
+{
+	const char *ext = get_extension(name);
+	if (ext != NULL && strcmp(ext, "cue") == 0)
+		return 1;
+	else return 0;
+}
+
 char *associated_cue(const char *filename)
 {
 	FILE *fp;
-	const char *ext;
 	char buf[4096] = {0};
 	const char *dot;
 
-	ext = get_extension(filename);
-	if (ext != NULL && strcmp(ext, "cue") == 0)
-		return NULL;
+	if (is_cue_filename(filename)) return NULL;
 
 	dot = strrchr(filename, '.');
 	if (dot == NULL)
@@ -83,4 +93,30 @@ char *construct_cue_url(const char *cue_filename, int track_n)
 	snprintf(buf, sizeof buf, "cue://%s/%d", cue_filename, track_n);
 
 	return xstrdup(buf);
+}
+
+int add_file_cue(const char *filename, void (*add_file)(const char*, int))
+{
+	int n_tracks;
+	char *url;
+	char *cue_filename;
+
+	cue_filename = associated_cue(filename);
+	if (cue_filename == NULL)
+		return 0;
+
+	n_tracks = cue_get_ntracks(cue_filename);
+	if (n_tracks <= 0) {
+		free(cue_filename);
+		return 0;
+	}
+
+	for (int i = 1; i <= n_tracks; ++i) {
+		url = construct_cue_url(cue_filename, i);
+		add_file(url, 0);
+		free(url);
+	}
+
+	free(cue_filename);
+	return 1;
 }

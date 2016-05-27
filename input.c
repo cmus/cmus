@@ -32,6 +32,7 @@
 #include "misc.h"
 #include "debug.h"
 #include "ui_curses.h"
+#include "special_handlers.h"
 #ifdef HAVE_CONFIG
 #include "config/libdir.h"
 #endif
@@ -530,11 +531,9 @@ int ip_open(struct input_plugin *ip)
 		if (rc == 0)
 			rc = ip->ops->open(&ip->data);
 	} else {
-		if (is_cdda_url(ip->data.filename)) {
-			ip->ops = get_ops_by_mime_type("x-content/audio-cdda");
-			rc = ip->ops ? ip->ops->open(&ip->data) : 1;
-		} else if (is_cue_url(ip->data.filename)) {
-			ip->ops = get_ops_by_mime_type("application/x-cue");
+		if (needs_special_mimetype_handler(ip->data.filename)) {
+			const char* mimetype = get_mimetype(ip->data.filename);
+			ip->ops = get_ops_by_mime_type(mimetype);
 			rc = ip->ops ? ip->ops->open(&ip->data) : 1;
 		} else
 			rc = open_file(ip);

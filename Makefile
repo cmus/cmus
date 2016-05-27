@@ -35,7 +35,7 @@ job.o cue_utils.o: CFLAGS += $(CUE_CFLAGS)
 
 # programs {{{
 cmus-y := \
-	ape.o browser.o buffer.o cache.o cmdline.o cmus.o command_mode.o comment.o \
+	ape.o browser.o buffer.o cache.o cmdline.o special_handlers.o cmus.o command_mode.o comment.o \
 	channelmap.o convert.lo debug.o discid.o editable.o expr.o filters.o \
 	format_print.o gbuf.o glob.o help.o history.o http.o id3.o input.o job.o \
 	keys.o keyval.o lib.o load_dir.o locking.o mergesort.o misc.o options.o \

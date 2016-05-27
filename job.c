@@ -34,12 +34,7 @@
 #include "discid.h"
 #include "xstrjoin.h"
 #include "ui_curses.h"
-#ifdef HAVE_CONFIG
-#include "config/cue.h"
-#endif
-#ifdef CONFIG_CUE
-#include "cue_utils.h"
-#endif
+#include "special_handlers.h"
 
 #include <string.h>
 #include <unistd.h>
@@ -70,23 +65,9 @@ static void add_ti(struct track_info *ti)
 	ti_buffer[ti_buffer_fill++] = ti;
 }
 
-#ifdef CONFIG_CUE
-static int add_file_cue(const char *filename);
-#endif
-
 static void add_file(const char *filename, int force)
 {
 	struct track_info *ti;
-
-#ifdef CONFIG_CUE
-	if (!is_cue_url(filename)) {
-		if (force || lookup_cache_entry(filename, hash_str(filename)) == NULL) {
-			int done = add_file_cue(filename);
-			if (done)
-				return;
-		}
-	}
-#endif
 
 	cache_lock();
 	ti = cache_get_ti(filename, force);
@@ -96,37 +77,15 @@ static void add_file(const char *filename, int force)
 		add_ti(ti);
 }
 
-#ifdef CONFIG_CUE
-static int add_file_cue(const char *filename)
-{
-	int n_tracks;
-	char *url;
-	char *cue_filename;
+static void add_files(const char *filename, int force) {
+		int (*adder)(const char *filename, void (*add_file)(const char*, int));
 
-	cue_filename = associated_cue(filename);
-	if (cue_filename == NULL)
-		return 0;
-
-	n_tracks = cue_get_ntracks(cue_filename);
-	if (n_tracks <= 0) {
-		free(cue_filename);
-		return 0;
-	}
-
-	for (int i = 1; i <= n_tracks; ++i) {
-		url = construct_cue_url(cue_filename, i);
-		add_file(url, 0);
-		free(url);
-	}
-
-	free(cue_filename);
-	return 1;
-}
-#endif
-
-static void add_url(const char *url)
-{
-	add_file(url, 0);
+		adder = get_special_filename_handler(filename);
+		if (adder != 0) {
+			adder(filename, add_file);
+		} else {
+			add_file(filename, force);
+		}
 }
 
 static void add_cdda(const char *url)
@@ -245,7 +204,7 @@ static void add_dir(const char *dirname, const char *root)
 			if (S_ISDIR(ents[i]->mode)) {
 				add_dir(dir.path, root);
 			} else {
-				add_file(dir.path, 0);
+				add_files(dir.path, 0);
 			}
 		}
 		free(ents[i]);
@@ -258,11 +217,11 @@ static int handle_line(void *data, const char *line)
 	if (worker_cancelling())
 		return 1;
 
-	if (is_http_url(line) || is_cue_url(line)) {
-		add_url(line);
+	if (is_http_url(line) || is_link(line)) {
+		add_file(line, 0);
 	} else {
 		char *absolute = path_absolute_cwd(line, data);
-		add_file(absolute, 0);
+		add_files(absolute, 0);
 		free(absolute);
 	}
 
@@ -294,7 +253,7 @@ void do_add_job(void *data)
 	jd = data;
 	switch (jd->type) {
 	case FILE_TYPE_URL:
-		add_url(jd->name);
+		add_file(jd->name, 0);
 		break;
 	case FILE_TYPE_CDDA:
 		add_cdda(jd->name);
@@ -306,7 +265,7 @@ void do_add_job(void *data)
 		add_dir(jd->name, jd->name);
 		break;
 	case FILE_TYPE_FILE:
-		add_file(jd->name, jd->force);
+		add_files(jd->name, jd->force);
 		break;
 	case FILE_TYPE_INVALID:
 		break;
@@ -346,7 +305,7 @@ void do_update_job(void *data)
 			cache_remove_ti(ti);
 			cache_unlock();
 
-			if (!is_cue_url(ti->filename) && !is_http_url(ti->filename) && rc) {
+			if (!is_url(ti->filename) && rc) {
 				d_print("removing dead file %s\n", ti->filename);
 			} else {
 				if (ti->mtime != s.st_mtime)
