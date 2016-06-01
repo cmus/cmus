@@ -531,8 +531,9 @@ int ip_open(struct input_plugin *ip)
 		if (rc == 0)
 			rc = ip->ops->open(&ip->data);
 	} else {
-		if (needs_special_mimetype_handler(ip->data.filename)) {
-			const char* mimetype = get_mimetype(ip->data.filename);
+		const char* mimetype = special_mimetype_handle(ip->data.filename);
+
+		if (mimetype != NULL) {
 			ip->ops = get_ops_by_mime_type(mimetype);
 			rc = ip->ops ? ip->ops->open(&ip->data) : 1;
 		} else
