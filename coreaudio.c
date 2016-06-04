@@ -467,46 +467,6 @@ static void coreaudio_sync_device_sample_rate(AudioDeviceID dev_id, AudioStreamB
 					 &sample_rate);
 	if (err != noErr)
 		d_print("Failed to synchronize the sample rate: %d\n", err);
-
-	aopa.mSelector = kAudioDevicePropertyStreams;
-	err = AudioObjectGetPropertyDataSize(dev_id, &aopa, 0, NULL, &property_size);
-	if (err != noErr) {
-		d_print("Cannot get number of streams: %d\n", err);
-		return;
-	}
-
-	int n_streams = property_size / sizeof(AudioStreamID);
-	AudioStreamID streams[n_streams];
-	err = AudioObjectGetPropertyData(dev_id, &aopa, 0, NULL, &property_size, streams);
-	if (err != noErr) {
-		d_print("Cannot get streams: %d\n", err);
-		return;
-	}
-
-	for (int i = 0; i < n_streams; i++) {
-		UInt32 direction;
-		aopa.mSelector = kAudioStreamPropertyDirection;
-		property_size = sizeof(direction);
-		err = AudioObjectGetPropertyData(streams[i],
-						 &aopa,
-						 0,
-						 NULL,
-						 &property_size,
-						 &direction);
-		if (err == noErr && direction == 0) {
-			aopa.mSelector = kAudioStreamPropertyPhysicalFormat;
-			err = AudioObjectSetPropertyData(streams[i],
-							 &aopa,
-							 0,
-							 NULL,
-							 sizeof(desc),
-							 &desc);
-			if (err != noErr) {
-				d_print("Failed to change the stream format: %d\n", err);
-			}
-		}
-
-	}
 }
 
 static void coreaudio_hog_device(AudioDeviceID dev_id, bool hog)
