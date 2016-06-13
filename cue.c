@@ -433,7 +433,7 @@ const struct input_plugin_ops ip_ops = {
 };
 
 extern void ip_init_function(void) {
-	register_special_filename_handler(is_cue_url, add_file_cue);
+	register_special_filename_handler(is_cue_filename, add_file_cue);
 	register_special_mimetype_handler(is_cue_url, "application/x-cue");
 }
 

@@ -199,7 +199,8 @@ static int handle_line(void *data, const char *line)
 		return 1;
 
 	if (is_partial_url(line)) {
-		add_file(line, 0);
+		if (is_http_url(line)) add_file(line, 0);
+		else add_files(line, 0);
 	} else {
 		char *absolute = path_absolute_cwd(line, data);
 		add_files(absolute, 0);

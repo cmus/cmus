@@ -26,6 +26,7 @@
 int is_cue_filename(const char *name)
 {
 	const char *ext = get_extension(name);
+
 	if (ext != NULL && strcmp(ext, "cue") == 0)
 		return 1;
 	else return 0;
@@ -37,7 +38,7 @@ char *associated_cue(const char *filename)
 	char buf[4096] = {0};
 	const char *dot;
 
-	if (is_cue_filename(filename)) return NULL;
+	if (is_cue_filename(filename)) return xstrdup(filename);
 
 	dot = strrchr(filename, '.');
 	if (dot == NULL)
