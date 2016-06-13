@@ -125,8 +125,7 @@ enum file_type cmus_detect_ft(const char *name, char **ret)
 	char *absolute;
 	struct stat st;
 
-// TODO there was is_cue_url
-	if (is_http_url(name)) {
+	if (is_partial_url(name)) {
 		*ret = xstrdup(name);
 		return FILE_TYPE_URL;
 	}

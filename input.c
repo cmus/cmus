@@ -92,6 +92,7 @@ struct ip {
 	const char * const *mime_types;
 	const struct input_plugin_ops *ops;
 	const char * const *options;
+	void (*init_function)(void);
 };
 
 static const char * const plugin_dir = LIBDIR "/cmus/ip";
@@ -486,6 +487,8 @@ void ip_load_plugins(void)
 		ip->mime_types = dlsym(so, "ip_mime_types");
 		ip->ops = dlsym(so, "ip_ops");
 		ip->options = dlsym(so, "ip_options");
+		ip->init_function = dlsym(so, "ip_init_function");
+
 		if (!priority_ptr || !ip->extensions || !ip->mime_types || !ip->ops || !ip->options) {
 			error_msg("%s: missing symbol", filename);
 			free(ip);
@@ -496,6 +499,8 @@ void ip_load_plugins(void)
 
 		ip->name = xstrndup(d->d_name, ext - d->d_name);
 		ip->handle = so;
+
+		if (ip->init_function) ip->init_function();
 
 		list_add_tail(&ip->node, &ip_head);
 	}

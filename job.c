@@ -88,25 +88,6 @@ static void add_files(const char *filename, int force) {
 		}
 }
 
-static void add_cdda(const char *url)
-{
-	char *disc_id = NULL;
-	int start_track = 1, end_track = -1;
-
-	parse_cdda_url(url, &disc_id, &start_track, &end_track);
-
-	if (end_track != -1) {
-		int i;
-		for (i = start_track; i <= end_track; i++) {
-			char *new_url = gen_cdda_url(disc_id, i, -1);
-			add_file(new_url, 0);
-			free(new_url);
-		}
-	} else
-		add_file(url, 0);
-	free(disc_id);
-}
-
 static int dir_entry_cmp(const void *ap, const void *bp)
 {
 	struct dir_entry *a = *(struct dir_entry **)ap;
@@ -217,7 +198,7 @@ static int handle_line(void *data, const char *line)
 	if (worker_cancelling())
 		return 1;
 
-	if (is_http_url(line) || is_link(line)) {
+	if (is_partial_url(line)) {
 		add_file(line, 0);
 	} else {
 		char *absolute = path_absolute_cwd(line, data);
@@ -255,9 +236,6 @@ void do_add_job(void *data)
 	case FILE_TYPE_URL:
 		add_file(jd->name, 0);
 		break;
-	case FILE_TYPE_CDDA:
-		add_cdda(jd->name);
-		break;
 	case FILE_TYPE_PL:
 		add_pl(jd->name);
 		break;
@@ -265,6 +243,7 @@ void do_add_job(void *data)
 		add_dir(jd->name, jd->name);
 		break;
 	case FILE_TYPE_FILE:
+	case FILE_TYPE_CDDA:
 		add_files(jd->name, jd->force);
 		break;
 	case FILE_TYPE_INVALID:

@@ -13,7 +13,6 @@ struct special_mimetype_handlers {
 struct special_filename_handlers filename_handlers;
 struct special_mimetype_handlers mimetype_handlers;
 
-int is_link (const char* filename);
 int (*get_special_filename_handler (const char* filename)) (const char*, void (*add_file)(const char*, int));
 const char* special_mimetype_handle(char* filename);
 void register_special_filename_handler(int (*detector)(const char*), int (*add_file_special) (const char*, void (*add_file)(const char*, int)));

@@ -26,7 +26,7 @@
 
 #include <stdio.h>
 #include <fcntl.h>
-
+#include "special_handlers.h"
 
 struct cue_private {
 	struct input_plugin *child;
@@ -391,6 +391,31 @@ static int cue_get_option(int key, char **val)
 	return -IP_ERROR_NOT_OPTION;
 }
 
+static int add_file_cue(const char *filename, void (*add_file)(const char*, int))
+{
+	int n_tracks;
+	char *url;
+	char *cue_filename;
+
+	cue_filename = associated_cue(filename);
+	if (cue_filename == NULL)
+		return 0;
+
+	n_tracks = cue_get_ntracks(cue_filename);
+	if (n_tracks <= 0) {
+		free(cue_filename);
+		return 0;
+	}
+
+	for (int i = 1; i <= n_tracks; ++i) {
+		url = construct_cue_url(cue_filename, i);
+		add_file(url, 0);
+		free(url);
+	}
+
+	free(cue_filename);
+	return 1;
+}
 
 const struct input_plugin_ops ip_ops = {
 	.open            = cue_open,
@@ -406,6 +431,11 @@ const struct input_plugin_ops ip_ops = {
 	.set_option      = cue_set_option,
 	.get_option      = cue_get_option
 };
+
+extern void ip_init_function(void) {
+	register_special_filename_handler(is_cue_url, add_file_cue);
+	register_special_mimetype_handler(is_cue_url, "application/x-cue");
+}
 
 const int ip_priority = 50;
 const char * const ip_extensions[] = { NULL };

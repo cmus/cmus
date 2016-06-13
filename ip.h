@@ -105,5 +105,5 @@ extern const int ip_priority;
 extern const char * const ip_extensions[];
 extern const char * const ip_mime_types[];
 extern const char * const ip_options[];
-
+extern void ip_init_function(void);
 #endif

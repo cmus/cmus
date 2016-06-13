@@ -1,12 +1,6 @@
-#include "cue_utils.h"
 #include "utils.h"
 #include "special_handlers.h"
-#include "cmus.h"
 #include "xmalloc.h"
-
-int is_link (const char* filename) {
-	return is_cue_url(filename);
-}
 
 int (*get_special_filename_handler (const char* filename)) (const char*, void (*add_file)(const char*, int)) {
 	int i;
@@ -58,8 +52,4 @@ void special_handlers_init(void) {
 		.detectors = NULL,
 		.strings = NULL,
 	};
-
-	register_special_filename_handler(is_cue_url, add_file_cue);
-	register_special_mimetype_handler(is_cue_url, "application/x-cue");
-	register_special_mimetype_handler(is_cdda_url, "x-content/audio-cdda");
 }
