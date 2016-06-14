@@ -78,14 +78,15 @@ static void add_file(const char *filename, int force)
 }
 
 static void add_files(const char *filename, int force) {
-		int (*adder)(const char *filename, void (*add_file)(const char*, int));
+	special_adder playlist_add;
 
-		adder = get_special_filename_handler(filename);
-		if (adder != 0) {
-			adder(filename, add_file);
-		} else {
-			add_file(filename, force);
-		}
+	playlist_add = get_special_filename_handler(filename);
+
+	if (playlist_add != 0) {
+		playlist_add(filename, add_file);
+	} else {
+		add_file(filename, force);
+	}
 }
 
 static int dir_entry_cmp(const void *ap, const void *bp)

@@ -1,20 +1,24 @@
+typedef void (*adder)(const char*, int);
+typedef int (*special_adder)(const char*, adder);
+typedef int (*identify_func)(const char*);
+
 struct special_filename_handlers {
 	size_t count;
-	int (**detectors) (const char* filename);
-	int (**handlers) (const char* filename, void (*add_file)(const char*, int));
+	identify_func *detectors;
+	special_adder *handlers;
 };
 
 struct special_mimetype_handlers {
 	size_t count;
-	int (**detectors) (const char* filename);
+	identify_func *detectors;
 	const char **strings;
 };
 
 struct special_filename_handlers filename_handlers;
 struct special_mimetype_handlers mimetype_handlers;
 
-int (*get_special_filename_handler (const char* filename)) (const char*, void (*add_file)(const char*, int));
+special_adder get_special_filename_handler (const char* filename);
 const char* special_mimetype_handle(char* filename);
-void register_special_filename_handler(int (*detector)(const char*), int (*add_file_special) (const char*, void (*add_file)(const char*, int)));
-void register_special_mimetype_handler(int (*detector)(const char*), const char *string);
+void register_special_filename_handler(identify_func detector, special_adder add_file_special);
+void register_special_mimetype_handler(identify_func detector, const char *string);
 void special_handlers_init(void);

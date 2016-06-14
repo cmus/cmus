@@ -540,7 +540,7 @@ static int libcdio_get_option(int key, char **val)
 	return 0;
 }
 
-static int add_cdda(const char *url, void (*add_file)(const char*, int))
+static int add_cdda(const char *url, adder add_file)
 {
 	char *disc_id = NULL;
 	int start_track = 1, end_track = -1;

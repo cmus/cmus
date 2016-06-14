@@ -391,7 +391,7 @@ static int cue_get_option(int key, char **val)
 	return -IP_ERROR_NOT_OPTION;
 }
 
-static int add_file_cue(const char *filename, void (*add_file)(const char*, int))
+static int add_file_cue(const char *filename, adder add_file)
 {
 	int n_tracks;
 	char *url;
