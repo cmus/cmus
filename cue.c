@@ -126,7 +126,7 @@ static int cue_open(struct input_plugin_data *ip_data)
 		goto cue_read_failed;
 	}
 
-	child_filename = track_get_filename(t);
+	child_filename = (char *)track_get_filename(t);
 	if (child_filename == NULL) {
 		rc = -IP_ERROR_FILE_FORMAT;
 		goto cue_read_failed;
@@ -258,7 +258,7 @@ static int cue_read_comments(struct input_plugin_data *ip_data, struct keyval **
 	Track *t;
 	Rem *track_rem;
 	Cdtext *track_cdtext;
-	char *val;
+	const char *val;
 	char buf[32] = {0};
 	GROWING_KEYVALS(c);
 	struct cue_private *priv = ip_data->private;

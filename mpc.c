@@ -202,7 +202,7 @@ static int scale(struct input_plugin_data *ip_data, char *buffer, int count)
 {
 	struct mpc_private *priv = ip_data->private;
 	const MPC_SAMPLE_FORMAT *samples;
-	const int clip_min = -1 << (16 - 1);
+	const int clip_min = (unsigned)-1 << (16 - 1);
 	const int clip_max = (1 << (16 - 1)) - 1;
 	const int float_scale = 1 << (16 - 1);
 	int i, sample_count;
