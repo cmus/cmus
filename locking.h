@@ -26,5 +26,6 @@
 
 void cmus_mutex_lock(pthread_mutex_t *mutex);
 void cmus_mutex_unlock(pthread_mutex_t *mutex);
+void cmus_mutex_init_recursive(pthread_mutex_t *mutex);
 
 #endif

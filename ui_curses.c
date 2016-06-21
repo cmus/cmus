@@ -48,6 +48,7 @@
 #include "file.h"
 #include "path.h"
 #include "mixer.h"
+#include "mpris.h"
 #ifdef HAVE_CONFIG
 #include "config/curses.h"
 #include "config/iconv.h"
@@ -1899,6 +1900,12 @@ static void update(void)
 	player_info_lock();
 	editable_lock();
 
+	if (player_info.status_changed)
+		mpris_playback_status_changed();
+
+	if (player_info.file_changed || player_info.metadata_changed)
+		mpris_metadata_changed();
+
 	needs_spawn = player_info.status_changed || player_info.file_changed ||
 		player_info.metadata_changed;
 
@@ -2147,6 +2154,11 @@ static void main_loop(void)
 		if (notify_out > fd_high)
 			fd_high = notify_out;
 		FD_SET(server_socket, &set);
+		if (mpris_fd != -1) {
+			FD_SET(mpris_fd, &set);
+			if (mpris_fd > fd_high)
+				fd_high = mpris_fd;
+		}
 		list_for_each_entry(client, &client_head, node) {
 			FD_SET(client->fd, &set);
 			if (client->fd > fd_high)
@@ -2177,8 +2189,10 @@ static void main_loop(void)
 			int or = volume_r;
 
 			mixer_read_volume();
-			if (ol != volume_l || or != volume_r)
+			if (ol != volume_l || or != volume_r) {
+				mpris_volume_changed();
 				update_statusline();
+			}
 
 		}
 		if (rc <= 0) {
@@ -2194,6 +2208,7 @@ static void main_loop(void)
 			if (FD_ISSET(fds[i], &set)) {
 				d_print("vol changed\n");
 				mixer_read_volume();
+				mpris_volume_changed();
 				update_statusline();
 			}
 		}
@@ -2212,6 +2227,9 @@ static void main_loop(void)
 
 		if (FD_ISSET(0, &set))
 			u_getch();
+
+		if (mpris_fd != -1 && FD_ISSET(mpris_fd, &set))
+			mpris_process();
 
 		if (FD_ISSET(notify_out, &set)) {
 			char buf[128];
@@ -2369,6 +2387,8 @@ static void init_all(void)
 
 	/* almost everything must be initialized now */
 	options_load();
+	if (mpris)
+		mpris_init();
 
 	/* finally we can set the output plugin */
 	player_set_op(output_plugin);
@@ -2425,6 +2445,7 @@ static void exit_all(void)
 	filters_exit();
 	help_exit();
 	browser_exit();
+	mpris_free();
 }
 
 enum {

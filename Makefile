@@ -21,13 +21,15 @@ CFLAGS += -D_FILE_OFFSET_BITS=64
 FFMPEG_CFLAGS += $(shell pkg-config --cflags libswresample)
 FFMPEG_LIBS += $(shell pkg-config --libs libswresample)
 
-CMUS_LIBS = $(PTHREAD_LIBS) $(NCURSES_LIBS) $(ICONV_LIBS) $(DL_LIBS) $(DISCID_LIBS) $(CUE_LIBS) -lm $(COMPAT_LIBS)
+CMUS_LIBS = $(PTHREAD_LIBS) $(NCURSES_LIBS) $(ICONV_LIBS) $(DL_LIBS) $(DISCID_LIBS) \
+			$(CUE_LIBS) -lm $(COMPAT_LIBS) $(LIBSYSTEMD_LIBS)
 
 input.o main.o ui_curses.o pulse.lo: .version
 input.o main.o ui_curses.o pulse.lo: CFLAGS += -DVERSION=\"$(VERSION)\"
 main.o server.o: CFLAGS += -DDEFAULT_PORT=3000
 discid.o: CFLAGS += $(DISCID_CFLAGS)
 job.o cue_utils.o: CFLAGS += $(CUE_CFLAGS)
+mpris.o: CFLAGS += $(LIBSYSTEMD_CFLAGS)
 
 .version: Makefile
 	@test "`cat $@ 2> /dev/null`" = "$(VERSION)" && exit 0; \
@@ -46,6 +48,7 @@ cmus-y := \
 	window.o worker.o xstrjoin.o
 
 cmus-$(CONFIG_CUE) += cue_utils.o
+cmus-$(CONFIG_MPRIS) += mpris.o
 
 $(cmus-y): CFLAGS += $(PTHREAD_CFLAGS) $(NCURSES_CFLAGS) $(ICONV_CFLAGS) $(DL_CFLAGS)
 

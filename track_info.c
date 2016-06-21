@@ -46,8 +46,12 @@ static void track_info_free(struct track_info *ti)
 
 struct track_info *track_info_new(const char *filename)
 {
+	static uint64_t cur_uid = 0;
+	cur_uid++;
+
 	struct track_info *ti;
 	ti = xnew(struct track_info, 1);
+	ti->uid = cur_uid;
 	ti->filename = xstrdup(filename);
 	ti->ref = 1;
 	ti->play_count = 0;
@@ -115,6 +119,13 @@ void track_info_unref(struct track_info *ti)
 	ti->ref--;
 	if (ti->ref == 0)
 		track_info_free(ti);
+}
+
+void track_info_unrefp(struct track_info **ti)
+{
+	if (*ti)
+		track_info_unref(*ti);
+	*ti = NULL;
 }
 
 int track_info_has_tag(const struct track_info *ti)

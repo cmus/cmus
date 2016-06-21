@@ -257,6 +257,12 @@ check_vorbis()
 	fi
 }
 
+check_libsystemd()
+{
+	pkg_config LIBSYSTEMD "libsystemd"
+	return $?
+}
+
 check_opus()
 {
 	pkg_config OPUS "opusfile"
@@ -493,6 +499,7 @@ Optional Features: y/n
   CONFIG_SNDIO    	Sndio                                           [auto]
   CONFIG_SUN      	Sun Audio                                       [auto]
   CONFIG_WAVEOUT  	Windows Wave Out                                [auto]
+  CONFIG_MPRIS  	MPRIS                                           [auto]
   USE_FALLBACK_IP	Use a specific IP for every unrecognized	[n]
                         input format. Currently set to FFMPEG.
 
@@ -531,37 +538,38 @@ check_header byteswap.h && HAVE_BYTESWAP_H=y
 check_string_function "strdup" && HAVE_STRDUP=y
 check_string_function "strndup" && HAVE_STRNDUP=y
 
-check check_cddb    CONFIG_CDDB
-check check_cdio    CONFIG_CDIO
-check check_flac    CONFIG_FLAC
-check check_mad     CONFIG_MAD
-check check_mikmod  CONFIG_MIKMOD
-check check_modplug CONFIG_MODPLUG
-check check_mpc     CONFIG_MPC
-check check_vorbis  CONFIG_VORBIS
-check check_opus    CONFIG_OPUS
-check check_wavpack CONFIG_WAVPACK
-check check_mp4     CONFIG_MP4
-check check_aac     CONFIG_AAC
-check check_ffmpeg  CONFIG_FFMPEG
-check check_cue     CONFIG_CUE
-check check_cue2    CONFIG_CUE2
-check check_vtx     CONFIG_VTX
+check check_cddb       CONFIG_CDDB
+check check_cdio       CONFIG_CDIO
+check check_flac       CONFIG_FLAC
+check check_mad        CONFIG_MAD
+check check_mikmod     CONFIG_MIKMOD
+check check_modplug    CONFIG_MODPLUG
+check check_mpc        CONFIG_MPC
+check check_vorbis     CONFIG_VORBIS
+check check_opus       CONFIG_OPUS
+check check_libsystemd CONFIG_MPRIS
+check check_wavpack    CONFIG_WAVPACK
+check check_mp4        CONFIG_MP4
+check check_aac        CONFIG_AAC
+check check_ffmpeg     CONFIG_FFMPEG
+check check_cue        CONFIG_CUE
+check check_cue2       CONFIG_CUE2
+check check_vtx        CONFIG_VTX
 # nothing to check, just validate the variable values
-check true          CONFIG_TREMOR
-check true          CONFIG_WAV
-check check_pulse   CONFIG_PULSE
-check check_alsa    CONFIG_ALSA
-check check_jack    CONFIG_JACK
+check true             CONFIG_TREMOR
+check true             CONFIG_WAV
+check check_pulse      CONFIG_PULSE
+check check_alsa       CONFIG_ALSA
+check check_jack       CONFIG_JACK
 check check_samplerate CONFIG_SAMPLERATE
-check check_ao      CONFIG_AO
-check check_coreaudio   CONFIG_COREAUDIO
-check check_arts    CONFIG_ARTS
-check check_oss     CONFIG_OSS
-check check_sndio   CONFIG_SNDIO
-check check_sun     CONFIG_SUN
-check check_waveout CONFIG_WAVEOUT
-check check_roar    CONFIG_ROAR
+check check_ao         CONFIG_AO
+check check_coreaudio  CONFIG_COREAUDIO
+check check_arts       CONFIG_ARTS
+check check_oss        CONFIG_OSS
+check check_sndio      CONFIG_SNDIO
+check check_sun        CONFIG_SUN
+check check_waveout    CONFIG_WAVEOUT
+check check_roar       CONFIG_ROAR
 
 # discid is only needed if at least one cdda plugin is active
 test -z "$CONFIG_DISCID" && CONFIG_DISCID=a
@@ -578,6 +586,7 @@ DATADIR="$datadir"
 LIBDIR="$libdir"
 
 config_header config/cdio.h HAVE_CDDB
+config_header config/mpris.h CONFIG_MPRIS
 config_header config/datadir.h DATADIR
 config_header config/libdir.h LIBDIR
 config_header config/debug.h DEBUG
@@ -597,6 +606,6 @@ CFLAGS="${CFLAGS} -DHAVE_CONFIG"
 
 makefile_vars bindir datadir libdir mandir exampledir
 makefile_vars CONFIG_CDIO CONFIG_FLAC CONFIG_MAD CONFIG_MIKMOD CONFIG_MODPLUG CONFIG_MPC CONFIG_VORBIS CONFIG_OPUS CONFIG_WAVPACK CONFIG_WAV CONFIG_MP4 CONFIG_AAC CONFIG_FFMPEG CONFIG_CUE CONFIG_CUE2 CONFIG_VTX
-makefile_vars CONFIG_ROAR CONFIG_PULSE CONFIG_ALSA CONFIG_JACK CONFIG_SAMPLERATE CONFIG_AO CONFIG_COREAUDIO CONFIG_ARTS CONFIG_OSS CONFIG_SNDIO CONFIG_SUN CONFIG_WAVEOUT
+makefile_vars CONFIG_ROAR CONFIG_PULSE CONFIG_ALSA CONFIG_JACK CONFIG_SAMPLERATE CONFIG_AO CONFIG_COREAUDIO CONFIG_ARTS CONFIG_OSS CONFIG_SNDIO CONFIG_SUN CONFIG_WAVEOUT CONFIG_MPRIS
 
 generate_config_mk

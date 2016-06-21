@@ -49,6 +49,7 @@
 #endif
 #include "help.h"
 #include "op.h"
+#include "mpris.h"
 
 #include <stdlib.h>
 #include <ctype.h>
@@ -1182,9 +1183,6 @@ static void cmd_echo(char *arg)
 	track_info_unref(sel_ti);
 }
 
-#define VF_RELATIVE	0x01
-#define VF_PERCENTAGE	0x02
-
 static int parse_vol_arg(const char *arg, int *value, unsigned int *flags)
 {
 	unsigned int f = 0;
@@ -1224,18 +1222,6 @@ err:
 	return -1;
 }
 
-static int calc_vol(int val, int old, int max_vol, unsigned int flags)
-{
-	if (flags & VF_RELATIVE) {
-		if (flags & VF_PERCENTAGE)
-			val = scale_from_percentage(val, max_vol);
-		val += old;
-	} else if (flags & VF_PERCENTAGE) {
-		val = scale_from_percentage(val, max_vol);
-	}
-	return clamp(val, 0, max_vol);
-}
-
 /*
  * :vol value [value]
  *
@@ -1260,22 +1246,13 @@ static void cmd_vol(char *arg)
 
 	free_str_array(values);
 
-	if (soft_vol) {
-		l = calc_vol(l, soft_vol_l, 100, lf);
-		r = calc_vol(r, soft_vol_r, 100, rf);
-		player_set_soft_volume(l, r);
+	int rc = player_set_vol(l, lf, r, rf);
+	if (rc != OP_ERROR_SUCCESS) {
+		char *msg = op_get_error_msg(rc, "can't change volume");
+		error_msg("%s", msg);
+		free(msg);
 	} else {
-		int rc;
-		mixer_read_volume();
-		l = calc_vol(l, volume_l, volume_max, lf);
-		r = calc_vol(r, volume_r, volume_max, rf);
-		rc = mixer_set_volume(l, r);
-		if (rc != OP_ERROR_SUCCESS) {
-			char *msg = op_get_error_msg(rc, "can't change volume");
-			error_msg("%s", msg);
-			free(msg);
-		}
-		mixer_read_volume();
+		mpris_volume_changed();
 	}
 	update_statusline();
 	return;

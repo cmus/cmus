@@ -21,8 +21,10 @@
 
 #include <time.h>
 #include <stddef.h>
+#include <stdint.h>
 
 struct track_info {
+	uint64_t uid;
 	struct keyval *comments;
 
 	// next track_info in the hash table (cache.c)
@@ -128,6 +130,7 @@ void track_info_set_comments(struct track_info *ti, struct keyval *comments);
 
 void track_info_ref(struct track_info *ti);
 void track_info_unref(struct track_info *ti);
+void track_info_unrefp(struct track_info **ti);
 
 /*
  * returns: 1 if @ti has any of the following tags: artist, album, title

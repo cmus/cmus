@@ -21,11 +21,13 @@
 #include "input.h"
 #include "output.h"
 #include "sf.h"
+#include "op.h"
 #include "utils.h"
 #include "xmalloc.h"
 #include "debug.h"
 #include "compiler.h"
 #include "options.h"
+#include "mpris.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -1018,6 +1020,8 @@ void player_init(const struct player_callbacks *callbacks)
 #endif
 	pthread_attr_t *attrp = NULL;
 
+	cmus_mutex_init_recursive(&player_info.mutex);
+
 	/*  1 s is 176400 B (0.168 MB)
 	 * 10 s is 1.68 MB
 	 */
@@ -1290,6 +1294,7 @@ void player_seek(double offset, int relative, int start_playing)
 			d_print("error: ip_seek returned %d\n", rc);
 		}
 	}
+	mpris_seeked();
 	player_unlock();
 }
 
@@ -1380,6 +1385,35 @@ void player_set_soft_vol(int soft)
 		scale_pos = consumer_pos;
 	soft_vol = soft;
 	consumer_unlock();
+}
+
+static int calc_vol(int val, int old, int max_vol, unsigned int flags)
+{
+	if (flags & VF_RELATIVE) {
+		if (flags & VF_PERCENTAGE)
+			val = scale_from_percentage(val, max_vol);
+		val += old;
+	} else if (flags & VF_PERCENTAGE) {
+		val = scale_from_percentage(val, max_vol);
+	}
+	return clamp(val, 0, max_vol);
+}
+
+int player_set_vol(int l, int lf, int r, int rf)
+{
+	int rc = OP_ERROR_SUCCESS;
+	if (soft_vol) {
+		l = calc_vol(l, soft_vol_l, 100, lf);
+		r = calc_vol(r, soft_vol_r, 100, rf);
+		player_set_soft_volume(l, r);
+	} else {
+		mixer_read_volume();
+		l = calc_vol(l, volume_l, volume_max, lf);
+		r = calc_vol(r, volume_r, volume_max, rf);
+		rc = mixer_set_volume(l, r);
+		mixer_read_volume();
+	}
+	return rc;
 }
 
 void player_set_rg(enum replaygain rg)
