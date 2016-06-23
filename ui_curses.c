@@ -2425,6 +2425,9 @@ static void exit_all(void)
 	filters_exit();
 	help_exit();
 	browser_exit();
+
+	/* Notify exit */
+	spawn_status_program();
 }
 
 enum {

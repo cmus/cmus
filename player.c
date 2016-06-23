@@ -36,7 +36,7 @@
 #include <stdarg.h>
 #include <math.h>
 
-const char * const player_status_names[] = { "stopped", "playing", "paused", NULL };
+const char * const player_status_names[] = { "stopped", "playing", "paused", "exiting", NULL };
 
 enum producer_status {
 	PS_UNLOADED,
@@ -48,7 +48,8 @@ enum producer_status {
 enum consumer_status {
 	CS_STOPPED,
 	CS_PLAYING,
-	CS_PAUSED
+	CS_PAUSED,
+	CS_EXITING
 };
 
 struct player_info player_info = {
@@ -759,6 +760,11 @@ static void _consumer_pause(void)
 	}
 }
 
+static void _consumer_exit(void)
+{
+	_consumer_status_update(CS_EXITING);
+}
+
 /* setting consumer status }}} */
 
 
@@ -1069,6 +1075,8 @@ void player_exit(void)
 	pthread_cond_broadcast(&consumer_playing);
 	producer_running = 0;
 	pthread_cond_broadcast(&producer_playing);
+	_consumer_exit();
+	_player_status_changed();
 	player_unlock();
 
 	rc = pthread_join(consumer_thread, NULL);
