@@ -36,16 +36,16 @@ void mpris_seeked(void);
 
 #else
 
-__attribute__((unused)) static int mpris_fd = -1;
-__attribute__((unused)) static void mpris_init(void) { }
-__attribute__((unused)) static void mpris_process(void) { }
-__attribute__((unused)) static void mpris_free(void) { }
-__attribute__((unused)) static void mpris_playback_status_changed(void) { }
-__attribute__((unused)) static void mpris_loop_status_changed(void) { }
-__attribute__((unused)) static void mpris_shuffle_changed(void) { }
-__attribute__((unused)) static void mpris_volume_changed(void) { }
-__attribute__((unused)) static void mpris_metadata_changed(void) { }
-__attribute__((unused)) static void mpris_seeked(void) { }
+#define mpris_fd -1
+#define mpris_init() { }
+#define mpris_process() { }
+#define mpris_free() { }
+#define mpris_playback_status_changed() { }
+#define mpris_loop_status_changed() { }
+#define mpris_shuffle_changed() { }
+#define mpris_volume_changed() { }
+#define mpris_metadata_changed() { }
+#define mpris_seeked() { }
 
 #endif
 
