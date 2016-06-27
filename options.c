@@ -42,6 +42,7 @@
 #include "cache.h"
 #include "debug.h"
 #include "discid.h"
+#include "mpris.h"
 
 #include <stdio.h>
 #include <errno.h>
@@ -82,6 +83,7 @@ int auto_expand_albums_search = 1;
 int auto_expand_albums_selcur = 1;
 int show_all_tracks = 1;
 int mouse = 0;
+int mpris = 1;
 
 int colors[NR_COLORS] = {
 	-1,
@@ -659,14 +661,18 @@ static void get_repeat_current(unsigned int id, char *buf)
 
 static void set_repeat_current(unsigned int id, const char *buf)
 {
+	int old = player_repeat_current;
 	if (!parse_bool(buf, &player_repeat_current))
 		return;
+	if (old != player_repeat_current)
+		mpris_loop_status_changed();
 	update_statusline();
 }
 
 static void toggle_repeat_current(unsigned int id)
 {
 	player_repeat_current ^= 1;
+	mpris_loop_status_changed();
 	update_statusline();
 }
 
@@ -816,14 +822,19 @@ static void get_repeat(unsigned int id, char *buf)
 
 static void set_repeat(unsigned int id, const char *buf)
 {
+	int old = repeat;
 	if (!parse_bool(buf, &repeat))
 		return;
+	if (!player_repeat_current && old != repeat)
+		mpris_loop_status_changed();
 	update_statusline();
 }
 
 static void toggle_repeat(unsigned int id)
 {
 	repeat ^= 1;
+	if (!player_repeat_current)
+		mpris_loop_status_changed();
 	update_statusline();
 }
 
@@ -1086,14 +1097,18 @@ static void get_shuffle(unsigned int id, char *buf)
 
 static void set_shuffle(unsigned int id, const char *buf)
 {
+	int old = shuffle;
 	if (!parse_bool(buf, &shuffle))
 		return;
+	if (old != shuffle)
+		mpris_shuffle_changed();
 	update_statusline();
 }
 
 static void toggle_shuffle(unsigned int id)
 {
 	shuffle ^= 1;
+	mpris_shuffle_changed();
 	update_statusline();
 }
 
@@ -1193,6 +1208,21 @@ static void toggle_mouse(unsigned int id)
 {
 	mouse ^= 1;
 	update_mouse();
+}
+
+static void get_mpris(unsigned int id, char *buf)
+{
+	strcpy(buf, bool_names[mpris]);
+}
+
+static void set_mpris(unsigned int id, const char *buf)
+{
+	parse_bool(buf, &mpris);
+}
+
+static void toggle_mpris(unsigned int id)
+{
+	mpris ^= 1;
 }
 
 /* }}} */
@@ -1409,6 +1439,7 @@ static const struct {
 	DT(wrap_search)
 	DT(skip_track_info)
 	DT(mouse)
+	DT(mpris)
 	{ NULL, NULL, NULL, NULL, 0 }
 };
 

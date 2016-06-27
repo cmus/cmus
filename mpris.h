@@ -16,16 +16,37 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef CMUS_LOCKING_H
-#define CMUS_LOCKING_H
+#ifndef CMUS_MPRIS_H
+#define CMUS_MPRIS_H
 
-#include <pthread.h>
+#include "config/mpris.h"
 
-#define CMUS_MUTEX_INITIALIZER PTHREAD_MUTEX_INITIALIZER
-#define CMUS_COND_INITIALIZER PTHREAD_COND_INITIALIZER
+#ifdef CONFIG_MPRIS
 
-void cmus_mutex_lock(pthread_mutex_t *mutex);
-void cmus_mutex_unlock(pthread_mutex_t *mutex);
-void cmus_mutex_init_recursive(pthread_mutex_t *mutex);
+extern int mpris_fd;
+void mpris_init(void);
+void mpris_process(void);
+void mpris_free(void);
+void mpris_playback_status_changed(void);
+void mpris_loop_status_changed(void);
+void mpris_shuffle_changed(void);
+void mpris_volume_changed(void);
+void mpris_metadata_changed(void);
+void mpris_seeked(void);
+
+#else
+
+#define mpris_fd -1
+#define mpris_init() { }
+#define mpris_process() { }
+#define mpris_free() { }
+#define mpris_playback_status_changed() { }
+#define mpris_loop_status_changed() { }
+#define mpris_shuffle_changed() { }
+#define mpris_volume_changed() { }
+#define mpris_metadata_changed() { }
+#define mpris_seeked() { }
+
+#endif
 
 #endif

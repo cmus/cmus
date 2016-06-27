@@ -986,6 +986,11 @@ mouse (false)
 	NOTE: Mouse wheel scrolling can lag if cmus is compiled with
 	old version of Ncurses.
 
+mpris (true)
+	Enable MPRIS support.
+
+	NOTE: This flag has no effect if cmus was compiled without MPRIS support.
+
 output_plugin [roar, pulse, alsa, arts, oss, sndio, sun, coreaudio]
 	Name of output plugin.
 

@@ -117,6 +117,10 @@ void player_set_rg(enum replaygain rg);
 void player_set_rg_limit(int limit);
 void player_set_rg_preamp(double db);
 
+#define VF_RELATIVE	0x01
+#define VF_PERCENTAGE	0x02
+int player_set_vol(int l, int lf, int r, int rf);
+
 #define player_info_lock() cmus_mutex_lock(&player_info.mutex)
 #define player_info_unlock() cmus_mutex_unlock(&player_info.mutex)
 
