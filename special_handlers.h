@@ -1,3 +1,6 @@
+#ifndef SPECIAL_HANDLERS_H
+#define SPECIAL_HANDLERS_H
+
 typedef void (*adder)(const char*, int);
 typedef int (*special_adder)(const char*, adder);
 typedef int (*identify_func)(const char*);
@@ -22,3 +25,5 @@ const char* special_mimetype_handle(char* filename);
 void register_special_filename_handler(identify_func detector, special_adder add_file_special);
 void register_special_mimetype_handler(identify_func detector, const char *string);
 void special_handlers_init(void);
+
+#endif

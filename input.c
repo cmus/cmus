@@ -500,7 +500,8 @@ void ip_load_plugins(void)
 		ip->name = xstrndup(d->d_name, ext - d->d_name);
 		ip->handle = so;
 
-		if (ip->init_function) ip->init_function();
+		if (ip->init_function)
+			ip->init_function();
 
 		list_add_tail(&ip->node, &ip_head);
 	}

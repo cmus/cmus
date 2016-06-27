@@ -3,8 +3,7 @@
 #include "xmalloc.h"
 
 special_adder get_special_filename_handler (const char* filename) {
-	int i;
-	for (i=0; i<filename_handlers.count; i++) {
+	for (int i=0; i<filename_handlers.count; i++) {
 		if (filename_handlers.detectors[i](filename))
 			return filename_handlers.handlers[i];
 	}
@@ -13,8 +12,7 @@ special_adder get_special_filename_handler (const char* filename) {
 }
 
 const char* special_mimetype_handle(char* filename) {
-	int i;
-	for (i=0; i<mimetype_handlers.count; i++) {
+	for (int i=0; i<mimetype_handlers.count; i++) {
 		if (mimetype_handlers.detectors[i](filename))
 			return mimetype_handlers.strings[i];
 	}
@@ -24,8 +22,8 @@ const char* special_mimetype_handle(char* filename) {
 void register_special_filename_handler(identify_func detector, special_adder add_file_special) {
 	int count = filename_handlers.count;
 	filename_handlers.count++;
-	filename_handlers.detectors = xrealloc(filename_handlers.detectors, sizeof(int(*)(const char* filename)) * (count + 1));
-	filename_handlers.handlers = xrealloc(filename_handlers.handlers, sizeof(int(*)(const char* filename)) * (count + 1));
+	filename_handlers.detectors = xrealloc(filename_handlers.detectors, sizeof(identify_func) * (count + 1));
+	filename_handlers.handlers = xrealloc(filename_handlers.handlers, sizeof(special_adder) * (count + 1));
 
 	filename_handlers.detectors[count] = detector;
 	filename_handlers.handlers[count] = add_file_special;
@@ -36,6 +34,7 @@ void register_special_mimetype_handler(identify_func detector, const char *strin
 	mimetype_handlers.count++;
 	mimetype_handlers.detectors = xrealloc(mimetype_handlers.detectors, sizeof(identify_func) * (count + 1));
 	mimetype_handlers.strings = xrealloc(mimetype_handlers.strings, sizeof(const char*) * (count + 1));
+
 	mimetype_handlers.detectors[count] = detector;
 	mimetype_handlers.strings[count] = string;
 }
