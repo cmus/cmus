@@ -851,17 +851,19 @@ static void set_ip_priority(unsigned int id, const char *val)
 		error_msg("non-negative integer expected");
 		return;
 	}
-	if (!warned) {
-		static const char *msg =
-			"Metadata might become inconsistend "
-			"after this change. Continue? [y/N]";
-		if (!yes_no_query("%s", msg)) {
-			info_msg("Aborted");
-			return;
+	if (ui_initialized) {
+		if (!warned) {
+			static const char *msg =
+				"Metadata might become inconsistend "
+				"after this change. Continue? [y/N]";
+			if (!yes_no_query("%s", msg)) {
+				info_msg("Aborted");
+				return;
+			}
+			warned = true;
 		}
-		warned = true;
+		info_msg("Run \":update-cache -f\" to refresh the metadata.");
 	}
-	info_msg("Run \":update-cache -f\" to refresh the metadata.");
 	ip->priority = (int)tmp;
 	list_mergesort(&sorted_ip_head, sort_ip);
 }
