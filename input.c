@@ -37,6 +37,7 @@
 #endif
 
 #include <unistd.h>
+#include <stdbool.h>
 #include <string.h>
 #include <errno.h>
 #include <stdio.h>
@@ -841,18 +842,28 @@ static void get_ip_option(unsigned int id, char *buf)
 
 static void set_ip_priority(unsigned int id, const char *val)
 {
-	long int tmp;
+	/* warn only once during the lifetime of the program. */
+	static bool warned = false;
+	long tmp;
+	struct ip *ip = find_plugin(id);
 
-	if (str_to_int(val, &tmp) == -1) {
-		error_msg("integer expected");
-	} else {
-		struct ip *ip = find_plugin(id);
-
-		if (tmp < 0)
-			tmp = 0;
-		ip->priority = (int)tmp;
-		list_mergesort(&sorted_ip_head, sort_ip);
+	if (str_to_int(val, &tmp) == -1 || tmp < 0 || (long)(int)tmp != tmp) {
+		error_msg("non-negative integer expected");
+		return;
 	}
+	if (!warned) {
+		static const char *msg =
+			"Metadata might become inconsistend "
+			"after this change. Continue? [y/N]";
+		if (!yes_no_query("%s", msg)) {
+			info_msg("Aborted");
+			return;
+		}
+		warned = true;
+	}
+	info_msg("Run \":update-cache -f\" to refresh the metadata.");
+	ip->priority = (int)tmp;
+	list_mergesort(&sorted_ip_head, sort_ip);
 }
 
 static void get_ip_priority(unsigned int id, char *val)
