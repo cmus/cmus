@@ -230,7 +230,7 @@ void help_select(void)
 		break;
 	case HE_OPTION:
 		snprintf(buf, sizeof(buf), "set %s=", ent->option->name);
-		ent->option->get(ent->option->id, buf + strlen(buf));
+		ent->option->get(ent->option->data, buf + strlen(buf));
 		cmdline_set_text(buf);
 		enter_command_mode();
 		break;
@@ -251,7 +251,7 @@ void help_toggle(void)
 	switch (ent->type) {
 	case HE_OPTION:
 		if (ent->option->toggle) {
-			ent->option->toggle(ent->option->id);
+			ent->option->toggle(ent->option->data);
 			help_win->changed = 1;
 		}
 		break;

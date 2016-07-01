@@ -23,9 +23,9 @@
 
 #define OPTION_MAX_SIZE	4096
 
-typedef void (*opt_get_cb)(unsigned int id, char *buf);
-typedef void (*opt_set_cb)(unsigned int id, const char *buf);
-typedef void (*opt_toggle_cb)(unsigned int id);
+typedef void (*opt_get_cb)(void *data, char *buf);
+typedef void (*opt_set_cb)(void *data, const char *buf);
+typedef void (*opt_toggle_cb)(void *data);
 
 enum {
 	OPT_PROGRAM_PATH = 1 << 0,
@@ -37,12 +37,10 @@ struct cmus_opt {
 	const char *name;
 
 	/* If there are many similar options you should write generic get(),
-	 * set() and optionally toggle() and set id to index of option array or
-	 * what ever.
-	 *
-	 * Useful for colors, format strings and plugin options.
+	 * set() and optionally toggle() and distinguish the concrete option
+	 * via this pointer.
 	 */
-	unsigned int id;
+	void *data;
 
 	opt_get_cb get;
 	opt_set_cb set;
@@ -195,7 +193,7 @@ void resume_load(void);
 /* save resume file */
 void resume_exit(void);
 
-void option_add(const char *name, unsigned int id, opt_get_cb get,
+void option_add(const char *name, const void *data, opt_get_cb get,
 		opt_set_cb set, opt_toggle_cb toggle, unsigned int flags);
 struct cmus_opt *option_find(const char *name);
 struct cmus_opt *option_find_silent(const char *name);

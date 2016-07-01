@@ -44,12 +44,6 @@
 #define BUFFER_MULTIPLYER (sizeof(jack_default_audio_sample_t) * 16)
 #define BUFFER_SIZE_MIN 16384
 
-#define CFG_SERVER_NAME 0
-
-#ifdef HAVE_SAMPLERATE
-#define CFG_RESAMPLING_QUALITY 1
-#endif
-
 static char               *server_name;
 
 static jack_client_t      *client;
@@ -85,8 +79,6 @@ static int op_jack_close(void);
 static int op_jack_write(const char *buffer, int count);
 static int op_jack_drop(void);
 static int op_jack_buffer_space(void);
-static int op_jack_set_option(const int key, const char* val);
-static int op_jack_get_option(const int key, char** val);
 static int op_jack_pause(void);
 static int op_jack_unpause(void);
 
@@ -565,66 +557,56 @@ static int op_jack_unpause(void)
 	return OP_ERROR_SUCCESS;
 }
 
-static int op_jack_set_option(int key, const char *val)
+static int op_jack_set_server_name(const char *val)
 {
-	switch (key) {
-	case CFG_SERVER_NAME:
-		free(server_name);
-		server_name = val[0] != '\0' ? xstrdup(val) : NULL;
-		break;
+	free(server_name);
+	server_name = val[0] != '\0' ? xstrdup(val) : NULL;
+	return OP_ERROR_SUCCESS;
+}
+
+static int op_jack_get_server_name(char **val)
+{
+	*val = xstrdup(server_name != NULL ? server_name : "");
+	return OP_ERROR_SUCCESS;
+}
+
 #ifdef HAVE_SAMPLERATE
-	case CFG_RESAMPLING_QUALITY:
-		if (strlen(val) != 1) {
-			return -OP_ERROR_NOT_SUPPORTED;
-		}
-		switch (val[0]) {
-		default:
-		case '2':
-			src_quality = SRC_SINC_BEST_QUALITY;
-			break;
-		case '1':
-			src_quality = SRC_SINC_MEDIUM_QUALITY;
-			break;
-		case '0':
-			src_quality = SRC_SINC_FASTEST;
-			break;
-		}
-		break;
-#endif
+static int op_jack_set_resampling_quality(const char *val)
+{
+	if (strlen(val) != 1) {
+		return -OP_ERROR_NOT_SUPPORTED;
+	}
+	switch (val[0]) {
 	default:
-		d_print("unknown key %d = %s\n", key, val);
-		return -OP_ERROR_NOT_OPTION;
+	case '2':
+		src_quality = SRC_SINC_BEST_QUALITY;
+		break;
+	case '1':
+		src_quality = SRC_SINC_MEDIUM_QUALITY;
+		break;
+	case '0':
+		src_quality = SRC_SINC_FASTEST;
+		break;
 	}
 	return OP_ERROR_SUCCESS;
 }
 
-static int op_jack_get_option(int key, char **val)
+static int op_jack_get_resampling_quality(char **val)
 {
-	switch (key) {
-	case CFG_SERVER_NAME:
-		*val = xstrdup(server_name != NULL ? server_name : "");
+	switch (src_quality) {
+	case SRC_SINC_BEST_QUALITY:
+		*val = xstrdup("2");
 		break;
-#ifdef HAVE_SAMPLERATE
-	case CFG_RESAMPLING_QUALITY:
-		switch (src_quality) {
-		case SRC_SINC_BEST_QUALITY:
-			*val = xstrdup("2");
-			break;
-		case SRC_SINC_MEDIUM_QUALITY:
-			*val = xstrdup("1");
-			break;
-		case SRC_SINC_FASTEST:
-			*val = xstrdup("0");
-			break;
-		}
+	case SRC_SINC_MEDIUM_QUALITY:
+		*val = xstrdup("1");
 		break;
-#endif
-	default:
-		return -OP_ERROR_NOT_OPTION;
+	case SRC_SINC_FASTEST:
+		*val = xstrdup("0");
+		break;
 	}
-
 	return OP_ERROR_SUCCESS;
 }
+#endif
 
 const struct output_plugin_ops op_pcm_ops = {
 	.init         = op_jack_init,
@@ -636,16 +618,14 @@ const struct output_plugin_ops op_pcm_ops = {
 	.buffer_space = op_jack_buffer_space,
 	.pause        = op_jack_pause,
 	.unpause      = op_jack_unpause,
-	.set_option   = op_jack_set_option,
-	.get_option   = op_jack_get_option
 };
 
-const char * const op_pcm_options[] = {
-	[CFG_SERVER_NAME] = "server_name",
+const struct output_plugin_opt op_pcm_options[] = {
+	OPT(op_jack, server_name),
 #ifdef HAVE_SAMPLERATE
-	[CFG_RESAMPLING_QUALITY] = "resampling_quality",
+	OPT(op_jack, resampling_quality),
 #endif
-	NULL
+	{ NULL },
 };
 
 const int op_priority = 2;

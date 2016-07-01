@@ -500,44 +500,27 @@ static char *libcdio_codec_profile(struct input_plugin_data *ip_data)
 	return xstrdup(discmode2str[cd_discmode]);
 }
 
-static int libcdio_set_option(int key, const char *val)
-{
 #ifdef HAVE_CDDB
+static int libcdio_set_cddb_url(const char *val)
+{
 	struct http_uri http_uri;
 	int use_http;
-#endif
-	switch (key) {
-#ifdef HAVE_CDDB
-	case 0:
-		if (parse_cddb_url(val, &http_uri, &use_http)) {
-			http_free_uri(&http_uri);
-			free(cddb_url);
-			cddb_url = xstrdup(val);
-		} else
-			return -IP_ERROR_INVALID_URI;
-		break;
-#endif
-	default:
-		return -IP_ERROR_NOT_OPTION;
-	}
+	if (!parse_cddb_url(val, &http_uri, &use_http))
+		return -IP_ERROR_INVALID_URI;
+	http_free_uri(&http_uri);
+	free(cddb_url);
+	cddb_url = xstrdup(val);
 	return 0;
 }
 
-static int libcdio_get_option(int key, char **val)
+static int libcdio_get_cddb_url(char **val)
 {
-	switch (key) {
-#ifdef HAVE_CDDB
-	case 0:
-		if (!cddb_url)
-			cddb_url = xstrdup("freedb.freedb.org:8880");
-		*val = xstrdup(cddb_url);
-		break;
-#endif
-	default:
-		return -IP_ERROR_NOT_OPTION;
-	}
+	if (!cddb_url)
+		cddb_url = xstrdup("freedb.freedb.org:8880");
+	*val = xstrdup(cddb_url);
 	return 0;
 }
+#endif
 
 const struct input_plugin_ops ip_ops = {
 	.open = libcdio_open,
@@ -549,15 +532,13 @@ const struct input_plugin_ops ip_ops = {
 	.bitrate = libcdio_bitrate,
 	.codec = libcdio_codec,
 	.codec_profile = libcdio_codec_profile,
-	.set_option = libcdio_set_option,
-	.get_option = libcdio_get_option
 };
 
-const char * const ip_options[] = {
+const struct input_plugin_opt ip_options[] = {
 #ifdef HAVE_CDDB
-	"cddb_url",
+	{ "cddb_url", libcdio_set_cddb_url, libcdio_get_cddb_url },
 #endif
-	NULL
+	{ NULL },
 };
 
 const int ip_priority = 50;

@@ -120,7 +120,7 @@ static int cmd_status(struct client *client)
 	for (i = 0; export_options[i]; i++) {
 		opt = option_find(export_options[i]);
 		if (opt) {
-			opt->get(opt->id, optbuf);
+			opt->get(opt->data, optbuf);
 			gbuf_addf(&buf, "set %s %s\n", opt->name, optbuf);
 		}
 	}

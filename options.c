@@ -256,24 +256,24 @@ static const struct {
 
 /* callbacks for normal options {{{ */
 
-static void get_device(unsigned int id, char *buf)
+static void get_device(void *data, char *buf)
 {
 	strcpy(buf, cdda_device);
 }
 
-static void set_device(unsigned int id, const char *buf)
+static void set_device(void *data, const char *buf)
 {
 	free(cdda_device);
 	cdda_device = expand_filename(buf);
 }
 
 #define SECOND_SIZE (44100 * 16 / 8 * 2)
-static void get_buffer_seconds(unsigned int id, char *buf)
+static void get_buffer_seconds(void *data, char *buf)
 {
 	buf_int(buf, (player_get_buffer_chunks() * CHUNK_SIZE + SECOND_SIZE / 2) / SECOND_SIZE);
 }
 
-static void set_buffer_seconds(unsigned int id, const char *buf)
+static void set_buffer_seconds(void *data, const char *buf)
 {
 	int sec;
 
@@ -281,12 +281,12 @@ static void set_buffer_seconds(unsigned int id, const char *buf)
 		player_set_buffer_chunks((sec * SECOND_SIZE + CHUNK_SIZE / 2) / CHUNK_SIZE);
 }
 
-static void get_scroll_offset(unsigned int id, char *buf)
+static void get_scroll_offset(void *data, char *buf)
 {
 	buf_int(buf, scroll_offset);
 }
 
-static void set_scroll_offset(unsigned int id, const char *buf)
+static void set_scroll_offset(void *data, const char *buf)
 {
 	int offset;
 
@@ -294,12 +294,12 @@ static void set_scroll_offset(unsigned int id, const char *buf)
 		scroll_offset = offset;
 }
 
-static void get_rewind_offset(unsigned int id, char *buf)
+static void get_rewind_offset(void *data, char *buf)
 {
 	buf_int(buf, rewind_offset);
 }
 
-static void set_rewind_offset(unsigned int id, const char *buf)
+static void set_rewind_offset(void *data, const char *buf)
 {
 	int offset;
 
@@ -307,23 +307,23 @@ static void set_rewind_offset(unsigned int id, const char *buf)
 		rewind_offset = offset;
 }
 
-static void get_id3_default_charset(unsigned int id, char *buf)
+static void get_id3_default_charset(void *data, char *buf)
 {
 	strcpy(buf, id3_default_charset);
 }
 
-static void get_icecast_default_charset(unsigned int id, char *buf)
+static void get_icecast_default_charset(void *data, char *buf)
 {
 	strcpy(buf, icecast_default_charset);
 }
 
-static void set_id3_default_charset(unsigned int id, const char *buf)
+static void set_id3_default_charset(void *data, const char *buf)
 {
 	free(id3_default_charset);
 	id3_default_charset = xstrdup(buf);
 }
 
-static void set_icecast_default_charset(unsigned int id, const char *buf)
+static void set_icecast_default_charset(void *data, const char *buf)
 {
 	free(icecast_default_charset);
 	icecast_default_charset = xstrdup(buf);
@@ -461,12 +461,12 @@ static void sort_keys_to_str(const sort_key_t *keys, char *buf, size_t bufsize)
 	buf[pos] = 0;
 }
 
-static void get_lib_sort(unsigned int id, char *buf)
+static void get_lib_sort(void *data, char *buf)
 {
 	strcpy(buf, lib_editable.sort_str);
 }
 
-static void set_lib_sort(unsigned int id, const char *buf)
+static void set_lib_sort(void *data, const char *buf)
 {
 	sort_key_t *keys = parse_sort_keys(buf);
 
@@ -478,12 +478,12 @@ static void set_lib_sort(unsigned int id, const char *buf)
 	}
 }
 
-static void get_pl_sort(unsigned int id, char *buf)
+static void get_pl_sort(void *data, char *buf)
 {
 	strcpy(buf, pl_editable.sort_str);
 }
 
-static void set_pl_sort(unsigned int id, const char *buf)
+static void set_pl_sort(void *data, const char *buf)
 {
 	sort_key_t *keys = parse_sort_keys(buf);
 
@@ -495,7 +495,7 @@ static void set_pl_sort(unsigned int id, const char *buf)
 	}
 }
 
-static void get_output_plugin(unsigned int id, char *buf)
+static void get_output_plugin(void *data, char *buf)
 {
 	const char *value = op_get_current();
 
@@ -503,7 +503,7 @@ static void get_output_plugin(unsigned int id, char *buf)
 		strcpy(buf, value);
 }
 
-static void set_output_plugin(unsigned int id, const char *buf)
+static void set_output_plugin(void *data, const char *buf)
 {
 	if (ui_initialized) {
 		if (!soft_vol)
@@ -517,13 +517,13 @@ static void set_output_plugin(unsigned int id, const char *buf)
 	}
 }
 
-static void get_passwd(unsigned int id, char *buf)
+static void get_passwd(void *data, char *buf)
 {
 	if (server_password)
 		strcpy(buf, server_password);
 }
 
-static void set_passwd(unsigned int id, const char *buf)
+static void set_passwd(void *data, const char *buf)
 {
 	int len = strlen(buf);
 
@@ -538,12 +538,12 @@ static void set_passwd(unsigned int id, const char *buf)
 	}
 }
 
-static void get_replaygain_preamp(unsigned int id, char *buf)
+static void get_replaygain_preamp(void *data, char *buf)
 {
 	sprintf(buf, "%f", replaygain_preamp);
 }
 
-static void set_replaygain_preamp(unsigned int id, const char *buf)
+static void set_replaygain_preamp(void *data, const char *buf)
 {
 	double val;
 	char *end;
@@ -556,12 +556,12 @@ static void set_replaygain_preamp(unsigned int id, const char *buf)
 	player_set_rg_preamp(val);
 }
 
-static void get_softvol_state(unsigned int id, char *buf)
+static void get_softvol_state(void *data, char *buf)
 {
 	sprintf(buf, "%d %d", soft_vol_l, soft_vol_r);
 }
 
-static void set_softvol_state(unsigned int id, const char *buf)
+static void set_softvol_state(void *data, const char *buf)
 {
 	char buffer[OPTION_MAX_SIZE];
 	char *ptr;
@@ -585,13 +585,13 @@ err:
 	error_msg("two integers in range 0..100 expected");
 }
 
-static void get_status_display_program(unsigned int id, char *buf)
+static void get_status_display_program(void *data, char *buf)
 {
 	if (status_display_program)
 		strcpy(buf, status_display_program);
 }
 
-static void set_status_display_program(unsigned int id, const char *buf)
+static void set_status_display_program(void *data, const char *buf)
 {
 	free(status_display_program);
 	status_display_program = NULL;
@@ -603,63 +603,63 @@ static void set_status_display_program(unsigned int id, const char *buf)
 
 /* callbacks for toggle options {{{ */
 
-static void get_auto_reshuffle(unsigned int id, char *buf)
+static void get_auto_reshuffle(void *data, char *buf)
 {
 	strcpy(buf, bool_names[auto_reshuffle]);
 }
 
-static void set_auto_reshuffle(unsigned int id, const char *buf)
+static void set_auto_reshuffle(void *data, const char *buf)
 {
 	parse_bool(buf, &auto_reshuffle);
 }
 
-static void toggle_auto_reshuffle(unsigned int id)
+static void toggle_auto_reshuffle(void *data)
 {
 	auto_reshuffle ^= 1;
 }
 
-static void get_follow(unsigned int id, char *buf)
+static void get_follow(void *data, char *buf)
 {
 	strcpy(buf, bool_names[follow]);
 }
 
-static void set_follow(unsigned int id, const char *buf)
+static void set_follow(void *data, const char *buf)
 {
 	if (!parse_bool(buf, &follow))
 		return;
 	update_statusline();
 }
 
-static void toggle_follow(unsigned int id)
+static void toggle_follow(void *data)
 {
 	follow ^= 1;
 	update_statusline();
 }
 
-static void get_continue(unsigned int id, char *buf)
+static void get_continue(void *data, char *buf)
 {
 	strcpy(buf, bool_names[player_cont]);
 }
 
-static void set_continue(unsigned int id, const char *buf)
+static void set_continue(void *data, const char *buf)
 {
 	if (!parse_bool(buf, &player_cont))
 		return;
 	update_statusline();
 }
 
-static void toggle_continue(unsigned int id)
+static void toggle_continue(void *data)
 {
 	player_cont ^= 1;
 	update_statusline();
 }
 
-static void get_repeat_current(unsigned int id, char *buf)
+static void get_repeat_current(void *data, char *buf)
 {
 	strcpy(buf, bool_names[player_repeat_current]);
 }
 
-static void set_repeat_current(unsigned int id, const char *buf)
+static void set_repeat_current(void *data, const char *buf)
 {
 	int old = player_repeat_current;
 	if (!parse_bool(buf, &player_repeat_current))
@@ -669,24 +669,24 @@ static void set_repeat_current(unsigned int id, const char *buf)
 	update_statusline();
 }
 
-static void toggle_repeat_current(unsigned int id)
+static void toggle_repeat_current(void *data)
 {
 	player_repeat_current ^= 1;
 	mpris_loop_status_changed();
 	update_statusline();
 }
 
-static void get_confirm_run(unsigned int id, char *buf)
+static void get_confirm_run(void *data, char *buf)
 {
 	strcpy(buf, bool_names[confirm_run]);
 }
 
-static void set_confirm_run(unsigned int id, const char *buf)
+static void set_confirm_run(void *data, const char *buf)
 {
 	parse_bool(buf, &confirm_run);
 }
 
-static void toggle_confirm_run(unsigned int id)
+static void toggle_confirm_run(void *data)
 {
 	confirm_run ^= 1;
 }
@@ -695,30 +695,30 @@ const char * const view_names[NR_VIEWS + 1] = {
 	"tree", "sorted", "playlist", "queue", "browser", "filters", "settings", NULL
 };
 
-static void get_play_library(unsigned int id, char *buf)
+static void get_play_library(void *data, char *buf)
 {
 	strcpy(buf, bool_names[play_library]);
 }
 
-static void set_play_library(unsigned int id, const char *buf)
+static void set_play_library(void *data, const char *buf)
 {
 	if (!parse_bool(buf, &play_library))
 		return;
 	update_statusline();
 }
 
-static void toggle_play_library(unsigned int id)
+static void toggle_play_library(void *data)
 {
 	play_library ^= 1;
 	update_statusline();
 }
 
-static void get_play_sorted(unsigned int id, char *buf)
+static void get_play_sorted(void *data, char *buf)
 {
 	strcpy(buf, bool_names[play_sorted]);
 }
 
-static void set_play_sorted(unsigned int id, const char *buf)
+static void set_play_sorted(void *data, const char *buf)
 {
 	int tmp;
 
@@ -732,7 +732,7 @@ static void set_play_sorted(unsigned int id, const char *buf)
 	update_statusline();
 }
 
-static void toggle_play_sorted(unsigned int id)
+static void toggle_play_sorted(void *data)
 {
 	editable_lock();
 	play_sorted = play_sorted ^ 1;
@@ -748,35 +748,35 @@ static void toggle_play_sorted(unsigned int id)
 	update_statusline();
 }
 
-static void get_smart_artist_sort(unsigned int id, char *buf)
+static void get_smart_artist_sort(void *data, char *buf)
 {
 	strcpy(buf, bool_names[smart_artist_sort]);
 }
 
-static void set_smart_artist_sort(unsigned int id, const char *buf)
+static void set_smart_artist_sort(void *data, const char *buf)
 {
 	if (parse_bool(buf, &smart_artist_sort))
 		tree_sort_artists();
 }
 
-static void toggle_smart_artist_sort(unsigned int id)
+static void toggle_smart_artist_sort(void *data)
 {
 	smart_artist_sort ^= 1;
 	tree_sort_artists();
 }
 
-static void get_display_artist_sort_name(unsigned int id, char *buf)
+static void get_display_artist_sort_name(void *data, char *buf)
 {
 	strcpy(buf, bool_names[display_artist_sort_name]);
 }
 
-static void set_display_artist_sort_name(unsigned int id, const char *buf)
+static void set_display_artist_sort_name(void *data, const char *buf)
 {
 	parse_bool(buf, &display_artist_sort_name);
 	lib_tree_win->changed = 1;
 }
 
-static void toggle_display_artist_sort_name(unsigned int id)
+static void toggle_display_artist_sort_name(void *data)
 {
 	display_artist_sort_name ^= 1;
 	lib_tree_win->changed = 1;
@@ -786,12 +786,12 @@ const char * const aaa_mode_names[] = {
 	"all", "artist", "album", NULL
 };
 
-static void get_aaa_mode(unsigned int id, char *buf)
+static void get_aaa_mode(void *data, char *buf)
 {
 	strcpy(buf, aaa_mode_names[aaa_mode]);
 }
 
-static void set_aaa_mode(unsigned int id, const char *buf)
+static void set_aaa_mode(void *data, const char *buf)
 {
 	int tmp;
 
@@ -802,7 +802,7 @@ static void set_aaa_mode(unsigned int id, const char *buf)
 	update_statusline();
 }
 
-static void toggle_aaa_mode(unsigned int id)
+static void toggle_aaa_mode(void *data)
 {
 	editable_lock();
 
@@ -815,12 +815,12 @@ static void toggle_aaa_mode(unsigned int id)
 	update_statusline();
 }
 
-static void get_repeat(unsigned int id, char *buf)
+static void get_repeat(void *data, char *buf)
 {
 	strcpy(buf, bool_names[repeat]);
 }
 
-static void set_repeat(unsigned int id, const char *buf)
+static void set_repeat(void *data, const char *buf)
 {
 	int old = repeat;
 	if (!parse_bool(buf, &repeat))
@@ -830,7 +830,7 @@ static void set_repeat(unsigned int id, const char *buf)
 	update_statusline();
 }
 
-static void toggle_repeat(unsigned int id)
+static void toggle_repeat(void *data)
 {
 	repeat ^= 1;
 	if (!player_repeat_current)
@@ -842,12 +842,12 @@ static const char * const replaygain_names[] = {
 	"disabled", "track", "album", "track-preferred", "album-preferred", NULL
 };
 
-static void get_replaygain(unsigned int id, char *buf)
+static void get_replaygain(void *data, char *buf)
 {
 	strcpy(buf, replaygain_names[replaygain]);
 }
 
-static void set_replaygain(unsigned int id, const char *buf)
+static void set_replaygain(void *data, const char *buf)
 {
 	int tmp;
 
@@ -856,17 +856,17 @@ static void set_replaygain(unsigned int id, const char *buf)
 	player_set_rg(tmp);
 }
 
-static void toggle_replaygain(unsigned int id)
+static void toggle_replaygain(void *data)
 {
 	player_set_rg((replaygain + 1) % 5);
 }
 
-static void get_replaygain_limit(unsigned int id, char *buf)
+static void get_replaygain_limit(void *data, char *buf)
 {
 	strcpy(buf, bool_names[replaygain_limit]);
 }
 
-static void set_replaygain_limit(unsigned int id, const char *buf)
+static void set_replaygain_limit(void *data, const char *buf)
 {
 	int tmp;
 
@@ -875,39 +875,39 @@ static void set_replaygain_limit(unsigned int id, const char *buf)
 	player_set_rg_limit(tmp);
 }
 
-static void toggle_replaygain_limit(unsigned int id)
+static void toggle_replaygain_limit(void *data)
 {
 	player_set_rg_limit(replaygain_limit ^ 1);
 }
 
-static void get_resume(unsigned int id, char *buf)
+static void get_resume(void *data, char *buf)
 {
 	strcpy(buf, bool_names[resume_cmus]);
 }
 
-static void set_resume(unsigned int id, const char *buf)
+static void set_resume(void *data, const char *buf)
 {
 	parse_bool(buf, &resume_cmus);
 }
 
-static void toggle_resume(unsigned int id)
+static void toggle_resume(void *data)
 {
 	resume_cmus ^= 1;
 }
 
-static void get_show_hidden(unsigned int id, char *buf)
+static void get_show_hidden(void *data, char *buf)
 {
 	strcpy(buf, bool_names[show_hidden]);
 }
 
-static void set_show_hidden(unsigned int id, const char *buf)
+static void set_show_hidden(void *data, const char *buf)
 {
 	if (!parse_bool(buf, &show_hidden))
 		return;
 	browser_reload();
 }
 
-static void toggle_show_hidden(unsigned int id)
+static void toggle_show_hidden(void *data)
 {
 	show_hidden ^= 1;
 	browser_reload();
@@ -915,7 +915,7 @@ static void toggle_show_hidden(unsigned int id)
 
 static void set_show_all_tracks_int(int); /* defined below */
 
-static void get_auto_expand_albums_follow(unsigned int id, char *buf)
+static void get_auto_expand_albums_follow(void *data, char *buf)
 {
 	strcpy(buf, bool_names[auto_expand_albums_follow]);
 }
@@ -927,19 +927,19 @@ static void set_auto_expand_albums_follow_int(int value)
 		set_show_all_tracks_int(1);
 }
 
-static void set_auto_expand_albums_follow(unsigned int id, const char *buf)
+static void set_auto_expand_albums_follow(void *data, const char *buf)
 {
 	int tmp = 0;
 	parse_bool(buf, &tmp);
 	set_auto_expand_albums_follow_int(tmp);
 }
 
-static void toggle_auto_expand_albums_follow(unsigned int id)
+static void toggle_auto_expand_albums_follow(void *data)
 {
 	set_auto_expand_albums_follow_int(!auto_expand_albums_follow);
 }
 
-static void get_auto_expand_albums_search(unsigned int id, char *buf)
+static void get_auto_expand_albums_search(void *data, char *buf)
 {
 	strcpy(buf, bool_names[auto_expand_albums_search]);
 }
@@ -951,19 +951,19 @@ static void set_auto_expand_albums_search_int(int value)
 		set_show_all_tracks_int(1);
 }
 
-static void set_auto_expand_albums_search(unsigned int id, const char *buf)
+static void set_auto_expand_albums_search(void *data, const char *buf)
 {
 	int tmp = 0;
 	parse_bool(buf, &tmp);
 	set_auto_expand_albums_search_int(tmp);
 }
 
-static void toggle_auto_expand_albums_search(unsigned int id)
+static void toggle_auto_expand_albums_search(void *data)
 {
 	set_auto_expand_albums_search_int(!auto_expand_albums_search);
 }
 
-static void get_auto_expand_albums_selcur(unsigned int id, char *buf)
+static void get_auto_expand_albums_selcur(void *data, char *buf)
 {
 	strcpy(buf, bool_names[auto_expand_albums_selcur]);
 }
@@ -975,20 +975,20 @@ static void set_auto_expand_albums_selcur_int(int value)
 		set_show_all_tracks_int(1);
 }
 
-static void set_auto_expand_albums_selcur(unsigned int id, const char *buf)
+static void set_auto_expand_albums_selcur(void *data, const char *buf)
 {
 	int tmp = 0;
 	parse_bool(buf, &tmp);
 	set_auto_expand_albums_selcur_int(tmp);
 }
 
-static void toggle_auto_expand_albums_selcur(unsigned int id)
+static void toggle_auto_expand_albums_selcur(void *data)
 {
 	set_auto_expand_albums_selcur_int(!auto_expand_albums_selcur);
 }
 
 
-static void get_show_all_tracks(unsigned int id, char *buf)
+static void get_show_all_tracks(void *data, char *buf)
 {
 	strcpy(buf, bool_names[show_all_tracks]);
 }
@@ -1010,92 +1010,92 @@ static void set_show_all_tracks_int(int value)
 	tree_sel_update(0);
 }
 
-static void set_show_all_tracks(unsigned int id, const char *buf)
+static void set_show_all_tracks(void *data, const char *buf)
 {
 	int tmp = 0;
 	parse_bool(buf, &tmp);
 	set_show_all_tracks_int(tmp);
 }
 
-static void toggle_show_all_tracks(unsigned int id)
+static void toggle_show_all_tracks(void *data)
 {
 	set_show_all_tracks_int(!show_all_tracks);
 }
 
-static void get_show_current_bitrate(unsigned int id, char *buf)
+static void get_show_current_bitrate(void *data, char *buf)
 {
 	strcpy(buf, bool_names[show_current_bitrate]);
 }
 
-static void set_show_current_bitrate(unsigned int id, const char *buf)
+static void set_show_current_bitrate(void *data, const char *buf)
 {
 	if (parse_bool(buf, &show_current_bitrate))
 		update_statusline();
 }
 
-static void toggle_show_current_bitrate(unsigned int id)
+static void toggle_show_current_bitrate(void *data)
 {
 	show_current_bitrate ^= 1;
 	update_statusline();
 }
 
-static void get_show_playback_position(unsigned int id, char *buf)
+static void get_show_playback_position(void *data, char *buf)
 {
 	strcpy(buf, bool_names[show_playback_position]);
 }
 
-static void set_show_playback_position(unsigned int id, const char *buf)
+static void set_show_playback_position(void *data, const char *buf)
 {
 	if (!parse_bool(buf, &show_playback_position))
 		return;
 	update_statusline();
 }
 
-static void toggle_show_playback_position(unsigned int id)
+static void toggle_show_playback_position(void *data)
 {
 	show_playback_position ^= 1;
 	update_statusline();
 }
 
-static void get_show_remaining_time(unsigned int id, char *buf)
+static void get_show_remaining_time(void *data, char *buf)
 {
 	strcpy(buf, bool_names[show_remaining_time]);
 }
 
-static void set_show_remaining_time(unsigned int id, const char *buf)
+static void set_show_remaining_time(void *data, const char *buf)
 {
 	if (!parse_bool(buf, &show_remaining_time))
 		return;
 	update_statusline();
 }
 
-static void toggle_show_remaining_time(unsigned int id)
+static void toggle_show_remaining_time(void *data)
 {
 	show_remaining_time ^= 1;
 	update_statusline();
 }
 
-static void get_set_term_title(unsigned int id, char *buf)
+static void get_set_term_title(void *data, char *buf)
 {
 	strcpy(buf, bool_names[set_term_title]);
 }
 
-static void set_set_term_title(unsigned int id, const char *buf)
+static void set_set_term_title(void *data, const char *buf)
 {
 	parse_bool(buf, &set_term_title);
 }
 
-static void toggle_set_term_title(unsigned int id)
+static void toggle_set_term_title(void *data)
 {
 	set_term_title ^= 1;
 }
 
-static void get_shuffle(unsigned int id, char *buf)
+static void get_shuffle(void *data, char *buf)
 {
 	strcpy(buf, bool_names[shuffle]);
 }
 
-static void set_shuffle(unsigned int id, const char *buf)
+static void set_shuffle(void *data, const char *buf)
 {
 	int old = shuffle;
 	if (!parse_bool(buf, &shuffle))
@@ -1105,14 +1105,14 @@ static void set_shuffle(unsigned int id, const char *buf)
 	update_statusline();
 }
 
-static void toggle_shuffle(unsigned int id)
+static void toggle_shuffle(void *data)
 {
 	shuffle ^= 1;
 	mpris_shuffle_changed();
 	update_statusline();
 }
 
-static void get_softvol(unsigned int id, char *buf)
+static void get_softvol(void *data, char *buf)
 {
 	strcpy(buf, bool_names[soft_vol]);
 }
@@ -1127,7 +1127,7 @@ static void do_set_softvol(int soft)
 	update_statusline();
 }
 
-static void set_softvol(unsigned int id, const char *buf)
+static void set_softvol(void *data, const char *buf)
 {
 	int soft;
 
@@ -1136,37 +1136,37 @@ static void set_softvol(unsigned int id, const char *buf)
 	do_set_softvol(soft);
 }
 
-static void toggle_softvol(unsigned int id)
+static void toggle_softvol(void *data)
 {
 	do_set_softvol(soft_vol ^ 1);
 }
 
-static void get_wrap_search(unsigned int id, char *buf)
+static void get_wrap_search(void *data, char *buf)
 {
 	strcpy(buf, bool_names[wrap_search]);
 }
 
-static void set_wrap_search(unsigned int id, const char *buf)
+static void set_wrap_search(void *data, const char *buf)
 {
 	parse_bool(buf, &wrap_search);
 }
 
-static void toggle_wrap_search(unsigned int id)
+static void toggle_wrap_search(void *data)
 {
 	wrap_search ^= 1;
 }
 
-static void get_skip_track_info(unsigned int id, char *buf)
+static void get_skip_track_info(void *data, char *buf)
 {
 	strcpy(buf, bool_names[skip_track_info]);
 }
 
-static void set_skip_track_info(unsigned int id, const char *buf)
+static void set_skip_track_info(void *data, const char *buf)
 {
 	parse_bool(buf, &skip_track_info);
 }
 
-static void toggle_skip_track_info(unsigned int id)
+static void toggle_skip_track_info(void *data)
 {
 	skip_track_info ^= 1;
 }
@@ -1193,34 +1193,34 @@ void update_mouse(void)
 	}
 }
 
-static void get_mouse(unsigned int id, char *buf)
+static void get_mouse(void *data, char *buf)
 {
 	strcpy(buf, bool_names[mouse]);
 }
 
-static void set_mouse(unsigned int id, const char *buf)
+static void set_mouse(void *data, const char *buf)
 {
 	parse_bool(buf, &mouse);
 	update_mouse();
 }
 
-static void toggle_mouse(unsigned int id)
+static void toggle_mouse(void *data)
 {
 	mouse ^= 1;
 	update_mouse();
 }
 
-static void get_mpris(unsigned int id, char *buf)
+static void get_mpris(void *data, char *buf)
 {
 	strcpy(buf, bool_names[mpris]);
 }
 
-static void set_mpris(unsigned int id, const char *buf)
+static void set_mpris(void *data, const char *buf)
 {
 	parse_bool(buf, &mpris);
 }
 
-static void toggle_mpris(unsigned int id)
+static void toggle_mpris(void *data)
 {
 	mpris ^= 1;
 }
@@ -1236,11 +1236,9 @@ static const char * const color_enum_names[1 + 8 * 2 + 1] = {
 	NULL
 };
 
-static void get_color(unsigned int id, char *buf)
+static void get_color(void *data, char *buf)
 {
-	int val;
-
-	val = colors[id];
+	int val = *(int *)data;
 	if (val < 16) {
 		strcpy(buf, color_enum_names[val + 1]);
 	} else {
@@ -1248,21 +1246,21 @@ static void get_color(unsigned int id, char *buf)
 	}
 }
 
-static void set_color(unsigned int id, const char *buf)
+static void set_color(void *data, const char *buf)
 {
 	int color;
 
 	if (!parse_enum(buf, -1, 255, color_enum_names, &color))
 		return;
 
-	colors[id] = color;
+	*(int *)data = color;
 	update_colors();
 	update_full();
 }
 
-static void get_attr(unsigned int id, char *buf)
+static void get_attr(void *data, char *buf)
 {
-	int attr = attrs[id];
+	int attr = *(int *)data;
 
 	if (attr == 0) {
 		strcpy(buf, "default");
@@ -1287,7 +1285,7 @@ static void get_attr(unsigned int id, char *buf)
 	buf[strlen(buf) - 1] = '\0';
 }
 
-static void set_attr(unsigned int id, const char *buf)
+static void set_attr(void *data, const char *buf)
 {
 	int attr = 0;
 	size_t i = 0;
@@ -1322,7 +1320,7 @@ static void set_attr(unsigned int id, const char *buf)
 		length++;
 	} while (buf[i - 1] != '\0');
 
-	attrs[id] = attr;
+	*(int *)data = attr;
 	update_colors();
 	update_full();
 }
@@ -1364,16 +1362,16 @@ static char **id_to_fmt(enum format_id id)
 	return NULL;
 }
 
-static void get_format(unsigned int id, char *buf)
+static void get_format(void *data, char *buf)
 {
-	char **fmtp = id_to_fmt(id);
+	char **fmtp = data;
 
 	strcpy(buf, *fmtp);
 }
 
-static void set_format(unsigned int id, const char *buf)
+static void set_format(void *data, const char *buf)
 {
-	char **fmtp = id_to_fmt(id);
+	char **fmtp = data;
 
 	if (!track_format_valid(buf)) {
 		error_msg("invalid format string");
@@ -1485,14 +1483,14 @@ static const char * const attr_names[NR_ATTRS] = {
 LIST_HEAD(option_head);
 int nr_options = 0;
 
-void option_add(const char *name, unsigned int id, opt_get_cb get,
+void option_add(const char *name, const void *data, opt_get_cb get,
 		opt_set_cb set, opt_toggle_cb toggle, unsigned int flags)
 {
 	struct cmus_opt *opt = xnew(struct cmus_opt, 1);
 	struct list_head *item;
 
 	opt->name = name;
-	opt->id = id;
+	opt->data = (void *)data;
 	opt->get = get;
 	opt->set = set;
 	opt->toggle = toggle;
@@ -1535,7 +1533,7 @@ void option_set(const char *name, const char *value)
 	struct cmus_opt *opt = option_find(name);
 
 	if (opt)
-		opt->set(opt->id, value);
+		opt->set(opt->data, value);
 }
 
 void options_add(void)
@@ -1543,18 +1541,21 @@ void options_add(void)
 	int i;
 
 	for (i = 0; simple_options[i].name; i++)
-		option_add(simple_options[i].name, 0, simple_options[i].get,
+		option_add(simple_options[i].name, NULL, simple_options[i].get,
 				simple_options[i].set, simple_options[i].toggle,
 				simple_options[i].flags);
 
 	for (i = 0; i < NR_FMTS; i++)
-		option_add(str_defaults[i].name, i, get_format, set_format, NULL, 0);
+		option_add(str_defaults[i].name, id_to_fmt(i), get_format,
+				set_format, NULL, 0);
 
 	for (i = 0; i < NR_COLORS; i++)
-		option_add(color_names[i], i, get_color, set_color, NULL, 0);
+		option_add(color_names[i], &colors[i], get_color, set_color,
+				NULL, 0);
 
 	for (i = 0; i < NR_ATTRS; i++)
-		option_add(attr_names[i], i, get_attr, set_attr, NULL, 0);
+		option_add(attr_names[i], &attrs[i], get_attr, set_attr, NULL,
+				0);
 
 	ip_add_options();
 	op_add_options();
@@ -1623,7 +1624,7 @@ void options_exit(void)
 		char buf[OPTION_MAX_SIZE];
 
 		buf[0] = 0;
-		opt->get(opt->id, buf);
+		opt->get(opt->data, buf);
 		fprintf(f, "set %s=%s\n", opt->name, buf);
 	}
 

@@ -223,16 +223,6 @@ static int sndio_mixer_close(void)
 	return OP_ERROR_SUCCESS;
 }
 
-static int sndio_mixer_set_option(int key, const char *val)
-{
-	return -OP_ERROR_NOT_OPTION;
-}
-
-static int sndio_mixer_get_option(int key, char **val)
-{
-	return -OP_ERROR_NOT_OPTION;
-}
-
 const struct output_plugin_ops op_pcm_ops = {
 	.init = sndio_init,
 	.exit = sndio_exit,
@@ -242,8 +232,6 @@ const struct output_plugin_ops op_pcm_ops = {
 	.pause = sndio_pause,
 	.unpause = sndio_unpause,
 	.buffer_space = sndio_buffer_space,
-	.set_option = op_sndio_set_option,
-	.get_option = op_sndio_get_option
 };
 
 const struct mixer_plugin_ops op_mixer_ops = {
@@ -253,16 +241,14 @@ const struct mixer_plugin_ops op_mixer_ops = {
 	.close = sndio_mixer_close,
 	.set_volume = sndio_mixer_set_volume,
 	.get_volume = sndio_mixer_get_volume,
-	.set_option = sndio_mixer_set_option,
-	.get_option = sndio_mixer_get_option
 };
 
-const char * const op_pcm_options[] = {
-	NULL
+const struct output_plugin_opt op_pcm_options[] = {
+	{ NULL },
 };
 
-const char * const op_mixer_options[] = {
-	NULL
+const struct mixer_plugin_opt op_mixer_options[] = {
+	{ NULL },
 };
 
 const int op_priority = 2;

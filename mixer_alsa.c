@@ -180,37 +180,31 @@ static int alsa_mixer_get_volume(int *l, int *r)
 	return 0;
 }
 
-static int alsa_mixer_set_option(int key, const char *val)
+static int alsa_mixer_set_channel(const char *val)
 {
-	switch (key) {
-	case 0:
-		free(alsa_mixer_element);
-		alsa_mixer_element = xstrdup(val);
-		break;
-	case 1:
-		free(alsa_mixer_device);
-		alsa_mixer_device = xstrdup(val);
-		break;
-	default:
-		return -OP_ERROR_NOT_OPTION;
-	}
+	free(alsa_mixer_element);
+	alsa_mixer_element = xstrdup(val);
 	return 0;
 }
 
-static int alsa_mixer_get_option(int key, char **val)
+static int alsa_mixer_get_channel(char **val)
 {
-	switch (key) {
-	case 0:
-		if (alsa_mixer_element)
-			*val = xstrdup(alsa_mixer_element);
-		break;
-	case 1:
-		if (alsa_mixer_device)
-			*val = xstrdup(alsa_mixer_device);
-		break;
-	default:
-		return -OP_ERROR_NOT_OPTION;
-	}
+	if (alsa_mixer_element)
+		*val = xstrdup(alsa_mixer_element);
+	return 0;
+}
+
+static int alsa_mixer_set_device(const char *val)
+{
+	free(alsa_mixer_device);
+	alsa_mixer_device = xstrdup(val);
+	return 0;
+}
+
+static int alsa_mixer_get_device(char **val)
+{
+	if (alsa_mixer_device)
+		*val = xstrdup(alsa_mixer_device);
 	return 0;
 }
 
@@ -222,12 +216,10 @@ const struct mixer_plugin_ops op_mixer_ops = {
 	.get_fds = alsa_mixer_get_fds,
 	.set_volume = alsa_mixer_set_volume,
 	.get_volume = alsa_mixer_get_volume,
-	.set_option = alsa_mixer_set_option,
-	.get_option = alsa_mixer_get_option
 };
 
-const char * const op_mixer_options[] = {
-	"channel",
-	"device",
-	NULL
+const struct mixer_plugin_opt op_mixer_options[] = {
+	OPT(alsa_mixer, channel),
+	OPT(alsa_mixer, device),
+	{ NULL },
 };

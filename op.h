@@ -60,13 +60,20 @@ struct output_plugin_ops {
 	int (*pause)(void);
 	int (*unpause)(void);
 
-	int (*set_option)(int key, const char *val);
-	int (*get_option)(int key, char **val);
+};
+
+#define OPT(prefix, name) { #name, prefix ## _set_ ## name, \
+	prefix ## _get_ ## name }
+
+struct output_plugin_opt {
+	const char *name;
+	int (*set)(const char *val);
+	int (*get)(char **val);
 };
 
 /* symbols exported by plugin */
 extern const struct output_plugin_ops op_pcm_ops;
-extern const char * const op_pcm_options[];
+extern const struct output_plugin_opt op_pcm_options[];
 extern const int op_priority;
 
 #endif

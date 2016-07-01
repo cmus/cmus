@@ -280,4 +280,4 @@ const char * const ip_extensions[] = { "mp3", "mp2", NULL };
 const char * const ip_mime_types[] = {
 	"audio/mpeg", "audio/x-mp3", "audio/x-mpeg", NULL
 };
-const char * const ip_options[] = { NULL };
+const struct input_plugin_opt ip_options[] = { { NULL } };

@@ -468,16 +468,6 @@ static int op_pulse_unpause(void)
 	return _pa_stream_cork(0);
 }
 
-static int op_pulse_set_option(int key, const char *val)
-{
-	return -OP_ERROR_NOT_OPTION;
-}
-
-static int op_pulse_get_option(int key, char **val)
-{
-	return -OP_ERROR_NOT_OPTION;
-}
-
 static int op_pulse_mixer_init(void)
 {
 	if (!pa_channel_map_init_stereo(&pa_cmap))
@@ -561,27 +551,15 @@ static int op_pulse_mixer_get_volume(int *l, int *r)
 	return rc;
 }
 
-static int op_pulse_mixer_set_option(int key, const char *val)
+static int op_pulse_set_restore_volume(const char *val)
 {
-	switch (key) {
-	case 0:
-		pa_restore_volume = is_freeform_true(val);
-		break;
-	default:
-		return -OP_ERROR_NOT_OPTION;
-	}
+	pa_restore_volume = is_freeform_true(val);
 	return 0;
 }
 
-static int op_pulse_mixer_get_option(int key, char **val)
+static int op_pulse_get_restore_volume(char **val)
 {
-	switch (key) {
-	case 0:
-		*val = xstrdup(pa_restore_volume ? "1" : "0");
-		break;
-	default:
-		return -OP_ERROR_NOT_OPTION;
-	}
+	*val = xstrdup(pa_restore_volume ? "1" : "0");
 	return 0;
 }
 
@@ -595,8 +573,6 @@ const struct output_plugin_ops op_pcm_ops = {
 	.buffer_space	= op_pulse_buffer_space,
 	.pause		= op_pulse_pause,
 	.unpause	= op_pulse_unpause,
-	.set_option	= op_pulse_set_option,
-	.get_option	= op_pulse_get_option
 };
 
 const struct mixer_plugin_ops op_mixer_ops = {
@@ -607,18 +583,15 @@ const struct mixer_plugin_ops op_mixer_ops = {
 	.get_fds	= op_pulse_mixer_get_fds,
 	.set_volume	= op_pulse_mixer_set_volume,
 	.get_volume	= op_pulse_mixer_get_volume,
-	.set_option	= op_pulse_mixer_set_option,
-	.get_option	= op_pulse_mixer_get_option
 };
 
-const char * const op_pcm_options[] = {
-	NULL
+const struct output_plugin_opt op_pcm_options[] = {
+	{ NULL },
 };
 
-const char * const op_mixer_options[] = {
-	"restore_volume",
-	NULL
+const struct mixer_plugin_opt op_mixer_options[] = {
+	OPT(op_pulse, restore_volume),
+	{ NULL },
 };
 
 const int op_priority = -2;
-

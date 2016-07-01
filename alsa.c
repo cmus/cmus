@@ -345,29 +345,17 @@ static int op_alsa_unpause(void)
 	return alsa_error_to_op_error(rc);
 }
 
-static int op_alsa_set_option(int key, const char *val)
+static int op_alsa_set_device(const char *val)
 {
-	switch (key) {
-	case 0:
-		free(alsa_dsp_device);
-		alsa_dsp_device = xstrdup(val);
-		break;
-	default:
-		return -OP_ERROR_NOT_OPTION;
-	}
+	free(alsa_dsp_device);
+	alsa_dsp_device = xstrdup(val);
 	return OP_ERROR_SUCCESS;
 }
 
-static int op_alsa_get_option(int key, char **val)
+static int op_alsa_get_device(char **val)
 {
-	switch (key) {
-	case 0:
-		if (alsa_dsp_device)
-			*val = xstrdup(alsa_dsp_device);
-		break;
-	default:
-		return -OP_ERROR_NOT_OPTION;
-	}
+	if (alsa_dsp_device)
+		*val = xstrdup(alsa_dsp_device);
 	return OP_ERROR_SUCCESS;
 }
 
@@ -381,13 +369,11 @@ const struct output_plugin_ops op_pcm_ops = {
 	.buffer_space = op_alsa_buffer_space,
 	.pause = op_alsa_pause,
 	.unpause = op_alsa_unpause,
-	.set_option = op_alsa_set_option,
-	.get_option = op_alsa_get_option
 };
 
-const char * const op_pcm_options[] = {
-	"device",
-	NULL
+const struct output_plugin_opt op_pcm_options[] = {
+	OPT(op_alsa, device),
+	{ NULL },
 };
 
 const int op_priority = 0;

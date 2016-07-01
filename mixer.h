@@ -33,12 +33,16 @@ struct mixer_plugin_ops {
 	int (*get_fds)(int *fds);
 	int (*set_volume)(int l, int r);
 	int (*get_volume)(int *l, int *r);
-	int (*set_option)(int key, const char *val);
-	int (*get_option)(int key, char **val);
+};
+
+struct mixer_plugin_opt {
+	const char *name;
+	int (*set)(const char *val);
+	int (*get)(char **val);
 };
 
 /* symbols exported by plugin */
 extern const struct mixer_plugin_ops op_mixer_ops;
-extern const char * const op_mixer_options[];
+extern const struct mixer_plugin_opt op_mixer_options[];
 
 #endif
