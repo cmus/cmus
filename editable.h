@@ -39,8 +39,6 @@ struct editable {
 	void (*free_track)(struct list_head *item);
 };
 
-extern pthread_mutex_t editable_mutex;
-
 void editable_init(struct editable *e, void (*free_track)(struct list_head *item));
 void editable_add(struct editable *e, struct simple_track *track);
 void editable_add_before(struct editable *e, struct simple_track *track);
@@ -70,8 +68,5 @@ static inline void editable_track_to_iter(struct editable *e, struct simple_trac
 	iter->data1 = track;
 	iter->data2 = NULL;
 }
-
-#define editable_lock() cmus_mutex_lock(&editable_mutex)
-#define editable_unlock() cmus_mutex_unlock(&editable_mutex)
 
 #endif

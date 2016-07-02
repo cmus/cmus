@@ -46,27 +46,120 @@
 #include <errno.h>
 #include <sys/mman.h>
 
-static struct track_info *ti_buffer[32];
-static int ti_buffer_fill;
+enum job_result_var {
+	JOB_RES_ADD,
+	JOB_RES_UPDATE,
+	JOB_RES_UPDATE_CACHE,
+};
+
+enum update_kind {
+	UPDATE_NONE = 0,
+	UPDATE_REMOVE = 1,
+	UPDATE_MTIME_CHANGED = 2,
+};
+
+struct job_result {
+	struct list_head node;
+
+	enum job_result_var var;
+	union {
+		struct {
+			add_ti_cb add_cb;
+			size_t add_num;
+			struct track_info **add_ti;
+		};
+		struct {
+			size_t update_num;
+			struct track_info **update_ti;
+			enum update_kind *update_kind;
+		};
+		struct {
+			size_t update_cache_num;
+			struct track_info **update_cache_ti;
+		};
+	};
+};
+
+int job_fd;
+static int job_fd_priv;
+
+static LIST_HEAD(job_result_head);
+static pthread_mutex_t job_mutex = CMUS_MUTEX_INITIALIZER;
+
+#define job_lock() cmus_mutex_lock(&job_mutex)
+#define job_unlock() cmus_mutex_unlock(&job_mutex)
+
+void job_init(void)
+{
+	int fds[] = { 0, 0 };
+	int rc = pipe(fds);
+	BUG_ON(rc);
+	job_fd = fds[0];
+	job_fd_priv = fds[1];
+
+	worker_init();
+}
+
+void job_exit(void)
+{
+	worker_remove_jobs(JOB_TYPE_ANY);
+	worker_exit();
+
+	close(job_fd);
+	close(job_fd_priv);
+}
+
+static void job_push_result(struct job_result *res)
+{
+	char b = 0;
+
+	job_lock();
+	list_add_tail(&res->node, &job_result_head);
+	write(job_fd_priv, &b, 1);
+	job_unlock();
+}
+
+static struct job_result *job_pop_result(void)
+{
+	struct job_result *res = NULL;
+
+	job_lock();
+	if (!list_empty(&job_result_head)) {
+		struct list_head *item = job_result_head.next;
+		list_del(item);
+		res = container_of(item, struct job_result, node);
+	}
+	job_unlock();
+
+	return res;
+}
+
+#define TI_CAP 32
+static struct track_info **ti_buffer;
+static size_t ti_buffer_fill;
 static struct add_data *jd;
 
 static void flush_ti_buffer(void)
 {
-	int i;
+	struct job_result *res = xnew(struct job_result, 1);
 
-	editable_lock();
-	for (i = 0; i < ti_buffer_fill; i++) {
-		jd->add(ti_buffer[i]);
-		track_info_unref(ti_buffer[i]);
-	}
-	editable_unlock();
+	res->var = JOB_RES_ADD;
+	res->add_cb = jd->add;
+	res->add_num = ti_buffer_fill;
+	res->add_ti = ti_buffer;
+
+	job_push_result(res);
+
 	ti_buffer_fill = 0;
+	ti_buffer = NULL;
 }
 
 static void add_ti(struct track_info *ti)
 {
-	if (ti_buffer_fill == N_ELEMENTS(ti_buffer))
+	if (ti_buffer_fill == TI_CAP)
 		flush_ti_buffer();
+	if (!ti_buffer)
+		ti_buffer = xnew(struct track_info *, TI_CAP);
 	ti_buffer[ti_buffer_fill++] = ti;
 }
 
@@ -289,7 +382,7 @@ static void add_pl(const char *filename)
 	}
 }
 
-void do_add_job(void *data)
+static void do_add_job(void *data)
 {
 	jd = data;
 	switch (jd->type) {
@@ -311,74 +404,147 @@ void do_add_job(void *data)
 	case FILE_TYPE_INVALID:
 		break;
 	}
-	if (ti_buffer_fill)
+	if (ti_buffer)
 		flush_ti_buffer();
 	jd = NULL;
 }
 
-void free_add_job(void *data)
+static void free_add_job(void *data)
 {
 	struct add_data *d = data;
 	free(d->name);
 	free(d);
-	ui_curses_notify();
 }
 
-void do_update_job(void *data)
+static void job_handle_add_result(struct job_result *res)
+{
+	for (size_t i = 0; i < res->add_num; i++) {
+		res->add_cb(res->add_ti[i]);
+		track_info_unref(res->add_ti[i]);
+	}
+
+	free(res->add_ti);
+}
+
+void job_schedule_add(int type, struct add_data *data)
+{
+	worker_add_job(type, do_add_job, free_add_job, data);
+}
+
+static void do_update_job(void *data)
 {
 	struct update_data *d = data;
 	int i;
+	enum update_kind *kind = xnew(enum update_kind, d->used);
+	struct job_result *res;
 
 	for (i = 0; i < d->used; i++) {
 		struct track_info *ti = d->ti[i];
 		struct stat s;
 		int rc;
 
-		/* stat follows symlinks, lstat does not */
 		rc = stat(ti->filename, &s);
 		if (rc || d->force || ti->mtime != s.st_mtime || ti->duration == 0) {
-			int force = ti->duration == 0;
-			editable_lock();
-			lib_remove(ti);
-			editable_unlock();
-
-			cache_lock();
-			cache_remove_ti(ti);
-			cache_unlock();
-
-			if (!is_cue_url(ti->filename) && !is_http_url(ti->filename) && rc) {
-				d_print("removing dead file %s\n", ti->filename);
-			} else {
-				if (ti->mtime != s.st_mtime)
-					d_print("mtime changed: %s\n", ti->filename);
-				cmus_add(lib_add_track, ti->filename, FILE_TYPE_FILE, JOB_TYPE_LIB, force);
-			}
+			kind[i] = UPDATE_NONE;
+			if (!is_cue_url(ti->filename) && !is_http_url(ti->filename) && rc)
+				kind[i] |= UPDATE_REMOVE;
+			else if (ti->mtime != s.st_mtime)
+				kind[i] |= UPDATE_MTIME_CHANGED;
+		} else {
+			track_info_unref(ti);
+			d->ti[i] = NULL;
 		}
-		track_info_unref(ti);
 	}
+
+	res = xnew(struct job_result, 1);
+
+	res->var = JOB_RES_UPDATE;
+	res->update_num = d->used;
+	res->update_ti = d->ti;
+	res->update_kind = kind;
+
+	job_push_result(res);
+
+	d->ti = NULL;
 }
 
-void free_update_job(void *data)
+static void free_update_job(void *data)
 {
 	struct update_data *d = data;
 
-	free(d->ti);
+	if (d->ti) {
+		for (size_t i = 0; i < d->used; i++)
+			track_info_unref(d->ti[i]);
+		free(d->ti);
+	}
 	free(d);
-	ui_curses_notify();
 }
 
-void do_update_cache_job(void *data)
+static void job_handle_update_result(struct job_result *res)
+{
+	for (size_t i = 0; i < res->update_num; i++) {
+		struct track_info *ti = res->update_ti[i];
+		int force;
+
+		if (!ti)
+			continue;
+
+		lib_remove(ti);
+
+		cache_lock();
+		cache_remove_ti(ti);
+		cache_unlock();
+
+		if (res->update_kind[i] & UPDATE_REMOVE) {
+			d_print("removing dead file %s\n", ti->filename);
+		} else {
+			if (res->update_kind[i] & UPDATE_MTIME_CHANGED)
+				d_print("mtime changed: %s\n", ti->filename);
+			force = ti->duration == 0;
+			cmus_add(lib_add_track, ti->filename, FILE_TYPE_FILE,
+					JOB_TYPE_LIB, force);
+		}
+
+		track_info_unref(ti);
+	}
+
+	free(res->update_kind);
+	free(res->update_ti);
+}
+
+void job_schedule_update(struct update_data *data)
+{
+	worker_add_job(JOB_TYPE_LIB, do_update_job, free_update_job, data);
+}
+
+static void do_update_cache_job(void *data)
 {
 	struct update_cache_data *d = data;
+	int count;
 	struct track_info **tis;
-	int i, count;
+	struct job_result *res;
 
 	cache_lock();
 	tis = cache_refresh(&count, d->force);
-	editable_lock();
+	cache_unlock();
+
+	res = xnew(struct job_result, 1);
+	res->var = JOB_RES_UPDATE_CACHE;
+	res->update_cache_ti = tis;
+	res->update_cache_num = count;
+	job_push_result(res);
+}
+
+static void free_update_cache_job(void *data)
+{
+	free(data);
+}
+
+static void job_handle_update_cache_result(struct job_result *res)
+{
 	player_info_lock();
-	for (i = 0; i < count; i++) {
-		struct track_info *new, *old = tis[i];
+	for (size_t i = 0; i < res->update_cache_num; i++) {
+		struct track_info *new, *old = res->update_cache_ti[i];
 
 		if (!old)
 			continue;
@@ -398,13 +564,33 @@ void do_update_cache_job(void *data)
 			track_info_unref(new);
 	}
 	player_info_unlock();
-	editable_unlock();
-	cache_unlock();
-	free(tis);
+	free(res->update_cache_ti);
 }
 
-void free_update_cache_job(void *data)
+void job_schedule_update_cache(int type, struct update_cache_data *data)
 {
-	free(data);
-	ui_curses_notify();
+	worker_add_job(type, do_update_cache_job, free_update_cache_job, data);
+}
+
+static void job_handle_result(struct job_result *res)
+{
+	switch (res->var) {
+	case JOB_RES_ADD:
+		job_handle_add_result(res);
+		break;
+	case JOB_RES_UPDATE:
+		job_handle_update_result(res);
+		break;
+	case JOB_RES_UPDATE_CACHE:
+		job_handle_update_cache_result(res);
+		break;
+	}
+	free(res);
+}
+
+void job_handle_results(void)
+{
+	struct job_result *res;
+	while ((res = job_pop_result()))
+		job_handle_result(res);
 }

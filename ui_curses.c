@@ -16,6 +16,7 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "job.h"
 #include "convert.h"
 #include "ui_curses.h"
 #include "cmdline.h"
@@ -108,9 +109,6 @@ int using_utf8 = 0;
 static char *lib_autosave_filename;
 static char *pl_autosave_filename;
 static char *play_queue_autosave_filename;
-
-static int notify_in;
-static int notify_out;
 
 /* shown error message and time stamp
  * error is cleared if it is older than 3s and key was pressed
@@ -646,10 +644,8 @@ const struct format_option *get_global_fopts(void)
 	int buffer_fill, vol, vol_left, vol_right;
 	int duration = -1;
 
-	editable_lock();
 	fopt_set_time(&track_fopts[TF_TOTAL], play_library ? lib_editable.total_time :
 			pl_editable.total_time, 0);
-	editable_unlock();
 
 	fopt_set_str(&track_fopts[TF_FOLLOW], follow_strs[follow]);
 	fopt_set_str(&track_fopts[TF_REPEAT], repeat_strs[repeat]);
@@ -1116,30 +1112,22 @@ static void do_update_view(int full)
 
 	switch (cur_view) {
 	case TREE_VIEW:
-		editable_lock();
 		if (full || lib_tree_win->changed)
 			update_tree_window();
 		if (full || lib_track_win->changed)
 			update_track_window();
-		editable_unlock();
 		draw_separator();
 		update_filterline();
 		break;
 	case SORTED_VIEW:
-		editable_lock();
 		update_sorted_window();
-		editable_unlock();
 		update_filterline();
 		break;
 	case PLAYLIST_VIEW:
-		editable_lock();
 		update_pl_window();
-		editable_unlock();
 		break;
 	case QUEUE_VIEW:
-		editable_lock();
 		update_play_queue_window();
-		editable_unlock();
 		break;
 	case BROWSER_VIEW:
 		update_browser_window();
@@ -1880,7 +1868,6 @@ static void update(void)
 				w = 16;
 			if (h < 2)
 				h = 2;
-			editable_lock();
 			resize_tree_view(w, h);
 			window_set_nr_rows(lib_editable.win, h - 1);
 			window_set_nr_rows(pl_editable.win, h - 1);
@@ -1888,7 +1875,6 @@ static void update(void)
 			window_set_nr_rows(filters_win, h - 1);
 			window_set_nr_rows(help_win, h - 1);
 			window_set_nr_rows(browser_win, h - 1);
-			editable_unlock();
 			needs_title_update = 1;
 			needs_status_update = 1;
 			needs_command_update = 1;
@@ -1898,7 +1884,6 @@ static void update(void)
 	}
 
 	player_info_lock();
-	editable_lock();
 
 	if (player_info.status_changed)
 		mpris_playback_status_changed();
@@ -1957,7 +1942,6 @@ static void update(void)
 		pl_editable.win->changed = 0;
 	}
 
-	editable_unlock();
 	player_info_unlock();
 
 	if (needs_spawn)
@@ -2101,17 +2085,15 @@ static void u_getch(void)
 	handle_ch(u);
 }
 
-void ui_curses_notify(void)
-{
-	char c;
-	if (write(notify_in, &c, 1) == -1) {
-		d_print("write failed: %s\n", strerror(errno));
-	}
-}
-
 static void main_loop(void)
 {
 	int rc, fd_high;
+
+#define SELECT_ADD_FD(fd) do {\
+	FD_SET((fd), &set); \
+	if ((fd) > fd_high) \
+		fd_high = (fd); \
+} while(0)
 
 	fd_high = server_socket;
 	while (cmus_running) {
@@ -2149,20 +2131,13 @@ static void main_loop(void)
 		}
 
 		FD_ZERO(&set);
-		FD_SET(0, &set);
-		FD_SET(notify_out, &set);
-		if (notify_out > fd_high)
-			fd_high = notify_out;
-		FD_SET(server_socket, &set);
-		if (mpris_fd != -1) {
-			FD_SET(mpris_fd, &set);
-			if (mpris_fd > fd_high)
-				fd_high = mpris_fd;
-		}
+		SELECT_ADD_FD(0);
+		SELECT_ADD_FD(job_fd);
+		SELECT_ADD_FD(server_socket);
+		if (mpris_fd != -1)
+			SELECT_ADD_FD(mpris_fd);
 		list_for_each_entry(client, &client_head, node) {
-			FD_SET(client->fd, &set);
-			if (client->fd > fd_high)
-				fd_high = client->fd;
+			SELECT_ADD_FD(client->fd);
 		}
 		if (!soft_vol) {
 			nr_fds = mixer_get_fds(fds);
@@ -2173,9 +2148,7 @@ static void main_loop(void)
 			}
 			for (i = 0; i < nr_fds; i++) {
 				BUG_ON(fds[i] <= 0);
-				FD_SET(fds[i], &set);
-				if (fds[i] > fd_high)
-					fd_high = fds[i];
+				SELECT_ADD_FD(fds[i]);
 			}
 		}
 
@@ -2231,11 +2204,10 @@ static void main_loop(void)
 		if (mpris_fd != -1 && FD_ISSET(mpris_fd, &set))
 			mpris_process();
 
-		if (FD_ISSET(notify_out, &set)) {
+		if (FD_ISSET(job_fd, &set)) {
 			char buf[128];
-			if (read(notify_out, buf, sizeof(buf)) == -1) {
-				d_print("read failed: %s\n", strerror(errno));
-			}
+			read(job_fd, buf, sizeof(buf));
+			job_handle_results();
 		}
 	}
 }
@@ -2244,7 +2216,6 @@ static int get_next(struct track_info **ti)
 {
 	struct track_info *info;
 
-	editable_lock();
 	info = play_queue_remove();
 	if (info == NULL) {
 		if (play_library) {
@@ -2253,7 +2224,6 @@ static int get_next(struct track_info **ti)
 			info = pl_goto_next();
 		}
 	}
-	editable_unlock();
 
 	if (info == NULL)
 		return -1;
@@ -2352,16 +2322,6 @@ static void init_curses(void)
 		}
 	}
 	update_mouse();
-}
-
-static void notify_init(void)
-{
-	int fildes[2];
-	BUG_ON(pipe(fildes) == -1);
-	notify_out = fildes[0];
-	notify_in = fildes[1];
-	int flags = fcntl(notify_in, F_GETFL, 0);
-	fcntl(notify_in, F_SETFL, flags | O_NONBLOCK);
 }
 
 static void init_all(void)
@@ -2542,7 +2502,6 @@ int main(int argc, char *argv[])
 		op_dump_plugins();
 		return 0;
 	}
-	notify_init();
 	init_all();
 	main_loop();
 	exit_all();

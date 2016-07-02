@@ -471,9 +471,7 @@ static void set_lib_sort(unsigned int id, const char *buf)
 	sort_key_t *keys = parse_sort_keys(buf);
 
 	if (keys) {
-		editable_lock();
 		editable_set_sort_keys(&lib_editable, keys);
-		editable_unlock();
 		sort_keys_to_str(keys, lib_editable.sort_str, sizeof(lib_editable.sort_str));
 	}
 }
@@ -488,9 +486,7 @@ static void set_pl_sort(unsigned int id, const char *buf)
 	sort_key_t *keys = parse_sort_keys(buf);
 
 	if (keys) {
-		editable_lock();
 		editable_set_sort_keys(&pl_editable, keys);
-		editable_unlock();
 		sort_keys_to_str(keys, pl_editable.sort_str, sizeof(pl_editable.sort_str));
 	}
 }
@@ -725,16 +721,13 @@ static void set_play_sorted(unsigned int id, const char *buf)
 	if (!parse_bool(buf, &tmp))
 		return;
 
-	editable_lock();
 	play_sorted = tmp;
-	editable_unlock();
 
 	update_statusline();
 }
 
 static void toggle_play_sorted(unsigned int id)
 {
-	editable_lock();
 	play_sorted = play_sorted ^ 1;
 
 	/* shuffle would override play_sorted... */
@@ -744,7 +737,6 @@ static void toggle_play_sorted(unsigned int id)
 		shuffle = 0;
 	}
 
-	editable_unlock();
 	update_statusline();
 }
 
@@ -804,14 +796,11 @@ static void set_aaa_mode(unsigned int id, const char *buf)
 
 static void toggle_aaa_mode(unsigned int id)
 {
-	editable_lock();
-
 	/* aaa mode makes no sense in playlist */
 	play_library = 1;
 
 	aaa_mode++;
 	aaa_mode %= 3;
-	editable_unlock();
 	update_statusline();
 }
 
@@ -1726,7 +1715,6 @@ void resume_load(void)
 		ti = old = cache_get_ti(resume.lib_filename, 0);
 		cache_unlock();
 		if (ti) {
-			editable_lock();
 			lib_add_track(ti);
 			track_info_unref(ti);
 			lib_store_cur_track(ti);
@@ -1738,7 +1726,6 @@ void resume_load(void)
 				tree_sel_current(auto_expand_albums_follow);
 				sorted_sel_current();
 			}
-			editable_unlock();
 		}
 		free(resume.lib_filename);
 	}
@@ -1754,9 +1741,7 @@ void resume_load(void)
 		free(resume.filename);
 	}
 	if (resume.live_filter) {
-		editable_lock();
 		filters_set_live(resume.live_filter);
-		editable_unlock();
 		free(resume.live_filter);
 	}
 	if (resume.browser_dir) {
