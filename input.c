@@ -37,7 +37,6 @@
 #endif
 
 #include <unistd.h>
-#include <stdbool.h>
 #include <string.h>
 #include <errno.h>
 #include <stdio.h>
@@ -84,7 +83,6 @@ struct input_plugin {
 
 struct ip {
 	struct list_head node;
-	struct list_head sorted_node;
 	char *name;
 	void *handle;
 
@@ -97,7 +95,6 @@ struct ip {
 
 static const char * const plugin_dir = LIBDIR "/cmus/ip";
 static LIST_HEAD(ip_head);
-static LIST_HEAD(sorted_ip_head);
 
 /* timeouts (ms) */
 static int http_connection_timeout = 5e3;
@@ -113,14 +110,10 @@ static const struct input_plugin_ops *get_ops_by_extension(const char *ext, stru
 {
 	struct list_head *node = *headp;
 
-	for (node = node->next; node != &sorted_ip_head; node = node->next) {
-		struct ip *ip = list_entry(node, struct ip, sorted_node);
+	for (node = node->next; node != &ip_head; node = node->next) {
+		struct ip *ip = list_entry(node, struct ip, node);
 		const char * const *exts = ip->extensions;
 		int i;
-
-		if (ip->priority <= 0) {
-			break;
-		}
 
 		for (i = 0; exts[i]; i++) {
 			if (strcasecmp(ext, exts[i]) == 0 || strcmp("*", exts[i]) == 0) {
@@ -136,13 +129,9 @@ static const struct input_plugin_ops *get_ops_by_mime_type(const char *mime_type
 {
 	struct ip *ip;
 
-	list_for_each_entry(ip, &sorted_ip_head, sorted_node) {
+	list_for_each_entry(ip, &ip_head, node) {
 		const char * const *types = ip->mime_types;
 		int i;
-
-		if (ip->priority <= 0) {
-			break;
-		}
 
 		for (i = 0; types[i]; i++) {
 			if (strcasecmp(mime_type, types[i]) == 0)
@@ -416,7 +405,7 @@ static void ip_reset(struct input_plugin *ip, int close_fd)
 static int open_file(struct input_plugin *ip)
 {
 	const struct input_plugin_ops *ops;
-	struct list_head *head = &sorted_ip_head;
+	struct list_head *head = &ip_head;
 	const char *ext;
 	int rc = 0;
 
@@ -451,8 +440,8 @@ static int open_file(struct input_plugin *ip)
 
 static int sort_ip(const struct list_head *a_, const struct list_head *b_)
 {
-	const struct ip *a = list_entry(a_, struct ip, sorted_node);
-	const struct ip *b = list_entry(b_, struct ip, sorted_node);
+	const struct ip *a = list_entry(a_, struct ip, node);
+	const struct ip *b = list_entry(b_, struct ip, node);
 	return b->priority - a->priority;
 }
 
@@ -508,9 +497,8 @@ void ip_load_plugins(void)
 		ip->handle = so;
 
 		list_add_tail(&ip->node, &ip_head);
-		list_add_tail(&ip->sorted_node, &sorted_ip_head);
 	}
-	list_mergesort(&sorted_ip_head, sort_ip);
+	list_mergesort(&ip_head, sort_ip);
 	closedir(dir);
 }
 
@@ -840,40 +828,6 @@ static void get_ip_option(unsigned int id, char *buf)
 	}
 }
 
-static void set_ip_priority(unsigned int id, const char *val)
-{
-	/* warn only once during the lifetime of the program. */
-	static bool warned = false;
-	long tmp;
-	struct ip *ip = find_plugin(id);
-
-	if (str_to_int(val, &tmp) == -1 || tmp < 0 || (long)(int)tmp != tmp) {
-		error_msg("non-negative integer expected");
-		return;
-	}
-	if (ui_initialized) {
-		if (!warned) {
-			static const char *msg =
-				"Metadata might become inconsistend "
-				"after this change. Continue? [y/N]";
-			if (!yes_no_query("%s", msg)) {
-				info_msg("Aborted");
-				return;
-			}
-			warned = true;
-		}
-		info_msg("Run \":update-cache -f\" to refresh the metadata.");
-	}
-	ip->priority = (int)tmp;
-	list_mergesort(&sorted_ip_head, sort_ip);
-}
-
-static void get_ip_priority(unsigned int id, char *val)
-{
-	const struct ip *ip = find_plugin(id);
-	snprintf(val, OPTION_MAX_SIZE, "%d", ip->priority);
-}
-
 void ip_add_options(void)
 {
 	struct ip *ip;
@@ -881,9 +835,6 @@ void ip_add_options(void)
 	char key[64];
 
 	list_for_each_entry(ip, &ip_head, node) {
-		snprintf(key, sizeof(key), "input.%s.priority", ip->name);
-		option_add(xstrdup(key), pid, get_ip_priority, set_ip_priority, NULL, 0);
-
 		for (iid = 0; ip->options[iid]; iid++) {
 			snprintf(key, sizeof(key), "input.%s.%s",
 					ip->name,
