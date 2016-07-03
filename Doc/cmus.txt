@@ -1280,11 +1280,6 @@ input.cdio.cddb_url
 	with "http://" (e.g.: http://freedb.musicbrainz.org:80/~cddb/cddb.cgi).
 	Set to an empty string to disable CDDB lookup completely.
 
-input.*.priority
-	Sets the priority of the input plugin. If multiple plugins can play a
-	file, the plugin with the higher priority is chosen. If the priority is
-	0, the plugin is disabled.
-
 dsp.oss.device
 	PCM device for OSS plugin, usually /dev/dsp.
 
