@@ -26,8 +26,6 @@
 #include "mergesort.h"
 #include "xmalloc.h"
 
-pthread_mutex_t editable_mutex = CMUS_MUTEX_INITIALIZER;
-
 static const struct searchable_ops simple_search_ops = {
 	.get_prev = simple_track_get_prev,
 	.get_next = simple_track_get_next,
