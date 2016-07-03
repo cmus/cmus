@@ -28,6 +28,9 @@
 #include "compiler.h"
 #include "options.h"
 #include "mpris.h"
+#include "play_queue.h"
+#include "lib.h"
+#include "pl.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -84,10 +87,16 @@ int soft_vol;
 int soft_vol_l;
 int soft_vol_r;
 
-static const struct player_callbacks *player_cbs = NULL;
-
 static sample_format_t buffer_sf;
 static CHANNEL_MAP(buffer_channel_map);
+
+int player_fd;
+static int player_fd_priv;
+
+static pthread_mutex_t next_file_mutex = CMUS_MUTEX_INITIALIZER;
+static pthread_cond_t next_file_cond = CMUS_COND_INITIALIZER;
+static int next_file_provided;
+static struct track_info *next_file;
 
 static pthread_t producer_thread;
 static pthread_mutex_t producer_mutex = CMUS_MUTEX_INITIALIZER;
@@ -110,6 +119,9 @@ static unsigned long scale_pos;
 static double replaygain_scale = 1.0;
 
 /* locking {{{ */
+
+#define next_file_lock() cmus_mutex_lock(&next_file_mutex)
+#define next_file_unlock() cmus_mutex_unlock(&next_file_mutex)
 
 #define producer_lock() cmus_mutex_lock(&producer_mutex)
 #define producer_unlock() cmus_mutex_unlock(&producer_mutex)
@@ -395,9 +407,23 @@ static inline unsigned int buffer_second_size(void)
 	return sf_get_second_size(buffer_sf);
 }
 
-static inline int get_next(struct track_info **ti)
+/* player_lock() is locked on entry */
+static int get_next(struct track_info **ti)
 {
-	return player_cbs->get_next(ti);
+	int rv = -1;
+	char buf = 0;
+	write(player_fd_priv, &buf, 1);
+
+	next_file_lock();
+	while (!next_file_provided)
+		pthread_cond_wait(&next_file_cond, &next_file_mutex);
+	if (next_file)
+		rv = 0;
+	*ti = next_file;
+	next_file_provided = 0;
+	next_file_unlock();
+
+	return rv;
 }
 
 /* updating player status {{{ */
@@ -1012,7 +1038,7 @@ static void *producer_loop(void *arg)
 	return NULL;
 }
 
-void player_init(const struct player_callbacks *callbacks)
+void player_init(void)
 {
 	int rc;
 #ifdef REALTIME_SCHEDULING
@@ -1028,13 +1054,13 @@ void player_init(const struct player_callbacks *callbacks)
 	 */
 	cmus_mutex_init_recursive(&player_info.mutex);
 
+	init_pipes(&player_fd, &player_fd_priv);
+
 	/*  1 s is 176400 B (0.168 MB)
 	 * 10 s is 1.68 MB
 	 */
 	buffer_nr_chunks = 10 * 44100 * 16 / 8 * 2 / CHUNK_SIZE;
 	buffer_init();
-
-	player_cbs = callbacks;
 
 #ifdef REALTIME_SCHEDULING
 	rc = pthread_attr_init(&attr);
@@ -1459,4 +1485,20 @@ void player_set_rg_preamp(double db)
 	player_info_unlock();
 
 	player_unlock();
+}
+
+void player_handle(void)
+{
+	char buf;
+	read(player_fd, &buf, 1);
+
+	next_file_lock();
+
+	next_file_provided = 1;
+	next_file = play_queue_remove();
+	if (!next_file)
+		next_file = play_library ? lib_goto_next() : pl_goto_next();
+
+	next_file_unlock();
+	pthread_cond_broadcast(&next_file_cond);
 }

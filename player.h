@@ -49,10 +49,6 @@ enum replaygain {
 	RG_ALBUM_PREFERRED
 };
 
-struct player_callbacks {
-	int (*get_next)(struct track_info **ti);
-};
-
 struct player_info {
 	pthread_mutex_t mutex;
 
@@ -80,6 +76,7 @@ struct player_info {
 	unsigned int buffer_fill_changed : 1;
 };
 
+extern int player_fd;
 extern struct player_info player_info;
 extern int player_cont;
 extern int player_repeat_current;
@@ -90,7 +87,7 @@ extern int soft_vol;
 extern int soft_vol_l;
 extern int soft_vol_r;
 
-void player_init(const struct player_callbacks *callbacks);
+void player_init(void);
 void player_exit(void);
 
 /* set current file */
@@ -116,6 +113,8 @@ void player_set_soft_vol(int soft);
 void player_set_rg(enum replaygain rg);
 void player_set_rg_limit(int limit);
 void player_set_rg_preamp(double db);
+
+void player_handle(void);
 
 #define VF_RELATIVE	0x01
 #define VF_PERCENTAGE	0x02

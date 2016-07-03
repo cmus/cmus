@@ -49,6 +49,6 @@ void job_exit(void);
 void job_schedule_add(int type, struct add_data *data);
 void job_schedule_update(struct update_data *data);
 void job_schedule_update_cache(int type, struct update_cache_data *data);
-void job_handle_results(void);
+void job_handle(void);
 
 #endif

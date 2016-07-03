@@ -2133,6 +2133,7 @@ static void main_loop(void)
 		FD_ZERO(&set);
 		SELECT_ADD_FD(0);
 		SELECT_ADD_FD(job_fd);
+		SELECT_ADD_FD(player_fd);
 		SELECT_ADD_FD(server_socket);
 		if (mpris_fd != -1)
 			SELECT_ADD_FD(mpris_fd);
@@ -2204,37 +2205,13 @@ static void main_loop(void)
 		if (mpris_fd != -1 && FD_ISSET(mpris_fd, &set))
 			mpris_process();
 
-		if (FD_ISSET(job_fd, &set)) {
-			char buf[128];
-			read(job_fd, buf, sizeof(buf));
-			job_handle_results();
-		}
+		if (FD_ISSET(job_fd, &set))
+			job_handle();
+
+		if (FD_ISSET(player_fd, &set))
+			player_handle();
 	}
 }
-
-static int get_next(struct track_info **ti)
-{
-	struct track_info *info;
-
-	info = play_queue_remove();
-	if (info == NULL) {
-		if (play_library) {
-			info = lib_goto_next();
-		} else {
-			info = pl_goto_next();
-		}
-	}
-
-	if (info == NULL)
-		return -1;
-
-	*ti = info;
-	return 0;
-}
-
-static const struct player_callbacks player_callbacks = {
-	.get_next = get_next
-};
 
 static void init_curses(void)
 {
@@ -2329,7 +2306,7 @@ static void init_all(void)
 	server_init(server_address);
 
 	/* does not select output plugin */
-	player_init(&player_callbacks);
+	player_init();
 
 	/* plugins have been loaded so we know what plugin options are available */
 	options_add();

@@ -16,6 +16,7 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "utils.h"
 #include "job.h"
 #include "worker.h"
 #include "cache.h"
@@ -91,11 +92,7 @@ static pthread_mutex_t job_mutex = CMUS_MUTEX_INITIALIZER;
 
 void job_init(void)
 {
-	int fds[] = { 0, 0 };
-	int rc = pipe(fds);
-	BUG_ON(rc);
-	job_fd = fds[0];
-	job_fd_priv = fds[1];
+	init_pipes(&job_fd, &job_fd_priv);
 
 	worker_init();
 }
@@ -588,8 +585,11 @@ static void job_handle_result(struct job_result *res)
 	free(res);
 }
 
-void job_handle_results(void)
+void job_handle(void)
 {
+	char buf[128];
+	read(job_fd, buf, sizeof(buf));
+
 	struct job_result *res;
 	while ((res = job_pop_result()))
 		job_handle_result(res);
