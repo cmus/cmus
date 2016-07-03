@@ -43,7 +43,9 @@
 #include <stdarg.h>
 #include <math.h>
 
-const char * const player_status_names[] = { "stopped", "playing", "paused", NULL };
+const char * const player_status_names[] = {
+	"stopped", "playing", "paused", NULL
+};
 
 enum producer_status {
 	PS_UNLOADED,
@@ -58,10 +60,12 @@ enum consumer_status {
 	CS_PAUSED
 };
 
-struct player_info player_info = {
-	.mutex = CMUS_MUTEX_INITIALIZER,
+/* protects player_info_priv and player_metadata */
+static pthread_mutex_t player_info_mutex = CMUS_MUTEX_INITIALIZER;
+struct player_info player_info;
+char player_metadata[255 * 16 + 1];
+static struct player_info player_info_priv = {
 	.ti = NULL,
-	.metadata = { 0, },
 	.status = PLAYER_STATUS_STOPPED,
 	.pos = 0,
 	.current_bitrate = -1,
@@ -113,6 +117,9 @@ static unsigned long scale_pos;
 static double replaygain_scale = 1.0;
 
 /* locking {{{ */
+
+#define player_info_priv_lock() cmus_mutex_lock(&player_info_mutex)
+#define player_info_priv_unlock() cmus_mutex_unlock(&player_info_mutex)
 
 #define producer_lock() cmus_mutex_lock(&producer_mutex)
 #define producer_unlock() cmus_mutex_unlock(&producer_mutex)
@@ -345,24 +352,24 @@ static void update_rg_scale(void)
 	double gain, peak, db, scale, limit;
 
 	replaygain_scale = 1.0;
-	if (!player_info.ti || !replaygain)
+	if (!player_info_priv.ti || !replaygain)
 		return;
 
 	if (replaygain == RG_TRACK || replaygain == RG_TRACK_PREFERRED) {
-		gain = player_info.ti->rg_track_gain;
-		peak = player_info.ti->rg_track_peak;
+		gain = player_info_priv.ti->rg_track_gain;
+		peak = player_info_priv.ti->rg_track_peak;
 	} else {
-		gain = player_info.ti->rg_album_gain;
-		peak = player_info.ti->rg_album_peak;
+		gain = player_info_priv.ti->rg_album_gain;
+		peak = player_info_priv.ti->rg_album_peak;
 	}
 
 	if (isnan(gain)) {
 		if (replaygain == RG_TRACK_PREFERRED) {
-			gain = player_info.ti->rg_album_gain;
-			peak = player_info.ti->rg_album_peak;
+			gain = player_info_priv.ti->rg_album_gain;
+			peak = player_info_priv.ti->rg_album_peak;
 		} else if (replaygain == RG_ALBUM_PREFERRED) {
-			gain = player_info.ti->rg_track_gain;
-			peak = player_info.ti->rg_track_peak;
+			gain = player_info_priv.ti->rg_track_gain;
+			peak = player_info_priv.ti->rg_track_peak;
 		}
 	}
 
@@ -402,25 +409,25 @@ static inline unsigned int buffer_second_size(void)
 
 static inline void _file_changed(struct track_info *ti)
 {
-	if (player_info.ti)
-		track_info_unref(player_info.ti);
+	player_info_priv_lock();
+	if (player_info_priv.ti)
+		track_info_unref(player_info_priv.ti);
 
-	player_info.ti = ti;
+	player_info_priv.ti = ti;
 	update_rg_scale();
-	player_info.metadata[0] = 0;
-	player_info.file_changed = 1;
+	player_metadata[0] = 0;
+	player_info_priv.file_changed = 1;
+	player_info_priv_unlock();
 }
 
 static inline void file_changed(struct track_info *ti)
 {
-	player_info_lock();
 	if (ti) {
 		d_print("file: %s\n", ti->filename);
 	} else {
 		d_print("unloaded\n");
 	}
 	_file_changed(ti);
-	player_info_unlock();
 }
 
 static inline void metadata_changed(void)
@@ -428,37 +435,36 @@ static inline void metadata_changed(void)
 	struct keyval *comments;
 	int rc;
 
-	player_info_lock();
+	player_info_priv_lock();
 	if (ip_get_metadata(ip)) {
 		d_print("metadata changed: %s\n", ip_get_metadata(ip));
-		memcpy(player_info.metadata, ip_get_metadata(ip),
-		       255 * 16 + 1);
+		memcpy(player_metadata, ip_get_metadata(ip), 255 * 16 + 1);
 	}
 
 	rc = ip_read_comments(ip, &comments);
 	if (!rc) {
-		if (player_info.ti->comments)
-			keyvals_free(player_info.ti->comments);
-		track_info_set_comments(player_info.ti, comments);
+		if (player_info_priv.ti->comments)
+			keyvals_free(player_info_priv.ti->comments);
+		track_info_set_comments(player_info_priv.ti, comments);
 	}
 
-	player_info.metadata_changed = 1;
-	player_info_unlock();
+	player_info_priv.metadata_changed = 1;
+	player_info_priv_unlock();
 }
 
 static void player_error(const char *msg)
 {
-	player_info_lock();
-	player_info.status = (enum player_status)consumer_status;
-	player_info.pos = 0;
-	player_info.current_bitrate = -1;
-	player_info.buffer_fill = buffer_get_filled_chunks();
-	player_info.buffer_size = buffer_nr_chunks;
-	player_info.status_changed = 1;
+	player_info_priv_lock();
+	player_info_priv.status = (enum player_status)consumer_status;
+	player_info_priv.pos = 0;
+	player_info_priv.current_bitrate = -1;
+	player_info_priv.buffer_fill = buffer_get_filled_chunks();
+	player_info_priv.buffer_size = buffer_nr_chunks;
+	player_info_priv.status_changed = 1;
 
-	free(player_info.error_msg);
-	player_info.error_msg = xstrdup(msg);
-	player_info_unlock();
+	free(player_info_priv.error_msg);
+	player_info_priv.error_msg = xstrdup(msg);
+	player_info_priv_unlock();
 
 	d_print("ERROR: '%s'\n", msg);
 }
@@ -504,14 +510,14 @@ static void _producer_buffer_fill_update(void)
 {
 	int fill;
 
-	player_info_lock();
+	player_info_priv_lock();
 	fill = buffer_get_filled_chunks();
-	if (fill != player_info.buffer_fill) {
+	if (fill != player_info_priv.buffer_fill) {
 /* 		d_print("\n"); */
-		player_info.buffer_fill = fill;
-		player_info.buffer_fill_changed = 1;
+		player_info_priv.buffer_fill = fill;
+		player_info_priv.buffer_fill_changed = 1;
 	}
-	player_info_unlock();
+	player_info_priv_unlock();
 }
 
 /*
@@ -528,16 +534,16 @@ static void _consumer_position_update(void)
 	if (pos != old_pos) {
 		old_pos = pos;
 
-		player_info_lock();
-		player_info.pos = pos;
+		player_info_priv_lock();
+		player_info_priv.pos = pos;
 
 		if (show_current_bitrate) {
 			bitrate = ip_current_bitrate(ip);
 			if (bitrate != -1)
-				player_info.current_bitrate = bitrate;
+				player_info_priv.current_bitrate = bitrate;
 		}
-		player_info.position_changed = 1;
-		player_info_unlock();
+		player_info_priv.position_changed = 1;
+		player_info_priv_unlock();
 	}
 }
 
@@ -552,14 +558,14 @@ static void _player_status_changed(void)
 	if (consumer_status == CS_PLAYING || consumer_status == CS_PAUSED)
 		pos = consumer_pos / buffer_second_size();
 
-	player_info_lock();
-	player_info.status = (enum player_status)consumer_status;
-	player_info.pos = pos;
-	player_info.current_bitrate = -1;
-	player_info.buffer_fill = buffer_get_filled_chunks();
-	player_info.buffer_size = buffer_nr_chunks;
-	player_info.status_changed = 1;
-	player_info_unlock();
+	player_info_priv_lock();
+	player_info_priv.status = (enum player_status)consumer_status;
+	player_info_priv.pos = pos;
+	player_info_priv.current_bitrate = -1;
+	player_info_priv.buffer_fill = buffer_get_filled_chunks();
+	player_info_priv.buffer_size = buffer_nr_chunks;
+	player_info_priv.status_changed = 1;
+	player_info_priv_unlock();
 }
 
 /* updating player status }}} */
@@ -801,8 +807,8 @@ static void _consumer_handle_eof(void)
 		return;
 	}
 
-	if (player_info.ti)
-		player_info.ti->play_count++;
+	if (player_info_priv.ti)
+		player_info_priv.ti->play_count++;
 
 	if (player_repeat_current) {
 		if (player_cont) {
@@ -1017,14 +1023,6 @@ void player_init(void)
 #endif
 	pthread_attr_t *attrp = NULL;
 
-	/* This mutex is locked inside of the mpris implementation which is
-	 * called into from many different places. It is not trivial to see if
-	 * those places do already hold this lock and so the mpris functions
-	 * always acquires it. To avoid deadlocks in the places where the lock
-	 * is already held by the calling context, we use a recursive mutex.
-	 */
-	cmus_mutex_init_recursive(&player_info.mutex);
-
 	/*  1 s is 176400 B (0.168 MB)
 	 * 10 s is 1.68 MB
 	 */
@@ -1059,7 +1057,7 @@ void player_init(void)
 	}
 	BUG_ON(rc);
 
-	/* update player_info.cont etc. */
+	/* update player_info_priv.cont etc. */
 	player_lock();
 	_player_status_changed();
 	player_unlock();
@@ -1425,9 +1423,9 @@ void player_set_rg(enum replaygain rg)
 		scale_pos = consumer_pos;
 	replaygain = rg;
 
-	player_info_lock();
+	player_info_priv_lock();
 	update_rg_scale();
-	player_info_unlock();
+	player_info_priv_unlock();
 
 	player_unlock();
 }
@@ -1437,9 +1435,9 @@ void player_set_rg_limit(int limit)
 	player_lock();
 	replaygain_limit = limit;
 
-	player_info_lock();
+	player_info_priv_lock();
 	update_rg_scale();
-	player_info_unlock();
+	player_info_priv_unlock();
 
 	player_unlock();
 }
@@ -1449,9 +1447,40 @@ void player_set_rg_preamp(double db)
 	player_lock();
 	replaygain_preamp = db;
 
-	player_info_lock();
+	player_info_priv_lock();
 	update_rg_scale();
-	player_info_unlock();
+	player_info_priv_unlock();
 
 	player_unlock();
+}
+
+void player_info_snapshot(void)
+{
+	player_info_priv_lock();
+
+	free(player_info.error_msg);
+	if (player_info.ti)
+		track_info_unref(player_info.ti);
+	memcpy(&player_info, &player_info_priv, sizeof(player_info));
+	if (player_info.ti)
+		track_info_ref(player_info.ti);
+
+	player_info_priv.file_changed = 0;
+	player_info_priv.metadata_changed = 0;
+	player_info_priv.status_changed = 0;
+	player_info_priv.position_changed = 0;
+	player_info_priv.buffer_fill_changed = 0;
+	player_info_priv.error_msg = NULL;
+
+	player_info_priv_unlock();
+}
+
+void player_metadata_lock(void)
+{
+	cmus_mutex_lock(&player_info_mutex);
+}
+
+void player_metadata_unlock(void)
+{
+	cmus_mutex_unlock(&player_info_mutex);
 }

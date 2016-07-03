@@ -50,13 +50,8 @@ enum replaygain {
 };
 
 struct player_info {
-	pthread_mutex_t mutex;
-
 	/* current track */
 	struct track_info *ti;
-
-	/* stream metadata */
-	char metadata[255 * 16 + 1];
 
 	/* status */
 	enum player_status status;
@@ -77,6 +72,7 @@ struct player_info {
 };
 
 extern int player_fd;
+extern char player_metadata[255 * 16 + 1];
 extern struct player_info player_info;
 extern int player_cont;
 extern int player_repeat_current;
@@ -107,6 +103,7 @@ void player_seek(double offset, int relative, int start_playing);
 void player_set_op(const char *name);
 void player_set_buffer_chunks(unsigned int nr_chunks);
 int player_get_buffer_chunks(void);
+void player_info_snapshot(void);
 
 void player_set_soft_volume(int l, int r);
 void player_set_soft_vol(int soft);
@@ -120,7 +117,7 @@ void player_handle(void);
 #define VF_PERCENTAGE	0x02
 int player_set_vol(int l, int lf, int r, int rf);
 
-#define player_info_lock() cmus_mutex_lock(&player_info.mutex)
-#define player_info_unlock() cmus_mutex_unlock(&player_info.mutex)
+void player_metadata_lock(void);
+void player_metadata_unlock(void);
 
 #endif

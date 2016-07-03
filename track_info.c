@@ -121,13 +121,6 @@ void track_info_unref(struct track_info *ti)
 		track_info_free(ti);
 }
 
-void track_info_unrefp(struct track_info **ti)
-{
-	if (*ti)
-		track_info_unref(*ti);
-	*ti = NULL;
-}
-
 int track_info_has_tag(const struct track_info *ti)
 {
 	return ti->artist || ti->album || ti->title;
