@@ -631,6 +631,7 @@ static void fill_track_fopts_artist(struct artist *artist)
 {
 	const char *name = display_artist_sort_name ? artist_sort_name(artist) : artist->name;
 	fopt_set_str(&track_fopts[TF_ARTIST], name);
+	fopt_set_str(&track_fopts[TF_ALBUMARTIST], name);
 }
 
 const struct format_option *get_global_fopts(void)
