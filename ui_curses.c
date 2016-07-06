@@ -16,6 +16,7 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "job.h"
 #include "convert.h"
 #include "ui_curses.h"
 #include "cmdline.h"
@@ -49,6 +50,7 @@
 #include "path.h"
 #include "mixer.h"
 #include "mpris.h"
+#include "locking.h"
 #ifdef HAVE_CONFIG
 #include "config/curses.h"
 #include "config/iconv.h"
@@ -102,15 +104,11 @@ char *play_queue_ext_filename = NULL;
 char *charset = NULL;
 int using_utf8 = 0;
 
-
 /* ------------------------------------------------------------------------- */
 
 static char *lib_autosave_filename;
 static char *pl_autosave_filename;
 static char *play_queue_autosave_filename;
-
-static int notify_in;
-static int notify_out;
 
 /* shown error message and time stamp
  * error is cleared if it is older than 3s and key was pressed
@@ -647,10 +645,8 @@ const struct format_option *get_global_fopts(void)
 	int buffer_fill, vol, vol_left, vol_right;
 	int duration = -1;
 
-	editable_lock();
 	fopt_set_time(&track_fopts[TF_TOTAL], play_library ? lib_editable.total_time :
 			pl_editable.total_time, 0);
-	editable_unlock();
 
 	fopt_set_str(&track_fopts[TF_FOLLOW], follow_strs[follow]);
 	fopt_set_str(&track_fopts[TF_REPEAT], repeat_strs[repeat]);
@@ -1117,30 +1113,22 @@ static void do_update_view(int full)
 
 	switch (cur_view) {
 	case TREE_VIEW:
-		editable_lock();
 		if (full || lib_tree_win->changed)
 			update_tree_window();
 		if (full || lib_track_win->changed)
 			update_track_window();
-		editable_unlock();
 		draw_separator();
 		update_filterline();
 		break;
 	case SORTED_VIEW:
-		editable_lock();
 		update_sorted_window();
-		editable_unlock();
 		update_filterline();
 		break;
 	case PLAYLIST_VIEW:
-		editable_lock();
 		update_pl_window();
-		editable_unlock();
 		break;
 	case QUEUE_VIEW:
-		editable_lock();
 		update_play_queue_window();
-		editable_unlock();
 		break;
 	case BROWSER_VIEW:
 		update_browser_window();
@@ -1156,21 +1144,12 @@ static void do_update_view(int full)
 
 static void do_update_statusline(void)
 {
-	player_info_lock();
 	format_print(print_buffer, COLS, statusline_format, get_global_fopts());
-
-	char *msg = player_info.error_msg;
-	player_info.error_msg = NULL;
-
-	player_info_unlock();
-
 	bkgdset(pairs[CURSED_STATUSLINE]);
 	dump_print_buffer(LINES - 2, 0);
 
-	if (msg) {
-		error_msg("%s", msg);
-		free(msg);
-	}
+	if (player_info.error_msg)
+		error_msg("%s", player_info.error_msg);
 }
 
 static void dump_buffer(const char *buffer)
@@ -1296,7 +1275,6 @@ static void set_title(const char *title)
 static void do_update_titleline(void)
 {
 	bkgdset(pairs[CURSED_TITLELINE]);
-	player_info_lock();
 	if (player_info.ti) {
 		int i, use_alt_format = 0;
 		char *wtitle;
@@ -1355,7 +1333,6 @@ static void do_update_titleline(void)
 
 		set_title("cmus " VERSION);
 	}
-	player_info_unlock();
 }
 
 static int cmdline_cursor_column(void)
@@ -1423,13 +1400,12 @@ static void post_update(void)
 	}
 }
 
-/* lock player_info! */
-const char *get_stream_title(void)
+static const char *get_stream_title_locked(void)
 {
 	static char stream_title[255 * 16 + 1];
 	char *ptr, *title;
 
-	ptr = strstr(player_info.metadata, "StreamTitle='");
+	ptr = strstr(player_metadata, "StreamTitle='");
 	if (ptr == NULL)
 		return NULL;
 	ptr += 13;
@@ -1443,6 +1419,14 @@ const char *get_stream_title(void)
 		ptr++;
 	}
 	return NULL;
+}
+
+const char *get_stream_title(void)
+{
+	player_metadata_lock();
+	const char *rv = get_stream_title_locked();
+	player_metadata_unlock();
+	return rv;
 }
 
 void update_titleline(void)
@@ -1748,7 +1732,6 @@ static void spawn_status_program(void)
 	if (status_display_program == NULL || status_display_program[0] == 0)
 		return;
 
-	player_info_lock();
 	status = player_info.status;
 	if (status == PLAYER_STATUS_PLAYING && player_info.ti && is_http_url(player_info.ti->filename))
 		stream_title = get_stream_title();
@@ -1802,7 +1785,6 @@ static void spawn_status_program(void)
 		}
 	}
 	argv[i++] = NULL;
-	player_info_unlock();
 
 	if (spawn(argv, NULL, 0) == -1)
 		error_msg("couldn't run `%s': %s", status_display_program, strerror(errno));
@@ -1881,7 +1863,6 @@ static void update(void)
 				w = 16;
 			if (h < 2)
 				h = 2;
-			editable_lock();
 			resize_tree_view(w, h);
 			window_set_nr_rows(lib_editable.win, h - 1);
 			window_set_nr_rows(pl_editable.win, h - 1);
@@ -1889,7 +1870,6 @@ static void update(void)
 			window_set_nr_rows(filters_win, h - 1);
 			window_set_nr_rows(help_win, h - 1);
 			window_set_nr_rows(browser_win, h - 1);
-			editable_unlock();
 			needs_title_update = 1;
 			needs_status_update = 1;
 			needs_command_update = 1;
@@ -1897,9 +1877,6 @@ static void update(void)
 		clearok(curscr, TRUE);
 		refresh();
 	}
-
-	player_info_lock();
-	editable_lock();
 
 	if (player_info.status_changed)
 		mpris_playback_status_changed();
@@ -1911,20 +1888,13 @@ static void update(void)
 		player_info.metadata_changed;
 
 	if (player_info.file_changed) {
-		player_info.file_changed = 0;
 		needs_title_update = 1;
 		needs_status_update = 1;
 	}
-	if (player_info.metadata_changed) {
-		player_info.metadata_changed = 0;
+	if (player_info.metadata_changed)
 		needs_title_update = 1;
-	}
-	if (player_info.position_changed || player_info.status_changed) {
-		player_info.position_changed = 0;
-		player_info.status_changed = 0;
-
+	if (player_info.position_changed || player_info.status_changed)
 		needs_status_update = 1;
-	}
 	switch (cur_view) {
 	case TREE_VIEW:
 		needs_view_update += lib_tree_win->changed || lib_track_win->changed;
@@ -1957,9 +1927,6 @@ static void update(void)
 		needs_status_update += pl_editable.win->changed;
 		pl_editable.win->changed = 0;
 	}
-
-	editable_unlock();
-	player_info_unlock();
 
 	if (needs_spawn)
 		spawn_status_program();
@@ -2102,17 +2069,15 @@ static void u_getch(void)
 	handle_ch(u);
 }
 
-void ui_curses_notify(void)
-{
-	char c;
-	if (write(notify_in, &c, 1) == -1) {
-		d_print("write failed: %s\n", strerror(errno));
-	}
-}
-
 static void main_loop(void)
 {
 	int rc, fd_high;
+
+#define SELECT_ADD_FD(fd) do {\
+	FD_SET((fd), &set); \
+	if ((fd) > fd_high) \
+		fd_high = (fd); \
+} while(0)
 
 	fd_high = server_socket;
 	while (cmus_running) {
@@ -2123,6 +2088,8 @@ static void main_loop(void)
 		int fds[NR_MIXER_FDS];
 		struct list_head *item;
 		struct client *client;
+
+		player_info_snapshot();
 
 		update();
 
@@ -2137,12 +2104,10 @@ static void main_loop(void)
 		tv.tv_sec = 0;
 		tv.tv_usec = 0;
 
-		player_info_lock();
 		if (player_info.status == PLAYER_STATUS_PLAYING) {
 			// player position updates need to be fast
 			tv.tv_usec = 100e3;
 		}
-		player_info_unlock();
 
 		if (!tv.tv_usec && worker_has_job(JOB_TYPE_ANY)) {
 			// playlist is loading. screen needs to be updated
@@ -2150,20 +2115,14 @@ static void main_loop(void)
 		}
 
 		FD_ZERO(&set);
-		FD_SET(0, &set);
-		FD_SET(notify_out, &set);
-		if (notify_out > fd_high)
-			fd_high = notify_out;
-		FD_SET(server_socket, &set);
-		if (mpris_fd != -1) {
-			FD_SET(mpris_fd, &set);
-			if (mpris_fd > fd_high)
-				fd_high = mpris_fd;
-		}
+		SELECT_ADD_FD(0);
+		SELECT_ADD_FD(job_fd);
+		SELECT_ADD_FD(cmus_next_track_request_fd);
+		SELECT_ADD_FD(server_socket);
+		if (mpris_fd != -1)
+			SELECT_ADD_FD(mpris_fd);
 		list_for_each_entry(client, &client_head, node) {
-			FD_SET(client->fd, &set);
-			if (client->fd > fd_high)
-				fd_high = client->fd;
+			SELECT_ADD_FD(client->fd);
 		}
 		if (!soft_vol) {
 			nr_fds = mixer_get_fds(fds);
@@ -2174,9 +2133,7 @@ static void main_loop(void)
 			}
 			for (i = 0; i < nr_fds; i++) {
 				BUG_ON(fds[i] <= 0);
-				FD_SET(fds[i], &set);
-				if (fds[i] > fd_high)
-					fd_high = fds[i];
+				SELECT_ADD_FD(fds[i]);
 			}
 		}
 
@@ -2232,40 +2189,13 @@ static void main_loop(void)
 		if (mpris_fd != -1 && FD_ISSET(mpris_fd, &set))
 			mpris_process();
 
-		if (FD_ISSET(notify_out, &set)) {
-			char buf[128];
-			if (read(notify_out, buf, sizeof(buf)) == -1) {
-				d_print("read failed: %s\n", strerror(errno));
-			}
-		}
+		if (FD_ISSET(job_fd, &set))
+			job_handle();
+
+		if (FD_ISSET(cmus_next_track_request_fd, &set))
+			cmus_provide_next_track();
 	}
 }
-
-static int get_next(struct track_info **ti)
-{
-	struct track_info *info;
-
-	editable_lock();
-	info = play_queue_remove();
-	if (info == NULL) {
-		if (play_library) {
-			info = lib_goto_next();
-		} else {
-			info = pl_goto_next();
-		}
-	}
-	editable_unlock();
-
-	if (info == NULL)
-		return -1;
-
-	*ti = info;
-	return 0;
-}
-
-static const struct player_callbacks player_callbacks = {
-	.get_next = get_next
-};
 
 static void init_curses(void)
 {
@@ -2355,22 +2285,15 @@ static void init_curses(void)
 	update_mouse();
 }
 
-static void notify_init(void)
-{
-	int fildes[2];
-	BUG_ON(pipe(fildes) == -1);
-	notify_out = fildes[0];
-	notify_in = fildes[1];
-	int flags = fcntl(notify_in, F_GETFL, 0);
-	fcntl(notify_in, F_SETFL, flags | O_NONBLOCK);
-}
-
 static void init_all(void)
 {
+	main_thread = pthread_self();
+	cmus_track_request_init();
+
 	server_init(server_address);
 
 	/* does not select output plugin */
-	player_init(&player_callbacks);
+	player_init();
 
 	/* plugins have been loaded so we know what plugin options are available */
 	options_add();
@@ -2543,7 +2466,6 @@ int main(int argc, char *argv[])
 		op_dump_plugins();
 		return 0;
 	}
-	notify_init();
 	init_all();
 	main_loop();
 	exit_all();

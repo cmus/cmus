@@ -21,11 +21,12 @@
 
 #include <pthread.h>
 
+extern pthread_t main_thread;
+
 #define CMUS_MUTEX_INITIALIZER PTHREAD_MUTEX_INITIALIZER
 #define CMUS_COND_INITIALIZER PTHREAD_COND_INITIALIZER
 
 void cmus_mutex_lock(pthread_mutex_t *mutex);
 void cmus_mutex_unlock(pthread_mutex_t *mutex);
-void cmus_mutex_init_recursive(pthread_mutex_t *mutex);
 
 #endif

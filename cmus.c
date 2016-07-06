@@ -23,7 +23,6 @@
 #include "player.h"
 #include "input.h"
 #include "play_queue.h"
-#include "worker.h"
 #include "cache.h"
 #include "misc.h"
 #include "file.h"
@@ -37,6 +36,7 @@
 #include "cache.h"
 #include "gbuf.h"
 #include "discid.h"
+#include "locking.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -57,33 +57,25 @@ int cmus_init(void)
 {
 	playable_exts = ip_get_supported_extensions();
 	cache_init();
-	worker_init();
+	job_init();
 	play_queue_init();
 	return 0;
 }
 
 void cmus_exit(void)
 {
-	worker_remove_jobs(JOB_TYPE_ANY);
-	worker_exit();
+	job_exit();
 	if (cache_close())
 		d_print("error: %s\n", strerror(errno));
 }
+
+static struct track_info *cmus_get_next_from_main_thread(void);
 
 void cmus_next(void)
 {
 	struct track_info *info;
 
-	editable_lock();
-	info = play_queue_remove();
-	if (info == NULL) {
-		if (play_library) {
-			info = lib_goto_next();
-		} else {
-			info = pl_goto_next();
-		}
-	}
-	editable_unlock();
+	info = cmus_get_next_from_main_thread();
 
 	if (info)
 		player_set_file(info);
@@ -93,13 +85,11 @@ void cmus_prev(void)
 {
 	struct track_info *info;
 
-	editable_lock();
 	if (play_library) {
 		info = lib_goto_prev();
 	} else {
 		info = pl_goto_prev();
 	}
-	editable_unlock();
 
 	if (info)
 		player_set_file(info);
@@ -164,7 +154,8 @@ enum file_type cmus_detect_ft(const char *name, char **ret)
 	return FILE_TYPE_FILE;
 }
 
-void cmus_add(add_ti_cb add, const char *name, enum file_type ft, int jt, int force)
+void cmus_add(add_ti_cb add, const char *name, enum file_type ft, int jt,
+		int force)
 {
 	struct add_data *data = xnew(struct add_data, 1);
 
@@ -172,7 +163,8 @@ void cmus_add(add_ti_cb add, const char *name, enum file_type ft, int jt, int fo
 	data->name = xstrdup(name);
 	data->type = ft;
 	data->force = force;
-	worker_add_job(jt, do_add_job, free_add_job, data);
+
+	job_schedule_add(jt, data);
 }
 
 static int save_ext_playlist_cb(void *data, struct track_info *ti)
@@ -250,7 +242,7 @@ static int update_cb(void *data, struct track_info *ti)
 		if (d->size == 0)
 			d->size = 16;
 		d->size *= 2;
-		d->ti = xrealloc(d->ti, d->size * sizeof(struct track_info *));
+		d->ti = xrenew(struct track_info *, d->ti, d->size);
 	}
 	track_info_ref(ti);
 	d->ti[d->used++] = ti;
@@ -264,23 +256,18 @@ void cmus_update_cache(int force)
 	data = xnew(struct update_cache_data, 1);
 	data->force = force;
 
-	worker_add_job(JOB_TYPE_LIB, do_update_cache_job, free_update_cache_job, data);
+	job_schedule_update_cache(JOB_TYPE_LIB, data);
 }
 
 void cmus_update_lib(void)
 {
 	struct update_data *data;
 
-	data = xnew(struct update_data, 1);
-	data->size = 0;
-	data->used = 0;
-	data->ti = NULL;
+	data = xnew0(struct update_data, 1);
 
-	editable_lock();
 	lib_for_each(update_cb, data);
-	editable_unlock();
 
-	worker_add_job(JOB_TYPE_LIB, do_update_job, free_update_job, data);
+	job_schedule_update(data);
 }
 
 void cmus_update_tis(struct track_info **tis, int nr, int force)
@@ -292,7 +279,8 @@ void cmus_update_tis(struct track_info **tis, int nr, int force)
 	data->used = nr;
 	data->ti = tis;
 	data->force = force;
-	worker_add_job(JOB_TYPE_LIB, do_update_job, free_update_job, data);
+
+	job_schedule_update(data);
 }
 
 static const char *get_ext(const char *filename)
@@ -387,4 +375,73 @@ int cmus_playlist_for_each(const char *buf, int size, int reverse,
 		buffer_for_each_line(buf, size, handler, &d);
 	}
 	return 0;
+}
+
+/* multit-hreaded next track requests */
+
+int cmus_next_track_request_fd;
+static int cmus_next_track_request_fd_priv;
+static pthread_mutex_t cmus_next_file_mutex = CMUS_MUTEX_INITIALIZER;
+static pthread_cond_t cmus_next_file_cond = CMUS_COND_INITIALIZER;
+static int cmus_next_file_provided;
+static struct track_info *cmus_next_file;
+
+#define cmus_next_file_lock() cmus_mutex_lock(&cmus_next_file_mutex)
+#define cmus_next_file_unlock() cmus_mutex_unlock(&cmus_next_file_mutex)
+
+static struct track_info *cmus_get_next_from_main_thread(void)
+{
+	struct track_info *ti = play_queue_remove();
+	if (!ti)
+		ti = play_library ? lib_goto_next() : pl_goto_next();
+	return ti;
+}
+
+static struct track_info *cmus_get_next_from_other_thread(void)
+{
+	static pthread_mutex_t mutex = CMUS_MUTEX_INITIALIZER;
+
+	cmus_mutex_lock(&mutex);
+
+	char buf = 0;
+	write(cmus_next_track_request_fd_priv, &buf, 1);
+
+	cmus_next_file_lock();
+	while (!cmus_next_file_provided)
+		pthread_cond_wait(&cmus_next_file_cond, &cmus_next_file_mutex);
+	struct track_info *ti = cmus_next_file;
+	cmus_next_file_provided = 0;
+	cmus_next_file_unlock();
+
+	cmus_mutex_unlock(&mutex);
+
+	return ti;
+}
+
+struct track_info *cmus_get_next_track(void)
+{
+	pthread_t this_thread = pthread_self();
+	if (pthread_equal(this_thread, main_thread))
+		return cmus_get_next_from_main_thread();
+	return cmus_get_next_from_other_thread();
+}
+
+void cmus_provide_next_track(void)
+{
+	char buf;
+	read(cmus_next_track_request_fd, &buf, 1);
+
+	cmus_next_file_lock();
+
+	cmus_next_file = cmus_get_next_from_main_thread();
+	cmus_next_file_provided = 1;
+
+	cmus_next_file_unlock();
+	pthread_cond_broadcast(&cmus_next_file_cond);
+}
+
+void cmus_track_request_init(void)
+{
+	init_pipes(&cmus_next_track_request_fd,
+			&cmus_next_track_request_fd_priv);
 }
