@@ -21,6 +21,8 @@
 
 #include <string.h>
 
+pthread_t main_thread;
+
 void cmus_mutex_lock(pthread_mutex_t *mutex)
 {
 	int rc = pthread_mutex_lock(mutex);

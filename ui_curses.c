@@ -50,6 +50,7 @@
 #include "path.h"
 #include "mixer.h"
 #include "mpris.h"
+#include "locking.h"
 #ifdef HAVE_CONFIG
 #include "config/curses.h"
 #include "config/iconv.h"
@@ -102,7 +103,6 @@ char *play_queue_filename = NULL;
 char *play_queue_ext_filename = NULL;
 char *charset = NULL;
 int using_utf8 = 0;
-
 
 /* ------------------------------------------------------------------------- */
 
@@ -2133,7 +2133,7 @@ static void main_loop(void)
 		FD_ZERO(&set);
 		SELECT_ADD_FD(0);
 		SELECT_ADD_FD(job_fd);
-		SELECT_ADD_FD(player_fd);
+		SELECT_ADD_FD(cmus_next_track_request_fd);
 		SELECT_ADD_FD(server_socket);
 		if (mpris_fd != -1)
 			SELECT_ADD_FD(mpris_fd);
@@ -2208,8 +2208,8 @@ static void main_loop(void)
 		if (FD_ISSET(job_fd, &set))
 			job_handle();
 
-		if (FD_ISSET(player_fd, &set))
-			player_handle();
+		if (FD_ISSET(cmus_next_track_request_fd, &set))
+			cmus_provide_next_track();
 	}
 }
 
@@ -2303,6 +2303,9 @@ static void init_curses(void)
 
 static void init_all(void)
 {
+	main_thread = pthread_self();
+	cmus_track_request_init();
+
 	server_init(server_address);
 
 	/* does not select output plugin */

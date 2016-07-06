@@ -31,6 +31,8 @@
 #include "play_queue.h"
 #include "lib.h"
 #include "pl.h"
+#include "locking.h"
+#include "cmus.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -90,14 +92,6 @@ int soft_vol_r;
 static sample_format_t buffer_sf;
 static CHANNEL_MAP(buffer_channel_map);
 
-int player_fd;
-static int player_fd_priv;
-
-static pthread_mutex_t next_file_mutex = CMUS_MUTEX_INITIALIZER;
-static pthread_cond_t next_file_cond = CMUS_COND_INITIALIZER;
-static int next_file_provided;
-static struct track_info *next_file;
-
 static pthread_t producer_thread;
 static pthread_mutex_t producer_mutex = CMUS_MUTEX_INITIALIZER;
 static pthread_cond_t producer_playing = CMUS_COND_INITIALIZER;
@@ -119,9 +113,6 @@ static unsigned long scale_pos;
 static double replaygain_scale = 1.0;
 
 /* locking {{{ */
-
-#define next_file_lock() cmus_mutex_lock(&next_file_mutex)
-#define next_file_unlock() cmus_mutex_unlock(&next_file_mutex)
 
 #define producer_lock() cmus_mutex_lock(&producer_mutex)
 #define producer_unlock() cmus_mutex_unlock(&producer_mutex)
@@ -407,25 +398,6 @@ static inline unsigned int buffer_second_size(void)
 	return sf_get_second_size(buffer_sf);
 }
 
-/* player_lock() is locked on entry */
-static int get_next(struct track_info **ti)
-{
-	int rv = -1;
-	char buf = 0;
-	write(player_fd_priv, &buf, 1);
-
-	next_file_lock();
-	while (!next_file_provided)
-		pthread_cond_wait(&next_file_cond, &next_file_mutex);
-	if (next_file)
-		rv = 0;
-	*ti = next_file;
-	next_file_provided = 0;
-	next_file_unlock();
-
-	return rv;
-}
-
 /* updating player status {{{ */
 
 static inline void _file_changed(struct track_info *ti)
@@ -657,7 +629,7 @@ static void _producer_play(void)
 	if (producer_status == PS_UNLOADED) {
 		struct track_info *ti;
 
-		if (get_next(&ti) == 0) {
+		if ((ti = cmus_get_next_track())) {
 			int rc;
 
 			ip = ip_new(ti->filename);
@@ -789,7 +761,6 @@ static void _consumer_pause(void)
 
 /* setting consumer status }}} */
 
-
 static int change_sf(int drop)
 {
 	int old_sf = buffer_sf;
@@ -845,7 +816,7 @@ static void _consumer_handle_eof(void)
 		return;
 	}
 
-	if (get_next(&ti) == 0) {
+	if ((ti = cmus_get_next_track())) {
 		_producer_unload();
 		ip = ip_new(ti->filename);
 		_producer_status_update(PS_STOPPED);
@@ -1053,8 +1024,6 @@ void player_init(void)
 	 * is already held by the calling context, we use a recursive mutex.
 	 */
 	cmus_mutex_init_recursive(&player_info.mutex);
-
-	init_pipes(&player_fd, &player_fd_priv);
 
 	/*  1 s is 176400 B (0.168 MB)
 	 * 10 s is 1.68 MB
@@ -1485,20 +1454,4 @@ void player_set_rg_preamp(double db)
 	player_info_unlock();
 
 	player_unlock();
-}
-
-void player_handle(void)
-{
-	char buf;
-	read(player_fd, &buf, 1);
-
-	next_file_lock();
-
-	next_file_provided = 1;
-	next_file = play_queue_remove();
-	if (!next_file)
-		next_file = play_library ? lib_goto_next() : pl_goto_next();
-
-	next_file_unlock();
-	pthread_cond_broadcast(&next_file_cond);
 }
