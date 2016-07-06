@@ -771,49 +771,6 @@ static int coreaudio_mixer_dummy(void)
 	return OP_ERROR_SUCCESS;
 }
 
-static int op_coreaudio_set_option(int key, const char *val)
-{
-	switch (key) {
- 	case 0:
-		free(coreaudio_opt_device_name);
-		coreaudio_opt_device_name = NULL;
-		if (val[0])
-			coreaudio_opt_device_name = xstrdup(val);
-		break;
-	case 1:
-		coreaudio_opt_enable_hog_mode = strcmp(val, "true") ? false : true;
-		coreaudio_hog_device(coreaudio_device_id, coreaudio_opt_enable_hog_mode);
-		break;
-	case 2:
-		coreaudio_opt_sync_rate = strcmp(val, "true") ? false : true;
-		if (coreaudio_opt_sync_rate)
-			coreaudio_sync_device_sample_rate(coreaudio_device_id, coreaudio_format_description);
-		break;
-	default:
-		return -OP_ERROR_NOT_OPTION;
-	}
-	return 0;
-}
-
-static int op_coreaudio_get_option(int key, char **val)
-{
-	switch (key) {
- 	case 0:
-		if (coreaudio_opt_device_name)
-			*val = xstrdup(coreaudio_opt_device_name);
-		break;
-	case 1:
-		*val = xstrdup(coreaudio_opt_enable_hog_mode ? "true" : "false");
-		break;
-	case 2:
-		*val = xstrdup(coreaudio_opt_sync_rate ? "true" : "false");
-		break;
- 	default:
- 		return -OP_ERROR_NOT_OPTION;
-	}
-	return 0;
-}
-
 static int coreaudio_pause(void)
 {
 	OSStatus err = AudioOutputUnitStop(coreaudio_audio_unit);
@@ -839,6 +796,49 @@ static int coreaudio_buffer_space(void)
 	return coreaudio_ring_buffer_write_available(&coreaudio_ring_buffer);
 }
 
+static int coreaudio_set_sync_sample_rate(const char *val)
+{
+	coreaudio_opt_sync_rate = strcmp(val, "true") ? false : true;
+	if (coreaudio_opt_sync_rate)
+		coreaudio_sync_device_sample_rate(coreaudio_device_id, coreaudio_format_description);
+	return 0;
+}
+
+static int coreaudio_get_sync_sample_rate(char **val)
+{
+	*val = xstrdup(coreaudio_opt_sync_rate ? "true" : "false");
+	return 0;
+}
+
+static int coreaudio_set_enable_hog_mode(const char *val)
+{
+	coreaudio_opt_enable_hog_mode = strcmp(val, "true") ? false : true;
+	coreaudio_hog_device(coreaudio_device_id, coreaudio_opt_enable_hog_mode);
+	return 0;
+}
+
+static int coreaudio_get_enable_hog_mode(char **val)
+{
+	*val = xstrdup(coreaudio_opt_enable_hog_mode ? "true" : "false");
+	return 0;
+}
+
+static int coreaudio_set_device(const char *val)
+{
+	free(coreaudio_opt_device_name);
+	coreaudio_opt_device_name = NULL;
+	if (val[0])
+		coreaudio_opt_device_name = xstrdup(val);
+	return 0;
+}
+
+static int coreaudio_get_device(char **val)
+{
+	if (coreaudio_opt_device_name)
+		*val = xstrdup(coreaudio_opt_device_name);
+	return 0;
+}
+
 const struct output_plugin_ops op_pcm_ops = {
 	.init         = coreaudio_init,
 	.exit         = coreaudio_exit,
@@ -848,8 +848,6 @@ const struct output_plugin_ops op_pcm_ops = {
 	.pause        = coreaudio_pause,
 	.unpause      = coreaudio_unpause,
 	.buffer_space = coreaudio_buffer_space,
-	.set_option   = op_coreaudio_set_option,
-	.get_option   = op_coreaudio_get_option
 };
 
 
@@ -860,20 +858,17 @@ const struct mixer_plugin_ops op_mixer_ops = {
 	.close      = coreaudio_mixer_dummy,
 	.set_volume = coreaudio_mixer_set_volume,
 	.get_volume = coreaudio_mixer_get_volume,
-	.set_option = coreaudio_mixer_set_option,
-	.get_option = coreaudio_mixer_get_option
 };
 
-const char * const op_pcm_options[] = {
-	"device",
-	"enable_hog_mode",
-	"sync_sample_rate",
-	NULL
+const struct output_plugin_opt op_pcm_options[] = {
+	OPT(coreaudio, device),
+	OPT(coreaudio, enable_hog_mode),
+	OPT(coreaudio, sync_sample_rate),
+	{ NULL },
 };
 
-const char * const op_mixer_options[] = {
-	NULL
+const struct mixer_plugin_opt op_mixer_options[] = {
+	{ NULL },
 };
 
 const int op_priority = 1;
-

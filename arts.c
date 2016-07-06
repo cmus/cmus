@@ -104,16 +104,6 @@ static int op_arts_buffer_space(void)
 	return space;
 }
 
-static int op_arts_set_option(int key, const char *val)
-{
-	return -OP_ERROR_NOT_OPTION;
-}
-
-static int op_arts_get_option(int key, char **val)
-{
-	return -OP_ERROR_NOT_OPTION;
-}
-
 const struct output_plugin_ops op_pcm_ops = {
 	.init = op_arts_init,
 	.exit = op_arts_exit,
@@ -123,12 +113,10 @@ const struct output_plugin_ops op_pcm_ops = {
 	.pause = op_arts_pause,
 	.unpause = op_arts_unpause,
 	.buffer_space = op_arts_buffer_space,
-	.set_option = op_arts_set_option,
-	.get_option = op_arts_get_option
 };
 
-const char * const op_pcm_options[] = {
-	NULL
+const struct output_plugin_opt op_pcm_options[] = {
+	{ NULL },
 };
 
 const int op_priority = 4;

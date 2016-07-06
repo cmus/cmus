@@ -534,4 +534,4 @@ const struct input_plugin_ops ip_ops = {
 const int ip_priority = 50;
 const char * const ip_extensions[] = { "aac", NULL };
 const char * const ip_mime_types[] = { "audio/aac", "audio/aacp", NULL };
-const char * const ip_options[] = { NULL };
+const struct input_plugin_opt ip_options[] = { { NULL } };

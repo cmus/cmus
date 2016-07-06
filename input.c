@@ -90,7 +90,7 @@ struct ip {
 	const char * const *extensions;
 	const char * const *mime_types;
 	const struct input_plugin_ops *ops;
-	const char * const *options;
+	const struct input_plugin_opt *options;
 };
 
 static const char * const plugin_dir = LIBDIR "/cmus/ip";
@@ -787,18 +787,6 @@ int ip_eof(struct input_plugin *ip)
 	return ip->eof;
 }
 
-static struct ip *find_plugin(int idx)
-{
-	struct ip *ip;
-
-	list_for_each_entry(ip, &ip_head, node) {
-		if (idx == 0)
-			return ip;
-		idx--;
-	}
-	return NULL;
-}
-
 static void option_error(int rc)
 {
 	char *msg = ip_get_error_msg(NULL, rc, "setting option");
@@ -806,22 +794,22 @@ static void option_error(int rc)
 	free(msg);
 }
 
-static void set_ip_option(unsigned int id, const char *val)
+static void set_ip_option(void *data, const char *val)
 {
-	const struct ip *ip = find_plugin(id >> 16);
+	const struct input_plugin_opt *ipo = data;
 	int rc;
 
-	rc = ip->ops->set_option(id & 0xffff, val);
+	rc = ipo->set(val);
 	if (rc)
 		option_error(rc);
 }
 
-static void get_ip_option(unsigned int id, char *buf)
+static void get_ip_option(void *data, char *buf)
 {
-	const struct ip *ip = find_plugin(id >> 16);
+	const struct input_plugin_opt *ipo = data;
 	char *val = NULL;
 
-	ip->ops->get_option(id & 0xffff, &val);
+	ipo->get(&val);
 	if (val) {
 		strcpy(buf, val);
 		free(val);
@@ -831,17 +819,16 @@ static void get_ip_option(unsigned int id, char *buf)
 void ip_add_options(void)
 {
 	struct ip *ip;
-	unsigned int iid, pid = 0;
+	const struct input_plugin_opt *ipo;
 	char key[64];
 
 	list_for_each_entry(ip, &ip_head, node) {
-		for (iid = 0; ip->options[iid]; iid++) {
-			snprintf(key, sizeof(key), "input.%s.%s",
-					ip->name,
-					ip->options[iid]);
-			option_add(xstrdup(key), (pid << 16) | iid, get_ip_option, set_ip_option, NULL, 0);
+		for (ipo = ip->options; ipo->name; ipo++) {
+			snprintf(key, sizeof(key), "input.%s.%s", ip->name,
+					ipo->name);
+			option_add(xstrdup(key), ipo, get_ip_option,
+					set_ip_option, NULL, 0);
 		}
-		pid++;
 	}
 }
 

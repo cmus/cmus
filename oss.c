@@ -224,29 +224,17 @@ static int oss_buffer_space(void)
 	return space;
 }
 
-static int op_oss_set_option(int key, const char *val)
+static int op_oss_set_device(const char *val)
 {
-	switch (key) {
-	case 0:
-		free(oss_dsp_device);
-		oss_dsp_device = xstrdup(val);
-		break;
-	default:
-		return -OP_ERROR_NOT_OPTION;
-	}
+	free(oss_dsp_device);
+	oss_dsp_device = xstrdup(val);
 	return 0;
 }
 
-static int op_oss_get_option(int key, char **val)
+static int op_oss_get_device(char **val)
 {
-	switch (key) {
-	case 0:
-		if (oss_dsp_device)
-			*val = xstrdup(oss_dsp_device);
-		break;
-	default:
-		return -OP_ERROR_NOT_OPTION;
-	}
+	if (oss_dsp_device)
+		*val = xstrdup(oss_dsp_device);
 	return 0;
 }
 
@@ -259,13 +247,11 @@ const struct output_plugin_ops op_pcm_ops = {
 	.pause = oss_pause,
 	.unpause = oss_unpause,
 	.buffer_space = oss_buffer_space,
-	.set_option = op_oss_set_option,
-	.get_option = op_oss_get_option
 };
 
-const char * const op_pcm_options[] = {
-	"device",
-	NULL
+const struct output_plugin_opt op_pcm_options[] = {
+	OPT(op_oss, device),
+	{ NULL },
 };
 
 const int op_priority = 1;

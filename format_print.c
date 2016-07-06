@@ -259,7 +259,7 @@ static const char *str_val(const char *key, const struct format_option *fopts, c
 	} else {
 		opt = option_find_silent(key);
 		if (opt) {
-			opt->get(opt->id, buf);
+			opt->get(opt->data, buf);
 			val = buf;
 		}
 	}
@@ -361,7 +361,7 @@ static int format_eval_cond(struct expr* expr, const struct format_option *fopts
 		return !fo->empty;
 	opt = option_find_silent(key);
 	if (opt) {
-		opt->get(opt->id, buf);
+		opt->get(opt->data, buf);
 		if (strcmp(buf, "false") != 0 && strlen(buf) != 0)
 			return 1;
 	}

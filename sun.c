@@ -217,31 +217,17 @@ static int sun_buffer_space(void)
 	return sp;
 }
 
-static int op_sun_set_option(int key, const char *val)
+static int op_sun_set_device(const char *val)
 {
-	switch (key) {
-	case 0:
-		free(sun_audio_device);
-		sun_audio_device = xstrdup(val);
-		break;
-	default:
-		return -OP_ERROR_NOT_OPTION;
-	}
-
+	free(sun_audio_device);
+	sun_audio_device = xstrdup(val);
 	return 0;
 }
 
-static int op_sun_get_option(int key, char **val)
+static int op_sun_get_device(char **val)
 {
-	switch (key) {
-	case 0:
-		if (sun_audio_device)
-			*val = xstrdup(sun_audio_device);
-		break;
-	default:
-		return -OP_ERROR_NOT_OPTION;
-	}
-
+	if (sun_audio_device)
+		*val = xstrdup(sun_audio_device);
 	return 0;
 }
 
@@ -254,13 +240,11 @@ const struct output_plugin_ops op_pcm_ops = {
 	.pause = sun_pause,
 	.unpause = sun_unpause,
 	.buffer_space = sun_buffer_space,
-	.set_option = op_sun_set_option,
-	.get_option = op_sun_get_option
 };
 
-const char * const op_pcm_options[] = {
-	"device",
-	NULL
+const struct output_plugin_opt op_pcm_options[] = {
+	OPT(op_sun, device),
+	{ NULL },
 };
 
 const int op_priority = 0;

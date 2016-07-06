@@ -203,74 +203,86 @@ static int op_ao_buffer_space(void)
 	return libao_cur_buffer_space;
 }
 
-static int op_ao_set_option(int key, const char *val)
+static int op_ao_set_buffer_size(const char *val)
 {
 	long int ival;
-
-	switch (key) {
-	case 0:
-		if (str_to_int(val, &ival) || ival < 4096) {
-			errno = EINVAL;
-			return -OP_ERROR_ERRNO;
-		}
-		libao_buffer_space = ival;
-		break;
-	case 1:
-		free(libao_driver);
-		libao_driver = NULL;
-		if (val[0])
-			libao_driver = xstrdup(val);
-		break;
-	case 2:
-		if (str_to_int(val, &ival)) {
-			errno = EINVAL;
-			return -OP_ERROR_ERRNO;
-		}
-		wav_counter = ival;
-		break;
-	case 3:
-		free(wav_dir);
-		wav_dir = xstrdup(val);
-		break;
-	case 4:
-		free(libao_device_interface);
-		libao_device_interface = NULL;
-		if (val[0])
-			libao_device_interface = xstrdup(val);
-		break;
-	default:
-		return -OP_ERROR_NOT_OPTION;
+	if (str_to_int(val, &ival) || ival < 4096) {
+		errno = EINVAL;
+		return -OP_ERROR_ERRNO;
 	}
+	libao_buffer_space = ival;
 	return 0;
 }
 
-static int op_ao_get_option(int key, char **val)
+static int op_ao_get_buffer_size(char **val)
 {
-	switch (key) {
-	case 0:
-		*val = xnew(char, 22);
-		snprintf(*val, 22, "%d", libao_buffer_space);
-		break;
-	case 1:
-		if (libao_driver)
-			*val = xstrdup(libao_driver);
-		break;
-	case 2:
-		*val = xnew(char, 22);
-		snprintf(*val, 22, "%d", wav_counter);
-		break;
-	case 3:
-		if (wav_dir == NULL)
-			wav_dir = xstrdup(home_dir);
-		*val = expand_filename(wav_dir);
-		break;
-	case 4:
-		if (libao_device_interface)
-			*val = xstrdup(libao_device_interface);
-		break;
-	default:
-		return -OP_ERROR_NOT_OPTION;
+	*val = xnew(char, 22);
+	snprintf(*val, 22, "%d", libao_buffer_space);
+	return 0;
+}
+
+static int op_ao_set_driver(const char *val)
+{
+	free(libao_driver);
+	libao_driver = NULL;
+	if (val[0])
+		libao_driver = xstrdup(val);
+	return 0;
+}
+
+static int op_ao_get_driver(char **val)
+{
+	if (libao_driver)
+		*val = xstrdup(libao_driver);
+	return 0;
+}
+
+static int op_ao_set_wav_counter(const char *val)
+{
+	long int ival;
+	if (str_to_int(val, &ival)) {
+		errno = EINVAL;
+		return -OP_ERROR_ERRNO;
 	}
+	wav_counter = ival;
+	return 0;
+}
+
+static int op_ao_get_wav_counter(char **val)
+{
+	*val = xnew(char, 22);
+	snprintf(*val, 22, "%d", wav_counter);
+	return 0;
+}
+
+static int op_ao_set_wav_dir(const char *val)
+{
+	free(wav_dir);
+	wav_dir = xstrdup(val);
+	return 0;
+}
+
+static int op_ao_get_wav_dir(char **val)
+{
+	if (wav_dir == NULL)
+		wav_dir = xstrdup(home_dir);
+	*val = expand_filename(wav_dir);
+	return 0;
+}
+
+static int op_ao_set_device_interface(const char *val)
+{
+	free(libao_device_interface);
+	libao_device_interface = NULL;
+	if (val[0])
+		libao_device_interface = xstrdup(val);
+	return 0;
+}
+
+static int op_ao_get_device_interface(char **val)
+{
+	if (libao_device_interface)
+		*val = xstrdup(libao_device_interface);
 	return 0;
 }
 
@@ -281,17 +293,15 @@ const struct output_plugin_ops op_pcm_ops = {
 	.close = op_ao_close,
 	.write = op_ao_write,
 	.buffer_space = op_ao_buffer_space,
-	.set_option = op_ao_set_option,
-	.get_option = op_ao_get_option
 };
 
-const char * const op_pcm_options[] = {
-	"buffer_size",
-	"driver",
-	"wav_counter",
-	"wav_dir",
-	"device_interface",
-	NULL
+const struct output_plugin_opt op_pcm_options[] = {
+	OPT(op_ao, buffer_size),
+	OPT(op_ao, driver),
+	OPT(op_ao, wav_counter),
+	OPT(op_ao, wav_dir),
+	OPT(op_ao, device_interface),
+	{ NULL },
 };
 
 const int op_priority = 3;

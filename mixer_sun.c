@@ -49,8 +49,6 @@ static int sun_mixer_open(int *);
 static int sun_mixer_close(void);
 static int sun_mixer_set_volume(int, int);
 static int sun_mixer_get_volume(int *, int *);
-static int sun_mixer_set_option(int, const char *);
-static int sun_mixer_get_option(int, char **);
 
 static int mixer_open(const char *dev)
 {
@@ -240,40 +238,32 @@ static int sun_mixer_get_volume(int *l, int *r)
 	return 0;
 }
 
-static int sun_mixer_set_option(int key, const char *val)
+static int sun_mixer_set_channel(const char *val)
 {
-	switch (key) {
-	case 0:
-		if (sun_mixer_channel != NULL)
-			free(sun_mixer_channel);
-		sun_mixer_channel = xstrdup(val);
-		break;
-	case 1:
-		free(sun_mixer_device);
-		sun_mixer_device = xstrdup(val);
-		break;
-	default:
-		return -OP_ERROR_NOT_OPTION;
-	}
-
+	if (sun_mixer_channel != NULL)
+		free(sun_mixer_channel);
+	sun_mixer_channel = xstrdup(val);
 	return 0;
 }
 
-static int sun_mixer_get_option(int key, char **val)
+static int sun_mixer_get_channel(char **val)
 {
-	switch (key) {
-	case 0:
-		if (sun_mixer_channel)
-			*val = xstrdup(sun_mixer_channel);
-		break;
-	case 1:
-		if (sun_mixer_device)
-			*val = xstrdup(sun_mixer_device);
-		break;
-	default:
-		return -OP_ERROR_NOT_OPTION;
-	}
+	if (sun_mixer_channel)
+		*val = xstrdup(sun_mixer_channel);
+	return 0;
+}
 
+static int sun_mixer_set_device(const char *val)
+{
+	free(sun_mixer_device);
+	sun_mixer_device = xstrdup(val);
+	return 0;
+}
+
+static int sun_mixer_get_device(char **val)
+{
+	if (sun_mixer_device)
+		*val = xstrdup(sun_mixer_device);
 	return 0;
 }
 
@@ -284,12 +274,10 @@ const struct mixer_plugin_ops op_mixer_ops = {
 	.close = sun_mixer_close,
 	.set_volume = sun_mixer_set_volume,
 	.get_volume = sun_mixer_get_volume,
-	.set_option = sun_mixer_set_option,
-	.get_option = sun_mixer_get_option
 };
 
-const char * const op_mixer_options[] = {
-	"channel",
-	"device",
-	NULL
+const struct mixer_plugin_opt op_mixer_options[] = {
+	OPT(sun_mixer, channel),
+	OPT(sun_mixer, device),
+	{ NULL },
 };

@@ -191,46 +191,40 @@ static int oss_mixer_get_volume(int *l, int *r)
 	}
 }
 
-static int oss_mixer_set_option(int key, const char *val)
+static int oss_mixer_set_channel(const char *val)
 {
-	switch (key) {
-	case 0:
-		if (strcasecmp(val, "pcm") == 0) {
-			oss_volume_controls_pcm = 1;
-		} else if (strcasecmp(val, "master") == 0) {
-			oss_volume_controls_pcm = 0;
-		} else {
-			errno = EINVAL;
-			return -OP_ERROR_ERRNO;
-		}
-		break;
-	case 1:
-		free(oss_mixer_device);
-		oss_mixer_device = xstrdup(val);
-		break;
-	default:
-		return -OP_ERROR_NOT_OPTION;
+	if (strcasecmp(val, "pcm") == 0) {
+		oss_volume_controls_pcm = 1;
+	} else if (strcasecmp(val, "master") == 0) {
+		oss_volume_controls_pcm = 0;
+	} else {
+		errno = EINVAL;
+		return -OP_ERROR_ERRNO;
 	}
 	return 0;
 }
 
-static int oss_mixer_get_option(int key, char **val)
+static int oss_mixer_get_channel(char **val)
 {
-	switch (key) {
-	case 0:
-		if (oss_volume_controls_pcm) {
-			*val = xstrdup("PCM");
-		} else {
-			*val = xstrdup("Master");
-		}
-		break;
-	case 1:
-		if (oss_mixer_device)
-			*val = xstrdup(oss_mixer_device);
-		break;
-	default:
-		return -OP_ERROR_NOT_OPTION;
+	if (oss_volume_controls_pcm) {
+		*val = xstrdup("PCM");
+	} else {
+		*val = xstrdup("Master");
 	}
+	return 0;
+}
+
+static int oss_mixer_set_device(const char *val)
+{
+	free(oss_mixer_device);
+	oss_mixer_device = xstrdup(val);
+	return 0;
+}
+
+static int oss_mixer_get_device(char **val)
+{
+	if (oss_mixer_device)
+		*val = xstrdup(oss_mixer_device);
 	return 0;
 }
 
@@ -241,12 +235,10 @@ const struct mixer_plugin_ops op_mixer_ops = {
 	.close = oss_mixer_close,
 	.set_volume = oss_mixer_set_volume,
 	.get_volume = oss_mixer_get_volume,
-	.set_option = oss_mixer_set_option,
-	.get_option = oss_mixer_get_option
 };
 
-const char * const op_mixer_options[] = {
-	"channel",
-	"device",
-	NULL
+const struct mixer_plugin_opt op_mixer_options[] = {
+	OPT(oss_mixer, channel),
+	OPT(oss_mixer, device),
+	{ NULL },
 };

@@ -172,4 +172,4 @@ const char * const ip_extensions[] = {
 	NULL
 };
 const char * const ip_mime_types[] = { NULL };
-const char * const ip_options[] = { NULL };
+const struct input_plugin_opt ip_options[] = { { NULL } };

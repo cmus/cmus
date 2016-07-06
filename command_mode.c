@@ -459,7 +459,7 @@ static void cmd_set(char *arg)
 
 		opt = option_find(arg);
 		if (opt) {
-			opt->get(opt->id, buf);
+			opt->get(opt->data, buf);
 			info_msg("setting: '%s=%s'", arg, buf);
 		}
 	}
@@ -476,7 +476,7 @@ static void cmd_toggle(char *arg)
 		error_msg("%s is not toggle option", opt->name);
 		return;
 	}
-	opt->toggle(opt->id);
+	opt->toggle(opt->data);
 	help_win->changed = 1;
 	if (cur_view == TREE_VIEW) {
 		lib_track_win->changed = 1;
@@ -2471,7 +2471,7 @@ static void expand_options(const char *str)
 					tails = xnew(char *, 1);
 
 					buf[0] = 0;
-					opt->get(opt->id, buf);
+					opt->get(opt->data, buf);
 					tails[0] = xstrdup(buf);
 
 					tabexp.head = xstrdup(str);

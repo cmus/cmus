@@ -237,37 +237,15 @@ static int waveout_buffer_space(void)
 	return buffers_free * FRAME_SIZE_ALIGN(buffer_size);
 }
 
-static int waveout_set_option(int key, const char *val)
+static int waveout_set_buffer_common(long int val, long int *dst)
 {
-	long int ival;
 	int reinit = 0;
 
-	switch (key) {
-	case 0:
-		if (str_to_int(val, &ival) || ival < 4096 || ival > 65536) {
-			errno = EINVAL;
-			return -OP_ERROR_ERRNO;
-		}
-		if (buffers) {
-			waveout_exit();
-			reinit = 1;
-		}
-		buffer_size = ival;
-		break;
-	case 1:
-		if (str_to_int(val, &ival) || ival < 2 || ival > 64) {
-			errno = EINVAL;
-			return -OP_ERROR_ERRNO;
-		}
-		if (buffers) {
-			waveout_exit();
-			reinit = 1;
-		}
-		buffer_count = ival;
-		break;
-	default:
-		return -OP_ERROR_NOT_OPTION;
+	if (buffers) {
+		waveout_exit();
+		reinit = 1;
 	}
+	*dst = val;
 
 	if (reinit) {
 		waveout_init();
@@ -276,20 +254,37 @@ static int waveout_set_option(int key, const char *val)
 	return 0;
 }
 
-static int waveout_get_option(int key, char **val)
+static int waveout_set_buffer_size(const char *val)
 {
-	switch (key) {
-	case 0:
-		*val = xnew(char, 22);
-		snprintf(*val, 22, "%d", buffer_size);
-		break;
-	case 1:
-		*val = xnew(char, 22);
-		snprintf(*val, 22, "%d", buffer_count);
-		break;
-	default:
-		return -OP_ERROR_NOT_OPTION;
+	long int ival;
+	if (str_to_int(val, &ival) || ival < 4096 || ival > 65536) {
+		errno = EINVAL;
+		return -OP_ERROR_ERRNO;
 	}
+	return waveout_set_buffer_common(ival, &buffer_size);
+}
+
+static int waveout_set_buffer_count(const char *val)
+{
+	long int ival;
+	if (str_to_int(val, &ival) || ival < 2 || ival > 64) {
+		errno = EINVAL;
+		return -OP_ERROR_ERRNO;
+	}
+	return waveout_set_buffer_common(ival, &buffer_count);
+}
+
+static int waveout_get_buffer_size(char **val)
+{
+	*val = xnew(char, 22);
+	snprintf(*val, 22, "%d", buffer_size);
+	return 0;
+}
+
+static int waveout_get_buffer_count(char **val)
+{
+	*val = xnew(char, 22);
+	snprintf(*val, 22, "%d", buffer_count);
 	return 0;
 }
 
@@ -302,14 +297,12 @@ const struct output_plugin_ops op_pcm_ops = {
 	.pause = waveout_pause,
 	.unpause = waveout_unpause,
 	.buffer_space = waveout_buffer_space,
-	.set_option = waveout_set_option,
-	.get_option = waveout_get_option
 };
 
-const char * const op_pcm_options[] = {
-	"buffer_size",
-	"buffer_count",
-	NULL
+const struct output_plugin_opt op_pcm_options[] = {
+	OPT(waveout, buffer_size),
+	OPT(waveout, buffer_count),
+	{ NULL },
 };
 
 const int op_priority = 0;

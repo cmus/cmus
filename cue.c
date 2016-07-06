@@ -380,18 +380,6 @@ static char *cue_codec_profile(struct input_plugin_data *ip_data)
 }
 
 
-static int cue_set_option(int key, const char *val)
-{
-	return -IP_ERROR_NOT_OPTION;
-}
-
-
-static int cue_get_option(int key, char **val)
-{
-	return -IP_ERROR_NOT_OPTION;
-}
-
-
 const struct input_plugin_ops ip_ops = {
 	.open            = cue_open,
 	.close           = cue_close,
@@ -403,11 +391,9 @@ const struct input_plugin_ops ip_ops = {
 	.bitrate_current = cue_current_bitrate,
 	.codec           = cue_codec,
 	.codec_profile   = cue_codec_profile,
-	.set_option      = cue_set_option,
-	.get_option      = cue_get_option
 };
 
 const int ip_priority = 50;
 const char * const ip_extensions[] = { NULL };
 const char * const ip_mime_types[] = { "application/x-cue", NULL };
-const char * const ip_options[] = { NULL };
+const struct input_plugin_opt ip_options[] = { { NULL } };

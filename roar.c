@@ -259,41 +259,6 @@ static int op_roar_unpause(void) {
 }
 
 
-static int op_roar_set_option(int key, const char *val)
-{
-	switch (key) {
-	case 0:
-		free(host);
-		host = xstrdup(val);
-		break;
-	case 1:
-		free(role);
-		role = xstrdup(val);
-		_set_role();
-		break;
-	default:
-		return -OP_ERROR_NOT_OPTION;
-	}
-	return 0;
-}
-
-static int op_roar_get_option(int key, char **val)
-{
-	switch (key) {
-	case 0:
-		if (host != NULL)
-			*val = xstrdup(host);
-		break;
-	case 1:
-		if (role != NULL)
-			*val = xstrdup(role);
-		break;
-	default:
-		return -OP_ERROR_NOT_OPTION;
-	}
-	return 0;
-}
-
 static int op_roar_mixer_open(int *volume_max)
 {
 	*volume_max = MIXER_BASE_VOLUME;
@@ -317,6 +282,7 @@ static int op_roar_mixer_set_volume(int l, int r)
 
 	return 0;
 }
+
 static int op_roar_mixer_get_volume(int *l, int *r)
 {
 	float lf, rf;
@@ -338,13 +304,33 @@ static int op_roar_mixer_get_volume(int *l, int *r)
 	return 0;
 }
 
-static int op_roar_mixer_set_option(int key, const char *val)
+static int op_roar_set_server(const char *val)
 {
-	return -OP_ERROR_NOT_OPTION;
+	free(host);
+	host = xstrdup(val);
+	return 0;
 }
-static int op_roar_mixer_get_option(int key, char **val)
+
+static int op_roar_get_server(char **val)
 {
-	return -OP_ERROR_NOT_OPTION;
+	if (host != NULL)
+		*val = xstrdup(host);
+	return 0;
+}
+
+
+static int op_roar_set_role(const char *val)
+{
+	free(host);
+	host = xstrdup(val);
+	return 0;
+}
+
+static int op_roar_get_role(char **val)
+{
+	if (role != NULL)
+		*val = xstrdup(role);
+	return 0;
 }
 
 const struct output_plugin_ops op_pcm_ops = {
@@ -357,14 +343,12 @@ const struct output_plugin_ops op_pcm_ops = {
 	.buffer_space = op_roar_buffer_space,
 	.pause = op_roar_pause,
 	.unpause = op_roar_unpause,
-	.set_option = op_roar_set_option,
-	.get_option = op_roar_get_option
 };
 
-const char * const op_pcm_options[] = {
-	"server",
-	"role",
-	NULL
+const struct output_plugin_opt op_pcm_options[] = {
+	OPT(op_roar, server),
+	OPT(op_roar, role),
+	{ NULL },
 };
 
 const struct mixer_plugin_ops op_mixer_ops = {
@@ -375,12 +359,10 @@ const struct mixer_plugin_ops op_mixer_ops = {
 	.get_fds = NULL,
 	.set_volume = op_roar_mixer_set_volume,
 	.get_volume = op_roar_mixer_get_volume,
-	.set_option = op_roar_mixer_set_option,
-	.get_option = op_roar_mixer_get_option
 };
 
-const char * const op_mixer_options[] = {
-	NULL
+const struct mixer_plugin_opt op_mixer_options[] = {
+	{ NULL },
 };
 
 const int op_priority = -1;
