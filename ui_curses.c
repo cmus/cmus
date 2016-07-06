@@ -45,6 +45,7 @@
 #include "help.h"
 #include "worker.h"
 #include "input.h"
+#include "special_handlers.h"
 #include "file.h"
 #include "path.h"
 #include "mixer.h"
@@ -2531,6 +2532,8 @@ int main(int argc, char *argv[])
 		using_utf8 = 1;
 
 	misc_init();
+	special_handlers_init();
+
 	if (server_address == NULL)
 		server_address = xstrdup(cmus_socket_path);
 	debug_init();

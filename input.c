@@ -32,6 +32,7 @@
 #include "misc.h"
 #include "debug.h"
 #include "ui_curses.h"
+#include "special_handlers.h"
 #ifdef HAVE_CONFIG
 #include "config/libdir.h"
 #endif
@@ -91,6 +92,7 @@ struct ip {
 	const char * const *mime_types;
 	const struct input_plugin_ops *ops;
 	const char * const *options;
+	void (*init_function)(void);
 };
 
 static const char * const plugin_dir = LIBDIR "/cmus/ip";
@@ -485,6 +487,8 @@ void ip_load_plugins(void)
 		ip->mime_types = dlsym(so, "ip_mime_types");
 		ip->ops = dlsym(so, "ip_ops");
 		ip->options = dlsym(so, "ip_options");
+		ip->init_function = dlsym(so, "ip_init_function");
+
 		if (!priority_ptr || !ip->extensions || !ip->mime_types || !ip->ops || !ip->options) {
 			error_msg("%s: missing symbol", filename);
 			free(ip);
@@ -495,6 +499,9 @@ void ip_load_plugins(void)
 
 		ip->name = xstrndup(d->d_name, ext - d->d_name);
 		ip->handle = so;
+
+		if (ip->init_function)
+			ip->init_function();
 
 		list_add_tail(&ip->node, &ip_head);
 	}
@@ -530,11 +537,10 @@ int ip_open(struct input_plugin *ip)
 		if (rc == 0)
 			rc = ip->ops->open(&ip->data);
 	} else {
-		if (is_cdda_url(ip->data.filename)) {
-			ip->ops = get_ops_by_mime_type("x-content/audio-cdda");
-			rc = ip->ops ? ip->ops->open(&ip->data) : 1;
-		} else if (is_cue_url(ip->data.filename)) {
-			ip->ops = get_ops_by_mime_type("application/x-cue");
+		const char* mimetype = special_mimetype_handle(ip->data.filename);
+
+		if (mimetype != NULL) {
+			ip->ops = get_ops_by_mime_type(mimetype);
 			rc = ip->ops ? ip->ops->open(&ip->data) : 1;
 		} else
 			rc = open_file(ip);

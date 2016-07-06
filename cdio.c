@@ -26,6 +26,7 @@
 #include "options.h"
 #include "comment.h"
 #include "discid.h"
+#include "special_handlers.h"
 
 #include <cdio/cdio.h>
 #include <cdio/logging.h>
@@ -539,6 +540,26 @@ static int libcdio_get_option(int key, char **val)
 	return 0;
 }
 
+static int add_cdda(const char *url, adder add_file)
+{
+	char *disc_id = NULL;
+	int start_track = 1, end_track = -1;
+
+	parse_cdda_url(url, &disc_id, &start_track, &end_track);
+
+	if (end_track != -1) {
+		int i;
+		for (i = start_track; i <= end_track; i++) {
+			char *new_url = gen_cdda_url(disc_id, i, -1);
+			add_file(new_url, 0);
+			free(new_url);
+		}
+	} else
+		add_file(url, 0);
+	free(disc_id);
+	return 1;
+}
+
 const struct input_plugin_ops ip_ops = {
 	.open = libcdio_open,
 	.close = libcdio_close,
@@ -563,3 +584,8 @@ const char * const ip_options[] = {
 const int ip_priority = 50;
 const char * const ip_extensions[] = { NULL };
 const char * const ip_mime_types[] = { "x-content/audio-cdda", NULL };
+
+extern void ip_init_function(void) {
+	register_special_filename_handler(is_cdda_url, add_cdda);
+	register_special_mimetype_handler(is_cdda_url, "x-content/audio-cdda");
+}

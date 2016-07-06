@@ -23,16 +23,21 @@
 
 #include <stdio.h>
 
+int is_cue_filename(const char *name)
+{
+	const char *ext = get_extension(name);
+
+	return (ext != NULL && strcmp(ext, "cue") == 0);
+}
+
 char *associated_cue(const char *filename)
 {
 	FILE *fp;
-	const char *ext;
 	char buf[4096] = {0};
 	const char *dot;
 
-	ext = get_extension(filename);
-	if (ext != NULL && strcmp(ext, "cue") == 0)
-		return NULL;
+	if (is_cue_filename(filename))
+		return xstrdup(filename);
 
 	dot = strrchr(filename, '.');
 	if (dot == NULL)
