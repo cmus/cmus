@@ -125,14 +125,14 @@ enum file_type cmus_detect_ft(const char *name, char **ret)
 	char *absolute;
 	struct stat st;
 
-	if (is_partial_url(name)) {
-		*ret = xstrdup(name);
-		return FILE_TYPE_URL;
-	}
-
 	if (is_cdda_url(name)) {
 		*ret = complete_cdda_url(cdda_device, name);
 		return FILE_TYPE_CDDA;
+	}
+
+	if (is_url(name)) {
+		*ret = xstrdup(name);
+		return FILE_TYPE_URL;
 	}
 
 	*ret = NULL;
