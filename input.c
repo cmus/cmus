@@ -32,11 +32,13 @@
 #include "misc.h"
 #include "debug.h"
 #include "ui_curses.h"
+#include "locking.h"
 #ifdef HAVE_CONFIG
 #include "config/libdir.h"
 #endif
 
 #include <unistd.h>
+#include <stdbool.h>
 #include <string.h>
 #include <errno.h>
 #include <stdio.h>
@@ -96,6 +98,13 @@ struct ip {
 static const char * const plugin_dir = LIBDIR "/cmus/ip";
 static LIST_HEAD(ip_head);
 
+/* protects ip->priority and ip_head */
+static pthread_rwlock_t ip_lock = CMUS_RWLOCK_INITIALIZER;
+
+#define ip_rdlock() cmus_rwlock_rdlock(&ip_lock)
+#define ip_wrlock() cmus_rwlock_wrlock(&ip_lock)
+#define ip_unlock() cmus_rwlock_unlock(&ip_lock)
+
 /* timeouts (ms) */
 static int http_connection_timeout = 5e3;
 static int http_read_timeout = 5e3;
@@ -106,7 +115,8 @@ static const char *pl_mime_types[] = {
 	"audio/x-mpegurl"
 };
 
-static const struct input_plugin_ops *get_ops_by_extension(const char *ext, struct list_head **headp)
+static const struct input_plugin_ops *
+get_ops_by_extension_locked(const char *ext, struct list_head **headp)
 {
 	struct list_head *node = *headp;
 
@@ -114,6 +124,10 @@ static const struct input_plugin_ops *get_ops_by_extension(const char *ext, stru
 		struct ip *ip = list_entry(node, struct ip, node);
 		const char * const *exts = ip->extensions;
 		int i;
+
+		if (ip->priority <= 0) {
+			break;
+		}
 
 		for (i = 0; exts[i]; i++) {
 			if (strcasecmp(ext, exts[i]) == 0 || strcmp("*", exts[i]) == 0) {
@@ -125,7 +139,18 @@ static const struct input_plugin_ops *get_ops_by_extension(const char *ext, stru
 	return NULL;
 }
 
-static const struct input_plugin_ops *get_ops_by_mime_type(const char *mime_type)
+static const struct input_plugin_ops *
+get_ops_by_extension(const char *ext, struct list_head **headp)
+{
+	ip_rdlock();
+	const struct input_plugin_ops *rv = get_ops_by_extension_locked(ext,
+			headp);
+	ip_unlock();
+	return rv;
+}
+
+static const struct input_plugin_ops *
+get_ops_by_mime_type_locked(const char *mime_type)
 {
 	struct ip *ip;
 
@@ -133,12 +158,26 @@ static const struct input_plugin_ops *get_ops_by_mime_type(const char *mime_type
 		const char * const *types = ip->mime_types;
 		int i;
 
+		if (ip->priority <= 0) {
+			break;
+		}
+
 		for (i = 0; types[i]; i++) {
 			if (strcasecmp(mime_type, types[i]) == 0)
 				return ip->ops;
 		}
 	}
 	return NULL;
+}
+
+static const struct input_plugin_ops *
+get_ops_by_mime_type(const char *mime_type)
+{
+	ip_rdlock();
+	const struct input_plugin_ops *rv =
+		get_ops_by_mime_type_locked(mime_type);
+	ip_unlock();
+	return rv;
 }
 
 static void keyvals_add_basic_auth(struct growing_keyvals *c,
@@ -402,7 +441,7 @@ static void ip_reset(struct input_plugin *ip, int close_fd)
 	}
 }
 
-static int open_file(struct input_plugin *ip)
+static int open_file_locked(struct input_plugin *ip)
 {
 	const struct input_plugin_ops *ops;
 	struct list_head *head = &ip_head;
@@ -438,6 +477,14 @@ static int open_file(struct input_plugin *ip)
 	return rc;
 }
 
+static int open_file(struct input_plugin *ip)
+{
+	ip_rdlock();
+	int rv = open_file_locked(ip);
+	ip_unlock();
+	return rv;
+}
+
 static int sort_ip(const struct list_head *a_, const struct list_head *b_)
 {
 	const struct ip *a = list_entry(a_, struct ip, node);
@@ -455,6 +502,8 @@ void ip_load_plugins(void)
 		error_msg("couldn't open directory `%s': %s", plugin_dir, strerror(errno));
 		return;
 	}
+
+	ip_wrlock();
 	while ((d = (struct dirent *) readdir(dir)) != NULL) {
 		char filename[256];
 		struct ip *ip;
@@ -500,6 +549,7 @@ void ip_load_plugins(void)
 	}
 	list_mergesort(&ip_head, sort_ip);
 	closedir(dir);
+	ip_unlock();
 }
 
 struct input_plugin *ip_new(const char *filename)
@@ -816,12 +866,52 @@ static void get_ip_option(void *data, char *buf)
 	}
 }
 
+static void set_ip_priority(void *data, const char *val)
+{
+	/* warn only once during the lifetime of the program. */
+	static bool warned = false;
+	long tmp;
+	struct ip *ip = data;
+
+	if (str_to_int(val, &tmp) == -1 || tmp < 0 || (long)(int)tmp != tmp) {
+		error_msg("non-negative integer expected");
+		return;
+	}
+	if (ui_initialized) {
+		if (!warned) {
+			static const char *msg =
+				"Metadata might become inconsistent "
+				"after this change. Continue? [y/N]";
+			if (!yes_no_query("%s", msg)) {
+				info_msg("Aborted");
+				return;
+			}
+			warned = true;
+		}
+		info_msg("Run \":update-cache -f\" to refresh the metadata.");
+	}
+
+	ip_wrlock();
+	ip->priority = (int)tmp;
+	list_mergesort(&ip_head, sort_ip);
+	ip_unlock();
+}
+
+static void get_ip_priority(void *data, char *val)
+{
+	const struct ip *ip = data;
+	ip_rdlock();
+	snprintf(val, OPTION_MAX_SIZE, "%d", ip->priority);
+	ip_unlock();
+}
+
 void ip_add_options(void)
 {
 	struct ip *ip;
 	const struct input_plugin_opt *ipo;
 	char key[64];
 
+	ip_rdlock();
 	list_for_each_entry(ip, &ip_head, node) {
 		for (ipo = ip->options; ipo->name; ipo++) {
 			snprintf(key, sizeof(key), "input.%s.%s", ip->name,
@@ -829,7 +919,10 @@ void ip_add_options(void)
 			option_add(xstrdup(key), ipo, get_ip_option,
 					set_ip_option, NULL, 0);
 		}
+		snprintf(key, sizeof(key), "input.%s.priority", ip->name);
+		option_add(xstrdup(key), ip, get_ip_priority, set_ip_priority, NULL, 0);
 	}
+	ip_unlock();
 }
 
 char *ip_get_error_msg(struct input_plugin *ip, int rc, const char *arg)
@@ -909,6 +1002,7 @@ char **ip_get_supported_extensions(void)
 
 	size = 8;
 	exts = xnew(char *, size);
+	ip_rdlock();
 	list_for_each_entry(ip, &ip_head, node) {
 		const char * const *e = ip->extensions;
 
@@ -920,6 +1014,7 @@ char **ip_get_supported_extensions(void)
 			exts[count++] = xstrdup(e[i]);
 		}
 	}
+	ip_unlock();
 	exts[count] = NULL;
 	qsort(exts, count, sizeof(char *), strptrcmp);
 	return exts;
@@ -931,6 +1026,7 @@ void ip_dump_plugins(void)
 	int i;
 
 	printf("Input Plugins: %s\n", plugin_dir);
+	ip_rdlock();
 	list_for_each_entry(ip, &ip_head, node) {
 		printf("  %s:\n    Priority: %d\n    File Types:", ip->name, ip->priority);
 		for (i = 0; ip->extensions[i]; i++)
@@ -940,4 +1036,5 @@ void ip_dump_plugins(void)
 			printf(" %s", ip->mime_types[i]);
 		printf("\n");
 	}
+	ip_unlock();
 }

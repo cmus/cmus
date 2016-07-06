@@ -51,3 +51,24 @@ void cmus_mutex_init_recursive(pthread_mutex_t *mutex)
 err:
 	BUG("error initializing recursive mutex: %s\n", strerror(rc));
 }
+
+void cmus_rwlock_rdlock(pthread_rwlock_t *lock)
+{
+	int rc = pthread_rwlock_rdlock(lock);
+	if (unlikely(rc))
+		BUG("error locking mutex: %s\n", strerror(rc));
+}
+
+void cmus_rwlock_wrlock(pthread_rwlock_t *lock)
+{
+	int rc = pthread_rwlock_wrlock(lock);
+	if (unlikely(rc))
+		BUG("error locking mutex: %s\n", strerror(rc));
+}
+
+void cmus_rwlock_unlock(pthread_rwlock_t *lock)
+{
+	int rc = pthread_rwlock_unlock(lock);
+	if (unlikely(rc))
+		BUG("error unlocking mutex: %s\n", strerror(rc));
+}
