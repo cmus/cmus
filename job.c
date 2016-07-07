@@ -16,6 +16,7 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "utils.h"
 #include "job.h"
 #include "worker.h"
 #include "cache.h"
@@ -86,8 +87,9 @@ static int job_fd_priv;
 static LIST_HEAD(job_result_head);
 static pthread_mutex_t job_mutex = CMUS_MUTEX_INITIALIZER;
 
-static struct track_info *ti_buffer[32];
-static int ti_buffer_fill;
+#define TI_CAP 32
+static struct track_info **ti_buffer;
+static size_t ti_buffer_fill;
 static struct add_data *jd;
 
 #define job_lock() cmus_mutex_lock(&job_mutex)
@@ -135,21 +137,25 @@ static struct job_result *job_pop_result(void)
 
 static void flush_ti_buffer(void)
 {
-	int i;
+	struct job_result *res = xnew(struct job_result, 1);
 
-	editable_lock();
-	for (i = 0; i < ti_buffer_fill; i++) {
-		jd->add(ti_buffer[i]);
-		track_info_unref(ti_buffer[i]);
-	}
-	editable_unlock();
+	res->var = JOB_RES_ADD;
+	res->add_cb = jd->add;
+	res->add_num = ti_buffer_fill;
+	res->add_ti = ti_buffer;
+
+	job_push_result(res);
+
 	ti_buffer_fill = 0;
+	ti_buffer = NULL;
 }
 
 static void add_ti(struct track_info *ti)
 {
-	if (ti_buffer_fill == N_ELEMENTS(ti_buffer))
+	if (ti_buffer_fill == TI_CAP)
 		flush_ti_buffer();
+	if (!ti_buffer)
+		ti_buffer = xnew(struct track_info *, TI_CAP);
 	ti_buffer[ti_buffer_fill++] = ti;
 }
 
@@ -394,7 +400,7 @@ static void do_add_job(void *data)
 	case FILE_TYPE_INVALID:
 		break;
 	}
-	if (ti_buffer_fill)
+	if (ti_buffer)
 		flush_ti_buffer();
 	jd = NULL;
 }
@@ -404,7 +410,6 @@ static void free_add_job(void *data)
 	struct add_data *d = data;
 	free(d->name);
 	free(d);
-	ui_curses_notify();
 }
 
 static void job_handle_add_result(struct job_result *res)
@@ -426,34 +431,37 @@ static void do_update_job(void *data)
 {
 	struct update_data *d = data;
 	int i;
+	enum update_kind *kind = xnew(enum update_kind, d->used);
+	struct job_result *res;
 
 	for (i = 0; i < d->used; i++) {
 		struct track_info *ti = d->ti[i];
 		struct stat s;
 		int rc;
 
-		/* stat follows symlinks, lstat does not */
 		rc = stat(ti->filename, &s);
 		if (rc || d->force || ti->mtime != s.st_mtime || ti->duration == 0) {
-			int force = ti->duration == 0;
-			editable_lock();
-			lib_remove(ti);
-			editable_unlock();
-
-			cache_lock();
-			cache_remove_ti(ti);
-			cache_unlock();
-
-			if (!is_cue_url(ti->filename) && !is_http_url(ti->filename) && rc) {
-				d_print("removing dead file %s\n", ti->filename);
-			} else {
-				if (ti->mtime != s.st_mtime)
-					d_print("mtime changed: %s\n", ti->filename);
-				cmus_add(lib_add_track, ti->filename, FILE_TYPE_FILE, JOB_TYPE_LIB, force);
-			}
+			kind[i] = UPDATE_NONE;
+			if (!is_cue_url(ti->filename) && !is_http_url(ti->filename) && rc)
+				kind[i] |= UPDATE_REMOVE;
+			else if (ti->mtime != s.st_mtime)
+				kind[i] |= UPDATE_MTIME_CHANGED;
+		} else {
+			track_info_unref(ti);
+			d->ti[i] = NULL;
 		}
-		track_info_unref(ti);
 	}
+
+	res = xnew(struct job_result, 1);
+
+	res->var = JOB_RES_UPDATE;
+	res->update_num = d->used;
+	res->update_ti = d->ti;
+	res->update_kind = kind;
+
+	job_push_result(res);
+
+	d->ti = NULL;
 }
 
 static void free_update_job(void *data)
@@ -466,7 +474,6 @@ static void free_update_job(void *data)
 		free(d->ti);
 	}
 	free(d);
-	ui_curses_notify();
 }
 
 static void job_handle_update_result(struct job_result *res)
@@ -509,44 +516,24 @@ void job_schedule_update(struct update_data *data)
 static void do_update_cache_job(void *data)
 {
 	struct update_cache_data *d = data;
+	int count;
 	struct track_info **tis;
-	int i, count;
+	struct job_result *res;
 
 	cache_lock();
 	tis = cache_refresh(&count, d->force);
-	editable_lock();
-	player_info_lock();
-	for (i = 0; i < count; i++) {
-		struct track_info *new, *old = tis[i];
-
-		if (!old)
-			continue;
-
-		new = old->next;
-		if (lib_remove(old) && new)
-			lib_add_track(new);
-		editable_update_track(&pl_editable, old, new);
-		editable_update_track(&pq_editable, old, new);
-		if (player_info.ti == old && new) {
-			track_info_ref(new);
-			player_file_changed(new);
-		}
-
-		track_info_unref(old);
-		if (new)
-			track_info_unref(new);
-	}
-	player_info_unlock();
-	editable_unlock();
 	cache_unlock();
-	free(tis);
-}
 
+	res = xnew(struct job_result, 1);
+	res->var = JOB_RES_UPDATE_CACHE;
+	res->update_cache_ti = tis;
+	res->update_cache_num = count;
+	job_push_result(res);
+}
 
 static void free_update_cache_job(void *data)
 {
 	free(data);
-	ui_curses_notify();
 }
 
 static void job_handle_update_cache_result(struct job_result *res)
