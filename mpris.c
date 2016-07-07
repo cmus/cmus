@@ -38,11 +38,9 @@ int mpris_fd = -1;
 
 static struct track_info *mpris_get_ti(void)
 {
-	player_info_lock();
 	struct track_info *ti = player_info_pub.ti;
 	if (ti)
 		track_info_ref(ti);
-	player_info_unlock();
 	return ti;
 }
 
@@ -191,9 +189,7 @@ static int mpris_playback_status(sd_bus *_bus, const char *_path,
 		sd_bus_error *_ret_error)
 {
 	const char *ss[] = { "Stopped", "Playing", "Paused" };
-	player_info_lock();
 	const char *s = ss[player_info_pub.status];
-	player_info_unlock();
 	return sd_bus_message_append_basic(reply, 's', s);
 }
 
@@ -298,9 +294,7 @@ static int mpris_position(sd_bus *_bus, const char *_path,
 		sd_bus_message *reply, void *_userdata,
 		sd_bus_error *_ret_error)
 {
-	player_info_lock();
 	int64_t pos = player_info_pub.pos;
-	player_info_unlock();
 	pos *= 1000 * 1000;
 	return sd_bus_message_append_basic(reply, 'x', &pos);
 }
@@ -549,9 +543,7 @@ void mpris_seeked(void)
 {
 	if (!bus)
 		return;
-	player_info_lock();
 	int64_t pos = player_info_pub.pos;
-	player_info_unlock();
 	pos *= 1000 * 1000;
 	sd_bus_emit_signal(bus, "/org/mpris/MediaPlayer2",
 			"org.mpris.MediaPlayer2.Player", "Seeked", "x", pos);

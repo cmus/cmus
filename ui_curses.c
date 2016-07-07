@@ -1144,21 +1144,12 @@ static void do_update_view(int full)
 
 static void do_update_statusline(void)
 {
-	player_info_lock();
 	format_print(print_buffer, COLS, statusline_format, get_global_fopts());
-
-	char *msg = player_info_pub.error_msg;
-	player_info_pub.error_msg = NULL;
-
-	player_info_unlock();
-
 	bkgdset(pairs[CURSED_STATUSLINE]);
 	dump_print_buffer(LINES - 2, 0);
 
-	if (msg) {
-		error_msg("%s", msg);
-		free(msg);
-	}
+	if (player_info_pub.error_msg)
+		error_msg("%s", player_info_pub.error_msg);
 }
 
 static void dump_buffer(const char *buffer)
@@ -1284,7 +1275,6 @@ static void set_title(const char *title)
 static void do_update_titleline(void)
 {
 	bkgdset(pairs[CURSED_TITLELINE]);
-	player_info_lock();
 	if (player_info_pub.ti) {
 		int i, use_alt_format = 0;
 		char *wtitle;
@@ -1343,7 +1333,6 @@ static void do_update_titleline(void)
 
 		set_title("cmus " VERSION);
 	}
-	player_info_unlock();
 }
 
 static int cmdline_cursor_column(void)
@@ -1411,8 +1400,7 @@ static void post_update(void)
 	}
 }
 
-/* lock player_info! */
-const char *get_stream_title(void)
+static const char *get_stream_title_locked(void)
 {
 	static char stream_title[255 * 16 + 1];
 	char *ptr, *title;
@@ -1431,6 +1419,14 @@ const char *get_stream_title(void)
 		ptr++;
 	}
 	return NULL;
+}
+
+const char *get_stream_title(void)
+{
+	player_info_lock();
+	const char *rv = get_stream_title_locked();
+	player_info_unlock();
+	return rv;
 }
 
 void update_titleline(void)
@@ -1736,7 +1732,6 @@ static void spawn_status_program(void)
 	if (status_display_program == NULL || status_display_program[0] == 0)
 		return;
 
-	player_info_lock();
 	status = player_info_pub.status;
 	if (status == PLAYER_STATUS_PLAYING && player_info_pub.ti && is_http_url(player_info_pub.ti->filename))
 		stream_title = get_stream_title();
@@ -1790,7 +1785,6 @@ static void spawn_status_program(void)
 		}
 	}
 	argv[i++] = NULL;
-	player_info_unlock();
 
 	if (spawn(argv, NULL, 0) == -1)
 		error_msg("couldn't run `%s': %s", status_display_program, strerror(errno));
@@ -1884,8 +1878,6 @@ static void update(void)
 		refresh();
 	}
 
-	player_info_lock();
-
 	if (player_info_pub.status_changed)
 		mpris_playback_status_changed();
 
@@ -1942,8 +1934,6 @@ static void update(void)
 		needs_status_update += pl_editable.win->changed;
 		pl_editable.win->changed = 0;
 	}
-
-	player_info_unlock();
 
 	if (needs_spawn)
 		spawn_status_program();
@@ -2123,12 +2113,10 @@ static void main_loop(void)
 		tv.tv_sec = 0;
 		tv.tv_usec = 0;
 
-		player_info_lock();
 		if (player_info_pub.status == PLAYER_STATUS_PLAYING) {
 			// player position updates need to be fast
 			tv.tv_usec = 100e3;
 		}
-		player_info_unlock();
 
 		if (!tv.tv_usec && worker_has_job(JOB_TYPE_ANY)) {
 			// playlist is loading. screen needs to be updated

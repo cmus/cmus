@@ -402,6 +402,7 @@ static inline unsigned int buffer_second_size(void)
 
 static inline void _file_changed(struct track_info *ti)
 {
+	player_info_priv_lock();
 	if (player_info_priv.ti)
 		track_info_unref(player_info_priv.ti);
 
@@ -409,18 +410,17 @@ static inline void _file_changed(struct track_info *ti)
 	update_rg_scale();
 	player_metadata[0] = 0;
 	player_info_priv.file_changed = 1;
+	player_info_priv_unlock();
 }
 
 static inline void file_changed(struct track_info *ti)
 {
-	player_info_lock();
 	if (ti) {
 		d_print("file: %s\n", ti->filename);
 	} else {
 		d_print("unloaded\n");
 	}
 	_file_changed(ti);
-	player_info_unlock();
 }
 
 static inline void metadata_changed(void)

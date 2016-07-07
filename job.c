@@ -538,7 +538,6 @@ static void free_update_cache_job(void *data)
 
 static void job_handle_update_cache_result(struct job_result *res)
 {
-	player_info_lock();
 	for (size_t i = 0; i < res->update_cache_num; i++) {
 		struct track_info *new, *old = res->update_cache_ti[i];
 
@@ -559,7 +558,6 @@ static void job_handle_update_cache_result(struct job_result *res)
 		if (new)
 			track_info_unref(new);
 	}
-	player_info_unlock();
 	free(res->update_cache_ti);
 }
 

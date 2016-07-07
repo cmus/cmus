@@ -1766,14 +1766,12 @@ void resume_exit(void)
 		return;
 	}
 
-	player_info_lock();
 	fprintf(f, "status %s\n", player_status_names[player_info_pub.status]);
 	ti = player_info_pub.ti;
 	if (ti) {
 		fprintf(f, "file %s\n", escape(ti->filename));
 		fprintf(f, "position %d\n", player_info_pub.pos);
 	}
-	player_info_unlock();
 	if (lib_cur_track)
 		ti = tree_track_info(lib_cur_track);
 	else
