@@ -1888,20 +1888,13 @@ static void update(void)
 		player_info_pub.metadata_changed;
 
 	if (player_info_pub.file_changed) {
-		player_info_pub.file_changed = 0;
 		needs_title_update = 1;
 		needs_status_update = 1;
 	}
-	if (player_info_pub.metadata_changed) {
-		player_info_pub.metadata_changed = 0;
+	if (player_info_pub.metadata_changed)
 		needs_title_update = 1;
-	}
-	if (player_info_pub.position_changed || player_info_pub.status_changed) {
-		player_info_pub.position_changed = 0;
-		player_info_pub.status_changed = 0;
-
+	if (player_info_pub.position_changed || player_info_pub.status_changed)
 		needs_status_update = 1;
-	}
 	switch (cur_view) {
 	case TREE_VIEW:
 		needs_view_update += lib_tree_win->changed || lib_track_win->changed;
