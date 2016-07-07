@@ -54,10 +54,10 @@ enum consumer_status {
 	CS_PAUSED
 };
 
+static pthread_mutex_t player_info_mutex = CMUS_MUTEX_INITIALIZER;
 char player_metadata[255 * 16 + 1];
 
 struct player_info player_info_pub = {
-	.mutex = CMUS_MUTEX_INITIALIZER,
 	.ti = NULL,
 	.status = PLAYER_STATUS_STOPPED,
 	.pos = 0,
@@ -1019,7 +1019,7 @@ void player_init(void)
 	 * always acquires it. To avoid deadlocks in the places where the lock
 	 * is already held by the calling context, we use a recursive mutex.
 	 */
-	cmus_mutex_init_recursive(&player_info_pub.mutex);
+	cmus_mutex_init_recursive(&player_info_mutex);
 
 	/*  1 s is 176400 B (0.168 MB)
 	 * 10 s is 1.68 MB
@@ -1450,4 +1450,14 @@ void player_set_rg_preamp(double db)
 	player_info_unlock();
 
 	player_unlock();
+}
+
+void player_info_lock(void)
+{
+	cmus_mutex_lock(&player_info_mutex);
+}
+
+void player_info_unlock(void)
+{
+	cmus_mutex_unlock(&player_info_mutex);
 }
