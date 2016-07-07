@@ -1476,12 +1476,12 @@ void player_info_snapshot(void)
 	player_info_priv_unlock();
 }
 
-void player_info_lock(void)
+void player_metadata_lock(void)
 {
 	cmus_mutex_lock(&player_info_mutex);
 }
 
-void player_info_unlock(void)
+void player_metadata_unlock(void)
 {
 	cmus_mutex_unlock(&player_info_mutex);
 }

@@ -1423,9 +1423,9 @@ static const char *get_stream_title_locked(void)
 
 const char *get_stream_title(void)
 {
-	player_info_lock();
+	player_metadata_lock();
 	const char *rv = get_stream_title_locked();
-	player_info_unlock();
+	player_metadata_unlock();
 	return rv;
 }
 

@@ -114,7 +114,7 @@ void player_set_rg_preamp(double db);
 #define VF_PERCENTAGE	0x02
 int player_set_vol(int l, int lf, int r, int rf);
 
-void player_info_lock(void);
-void player_info_unlock(void);
+void player_metadata_lock(void);
+void player_metadata_unlock(void);
 
 #endif
