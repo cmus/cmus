@@ -23,7 +23,6 @@
 #include "player.h"
 #include "input.h"
 #include "play_queue.h"
-#include "worker.h"
 #include "cache.h"
 #include "misc.h"
 #include "file.h"
@@ -244,7 +243,7 @@ static int update_cb(void *data, struct track_info *ti)
 		if (d->size == 0)
 			d->size = 16;
 		d->size *= 2;
-		d->ti = xrealloc(d->ti, d->size * sizeof(struct track_info *));
+		d->ti = xrenew(struct track_info *, d->ti, d->size);
 	}
 	track_info_ref(ti);
 	d->ti[d->used++] = ti;
@@ -265,10 +264,7 @@ void cmus_update_lib(void)
 {
 	struct update_data *data;
 
-	data = xnew(struct update_data, 1);
-	data->size = 0;
-	data->used = 0;
-	data->ti = NULL;
+	data = xnew0(struct update_data, 1);
 
 	lib_for_each(update_cb, data);
 
