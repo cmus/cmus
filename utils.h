@@ -54,8 +54,6 @@
 #define STATIC_ASSERT(cond) \
 	static uint8_t CONCATENATE(_cmus_unused_, __LINE__)[2*(cond) - 1] UNUSED
 
-#define CLEANUP(f) __attribute__((cleanup(f)))
-
 static inline long min_i(long a, long b)
 {
 	return a < b ? a : b;

@@ -36,14 +36,6 @@ do { \
 static sd_bus *bus;
 int mpris_fd = -1;
 
-static struct track_info *mpris_get_ti(void)
-{
-	struct track_info *ti = player_info_pub.ti;
-	if (ti)
-		track_info_ref(ti);
-	return ti;
-}
-
 static int mpris_msg_ignore(sd_bus_message *m, void *_userdata,
 		sd_bus_error *_ret_error)
 {
@@ -157,10 +149,9 @@ static int mpris_seek(sd_bus_message *m, void *_userdata,
 static int mpris_seek_abs(sd_bus_message *m, void *_userdata,
 		sd_bus_error *_ret_error)
 {
-	CLEANUP(track_info_unrefp) struct track_info *ti = mpris_get_ti();
 	char buf[] = "/1122334455667788";
-	if (ti)
-		sprintf(buf, "/%"PRIx64, ti->uid);
+	if (player_info_pub.ti)
+		sprintf(buf, "/%"PRIx64, player_info_pub.ti->uid);
 	else
 		sprintf(buf, "/");
 
@@ -357,7 +348,7 @@ static int mpris_metadata(sd_bus *_bus, const char *_path,
 {
 	CK(sd_bus_message_open_container(reply, 'a', "{sv}"));
 
-	CLEANUP(track_info_unrefp) struct track_info *ti = mpris_get_ti();
+	struct track_info *ti = player_info_pub.ti;
 	if (ti) {
 		char buf[] = "/1122334455667788";
 		sprintf(buf, "/%"PRIx64, ti->uid);
