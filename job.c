@@ -460,6 +460,11 @@ void free_update_job(void *data)
 	ui_curses_notify();
 }
 
+void job_schedule_add(int type, struct add_data *data)
+{
+	worker_add_job(type, do_add_job, free_add_job, data);
+}
+
 static void job_handle_update_result(struct job_result *res)
 {
 	for (size_t i = 0; i < res->update_num; i++) {
@@ -534,6 +539,11 @@ void free_update_cache_job(void *data)
 	ui_curses_notify();
 }
 
+void job_schedule_update(struct update_data *data)
+{
+	worker_add_job(JOB_TYPE_LIB, do_update_job, free_update_job, data);
+}
+
 static void job_handle_update_cache_result(struct job_result *res)
 {
 	player_info_lock();
@@ -559,6 +569,11 @@ static void job_handle_update_cache_result(struct job_result *res)
 	}
 	player_info_unlock();
 	free(res->update_cache_ti);
+}
+
+void job_schedule_update_cache(int type, struct update_cache_data *data)
+{
+	worker_add_job(type, do_update_cache_job, free_update_cache_job, data);
 }
 
 static void job_handle_result(struct job_result *res)
