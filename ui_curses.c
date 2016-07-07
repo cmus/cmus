@@ -646,10 +646,8 @@ const struct format_option *get_global_fopts(void)
 	int buffer_fill, vol, vol_left, vol_right;
 	int duration = -1;
 
-	editable_lock();
 	fopt_set_time(&track_fopts[TF_TOTAL], play_library ? lib_editable.total_time :
 			pl_editable.total_time, 0);
-	editable_unlock();
 
 	fopt_set_str(&track_fopts[TF_FOLLOW], follow_strs[follow]);
 	fopt_set_str(&track_fopts[TF_REPEAT], repeat_strs[repeat]);
@@ -1116,30 +1114,22 @@ static void do_update_view(int full)
 
 	switch (cur_view) {
 	case TREE_VIEW:
-		editable_lock();
 		if (full || lib_tree_win->changed)
 			update_tree_window();
 		if (full || lib_track_win->changed)
 			update_track_window();
-		editable_unlock();
 		draw_separator();
 		update_filterline();
 		break;
 	case SORTED_VIEW:
-		editable_lock();
 		update_sorted_window();
-		editable_unlock();
 		update_filterline();
 		break;
 	case PLAYLIST_VIEW:
-		editable_lock();
 		update_pl_window();
-		editable_unlock();
 		break;
 	case QUEUE_VIEW:
-		editable_lock();
 		update_play_queue_window();
-		editable_unlock();
 		break;
 	case BROWSER_VIEW:
 		update_browser_window();
@@ -1880,7 +1870,6 @@ static void update(void)
 				w = 16;
 			if (h < 2)
 				h = 2;
-			editable_lock();
 			resize_tree_view(w, h);
 			window_set_nr_rows(lib_editable.win, h - 1);
 			window_set_nr_rows(pl_editable.win, h - 1);
@@ -1888,7 +1877,6 @@ static void update(void)
 			window_set_nr_rows(filters_win, h - 1);
 			window_set_nr_rows(help_win, h - 1);
 			window_set_nr_rows(browser_win, h - 1);
-			editable_unlock();
 			needs_title_update = 1;
 			needs_status_update = 1;
 			needs_command_update = 1;
@@ -1898,7 +1886,6 @@ static void update(void)
 	}
 
 	player_info_lock();
-	editable_lock();
 
 	if (player_info.status_changed)
 		mpris_playback_status_changed();
@@ -1957,7 +1944,6 @@ static void update(void)
 		pl_editable.win->changed = 0;
 	}
 
-	editable_unlock();
 	player_info_unlock();
 
 	if (needs_spawn)
@@ -2223,11 +2209,8 @@ static void main_loop(void)
 		if (mpris_fd != -1 && FD_ISSET(mpris_fd, &set))
 			mpris_process();
 
-		if (FD_ISSET(job_fd, &set)) {
-			editable_lock();
+		if (FD_ISSET(job_fd, &set))
 			job_handle();
-			editable_unlock();
-		}
 
 		if (FD_ISSET(cmus_next_track_request_fd, &set))
 			cmus_provide_next_track();

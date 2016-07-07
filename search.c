@@ -29,16 +29,6 @@ struct searchable {
 	struct searchable_ops ops;
 };
 
-static void search_lock(void)
-{
-	editable_lock();
-}
-
-static void search_unlock(void)
-{
-	editable_unlock();
-}
-
 static int advance(struct searchable *s, struct iter *iter,
 		enum search_direction dir, int *wrapped)
 {
@@ -126,7 +116,6 @@ int search(struct searchable *s, const char *text, enum search_direction dir, in
 	struct iter iter;
 	int ret;
 
-	search_lock();
 	if (beginning) {
 		/* first or last item */
 		iter = s->head;
@@ -141,7 +130,6 @@ int search(struct searchable *s, const char *text, enum search_direction dir, in
 	}
 	if (ret)
 		ret = do_search(s, &iter, text, dir, 0);
-	search_unlock();
 	return ret;
 }
 
@@ -150,12 +138,9 @@ int search_next(struct searchable *s, const char *text, enum search_direction di
 	struct iter iter;
 	int ret;
 
-	search_lock();
 	if (!s->ops.get_current(s->data, &iter)) {
-		search_unlock();
 		return 0;
 	}
 	ret = do_search(s, &iter, text, dir, 1);
-	search_unlock();
 	return ret;
 }

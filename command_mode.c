@@ -70,25 +70,18 @@ void view_clear(int view)
 	case TREE_VIEW:
 	case SORTED_VIEW:
 		worker_remove_jobs(JOB_TYPE_LIB);
-		editable_lock();
 		editable_clear(&lib_editable);
 
 		/* FIXME: make this optional? */
 		lib_clear_store();
-
-		editable_unlock();
 		break;
 	case PLAYLIST_VIEW:
 		worker_remove_jobs(JOB_TYPE_PL);
-		editable_lock();
 		editable_clear(&pl_editable);
-		editable_unlock();
 		break;
 	case QUEUE_VIEW:
 		worker_remove_jobs(JOB_TYPE_QUEUE);
-		editable_lock();
 		editable_clear(&pq_editable);
-		editable_unlock();
 		break;
 	default:
 		info_msg(":clear only works in views 1-4");
@@ -156,18 +149,14 @@ void view_load(int view, char *arg)
 	case TREE_VIEW:
 	case SORTED_VIEW:
 		worker_remove_jobs(JOB_TYPE_LIB);
-		editable_lock();
 		editable_clear(&lib_editable);
-		editable_unlock();
 		cmus_add(lib_add_track, name, FILE_TYPE_PL, JOB_TYPE_LIB, 0);
 		free(lib_filename);
 		lib_filename = name;
 		break;
 	case PLAYLIST_VIEW:
 		worker_remove_jobs(JOB_TYPE_PL);
-		editable_lock();
 		editable_clear(&pl_editable);
-		editable_unlock();
 		cmus_add(pl_add_track, name, FILE_TYPE_PL, JOB_TYPE_PL, 0);
 		free(pl_filename);
 		pl_filename = name;
@@ -195,10 +184,8 @@ static void do_save(for_each_ti_cb for_each_ti, const char *arg, char **filename
 		return;
 	}
 
-	editable_lock();
 	if (save_ti(for_each_ti, filename) == -1)
 		error_msg("saving '%s': %s", filename, strerror(errno));
-	editable_unlock();
 }
 
 void view_save(int view, char *arg, int to_stdout, int filtered, int extended)
@@ -561,23 +548,17 @@ err:
 
 static void cmd_factivate(char *arg)
 {
-	editable_lock();
 	filters_activate_names(arg);
-	editable_unlock();
 }
 
 static void cmd_live_filter(char *arg)
 {
-	editable_lock();
 	filters_set_live(arg);
-	editable_unlock();
 }
 
 static void cmd_filter(char *arg)
 {
-	editable_lock();
 	filters_set_anonymous(arg);
-	editable_unlock();
 }
 
 static void cmd_fset(char *arg)
@@ -592,7 +573,6 @@ static void cmd_help(char *arg)
 
 static void cmd_invert(char *arg)
 {
-	editable_lock();
 	switch (cur_view) {
 	case SORTED_VIEW:
 		editable_invert_marks(&lib_editable);
@@ -606,12 +586,10 @@ static void cmd_invert(char *arg)
 	default:
 		info_msg(":invert only works in views 2-4");
 	}
-	editable_unlock();
 }
 
 static void cmd_mark(char *arg)
 {
-	editable_lock();
 	switch (cur_view) {
 	case SORTED_VIEW:
 		editable_mark(&lib_editable, arg);
@@ -625,12 +603,10 @@ static void cmd_mark(char *arg)
 	default:
 		info_msg(":mark only works in views 2-4");
 	}
-	editable_unlock();
 }
 
 static void cmd_unmark(char *arg)
 {
-	editable_lock();
 	switch (cur_view) {
 	case SORTED_VIEW:
 		editable_unmark(&lib_editable);
@@ -644,7 +620,6 @@ static void cmd_unmark(char *arg)
 	default:
 		info_msg(":unmark only works in views 2-4");
 	}
-	editable_unlock();
 }
 
 static void cmd_update_cache(char *arg)
@@ -774,10 +749,8 @@ static void cmd_quit(char *arg)
 
 static void cmd_reshuffle(char *arg)
 {
-	editable_lock();
 	lib_reshuffle();
 	pl_reshuffle();
-	editable_unlock();
 }
 
 static void cmd_source(char *arg)
@@ -1021,7 +994,6 @@ static void cmd_run(char *arg)
 	}
 
 	/* collect selected files (struct track_info) */
-	editable_lock();
 	switch (cur_view) {
 	case TREE_VIEW:
 		_tree_for_each_sel(add_ti, &sel, 0);
@@ -1036,7 +1008,6 @@ static void cmd_run(char *arg)
 		_editable_for_each_sel(&pq_editable, add_ti, &sel, 0);
 		break;
 	}
-	editable_unlock();
 
 	if (sel.tis_nr == 0) {
 		/* no files selected, do nothing */
@@ -1159,7 +1130,6 @@ static void cmd_echo(char *arg)
 	/* get only the first selected track */
 	sel_ti = NULL;
 
-	editable_lock();
 	switch (cur_view) {
 	case TREE_VIEW:
 		_tree_for_each_sel(get_one_ti, &sel_ti, 0);
@@ -1174,7 +1144,6 @@ static void cmd_echo(char *arg)
 		_editable_for_each_sel(&pq_editable, get_one_ti, &sel_ti, 0);
 		break;
 	}
-	editable_unlock();
 
 	if (sel_ti == NULL)
 		return;
@@ -1349,7 +1318,6 @@ static void cmd_pwd(char *arg)
 
 static void cmd_rand(char *arg)
 {
-	editable_lock();
 	switch (cur_view) {
 	case TREE_VIEW:
 		break;
@@ -1363,7 +1331,6 @@ static void cmd_rand(char *arg)
 		editable_rand(&pq_editable);
 		break;
 	}
-	editable_unlock();
 }
 
 static void cmd_search_next(char *arg)
@@ -1449,9 +1416,7 @@ static void cmd_win_add_l(char *arg)
 
 	if (cur_view <= QUEUE_VIEW) {
 		struct wrapper_cb_data add = { lib_add_track };
-		editable_lock();
 		view_for_each_sel[cur_view](wrapper_cb, &add, 0);
-		editable_unlock();
 	} else if (cur_view == BROWSER_VIEW) {
 		add_from_browser(lib_add_track, JOB_TYPE_LIB);
 	}
@@ -1465,9 +1430,7 @@ static void cmd_win_add_p(char *arg)
 
 	if (cur_view <= QUEUE_VIEW) {
 		struct wrapper_cb_data add = { pl_add_track };
-		editable_lock();
 		view_for_each_sel[cur_view](wrapper_cb, &add, 0);
-		editable_unlock();
 	} else if (cur_view == BROWSER_VIEW) {
 		add_from_browser(pl_add_track, JOB_TYPE_PL);
 	}
@@ -1480,9 +1443,7 @@ static void cmd_win_add_Q(char *arg)
 
 	if (cur_view <= QUEUE_VIEW) {
 		struct wrapper_cb_data add = { play_queue_prepend };
-		editable_lock();
 		view_for_each_sel[cur_view](wrapper_cb, &add, 1);
-		editable_unlock();
 	} else if (cur_view == BROWSER_VIEW) {
 		add_from_browser(play_queue_prepend, JOB_TYPE_QUEUE);
 	}
@@ -1495,9 +1456,7 @@ static void cmd_win_add_q(char *arg)
 
 	if (cur_view <= QUEUE_VIEW) {
 		struct wrapper_cb_data add = { play_queue_append };
-		editable_lock();
 		view_for_each_sel[cur_view](wrapper_cb, &add, 0);
-		editable_unlock();
 	} else if (cur_view == BROWSER_VIEW) {
 		add_from_browser(play_queue_append, JOB_TYPE_QUEUE);
 	}
@@ -1518,7 +1477,6 @@ static void cmd_win_activate(char *arg)
 		shuffle_root = &pl_shuffle_root;
 	}
 
-	editable_lock();
 	switch (cur_view) {
 	case TREE_VIEW:
 		info = tree_activate_selected();
@@ -1544,7 +1502,6 @@ static void cmd_win_activate(char *arg)
 		help_select();
 		break;
 	}
-	editable_unlock();
 
 	if (info) {
 		if (shuffle)
@@ -1561,10 +1518,7 @@ static void cmd_win_activate(char *arg)
 
 static void cmd_win_mv_after(char *arg)
 {
-	editable_lock();
 	switch (cur_view) {
-	case TREE_VIEW:
-		break;
 	case SORTED_VIEW:
 		editable_move_after(&lib_editable);
 		break;
@@ -1574,22 +1528,12 @@ static void cmd_win_mv_after(char *arg)
 	case QUEUE_VIEW:
 		editable_move_after(&pq_editable);
 		break;
-	case BROWSER_VIEW:
-		break;
-	case FILTERS_VIEW:
-		break;
-	case HELP_VIEW:
-		break;
 	}
-	editable_unlock();
 }
 
 static void cmd_win_mv_before(char *arg)
 {
-	editable_lock();
 	switch (cur_view) {
-	case TREE_VIEW:
-		break;
 	case SORTED_VIEW:
 		editable_move_before(&lib_editable);
 		break;
@@ -1599,19 +1543,11 @@ static void cmd_win_mv_before(char *arg)
 	case QUEUE_VIEW:
 		editable_move_before(&pq_editable);
 		break;
-	case BROWSER_VIEW:
-		break;
-	case FILTERS_VIEW:
-		break;
-	case HELP_VIEW:
-		break;
 	}
-	editable_unlock();
 }
 
 static void cmd_win_remove(char *arg)
 {
-	editable_lock();
 	switch (cur_view) {
 	case TREE_VIEW:
 		tree_remove_sel();
@@ -1635,12 +1571,10 @@ static void cmd_win_remove(char *arg)
 		help_remove();
 		break;
 	}
-	editable_unlock();
 }
 
 static void cmd_win_sel_cur(char *arg)
 {
-	editable_lock();
 	switch (cur_view) {
 	case TREE_VIEW:
 		tree_sel_current(auto_expand_albums_selcur);
@@ -1651,42 +1585,23 @@ static void cmd_win_sel_cur(char *arg)
 	case PLAYLIST_VIEW:
 		pl_sel_current();
 		break;
-	case QUEUE_VIEW:
-		break;
-	case BROWSER_VIEW:
-		break;
-	case FILTERS_VIEW:
-		break;
-	case HELP_VIEW:
-		break;
 	}
-	editable_unlock();
 }
 
 static void cmd_win_toggle(char *arg)
 {
 	switch (cur_view) {
 	case TREE_VIEW:
-		editable_lock();
 		tree_toggle_expand_artist();
-		editable_unlock();
 		break;
 	case SORTED_VIEW:
-		editable_lock();
 		editable_toggle_mark(&lib_editable);
-		editable_unlock();
 		break;
 	case PLAYLIST_VIEW:
-		editable_lock();
 		editable_toggle_mark(&pl_editable);
-		editable_unlock();
 		break;
 	case QUEUE_VIEW:
-		editable_lock();
 		editable_toggle_mark(&pq_editable);
-		editable_unlock();
-		break;
-	case BROWSER_VIEW:
 		break;
 	case FILTERS_VIEW:
 		filters_toggle_filter();
@@ -1699,23 +1614,17 @@ static void cmd_win_toggle(char *arg)
 
 static void cmd_win_scroll_down(char *arg)
 {
-	editable_lock();
 	window_scroll_down(current_win());
-	editable_unlock();
 }
 
 static void cmd_win_scroll_up(char *arg)
 {
-	editable_lock();
 	window_scroll_up(current_win());
-	editable_unlock();
 }
 
 static void cmd_win_bottom(char *arg)
 {
-	editable_lock();
 	window_goto_bottom(current_win());
-	editable_unlock();
 }
 
 static void cmd_win_down(char *arg)
@@ -1730,67 +1639,48 @@ static void cmd_win_down(char *arg)
 		}
 	}
 
-	editable_lock();
 	window_down(current_win(), num_rows);
-	editable_unlock();
 }
 
 static void cmd_win_next(char *arg)
 {
-	if (cur_view == TREE_VIEW) {
-		editable_lock();
+	if (cur_view == TREE_VIEW)
 		tree_toggle_active_window();
-		editable_unlock();
-	}
 }
 
 static void cmd_win_pg_down(char *arg)
 {
-	editable_lock();
 	window_page_down(current_win());
-	editable_unlock();
 }
 
 static void cmd_win_pg_up(char *arg)
 {
-	editable_lock();
 	window_page_up(current_win());
-	editable_unlock();
 }
 
 static void cmd_win_hf_pg_down(char *arg)
 {
-	editable_lock();
 	window_half_page_down(current_win());
-	editable_unlock();
 }
 
 static void cmd_win_hf_pg_up(char *arg)
 {
-	editable_lock();
 	window_half_page_up(current_win());
-	editable_unlock();
 }
 
 static void cmd_win_pg_top(char *arg)
 {
-	editable_lock();
 	window_page_top(current_win());
-	editable_unlock();
 }
 
 static void cmd_win_pg_bottom(char *arg)
 {
-	editable_lock();
 	window_page_bottom(current_win());
-	editable_unlock();
 }
 
 static void cmd_win_pg_middle(char *arg)
 {
-	editable_lock();
 	window_page_middle(current_win());
-	editable_unlock();
 }
 
 static void cmd_win_update_cache(char *arg)
@@ -1801,9 +1691,7 @@ static void cmd_win_update_cache(char *arg)
 	if (cur_view != TREE_VIEW && cur_view != SORTED_VIEW)
 		return;
 
-	editable_lock();
 	view_for_each_sel[cur_view](add_ti, &sel, 0);
-	editable_unlock();
 	if (sel.tis_nr == 0)
 		return;
 	sel.tis[sel.tis_nr] = NULL;
@@ -1812,9 +1700,7 @@ static void cmd_win_update_cache(char *arg)
 
 static void cmd_win_top(char *arg)
 {
-	editable_lock();
 	window_goto_top(current_win());
-	editable_unlock();
 }
 
 static void cmd_win_up(char *arg)
@@ -1829,9 +1715,7 @@ static void cmd_win_up(char *arg)
 		}
 	}
 
-	editable_lock();
 	window_up(current_win(), num_rows);
-	editable_unlock();
 }
 
 static void cmd_win_update(char *arg)
@@ -1842,9 +1726,7 @@ static void cmd_win_update(char *arg)
 		cmus_update_lib();
 		break;
 	case PLAYLIST_VIEW:
-		editable_lock();
 		editable_clear(&pl_editable);
-		editable_unlock();
 		cmus_add(pl_add_track, pl_filename, FILE_TYPE_PL, JOB_TYPE_PL, 0);
 		break;
 	case BROWSER_VIEW:
@@ -1963,12 +1845,11 @@ static void cmd_lqueue(char *arg)
 		}
 		count = val;
 	}
-	editable_lock();
 	nmax = count_albums();
 	if (count > nmax)
 		count = nmax;
 	if (!count)
-		goto unlock;
+		return;
 
 	r = rand_array(count, nmax);
 	album = to_album(rb_first(&to_artist(rb_first(&lib_artist_root))->album_root));
@@ -2004,8 +1885,6 @@ static void cmd_lqueue(char *arg)
 		free(a);
 		item = next;
 	} while (item != &head);
-unlock:
-	editable_unlock();
 }
 
 struct track_list {
@@ -2029,11 +1908,10 @@ static void cmd_tqueue(char *arg)
 		}
 		count = val;
 	}
-	editable_lock();
 	if (count > lib_editable.nr_tracks)
 		count = lib_editable.nr_tracks;
 	if (!count)
-		goto unlock;
+		return;
 
 	r = rand_array(count, lib_editable.nr_tracks);
 	item = lib_editable.head.next;
@@ -2059,8 +1937,6 @@ static void cmd_tqueue(char *arg)
 		free(t);
 		item = next;
 	} while (item != &head);
-unlock:
-	editable_unlock();
 }
 
 /* tab exp {{{

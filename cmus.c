@@ -38,7 +38,6 @@
 #include "gbuf.h"
 #include "discid.h"
 #include "locking.h"
-#include "editable.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -89,13 +88,11 @@ void cmus_prev(void)
 {
 	struct track_info *info;
 
-	editable_lock();
 	if (play_library) {
 		info = lib_goto_prev();
 	} else {
 		info = pl_goto_prev();
 	}
-	editable_unlock();
 
 	if (info)
 		player_set_file(info);
@@ -273,9 +270,7 @@ void cmus_update_lib(void)
 	data->used = 0;
 	data->ti = NULL;
 
-	editable_lock();
 	lib_for_each(update_cb, data);
-	editable_unlock();
 
 	job_schedule_update(data);
 }
@@ -394,11 +389,9 @@ int cmus_playlist_for_each(const char *buf, int size, int reverse,
 
 static struct track_info *cmus_get_next_from_main_thread(void)
 {
-	editable_lock();
 	struct track_info *ti = play_queue_remove();
 	if (!ti)
 		ti = play_library ? lib_goto_next() : pl_goto_next();
-	editable_unlock();
 	return ti;
 }
 
