@@ -72,7 +72,7 @@ struct player_info {
 };
 
 extern char player_metadata[255 * 16 + 1];
-extern struct player_info player_info_pub;
+extern struct player_info player_info;
 extern int player_cont;
 extern int player_repeat_current;
 extern enum replaygain replaygain;

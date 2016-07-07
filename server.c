@@ -88,12 +88,12 @@ static int cmd_status(struct client *client)
 	int i, ret;
 	enum player_status status;
 
-	gbuf_addf(&buf, "status %s\n", player_status_names[player_info_pub.status]);
-	ti = player_info_pub.ti;
+	gbuf_addf(&buf, "status %s\n", player_status_names[player_info.status]);
+	ti = player_info.ti;
 	if (ti) {
 		gbuf_addf(&buf, "file %s\n", escape(ti->filename));
 		gbuf_addf(&buf, "duration %d\n", ti->duration);
-		gbuf_addf(&buf, "position %d\n", player_info_pub.pos);
+		gbuf_addf(&buf, "position %d\n", player_info.pos);
 		for (i = 0; ti->comments[i].key; i++)
 			gbuf_addf(&buf, "tag %s %s\n",
 					ti->comments[i].key,
@@ -101,8 +101,8 @@ static int cmd_status(struct client *client)
 	}
 
 	/* add track metadata to cmus-status */
-	status = player_info_pub.status;
-	if (status == PLAYER_STATUS_PLAYING && ti && is_http_url(player_info_pub.ti->filename)) {
+	status = player_info.status;
+	if (status == PLAYER_STATUS_PLAYING && ti && is_http_url(player_info.ti->filename)) {
 	const char *title = get_stream_title();
 		if (title != NULL) {
 			free(title_buf);

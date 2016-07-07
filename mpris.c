@@ -150,8 +150,8 @@ static int mpris_seek_abs(sd_bus_message *m, void *_userdata,
 		sd_bus_error *_ret_error)
 {
 	char buf[] = "/1122334455667788";
-	if (player_info_pub.ti)
-		sprintf(buf, "/%"PRIx64, player_info_pub.ti->uid);
+	if (player_info.ti)
+		sprintf(buf, "/%"PRIx64, player_info.ti->uid);
 	else
 		sprintf(buf, "/");
 
@@ -180,7 +180,7 @@ static int mpris_playback_status(sd_bus *_bus, const char *_path,
 		sd_bus_error *_ret_error)
 {
 	const char *ss[] = { "Stopped", "Playing", "Paused" };
-	const char *s = ss[player_info_pub.status];
+	const char *s = ss[player_info.status];
 	return sd_bus_message_append_basic(reply, 's', s);
 }
 
@@ -285,7 +285,7 @@ static int mpris_position(sd_bus *_bus, const char *_path,
 		sd_bus_message *reply, void *_userdata,
 		sd_bus_error *_ret_error)
 {
-	int64_t pos = player_info_pub.pos;
+	int64_t pos = player_info.pos;
 	pos *= 1000 * 1000;
 	return sd_bus_message_append_basic(reply, 'x', &pos);
 }
@@ -348,7 +348,7 @@ static int mpris_metadata(sd_bus *_bus, const char *_path,
 {
 	CK(sd_bus_message_open_container(reply, 'a', "{sv}"));
 
-	struct track_info *ti = player_info_pub.ti;
+	struct track_info *ti = player_info.ti;
 	if (ti) {
 		char buf[] = "/1122334455667788";
 		sprintf(buf, "/%"PRIx64, ti->uid);
@@ -534,7 +534,7 @@ void mpris_seeked(void)
 {
 	if (!bus)
 		return;
-	int64_t pos = player_info_pub.pos;
+	int64_t pos = player_info.pos;
 	pos *= 1000 * 1000;
 	sd_bus_emit_signal(bus, "/org/mpris/MediaPlayer2",
 			"org.mpris.MediaPlayer2.Player", "Seeked", "x", pos);

@@ -58,7 +58,7 @@ enum consumer_status {
 
 /* protects player_info_priv and player_metadata */
 static pthread_mutex_t player_info_mutex = CMUS_MUTEX_INITIALIZER;
-struct player_info player_info_pub;
+struct player_info player_info;
 char player_metadata[255 * 16 + 1];
 static struct player_info player_info_priv = {
 	.ti = NULL,
@@ -1454,12 +1454,12 @@ void player_info_snapshot(void)
 {
 	player_info_priv_lock();
 
-	free(player_info_pub.error_msg);
-	if (player_info_pub.ti)
-		track_info_unref(player_info_pub.ti);
-	memcpy(&player_info_pub, &player_info_priv, sizeof(player_info_pub));
-	if (player_info_pub.ti)
-		track_info_ref(player_info_pub.ti);
+	free(player_info.error_msg);
+	if (player_info.ti)
+		track_info_unref(player_info.ti);
+	memcpy(&player_info, &player_info_priv, sizeof(player_info));
+	if (player_info.ti)
+		track_info_ref(player_info.ti);
 
 	player_info_priv.file_changed = 0;
 	player_info_priv.metadata_changed = 0;
