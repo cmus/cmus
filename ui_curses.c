@@ -634,8 +634,8 @@ static void fill_track_fopts_artist(struct artist *artist)
 
 const struct format_option *get_global_fopts(void)
 {
-	if (player_info.ti)
-		fill_track_fopts_track_info(player_info.ti);
+	if (player_info_pub.ti)
+		fill_track_fopts_track_info(player_info_pub.ti);
 
 	static const char *status_strs[] = { ".", ">", "|" };
 	static const char *cont_strs[] = { " ", "C" };
@@ -653,8 +653,8 @@ const struct format_option *get_global_fopts(void)
 	fopt_set_str(&track_fopts[TF_SHUFFLE], shuffle_strs[shuffle]);
 	fopt_set_str(&track_fopts[TF_PLAYLISTMODE], aaa_mode_names[aaa_mode]);
 
-	if (player_info.ti)
-		duration = player_info.ti->duration;
+	if (player_info_pub.ti)
+		duration = player_info_pub.ti->duration;
 
 	vol_left = vol_right = vol = -1;
 	if (soft_vol) {
@@ -666,24 +666,24 @@ const struct format_option *get_global_fopts(void)
 		vol_right = scale_to_percentage(volume_r, volume_max);
 		vol = (vol_left + vol_right + 1) / 2;
 	}
-	buffer_fill = scale_to_percentage(player_info.buffer_fill, player_info.buffer_size);
+	buffer_fill = scale_to_percentage(player_info_pub.buffer_fill, player_info_pub.buffer_size);
 
-	fopt_set_str(&track_fopts[TF_STATUS], status_strs[player_info.status]);
+	fopt_set_str(&track_fopts[TF_STATUS], status_strs[player_info_pub.status]);
 
 	if (show_remaining_time && duration != -1) {
-		fopt_set_time(&track_fopts[TF_POSITION], player_info.pos - duration, 0);
+		fopt_set_time(&track_fopts[TF_POSITION], player_info_pub.pos - duration, 0);
 	} else {
-		fopt_set_time(&track_fopts[TF_POSITION], player_info.pos, 0);
+		fopt_set_time(&track_fopts[TF_POSITION], player_info_pub.pos, 0);
 	}
 
-	fopt_set_int(&track_fopts[TF_POSITION_SEC], player_info.pos, player_info.pos < 0);
+	fopt_set_int(&track_fopts[TF_POSITION_SEC], player_info_pub.pos, player_info_pub.pos < 0);
 	fopt_set_time(&track_fopts[TF_DURATION], duration, duration < 0);
 	fopt_set_int(&track_fopts[TF_VOLUME], vol, vol < 0);
 	fopt_set_int(&track_fopts[TF_LVOLUME], vol_left, vol_left < 0);
 	fopt_set_int(&track_fopts[TF_RVOLUME], vol_right, vol_right < 0);
 	fopt_set_int(&track_fopts[TF_BUFFER], buffer_fill, 0);
 	fopt_set_str(&track_fopts[TF_CONTINUE], cont_strs[player_cont]);
-	fopt_set_int(&track_fopts[TF_BITRATE], player_info.current_bitrate / 1000. + 0.5, 0);
+	fopt_set_int(&track_fopts[TF_BITRATE], player_info_pub.current_bitrate / 1000. + 0.5, 0);
 
 	return track_fopts;
 }
@@ -1147,8 +1147,8 @@ static void do_update_statusline(void)
 	player_info_lock();
 	format_print(print_buffer, COLS, statusline_format, get_global_fopts());
 
-	char *msg = player_info.error_msg;
-	player_info.error_msg = NULL;
+	char *msg = player_info_pub.error_msg;
+	player_info_pub.error_msg = NULL;
 
 	player_info_unlock();
 
@@ -1285,15 +1285,15 @@ static void do_update_titleline(void)
 {
 	bkgdset(pairs[CURSED_TITLELINE]);
 	player_info_lock();
-	if (player_info.ti) {
+	if (player_info_pub.ti) {
 		int i, use_alt_format = 0;
 		char *wtitle;
 
-		fill_track_fopts_track_info(player_info.ti);
+		fill_track_fopts_track_info(player_info_pub.ti);
 
-		use_alt_format = !track_info_has_tag(player_info.ti);
+		use_alt_format = !track_info_has_tag(player_info_pub.ti);
 
-		if (is_http_url(player_info.ti->filename)) {
+		if (is_http_url(player_info_pub.ti->filename)) {
 			const char *title = get_stream_title();
 
 			if (title != NULL) {
@@ -1737,8 +1737,8 @@ static void spawn_status_program(void)
 		return;
 
 	player_info_lock();
-	status = player_info.status;
-	if (status == PLAYER_STATUS_PLAYING && player_info.ti && is_http_url(player_info.ti->filename))
+	status = player_info_pub.status;
+	if (status == PLAYER_STATUS_PLAYING && player_info_pub.ti && is_http_url(player_info_pub.ti->filename))
 		stream_title = get_stream_title();
 
 	i = 0;
@@ -1746,21 +1746,21 @@ static void spawn_status_program(void)
 
 	argv[i++] = xstrdup("status");
 	argv[i++] = xstrdup(player_status_names[status]);
-	if (player_info.ti) {
+	if (player_info_pub.ti) {
 		static const char *keys[] = {
 			"artist", "album", "discnumber", "tracknumber", "title", "date",
 			"musicbrainz_trackid", NULL
 		};
 		int j;
 
-		if (is_http_url(player_info.ti->filename)) {
+		if (is_http_url(player_info_pub.ti->filename)) {
 			argv[i++] = xstrdup("url");
 		} else {
 			argv[i++] = xstrdup("file");
 		}
-		argv[i++] = xstrdup(player_info.ti->filename);
+		argv[i++] = xstrdup(player_info_pub.ti->filename);
 
-		if (track_info_has_tag(player_info.ti)) {
+		if (track_info_has_tag(player_info_pub.ti)) {
 			for (j = 0; keys[j]; j++) {
 				const char *key = keys[j];
 				const char *val;
@@ -1771,16 +1771,16 @@ static void spawn_status_program(void)
 					 */
 					val = stream_title;
 				else
-					val = keyvals_get_val(player_info.ti->comments, key);
+					val = keyvals_get_val(player_info_pub.ti->comments, key);
 
 				if (val) {
 					argv[i++] = xstrdup(key);
 					argv[i++] = xstrdup(val);
 				}
 			}
-			if (player_info.ti->duration > 0) {
+			if (player_info_pub.ti->duration > 0) {
 				char buf[32];
-				snprintf(buf, sizeof(buf), "%d", player_info.ti->duration);
+				snprintf(buf, sizeof(buf), "%d", player_info_pub.ti->duration);
 				argv[i++] = xstrdup("duration");
 				argv[i++] = xstrdup(buf);
 			}
@@ -1886,27 +1886,27 @@ static void update(void)
 
 	player_info_lock();
 
-	if (player_info.status_changed)
+	if (player_info_pub.status_changed)
 		mpris_playback_status_changed();
 
-	if (player_info.file_changed || player_info.metadata_changed)
+	if (player_info_pub.file_changed || player_info_pub.metadata_changed)
 		mpris_metadata_changed();
 
-	needs_spawn = player_info.status_changed || player_info.file_changed ||
-		player_info.metadata_changed;
+	needs_spawn = player_info_pub.status_changed || player_info_pub.file_changed ||
+		player_info_pub.metadata_changed;
 
-	if (player_info.file_changed) {
-		player_info.file_changed = 0;
+	if (player_info_pub.file_changed) {
+		player_info_pub.file_changed = 0;
 		needs_title_update = 1;
 		needs_status_update = 1;
 	}
-	if (player_info.metadata_changed) {
-		player_info.metadata_changed = 0;
+	if (player_info_pub.metadata_changed) {
+		player_info_pub.metadata_changed = 0;
 		needs_title_update = 1;
 	}
-	if (player_info.position_changed || player_info.status_changed) {
-		player_info.position_changed = 0;
-		player_info.status_changed = 0;
+	if (player_info_pub.position_changed || player_info_pub.status_changed) {
+		player_info_pub.position_changed = 0;
+		player_info_pub.status_changed = 0;
 
 		needs_status_update = 1;
 	}
@@ -2122,7 +2122,7 @@ static void main_loop(void)
 		tv.tv_usec = 0;
 
 		player_info_lock();
-		if (player_info.status == PLAYER_STATUS_PLAYING) {
+		if (player_info_pub.status == PLAYER_STATUS_PLAYING) {
 			// player position updates need to be fast
 			tv.tv_usec = 100e3;
 		}

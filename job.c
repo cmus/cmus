@@ -550,7 +550,7 @@ static void job_handle_update_cache_result(struct job_result *res)
 			lib_add_track(new);
 		editable_update_track(&pl_editable, old, new);
 		editable_update_track(&pq_editable, old, new);
-		if (player_info.ti == old && new) {
+		if (player_info_pub.ti == old && new) {
 			track_info_ref(new);
 			player_file_changed(new);
 		}

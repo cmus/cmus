@@ -74,7 +74,7 @@ struct player_info {
 };
 
 extern char player_metadata[255 * 16 + 1];
-extern struct player_info player_info;
+extern struct player_info player_info_pub;
 extern int player_cont;
 extern int player_repeat_current;
 extern enum replaygain replaygain;
@@ -115,7 +115,7 @@ void player_set_rg_preamp(double db);
 #define VF_PERCENTAGE	0x02
 int player_set_vol(int l, int lf, int r, int rf);
 
-#define player_info_lock() cmus_mutex_lock(&player_info.mutex)
-#define player_info_unlock() cmus_mutex_unlock(&player_info.mutex)
+#define player_info_lock() cmus_mutex_lock(&player_info_pub.mutex)
+#define player_info_unlock() cmus_mutex_unlock(&player_info_pub.mutex)
 
 #endif
