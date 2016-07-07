@@ -39,11 +39,16 @@ struct update_cache_data {
 	unsigned int force : 1;
 };
 
+extern int job_fd;
+
+void job_init(void);
+void job_exit(void);
 void do_add_job(void *data);
 void free_add_job(void *data);
 void do_update_job(void *data);
 void free_update_job(void *data);
 void do_update_cache_job(void *data);
 void free_update_cache_job(void *data);
+void job_handle(void);
 
 #endif

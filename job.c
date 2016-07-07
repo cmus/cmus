@@ -46,9 +46,92 @@
 #include <errno.h>
 #include <sys/mman.h>
 
+enum job_result_var {
+	JOB_RES_ADD,
+	JOB_RES_UPDATE,
+	JOB_RES_UPDATE_CACHE,
+};
+
+enum update_kind {
+	UPDATE_NONE = 0,
+	UPDATE_REMOVE = 1,
+	UPDATE_MTIME_CHANGED = 2,
+};
+
+struct job_result {
+	struct list_head node;
+
+	enum job_result_var var;
+	union {
+		struct {
+			add_ti_cb add_cb;
+			size_t add_num;
+			struct track_info **add_ti;
+		};
+		struct {
+			size_t update_num;
+			struct track_info **update_ti;
+			enum update_kind *update_kind;
+		};
+		struct {
+			size_t update_cache_num;
+			struct track_info **update_cache_ti;
+		};
+	};
+};
+
+int job_fd;
+static int job_fd_priv;
+
+static LIST_HEAD(job_result_head);
+static pthread_mutex_t job_mutex = CMUS_MUTEX_INITIALIZER;
+
 static struct track_info *ti_buffer[32];
 static int ti_buffer_fill;
 static struct add_data *jd;
+
+#define job_lock() cmus_mutex_lock(&job_mutex)
+#define job_unlock() cmus_mutex_unlock(&job_mutex)
+
+void job_init(void)
+{
+	init_pipes(&job_fd, &job_fd_priv);
+
+	worker_init();
+}
+
+void job_exit(void)
+{
+	worker_remove_jobs(JOB_TYPE_ANY);
+	worker_exit();
+
+	close(job_fd);
+	close(job_fd_priv);
+}
+
+static void job_push_result(struct job_result *res)
+{
+	job_lock();
+	list_add_tail(&res->node, &job_result_head);
+	job_unlock();
+
+	notify_via_pipe(job_fd_priv);
+}
+
+static struct job_result *job_pop_result(void)
+{
+	struct job_result *res = NULL;
+
+	job_lock();
+	if (!list_empty(&job_result_head)) {
+		struct list_head *item = job_result_head.next;
+		list_del(item);
+		res = container_of(item, struct job_result, node);
+	}
+	job_unlock();
+
+	return res;
+}
 
 static void flush_ti_buffer(void)
 {
@@ -324,6 +407,16 @@ void free_add_job(void *data)
 	ui_curses_notify();
 }
 
+static void job_handle_add_result(struct job_result *res)
+{
+	for (size_t i = 0; i < res->add_num; i++) {
+		res->add_cb(res->add_ti[i]);
+		track_info_unref(res->add_ti[i]);
+	}
+
+	free(res->add_ti);
+}
+
 void do_update_job(void *data)
 {
 	struct update_data *d = data;
@@ -367,6 +460,38 @@ void free_update_job(void *data)
 	ui_curses_notify();
 }
 
+static void job_handle_update_result(struct job_result *res)
+{
+	for (size_t i = 0; i < res->update_num; i++) {
+		struct track_info *ti = res->update_ti[i];
+		int force;
+
+		if (!ti)
+			continue;
+
+		lib_remove(ti);
+
+		cache_lock();
+		cache_remove_ti(ti);
+		cache_unlock();
+
+		if (res->update_kind[i] & UPDATE_REMOVE) {
+			d_print("removing dead file %s\n", ti->filename);
+		} else {
+			if (res->update_kind[i] & UPDATE_MTIME_CHANGED)
+				d_print("mtime changed: %s\n", ti->filename);
+			force = ti->duration == 0;
+			cmus_add(lib_add_track, ti->filename, FILE_TYPE_FILE,
+					JOB_TYPE_LIB, force);
+		}
+
+		track_info_unref(ti);
+	}
+
+	free(res->update_kind);
+	free(res->update_ti);
+}
+
 void do_update_cache_job(void *data)
 {
 	struct update_cache_data *d = data;
@@ -407,4 +532,56 @@ void free_update_cache_job(void *data)
 {
 	free(data);
 	ui_curses_notify();
+}
+
+static void job_handle_update_cache_result(struct job_result *res)
+{
+	player_info_lock();
+	for (size_t i = 0; i < res->update_cache_num; i++) {
+		struct track_info *new, *old = res->update_cache_ti[i];
+
+		if (!old)
+			continue;
+
+		new = old->next;
+		if (lib_remove(old) && new)
+			lib_add_track(new);
+		editable_update_track(&pl_editable, old, new);
+		editable_update_track(&pq_editable, old, new);
+		if (player_info.ti == old && new) {
+			track_info_ref(new);
+			player_file_changed(new);
+		}
+
+		track_info_unref(old);
+		if (new)
+			track_info_unref(new);
+	}
+	player_info_unlock();
+	free(res->update_cache_ti);
+}
+
+static void job_handle_result(struct job_result *res)
+{
+	switch (res->var) {
+	case JOB_RES_ADD:
+		job_handle_add_result(res);
+		break;
+	case JOB_RES_UPDATE:
+		job_handle_update_result(res);
+		break;
+	case JOB_RES_UPDATE_CACHE:
+		job_handle_update_cache_result(res);
+		break;
+	}
+	free(res);
+}
+
+void job_handle(void)
+{
+	clear_pipe(job_fd, -1);
+
+	struct job_result *res;
+	while ((res = job_pop_result()))
+		job_handle_result(res);
 }
