@@ -37,6 +37,8 @@
 #include "cache.h"
 #include "gbuf.h"
 #include "discid.h"
+#include "locking.h"
+#include "editable.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -52,6 +54,13 @@ typedef int (*save_tracks_cb)(void *data, struct track_info *ti);
 
 static char **playable_exts;
 static const char * const playlist_exts[] = { "m3u", "pl", "pls", NULL };
+
+int cmus_next_track_request_fd;
+static int cmus_next_track_request_fd_priv;
+static pthread_mutex_t cmus_next_file_mutex = CMUS_MUTEX_INITIALIZER;
+static pthread_cond_t cmus_next_file_cond = CMUS_COND_INITIALIZER;
+static int cmus_next_file_provided;
+static struct track_info *cmus_next_file;
 
 int cmus_init(void)
 {
@@ -71,19 +80,7 @@ void cmus_exit(void)
 
 void cmus_next(void)
 {
-	struct track_info *info;
-
-	editable_lock();
-	info = play_queue_remove();
-	if (info == NULL) {
-		if (play_library) {
-			info = lib_goto_next();
-		} else {
-			info = pl_goto_next();
-		}
-	}
-	editable_unlock();
-
+	struct track_info *info = cmus_get_next_track();
 	if (info)
 		player_set_file(info);
 }
@@ -388,4 +385,65 @@ int cmus_playlist_for_each(const char *buf, int size, int reverse,
 		buffer_for_each_line(buf, size, handler, &d);
 	}
 	return 0;
+}
+
+/* multi-threaded next track requests */
+
+#define cmus_next_file_lock() cmus_mutex_lock(&cmus_next_file_mutex)
+#define cmus_next_file_unlock() cmus_mutex_unlock(&cmus_next_file_mutex)
+
+static struct track_info *cmus_get_next_from_main_thread(void)
+{
+	editable_lock();
+	struct track_info *ti = play_queue_remove();
+	if (!ti)
+		ti = play_library ? lib_goto_next() : pl_goto_next();
+	editable_unlock();
+	return ti;
+}
+
+static struct track_info *cmus_get_next_from_other_thread(void)
+{
+	static pthread_mutex_t mutex = CMUS_MUTEX_INITIALIZER;
+	cmus_mutex_lock(&mutex);
+
+	/* only one thread may request a track at a time */
+
+	notify_via_pipe(cmus_next_track_request_fd_priv);
+
+	cmus_next_file_lock();
+	while (!cmus_next_file_provided)
+		pthread_cond_wait(&cmus_next_file_cond, &cmus_next_file_mutex);
+	struct track_info *ti = cmus_next_file;
+	cmus_next_file_provided = 0;
+	cmus_next_file_unlock();
+
+	cmus_mutex_unlock(&mutex);
+
+	return ti;
+}
+
+struct track_info *cmus_get_next_track(void)
+{
+	pthread_t this_thread = pthread_self();
+	if (pthread_equal(this_thread, main_thread))
+		return cmus_get_next_from_main_thread();
+	return cmus_get_next_from_other_thread();
+}
+
+void cmus_provide_next_track(void)
+{
+	clear_pipe(cmus_next_track_request_fd, 1);
+
+	cmus_next_file_lock();
+	cmus_next_file = cmus_get_next_from_main_thread();
+	cmus_next_file_provided = 1;
+	cmus_next_file_unlock();
+
+	pthread_cond_broadcast(&cmus_next_file_cond);
+}
+
+void cmus_track_request_init(void)
+{
+	init_pipes(&cmus_next_track_request_fd, &cmus_next_track_request_fd_priv);
 }
