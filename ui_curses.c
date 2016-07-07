@@ -50,6 +50,7 @@
 #include "path.h"
 #include "mixer.h"
 #include "mpris.h"
+#include "locking.h"
 #ifdef HAVE_CONFIG
 #include "config/curses.h"
 #include "config/iconv.h"
@@ -2350,6 +2351,8 @@ static void notify_init(void)
 
 static void init_all(void)
 {
+	main_thread = pthread_self();
+
 	server_init(server_address);
 
 	/* does not select output plugin */
