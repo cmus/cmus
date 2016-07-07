@@ -57,15 +57,14 @@ int cmus_init(void)
 {
 	playable_exts = ip_get_supported_extensions();
 	cache_init();
-	worker_init();
+	job_init();
 	play_queue_init();
 	return 0;
 }
 
 void cmus_exit(void)
 {
-	worker_remove_jobs(JOB_TYPE_ANY);
-	worker_exit();
+	job_exit();
 	if (cache_close())
 		d_print("error: %s\n", strerror(errno));
 }

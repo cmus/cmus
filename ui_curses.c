@@ -16,6 +16,7 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "job.h"
 #include "convert.h"
 #include "ui_curses.h"
 #include "cmdline.h"
@@ -2160,6 +2161,7 @@ static void main_loop(void)
 		FD_ZERO(&set);
 		SELECT_ADD_FD(0);
 		SELECT_ADD_FD(notify_out);
+		SELECT_ADD_FD(job_fd);
 		SELECT_ADD_FD(server_socket);
 		if (mpris_fd != -1)
 			SELECT_ADD_FD(mpris_fd);
@@ -2230,6 +2232,12 @@ static void main_loop(void)
 
 		if (mpris_fd != -1 && FD_ISSET(mpris_fd, &set))
 			mpris_process();
+
+		if (FD_ISSET(job_fd, &set)) {
+			editable_lock();
+			job_handle();
+			editable_unlock();
+		}
 
 		if (FD_ISSET(notify_out, &set)) {
 			char buf[128];
