@@ -460,7 +460,11 @@ static void free_update_job(void *data)
 {
 	struct update_data *d = data;
 
-	free(d->ti);
+	if (d->ti) {
+		for (size_t i = 0; i < d->used; i++)
+			track_info_unref(d->ti[i]);
+		free(d->ti);
+	}
 	free(d);
 	ui_curses_notify();
 }
