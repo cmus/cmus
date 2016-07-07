@@ -2108,6 +2108,8 @@ static void main_loop(void)
 		struct list_head *item;
 		struct client *client;
 
+		player_info_snapshot();
+
 		update();
 
 		/* Timeout must be so small that screen updates seem instant.
