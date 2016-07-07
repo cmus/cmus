@@ -111,9 +111,6 @@ static char *lib_autosave_filename;
 static char *pl_autosave_filename;
 static char *play_queue_autosave_filename;
 
-static int notify_in;
-static int notify_out;
-
 /* shown error message and time stamp
  * error is cleared if it is older than 3s and key was pressed
  */
@@ -2106,14 +2103,6 @@ static void u_getch(void)
 	handle_ch(u);
 }
 
-void ui_curses_notify(void)
-{
-	char c;
-	if (write(notify_in, &c, 1) == -1) {
-		d_print("write failed: %s\n", strerror(errno));
-	}
-}
-
 static void main_loop(void)
 {
 	int rc, fd_high;
@@ -2161,7 +2150,6 @@ static void main_loop(void)
 
 		FD_ZERO(&set);
 		SELECT_ADD_FD(0);
-		SELECT_ADD_FD(notify_out);
 		SELECT_ADD_FD(job_fd);
 		SELECT_ADD_FD(cmus_next_track_request_fd);
 		SELECT_ADD_FD(server_socket);
@@ -2239,13 +2227,6 @@ static void main_loop(void)
 			editable_lock();
 			job_handle();
 			editable_unlock();
-		}
-
-		if (FD_ISSET(notify_out, &set)) {
-			char buf[128];
-			if (read(notify_out, buf, sizeof(buf)) == -1) {
-				d_print("read failed: %s\n", strerror(errno));
-			}
 		}
 
 		if (FD_ISSET(cmus_next_track_request_fd, &set))
@@ -2341,16 +2322,6 @@ static void init_curses(void)
 		}
 	}
 	update_mouse();
-}
-
-static void notify_init(void)
-{
-	int fildes[2];
-	BUG_ON(pipe(fildes) == -1);
-	notify_out = fildes[0];
-	notify_in = fildes[1];
-	int flags = fcntl(notify_in, F_GETFL, 0);
-	fcntl(notify_in, F_SETFL, flags | O_NONBLOCK);
 }
 
 static void init_all(void)
@@ -2534,7 +2505,6 @@ int main(int argc, char *argv[])
 		op_dump_plugins();
 		return 0;
 	}
-	notify_init();
 	init_all();
 	main_loop();
 	exit_all();
