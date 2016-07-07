@@ -28,6 +28,7 @@
 #include "compiler.h"
 #include "options.h"
 #include "mpris.h"
+#include "cmus.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -83,8 +84,6 @@ double replaygain_preamp = 0.0;
 int soft_vol;
 int soft_vol_l;
 int soft_vol_r;
-
-static const struct player_callbacks *player_cbs = NULL;
 
 static sample_format_t buffer_sf;
 static CHANNEL_MAP(buffer_channel_map);
@@ -395,11 +394,6 @@ static inline unsigned int buffer_second_size(void)
 	return sf_get_second_size(buffer_sf);
 }
 
-static inline int get_next(struct track_info **ti)
-{
-	return player_cbs->get_next(ti);
-}
-
 /* updating player status {{{ */
 
 static inline void _file_changed(struct track_info *ti)
@@ -631,7 +625,7 @@ static void _producer_play(void)
 	if (producer_status == PS_UNLOADED) {
 		struct track_info *ti;
 
-		if (get_next(&ti) == 0) {
+		if ((ti = cmus_get_next_track())) {
 			int rc;
 
 			ip = ip_new(ti->filename);
@@ -763,7 +757,6 @@ static void _consumer_pause(void)
 
 /* setting consumer status }}} */
 
-
 static int change_sf(int drop)
 {
 	int old_sf = buffer_sf;
@@ -819,7 +812,7 @@ static void _consumer_handle_eof(void)
 		return;
 	}
 
-	if (get_next(&ti) == 0) {
+	if ((ti = cmus_get_next_track())) {
 		_producer_unload();
 		ip = ip_new(ti->filename);
 		_producer_status_update(PS_STOPPED);
@@ -1012,7 +1005,7 @@ static void *producer_loop(void *arg)
 	return NULL;
 }
 
-void player_init(const struct player_callbacks *callbacks)
+void player_init(void)
 {
 	int rc;
 #ifdef REALTIME_SCHEDULING
@@ -1033,8 +1026,6 @@ void player_init(const struct player_callbacks *callbacks)
 	 */
 	buffer_nr_chunks = 10 * 44100 * 16 / 8 * 2 / CHUNK_SIZE;
 	buffer_init();
-
-	player_cbs = callbacks;
 
 #ifdef REALTIME_SCHEDULING
 	rc = pthread_attr_init(&attr);

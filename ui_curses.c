@@ -104,7 +104,6 @@ char *play_queue_ext_filename = NULL;
 char *charset = NULL;
 int using_utf8 = 0;
 
-
 /* ------------------------------------------------------------------------- */
 
 static char *lib_autosave_filename;
@@ -2217,15 +2216,6 @@ static void main_loop(void)
 	}
 }
 
-static int get_next(struct track_info **ti)
-{
-	return -1;
-}
-
-static const struct player_callbacks player_callbacks = {
-	.get_next = get_next
-};
-
 static void init_curses(void)
 {
 	struct sigaction act;
@@ -2315,7 +2305,7 @@ static void init_all(void)
 	server_init(server_address);
 
 	/* does not select output plugin */
-	player_init(&player_callbacks);
+	player_init();
 
 	/* plugins have been loaded so we know what plugin options are available */
 	options_add();
