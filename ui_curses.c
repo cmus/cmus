@@ -2116,6 +2116,12 @@ static void main_loop(void)
 {
 	int rc, fd_high;
 
+#define SELECT_ADD_FD(fd) do {\
+	FD_SET((fd), &set); \
+	if ((fd) > fd_high) \
+		fd_high = (fd); \
+} while(0)
+
 	fd_high = server_socket;
 	while (cmus_running) {
 		fd_set set;
@@ -2152,20 +2158,13 @@ static void main_loop(void)
 		}
 
 		FD_ZERO(&set);
-		FD_SET(0, &set);
-		FD_SET(notify_out, &set);
-		if (notify_out > fd_high)
-			fd_high = notify_out;
-		FD_SET(server_socket, &set);
-		if (mpris_fd != -1) {
-			FD_SET(mpris_fd, &set);
-			if (mpris_fd > fd_high)
-				fd_high = mpris_fd;
-		}
+		SELECT_ADD_FD(0);
+		SELECT_ADD_FD(notify_out);
+		SELECT_ADD_FD(server_socket);
+		if (mpris_fd != -1)
+			SELECT_ADD_FD(mpris_fd);
 		list_for_each_entry(client, &client_head, node) {
-			FD_SET(client->fd, &set);
-			if (client->fd > fd_high)
-				fd_high = client->fd;
+			SELECT_ADD_FD(client->fd);
 		}
 		if (!soft_vol) {
 			nr_fds = mixer_get_fds(fds);
@@ -2176,9 +2175,7 @@ static void main_loop(void)
 			}
 			for (i = 0; i < nr_fds; i++) {
 				BUG_ON(fds[i] <= 0);
-				FD_SET(fds[i], &set);
-				if (fds[i] > fd_high)
-					fd_high = fds[i];
+				SELECT_ADD_FD(fds[i]);
 			}
 		}
 
