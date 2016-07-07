@@ -2245,24 +2245,7 @@ static void main_loop(void)
 
 static int get_next(struct track_info **ti)
 {
-	struct track_info *info;
-
-	editable_lock();
-	info = play_queue_remove();
-	if (info == NULL) {
-		if (play_library) {
-			info = lib_goto_next();
-		} else {
-			info = pl_goto_next();
-		}
-	}
-	editable_unlock();
-
-	if (info == NULL)
-		return -1;
-
-	*ti = info;
-	return 0;
+	return -1;
 }
 
 static const struct player_callbacks player_callbacks = {
