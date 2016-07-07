@@ -43,12 +43,6 @@ extern int job_fd;
 
 void job_init(void);
 void job_exit(void);
-void do_add_job(void *data);
-void free_add_job(void *data);
-void do_update_job(void *data);
-void free_update_job(void *data);
-void do_update_cache_job(void *data);
-void free_update_cache_job(void *data);
 void job_schedule_add(int type, struct add_data *data);
 void job_schedule_update(struct update_data *data);
 void job_schedule_update_cache(int type, struct update_cache_data *data);

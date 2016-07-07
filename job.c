@@ -372,7 +372,7 @@ static void add_pl(const char *filename)
 	}
 }
 
-void do_add_job(void *data)
+static void do_add_job(void *data)
 {
 	jd = data;
 	switch (jd->type) {
@@ -399,7 +399,7 @@ void do_add_job(void *data)
 	jd = NULL;
 }
 
-void free_add_job(void *data)
+static void free_add_job(void *data)
 {
 	struct add_data *d = data;
 	free(d->name);
@@ -417,7 +417,12 @@ static void job_handle_add_result(struct job_result *res)
 	free(res->add_ti);
 }
 
-void do_update_job(void *data)
+void job_schedule_add(int type, struct add_data *data)
+{
+	worker_add_job(type, do_add_job, free_add_job, data);
+}
+
+static void do_update_job(void *data)
 {
 	struct update_data *d = data;
 	int i;
@@ -451,18 +456,13 @@ void do_update_job(void *data)
 	}
 }
 
-void free_update_job(void *data)
+static void free_update_job(void *data)
 {
 	struct update_data *d = data;
 
 	free(d->ti);
 	free(d);
 	ui_curses_notify();
-}
-
-void job_schedule_add(int type, struct add_data *data)
-{
-	worker_add_job(type, do_add_job, free_add_job, data);
 }
 
 static void job_handle_update_result(struct job_result *res)
@@ -497,7 +497,12 @@ static void job_handle_update_result(struct job_result *res)
 	free(res->update_ti);
 }
 
-void do_update_cache_job(void *data)
+void job_schedule_update(struct update_data *data)
+{
+	worker_add_job(JOB_TYPE_LIB, do_update_job, free_update_job, data);
+}
+
+static void do_update_cache_job(void *data)
 {
 	struct update_cache_data *d = data;
 	struct track_info **tis;
@@ -533,15 +538,11 @@ void do_update_cache_job(void *data)
 	free(tis);
 }
 
-void free_update_cache_job(void *data)
+
+static void free_update_cache_job(void *data)
 {
 	free(data);
 	ui_curses_notify();
-}
-
-void job_schedule_update(struct update_data *data)
-{
-	worker_add_job(JOB_TYPE_LIB, do_update_job, free_update_job, data);
 }
 
 static void job_handle_update_cache_result(struct job_result *res)
