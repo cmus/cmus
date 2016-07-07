@@ -54,10 +54,11 @@ enum consumer_status {
 	CS_PAUSED
 };
 
+char player_metadata[255 * 16 + 1];
+
 struct player_info player_info = {
 	.mutex = CMUS_MUTEX_INITIALIZER,
 	.ti = NULL,
-	.metadata = { 0, },
 	.status = PLAYER_STATUS_STOPPED,
 	.pos = 0,
 	.current_bitrate = -1,
@@ -403,7 +404,7 @@ static inline void _file_changed(struct track_info *ti)
 
 	player_info.ti = ti;
 	update_rg_scale();
-	player_info.metadata[0] = 0;
+	player_metadata[0] = 0;
 	player_info.file_changed = 1;
 }
 
@@ -427,8 +428,7 @@ static inline void metadata_changed(void)
 	player_info_lock();
 	if (ip_get_metadata(ip)) {
 		d_print("metadata changed: %s\n", ip_get_metadata(ip));
-		memcpy(player_info.metadata, ip_get_metadata(ip),
-		       255 * 16 + 1);
+		memcpy(player_metadata, ip_get_metadata(ip), 255 * 16 + 1);
 	}
 
 	rc = ip_read_comments(ip, &comments);

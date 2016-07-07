@@ -55,9 +55,6 @@ struct player_info {
 	/* current track */
 	struct track_info *ti;
 
-	/* stream metadata */
-	char metadata[255 * 16 + 1];
-
 	/* status */
 	enum player_status status;
 	int pos;
@@ -76,6 +73,7 @@ struct player_info {
 	unsigned int buffer_fill_changed : 1;
 };
 
+extern char player_metadata[255 * 16 + 1];
 extern struct player_info player_info;
 extern int player_cont;
 extern int player_repeat_current;

@@ -1417,7 +1417,7 @@ const char *get_stream_title(void)
 	static char stream_title[255 * 16 + 1];
 	char *ptr, *title;
 
-	ptr = strstr(player_info.metadata, "StreamTitle='");
+	ptr = strstr(player_metadata, "StreamTitle='");
 	if (ptr == NULL)
 		return NULL;
 	ptr += 13;
