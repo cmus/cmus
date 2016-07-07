@@ -1016,14 +1016,6 @@ void player_init(void)
 #endif
 	pthread_attr_t *attrp = NULL;
 
-	/* This mutex is locked inside of the mpris implementation which is
-	 * called into from many different places. It is not trivial to see if
-	 * those places do already hold this lock and so the mpris functions
-	 * always acquires it. To avoid deadlocks in the places where the lock
-	 * is already held by the calling context, we use a recursive mutex.
-	 */
-	cmus_mutex_init_recursive(&player_info_mutex);
-
 	/*  1 s is 176400 B (0.168 MB)
 	 * 10 s is 1.68 MB
 	 */
