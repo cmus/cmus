@@ -265,4 +265,16 @@ static inline void enable_stdio(void)
 	close(_saved_stderr);
 }
 
+static inline ssize_t strscpy(char *dst, const char *src, size_t size)
+{
+	for (size_t i = 0; i < size; i++) {
+		dst[i] = src[i];
+		if (src[i] == 0)
+			return i;
+	}
+	if (size > 0)
+		dst[size - 1] = 0;
+	return -1;
+}
+
 #endif
