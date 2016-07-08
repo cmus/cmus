@@ -23,7 +23,7 @@
 
 #define OPTION_MAX_SIZE	4096
 
-typedef void (*opt_get_cb)(void *data, char *buf);
+typedef void (*opt_get_cb)(void *data, char *buf, size_t size);
 typedef void (*opt_set_cb)(void *data, const char *buf);
 typedef void (*opt_toggle_cb)(void *data);
 
