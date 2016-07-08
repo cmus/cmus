@@ -96,7 +96,7 @@ void window_set_nr_rows(struct window *win, int nr_rows)
 void window_up(struct window *win, int rows)
 {
 	struct iter iter;
-	int upper_bound   = min(scroll_offset,  win->nr_rows/2);
+	int upper_bound   = min_i(scroll_offset,  win->nr_rows/2);
 	int buffer        = 0; /* rows between `old sel` and `old top` */
 	int sel_up        = 0; /* selectable rows between `old sel` and `new sel` */
 	int skipped       = 0; /* unselectable rows between `old sel` and `new sel` */
@@ -125,7 +125,7 @@ void window_up(struct window *win, int rows)
 	 * this is necessary when scroll_offset=0 to make the first album header visible */
 	if (sel_up == 0) {
 		skipped = 0;
-		upper_bound = min(buffer+rows, win->nr_rows/2);
+		upper_bound = min_i(buffer+rows, win->nr_rows/2);
 	}
 
 	iter = win->sel;
@@ -149,7 +149,7 @@ void window_up(struct window *win, int rows)
 void window_down(struct window *win, int rows)
 {
 	struct iter iter;
-	int upper_bound   = min(scroll_offset, (win->nr_rows-1)/2);
+	int upper_bound   = min_i(scroll_offset, (win->nr_rows-1)/2);
 	int buffer        = 0; /* rows between `old sel` and `old bottom` */
 	int sel_down      = 0; /* selectable rows between `old sel` and `new sel` */
 	int skipped       = 0; /* unselectable rows between `old sel` and `new sel` */
@@ -177,7 +177,7 @@ void window_down(struct window *win, int rows)
 	}
 	if (sel_down == 0) {
 		skipped = 0;
-		upper_bound = min(buffer+rows, (win->nr_rows-1)/2);
+		upper_bound = min_i(buffer+rows, (win->nr_rows-1)/2);
 	}
 
 	iter = win->sel;

@@ -399,7 +399,7 @@ static void utf8_encode_to_buf(const char *buffer)
 	return;
 fallback:
 #endif
-	n = min(sizeof(conv_buffer) - 1, strlen(buffer));
+	n = min_i(sizeof(conv_buffer) - 1, strlen(buffer));
 	memmove(conv_buffer, buffer, n);
 	conv_buffer[n] = '\0';
 }

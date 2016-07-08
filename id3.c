@@ -935,7 +935,7 @@ static void decode_rva2(struct id3tag *id3, const char *buf, int len)
 	/*
 	 * This crazy code comes from Mutagen
 	 */
-	peak_bytes = min(4, (peak_bits + 7) >> 3);
+	peak_bytes = min_i(4, (peak_bits + 7) >> 3);
 	peak_shift = ((8 - (peak_bits & 7)) & 7) + (4 - peak_bytes) * 8;
 
 	if (len < rva2_min_len + peak_bytes) {

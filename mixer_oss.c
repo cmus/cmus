@@ -84,7 +84,7 @@ static int mixer_open(const char *device)
 /* 	ioctl(mixer_fd, SOUND_MIXER_READ_RECSRC, &mixer_recsrc); */
 /* 	ioctl(mixer_fd, SOUND_MIXER_READ_STEREODEVS, &mixer_stereodevs); */
 	i = 0;
-	while (i < min(SOUND_MIXER_NRDEVICES, OSS_MIXER_CHANNEL_MAX)) {
+	while (i < min_i(SOUND_MIXER_NRDEVICES, OSS_MIXER_CHANNEL_MAX)) {
 		mixer_channels[i] = (mixer_devmask >> i) & 1;
 		i++;
 	}

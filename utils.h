@@ -55,12 +55,17 @@
 
 #define CLEANUP(f) __attribute__((cleanup(f)))
 
-static inline int min(int a, int b)
+static inline long min_i(long a, long b)
 {
 	return a < b ? a : b;
 }
 
-static inline int max(int a, int b)
+static inline unsigned long min_u(unsigned long a, unsigned long b)
+{
+	return a < b ? a : b;
+}
+
+static inline long max_i(long a, long b)
 {
 	return a > b ? a : b;
 }

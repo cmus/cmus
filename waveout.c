@@ -189,7 +189,7 @@ static int waveout_write(const char *buffer, int count)
 			break;
 		}
 
-		len = FRAME_SIZE_ALIGN(min(count, buffer_size));
+		len = FRAME_SIZE_ALIGN(min_i(count, buffer_size));
 		hdr->dwBufferLength = len;
 		memcpy(hdr->lpData, buffer + written, len);
 

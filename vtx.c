@@ -82,7 +82,7 @@ static int vtx_read(struct input_plugin_data *ip_data, char *buffer, int count)
 
 	while (need > 0) {
 		if (priv->left > 0) {
-			donow = min(need, priv->left);
+			donow = min_i(need, priv->left);
 			buffer = ayemu_gen_sound(&priv->ay, (char *)buffer, donow);
 			priv->left -= donow;
 			need -= donow;

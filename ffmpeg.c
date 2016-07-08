@@ -483,7 +483,7 @@ static int ffmpeg_read(struct input_plugin_data *ip_data, char *buffer, int coun
 			return rc;
 		}
 	}
-	out_size = min(output->buffer_used_len, count);
+	out_size = min_i(output->buffer_used_len, count);
 	memcpy(buffer, output->buffer_pos, out_size);
 	output->buffer_used_len -= out_size;
 	output->buffer_pos += out_size;
