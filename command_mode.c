@@ -113,9 +113,11 @@ void view_add(int view, char *arg, int prepend)
 		break;
 	case QUEUE_VIEW:
 		if (prepend) {
-			cmus_add(play_queue_prepend, name, ft, JOB_TYPE_QUEUE, 0, NULL);
+			cmus_add(play_queue_prepend, name, ft, JOB_TYPE_QUEUE,
+					0, NULL);
 		} else {
-			cmus_add(play_queue_append, name, ft, JOB_TYPE_QUEUE, 0, NULL);
+			cmus_add(play_queue_append, name, ft, JOB_TYPE_QUEUE,
+					0, NULL);
 		}
 		break;
 	default:
@@ -151,7 +153,8 @@ void view_load(int view, char *arg)
 	case SORTED_VIEW:
 		worker_remove_jobs_by_type(JOB_TYPE_LIB);
 		editable_clear(&lib_editable);
-		cmus_add(lib_add_track, name, FILE_TYPE_PL, JOB_TYPE_LIB, 0, NULL);
+		cmus_add(lib_add_track, name, FILE_TYPE_PL, JOB_TYPE_LIB, 0,
+				NULL);
 		free(lib_filename);
 		lib_filename = name;
 		break;

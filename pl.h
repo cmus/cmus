@@ -22,6 +22,7 @@
 #include "editable.h"
 #include "track_info.h"
 #include "track.h"
+#include "cmus.h"
 
 extern struct editable pl_editable;
 extern struct simple_track *pl_cur_track;
@@ -41,6 +42,11 @@ struct searchable *pl_get_searchable(void);
 unsigned int pl_playing_total_time(void);
 void pl_set_nr_rows(int h);
 int pl_needs_redraw(void);
+
+void pl_clear(void);
+void pl_load_extern(char *path);
+struct window *pl_cursor_win(void);
+int _pl_for_each_sel(track_info_cb cb, void *data, int reverse);
 
 void pl_invert_marks(void);
 void pl_mark(char *arg);

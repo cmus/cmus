@@ -23,6 +23,7 @@
 #include "cmus.h"
 #include "ui_curses.h"
 #include "job.h"
+#include "worker.h"
 
 struct editable pl_editable;
 struct simple_track *pl_cur_track = NULL;
@@ -221,4 +222,29 @@ void pl_win_update(void)
 
 void pl_win_next(void)
 {
+}
+
+void pl_clear(void)
+{
+	worker_remove_jobs_by_type(JOB_TYPE_PL);
+	editable_clear(&pl_editable);
+}
+
+void pl_load_extern(char *path)
+{
+	worker_remove_jobs_by_type(JOB_TYPE_PL);
+	editable_clear(&pl_editable);
+	cmus_add(pl_add_track, path, FILE_TYPE_PL, JOB_TYPE_PL, 0, NULL);
+	free(pl_filename);
+	pl_filename = (char *)path;
+}
+
+struct window *pl_cursor_win(void)
+{
+	return pl_editable.win;
+}
+
+int _pl_for_each_sel(track_info_cb cb, void *data, int reverse)
+{
+	return _editable_for_each_sel(&pl_editable, cb, data, reverse);
 }
