@@ -38,6 +38,12 @@ struct shuffle_track {
 	double rand;
 };
 
+static inline struct shuffle_track *
+simple_track_to_shuffle_track(struct simple_track *track)
+{
+	return container_of(track, struct shuffle_track, simple_track);
+}
+
 static inline struct track_info *shuffle_track_info(const struct shuffle_track *track)
 {
 	return ((struct simple_track *)track)->info;
