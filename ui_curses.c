@@ -137,11 +137,9 @@ static const char *t_ts;
 static const char *t_fs;
 
 static int tree_win_x = 0;
-static int tree_win_y = 0;
 static int tree_win_w = 0;
 
 static int track_win_x = 0;
-static int track_win_y = 0;
 static int track_win_w = 0;
 
 static int show_cursor;
@@ -726,7 +724,7 @@ static void print_tree(struct window *win, int row, struct iter *iter)
 	pos = strlen(print_buffer);
 	print_buffer[pos++] = ' ';
 	print_buffer[pos++] = 0;
-	dump_print_buffer(tree_win_y + row + 1, tree_win_x);
+	dump_print_buffer(row + 1, tree_win_x);
 }
 
 static void print_track(struct window *win, int row, struct iter *iter)
@@ -752,11 +750,11 @@ static void print_track(struct window *win, int row, struct iter *iter)
 		fill_track_fopts_album(album);
 
 		len = format_print(print_buffer, track_win_w, track_win_album_format, track_fopts);
-		dump_print_buffer(track_win_y + row + 1, track_win_x);
+		dump_print_buffer(row + 1, track_win_x);
 
 		bkgdset(pairs[CURSED_SEPARATOR]);
 		for(pos = track_win_x + len.llen; pos < COLS - len.rlen; ++pos)
-			(void) mvaddch(track_win_y + row + 1, pos, ACS_HLINE);
+			(void) mvaddch(row + 1, pos, ACS_HLINE);
 
 		return;
 	}
@@ -783,7 +781,7 @@ static void print_track(struct window *win, int row, struct iter *iter)
 		format = track_win_alt_format;
 	}
 	format_print(print_buffer, track_win_w, format, track_fopts);
-	dump_print_buffer(track_win_y + row + 1, track_win_x);
+	dump_print_buffer(row + 1, track_win_x);
 }
 
 /* used by print_editable only */
@@ -989,7 +987,7 @@ static void update_window(struct window *win, int x, int y, int w, const char *t
 
 static void update_tree_window(void)
 {
-	update_window(lib_tree_win, tree_win_x, tree_win_y,
+	update_window(lib_tree_win, tree_win_x, 0,
 			tree_win_w, "Artist / Album", print_tree);
 }
 
@@ -1000,7 +998,7 @@ static void update_track_window(void)
 	/* it doesn't matter what format options we use because the format
 	 * string does not contain any format charaters */
 	format_print(title, track_win_w - 2, "Track%=Library", track_fopts);
-	update_window(lib_track_win, track_win_x, track_win_y,
+	update_window(lib_track_win, track_win_x, 0,
 			track_win_w, title, print_track);
 }
 
@@ -1831,9 +1829,7 @@ static void resize_tree_view(int w, int h)
 	if (track_win_w < 8)
 		track_win_w = 8;
 	tree_win_x = 0;
-	tree_win_y = 0;
 	track_win_x = tree_win_w + 1;
-	track_win_y = 0;
 
 	h--;
 	window_set_nr_rows(lib_tree_win, h);
