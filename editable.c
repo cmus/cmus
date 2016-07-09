@@ -415,3 +415,8 @@ void editable_rand(struct editable *e)
 	window_changed(e->win);
 	window_goto_top(e->win);
 }
+
+int editable_empty(struct editable *e)
+{
+	return list_empty(&e->head);
+}
