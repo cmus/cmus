@@ -1385,19 +1385,26 @@ static int wrapper_cb(void *data, struct track_info *ti)
 	return 0;
 }
 
-static void add_from_browser(add_ti_cb add, int job_type)
+static char *get_browser_add_file(void)
 {
 	char *sel = browser_get_sel();
+
+	if (sel && (ends_with(sel, "/../") || ends_with(sel, "/.."))) {
+		info_msg("For convenience, you can not add \"..\" directory from the browser view");
+		free(sel);
+		sel = NULL;
+	}
+
+	return sel;
+}
+
+static void add_from_browser(add_ti_cb add, int job_type)
+{
+	char *sel = get_browser_add_file();
 
 	if (sel) {
 		enum file_type ft;
 		char *ret;
-
-		if (ends_with(sel, "/../") || ends_with(sel, "/..")) {
-			info_msg("For convenience, you can not add \"..\" directory from the browser view");
-			free(sel);
-			return;
-		}
 
 		ft = cmus_detect_ft(sel, &ret);
 		if (ft != FILE_TYPE_INVALID) {
