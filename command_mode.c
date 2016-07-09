@@ -115,8 +115,8 @@ void view_add(int view, char *arg, int prepend)
 			cmus_add(play_queue_prepend, name, ft, JOB_TYPE_QUEUE,
 					0, NULL);
 		} else {
-			cmus_add(play_queue_append, name, ft, JOB_TYPE_QUEUE,
-					0, NULL);
+			cmus_add(play_queue_append, name, ft, JOB_TYPE_QUEUE, 0,
+					NULL);
 		}
 		break;
 	default:

@@ -934,9 +934,9 @@ static void print_help(struct window *win, int row, struct iter *iter)
 		break;
 	case HE_BOUND:
 		snprintf(buf, sizeof(buf), " %-8s %-14s %s",
-			key_context_names[e->binding->ctx],
-			e->binding->key->name,
-			e->binding->cmd);
+				key_context_names[e->binding->ctx],
+				e->binding->key->name,
+				e->binding->cmd);
 		break;
 	case HE_UNBOUND:
 		snprintf(buf, sizeof(buf), " %s", e->command->name);
@@ -991,8 +991,8 @@ static void update_window(struct window *win, int x, int y, int w, const char *t
 
 static void update_tree_window(void)
 {
-	update_window(lib_tree_win, tree_win_x, 0,
-			tree_win_w, "Artist / Album", print_tree);
+	update_window(lib_tree_win, tree_win_x, 0, tree_win_w,
+			"Artist / Album", print_tree);
 }
 
 static void update_track_window(void)
@@ -1002,8 +1002,8 @@ static void update_track_window(void)
 	/* it doesn't matter what format options we use because the format
 	 * string does not contain any format charaters */
 	format_print(title, track_win_w - 2, "Track%=Library", track_fopts);
-	update_window(lib_track_win, track_win_x, 0,
-			track_win_w, title, print_track);
+	update_window(lib_track_win, track_win_x, 0, track_win_w, title,
+			print_track);
 }
 
 static const char *pretty(const char *path)
