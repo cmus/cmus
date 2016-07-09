@@ -107,7 +107,7 @@ int using_utf8 = 0;
 /* ------------------------------------------------------------------------- */
 
 static char *lib_autosave_filename;
-static char *pl_autosave_filename;
+char *pl_autosave_filename;
 static char *play_queue_autosave_filename;
 
 /* shown error message and time stamp
@@ -2334,7 +2334,6 @@ static void init_all(void)
 		cmus_add(play_queue_append, play_queue_autosave_filename, FILE_TYPE_PL, JOB_TYPE_QUEUE, 0);
 	}
 
-	cmus_add(pl_add_track, pl_autosave_filename, FILE_TYPE_PL, JOB_TYPE_PL, 0);
 	cmus_add(lib_add_track, lib_autosave_filename, FILE_TYPE_PL, JOB_TYPE_LIB, 0);
 }
 
@@ -2351,7 +2350,6 @@ static void exit_all(void)
 	if (resume_cmus)
 		cmus_save(play_queue_for_each, play_queue_autosave_filename);
 	cmus_save(lib_for_each, lib_autosave_filename);
-	cmus_save(pl_for_each, pl_autosave_filename);
 
 	pl_exit();
 	player_exit();
