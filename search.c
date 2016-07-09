@@ -111,6 +111,11 @@ void searchable_free(struct searchable *s)
 	free(s);
 }
 
+void searchable_set_head(struct searchable *s, const struct iter *head)
+{
+	s->head = *head;
+}
+
 int search(struct searchable *s, const char *text, enum search_direction dir, int beginning)
 {
 	struct iter iter;
