@@ -23,6 +23,7 @@
 #include "rbtree.h"
 #include "iter.h"
 #include "track_info.h"
+#include "cmus.h"
 
 struct simple_track {
 	struct list_head node;
@@ -95,8 +96,8 @@ void rand_list_rebuild(struct list_head *head, struct rb_root *tree_root);
 
 void list_add_rand(struct list_head *head, struct list_head *node, int nr);
 
-int simple_list_for_each_marked(struct list_head *head,
-		int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
+int simple_list_for_each_marked(struct list_head *head, track_info_cb cb,
+		void *data, int reverse);
 
 void shuffle_list_add(struct shuffle_track *track, struct rb_root *tree_root);
 void shuffle_list_reshuffle(struct rb_root *tree_root);

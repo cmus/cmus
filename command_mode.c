@@ -1349,17 +1349,17 @@ static void cmd_search_prev(char *arg)
 	}
 }
 
-static int sorted_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
+static int sorted_for_each_sel(track_info_cb cb, void *data, int reverse)
 {
 	return editable_for_each_sel(&lib_editable, cb, data, reverse);
 }
 
-static int pl_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
+static int pl_for_each_sel(track_info_cb cb, void *data, int reverse)
 {
 	return editable_for_each_sel(&pl_editable, cb, data, reverse);
 }
 
-static int pq_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
+static int pq_for_each_sel(track_info_cb cb, void *data, int reverse)
 {
 	return editable_for_each_sel(&pq_editable, cb, data, reverse);
 }

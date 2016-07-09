@@ -381,8 +381,8 @@ void list_add_rand(struct list_head *head, struct list_head *node, int nr)
 	}
 }
 
-int simple_list_for_each_marked(struct list_head *head,
-		int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
+int simple_list_for_each_marked(struct list_head *head, track_info_cb cb,
+		void *data, int reverse)
 {
 	struct simple_track *t;
 	int rc = 0;

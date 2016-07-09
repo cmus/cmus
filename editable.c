@@ -351,8 +351,8 @@ void editable_invert_marks(struct editable *e)
 	e->win->changed = 1;
 }
 
-int _editable_for_each_sel(struct editable *e, int (*cb)(void *data, struct track_info *ti),
-		void *data, int reverse)
+int _editable_for_each_sel(struct editable *e, track_info_cb cb, void *data,
+		int reverse)
 {
 	int rc = 0;
 
@@ -368,8 +368,8 @@ int _editable_for_each_sel(struct editable *e, int (*cb)(void *data, struct trac
 	return rc;
 }
 
-int editable_for_each_sel(struct editable *e, int (*cb)(void *data, struct track_info *ti),
-		void *data, int reverse)
+int editable_for_each_sel(struct editable *e, track_info_cb cb, void *data,
+		int reverse)
 {
 	int rc;
 
