@@ -1716,7 +1716,7 @@ void resume_load(void)
 		ti = old = cache_get_ti(resume.lib_filename, 0);
 		cache_unlock();
 		if (ti) {
-			lib_add_track(ti);
+			lib_add_track(ti, NULL);
 			track_info_unref(ti);
 			lib_store_cur_track(ti);
 			track_info_unref(ti);

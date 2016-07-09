@@ -68,6 +68,7 @@ struct job_result {
 			add_ti_cb add_cb;
 			size_t add_num;
 			struct track_info **add_ti;
+			void *add_opaque;
 		};
 		struct {
 			size_t update_num;
@@ -143,6 +144,7 @@ static void flush_ti_buffer(void)
 	res->add_cb = jd->add;
 	res->add_num = ti_buffer_fill;
 	res->add_ti = ti_buffer;
+	res->add_opaque = jd->opaque;
 
 	job_push_result(res);
 
@@ -415,7 +417,7 @@ static void free_add_job(void *data)
 static void job_handle_add_result(struct job_result *res)
 {
 	for (size_t i = 0; i < res->add_num; i++) {
-		res->add_cb(res->add_ti[i]);
+		res->add_cb(res->add_ti[i], res->add_opaque);
 		track_info_unref(res->add_ti[i]);
 	}
 
@@ -498,7 +500,7 @@ static void job_handle_update_result(struct job_result *res)
 				d_print("mtime changed: %s\n", ti->filename);
 			force = ti->duration == 0;
 			cmus_add(lib_add_track, ti->filename, FILE_TYPE_FILE,
-					JOB_TYPE_LIB, force);
+					JOB_TYPE_LIB, force, NULL);
 		}
 
 		track_info_unref(ti);
@@ -546,7 +548,7 @@ static void job_handle_update_cache_result(struct job_result *res)
 
 		new = old->next;
 		if (lib_remove(old) && new)
-			lib_add_track(new);
+			lib_add_track(new, NULL);
 		editable_update_track(&pl_editable, old, new);
 		editable_update_track(&pq_editable, old, new);
 		if (player_info.ti == old && new) {

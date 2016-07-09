@@ -156,7 +156,7 @@ static int is_filtered(struct track_info *ti)
 	return 0;
 }
 
-void lib_add_track(struct track_info *ti)
+void lib_add_track(struct track_info *ti, void *opaque)
 {
 	if (!hash_insert(ti)) {
 		/* duplicate files not allowed */

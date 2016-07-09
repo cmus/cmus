@@ -156,7 +156,8 @@ enum file_type cmus_detect_ft(const char *name, char **ret)
 	return FILE_TYPE_FILE;
 }
 
-void cmus_add(add_ti_cb add, const char *name, enum file_type ft, int jt, int force)
+void cmus_add(add_ti_cb add, const char *name, enum file_type ft, int jt, int force,
+		void *opaque)
 {
 	struct add_data *data = xnew(struct add_data, 1);
 
@@ -164,6 +165,7 @@ void cmus_add(add_ti_cb add, const char *name, enum file_type ft, int jt, int fo
 	data->name = xstrdup(name);
 	data->type = ft;
 	data->force = force;
+	data->opaque = opaque;
 
 	job_schedule_add(jt, data);
 }

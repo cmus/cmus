@@ -36,14 +36,14 @@ void play_queue_init(void)
 	editable_init(&pq_editable, pq_free_track);
 }
 
-void play_queue_append(struct track_info *ti)
+void play_queue_append(struct track_info *ti, void *opaque)
 {
 	struct simple_track *t = simple_track_new(ti);
 
 	editable_add(&pq_editable, t);
 }
 
-void play_queue_prepend(struct track_info *ti)
+void play_queue_prepend(struct track_info *ti, void *opaque)
 {
 	struct simple_track *t = simple_track_new(ti);
 

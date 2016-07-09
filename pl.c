@@ -43,7 +43,7 @@ static void pl_free_track(struct list_head *item)
 void pl_init(void)
 {
 	editable_init(&pl_editable, pl_free_track);
-	cmus_add(pl_add_track, pl_autosave_filename, FILE_TYPE_PL, JOB_TYPE_PL, 0);
+	cmus_add(pl_add_track, pl_autosave_filename, FILE_TYPE_PL, JOB_TYPE_PL, 0, NULL);
 }
 
 static int dummy_filter(const struct simple_track *track)
@@ -119,7 +119,7 @@ void pl_sel_current(void)
 	}
 }
 
-void pl_add_track(struct track_info *ti)
+void pl_add_track(struct track_info *ti, void *opaque)
 {
 	struct shuffle_track *track = xnew(struct shuffle_track, 1);
 
@@ -215,7 +215,7 @@ void pl_win_toggle(void)
 void pl_win_update(void)
 {
 	editable_clear(&pl_editable);
-	cmus_add(pl_add_track, pl_filename, FILE_TYPE_PL, JOB_TYPE_PL, 0);
+	cmus_add(pl_add_track, pl_filename, FILE_TYPE_PL, JOB_TYPE_PL, 0, NULL);
 }
 
 void pl_win_next(void)

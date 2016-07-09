@@ -32,7 +32,7 @@ void pl_exit(void);
 struct track_info *pl_goto_next(void);
 struct track_info *pl_goto_prev(void);
 struct track_info *pl_activate_selected(void);
-void pl_add_track(struct track_info *track_info);
+void pl_add_track(struct track_info *track_info, void *opaque);
 void pl_sel_current(void);
 void pl_reshuffle(void);
 int pl_for_each(int (*cb)(void *data, struct track_info *ti), void *data);

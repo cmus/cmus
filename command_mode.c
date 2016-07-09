@@ -105,16 +105,16 @@ void view_add(int view, char *arg, int prepend)
 	switch (view) {
 	case TREE_VIEW:
 	case SORTED_VIEW:
-		cmus_add(lib_add_track, name, ft, JOB_TYPE_LIB, 0);
+		cmus_add(lib_add_track, name, ft, JOB_TYPE_LIB, 0, NULL);
 		break;
 	case PLAYLIST_VIEW:
-		cmus_add(pl_add_track, name, ft, JOB_TYPE_PL, 0);
+		cmus_add(pl_add_track, name, ft, JOB_TYPE_PL, 0, NULL);
 		break;
 	case QUEUE_VIEW:
 		if (prepend) {
-			cmus_add(play_queue_prepend, name, ft, JOB_TYPE_QUEUE, 0);
+			cmus_add(play_queue_prepend, name, ft, JOB_TYPE_QUEUE, 0, NULL);
 		} else {
-			cmus_add(play_queue_append, name, ft, JOB_TYPE_QUEUE, 0);
+			cmus_add(play_queue_append, name, ft, JOB_TYPE_QUEUE, 0, NULL);
 		}
 		break;
 	default:
@@ -150,14 +150,14 @@ void view_load(int view, char *arg)
 	case SORTED_VIEW:
 		worker_remove_jobs(JOB_TYPE_LIB);
 		editable_clear(&lib_editable);
-		cmus_add(lib_add_track, name, FILE_TYPE_PL, JOB_TYPE_LIB, 0);
+		cmus_add(lib_add_track, name, FILE_TYPE_PL, JOB_TYPE_LIB, 0, NULL);
 		free(lib_filename);
 		lib_filename = name;
 		break;
 	case PLAYLIST_VIEW:
 		worker_remove_jobs(JOB_TYPE_PL);
 		editable_clear(&pl_editable);
-		cmus_add(pl_add_track, name, FILE_TYPE_PL, JOB_TYPE_PL, 0);
+		cmus_add(pl_add_track, name, FILE_TYPE_PL, JOB_TYPE_PL, 0, NULL);
 		free(pl_filename);
 		pl_filename = name;
 		break;
@@ -1381,7 +1381,7 @@ static int wrapper_cb(void *data, struct track_info *ti)
 {
 	struct wrapper_cb_data *add = data;
 
-	add->cb(ti);
+	add->cb(ti, NULL);
 	return 0;
 }
 
@@ -1401,7 +1401,7 @@ static void add_from_browser(add_ti_cb add, int job_type)
 
 		ft = cmus_detect_ft(sel, &ret);
 		if (ft != FILE_TYPE_INVALID) {
-			cmus_add(add, ret, ft, job_type, 0);
+			cmus_add(add, ret, ft, job_type, 0, NULL);
 			window_down(browser_win, 1);
 		}
 		free(ret);
@@ -1882,7 +1882,7 @@ static void cmd_lqueue(char *arg)
 		struct rb_node *tmp;
 
 		rb_for_each_entry(t, tmp, &a->album->track_root, tree_node)
-			play_queue_append(tree_track_info(t));
+			play_queue_append(tree_track_info(t), NULL);
 		free(a);
 		item = next;
 	} while (item != &head);
@@ -1934,7 +1934,7 @@ static void cmd_tqueue(char *arg)
 	do {
 		struct list_head *next = item->next;
 		struct track_list *t = container_of(item, struct track_list, node);
-		play_queue_append(t->track->info);
+		play_queue_append(t->track->info, NULL);
 		free(t);
 		item = next;
 	} while (item != &head);
