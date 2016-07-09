@@ -2107,7 +2107,7 @@ static void main_loop(void)
 			tv.tv_usec = 100e3;
 		}
 
-		if (!tv.tv_usec && worker_has_job(JOB_TYPE_ANY)) {
+		if (!tv.tv_usec && worker_has_job_by_type(JOB_TYPE_ANY)) {
 			// playlist is loading. screen needs to be updated
 			tv.tv_usec = 250e3;
 		}

@@ -50,6 +50,7 @@
 #include "help.h"
 #include "op.h"
 #include "mpris.h"
+#include "job.h"
 
 #include <stdlib.h>
 #include <ctype.h>
@@ -69,18 +70,18 @@ void view_clear(int view)
 	switch (view) {
 	case TREE_VIEW:
 	case SORTED_VIEW:
-		worker_remove_jobs(JOB_TYPE_LIB);
+		worker_remove_jobs_by_type(JOB_TYPE_LIB);
 		editable_clear(&lib_editable);
 
 		/* FIXME: make this optional? */
 		lib_clear_store();
 		break;
 	case PLAYLIST_VIEW:
-		worker_remove_jobs(JOB_TYPE_PL);
+		worker_remove_jobs_by_type(JOB_TYPE_PL);
 		editable_clear(&pl_editable);
 		break;
 	case QUEUE_VIEW:
-		worker_remove_jobs(JOB_TYPE_QUEUE);
+		worker_remove_jobs_by_type(JOB_TYPE_QUEUE);
 		editable_clear(&pq_editable);
 		break;
 	default:
@@ -148,14 +149,14 @@ void view_load(int view, char *arg)
 	switch (view) {
 	case TREE_VIEW:
 	case SORTED_VIEW:
-		worker_remove_jobs(JOB_TYPE_LIB);
+		worker_remove_jobs_by_type(JOB_TYPE_LIB);
 		editable_clear(&lib_editable);
 		cmus_add(lib_add_track, name, FILE_TYPE_PL, JOB_TYPE_LIB, 0, NULL);
 		free(lib_filename);
 		lib_filename = name;
 		break;
 	case PLAYLIST_VIEW:
-		worker_remove_jobs(JOB_TYPE_PL);
+		worker_remove_jobs_by_type(JOB_TYPE_PL);
 		editable_clear(&pl_editable);
 		cmus_add(pl_add_track, name, FILE_TYPE_PL, JOB_TYPE_PL, 0, NULL);
 		free(pl_filename);
@@ -208,19 +209,19 @@ void view_save(int view, char *arg, int to_stdout, int filtered, int extended)
 	switch (view) {
 	case TREE_VIEW:
 	case SORTED_VIEW:
-		if (worker_has_job(JOB_TYPE_LIB))
+		if (worker_has_job_by_type(JOB_TYPE_LIB))
 			goto worker_running;
 		dest = extended ? &lib_ext_filename : &lib_filename;
 		do_save(lib_for_each_ti, arg, dest, save_ti);
 		break;
 	case PLAYLIST_VIEW:
-		if (worker_has_job(JOB_TYPE_PL))
+		if (worker_has_job_by_type(JOB_TYPE_PL))
 			goto worker_running;
 		dest = extended ? &pl_ext_filename : &pl_filename;
 		do_save(pl_for_each, arg, dest, save_ti);
 		break;
 	case QUEUE_VIEW:
-		if (worker_has_job(JOB_TYPE_QUEUE))
+		if (worker_has_job_by_type(JOB_TYPE_QUEUE))
 			goto worker_running;
 		dest = extended ? &play_queue_ext_filename : &play_queue_filename;
 		do_save(play_queue_for_each, arg, dest, save_ti);
@@ -739,7 +740,7 @@ err:
 static void cmd_quit(char *arg)
 {
 	int flag = parse_flags((const char **)&arg, "i");
-	if (!worker_has_job(JOB_TYPE_ANY)) {
+	if (!worker_has_job_by_type(JOB_TYPE_ANY)) {
 		if (flag != 'i' || yes_no_query("Quit cmus? [y/N]"))
 			cmus_running = 0;
 	} else {

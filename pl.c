@@ -22,6 +22,7 @@
 #include "xmalloc.h"
 #include "cmus.h"
 #include "ui_curses.h"
+#include "job.h"
 
 struct editable pl_editable;
 struct simple_track *pl_cur_track = NULL;

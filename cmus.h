@@ -21,16 +21,6 @@
 
 #include "track_info.h"
 
-/*
- * these types are only used to determine what jobs we should cancel.
- * for example ":load" cancels jobs for the current view before loading
- * new playlist.
- */
-
-#define JOB_TYPE_LIB	1
-#define JOB_TYPE_PL	2
-#define JOB_TYPE_QUEUE	3
-
 enum file_type {
 	/* not found, device file... */
 	FILE_TYPE_INVALID,

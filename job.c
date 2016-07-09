@@ -105,7 +105,7 @@ void job_init(void)
 
 void job_exit(void)
 {
-	worker_remove_jobs(JOB_TYPE_ANY);
+	worker_remove_jobs_by_type(JOB_TYPE_ANY);
 	worker_exit();
 
 	close(job_fd);
@@ -426,7 +426,7 @@ static void job_handle_add_result(struct job_result *res)
 
 void job_schedule_add(int type, struct add_data *data)
 {
-	worker_add_job(type, do_add_job, free_add_job, data);
+	worker_add_job(type | JOB_TYPE_ADD, do_add_job, free_add_job, data);
 }
 
 static void do_update_job(void *data)
@@ -512,7 +512,8 @@ static void job_handle_update_result(struct job_result *res)
 
 void job_schedule_update(struct update_data *data)
 {
-	worker_add_job(JOB_TYPE_LIB, do_update_job, free_update_job, data);
+	worker_add_job(JOB_TYPE_LIB | JOB_TYPE_UPDATE, do_update_job,
+			free_update_job, data);
 }
 
 static void do_update_cache_job(void *data)
@@ -565,7 +566,8 @@ static void job_handle_update_cache_result(struct job_result *res)
 
 void job_schedule_update_cache(int type, struct update_cache_data *data)
 {
-	worker_add_job(type, do_update_cache_job, free_update_cache_job, data);
+	worker_add_job(type | JOB_TYPE_UPDATE_CACHE, do_update_cache_job,
+			free_update_cache_job, data);
 }
 
 static void job_handle_result(struct job_result *res)

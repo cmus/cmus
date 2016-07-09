@@ -21,6 +21,14 @@
 
 #include "cmus.h"
 
+#define JOB_TYPE_LIB   1 << 0
+#define JOB_TYPE_PL    1 << 1
+#define JOB_TYPE_QUEUE 1 << 2
+
+#define JOB_TYPE_ADD          1 << 16
+#define JOB_TYPE_UPDATE       1 << 17
+#define JOB_TYPE_UPDATE_CACHE 1 << 18
+
 struct add_data {
 	enum file_type type;
 	char *name;
