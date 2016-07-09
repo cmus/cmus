@@ -578,7 +578,7 @@ static void cmd_invert(char *arg)
 		editable_invert_marks(&lib_editable);
 		break;
 	case PLAYLIST_VIEW:
-		editable_invert_marks(&pl_editable);
+		pl_invert_marks();
 		break;
 	case QUEUE_VIEW:
 		editable_invert_marks(&pq_editable);
@@ -595,7 +595,7 @@ static void cmd_mark(char *arg)
 		editable_mark(&lib_editable, arg);
 		break;
 	case PLAYLIST_VIEW:
-		editable_mark(&pl_editable, arg);
+		pl_mark(arg);
 		break;
 	case QUEUE_VIEW:
 		editable_mark(&pq_editable, arg);
@@ -612,7 +612,7 @@ static void cmd_unmark(char *arg)
 		editable_unmark(&lib_editable);
 		break;
 	case PLAYLIST_VIEW:
-		editable_unmark(&pl_editable);
+		pl_unmark();
 		break;
 	case QUEUE_VIEW:
 		editable_unmark(&pq_editable);
@@ -1325,7 +1325,7 @@ static void cmd_rand(char *arg)
 		editable_rand(&lib_editable);
 		break;
 	case PLAYLIST_VIEW:
-		editable_rand(&pl_editable);
+		pl_rand();
 		break;
 	case QUEUE_VIEW:
 		editable_rand(&pq_editable);
@@ -1523,7 +1523,7 @@ static void cmd_win_mv_after(char *arg)
 		editable_move_after(&lib_editable);
 		break;
 	case PLAYLIST_VIEW:
-		editable_move_after(&pl_editable);
+		pl_win_mv_after();
 		break;
 	case QUEUE_VIEW:
 		editable_move_after(&pq_editable);
@@ -1538,7 +1538,7 @@ static void cmd_win_mv_before(char *arg)
 		editable_move_before(&lib_editable);
 		break;
 	case PLAYLIST_VIEW:
-		editable_move_before(&pl_editable);
+		pl_win_mv_before();
 		break;
 	case QUEUE_VIEW:
 		editable_move_before(&pq_editable);
@@ -1556,7 +1556,7 @@ static void cmd_win_remove(char *arg)
 		editable_remove_sel(&lib_editable);
 		break;
 	case PLAYLIST_VIEW:
-		editable_remove_sel(&pl_editable);
+		pl_win_remove();
 		break;
 	case QUEUE_VIEW:
 		editable_remove_sel(&pq_editable);
@@ -1598,7 +1598,7 @@ static void cmd_win_toggle(char *arg)
 		editable_toggle_mark(&lib_editable);
 		break;
 	case PLAYLIST_VIEW:
-		editable_toggle_mark(&pl_editable);
+		pl_win_toggle();
 		break;
 	case QUEUE_VIEW:
 		editable_toggle_mark(&pq_editable);
@@ -1646,6 +1646,8 @@ static void cmd_win_next(char *arg)
 {
 	if (cur_view == TREE_VIEW)
 		tree_toggle_active_window();
+	if (cur_view == PLAYLIST_VIEW)
+		pl_win_next();
 }
 
 static void cmd_win_pg_down(char *arg)
@@ -1726,8 +1728,7 @@ static void cmd_win_update(char *arg)
 		cmus_update_lib();
 		break;
 	case PLAYLIST_VIEW:
-		editable_clear(&pl_editable);
-		cmus_add(pl_add_track, pl_filename, FILE_TYPE_PL, JOB_TYPE_PL, 0);
+		pl_win_update();
 		break;
 	case BROWSER_VIEW:
 		browser_reload();
