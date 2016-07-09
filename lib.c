@@ -30,6 +30,8 @@
 #include <string.h>
 
 struct editable lib_editable;
+static struct editable_shared lib_editable_shared;
+
 struct tree_track *lib_cur_track = NULL;
 unsigned int play_sorted = 0;
 enum aaa_mode aaa_mode = AAA_MODE_ALL;
@@ -66,7 +68,7 @@ static void all_wins_changed(void)
 {
 	lib_tree_win->changed = 1;
 	lib_track_win->changed = 1;
-	lib_editable.win->changed = 1;
+	lib_editable.shared->win->changed = 1;
 }
 
 static void shuffle_add(struct tree_track *track)
@@ -302,7 +304,7 @@ void lib_reshuffle(void)
 	shuffle_list_reshuffle(&lib_shuffle_root);
 }
 
-static void free_lib_track(struct list_head *item)
+static void free_lib_track(struct editable *e, struct list_head *item)
 {
 	struct tree_track *track = (struct tree_track *)to_simple_track(item);
 	struct track_info *ti = tree_track_info(track);
@@ -322,7 +324,8 @@ static void free_lib_track(struct list_head *item)
 
 void lib_init(void)
 {
-	editable_init(&lib_editable, free_lib_track);
+	editable_shared_init(&lib_editable_shared, free_lib_track);
+	editable_init(&lib_editable, &lib_editable_shared, 1);
 	tree_init();
 	srand(time(NULL));
 }
@@ -391,7 +394,7 @@ static struct tree_track *sorted_get_selected(void)
 	if (list_empty(&lib_editable.head))
 		return NULL;
 
-	window_get_sel(lib_editable.win, &sel);
+	window_get_sel(lib_editable.shared->win, &sel);
 	return iter_to_sorted_track(&sel);
 }
 
@@ -474,8 +477,8 @@ static void do_lib_filter(int clear_before)
 		editable_remove_matching_tracks(&lib_editable, is_filtered_cb, NULL);
 	remove_from_hash = 1;
 
-	window_changed(lib_editable.win);
-	window_goto_top(lib_editable.win);
+	window_changed(lib_editable.shared->win);
+	window_goto_top(lib_editable.shared->win);
 	lib_cur_win = lib_tree_win;
 	window_goto_top(lib_tree_win);
 
@@ -523,7 +526,7 @@ static void set_sel_track(struct tree_track *tt)
 		break;
 	case SORTED_VIEW:
 		sorted_track_to_iter(tt, &iter);
-		window_set_sel(lib_editable.win, &iter);
+		window_set_sel(lib_editable.shared->win, &iter);
 		break;
 	}
 }
@@ -637,7 +640,7 @@ void sorted_sel_current(void)
 		struct iter iter;
 
 		sorted_track_to_iter(lib_cur_track, &iter);
-		window_set_sel(lib_editable.win, &iter);
+		window_set_sel(lib_editable.shared->win, &iter);
 	}
 }
 
@@ -646,7 +649,7 @@ static int ti_cmp(const void *a, const void *b)
 	const struct track_info *ai = *(const struct track_info **)a;
 	const struct track_info *bi = *(const struct track_info **)b;
 
-	return track_info_cmp(ai, bi, lib_editable.sort_keys);
+	return track_info_cmp(ai, bi, lib_editable.shared->sort_keys);
 }
 
 static int do_lib_for_each(int (*cb)(void *data, struct track_info *ti), void *data, int filtered)

@@ -340,11 +340,11 @@ struct window *current_win(void)
 	case TREE_VIEW:
 		return lib_cur_win;
 	case SORTED_VIEW:
-		return lib_editable.win;
+		return lib_editable.shared->win;
 	case PLAYLIST_VIEW:
 		return pl_cursor_win();
 	case QUEUE_VIEW:
-		return pq_editable.win;
+		return pq_editable.shared->win;
 	case BROWSER_VIEW:
 		return browser_win;
 	case HELP_VIEW:

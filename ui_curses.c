@@ -1048,9 +1048,10 @@ static void update_editable_window(struct editable *e, const char *title, const 
 	}
 	pos = strlen(buf);
 	snprintf(buf + pos, sizeof(buf) - pos, " %s%s",
-			sorted_names[e->sort_str[0] != 0], e->sort_str);
+			sorted_names[e->shared->sort_str[0] != 0],
+			e->shared->sort_str);
 
-	update_window(e->win, 0, 0, COLS, buf, &print_editable);
+	update_window(e->shared->win, 0, 0, COLS, buf, &print_editable);
 }
 
 static void update_sorted_window(void)
@@ -1632,13 +1633,13 @@ void set_view(int view)
 		searchable = tree_searchable;
 		break;
 	case SORTED_VIEW:
-		searchable = lib_editable.searchable;
+		searchable = lib_editable.shared->searchable;
 		break;
 	case PLAYLIST_VIEW:
 		searchable = pl_get_searchable();
 		break;
 	case QUEUE_VIEW:
-		searchable = pq_editable.searchable;
+		searchable = pq_editable.shared->searchable;
 		break;
 	case BROWSER_VIEW:
 		searchable = browser_searchable;
@@ -1865,9 +1866,9 @@ static void update(void)
 			if (h < 2)
 				h = 2;
 			resize_tree_view(w, h);
-			window_set_nr_rows(lib_editable.win, h - 1);
+			window_set_nr_rows(lib_editable.shared->win, h - 1);
 			pl_set_nr_rows(h - 1);
-			window_set_nr_rows(pq_editable.win, h - 1);
+			window_set_nr_rows(pq_editable.shared->win, h - 1);
 			window_set_nr_rows(filters_win, h - 1);
 			window_set_nr_rows(help_win, h - 1);
 			window_set_nr_rows(browser_win, h - 1);
@@ -1901,13 +1902,13 @@ static void update(void)
 		needs_view_update += lib_tree_win->changed || lib_track_win->changed;
 		break;
 	case SORTED_VIEW:
-		needs_view_update += lib_editable.win->changed;
+		needs_view_update += lib_editable.shared->win->changed;
 		break;
 	case PLAYLIST_VIEW:
 		needs_view_update += pl_needs_redraw();
 		break;
 	case QUEUE_VIEW:
-		needs_view_update += pq_editable.win->changed;
+		needs_view_update += pq_editable.shared->win->changed;
 		break;
 	case BROWSER_VIEW:
 		needs_view_update += browser_win->changed;
@@ -1922,11 +1923,11 @@ static void update(void)
 
 	/* total time changed? */
 	if (play_library) {
-		needs_status_update += lib_editable.win->changed;
-		lib_editable.win->changed = 0;
+		needs_status_update += lib_editable.shared->win->changed;
+		lib_editable.shared->win->changed = 0;
 	} else {
 		needs_status_update += pl_needs_redraw();
-		pl_editable.win->changed = 0;
+		pl_editable.shared->win->changed = 0;
 	}
 
 	if (needs_spawn)

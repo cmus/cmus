@@ -331,7 +331,7 @@ static void set_icecast_default_charset(void *data, const char *buf)
 
 static void get_lib_sort(void *data, char *buf)
 {
-	strcpy(buf, lib_editable.sort_str);
+	strcpy(buf, lib_editable.shared->sort_str);
 }
 
 static void set_lib_sort(void *data, const char *buf)
@@ -339,8 +339,10 @@ static void set_lib_sort(void *data, const char *buf)
 	sort_key_t *keys = parse_sort_keys(buf);
 
 	if (keys) {
-		editable_set_sort_keys(&lib_editable, keys);
-		sort_keys_to_str(keys, lib_editable.sort_str, sizeof(lib_editable.sort_str));
+		editable_shared_set_sort_keys(lib_editable.shared, keys);
+		editable_sort(&lib_editable);
+		sort_keys_to_str(keys, lib_editable.shared->sort_str,
+				sizeof(lib_editable.shared->sort_str));
 	}
 }
 

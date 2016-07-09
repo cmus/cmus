@@ -37,41 +37,67 @@ static struct simple_track *get_selected(struct editable *e)
 {
 	struct iter sel;
 
-	if (window_get_sel(e->win, &sel))
+	if (window_get_sel(e->shared->win, &sel))
 		return iter_to_simple_track(&sel);
 	return NULL;
 }
 
-void editable_init(struct editable *e, void (*free_track)(struct list_head *item))
+void editable_shared_init(struct editable_shared *shared,
+		editable_free_track free_track)
 {
-	struct iter iter;
+	shared->win = window_new(simple_track_get_prev, simple_track_get_next);
+	shared->sort_keys = xnew(sort_key_t, 1);
+	shared->sort_keys[0] = SORT_INVALID;
+	shared->sort_str[0] = 0;
+	shared->free_track = free_track;
+	shared->owner = NULL;
 
+	struct iter iter = { 0 };
+	shared->searchable = searchable_new(shared->win, &iter,
+			&simple_search_ops);
+}
+
+void editable_init(struct editable *e, struct editable_shared *shared,
+		int take_ownership)
+{
 	list_init(&e->head);
 	e->tree_root = RB_ROOT;
 	e->nr_tracks = 0;
 	e->nr_marked = 0;
 	e->total_time = 0;
-	e->sort_keys = xnew(sort_key_t, 1);
-	e->sort_keys[0] = SORT_INVALID;
-	e->sort_str[0] = 0;
-	e->free_track = free_track;
+	e->shared = shared;
 
-	e->win = window_new(simple_track_get_prev, simple_track_get_next);
-	window_set_contents(e->win, &e->head);
 
-	iter.data0 = &e->head;
-	iter.data1 = NULL;
-	iter.data2 = NULL;
-	e->searchable = searchable_new(e->win, &iter, &simple_search_ops);
+	if (take_ownership)
+		editable_take_ownership(e);
+}
+
+static int editable_owns_shared(struct editable *e)
+{
+	return e->shared->owner == e;
+}
+
+void editable_take_ownership(struct editable *e)
+{
+	if (!editable_owns_shared(e)) {
+		e->shared->owner = e;
+		window_set_contents(e->shared->win, &e->head);
+		e->shared->win->changed = 1;
+
+		struct iter iter = { .data0 = &e->head };
+		searchable_set_head(e->shared->searchable, &iter);
+	}
 }
 
 static void do_editable_add(struct editable *e, struct simple_track *track, int tiebreak)
 {
-	sorted_list_add_track(&e->head, &e->tree_root, track, e->sort_keys, tiebreak);
+	sorted_list_add_track(&e->head, &e->tree_root, track,
+			e->shared->sort_keys, tiebreak);
 	e->nr_tracks++;
 	if (track->info->duration != -1)
 		e->total_time += track->info->duration;
-	window_changed(e->win);
+	if (editable_owns_shared(e))
+		window_changed(e->shared->win);
 }
 
 void editable_add(struct editable *e, struct simple_track *track)
@@ -90,7 +116,8 @@ void editable_remove_track(struct editable *e, struct simple_track *track)
 	struct iter iter;
 
 	editable_track_to_iter(e, track, &iter);
-	window_row_vanishes(e->win, &iter);
+	if (editable_owns_shared(e))
+		window_row_vanishes(e->shared->win, &iter);
 
 	e->nr_tracks--;
 	e->nr_marked -= track->marked;
@@ -98,7 +125,7 @@ void editable_remove_track(struct editable *e, struct simple_track *track)
 		e->total_time -= ti->duration;
 
 	sorted_list_remove_track(&e->head, &e->tree_root, track);
-	e->free_track(&track->node);
+	e->shared->free_track(e, &track->node);
 }
 
 void editable_remove_sel(struct editable *e)
@@ -127,17 +154,19 @@ void editable_sort(struct editable *e)
 {
 	if (e->nr_tracks <= 1)
 		return;
-	sorted_list_rebuild(&e->head, &e->tree_root, e->sort_keys);
+	sorted_list_rebuild(&e->head, &e->tree_root, e->shared->sort_keys);
 
-	window_changed(e->win);
-	window_goto_top(e->win);
+	if (editable_owns_shared(e)) {
+		window_changed(e->shared->win);
+		window_goto_top(e->shared->win);
+	}
 }
 
-void editable_set_sort_keys(struct editable *e, sort_key_t *keys)
+void editable_shared_set_sort_keys(struct editable_shared *shared,
+		sort_key_t *keys)
 {
-	free(e->sort_keys);
-	e->sort_keys = keys;
-	editable_sort(e);
+	free(shared->sort_keys);
+	shared->sort_keys = keys;
 }
 
 void editable_toggle_mark(struct editable *e)
@@ -149,8 +178,10 @@ void editable_toggle_mark(struct editable *e)
 		e->nr_marked -= t->marked;
 		t->marked ^= 1;
 		e->nr_marked += t->marked;
-		e->win->changed = 1;
-		window_down(e->win, 1);
+		if (editable_owns_shared(e)) {
+			e->shared->win->changed = 1;
+			window_down(e->shared->win, 1);
+		}
 	}
 }
 
@@ -160,7 +191,8 @@ static void move_item(struct editable *e, struct list_head *head, struct list_he
 	struct iter iter;
 
 	editable_track_to_iter(e, t, &iter);
-	window_row_vanishes(e->win, &iter);
+	if (editable_owns_shared(e))
+		window_row_vanishes(e->shared->win, &iter);
 
 	list_del(item);
 	list_add(item, head);
@@ -213,8 +245,11 @@ static void move_sel(struct editable *e, struct list_head *after)
 
 	/* select top-most of the moved tracks */
 	editable_track_to_iter(e, to_simple_track(after->next), &iter);
-	window_set_sel(e->win, &iter);
-	window_changed(e->win);
+
+	if (editable_owns_shared(e)) {
+		window_set_sel(e->shared->win, &iter);
+		window_changed(e->shared->win);
+	}
 }
 
 static struct list_head *find_insert_after_point(struct editable *e, struct list_head *item)
@@ -266,7 +301,7 @@ void editable_move_after(struct editable *e)
 {
 	struct simple_track *sel;
 
-	if (e->nr_tracks <= 1 || e->sort_keys[0] != SORT_INVALID)
+	if (e->nr_tracks <= 1 || e->shared->sort_keys[0] != SORT_INVALID)
 		return;
 
 	sel = get_selected(e);
@@ -278,7 +313,7 @@ void editable_move_before(struct editable *e)
 {
 	struct simple_track *sel;
 
-	if (e->nr_tracks <= 1 || e->sort_keys[0] != SORT_INVALID)
+	if (e->nr_tracks <= 1 || e->shared->sort_keys[0] != SORT_INVALID)
 		return;
 
 	sel = get_selected(e);
@@ -325,7 +360,9 @@ void editable_mark(struct editable *e, const char *filter)
 			e->nr_marked++;
 		}
 	}
-	e->win->changed = 1;
+
+	if (editable_owns_shared(e))
+		e->shared->win->changed = 1;
 }
 
 void editable_unmark(struct editable *e)
@@ -336,7 +373,9 @@ void editable_unmark(struct editable *e)
 		e->nr_marked -= t->marked;
 		t->marked = 0;
 	}
-	e->win->changed = 1;
+
+	if (editable_owns_shared(e))
+		e->shared->win->changed = 1;
 }
 
 void editable_invert_marks(struct editable *e)
@@ -348,7 +387,9 @@ void editable_invert_marks(struct editable *e)
 		t->marked ^= 1;
 		e->nr_marked += t->marked;
 	}
-	e->win->changed = 1;
+
+	if (editable_owns_shared(e))
+		e->shared->win->changed = 1;
 }
 
 int _editable_for_each_sel(struct editable *e, track_info_cb cb, void *data,
@@ -374,8 +415,8 @@ int editable_for_each_sel(struct editable *e, track_info_cb cb, void *data,
 	int rc;
 
 	rc = _editable_for_each_sel(e, cb, data, reverse);
-	if (e->nr_marked == 0)
-		window_down(e->win, 1);
+	if (e->nr_marked == 0 && editable_owns_shared(e))
+		window_down(e->shared->win, 1);
 	return rc;
 }
 
@@ -403,8 +444,8 @@ void editable_update_track(struct editable *e, struct track_info *old, struct tr
 			changed = 1;
 		}
 	}
-	if (changed)
-		e->win->changed = changed;
+	if (editable_owns_shared(e))
+		e->shared->win->changed |= changed;
 }
 
 void editable_rand(struct editable *e)
@@ -412,8 +453,11 @@ void editable_rand(struct editable *e)
 	if (e->nr_tracks <=1)
 		return;
 	rand_list_rebuild(&e->head, &e->tree_root);
-	window_changed(e->win);
-	window_goto_top(e->win);
+
+	if (editable_owns_shared(e)) {
+		window_changed(e->shared->win);
+		window_goto_top(e->shared->win);
+	}
 }
 
 int editable_empty(struct editable *e)

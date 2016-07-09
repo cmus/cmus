@@ -26,10 +26,11 @@
 #include "worker.h"
 
 struct editable pl_editable;
+struct editable_shared pl_editable_shared;
 struct simple_track *pl_cur_track = NULL;
 struct rb_root pl_shuffle_root;
 
-static void pl_free_track(struct list_head *item)
+static void pl_free_track(struct editable *e, struct list_head *item)
 {
 	struct simple_track *track = to_simple_track(item);
 	struct shuffle_track *shuffle_track = (struct shuffle_track *) track;
@@ -44,7 +45,8 @@ static void pl_free_track(struct list_head *item)
 
 void pl_init(void)
 {
-	editable_init(&pl_editable, pl_free_track);
+	editable_shared_init(&pl_editable_shared, pl_free_track);
+	editable_init(&pl_editable, &pl_editable_shared, 1);
 	cmus_add(pl_add_track, pl_autosave_filename, FILE_TYPE_PL, JOB_TYPE_PL, 0, NULL);
 }
 
@@ -63,7 +65,7 @@ static struct track_info *set_track(struct simple_track *track)
 		track_info_ref(ti);
 		if (follow)
 			pl_sel_current();
-		pl_editable.win->changed = 1;
+		pl_editable_shared.win->changed = 1;
 	}
 	return ti;
 }
@@ -107,7 +109,7 @@ struct track_info *pl_activate_selected(void)
 	if (list_empty(&pl_editable.head))
 		return NULL;
 
-	window_get_sel(pl_editable.win, &sel);
+	window_get_sel(pl_editable_shared.win, &sel);
 	return set_track(iter_to_simple_track(&sel));
 }
 
@@ -117,7 +119,7 @@ void pl_sel_current(void)
 		struct iter iter;
 
 		editable_track_to_iter(&pl_editable, pl_cur_track, &iter);
-		window_set_sel(pl_editable.win, &iter);
+		window_set_sel(pl_editable_shared.win, &iter);
 	}
 }
 
@@ -156,7 +158,7 @@ void pl_exit(void)
 
 struct searchable *pl_get_searchable(void)
 {
-	return pl_editable.searchable;
+	return pl_editable_shared.searchable;
 }
 
 unsigned int pl_playing_total_time(void)
@@ -166,12 +168,12 @@ unsigned int pl_playing_total_time(void)
 
 void pl_set_nr_rows(int h)
 {
-	window_set_nr_rows(pl_editable.win, h);
+	window_set_nr_rows(pl_editable_shared.win, h);
 }
 
 int pl_needs_redraw(void)
 {
-	return pl_editable.win->changed;
+	return pl_editable_shared.win->changed;
 }
 
 void pl_invert_marks(void)
@@ -241,7 +243,7 @@ void pl_load_extern(char *path)
 
 struct window *pl_cursor_win(void)
 {
-	return pl_editable.win;
+	return pl_editable_shared.win;
 }
 
 int _pl_for_each_sel(track_info_cb cb, void *data, int reverse)
@@ -251,7 +253,7 @@ int _pl_for_each_sel(track_info_cb cb, void *data, int reverse)
 
 void pl_get_sort_str(char *buf)
 {
-	strcpy(buf, pl_editable.sort_str);
+	strcpy(buf, pl_editable_shared.sort_str);
 }
 
 void pl_set_sort_str(const char *buf)
@@ -259,7 +261,9 @@ void pl_set_sort_str(const char *buf)
 	sort_key_t *keys = parse_sort_keys(buf);
 
 	if (keys) {
-		editable_set_sort_keys(&pl_editable, keys);
-		sort_keys_to_str(keys, pl_editable.sort_str, sizeof(pl_editable.sort_str));
+		editable_shared_set_sort_keys(&pl_editable_shared, keys);
+		editable_sort(&pl_editable);
+		sort_keys_to_str(keys, pl_editable_shared.sort_str,
+				sizeof(pl_editable_shared.sort_str));
 	}
 }

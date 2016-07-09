@@ -26,28 +26,43 @@
 #include "locking.h"
 #include "cmus.h"
 
-struct editable {
+struct editable;
+
+typedef void (*editable_free_track)(struct editable *e, struct list_head *head);
+
+struct editable_shared {
+	struct editable *owner;
+
 	struct window *win;
+	sort_key_t *sort_keys;
+	char sort_str[128];
+	editable_free_track free_track;
+	struct searchable *searchable;
+};
+
+struct editable {
 	struct list_head head;
 	struct rb_root tree_root;
 	unsigned int nr_tracks;
 	unsigned int nr_marked;
 	unsigned int total_time;
-	sort_key_t *sort_keys;
-	char sort_str[128];
-	struct searchable *searchable;
-
-	void (*free_track)(struct list_head *item);
+	struct editable_shared *shared;
 };
 
-void editable_init(struct editable *e, void (*free_track)(struct list_head *item));
+void editable_shared_init(struct editable_shared *shared,
+		editable_free_track free_track);
+void editable_shared_set_sort_keys(struct editable_shared *shared,
+		sort_key_t *keys);
+
+void editable_init(struct editable *e, struct editable_shared *shared,
+		int take_ownership);
+void editable_take_ownership(struct editable *e);
 void editable_add(struct editable *e, struct simple_track *track);
 void editable_add_before(struct editable *e, struct simple_track *track);
 void editable_remove_track(struct editable *e, struct simple_track *track);
 void editable_remove_sel(struct editable *e);
 void editable_sort(struct editable *e);
 void editable_rand(struct editable *e);
-void editable_set_sort_keys(struct editable *e, sort_key_t *keys);
 void editable_toggle_mark(struct editable *e);
 void editable_move_after(struct editable *e);
 void editable_move_before(struct editable *e);
