@@ -23,12 +23,13 @@
 #include "debug.h"
 
 #include <stdlib.h>
+#include <stdint.h>
 #include <pthread.h>
 
 struct worker_job {
 	struct list_head node;
 	/* >0, 0 is 'any' */
-	int type;
+	uint32_t type;
 	void (*job_cb)(void *data);
 	void (*free_cb)(void *data);
 	void *data;
@@ -39,7 +40,7 @@ static pthread_mutex_t worker_mutex = CMUS_MUTEX_INITIALIZER;
 static pthread_cond_t worker_cond = PTHREAD_COND_INITIALIZER;
 static pthread_t worker_thread;
 static int running = 1;
-static int cancel_type = JOB_TYPE_NONE;
+static uint32_t cancel_type = JOB_TYPE_NONE;
 
 /*
  * - only worker thread modifies this
@@ -109,7 +110,7 @@ void worker_exit(void)
 	pthread_join(worker_thread, NULL);
 }
 
-void worker_add_job(int type, void (*job_cb)(void *data),
+void worker_add_job(uint32_t type, void (*job_cb)(void *data),
 		void (*free_cb)(void *data), void *data)
 {
 	struct worker_job *job;
@@ -126,7 +127,7 @@ void worker_add_job(int type, void (*job_cb)(void *data),
 	worker_unlock();
 }
 
-void worker_remove_jobs(int type)
+void worker_remove_jobs(uint32_t type)
 {
 	struct list_head *item;
 
@@ -155,7 +156,7 @@ void worker_remove_jobs(int type)
 	worker_unlock();
 }
 
-int worker_has_job(int type)
+int worker_has_job(uint32_t type)
 {
 	struct worker_job *job;
 	int has_job = 0;

@@ -21,6 +21,7 @@
 
 #define JOB_TYPE_NONE	0
 #define JOB_TYPE_ANY	-1
+#include <stdint.h>
 
 void worker_init(void);
 void worker_exit(void);
@@ -31,15 +32,15 @@ void worker_exit(void);
  * @free_cb:  frees @data
  * @data:     data for the callbacks
  */
-void worker_add_job(int type, void (*job_cb)(void *data),
+void worker_add_job(uint32_t type, void (*job_cb)(void *data),
 		void (*free_cb)(void *data), void *data);
 
 /*
  * @type: job type. >0, use JOB_TYPE_ANY to remove all
  */
-void worker_remove_jobs(int type);
+void worker_remove_jobs(uint32_t type);
 
-int worker_has_job(int type);
+int worker_has_job(uint32_t type);
 
 /*
  * @type: type of this job
