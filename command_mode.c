@@ -77,8 +77,7 @@ void view_clear(int view)
 		lib_clear_store();
 		break;
 	case PLAYLIST_VIEW:
-		worker_remove_jobs_by_type(JOB_TYPE_PL);
-		editable_clear(&pl_editable);
+		pl_clear();
 		break;
 	case QUEUE_VIEW:
 		worker_remove_jobs_by_type(JOB_TYPE_QUEUE);
@@ -159,11 +158,7 @@ void view_load(int view, char *arg)
 		lib_filename = name;
 		break;
 	case PLAYLIST_VIEW:
-		worker_remove_jobs_by_type(JOB_TYPE_PL);
-		editable_clear(&pl_editable);
-		cmus_add(pl_add_track, name, FILE_TYPE_PL, JOB_TYPE_PL, 0, NULL);
-		free(pl_filename);
-		pl_filename = name;
+		pl_load_extern(name);
 		break;
 	default:
 		info_msg(":load only works in views 1-3");
@@ -347,7 +342,7 @@ struct window *current_win(void)
 	case SORTED_VIEW:
 		return lib_editable.win;
 	case PLAYLIST_VIEW:
-		return pl_editable.win;
+		return pl_cursor_win();
 	case QUEUE_VIEW:
 		return pq_editable.win;
 	case BROWSER_VIEW:
@@ -1007,7 +1002,7 @@ static void cmd_run(char *arg)
 		_editable_for_each_sel(&lib_editable, add_ti, &sel, 0);
 		break;
 	case PLAYLIST_VIEW:
-		_editable_for_each_sel(&pl_editable, add_ti, &sel, 0);
+		_pl_for_each_sel(add_ti, &sel, 0);
 		break;
 	case QUEUE_VIEW:
 		_editable_for_each_sel(&pq_editable, add_ti, &sel, 0);
@@ -1143,7 +1138,7 @@ static void cmd_echo(char *arg)
 		_editable_for_each_sel(&lib_editable, get_one_ti, &sel_ti, 0);
 		break;
 	case PLAYLIST_VIEW:
-		_editable_for_each_sel(&pl_editable, get_one_ti, &sel_ti, 0);
+		_pl_for_each_sel(get_one_ti, &sel_ti, 0);
 		break;
 	case QUEUE_VIEW:
 		_editable_for_each_sel(&pq_editable, get_one_ti, &sel_ti, 0);
