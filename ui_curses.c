@@ -142,6 +142,10 @@ static int tree_win_w = 0;
 static int track_win_x = 0;
 static int track_win_w = 0;
 
+static int editable_win_x = 0;
+static int editable_win_w = 0;
+static int editable_active = 1;
+
 static int show_cursor;
 static int cursor_x;
 static int cursor_y;
@@ -800,11 +804,11 @@ static void print_editable(struct window *win, int row, struct iter *iter)
 	selected = iters_equal(iter, &sel);
 
 	if (selected) {
-		cursor_x = 0;
+		cursor_x = editable_win_x;
 		cursor_y = 1 + row;
 	}
 
-	active = 1;
+	active = editable_active;
 	if (!selected && track->marked) {
 		selected = 1;
 		active = 0;
@@ -821,8 +825,8 @@ static void print_editable(struct window *win, int row, struct iter *iter)
 	} else if (*list_win_alt_format) {
 		format = list_win_alt_format;
 	}
-	format_print(print_buffer, COLS, format, track_fopts);
-	dump_print_buffer(row + 1, 0);
+	format_print(print_buffer, editable_win_w, format, track_fopts);
+	dump_print_buffer(row + 1, editable_win_x);
 }
 
 static void print_browser(struct window *win, int row, struct iter *iter)
@@ -1853,6 +1857,7 @@ static void update(void)
 #if HAVE_RESIZETERM
 			resizeterm(lines, columns);
 #endif
+			editable_win_w = COLS;
 			w = COLS;
 			h = LINES - 3;
 			if (w < 16)
