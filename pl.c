@@ -146,6 +146,30 @@ int pl_for_each(int (*cb)(void *data, struct track_info *ti), void *data)
 	return rc;
 }
 
+void pl_exit(void)
+{
+}
+
+struct searchable *pl_get_searchable(void)
+{
+	return pl_editable.searchable;
+}
+
+unsigned int pl_playing_total_time(void)
+{
+	return pl_editable.total_time;
+}
+
+void pl_set_nr_rows(int h)
+{
+	window_set_nr_rows(pl_editable.win, h);
+}
+
+int pl_needs_redraw(void)
+{
+	return pl_editable.win->changed;
+}
+
 void pl_invert_marks(void)
 {
 	editable_invert_marks(&pl_editable);
