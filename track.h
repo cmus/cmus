@@ -75,6 +75,7 @@ int simple_track_get_next(struct iter *);
 /* data is window */
 int simple_track_search_get_current(void *data, struct iter *iter);
 int simple_track_search_matches(void *data, struct iter *iter, const char *text);
+int _simple_track_search_matches(struct iter *iter, const char *text);
 
 struct shuffle_track *shuffle_list_get_next(struct rb_root *root, struct shuffle_track *cur,
 		int (*filter)(const struct simple_track *));

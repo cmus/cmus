@@ -52,7 +52,7 @@ int simple_track_search_get_current(void *data, struct iter *iter)
 	return window_get_sel(data, iter);
 }
 
-int simple_track_search_matches(void *data, struct iter *iter, const char *text)
+int _simple_track_search_matches(struct iter *iter, const char *text)
 {
 	unsigned int flags = TI_MATCH_TITLE;
 	struct simple_track *track = iter_to_simple_track(iter);
@@ -60,11 +60,15 @@ int simple_track_search_matches(void *data, struct iter *iter, const char *text)
 	if (!search_restricted)
 		flags |= TI_MATCH_ARTIST | TI_MATCH_ALBUM | TI_MATCH_ALBUMARTIST;
 
-	if (!track_info_matches(track->info, text, flags))
-		return 0;
+	return track_info_matches(track->info, text, flags);
+}
 
-	window_set_sel(data, iter);
-	return 1;
+int simple_track_search_matches(void *data, struct iter *iter, const char *text)
+{
+	int rc = _simple_track_search_matches(iter, text);
+	if (rc)
+		window_set_sel(data, iter);
+	return rc;
 }
 
 void shuffle_insert(struct rb_root *root, struct shuffle_track *previous, struct shuffle_track *next)
