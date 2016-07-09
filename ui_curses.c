@@ -646,7 +646,7 @@ const struct format_option *get_global_fopts(void)
 	int duration = -1;
 
 	fopt_set_time(&track_fopts[TF_TOTAL], play_library ? lib_editable.total_time :
-			pl_editable.total_time, 0);
+			pl_playing_total_time(), 0);
 
 	fopt_set_str(&track_fopts[TF_FOLLOW], follow_strs[follow]);
 	fopt_set_str(&track_fopts[TF_REPEAT], repeat_strs[repeat]);
@@ -1633,7 +1633,7 @@ void set_view(int view)
 		searchable = lib_editable.searchable;
 		break;
 	case PLAYLIST_VIEW:
-		searchable = pl_editable.searchable;
+		searchable = pl_get_searchable();
 		break;
 	case QUEUE_VIEW:
 		searchable = pq_editable.searchable;
@@ -1865,7 +1865,7 @@ static void update(void)
 				h = 2;
 			resize_tree_view(w, h);
 			window_set_nr_rows(lib_editable.win, h - 1);
-			window_set_nr_rows(pl_editable.win, h - 1);
+			pl_set_nr_rows(h - 1);
 			window_set_nr_rows(pq_editable.win, h - 1);
 			window_set_nr_rows(filters_win, h - 1);
 			window_set_nr_rows(help_win, h - 1);
@@ -1903,7 +1903,7 @@ static void update(void)
 		needs_view_update += lib_editable.win->changed;
 		break;
 	case PLAYLIST_VIEW:
-		needs_view_update += pl_editable.win->changed;
+		needs_view_update += pl_needs_redraw();
 		break;
 	case QUEUE_VIEW:
 		needs_view_update += pq_editable.win->changed;
@@ -1924,7 +1924,7 @@ static void update(void)
 		needs_status_update += lib_editable.win->changed;
 		lib_editable.win->changed = 0;
 	} else {
-		needs_status_update += pl_editable.win->changed;
+		needs_status_update += pl_needs_redraw();
 		pl_editable.win->changed = 0;
 	}
 
@@ -2357,6 +2357,7 @@ static void exit_all(void)
 	cmus_save(lib_for_each, lib_autosave_filename);
 	cmus_save(pl_for_each, pl_autosave_filename);
 
+	pl_exit();
 	player_exit();
 	op_exit_plugins();
 	commands_exit();
