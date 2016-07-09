@@ -346,17 +346,12 @@ static void set_lib_sort(void *data, const char *buf)
 
 static void get_pl_sort(void *data, char *buf)
 {
-	strcpy(buf, pl_editable.sort_str);
+	pl_get_sort_str(buf);
 }
 
 static void set_pl_sort(void *data, const char *buf)
 {
-	sort_key_t *keys = parse_sort_keys(buf);
-
-	if (keys) {
-		editable_set_sort_keys(&pl_editable, keys);
-		sort_keys_to_str(keys, pl_editable.sort_str, sizeof(pl_editable.sort_str));
-	}
+	pl_set_sort_str(buf);
 }
 
 static void get_output_plugin(void *data, char *buf)

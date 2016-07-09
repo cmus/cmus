@@ -48,6 +48,9 @@ void pl_load_extern(char *path);
 struct window *pl_cursor_win(void);
 int _pl_for_each_sel(track_info_cb cb, void *data, int reverse);
 
+void pl_get_sort_str(char *buf);
+void pl_set_sort_str(const char *buf);
+
 void pl_invert_marks(void);
 void pl_mark(char *arg);
 void pl_unmark(void);

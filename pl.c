@@ -248,3 +248,18 @@ int _pl_for_each_sel(track_info_cb cb, void *data, int reverse)
 {
 	return _editable_for_each_sel(&pl_editable, cb, data, reverse);
 }
+
+void pl_get_sort_str(char *buf)
+{
+	strcpy(buf, pl_editable.sort_str);
+}
+
+void pl_set_sort_str(const char *buf)
+{
+	sort_key_t *keys = parse_sort_keys(buf);
+
+	if (keys) {
+		editable_set_sort_keys(&pl_editable, keys);
+		sort_keys_to_str(keys, pl_editable.sort_str, sizeof(pl_editable.sort_str));
+	}
+}
