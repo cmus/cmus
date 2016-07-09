@@ -73,6 +73,16 @@ static inline void _list_add(struct list_head *new,
 	prev->next = new;
 }
 
+static inline struct list_head *list_prev(struct list_head *list)
+{
+	return list->prev;
+}
+
+static inline struct list_head *list_next(struct list_head *list)
+{
+	return list->next;
+}
+
 /**
  * list_add - add a new entry
  * @new: new entry to be added
@@ -320,5 +330,19 @@ static inline void list_splice_init(struct list_head *list,
 		n = list_entry(pos->member.next, __typeof__(*pos), member);	\
 	     &pos->member != (head); 					\
 	     pos = n, n = list_entry(n->member.next, __typeof__(*n), member))
+
+
+/**
+ * list_len - get the length of a list
+ * @list: the list to measure
+ */
+static inline size_t list_len(struct list_head *list)
+{
+	size_t len = 0;
+	struct list_head *pos;
+	list_for_each(pos, list)
+		len++;
+	return len;
+}
 
 #endif
