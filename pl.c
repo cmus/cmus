@@ -20,6 +20,8 @@
 #include "editable.h"
 #include "options.h"
 #include "xmalloc.h"
+#include "cmus.h"
+#include "ui_curses.h"
 
 struct editable pl_editable;
 struct simple_track *pl_cur_track = NULL;
@@ -142,4 +144,54 @@ int pl_for_each(int (*cb)(void *data, struct track_info *ti), void *data)
 			break;
 	}
 	return rc;
+}
+
+void pl_invert_marks(void)
+{
+	editable_invert_marks(&pl_editable);
+}
+
+void pl_mark(char *arg)
+{
+	editable_mark(&pl_editable, arg);
+}
+
+void pl_unmark(void)
+{
+	editable_unmark(&pl_editable);
+}
+
+void pl_rand(void)
+{
+	editable_rand(&pl_editable);
+}
+
+void pl_win_mv_after(void)
+{
+	editable_move_after(&pl_editable);
+}
+
+void pl_win_mv_before(void)
+{
+	editable_move_before(&pl_editable);
+}
+
+void pl_win_remove(void)
+{
+	editable_remove_sel(&pl_editable);
+}
+
+void pl_win_toggle(void)
+{
+	editable_toggle_mark(&pl_editable);
+}
+
+void pl_win_update(void)
+{
+	editable_clear(&pl_editable);
+	cmus_add(pl_add_track, pl_filename, FILE_TYPE_PL, JOB_TYPE_PL, 0);
+}
+
+void pl_win_next(void)
+{
 }

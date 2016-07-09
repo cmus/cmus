@@ -36,4 +36,15 @@ void pl_sel_current(void);
 void pl_reshuffle(void);
 int pl_for_each(int (*cb)(void *data, struct track_info *ti), void *data);
 
+void pl_invert_marks(void);
+void pl_mark(char *arg);
+void pl_unmark(void);
+void pl_rand(void);
+void pl_win_mv_after(void);
+void pl_win_mv_before(void);
+void pl_win_remove(void);
+void pl_win_toggle(void);
+void pl_win_update(void);
+void pl_win_next(void);
+
 #endif
