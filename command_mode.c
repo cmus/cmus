@@ -108,7 +108,7 @@ void view_add(int view, char *arg, int prepend)
 		cmus_add(lib_add_track, name, ft, JOB_TYPE_LIB, 0, NULL);
 		break;
 	case PLAYLIST_VIEW:
-		cmus_add(pl_add_track, name, ft, JOB_TYPE_PL, 0, NULL);
+		pl_add_file_to_marked_pl(name);
 		break;
 	case QUEUE_VIEW:
 		if (prepend) {
@@ -213,10 +213,7 @@ void view_save(int view, char *arg, int to_stdout, int filtered, int extended)
 		do_save(lib_for_each_ti, arg, dest, save_ti);
 		break;
 	case PLAYLIST_VIEW:
-		if (worker_has_job_by_type(JOB_TYPE_PL))
-			goto worker_running;
-		dest = extended ? &pl_ext_filename : &pl_filename;
-		do_save(pl_for_each, arg, dest, save_ti);
+		pl_save();
 		break;
 	case QUEUE_VIEW:
 		if (worker_has_job_by_type(JOB_TYPE_QUEUE))
@@ -225,7 +222,7 @@ void view_save(int view, char *arg, int to_stdout, int filtered, int extended)
 		do_save(play_queue_for_each, arg, dest, save_ti);
 		break;
 	default:
-		info_msg(":save only works in views 1 & 2 (library) and 3 (playlist)");
+		info_msg(":save only works in views 1 - 4");
 	}
 	free(arg);
 	return;
@@ -430,6 +427,8 @@ static void cmd_set(char *arg)
 		if (cur_view == TREE_VIEW) {
 			lib_track_win->changed = 1;
 			lib_tree_win->changed = 1;
+		} else if (cur_view == PLAYLIST_VIEW) {
+			pl_mark_for_redraw();
 		} else {
 			current_win()->changed = 1;
 		}
@@ -468,6 +467,8 @@ static void cmd_toggle(char *arg)
 	if (cur_view == TREE_VIEW) {
 		lib_track_win->changed = 1;
 		lib_tree_win->changed = 1;
+	} else if (cur_view == PLAYLIST_VIEW) {
+		pl_mark_for_redraw();
 	} else {
 		current_win()->changed = 1;
 	}
@@ -1255,6 +1256,16 @@ static void cmd_right_view(char *arg)
 	}
 }
 
+static void cmd_pl_create(char *arg)
+{
+	pl_create(arg);
+}
+
+static void cmd_pl_rename(char *arg)
+{
+	pl_rename_selected_pl(arg);
+}
+
 static void cmd_view(char *arg)
 {
 	int view;
@@ -1354,11 +1365,6 @@ static int sorted_for_each_sel(track_info_cb cb, void *data, int reverse)
 	return editable_for_each_sel(&lib_editable, cb, data, reverse);
 }
 
-static int pl_for_each_sel(track_info_cb cb, void *data, int reverse)
-{
-	return editable_for_each_sel(&pl_editable, cb, data, reverse);
-}
-
 static int pq_for_each_sel(track_info_cb cb, void *data, int reverse)
 {
 	return editable_for_each_sel(&pq_editable, cb, data, reverse);
@@ -1436,10 +1442,14 @@ static void cmd_win_add_p(char *arg)
 		return;
 
 	if (cur_view <= QUEUE_VIEW) {
-		struct wrapper_cb_data add = { pl_add_track };
+		struct wrapper_cb_data add = { pl_add_track_to_marked_pl2 };
 		view_for_each_sel[cur_view](wrapper_cb, &add, 0);
 	} else if (cur_view == BROWSER_VIEW) {
-		add_from_browser(pl_add_track, JOB_TYPE_PL);
+		char *sel = get_browser_add_file();
+		if (sel) {
+			pl_add_file_to_marked_pl(sel);
+			free(sel);
+		}
 	}
 }
 
@@ -1479,9 +1489,6 @@ static void cmd_win_activate(char *arg)
 		if (lib_cur_track)
 			previous = &lib_cur_track->shuffle_track;
 		shuffle_root = &lib_shuffle_root;
-	} else if (cur_view == PLAYLIST_VIEW) {
-		previous = (struct shuffle_track *)pl_cur_track;
-		shuffle_root = &pl_shuffle_root;
 	}
 
 	switch (cur_view) {
@@ -1494,8 +1501,7 @@ static void cmd_win_activate(char *arg)
 		next = &lib_cur_track->shuffle_track;
 		break;
 	case PLAYLIST_VIEW:
-		info = pl_activate_selected();
-		next = (struct shuffle_track *)pl_cur_track;
+		info = pl_play_selected_row();
 		break;
 	case QUEUE_VIEW:
 		break;
@@ -1511,7 +1517,7 @@ static void cmd_win_activate(char *arg)
 	}
 
 	if (info) {
-		if (shuffle)
+		if (shuffle && next)
 			shuffle_insert(shuffle_root, previous, next);
 		/* update lib/pl mode */
 		if (cur_view < 2)
@@ -1590,7 +1596,7 @@ static void cmd_win_sel_cur(char *arg)
 		sorted_sel_current();
 		break;
 	case PLAYLIST_VIEW:
-		pl_sel_current();
+		pl_select_playing_track();
 		break;
 	}
 }
@@ -1653,7 +1659,7 @@ static void cmd_win_next(char *arg)
 {
 	if (cur_view == TREE_VIEW)
 		tree_toggle_active_window();
-	if (cur_view == PLAYLIST_VIEW)
+	else if (cur_view == PLAYLIST_VIEW)
 		pl_win_next();
 }
 
@@ -2495,6 +2501,8 @@ struct command commands[] = {
 	{ "prev-view",		cmd_prev_view,	0, 0, NULL,		  0, 0 },
 	{ "left-view",		cmd_left_view,	0, 0, NULL,		0, 0 },
 	{ "right-view",		cmd_right_view, 0, 0, NULL,		0, 0 },
+	{ "pl-create",		cmd_pl_create,	1, -1,NULL,		0, 0 },
+	{ "pl-rename",		cmd_pl_rename,	1, -1,NULL,		0, 0 },
 	{ "push",		cmd_push,	1,-1, expand_commands,	  0, 0 },
 	{ "pwd",		cmd_pwd,	0, 0, NULL,		  0, 0 },
 	{ "rand",		cmd_rand,	0, 0, NULL,		  0, 0 },

@@ -28,6 +28,7 @@
 #define JOB_TYPE_ADD          1 << 16
 #define JOB_TYPE_UPDATE       1 << 17
 #define JOB_TYPE_UPDATE_CACHE 1 << 18
+#define JOB_TYPE_DELETE       1 << 19
 
 struct add_data {
 	enum file_type type;
@@ -48,6 +49,11 @@ struct update_cache_data {
 	unsigned int force : 1;
 };
 
+struct pl_delete_data {
+	struct playlist *pl;
+	void (*cb)(struct playlist *);
+};
+
 extern int job_fd;
 
 void job_init(void);
@@ -55,6 +61,7 @@ void job_exit(void);
 void job_schedule_add(int type, struct add_data *data);
 void job_schedule_update(struct update_data *data);
 void job_schedule_update_cache(int type, struct update_cache_data *data);
+void job_schedule_pl_delete(struct pl_delete_data *data);
 void job_handle(void);
 
 #endif

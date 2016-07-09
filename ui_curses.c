@@ -97,8 +97,6 @@ int prev_view = -1;
 struct searchable *searchable;
 char *lib_filename = NULL;
 char *lib_ext_filename = NULL;
-char *pl_filename = NULL;
-char *pl_ext_filename = NULL;
 char *play_queue_filename = NULL;
 char *play_queue_ext_filename = NULL;
 char *charset = NULL;
@@ -107,7 +105,6 @@ int using_utf8 = 0;
 /* ------------------------------------------------------------------------- */
 
 static char *lib_autosave_filename;
-char *pl_autosave_filename;
 static char *play_queue_autosave_filename;
 
 /* shown error message and time stamp
@@ -1006,6 +1003,52 @@ static void update_track_window(void)
 			print_track);
 }
 
+static void print_pl_list(struct window *win, int row, struct iter *iter)
+{
+	struct pl_list_info info;
+
+	pl_list_iter_to_info(iter, &info);
+
+	bkgdset(pairs[(info.active<<2) | (info.selected<<1) | info.current]);
+
+	const char *prefix = "   ";
+	if (info.marked)
+		prefix = " * ";
+	size_t prefix_w = strlen(prefix);
+	format_str(print_buffer, prefix, prefix_w);
+
+	if (tree_win_w >= prefix_w)
+		format_str(print_buffer + prefix_w, info.name,
+				tree_win_w - prefix_w);
+
+	dump_print_buffer(row + 1, 0);
+}
+
+static void update_pl_list(struct window *win)
+{
+	update_window(win, tree_win_x, 0, tree_win_w, "Playlist",
+			print_pl_list);
+}
+
+static void update_pl_tracks(struct window *win)
+{
+	char title[512];
+
+	editable_win_x = track_win_x;
+	editable_win_w = track_win_w;
+	editable_active = pl_get_cursor_in_track_window();
+
+	get_global_fopts();
+	fopt_set_time(&track_fopts[TF_TOTAL], pl_visible_total_time(), 0);
+
+	format_print(title, track_win_w - 2, "Track%=%{total}", track_fopts);
+	update_window(win, track_win_x, 0, track_win_w, title, print_editable);
+
+	editable_active = 1;
+	editable_win_x = 0;
+	editable_win_w = COLS;
+}
+
 static const char *pretty(const char *path)
 {
 	static int home_len = -1;
@@ -1060,12 +1103,6 @@ static void update_sorted_window(void)
 	update_editable_window(&lib_editable, "Library", lib_filename);
 }
 
-static void update_pl_window(void)
-{
-	current_track = pl_cur_track;
-	update_editable_window(&pl_editable, "Playlist", pl_filename);
-}
-
 static void update_play_queue_window(void)
 {
 	current_track = NULL;
@@ -1109,6 +1146,13 @@ static void draw_separator(void)
 		(void) mvaddch(row, tree_win_w, ACS_VLINE);
 }
 
+static void update_pl_view(int full)
+{
+	current_track = pl_get_playing_track();
+	pl_draw(update_pl_list, update_pl_tracks, full);
+	draw_separator();
+}
+
 static void do_update_view(int full)
 {
 	cursor_x = -1;
@@ -1128,7 +1172,7 @@ static void do_update_view(int full)
 		update_filterline();
 		break;
 	case PLAYLIST_VIEW:
-		update_pl_window();
+		update_pl_view(full);
 		break;
 	case QUEUE_VIEW:
 		update_play_queue_window();
@@ -1927,7 +1971,6 @@ static void update(void)
 		lib_editable.shared->win->changed = 0;
 	} else {
 		needs_status_update += pl_needs_redraw();
-		pl_editable.shared->win->changed = 0;
 	}
 
 	if (needs_spawn)
@@ -2317,9 +2360,7 @@ static void init_all(void)
 		mixer_open();
 
 	lib_autosave_filename = xstrjoin(cmus_config_dir, "/lib.pl");
-	pl_autosave_filename = xstrjoin(cmus_config_dir, "/playlist.pl");
 	play_queue_autosave_filename = xstrjoin(cmus_config_dir, "/queue.pl");
-	pl_filename = xstrdup(pl_autosave_filename);
 	lib_filename = xstrdup(lib_autosave_filename);
 
 	if (error_count) {
