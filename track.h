@@ -98,6 +98,8 @@ void list_add_rand(struct list_head *head, struct list_head *node, int nr);
 
 int simple_list_for_each_marked(struct list_head *head, track_info_cb cb,
 		void *data, int reverse);
+int simple_list_for_each(struct list_head *head, track_info_cb cb,
+		void *data, int reverse);
 
 void shuffle_list_add(struct shuffle_track *track, struct rb_root *tree_root);
 void shuffle_list_reshuffle(struct rb_root *tree_root);

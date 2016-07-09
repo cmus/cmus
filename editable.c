@@ -379,6 +379,12 @@ int editable_for_each_sel(struct editable *e, track_info_cb cb, void *data,
 	return rc;
 }
 
+int editable_for_each(struct editable *e, track_info_cb cb, void *data,
+		int reverse)
+{
+	return simple_list_for_each(&e->head, cb, data, reverse);
+}
+
 void editable_update_track(struct editable *e, struct track_info *old, struct track_info *new)
 {
 	struct list_head *item, *tmp;

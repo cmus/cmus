@@ -61,6 +61,8 @@ int _editable_for_each_sel(struct editable *e, track_info_cb cb, void *data,
 		int reverse);
 int editable_for_each_sel(struct editable *e, track_info_cb cb, void *data,
 		int reverse);
+int editable_for_each(struct editable *e, track_info_cb cb, void *data,
+		int reverse);
 void editable_update_track(struct editable *e, struct track_info *old, struct track_info *new);
 
 static inline void editable_track_to_iter(struct editable *e, struct simple_track *track, struct iter *iter)

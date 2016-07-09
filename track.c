@@ -406,3 +406,24 @@ int simple_list_for_each_marked(struct list_head *head, track_info_cb cb,
 	}
 	return rc;
 }
+
+int simple_list_for_each(struct list_head *head, track_info_cb cb, void *data,
+		int reverse)
+{
+	struct simple_track *t;
+	int rc = 0;
+
+	if (reverse) {
+		list_for_each_entry_reverse(t, head, node) {
+			if ((rc = cb(data, t->info)))
+				break;
+		}
+	} else {
+		list_for_each_entry(t, head, node) {
+			if ((rc = cb(data, t->info)))
+				break;
+		}
+	}
+
+	return rc;
+}
