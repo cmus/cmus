@@ -117,8 +117,10 @@ int lib_remove(struct track_info *ti);
 void lib_clear_store(void);
 void lib_reshuffle(void);
 void lib_set_view(int view);
-int lib_for_each(int (*cb)(void *data, struct track_info *ti), void *data);
-int lib_for_each_filtered(int (*cb)(void *data, struct track_info *ti), void *data);
+int lib_for_each(int (*cb)(void *data, struct track_info *ti), void *data,
+		void *opaque);
+int lib_for_each_filtered(int (*cb)(void *data, struct track_info *ti),
+		void *data, void *opaque);
 
 struct tree_track *lib_find_track(struct track_info *ti);
 struct track_info *lib_set_track(struct tree_track *track);

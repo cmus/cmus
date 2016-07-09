@@ -28,6 +28,7 @@ void play_queue_init(void);
 void play_queue_append(struct track_info *ti, void *opaque);
 void play_queue_prepend(struct track_info *ti, void *opaque);
 struct track_info *play_queue_remove(void);
-int play_queue_for_each(int (*cb)(void *data, struct track_info *ti), void *data);
+int play_queue_for_each(int (*cb)(void *data, struct track_info *ti),
+		void *data, void *opaque);
 
 #endif

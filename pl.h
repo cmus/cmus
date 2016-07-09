@@ -35,7 +35,7 @@ struct track_info *pl_activate_selected(void);
 void pl_add_track(struct track_info *track_info, void *opaque);
 void pl_sel_current(void);
 void pl_reshuffle(void);
-int pl_for_each(int (*cb)(void *data, struct track_info *ti), void *data);
+int pl_for_each(int (*cb)(void *data, struct track_info *ti), void *data, void *opaque);
 
 struct searchable *pl_get_searchable(void);
 unsigned int pl_playing_total_time(void);

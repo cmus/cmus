@@ -208,7 +208,8 @@ static int save_playlist_cb(void *data, struct track_info *ti)
 	return 0;
 }
 
-static int do_cmus_save(for_each_ti_cb for_each_ti, const char *filename, save_tracks_cb save_tracks)
+static int do_cmus_save(for_each_ti_cb for_each_ti, const char *filename,
+		save_tracks_cb save_tracks, void *opaque)
 {
 	int fd, rc;
 
@@ -222,19 +223,21 @@ static int do_cmus_save(for_each_ti_cb for_each_ti, const char *filename, save_t
 		fd = open(filename, O_CREAT | O_WRONLY | O_TRUNC, 0666);
 	if (fd == -1)
 		return -1;
-	rc = for_each_ti(save_tracks, &fd);
+	rc = for_each_ti(save_tracks, &fd, opaque);
 	close(fd);
 	return rc;
 }
 
-int cmus_save(for_each_ti_cb for_each_ti, const char *filename)
+int cmus_save(for_each_ti_cb for_each_ti, const char *filename, void *opaque)
 {
-	return do_cmus_save(for_each_ti, filename, save_playlist_cb);
+	return do_cmus_save(for_each_ti, filename, save_playlist_cb, opaque);
 }
 
-int cmus_save_ext(for_each_ti_cb for_each_ti, const char *filename)
+int cmus_save_ext(for_each_ti_cb for_each_ti, const char *filename,
+		void *opaque)
 {
-	return do_cmus_save(for_each_ti, filename, save_ext_playlist_cb);
+	return do_cmus_save(for_each_ti, filename, save_ext_playlist_cb,
+			opaque);
 }
 
 static int update_cb(void *data, struct track_info *ti)
@@ -268,7 +271,7 @@ void cmus_update_lib(void)
 
 	data = xnew0(struct update_data, 1);
 
-	lib_for_each(update_cb, data);
+	lib_for_each(update_cb, data, NULL);
 
 	job_schedule_update(data);
 }

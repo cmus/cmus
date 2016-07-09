@@ -684,12 +684,14 @@ static int do_lib_for_each(int (*cb)(void *data, struct track_info *ti), void *d
 	return rc;
 }
 
-int lib_for_each(int (*cb)(void *data, struct track_info *ti), void *data)
+int lib_for_each(int (*cb)(void *data, struct track_info *ti), void *data,
+		void *opaque)
 {
 	return do_lib_for_each(cb, data, 0);
 }
 
-int lib_for_each_filtered(int (*cb)(void *data, struct track_info *ti), void *data)
+int lib_for_each_filtered(int (*cb)(void *data, struct track_info *ti),
+		void *data, void *opaque)
 {
 	return do_lib_for_each(cb, data, 1);
 }

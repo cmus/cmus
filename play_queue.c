@@ -64,7 +64,8 @@ struct track_info *play_queue_remove(void)
 	return info;
 }
 
-int play_queue_for_each(int (*cb)(void *data, struct track_info *ti), void *data)
+int play_queue_for_each(int (*cb)(void *data, struct track_info *ti),
+		void *data, void *opaque)
 {
 	struct simple_track *track;
 	int rc = 0;

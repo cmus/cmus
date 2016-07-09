@@ -45,7 +45,7 @@ enum file_type {
 typedef int (*track_info_cb)(void *data, struct track_info *ti);
 
 /* lib_for_each, lib_for_each_filtered, pl_for_each, play_queue_for_each */
-typedef int (*for_each_ti_cb)(track_info_cb cb, void *data);
+typedef int (*for_each_ti_cb)(track_info_cb cb, void *data, void *opaque);
 
 /* lib_for_each_sel, pl_for_each_sel, play_queue_for_each_sel */
 typedef int (*for_each_sel_ti_cb)(track_info_cb cb, void *data, int reverse);
@@ -54,7 +54,8 @@ typedef int (*for_each_sel_ti_cb)(track_info_cb cb, void *data, int reverse);
 typedef void (*add_ti_cb)(struct track_info *, void *opaque);
 
 /* cmus_save, cmus_save_ext */
-typedef int (*save_ti_cb)(for_each_ti_cb for_each_ti, const char *filename);
+typedef int (*save_ti_cb)(for_each_ti_cb for_each_ti, const char *filename,
+		void *opaque);
 
 int cmus_init(void);
 void cmus_exit(void);
@@ -75,8 +76,9 @@ enum file_type cmus_detect_ft(const char *name, char **ret);
 void cmus_add(add_ti_cb, const char *name, enum file_type ft, int jt,
 		int force, void *opaque);
 
-int cmus_save(for_each_ti_cb for_each_ti, const char *filename);
-int cmus_save_ext(for_each_ti_cb for_each_ti, const char *filename);
+int cmus_save(for_each_ti_cb for_each_ti, const char *filename, void *opaque);
+int cmus_save_ext(for_each_ti_cb for_each_ti, const char *filename,
+		void *opaque);
 
 void cmus_update_cache(int force);
 void cmus_update_lib(void);

@@ -134,7 +134,7 @@ void pl_reshuffle(void)
 	shuffle_list_reshuffle(&pl_shuffle_root);
 }
 
-int pl_for_each(int (*cb)(void *data, struct track_info *ti), void *data)
+int pl_for_each(int (*cb)(void *data, struct track_info *ti), void *data, void *opaque)
 {
 	struct simple_track *track;
 	int rc = 0;
@@ -149,7 +149,7 @@ int pl_for_each(int (*cb)(void *data, struct track_info *ti), void *data)
 
 void pl_exit(void)
 {
-	cmus_save(pl_for_each, pl_autosave_filename);
+	cmus_save(pl_for_each, pl_autosave_filename, NULL);
 }
 
 struct searchable *pl_get_searchable(void)

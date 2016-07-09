@@ -167,7 +167,8 @@ void view_load(int view, char *arg)
 	}
 }
 
-static void do_save(for_each_ti_cb for_each_ti, const char *arg, char **filenamep, save_ti_cb save_ti)
+static void do_save(for_each_ti_cb for_each_ti, const char *arg, char **filenamep,
+		save_ti_cb save_ti)
 {
 	char *filename = *filenamep;
 
@@ -184,7 +185,7 @@ static void do_save(for_each_ti_cb for_each_ti, const char *arg, char **filename
 		return;
 	}
 
-	if (save_ti(for_each_ti, filename) == -1)
+	if (save_ti(for_each_ti, filename, NULL) == -1)
 		error_msg("saving '%s': %s", filename, strerror(errno));
 }
 
