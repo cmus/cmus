@@ -590,6 +590,14 @@ void pl_import(const char *path)
 	free(name);
 }
 
+void pl_export_selected_pl(const char *path)
+{
+	char *tmp = expand_filename(path);
+	if (access(tmp, F_OK) != 0 || yes_no_query("File exists. Overwrite? [y/N]"))
+		cmus_save(pl_save_cb, tmp, pl_visible);
+	free(tmp);
+}
+
 struct searchable *pl_get_searchable(void)
 {
 	return pl_searchable;

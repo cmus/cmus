@@ -1263,6 +1263,14 @@ static void cmd_pl_create(char *arg)
 	pl_create(arg);
 }
 
+static void cmd_pl_export(char *arg)
+{
+	if (cur_view == PLAYLIST_VIEW)
+		pl_export_selected_pl(arg);
+	else
+		info_msg(":pl-export only works in view 3");
+}
+
 static void cmd_pl_import(char *arg)
 {
 	char *name = view_load_prepare(arg);
@@ -2516,6 +2524,7 @@ struct command commands[] = {
 	{ "left-view",		cmd_left_view,	0, 0, NULL,		0, 0 },
 	{ "right-view",		cmd_right_view, 0, 0, NULL,		0, 0 },
 	{ "pl-create",		cmd_pl_create,	1, -1,NULL,		0, 0 },
+	{ "pl-export",		cmd_pl_export,	1, -1,NULL,		0, 0 },
 	{ "pl-import",		cmd_pl_import,	1, -1,NULL,		0, 0 },
 	{ "pl-rename",		cmd_pl_rename,	1, -1,NULL,		0, 0 },
 	{ "push",		cmd_push,	1,-1, expand_commands,	  0, 0 },

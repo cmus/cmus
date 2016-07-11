@@ -36,6 +36,7 @@ void pl_init(void);
 void pl_exit(void);
 void pl_save(void);
 void pl_import(const char *path);
+void pl_export_selected_pl(const char *path);
 struct searchable *pl_get_searchable(void);
 void pl_add_file_to_marked_pl(const char *file);
 void pl_add_track_to_marked_pl(struct track_info *ti);
