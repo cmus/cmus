@@ -125,17 +125,14 @@ void view_add(int view, char *arg, int prepend)
 	free(name);
 }
 
-void view_load(int view, char *arg)
+static char *view_load_prepare(char *arg)
 {
-	char *tmp, *name;
-	enum file_type ft;
-
-	tmp = expand_filename(arg);
-	ft = cmus_detect_ft(tmp, &name);
+	char *name, *tmp = expand_filename(arg);
+	enum file_type ft = cmus_detect_ft(tmp, &name);
 	if (ft == FILE_TYPE_INVALID) {
 		error_msg("loading '%s': %s", tmp, strerror(errno));
 		free(tmp);
-		return;
+		return NULL;
 	}
 	free(tmp);
 
@@ -144,8 +141,16 @@ void view_load(int view, char *arg)
 	if (ft != FILE_TYPE_PL) {
 		error_msg("loading '%s': not a playlist file", name);
 		free(name);
-		return;
+		return NULL;
 	}
+	return name;
+}
+
+void view_load(int view, char *arg)
+{
+	char *name = view_load_prepare(arg);
+	if (!name)
+		return;
 
 	switch (view) {
 	case TREE_VIEW:
