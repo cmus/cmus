@@ -1271,9 +1271,30 @@ static void cmd_pl_export(char *arg)
 		info_msg(":pl-export only works in view 3");
 }
 
+static char *get_browser_add_file(void)
+{
+	char *sel = browser_get_sel();
+
+	if (sel && (ends_with(sel, "/../") || ends_with(sel, "/.."))) {
+		info_msg("For convenience, you can not add \"..\" directory from the browser view");
+		free(sel);
+		sel = NULL;
+	}
+
+	return sel;
+}
+
 static void cmd_pl_import(char *arg)
 {
-	char *name = view_load_prepare(arg);
+	char *name = NULL;
+
+	if (arg)
+		name = view_load_prepare(arg);
+	else if (cur_view == BROWSER_VIEW)
+		name = get_browser_add_file();
+	else
+		error_msg("not enough arguments");
+
 	if (name) {
 		pl_import(name);
 		free(name);
@@ -1411,19 +1432,6 @@ static int wrapper_cb(void *data, struct track_info *ti)
 
 	add->cb(ti, NULL);
 	return 0;
-}
-
-static char *get_browser_add_file(void)
-{
-	char *sel = browser_get_sel();
-
-	if (sel && (ends_with(sel, "/../") || ends_with(sel, "/.."))) {
-		info_msg("For convenience, you can not add \"..\" directory from the browser view");
-		free(sel);
-		sel = NULL;
-	}
-
-	return sel;
 }
 
 static void add_from_browser(add_ti_cb add, int job_type)
@@ -2525,7 +2533,7 @@ struct command commands[] = {
 	{ "right-view",            cmd_right_view,       0, 0,  NULL,                 0, 0          },
 	{ "pl-create",             cmd_pl_create,        1, -1, NULL,                 0, 0          },
 	{ "pl-export",             cmd_pl_export,        1, -1, NULL,                 0, 0          },
-	{ "pl-import",             cmd_pl_import,        1, -1, NULL,                 0, 0          },
+	{ "pl-import",             cmd_pl_import,        0, -1, NULL,                 0, 0          },
 	{ "pl-rename",             cmd_pl_rename,        1, -1, NULL,                 0, 0          },
 	{ "push",                  cmd_push,             1, -1, expand_commands,      0, 0          },
 	{ "pwd",                   cmd_pwd,              0, 0,  NULL,                 0, 0          },
