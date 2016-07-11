@@ -460,6 +460,12 @@ mark <filter-expression>
 pl-create <name>
 	Creates a new playlist.
 
+pl-export <filename>
+	Exports the currently selected playlist.
+
+pl-import <filename>
+	Imports a playlist into the playlist view.
+
 pl-rename <name>
 	Renames the selected playlist.
 
