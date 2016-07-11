@@ -901,3 +901,8 @@ void pl_create(const char *name)
 	list_add_tail(&pl->node, &pl_head);
 	pl_list_win->changed = 1;
 }
+
+int pl_visible_is_marked(void)
+{
+	return pl_visible == pl_marked;
+}
