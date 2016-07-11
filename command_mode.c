@@ -1260,7 +1260,10 @@ static void cmd_pl_create(char *arg)
 
 static void cmd_pl_rename(char *arg)
 {
-	pl_rename_selected_pl(arg);
+	if (cur_view == PLAYLIST_VIEW)
+		pl_rename_selected_pl(arg);
+	else
+		info_msg(":pl-rename only works in view 3");
 }
 
 static void cmd_view(char *arg)
