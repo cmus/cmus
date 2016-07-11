@@ -157,11 +157,8 @@ void view_load(int view, char *arg)
 		free(lib_filename);
 		lib_filename = name;
 		break;
-	case PLAYLIST_VIEW:
-		pl_load_extern(name);
-		break;
 	default:
-		info_msg(":load only works in views 1-3");
+		info_msg(":load only works in views 1-2");
 		free(name);
 	}
 }
