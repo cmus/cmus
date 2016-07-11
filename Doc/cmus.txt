@@ -463,8 +463,9 @@ pl-create <name>
 pl-export <filename>
 	Exports the currently selected playlist.
 
-pl-import <filename>
-	Imports a playlist into the playlist view.
+pl-import [filename]
+	Imports a playlist into the playlist view. The argument can be omitted in
+    the browser view.
 
 pl-rename <name>
 	Renames the selected playlist.
