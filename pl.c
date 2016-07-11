@@ -565,7 +565,7 @@ void pl_save(void)
 	pl_save_all();
 }
 
-void pl_load_extern(const char *path)
+void pl_import(const char *path)
 {
 	const char *file = get_filename(path);
 	if (!file) {
