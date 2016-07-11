@@ -1467,8 +1467,7 @@ static void cmd_win_add_l(char *arg)
 
 static void cmd_win_add_p(char *arg)
 {
-	/* could allow adding dups? */
-	if (cur_view == PLAYLIST_VIEW)
+	if (cur_view == PLAYLIST_VIEW && pl_visible_is_marked())
 		return;
 
 	if (cur_view <= QUEUE_VIEW) {
