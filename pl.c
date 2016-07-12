@@ -429,8 +429,10 @@ static void pl_delete_selected_pl(void)
 
 	if (pl == pl_marked)
 		pl_marked = pl_visible;
-	if (pl == pl_playing)
+	if (pl == pl_playing) {
 		pl_playing = NULL;
+		pl_playing_track = NULL;
+	}
 
 	char *path = pl_name_to_pl_file(pl->name);
 	unlink(path);
