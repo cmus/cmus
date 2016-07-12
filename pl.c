@@ -531,6 +531,17 @@ static char *pl_create_name(const char *file)
 	return name;
 }
 
+static void pl_delete_sel_track(void)
+{
+	/* pl_cursor_in_track_window == true */
+
+	if (pl_get_sel() == pl_playing_track)
+		pl_playing_track = NULL;
+	editable_remove_sel(&pl_visible->editable);
+	if (pl_empty(pl_visible))
+		pl_win_next();
+}
+
 void pl_init(void)
 {
 	editable_shared_init(&pl_editable_shared, pl_free_track);
@@ -794,15 +805,10 @@ void pl_win_mv_before(void)
 
 void pl_win_remove(void)
 {
-	if (pl_cursor_in_track_window) {
-		if (pl_get_sel() == pl_playing_track)
-			pl_playing_track = NULL;
-		editable_remove_sel(&pl_visible->editable);
-		if (pl_empty(pl_visible))
-			pl_win_next();
-	} else {
+	if (pl_cursor_in_track_window)
+		pl_delete_sel_track();
+	else
 		pl_delete_selected_pl();
-	}
 }
 
 void pl_win_toggle(void)
