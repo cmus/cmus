@@ -139,9 +139,8 @@ static int pl_search_matches(void *data, struct iter *iter, const char *text)
 	}
 	free_str_array(words);
 
-	if (!matched && iter->data1) {
+	if (!matched && iter->data1)
 		matched = _simple_track_search_matches(iter, text);
-	}
 
 	if (matched) {
 		struct iter list_iter;
@@ -255,15 +254,14 @@ static void pl_load_all(void)
 {
 	struct directory dir;
 	if (dir_open(&dir, cmus_playlist_dir))
-		die_errno("error: cannot open playlist directory %s",
-				cmus_playlist_dir);
+		die_errno("error: cannot open playlist directory %s", cmus_playlist_dir);
 	const char *file;
 	while ((file = dir_read(&dir))) {
 		if (strcmp(file, ".") == 0 || strcmp(file, "..") == 0)
 			continue;
 		if (!S_ISREG(dir.st.st_mode)) {
-			error_msg("error: %s in %s is not a regular file",
-					file, cmus_playlist_dir);
+			error_msg("error: %s in %s is not a regular file", file,
+					cmus_playlist_dir);
 			continue;
 		}
 		pl_load_one(file);
@@ -638,8 +636,7 @@ struct track_info *pl_play_selected_row(void)
 	struct track_info *rv = pl_play_selected_track();
 
 	if (shuffle && rv && (pl_playing == prev_pl) && prev_track) {
-		struct shuffle_track *prev_st =
-			simple_track_to_shuffle_track(prev_track);
+		struct shuffle_track *prev_st = simple_track_to_shuffle_track(prev_track);
 		struct shuffle_track *cur_st =
 			simple_track_to_shuffle_track(pl_playing_track);
 		shuffle_insert(&pl_playing->shuffle_root, prev_st, cur_st);
@@ -746,21 +743,17 @@ struct window *pl_cursor_win(void)
 int _pl_for_each_sel(track_info_cb cb, void *data, int reverse)
 {
 	if (pl_cursor_in_track_window)
-		return _editable_for_each_sel(&pl_visible->editable, cb, data,
-				reverse);
+		return _editable_for_each_sel(&pl_visible->editable, cb, data, reverse);
 	else
-		return editable_for_each(&pl_visible->editable, cb, data,
-				reverse);
+		return editable_for_each(&pl_visible->editable, cb, data, reverse);
 }
 
 int pl_for_each_sel(track_info_cb cb, void *data, int reverse)
 {
 	if (pl_cursor_in_track_window)
-		return editable_for_each_sel(&pl_visible->editable, cb, data,
-				reverse);
+		return editable_for_each_sel(&pl_visible->editable, cb, data, reverse);
 	else
-		return editable_for_each(&pl_visible->editable, cb, data,
-				reverse);
+		return editable_for_each(&pl_visible->editable, cb, data, reverse);
 }
 
 #define pl_tw_only(cmd) if (!pl_cursor_in_track_window) { \
