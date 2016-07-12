@@ -799,6 +799,8 @@ void pl_win_mv_before(void)
 void pl_win_remove(void)
 {
 	if (pl_cursor_in_track_window) {
+		if (pl_get_sel(pl_visible) == pl_playing_track)
+			pl_playing_track = NULL;
 		editable_remove_sel(&pl_visible->editable);
 		if (pl_empty(pl_visible))
 			pl_win_next();
