@@ -24,6 +24,7 @@
 #include "rbtree.h"
 #include "debug.h"
 #include "utils.h"
+#include "short_expr.h"
 #include "ui_curses.h" /* cur_view */
 
 #include <pthread.h>
@@ -571,7 +572,7 @@ void lib_set_live_filter(const char *str)
 	if (strcmp0(str, lib_live_filter) == 0)
 		return;
 
-	if (str && expr_is_short(str)) {
+	if (str && short_expr_is_short(str)) {
 		expr = expr_parse(str);
 		if (!expr)
 			return;

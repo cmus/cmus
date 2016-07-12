@@ -82,7 +82,6 @@ int expr_op_to_bool(int res, int op);
 int expr_eval(struct expr *expr, struct track_info *ti);
 void expr_free(struct expr *expr);
 const char *expr_error(void);
-int expr_is_short(const char *str);
 
 unsigned int expr_get_match_type(struct expr *expr);
 /* "harmless" expressions will reduce filter results when adding characters at the beginning/end */

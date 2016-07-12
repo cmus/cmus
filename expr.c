@@ -447,18 +447,6 @@ static char *expand_short_expr(const char *expr_short)
 	return short_expr_expand(expr_short, expand_err, NULL);
 }
 
-int expr_is_short(const char *str)
-{
-	int i;
-	for (i = 0; str[i]; i++) {
-		if (str[i] == '~')
-			return 1;
-		if (str[i] != '!' && str[i] != '(' && str[i] != ' ')
-			return 0;
-	}
-	return 0;
-}
-
 struct expr *expr_parse(const char *str)
 {
 	return expr_parse_i(str, "filter contains control characters", 1);
