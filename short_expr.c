@@ -198,15 +198,12 @@ static int short_expr_quoted_str_arg(struct short_expr *e)
 		else if (c == '\\')
 			esc = true;
 		if (c == 0)
-			break;
-		else
-			e->input++;
-	}
-	size_t len = e->input - start;
-	if (*e->input == '"')
+			return short_expr_err(e, "unterminated string");
 		e->input++;
+	}
+	e->input++;
+	size_t len = e->input - start;
 	short_expr_push_strn(e, start, len);
-	short_expr_push_char(e, '"');
 	return 0;
 }
 
