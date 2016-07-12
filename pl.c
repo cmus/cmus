@@ -310,9 +310,7 @@ static struct simple_track *pl_get_first(struct playlist *pl)
 {
 	/* pl is not empty */
 
-	struct iter first = pl_editable_shared.win->head;
-	pl_list_get_next(&first);
-	return iter_to_simple_track(&first);
+	return to_simple_track(pl->editable.head.next);
 }
 
 static struct track_info *pl_play_track(struct playlist *pl,
