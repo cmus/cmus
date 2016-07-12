@@ -482,8 +482,10 @@ static struct track_info *pl_goto_generic(pl_shuffled_move shuffled,
 	return NULL;
 }
 
-static void pl_clear_pl(struct playlist *pl)
+static void pl_clear_visible_pl(void)
 {
+	if (pl_cursor_in_track_window)
+		pl_win_next();
 	if (pl_visible == pl_playing)
 		pl_playing_track = NULL;
 	editable_clear(&pl_visible->editable);
@@ -712,9 +714,7 @@ void pl_clear(void)
 	if (!pl_cursor_in_track_window)
 		return;
 
-	pl_clear_pl(pl_visible);
-	pl_cursor_in_track_window = 0;
-	pl_list_win->changed = 1;
+	pl_clear_visible_pl();
 }
 
 void pl_mark_for_redraw(void)
@@ -822,7 +822,7 @@ void pl_win_update(void)
 	if (!yes_no_query("Reload this playlist? [y/N]"))
 		return;
 
-	pl_clear_pl(pl_visible);
+	pl_clear_visible_pl();
 
 	char *full = pl_name_to_pl_file(pl_visible->name);
 	cmus_add(pl_add_cb, full, FILE_TYPE_PL, JOB_TYPE_PL, 0, pl_visible);
