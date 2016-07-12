@@ -374,9 +374,9 @@ static struct simple_track *pl_get_prev_shuffled(struct playlist *pl,
 	return &st->simple_track;
 }
 
-static int pl_match_add_job(unsigned type, void *job_data, void *opaque)
+static int pl_match_add_job(uint32_t type, void *job_data, void *opaque)
 {
-	unsigned pat = JOB_TYPE_PL | JOB_TYPE_ADD;
+	uint32_t pat = JOB_TYPE_PL | JOB_TYPE_ADD;
 	if (type != pat)
 		return 0;
 
