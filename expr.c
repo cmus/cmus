@@ -27,6 +27,7 @@
 #include "list.h"
 #include "ui_curses.h" /* using_utf8, charset */
 #include "convert.h"
+#include "short_expr.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -410,27 +411,6 @@ static int parse(struct expr **rootp, struct list_head *head, struct list_head *
 }
 
 static const struct {
-	char short_key;
-	const char *long_key;
-} map_short2long[] = {
-	{ 'A',	"albumartist"	},
-	{ 'D',	"discnumber"	},
-	{ 'T',	"tag",		},
-	{ 'a',	"artist"	},
-	{ 'c',	"comment"	},
-	{ 'd',	"duration"	},
-	{ 'f',	"filename"	},
-	{ 'g',	"genre"		},
-	{ 'l',	"album"		},
-	{ 'n',	"tracknumber"	},
-	{ 'X',	"play_count"	},
-	{ 's',	"stream"	},
-	{ 't',	"title"		},
-	{ 'y',	"date"		},
-	{ '\0',	NULL		},
-};
-
-static const struct {
 	const char *key;
 	enum expr_type type;
 } builtin[] = {
@@ -457,267 +437,14 @@ static const struct {
 	{ NULL,		-1		},
 };
 
-static const char *lookup_long_key(char c)
+static void expand_err(const char *err, void *opaque)
 {
-	int i;
-	for (i = 0; map_short2long[i].short_key; i++) {
-		if (map_short2long[i].short_key == c)
-			return map_short2long[i].long_key;
-	}
-	return NULL;
-}
-
-static enum expr_type lookup_key_type(const char *key)
-{
-	int i;
-	for (i = 0; builtin[i].key; i++) {
-		int cmp = strcmp(key, builtin[i].key);
-		if (cmp == 0)
-			return builtin[i].type;
-		if (cmp < 0)
-			break;
-	}
-	return -1;
-}
-
-static unsigned long stack4_new(void)
-{
-	return 0;
-}
-static void stack4_push(unsigned long *s, unsigned long e)
-{
-	*s = (*s << 4) | e;
-}
-static void stack4_pop(unsigned long *s)
-{
-	*s = *s >> 4;
-}
-static unsigned long stack4_top(unsigned long s)
-{
-	return s & 0xf;
-}
-static void stack4_replace_top(unsigned long *s, unsigned long e)
-{
-	*s = (*s & ~0xf) | e;
+	set_error("%s", err);
 }
 
 static char *expand_short_expr(const char *expr_short)
 {
-	/* state space, can contain maximal 15 states */
-	enum state_type {
-		ST_SKIP_SPACE = 1,
-		ST_TOP,
-		ST_EXPECT_KEY,
-		ST_EXPECT_OP,
-		ST_EXPECT_INT,
-		ST_IN_INT,
-		ST_MEM_INT,
-		ST_IN_2ND_INT,
-		ST_EXPECT_STR,
-		ST_IN_QUOTE_STR,
-		ST_IN_STR,
-	};
-
-	size_t len_expr_short = strlen(expr_short);
-	/* worst case blowup of expr_short is 31/5 (e.g. ~n1-2), so take x7:
-	 * strlen("~n1-2") == 5
-	 * strlen("(tracknumber>=1&tracknumber<=2)") == 31
-	 */
-	char *out = xnew(char, len_expr_short * 7);
-	char *num = NULL;
-	size_t i, i_num = 0, k = 0;
-	const char *key = NULL;
-	int level = 0;
-	enum expr_type etype;
-	/* used as state-stack, can contain at least 32/4 = 8 states */
-	unsigned long state_stack = stack4_new();
-	stack4_push(&state_stack, ST_TOP);
-	stack4_push(&state_stack, ST_SKIP_SPACE);
-
-	/* include terminal '\0' to recognize end of string */
-	for (i = 0; i <= len_expr_short; i++) {
-		unsigned char c = expr_short[i];
-		switch (stack4_top(state_stack)) {
-		case ST_SKIP_SPACE:
-			if (c != ' ') {
-				stack4_pop(&state_stack);
-				i--;
-			}
-			break;
-		case ST_TOP:
-			switch (c) {
-			case '~':
-				stack4_push(&state_stack, ST_EXPECT_OP);
-				stack4_push(&state_stack, ST_SKIP_SPACE);
-				stack4_push(&state_stack, ST_EXPECT_KEY);
-				break;
-			case '(':
-				level++;
-			/* Fall through */
-			case '!':
-			case '|':
-				out[k++] = c;
-				stack4_push(&state_stack, ST_SKIP_SPACE);
-				break;
-			case ')':
-				level--;
-				out[k++] = c;
-				stack4_push(&state_stack, ST_EXPECT_OP);
-				stack4_push(&state_stack, ST_SKIP_SPACE);
-				break;
-			case '\0':
-				if (level > 0) {
-					set_error("')' expected");
-					goto error_exit;
-				}
-				out[k++] = c;
-				break;
-			default:
-				set_error("unexpected '%c'", c);
-				goto error_exit;
-			}
-			break;
-		case ST_EXPECT_KEY:
-			stack4_pop(&state_stack);
-			key = lookup_long_key(c);
-			if (!key) {
-				set_error("unknown short key %c", c);
-				goto error_exit;
-			}
-			etype = lookup_key_type(key);
-			if (etype == EXPR_INT) {
-				stack4_push(&state_stack, ST_EXPECT_INT);
-				out[k++] = '(';
-			} else if (etype == EXPR_STR) {
-				stack4_push(&state_stack, ST_EXPECT_STR);
-			} else if (etype != EXPR_BOOL) {
-				BUG("wrong etype: %d\n", etype);
-			}
-			strcpy(out+k, key);
-			k += strlen(key);
-			stack4_push(&state_stack, ST_SKIP_SPACE);
-			break;
-		case ST_EXPECT_OP:
-			if (c == '~' || c == '(' || c == '!')
-				out[k++] = '&';
-			i--;
-			stack4_replace_top(&state_stack, ST_SKIP_SPACE);
-			break;
-		case ST_EXPECT_INT:
-			if (c == '<' || c == '>') {
-				out[k++] = c;
-				stack4_replace_top(&state_stack, ST_IN_INT);
-			} else if (c == '-') {
-				out[k++] = '<';
-				out[k++] = '=';
-				stack4_replace_top(&state_stack, ST_IN_INT);
-			} else if (isdigit(c)) {
-				if (!num)
-					num = xnew(char, len_expr_short);
-				num[i_num++] = c;
-				stack4_replace_top(&state_stack, ST_MEM_INT);
-			} else {
-				set_error("integer expected", expr_short);
-				goto error_exit;
-			}
-			break;
-		case ST_IN_INT:
-			if (isdigit(c)) {
-				out[k++] = c;
-			} else {
-				i -= 1;
-				stack4_pop(&state_stack);
-				out[k++] = ')';
-			}
-			break;
-		case ST_MEM_INT:
-			if (isdigit(c)) {
-				num[i_num++] = c;
-			} else {
-				if (c == '-') {
-					out[k++] = '>';
-					out[k++] = '=';
-					stack4_replace_top(&state_stack, ST_IN_2ND_INT);
-				} else {
-					out[k++] = '=';
-					i--;
-					stack4_pop(&state_stack);
-				}
-				strncpy(out+k, num, i_num);
-				k += i_num;
-				i_num = 0;
-				if (c != '-')
-					out[k++] = ')';
-			}
-			break;
-		case ST_IN_2ND_INT:
-			if (isdigit(c)) {
-				num[i_num++] = c;
-			} else {
-				i--;
-				stack4_pop(&state_stack);
-				if (i_num > 0) {
-					out[k++] = '&';
-					strcpy(out+k, key);
-					k += strlen(key);
-					out[k++] = '<';
-					out[k++] = '=';
-					strncpy(out+k, num, i_num);
-					k += i_num;
-				}
-				out[k++] = ')';
-			}
-			break;
-		case ST_EXPECT_STR:
-			out[k++] = '=';
-			if (c == '"') {
-				stack4_replace_top(&state_stack, ST_IN_QUOTE_STR);
-				out[k++] = c;
-			} else {
-				stack4_replace_top(&state_stack, ST_IN_STR);
-				out[k++] = '"';
-				out[k++] = '*';
-				out[k++] = c;
-			}
-			break;
-		case ST_IN_QUOTE_STR:
-			if (c == '"' && expr_short[i-1] != '\\') {
-				stack4_pop(&state_stack);
-			}
-			out[k++] = c;
-			break;
-		case ST_IN_STR:
-			/* isalnum() doesn't work for multi-byte characters */
-			if (c != '~' && c != '!' && c != '|' &&
-					c != '(' && c != ')' && c != '\0') {
-				out[k++] = c;
-			} else {
-				while (k > 0 && out[k-1] == ' ')
-					k--;
-				out[k++] = '*';
-				out[k++] = '"';
-				i--;
-				stack4_pop(&state_stack);
-			}
-			break;
-		default:
-			BUG("state %ld not covered", stack4_top(state_stack));
-			break;
-		}
-	}
-
-	if (num)
-		free(num);
-
-	d_print("expanded \"%s\" to \"%s\"\n", expr_short, out);
-
-	return out;
-
-error_exit:
-	if (num)
-		free(num);
-	free(out);
-	return NULL;
+	return short_expr_expand(expr_short, expand_err, NULL);
 }
 
 int expr_is_short(const char *str)
@@ -760,7 +487,7 @@ struct expr *expr_parse_i(const char *str, const char *err_msg, int check_short)
 		goto out;
 	}
 
-	if (check_short && expr_is_short(str)) {
+	if (check_short && short_expr_is_short(str)) {
 		str = long_str = expand_short_expr(str);
 		if (!str)
 			goto out;
