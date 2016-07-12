@@ -313,8 +313,7 @@ static struct simple_track *pl_get_first(struct playlist *pl)
 	return to_simple_track(pl->editable.head.next);
 }
 
-static struct track_info *pl_play_track(struct playlist *pl,
-		struct simple_track *t)
+static struct track_info *pl_play_track(struct playlist *pl, struct simple_track *t)
 {
 	/* t is a track in pl */
 
@@ -350,8 +349,7 @@ static struct track_info *pl_play_first_in_pl_playing(void)
 	return pl_play_track(pl_playing, pl_get_first(pl_playing));
 }
 
-static struct simple_track *pl_get_next(struct playlist *pl,
-		struct simple_track *cur)
+static struct simple_track *pl_get_next(struct playlist *pl, struct simple_track *cur)
 {
 	return simple_list_get_next(&pl->editable.head, cur, pl_dummy_filter);
 }
