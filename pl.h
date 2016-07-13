@@ -61,6 +61,8 @@ struct simple_track *pl_get_playing_track(void);
 void pl_update_track(struct track_info *old, struct track_info *new);
 int pl_get_cursor_in_track_window(void);
 int pl_visible_is_marked(void);
+const char *pl_marked_pl_name(void);
+void pl_set_marked_pl_by_name(const char *name);
 
 void pl_mark_for_redraw(void);
 int pl_needs_redraw(void);

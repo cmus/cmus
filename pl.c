@@ -905,3 +905,19 @@ int pl_visible_is_marked(void)
 {
 	return pl_visible == pl_marked;
 }
+
+const char *pl_marked_pl_name(void)
+{
+	return pl_marked->name;
+}
+
+void pl_set_marked_pl_by_name(const char *name)
+{
+	struct playlist *pl;
+	list_for_each_entry(pl, &pl_head, node) {
+		if (strcmp(pl->name, name) == 0) {
+			pl_marked = pl;
+			return;
+		}
+	}
+}
