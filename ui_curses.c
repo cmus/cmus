@@ -2068,7 +2068,9 @@ static void u_getch(void)
 
 	/* escape sequence */
 	if (key == 0x1B) {
+		cbreak();
 		int e_key = getch();
+		halfdelay(5);
 		if (e_key != ERR && e_key != 0) {
 			handle_escape(e_key);
 			return;
@@ -2294,18 +2296,11 @@ static void init_curses(void)
 	sigaction(SIGWINCH, &act, NULL);
 
 	initscr();
-
-	/* turn off kb buffering */
-	cbreak();
-
+	nodelay(stdscr, TRUE);
 	keypad(stdscr, TRUE);
-
-	/* wait max 5 * 0.1 s if there are no keys available
-	 * doesn't really matter because we use select()
-	 */
 	halfdelay(5);
-
 	noecho();
+
 	if (has_colors()) {
 #if HAVE_USE_DEFAULT_COLORS
 		start_color();
