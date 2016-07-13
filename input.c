@@ -510,6 +510,8 @@ void ip_load_plugins(void)
 		void *so;
 		char *ext;
 		const int *priority_ptr;
+		const unsigned *abi_version_ptr;
+		bool err = false;
 
 		if (d->d_name[0] == '.')
 			continue;
@@ -529,6 +531,7 @@ void ip_load_plugins(void)
 
 		ip = xnew(struct ip, 1);
 
+		abi_version_ptr = dlsym(so, "ip_abi_version");
 		priority_ptr = dlsym(so, "ip_priority");
 		ip->extensions = dlsym(so, "ip_extensions");
 		ip->mime_types = dlsym(so, "ip_mime_types");
@@ -536,6 +539,13 @@ void ip_load_plugins(void)
 		ip->options = dlsym(so, "ip_options");
 		if (!priority_ptr || !ip->extensions || !ip->mime_types || !ip->ops || !ip->options) {
 			error_msg("%s: missing symbol", filename);
+			err = true;
+		}
+		if (!abi_version_ptr || *abi_version_ptr != IP_ABI_VERSION) {
+			error_msg("%s: incompatible plugin version", filename);
+			err = true;
+		}
+		if (err) {
 			free(ip);
 			dlclose(so);
 			continue;

@@ -535,3 +535,4 @@ const int ip_priority = 50;
 const char * const ip_extensions[] = { "aac", NULL };
 const char * const ip_mime_types[] = { "audio/aac", "audio/aacp", NULL };
 const struct input_plugin_opt ip_options[] = { { NULL } };
+const unsigned ip_abi_version = IP_ABI_VERSION;

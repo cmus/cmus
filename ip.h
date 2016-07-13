@@ -28,6 +28,8 @@
 #include <unistd.h>
 #endif
 
+#define IP_ABI_VERSION 1
+
 enum {
 	/* no error */
 	IP_ERROR_SUCCESS,
@@ -109,5 +111,6 @@ extern const int ip_priority;
 extern const char * const ip_extensions[];
 extern const char * const ip_mime_types[];
 extern const struct input_plugin_opt ip_options[];
+extern const unsigned ip_abi_version;
 
 #endif

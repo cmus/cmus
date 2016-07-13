@@ -306,3 +306,4 @@ const struct output_plugin_opt op_pcm_options[] = {
 };
 
 const int op_priority = 0;
+const unsigned op_abi_version = OP_ABI_VERSION;
