@@ -218,6 +218,8 @@ static int short_expr_plain_str_arg(struct short_expr *e)
 	}
 	while (len > 0 && e->input[len - 1] == ' ')
 		len--;
+	if (len == 0)
+		return short_expr_err(e, "string expected");
 	short_expr_push_str(e, "\"*");
 	short_expr_push_strn(e, e->input, len);
 	short_expr_push_str(e, "*\"");
