@@ -1524,6 +1524,7 @@ struct resume {
 	int view;
 	char *live_filter;
 	char *browser_dir;
+	char *marked_pl;
 };
 
 static int handle_resume_line(void *data, const char *line)
@@ -1554,6 +1555,9 @@ static int handle_resume_line(void *data, const char *line)
 	} else if (strcmp(cmd, "browser-dir") == 0) {
 		free(resume->browser_dir);
 		resume->browser_dir = xstrdup(unescape(arg));
+	} else if (strcmp(cmd, "marked-pl") == 0) {
+		free(resume->marked_pl);
+		resume->marked_pl = xstrdup(unescape(arg));
 	}
 
 	free(arg);
@@ -1614,6 +1618,10 @@ void resume_load(void)
 		browser_chdir(resume.browser_dir);
 		free(resume.browser_dir);
 	}
+	if (resume.marked_pl) {
+		pl_set_marked_pl_by_name(resume.marked_pl);
+		free(resume.marked_pl);
+	}
 }
 
 void resume_exit(void)
@@ -1647,6 +1655,8 @@ void resume_exit(void)
 	if (lib_live_filter)
 		fprintf(f, "live-filter %s\n", escape(lib_live_filter));
 	fprintf(f, "browser-dir %s\n", escape(browser_dir));
+
+	fprintf(f, "marked-pl %s\n", escape(pl_marked_pl_name()));
 
 	fclose(f);
 
