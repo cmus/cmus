@@ -95,6 +95,8 @@ void op_load_plugins(void)
 		struct output_plugin *plug;
 		void *so, *symptr;
 		char *ext;
+		const unsigned *abi_version_ptr;
+		bool err = false;
 
 		if (d->d_name[0] == '.')
 			continue;
@@ -117,8 +119,16 @@ void op_load_plugins(void)
 		plug->pcm_ops = dlsym(so, "op_pcm_ops");
 		plug->pcm_options = dlsym(so, "op_pcm_options");
 		symptr = dlsym(so, "op_priority");
+		abi_version_ptr = dlsym(so, "op_abi_version");
 		if (!plug->pcm_ops || !plug->pcm_options || !symptr) {
 			error_msg("%s: missing symbol", filename);
+			err = true;
+		}
+		if (!abi_version_ptr || *abi_version_ptr != OP_ABI_VERSION) {
+			error_msg("%s: incompatible plugin version", filename);
+			err = true;
+		}
+		if (err) {
 			free(plug);
 			dlclose(so);
 			continue;

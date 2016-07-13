@@ -252,3 +252,4 @@ const struct mixer_plugin_opt op_mixer_options[] = {
 };
 
 const int op_priority = 2;
+const unsigned op_abi_version = OP_ABI_VERSION;

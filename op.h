@@ -26,6 +26,8 @@
 #include <fcntl.h>
 #endif
 
+#define OP_ABI_VERSION 1
+
 enum {
 	/* no error */
 	OP_ERROR_SUCCESS,
@@ -75,5 +77,6 @@ struct output_plugin_opt {
 extern const struct output_plugin_ops op_pcm_ops;
 extern const struct output_plugin_opt op_pcm_options[];
 extern const int op_priority;
+extern const unsigned op_abi_version;
 
 #endif

@@ -173,3 +173,4 @@ const char * const ip_extensions[] = {
 };
 const char * const ip_mime_types[] = { NULL };
 const struct input_plugin_opt ip_options[] = { { NULL } };
+const unsigned ip_abi_version = IP_ABI_VERSION;
