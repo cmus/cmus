@@ -88,7 +88,6 @@ static int cmd_status(struct client *client)
 	int i, ret;
 	enum player_status status;
 
-	player_info_lock();
 	gbuf_addf(&buf, "status %s\n", player_status_names[player_info.status]);
 	ti = player_info.ti;
 	if (ti) {
@@ -141,7 +140,6 @@ static int cmd_status(struct client *client)
 	gbuf_addf(&buf, "set vol_right %d\n", vol_right);
 
 	gbuf_add_str(&buf, "\n");
-	player_info_unlock();
 
 	ret = write_all(client->fd, buf.buffer, buf.len);
 	gbuf_free(&buf);
@@ -168,7 +166,6 @@ static int cmd_format_print(struct client *client, char *arg)
 
 	GBUF(buf);
 
-	player_info_lock();
 	const struct format_option *fopts = get_global_fopts();
 	for (i = 0; i < ac; ++i) {
 		if (format_valid(args[i], fopts))
@@ -177,7 +174,6 @@ static int cmd_format_print(struct client *client, char *arg)
 		free(args[i]);
 	}
 	gbuf_add_ch(&buf, '\n');
-	player_info_unlock();
 
 	ret = write_all(client->fd, buf.buffer, buf.len);
 	gbuf_free(&buf);

@@ -755,9 +755,7 @@ static const struct key *normal_mode_mouse_handle(MEVENT* event)
 void normal_mode_mouse(MEVENT *event)
 {
 	enum key_context c = view_to_context[cur_view];
-	editable_lock();
 	const struct key *k = normal_mode_mouse_handle(event);
-	editable_unlock();
 
 	if (k == NULL)
 		return;

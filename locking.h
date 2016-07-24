@@ -21,13 +21,14 @@
 
 #include <pthread.h>
 
+extern pthread_t main_thread;
+
 #define CMUS_MUTEX_INITIALIZER PTHREAD_MUTEX_INITIALIZER
 #define CMUS_COND_INITIALIZER PTHREAD_COND_INITIALIZER
 #define CMUS_RWLOCK_INITIALIZER PTHREAD_RWLOCK_INITIALIZER
 
 void cmus_mutex_lock(pthread_mutex_t *mutex);
 void cmus_mutex_unlock(pthread_mutex_t *mutex);
-void cmus_mutex_init_recursive(pthread_mutex_t *mutex);
 void cmus_rwlock_rdlock(pthread_rwlock_t *lock);
 void cmus_rwlock_wrlock(pthread_rwlock_t *lock);
 void cmus_rwlock_unlock(pthread_rwlock_t *lock);

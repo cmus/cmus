@@ -24,6 +24,7 @@
 #endif
 
 #include "compiler.h"
+#include "debug.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -53,14 +54,17 @@
 #define STATIC_ASSERT(cond) \
 	static uint8_t CONCATENATE(_cmus_unused_, __LINE__)[2*(cond) - 1] UNUSED
 
-#define CLEANUP(f) __attribute__((cleanup(f)))
-
-static inline int min(int a, int b)
+static inline long min_i(long a, long b)
 {
 	return a < b ? a : b;
 }
 
-static inline int max(int a, int b)
+static inline unsigned long min_u(unsigned long a, unsigned long b)
+{
+	return a < b ? a : b;
+}
+
+static inline long max_i(long a, long b)
 {
 	return a > b ? a : b;
 }
@@ -263,6 +267,31 @@ static inline void enable_stdio(void)
 	while (dup2(_saved_stderr, 2) == -1 && errno == EINTR) { }
 	close(_saved_stdout);
 	close(_saved_stderr);
+}
+
+static inline void init_pipes(int *out, int *in)
+{
+	int fds[2];
+	int rc = pipe(fds);
+	BUG_ON(rc);
+	*out = fds[0];
+	*in = fds[1];
+	int flags = fcntl(*out, F_GETFL);
+	rc = fcntl(*out, F_SETFL, flags | O_NONBLOCK);
+	BUG_ON(rc);
+}
+
+static inline void notify_via_pipe(int pipe)
+{
+	char buf = 0;
+	write(pipe, &buf, 1);
+}
+
+static inline void clear_pipe(int pipe, size_t bytes)
+{
+	char buf[128];
+	size_t bytes_to_read = min_u(sizeof(buf), bytes);
+	read(pipe, buf, bytes_to_read);
 }
 
 #endif

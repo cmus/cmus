@@ -21,6 +21,8 @@
 
 #include <string.h>
 
+pthread_t main_thread;
+
 void cmus_mutex_lock(pthread_mutex_t *mutex)
 {
 	int rc = pthread_mutex_lock(mutex);
@@ -33,23 +35,6 @@ void cmus_mutex_unlock(pthread_mutex_t *mutex)
 	int rc = pthread_mutex_unlock(mutex);
 	if (unlikely(rc))
 		BUG("error unlocking mutex: %s\n", strerror(rc));
-}
-
-void cmus_mutex_init_recursive(pthread_mutex_t *mutex)
-{
-	pthread_mutexattr_t attr;
-	int rc = pthread_mutexattr_init(&attr);
-	if (rc)
-		goto err;
-	rc = pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-	if (rc)
-		goto err;
-	rc = pthread_mutex_init(mutex, &attr);
-	if (rc)
-		goto err;
-	return;
-err:
-	BUG("error initializing recursive mutex: %s\n", strerror(rc));
 }
 
 void cmus_rwlock_rdlock(pthread_rwlock_t *lock)
