@@ -21,7 +21,7 @@ check_cflags()
 check_sndio()
 {
 	case `uname -s` in
-	OpenBSD)
+	OpenBSD|FreeBSD)
 		check_library SNDIO "" "-lsndio"
 		return $?
 	esac
