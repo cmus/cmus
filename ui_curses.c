@@ -587,7 +587,7 @@ static void fill_track_fopts_track_info(struct track_info *info)
 	fopt_set_double(&track_fopts[TF_RG_TRACK_PEAK], info->rg_track_peak, isnan(info->rg_track_peak));
 	fopt_set_double(&track_fopts[TF_RG_ALBUM_GAIN], info->rg_album_gain, isnan(info->rg_album_gain));
 	fopt_set_double(&track_fopts[TF_RG_ALBUM_PEAK], info->rg_album_peak, isnan(info->rg_album_peak));
-	fopt_set_int(&track_fopts[TF_ORIGINALYEAR], info->date / 10000, info->originaldate <= 0);
+	fopt_set_int(&track_fopts[TF_ORIGINALYEAR], info->originaldate / 10000, info->originaldate <= 0);
 	fopt_set_int(&track_fopts[TF_BITRATE], (int) (info->bitrate / 1000. + 0.5), info->bitrate == -1);
 	fopt_set_str(&track_fopts[TF_CODEC], info->codec);
 	fopt_set_str(&track_fopts[TF_CODEC_PROFILE], info->codec_profile);
