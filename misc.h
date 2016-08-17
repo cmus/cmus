@@ -22,6 +22,7 @@
 #include <stddef.h>
 
 extern const char *cmus_config_dir;
+extern const char *cmus_playlist_dir;
 extern const char *cmus_socket_path;
 extern const char *home_dir;
 extern const char *user_name;
@@ -32,6 +33,7 @@ int strptrcoll(const void *a, const void *b);
 int misc_init(void);
 const char *escape(const char *str);
 const char *unescape(const char *str);
+const char *get_filename(const char *path);
 
 /*
  * @field   contains Replay Gain data format in bit representation

@@ -19,36 +19,29 @@
 #ifndef CMUS_WORKER_H
 #define CMUS_WORKER_H
 
-#define JOB_TYPE_NONE	0
-#define JOB_TYPE_ANY	-1
+#include <stdint.h>
+
+#define JOB_TYPE_NONE 0
+#define JOB_TYPE_ANY  ~0
+
+typedef int (*worker_match_cb)(uint32_t type, void *job_data, void *opaque);
 
 void worker_init(void);
 void worker_exit(void);
 
-/*
- * @type:     JOB_TYPE_* (>0)
- * @job_cb:   does the job
- * @free_cb:  frees @data
- * @data:     data for the callbacks
- */
-void worker_add_job(int type, void (*job_cb)(void *data),
-		void (*free_cb)(void *data), void *data);
+void worker_add_job(uint32_t type, void (*job_cb)(void *job_data),
+		void (*free_cb)(void *job_data), void *job_data);
 
-/*
- * @type: job type. >0, use JOB_TYPE_ANY to remove all
+/* NOTE: The callbacks below run in parallel with the job_cb function. Access to
+ * job_data must by synchronized.
  */
-void worker_remove_jobs(int type);
 
-int worker_has_job(int type);
+void worker_remove_jobs_by_type(uint32_t pat);
+void worker_remove_jobs_by_cb(worker_match_cb cb, void *opaque);
 
-/*
- * @type: type of this job
- *
- * returns: 0 or 1
- *
- * long jobs should call this to see whether it should cancel
- * call from job function _only_
- */
+int worker_has_job_by_type(uint32_t pat);
+int worker_has_job_by_cb(worker_match_cb cb, void *opaque);
+
 int worker_cancelling(void);
 
 #endif

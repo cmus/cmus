@@ -158,4 +158,8 @@ int track_info_matches_full(const struct track_info *ti, const char *text, unsig
 
 int track_info_cmp(const struct track_info *a, const struct track_info *b, const sort_key_t *keys);
 
+sort_key_t *parse_sort_keys(const char *value);
+const char *sort_key_to_str(sort_key_t key);
+void sort_keys_to_str(const sort_key_t *keys, char *buf, size_t bufsize);
+
 #endif

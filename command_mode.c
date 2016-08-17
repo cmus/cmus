@@ -50,6 +50,7 @@
 #include "help.h"
 #include "op.h"
 #include "mpris.h"
+#include "job.h"
 
 #include <stdlib.h>
 #include <ctype.h>
@@ -69,18 +70,17 @@ void view_clear(int view)
 	switch (view) {
 	case TREE_VIEW:
 	case SORTED_VIEW:
-		worker_remove_jobs(JOB_TYPE_LIB);
+		worker_remove_jobs_by_type(JOB_TYPE_LIB);
 		editable_clear(&lib_editable);
 
 		/* FIXME: make this optional? */
 		lib_clear_store();
 		break;
 	case PLAYLIST_VIEW:
-		worker_remove_jobs(JOB_TYPE_PL);
-		editable_clear(&pl_editable);
+		pl_clear();
 		break;
 	case QUEUE_VIEW:
-		worker_remove_jobs(JOB_TYPE_QUEUE);
+		worker_remove_jobs_by_type(JOB_TYPE_QUEUE);
 		editable_clear(&pq_editable);
 		break;
 	default:
@@ -105,16 +105,18 @@ void view_add(int view, char *arg, int prepend)
 	switch (view) {
 	case TREE_VIEW:
 	case SORTED_VIEW:
-		cmus_add(lib_add_track, name, ft, JOB_TYPE_LIB, 0);
+		cmus_add(lib_add_track, name, ft, JOB_TYPE_LIB, 0, NULL);
 		break;
 	case PLAYLIST_VIEW:
-		cmus_add(pl_add_track, name, ft, JOB_TYPE_PL, 0);
+		pl_add_file_to_marked_pl(name);
 		break;
 	case QUEUE_VIEW:
 		if (prepend) {
-			cmus_add(play_queue_prepend, name, ft, JOB_TYPE_QUEUE, 0);
+			cmus_add(play_queue_prepend, name, ft, JOB_TYPE_QUEUE,
+					0, NULL);
 		} else {
-			cmus_add(play_queue_append, name, ft, JOB_TYPE_QUEUE, 0);
+			cmus_add(play_queue_append, name, ft, JOB_TYPE_QUEUE, 0,
+					NULL);
 		}
 		break;
 	default:
@@ -123,17 +125,14 @@ void view_add(int view, char *arg, int prepend)
 	free(name);
 }
 
-void view_load(int view, char *arg)
+static char *view_load_prepare(char *arg)
 {
-	char *tmp, *name;
-	enum file_type ft;
-
-	tmp = expand_filename(arg);
-	ft = cmus_detect_ft(tmp, &name);
+	char *name, *tmp = expand_filename(arg);
+	enum file_type ft = cmus_detect_ft(tmp, &name);
 	if (ft == FILE_TYPE_INVALID) {
 		error_msg("loading '%s': %s", tmp, strerror(errno));
 		free(tmp);
-		return;
+		return NULL;
 	}
 	free(tmp);
 
@@ -142,32 +141,35 @@ void view_load(int view, char *arg)
 	if (ft != FILE_TYPE_PL) {
 		error_msg("loading '%s': not a playlist file", name);
 		free(name);
-		return;
+		return NULL;
 	}
+	return name;
+}
+
+void view_load(int view, char *arg)
+{
+	char *name = view_load_prepare(arg);
+	if (!name)
+		return;
 
 	switch (view) {
 	case TREE_VIEW:
 	case SORTED_VIEW:
-		worker_remove_jobs(JOB_TYPE_LIB);
+		worker_remove_jobs_by_type(JOB_TYPE_LIB);
 		editable_clear(&lib_editable);
-		cmus_add(lib_add_track, name, FILE_TYPE_PL, JOB_TYPE_LIB, 0);
+		cmus_add(lib_add_track, name, FILE_TYPE_PL, JOB_TYPE_LIB, 0,
+				NULL);
 		free(lib_filename);
 		lib_filename = name;
 		break;
-	case PLAYLIST_VIEW:
-		worker_remove_jobs(JOB_TYPE_PL);
-		editable_clear(&pl_editable);
-		cmus_add(pl_add_track, name, FILE_TYPE_PL, JOB_TYPE_PL, 0);
-		free(pl_filename);
-		pl_filename = name;
-		break;
 	default:
-		info_msg(":load only works in views 1-3");
+		info_msg(":load only works in views 1-2");
 		free(name);
 	}
 }
 
-static void do_save(for_each_ti_cb for_each_ti, const char *arg, char **filenamep, save_ti_cb save_ti)
+static void do_save(for_each_ti_cb for_each_ti, const char *arg, char **filenamep,
+		save_ti_cb save_ti)
 {
 	char *filename = *filenamep;
 
@@ -184,7 +186,7 @@ static void do_save(for_each_ti_cb for_each_ti, const char *arg, char **filename
 		return;
 	}
 
-	if (save_ti(for_each_ti, filename) == -1)
+	if (save_ti(for_each_ti, filename, NULL) == -1)
 		error_msg("saving '%s': %s", filename, strerror(errno));
 }
 
@@ -207,25 +209,22 @@ void view_save(int view, char *arg, int to_stdout, int filtered, int extended)
 	switch (view) {
 	case TREE_VIEW:
 	case SORTED_VIEW:
-		if (worker_has_job(JOB_TYPE_LIB))
+		if (worker_has_job_by_type(JOB_TYPE_LIB))
 			goto worker_running;
 		dest = extended ? &lib_ext_filename : &lib_filename;
 		do_save(lib_for_each_ti, arg, dest, save_ti);
 		break;
 	case PLAYLIST_VIEW:
-		if (worker_has_job(JOB_TYPE_PL))
-			goto worker_running;
-		dest = extended ? &pl_ext_filename : &pl_filename;
-		do_save(pl_for_each, arg, dest, save_ti);
+		pl_save();
 		break;
 	case QUEUE_VIEW:
-		if (worker_has_job(JOB_TYPE_QUEUE))
+		if (worker_has_job_by_type(JOB_TYPE_QUEUE))
 			goto worker_running;
 		dest = extended ? &play_queue_ext_filename : &play_queue_filename;
 		do_save(play_queue_for_each, arg, dest, save_ti);
 		break;
 	default:
-		info_msg(":save only works in views 1 & 2 (library) and 3 (playlist)");
+		info_msg(":save only works in views 1 - 4");
 	}
 	free(arg);
 	return;
@@ -340,11 +339,11 @@ struct window *current_win(void)
 	case TREE_VIEW:
 		return lib_cur_win;
 	case SORTED_VIEW:
-		return lib_editable.win;
+		return lib_editable.shared->win;
 	case PLAYLIST_VIEW:
-		return pl_editable.win;
+		return pl_cursor_win();
 	case QUEUE_VIEW:
-		return pq_editable.win;
+		return pq_editable.shared->win;
 	case BROWSER_VIEW:
 		return browser_win;
 	case HELP_VIEW:
@@ -430,6 +429,8 @@ static void cmd_set(char *arg)
 		if (cur_view == TREE_VIEW) {
 			lib_track_win->changed = 1;
 			lib_tree_win->changed = 1;
+		} else if (cur_view == PLAYLIST_VIEW) {
+			pl_mark_for_redraw();
 		} else {
 			current_win()->changed = 1;
 		}
@@ -468,6 +469,8 @@ static void cmd_toggle(char *arg)
 	if (cur_view == TREE_VIEW) {
 		lib_track_win->changed = 1;
 		lib_tree_win->changed = 1;
+	} else if (cur_view == PLAYLIST_VIEW) {
+		pl_mark_for_redraw();
 	} else {
 		current_win()->changed = 1;
 	}
@@ -578,7 +581,7 @@ static void cmd_invert(char *arg)
 		editable_invert_marks(&lib_editable);
 		break;
 	case PLAYLIST_VIEW:
-		editable_invert_marks(&pl_editable);
+		pl_invert_marks();
 		break;
 	case QUEUE_VIEW:
 		editable_invert_marks(&pq_editable);
@@ -595,7 +598,7 @@ static void cmd_mark(char *arg)
 		editable_mark(&lib_editable, arg);
 		break;
 	case PLAYLIST_VIEW:
-		editable_mark(&pl_editable, arg);
+		pl_mark(arg);
 		break;
 	case QUEUE_VIEW:
 		editable_mark(&pq_editable, arg);
@@ -612,7 +615,7 @@ static void cmd_unmark(char *arg)
 		editable_unmark(&lib_editable);
 		break;
 	case PLAYLIST_VIEW:
-		editable_unmark(&pl_editable);
+		pl_unmark();
 		break;
 	case QUEUE_VIEW:
 		editable_unmark(&pq_editable);
@@ -738,7 +741,7 @@ err:
 static void cmd_quit(char *arg)
 {
 	int flag = parse_flags((const char **)&arg, "i");
-	if (!worker_has_job(JOB_TYPE_ANY)) {
+	if (!worker_has_job_by_type(JOB_TYPE_ANY)) {
 		if (flag != 'i' || yes_no_query("Quit cmus? [y/N]"))
 			cmus_running = 0;
 	} else {
@@ -1002,7 +1005,7 @@ static void cmd_run(char *arg)
 		_editable_for_each_sel(&lib_editable, add_ti, &sel, 0);
 		break;
 	case PLAYLIST_VIEW:
-		_editable_for_each_sel(&pl_editable, add_ti, &sel, 0);
+		_pl_for_each_sel(add_ti, &sel, 0);
 		break;
 	case QUEUE_VIEW:
 		_editable_for_each_sel(&pq_editable, add_ti, &sel, 0);
@@ -1138,7 +1141,7 @@ static void cmd_echo(char *arg)
 		_editable_for_each_sel(&lib_editable, get_one_ti, &sel_ti, 0);
 		break;
 	case PLAYLIST_VIEW:
-		_editable_for_each_sel(&pl_editable, get_one_ti, &sel_ti, 0);
+		_pl_for_each_sel(get_one_ti, &sel_ti, 0);
 		break;
 	case QUEUE_VIEW:
 		_editable_for_each_sel(&pq_editable, get_one_ti, &sel_ti, 0);
@@ -1255,6 +1258,57 @@ static void cmd_right_view(char *arg)
 	}
 }
 
+static void cmd_pl_create(char *arg)
+{
+	pl_create(arg);
+}
+
+static void cmd_pl_export(char *arg)
+{
+	if (cur_view == PLAYLIST_VIEW)
+		pl_export_selected_pl(arg);
+	else
+		info_msg(":pl-export only works in view 3");
+}
+
+static char *get_browser_add_file(void)
+{
+	char *sel = browser_get_sel();
+
+	if (sel && (ends_with(sel, "/../") || ends_with(sel, "/.."))) {
+		info_msg("For convenience, you can not add \"..\" directory from the browser view");
+		free(sel);
+		sel = NULL;
+	}
+
+	return sel;
+}
+
+static void cmd_pl_import(char *arg)
+{
+	char *name = NULL;
+
+	if (arg)
+		name = view_load_prepare(arg);
+	else if (cur_view == BROWSER_VIEW)
+		name = get_browser_add_file();
+	else
+		error_msg("not enough arguments");
+
+	if (name) {
+		pl_import(name);
+		free(name);
+	}
+}
+
+static void cmd_pl_rename(char *arg)
+{
+	if (cur_view == PLAYLIST_VIEW)
+		pl_rename_selected_pl(arg);
+	else
+		info_msg(":pl-rename only works in view 3");
+}
+
 static void cmd_view(char *arg)
 {
 	int view;
@@ -1325,7 +1379,7 @@ static void cmd_rand(char *arg)
 		editable_rand(&lib_editable);
 		break;
 	case PLAYLIST_VIEW:
-		editable_rand(&pl_editable);
+		pl_rand();
 		break;
 	case QUEUE_VIEW:
 		editable_rand(&pq_editable);
@@ -1349,17 +1403,12 @@ static void cmd_search_prev(char *arg)
 	}
 }
 
-static int sorted_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
+static int sorted_for_each_sel(track_info_cb cb, void *data, int reverse)
 {
 	return editable_for_each_sel(&lib_editable, cb, data, reverse);
 }
 
-static int pl_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
-{
-	return editable_for_each_sel(&pl_editable, cb, data, reverse);
-}
-
-static int pq_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
+static int pq_for_each_sel(track_info_cb cb, void *data, int reverse)
 {
 	return editable_for_each_sel(&pq_editable, cb, data, reverse);
 }
@@ -1381,27 +1430,21 @@ static int wrapper_cb(void *data, struct track_info *ti)
 {
 	struct wrapper_cb_data *add = data;
 
-	add->cb(ti);
+	add->cb(ti, NULL);
 	return 0;
 }
 
 static void add_from_browser(add_ti_cb add, int job_type)
 {
-	char *sel = browser_get_sel();
+	char *sel = get_browser_add_file();
 
 	if (sel) {
 		enum file_type ft;
 		char *ret;
 
-		if (ends_with(sel, "/../") || ends_with(sel, "/..")) {
-			info_msg("For convenience, you can not add \"..\" directory from the browser view");
-			free(sel);
-			return;
-		}
-
 		ft = cmus_detect_ft(sel, &ret);
 		if (ft != FILE_TYPE_INVALID) {
-			cmus_add(add, ret, ft, job_type, 0);
+			cmus_add(add, ret, ft, job_type, 0, NULL);
 			window_down(browser_win, 1);
 		}
 		free(ret);
@@ -1424,15 +1467,18 @@ static void cmd_win_add_l(char *arg)
 
 static void cmd_win_add_p(char *arg)
 {
-	/* could allow adding dups? */
-	if (cur_view == PLAYLIST_VIEW)
+	if (cur_view == PLAYLIST_VIEW && pl_visible_is_marked())
 		return;
 
 	if (cur_view <= QUEUE_VIEW) {
-		struct wrapper_cb_data add = { pl_add_track };
+		struct wrapper_cb_data add = { pl_add_track_to_marked_pl2 };
 		view_for_each_sel[cur_view](wrapper_cb, &add, 0);
 	} else if (cur_view == BROWSER_VIEW) {
-		add_from_browser(pl_add_track, JOB_TYPE_PL);
+		char *sel = get_browser_add_file();
+		if (sel) {
+			pl_add_file_to_marked_pl(sel);
+			free(sel);
+		}
 	}
 }
 
@@ -1472,9 +1518,6 @@ static void cmd_win_activate(char *arg)
 		if (lib_cur_track)
 			previous = &lib_cur_track->shuffle_track;
 		shuffle_root = &lib_shuffle_root;
-	} else if (cur_view == PLAYLIST_VIEW) {
-		previous = (struct shuffle_track *)pl_cur_track;
-		shuffle_root = &pl_shuffle_root;
 	}
 
 	switch (cur_view) {
@@ -1487,8 +1530,7 @@ static void cmd_win_activate(char *arg)
 		next = &lib_cur_track->shuffle_track;
 		break;
 	case PLAYLIST_VIEW:
-		info = pl_activate_selected();
-		next = (struct shuffle_track *)pl_cur_track;
+		info = pl_play_selected_row();
 		break;
 	case QUEUE_VIEW:
 		break;
@@ -1504,7 +1546,7 @@ static void cmd_win_activate(char *arg)
 	}
 
 	if (info) {
-		if (shuffle)
+		if (shuffle && next)
 			shuffle_insert(shuffle_root, previous, next);
 		/* update lib/pl mode */
 		if (cur_view < 2)
@@ -1523,7 +1565,7 @@ static void cmd_win_mv_after(char *arg)
 		editable_move_after(&lib_editable);
 		break;
 	case PLAYLIST_VIEW:
-		editable_move_after(&pl_editable);
+		pl_win_mv_after();
 		break;
 	case QUEUE_VIEW:
 		editable_move_after(&pq_editable);
@@ -1538,7 +1580,7 @@ static void cmd_win_mv_before(char *arg)
 		editable_move_before(&lib_editable);
 		break;
 	case PLAYLIST_VIEW:
-		editable_move_before(&pl_editable);
+		pl_win_mv_before();
 		break;
 	case QUEUE_VIEW:
 		editable_move_before(&pq_editable);
@@ -1556,7 +1598,7 @@ static void cmd_win_remove(char *arg)
 		editable_remove_sel(&lib_editable);
 		break;
 	case PLAYLIST_VIEW:
-		editable_remove_sel(&pl_editable);
+		pl_win_remove();
 		break;
 	case QUEUE_VIEW:
 		editable_remove_sel(&pq_editable);
@@ -1583,7 +1625,7 @@ static void cmd_win_sel_cur(char *arg)
 		sorted_sel_current();
 		break;
 	case PLAYLIST_VIEW:
-		pl_sel_current();
+		pl_select_playing_track();
 		break;
 	}
 }
@@ -1598,7 +1640,7 @@ static void cmd_win_toggle(char *arg)
 		editable_toggle_mark(&lib_editable);
 		break;
 	case PLAYLIST_VIEW:
-		editable_toggle_mark(&pl_editable);
+		pl_win_toggle();
 		break;
 	case QUEUE_VIEW:
 		editable_toggle_mark(&pq_editable);
@@ -1646,6 +1688,8 @@ static void cmd_win_next(char *arg)
 {
 	if (cur_view == TREE_VIEW)
 		tree_toggle_active_window();
+	else if (cur_view == PLAYLIST_VIEW)
+		pl_win_next();
 }
 
 static void cmd_win_pg_down(char *arg)
@@ -1726,8 +1770,7 @@ static void cmd_win_update(char *arg)
 		cmus_update_lib();
 		break;
 	case PLAYLIST_VIEW:
-		editable_clear(&pl_editable);
-		cmus_add(pl_add_track, pl_filename, FILE_TYPE_PL, JOB_TYPE_PL, 0);
+		pl_win_update();
 		break;
 	case BROWSER_VIEW:
 		browser_reload();
@@ -1881,7 +1924,7 @@ static void cmd_lqueue(char *arg)
 		struct rb_node *tmp;
 
 		rb_for_each_entry(t, tmp, &a->album->track_root, tree_node)
-			play_queue_append(tree_track_info(t));
+			play_queue_append(tree_track_info(t), NULL);
 		free(a);
 		item = next;
 	} while (item != &head);
@@ -1933,7 +1976,7 @@ static void cmd_tqueue(char *arg)
 	do {
 		struct list_head *next = item->next;
 		struct track_list *t = container_of(item, struct track_list, node);
-		play_queue_append(t->track->info);
+		play_queue_append(t->track->info, NULL);
 		free(t);
 		item = next;
 	} while (item != &head);
@@ -2462,82 +2505,86 @@ static void expand_commands(const char *str);
 
 /* sort by name */
 struct command commands[] = {
-	{ "add",		cmd_add,	1, 1, expand_add,	  0, 0 },
-	{ "bind",		cmd_bind,	1, 1, expand_bind_args,	  0, CMD_UNSAFE },
-	{ "browser-up",		cmd_browser_up,	0, 0, NULL,		  0, 0 },
-	{ "cd",			cmd_cd,		0, 1, expand_directories, 0, 0 },
-	{ "clear",		cmd_clear,	0, 1, NULL,		  0, 0 },
-	{ "colorscheme",	cmd_colorscheme,1, 1, expand_colorscheme, 0, 0 },
-	{ "echo",		cmd_echo,	1,-1, NULL,		  0, 0 },
-	{ "factivate",		cmd_factivate,	0, 1, expand_factivate,	  0, 0 },
-	{ "filter",		cmd_filter,	0, 1, NULL,		  0, 0 },
-	{ "fset",		cmd_fset,	1, 1, expand_fset,	  0, 0 },
-	{ "help",		cmd_help,	0, 0, NULL,		  0, 0 },
-	{ "invert",		cmd_invert,	0, 0, NULL,		  0, 0 },
-	{ "live-filter",	cmd_live_filter,0, 1, NULL,		  0, CMD_LIVE },
-	{ "load",		cmd_load,	1, 1, expand_load_save,	  0, 0 },
-	{ "lqueue",		cmd_lqueue,	0, 1, NULL,		  0, 0 },
-	{ "mark",		cmd_mark,	0, 1, NULL,		  0, 0 },
-	{ "player-next",	cmd_p_next,	0, 0, NULL,		  0, 0 },
-	{ "player-pause",	cmd_p_pause,	0, 0, NULL,		  0, 0 },
-	{ "player-pause-playback",	cmd_p_pause_playback, 0, 0, NULL, 0, 0 },
-	{ "player-play",	cmd_p_play,	0, 1, expand_playable,	  0, 0 },
-	{ "player-prev",	cmd_p_prev,	0, 0, NULL,		  0, 0 },
-	{ "player-stop",	cmd_p_stop,	0, 0, NULL,		  0, 0 },
-	{ "prev-view",		cmd_prev_view,	0, 0, NULL,		  0, 0 },
-	{ "left-view",		cmd_left_view,	0, 0, NULL,		0, 0 },
-	{ "right-view",		cmd_right_view, 0, 0, NULL,		0, 0 },
-	{ "push",		cmd_push,	1,-1, expand_commands,	  0, 0 },
-	{ "pwd",		cmd_pwd,	0, 0, NULL,		  0, 0 },
-	{ "rand",		cmd_rand,	0, 0, NULL,		  0, 0 },
-	{ "quit",		cmd_quit,	0, 1, NULL,		  0, 0 },
-	{ "refresh",		cmd_refresh,	0, 0, NULL,		  0, 0 },
-	{ "run",		cmd_run,	1,-1, expand_program_paths, 0, CMD_UNSAFE },
-	{ "save",		cmd_save,	0, 1, expand_load_save,	  0, CMD_UNSAFE },
-	{ "search-next",	cmd_search_next,0, 0, NULL,		  0, 0 },
-	{ "search-prev",	cmd_search_prev,0, 0, NULL,		  0, 0 },
-	{ "seek",		cmd_seek,	1, 1, NULL,		  0, 0 },
-	{ "set",		cmd_set,	1, 1, expand_options,	  0, 0 },
-	{ "shell",		cmd_shell,	1,-1, expand_program_paths, 0, CMD_UNSAFE },
-	{ "showbind",		cmd_showbind,	1, 1, expand_unbind_args, 0, 0 },
-	{ "shuffle",		cmd_reshuffle,	0, 0, NULL,		  0, 0 },
-	{ "source",		cmd_source,	1, 1, expand_files,	  0, CMD_UNSAFE },
-	{ "toggle",		cmd_toggle,	1, 1, expand_toptions,	  0, 0 },
-	{ "tqueue",		cmd_tqueue,	0, 1, NULL,		  0, 0 },
-	{ "unbind",		cmd_unbind,	1, 1, expand_unbind_args, 0, 0 },
-	{ "unmark",		cmd_unmark,	0, 0, NULL,		  0, 0 },
-	{ "update-cache",	cmd_update_cache,0, 1, NULL,		  0, 0 },
-	{ "view",		cmd_view,	1, 1, NULL,		  0, 0 },
-	{ "vol",		cmd_vol,	1, 2, NULL,		  0, 0 },
-	{ "w",			cmd_save,	0, 1, expand_load_save,	  0, CMD_UNSAFE },
-	{ "win-activate",	cmd_win_activate,0, 0, NULL,		  0, 0 },
-	{ "win-add-l",		cmd_win_add_l,	0, 0, NULL,		  0, 0 },
-	{ "win-add-p",		cmd_win_add_p,	0, 0, NULL,		  0, 0 },
-	{ "win-add-Q",		cmd_win_add_Q,	0, 0, NULL,		  0, 0 },
-	{ "win-add-q",		cmd_win_add_q,	0, 0, NULL,		  0, 0 },
-	{ "win-bottom",		cmd_win_bottom,	0, 0, NULL,		  0, 0 },
-	{ "win-down",		cmd_win_down,	0, 1, NULL,		  0, 0 },
-	{ "win-half-page-down",	cmd_win_hf_pg_down,	0, 0, NULL,		  0, 0 },
-	{ "win-half-page-up",	cmd_win_hf_pg_up,	0, 0, NULL,		  0, 0 },
-	{ "win-mv-after",	cmd_win_mv_after,0, 0, NULL,		  0, 0 },
-	{ "win-mv-before",	cmd_win_mv_before,0, 0, NULL,		  0, 0 },
-	{ "win-next",		cmd_win_next,	0, 0, NULL,		  0, 0 },
-	{ "win-page-bottom",	cmd_win_pg_bottom,0, 0, NULL,		  0, 0 },
-	{ "win-page-down",	cmd_win_pg_down,0, 0, NULL,		  0, 0 },
-	{ "win-page-middle",	cmd_win_pg_middle,0, 0, NULL,		  0, 0 },
-	{ "win-page-top",	cmd_win_pg_top,	0, 0, NULL,		  0, 0 },
-	{ "win-page-up",	cmd_win_pg_up,	0, 0, NULL,		  0, 0 },
-	{ "win-remove",		cmd_win_remove,	0, 0, NULL,		  0, CMD_UNSAFE },
-	{ "win-scroll-down",	cmd_win_scroll_down,0, 0, NULL,		  0, 0 },
-	{ "win-scroll-up",	cmd_win_scroll_up,0, 0, NULL,		  0, 0 },
-	{ "win-sel-cur",	cmd_win_sel_cur,0, 0, NULL,		  0, 0 },
-	{ "win-toggle",		cmd_win_toggle,	0, 0, NULL,		  0, 0 },
-	{ "win-top",		cmd_win_top,	0, 0, NULL,		  0, 0 },
-	{ "win-up",		cmd_win_up,	0, 1, NULL,		  0, 0 },
-	{ "win-update",		cmd_win_update,	0, 0, NULL,		  0, 0 },
-	{ "win-update-cache",	cmd_win_update_cache,0, 1, NULL,	  0, 0 },
-	{ "wq",			cmd_quit,	0, 1, NULL,		  0, 0 },
-	{ NULL,			NULL,		0, 0, 0,		  0, 0 }
+	{ "add",                   cmd_add,              1, 1,  expand_add,           0, 0          },
+	{ "bind",                  cmd_bind,             1, 1,  expand_bind_args,     0, CMD_UNSAFE },
+	{ "browser-up",            cmd_browser_up,       0, 0,  NULL,                 0, 0          },
+	{ "cd",                    cmd_cd,               0, 1,  expand_directories,   0, 0          },
+	{ "clear",                 cmd_clear,            0, 1,  NULL,                 0, 0          },
+	{ "colorscheme",           cmd_colorscheme,      1, 1,  expand_colorscheme,   0, 0          },
+	{ "echo",                  cmd_echo,             1, -1, NULL,                 0, 0          },
+	{ "factivate",             cmd_factivate,        0, 1,  expand_factivate,     0, 0          },
+	{ "filter",                cmd_filter,           0, 1,  NULL,                 0, 0          },
+	{ "fset",                  cmd_fset,             1, 1,  expand_fset,          0, 0          },
+	{ "help",                  cmd_help,             0, 0,  NULL,                 0, 0          },
+	{ "invert",                cmd_invert,           0, 0,  NULL,                 0, 0          },
+	{ "live-filter",           cmd_live_filter,      0, 1,  NULL,                 0, CMD_LIVE   },
+	{ "load",                  cmd_load,             1, 1,  expand_load_save,     0, 0          },
+	{ "lqueue",                cmd_lqueue,           0, 1,  NULL,                 0, 0          },
+	{ "mark",                  cmd_mark,             0, 1,  NULL,                 0, 0          },
+	{ "player-next",           cmd_p_next,           0, 0,  NULL,                 0, 0          },
+	{ "player-pause",          cmd_p_pause,          0, 0,  NULL,                 0, 0          },
+	{ "player-pause-playback", cmd_p_pause_playback, 0, 0,  NULL,                 0, 0          },
+	{ "player-play",           cmd_p_play,           0, 1,  expand_playable,      0, 0          },
+	{ "player-prev",           cmd_p_prev,           0, 0,  NULL,                 0, 0          },
+	{ "player-stop",           cmd_p_stop,           0, 0,  NULL,                 0, 0          },
+	{ "prev-view",             cmd_prev_view,        0, 0,  NULL,                 0, 0          },
+	{ "left-view",             cmd_left_view,        0, 0,  NULL,                 0, 0          },
+	{ "right-view",            cmd_right_view,       0, 0,  NULL,                 0, 0          },
+	{ "pl-create",             cmd_pl_create,        1, -1, NULL,                 0, 0          },
+	{ "pl-export",             cmd_pl_export,        1, -1, NULL,                 0, 0          },
+	{ "pl-import",             cmd_pl_import,        0, -1, NULL,                 0, 0          },
+	{ "pl-rename",             cmd_pl_rename,        1, -1, NULL,                 0, 0          },
+	{ "push",                  cmd_push,             1, -1, expand_commands,      0, 0          },
+	{ "pwd",                   cmd_pwd,              0, 0,  NULL,                 0, 0          },
+	{ "rand",                  cmd_rand,             0, 0,  NULL,                 0, 0          },
+	{ "quit",                  cmd_quit,             0, 1,  NULL,                 0, 0          },
+	{ "refresh",               cmd_refresh,          0, 0,  NULL,                 0, 0          },
+	{ "run",                   cmd_run,              1, -1, expand_program_paths, 0, CMD_UNSAFE },
+	{ "save",                  cmd_save,             0, 1,  expand_load_save,     0, CMD_UNSAFE },
+	{ "search-next",           cmd_search_next,      0, 0,  NULL,                 0, 0          },
+	{ "search-prev",           cmd_search_prev,      0, 0,  NULL,                 0, 0          },
+	{ "seek",                  cmd_seek,             1, 1,  NULL,                 0, 0          },
+	{ "set",                   cmd_set,              1, 1,  expand_options,       0, 0          },
+	{ "shell",                 cmd_shell,            1, -1, expand_program_paths, 0, CMD_UNSAFE },
+	{ "showbind",              cmd_showbind,         1, 1,  expand_unbind_args,   0, 0          },
+	{ "shuffle",               cmd_reshuffle,        0, 0,  NULL,                 0, 0          },
+	{ "source",                cmd_source,           1, 1,  expand_files,         0, CMD_UNSAFE },
+	{ "toggle",                cmd_toggle,           1, 1,  expand_toptions,      0, 0          },
+	{ "tqueue",                cmd_tqueue,           0, 1,  NULL,                 0, 0          },
+	{ "unbind",                cmd_unbind,           1, 1,  expand_unbind_args,   0, 0          },
+	{ "unmark",                cmd_unmark,           0, 0,  NULL,                 0, 0          },
+	{ "update-cache",          cmd_update_cache,     0, 1,  NULL,                 0, 0          },
+	{ "view",                  cmd_view,             1, 1,  NULL,                 0, 0          },
+	{ "vol",                   cmd_vol,              1, 2,  NULL,                 0, 0          },
+	{ "w",                     cmd_save,             0, 1,  expand_load_save,     0, CMD_UNSAFE },
+	{ "win-activate",          cmd_win_activate,     0, 0,  NULL,                 0, 0          },
+	{ "win-add-l",             cmd_win_add_l,        0, 0,  NULL,                 0, 0          },
+	{ "win-add-p",             cmd_win_add_p,        0, 0,  NULL,                 0, 0          },
+	{ "win-add-Q",             cmd_win_add_Q,        0, 0,  NULL,                 0, 0          },
+	{ "win-add-q",             cmd_win_add_q,        0, 0,  NULL,                 0, 0          },
+	{ "win-bottom",            cmd_win_bottom,       0, 0,  NULL,                 0, 0          },
+	{ "win-down",              cmd_win_down,         0, 1,  NULL,                 0, 0          },
+	{ "win-half-page-down",    cmd_win_hf_pg_down,   0, 0,  NULL,                 0, 0          },
+	{ "win-half-page-up",      cmd_win_hf_pg_up,     0, 0,  NULL,                 0, 0          },
+	{ "win-mv-after",          cmd_win_mv_after,     0, 0,  NULL,                 0, 0          },
+	{ "win-mv-before",         cmd_win_mv_before,    0, 0,  NULL,                 0, 0          },
+	{ "win-next",              cmd_win_next,         0, 0,  NULL,                 0, 0          },
+	{ "win-page-bottom",       cmd_win_pg_bottom,    0, 0,  NULL,                 0, 0          },
+	{ "win-page-down",         cmd_win_pg_down,      0, 0,  NULL,                 0, 0          },
+	{ "win-page-middle",       cmd_win_pg_middle,    0, 0,  NULL,                 0, 0          },
+	{ "win-page-top",          cmd_win_pg_top,       0, 0,  NULL,                 0, 0          },
+	{ "win-page-up",           cmd_win_pg_up,        0, 0,  NULL,                 0, 0          },
+	{ "win-remove",            cmd_win_remove,       0, 0,  NULL,                 0, CMD_UNSAFE },
+	{ "win-scroll-down",       cmd_win_scroll_down,  0, 0,  NULL,                 0, 0          },
+	{ "win-scroll-up",         cmd_win_scroll_up,    0, 0,  NULL,                 0, 0          },
+	{ "win-sel-cur",           cmd_win_sel_cur,      0, 0,  NULL,                 0, 0          },
+	{ "win-toggle",            cmd_win_toggle,       0, 0,  NULL,                 0, 0          },
+	{ "win-top",               cmd_win_top,          0, 0,  NULL,                 0, 0          },
+	{ "win-up",                cmd_win_up,           0, 1,  NULL,                 0, 0          },
+	{ "win-update",            cmd_win_update,       0, 0,  NULL,                 0, 0          },
+	{ "win-update-cache",      cmd_win_update_cache, 0, 1,  NULL,                 0, 0          },
+	{ "wq",                    cmd_quit,             0, 1,  NULL,                 0, 0          },
+	{ NULL,                    NULL,                 0, 0,  0,                    0, 0          }
 };
 
 /* fills tabexp struct */

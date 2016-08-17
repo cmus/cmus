@@ -41,7 +41,6 @@ extern struct searchable *searchable;
 extern char *lib_filename;
 extern char *lib_ext_filename;
 extern char *pl_filename;
-extern char *pl_ext_filename;
 extern char *play_queue_filename;
 extern char *play_queue_ext_filename;
 

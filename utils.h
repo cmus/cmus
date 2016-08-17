@@ -43,6 +43,16 @@
 
 #define N_ELEMENTS(array) (sizeof(array) / sizeof((array)[0]))
 
+struct slice {
+	void *ptr;
+	size_t len;
+};
+
+#define TO_SLICE(type, ...) ((struct slice) { \
+	.ptr = ((type[]){__VA_ARGS__}), \
+	.len = N_ELEMENTS(((type[]){__VA_ARGS__})), \
+})
+
 #define STRINGIZE_HELPER(x) #x
 #define STRINGIZE(x) STRINGIZE_HELPER(x)
 

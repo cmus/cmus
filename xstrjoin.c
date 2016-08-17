@@ -18,17 +18,29 @@
 
 #include "xstrjoin.h"
 #include "xmalloc.h"
-#include "string.h"
+#include "utils.h"
 
-char *xstrjoin(const char *a, const char *b)
+char *xstrjoin_slice(struct slice slice)
 {
-	int a_len, b_len;
+	const char **str = slice.ptr;
+	size_t i, pos = 0, len = 0;
 	char *joined;
+	size_t *lens;
 
-	a_len = strlen(a);
-	b_len = strlen(b);
-	joined = xnew(char, a_len + b_len + 1);
-	memcpy(joined, a, a_len);
-	memcpy(joined + a_len, b, b_len + 1);
+	lens = xnew(size_t, slice.len);
+	for (i = 0; i < slice.len; i++) {
+		lens[i] = strlen(str[i]);
+		len += lens[i];
+	}
+
+	joined = xnew(char, len + 1);
+	for (i = 0; i < slice.len; i++) {
+		memcpy(joined + pos, str[i], lens[i]);
+		pos += lens[i];
+	}
+	joined[len] = 0;
+
+	free(lens);
+
 	return joined;
 }

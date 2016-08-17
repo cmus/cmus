@@ -22,8 +22,9 @@
 #include "xmalloc.h"
 
 struct editable pq_editable;
+static struct editable_shared pq_editable_shared;
 
-static void pq_free_track(struct list_head *item)
+static void pq_free_track(struct editable *e, struct list_head *item)
 {
 	struct simple_track *track = to_simple_track(item);
 
@@ -33,17 +34,18 @@ static void pq_free_track(struct list_head *item)
 
 void play_queue_init(void)
 {
-	editable_init(&pq_editable, pq_free_track);
+	editable_shared_init(&pq_editable_shared, pq_free_track);
+	editable_init(&pq_editable, &pq_editable_shared, 1);
 }
 
-void play_queue_append(struct track_info *ti)
+void play_queue_append(struct track_info *ti, void *opaque)
 {
 	struct simple_track *t = simple_track_new(ti);
 
 	editable_add(&pq_editable, t);
 }
 
-void play_queue_prepend(struct track_info *ti)
+void play_queue_prepend(struct track_info *ti, void *opaque)
 {
 	struct simple_track *t = simple_track_new(ti);
 
@@ -64,7 +66,8 @@ struct track_info *play_queue_remove(void)
 	return info;
 }
 
-int play_queue_for_each(int (*cb)(void *data, struct track_info *ti), void *data)
+int play_queue_for_each(int (*cb)(void *data, struct track_info *ti),
+		void *data, void *opaque)
 {
 	struct simple_track *track;
 	int rc = 0;

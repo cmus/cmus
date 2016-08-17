@@ -23,6 +23,7 @@
 #include "rbtree.h"
 #include "iter.h"
 #include "track_info.h"
+#include "cmus.h"
 
 struct simple_track {
 	struct list_head node;
@@ -36,6 +37,12 @@ struct shuffle_track {
 	struct rb_node tree_node;
 	double rand;
 };
+
+static inline struct shuffle_track *
+simple_track_to_shuffle_track(struct simple_track *track)
+{
+	return container_of(track, struct shuffle_track, simple_track);
+}
 
 static inline struct track_info *shuffle_track_info(const struct shuffle_track *track)
 {
@@ -74,6 +81,7 @@ int simple_track_get_next(struct iter *);
 /* data is window */
 int simple_track_search_get_current(void *data, struct iter *iter);
 int simple_track_search_matches(void *data, struct iter *iter, const char *text);
+int _simple_track_search_matches(struct iter *iter, const char *text);
 
 struct shuffle_track *shuffle_list_get_next(struct rb_root *root, struct shuffle_track *cur,
 		int (*filter)(const struct simple_track *));
@@ -95,8 +103,10 @@ void rand_list_rebuild(struct list_head *head, struct rb_root *tree_root);
 
 void list_add_rand(struct list_head *head, struct list_head *node, int nr);
 
-int simple_list_for_each_marked(struct list_head *head,
-		int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
+int simple_list_for_each_marked(struct list_head *head, track_info_cb cb,
+		void *data, int reverse);
+int simple_list_for_each(struct list_head *head, track_info_cb cb,
+		void *data, int reverse);
 
 void shuffle_list_add(struct shuffle_track *track, struct rb_root *tree_root);
 void shuffle_list_reshuffle(struct rb_root *tree_root);

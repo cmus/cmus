@@ -51,6 +51,7 @@ enum job_result_var {
 	JOB_RES_ADD,
 	JOB_RES_UPDATE,
 	JOB_RES_UPDATE_CACHE,
+	JOB_RES_PL_DELETE,
 };
 
 enum update_kind {
@@ -68,6 +69,7 @@ struct job_result {
 			add_ti_cb add_cb;
 			size_t add_num;
 			struct track_info **add_ti;
+			void *add_opaque;
 		};
 		struct {
 			size_t update_num;
@@ -77,6 +79,10 @@ struct job_result {
 		struct {
 			size_t update_cache_num;
 			struct track_info **update_cache_ti;
+		};
+		struct {
+			void (*pl_delete_cb)(struct playlist *);
+			struct playlist *pl_delete_pl;
 		};
 	};
 };
@@ -104,7 +110,7 @@ void job_init(void)
 
 void job_exit(void)
 {
-	worker_remove_jobs(JOB_TYPE_ANY);
+	worker_remove_jobs_by_type(JOB_TYPE_ANY);
 	worker_exit();
 
 	close(job_fd);
@@ -143,6 +149,7 @@ static void flush_ti_buffer(void)
 	res->add_cb = jd->add;
 	res->add_num = ti_buffer_fill;
 	res->add_ti = ti_buffer;
+	res->add_opaque = jd->opaque;
 
 	job_push_result(res);
 
@@ -415,7 +422,7 @@ static void free_add_job(void *data)
 static void job_handle_add_result(struct job_result *res)
 {
 	for (size_t i = 0; i < res->add_num; i++) {
-		res->add_cb(res->add_ti[i]);
+		res->add_cb(res->add_ti[i], res->add_opaque);
 		track_info_unref(res->add_ti[i]);
 	}
 
@@ -424,7 +431,7 @@ static void job_handle_add_result(struct job_result *res)
 
 void job_schedule_add(int type, struct add_data *data)
 {
-	worker_add_job(type, do_add_job, free_add_job, data);
+	worker_add_job(type | JOB_TYPE_ADD, do_add_job, free_add_job, data);
 }
 
 static void do_update_job(void *data)
@@ -498,7 +505,7 @@ static void job_handle_update_result(struct job_result *res)
 				d_print("mtime changed: %s\n", ti->filename);
 			force = ti->duration == 0;
 			cmus_add(lib_add_track, ti->filename, FILE_TYPE_FILE,
-					JOB_TYPE_LIB, force);
+					JOB_TYPE_LIB, force, NULL);
 		}
 
 		track_info_unref(ti);
@@ -510,7 +517,8 @@ static void job_handle_update_result(struct job_result *res)
 
 void job_schedule_update(struct update_data *data)
 {
-	worker_add_job(JOB_TYPE_LIB, do_update_job, free_update_job, data);
+	worker_add_job(JOB_TYPE_LIB | JOB_TYPE_UPDATE, do_update_job,
+			free_update_job, data);
 }
 
 static void do_update_cache_job(void *data)
@@ -546,8 +554,8 @@ static void job_handle_update_cache_result(struct job_result *res)
 
 		new = old->next;
 		if (lib_remove(old) && new)
-			lib_add_track(new);
-		editable_update_track(&pl_editable, old, new);
+			lib_add_track(new, NULL);
+		pl_update_track(old, new);
 		editable_update_track(&pq_editable, old, new);
 		if (player_info.ti == old && new) {
 			track_info_ref(new);
@@ -563,7 +571,41 @@ static void job_handle_update_cache_result(struct job_result *res)
 
 void job_schedule_update_cache(int type, struct update_cache_data *data)
 {
-	worker_add_job(type, do_update_cache_job, free_update_cache_job, data);
+	worker_add_job(type | JOB_TYPE_UPDATE_CACHE, do_update_cache_job,
+			free_update_cache_job, data);
+}
+
+static void do_pl_delete_job(void *data)
+{
+	/*
+	 * If PL jobs are canceled this function won't run. Hence we push the
+	 * result in the free function.
+	 */
+}
+
+static void free_pl_delete_job(void *data)
+{
+	struct pl_delete_data *pdd = data;
+	struct job_result *res;
+
+	res = xnew(struct job_result, 1);
+	res->var = JOB_RES_PL_DELETE;
+	res->pl_delete_cb = pdd->cb;
+	res->pl_delete_pl = pdd->pl;
+	job_push_result(res);
+
+	free(pdd);
+}
+
+static void job_handle_pl_delete_result(struct job_result *res)
+{
+	res->pl_delete_cb(res->pl_delete_pl);
+}
+
+void job_schedule_pl_delete(struct pl_delete_data *data)
+{
+	worker_add_job(JOB_TYPE_PL | JOB_TYPE_DELETE, do_pl_delete_job,
+			free_pl_delete_job, data);
 }
 
 static void job_handle_result(struct job_result *res)
@@ -577,6 +619,9 @@ static void job_handle_result(struct job_result *res)
 		break;
 	case JOB_RES_UPDATE_CACHE:
 		job_handle_update_cache_result(res);
+		break;
+	case JOB_RES_PL_DELETE:
+		job_handle_pl_delete_result(res);
 		break;
 	}
 	free(res);

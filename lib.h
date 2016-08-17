@@ -110,15 +110,17 @@ void lib_init(void);
 void tree_init(void);
 struct track_info *lib_goto_next(void);
 struct track_info *lib_goto_prev(void);
-void lib_add_track(struct track_info *track_info);
+void lib_add_track(struct track_info *track_info, void *opaque);
 void lib_set_filter(struct expr *expr);
 void lib_set_live_filter(const char *str);
 int lib_remove(struct track_info *ti);
 void lib_clear_store(void);
 void lib_reshuffle(void);
 void lib_set_view(int view);
-int lib_for_each(int (*cb)(void *data, struct track_info *ti), void *data);
-int lib_for_each_filtered(int (*cb)(void *data, struct track_info *ti), void *data);
+int lib_for_each(int (*cb)(void *data, struct track_info *ti), void *data,
+		void *opaque);
+int lib_for_each_filtered(int (*cb)(void *data, struct track_info *ti),
+		void *data, void *opaque);
 
 struct tree_track *lib_find_track(struct track_info *ti);
 struct track_info *lib_set_track(struct tree_track *track);
