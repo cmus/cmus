@@ -50,6 +50,16 @@
 /* save_playlist_cb, save_ext_playlist_cb */
 typedef int (*save_tracks_cb)(void *data, struct track_info *ti);
 
+/* cmus_next, cmus_prev */
+typedef struct track_info *(*goto_next_prev)(void);
+static const struct {
+	const goto_next_prev goto_next;
+	const goto_next_prev goto_prev;
+} play_mode_controls[] = {
+	[PLAY_LIBRARY]  	= { lib_goto_next, lib_goto_prev },
+	[PLAY_PLAYLIST]		= { pl_goto_next, pl_goto_prev }
+};
+
 static char **playable_exts;
 static const char * const playlist_exts[] = { "m3u", "pl", "pls", NULL };
 
@@ -87,11 +97,7 @@ void cmus_prev(void)
 {
 	struct track_info *info;
 
-	if (play_mode == PLAY_LIBRARY) {
-		info = lib_goto_prev();
-	} else {
-		info = pl_goto_prev();
-	}
+	info = play_mode_controls[play_mode].goto_prev();
 
 	if (info)
 		player_set_file(info);
@@ -392,7 +398,7 @@ static struct track_info *cmus_get_next_from_main_thread(void)
 {
 	struct track_info *ti = play_queue_remove();
 	if (!ti)
-		ti = (play_mode == PLAY_LIBRARY) ? lib_goto_next() : pl_goto_next();
+		ti = play_mode_controls[play_mode].goto_next();
 	return ti;
 }
 
