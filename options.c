@@ -69,7 +69,7 @@ int show_playback_position = 1;
 int show_remaining_time = 0;
 int set_term_title = 1;
 int wrap_search = 1;
-int play_library = 1;
+int play_library = PLAY_LIBRARY;
 int repeat = 0;
 int shuffle = 0;
 int follow = 0;
@@ -556,21 +556,30 @@ const char * const view_names[NR_VIEWS + 1] = {
 	"tree", "sorted", "playlist", "queue", "browser", "filters", "settings", NULL
 };
 
+const char * const play_mode_names[NR_PLAY_MODES + 1] = {
+	"playlist", "library", NULL
+};
+
 static void get_play_library(void *data, char *buf)
 {
-	strcpy(buf, bool_names[play_library]);
+	strcpy(buf, play_mode_names[play_library]);
 }
 
 static void set_play_library(void *data, const char *buf)
 {
-	if (!parse_bool(buf, &play_library))
+	int tmp;
+
+	if (!parse_enum(buf, 0, NR_PLAY_MODES - 1, play_mode_names, &tmp))
 		return;
+
+	play_library = tmp;
+
 	update_statusline();
 }
 
 static void toggle_play_library(void *data)
 {
-	play_library ^= 1;
+	play_library = (play_library + 1) % NR_PLAY_MODES;
 	update_statusline();
 }
 

@@ -66,6 +66,12 @@ enum {
 };
 
 enum {
+	PLAY_PLAYLIST,
+	PLAY_LIBRARY,
+	NR_PLAY_MODES
+};
+
+enum {
 	COLOR_CMDLINE_BG,
 	COLOR_CMDLINE_FG,
 	COLOR_ERROR,
