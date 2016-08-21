@@ -69,6 +69,7 @@ static int cmd_status(struct client *client)
 	const char *export_options[] = {
 		"aaa_mode",
 		"continue",
+		"play_library",
 		"play_mode",
 		"play_sorted",
 		"replaygain",

@@ -1012,6 +1012,10 @@ pl_sort () [`Sort Keys`]
 	Sort keys for the playlist view (3).  Empty value disables sorting and
 	enables manually moving tracks.
 
+play_library (true)
+	Play tracks from the library instead of playlist. This setting changes
+	*play_mode* and is kept for backwards compatability.
+
 play_mode (library playlist)
 	Play tracks from the library or from the playlist.
 

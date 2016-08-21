@@ -557,7 +557,7 @@ const char * const view_names[NR_VIEWS + 1] = {
 };
 
 const char * const play_mode_names[NR_PLAY_MODES + 1] = {
-	"playlist", "library", NULL
+	"library", "playlist", NULL
 };
 
 static void get_play_mode(void *data, char *buf)
@@ -580,6 +580,28 @@ static void set_play_mode(void *data, const char *buf)
 static void toggle_play_mode(void *data)
 {
 	play_mode = (play_mode + 1) % NR_PLAY_MODES;
+	update_statusline();
+}
+
+static void get_play_library(void *data, char *buf)
+{
+	strcpy(buf, bool_names[play_mode == PLAY_LIBRARY]);
+}
+
+static void set_play_library(void *data, const char *buf)
+{
+	int play_library;
+	if (!parse_bool(buf, &play_library))
+		return;
+
+	play_mode = play_library ? PLAY_LIBRARY : PLAY_PLAYLIST;
+
+	update_statusline();
+}
+
+static void toggle_play_library(void *data)
+{
+	play_mode = play_mode == PLAY_LIBRARY ? PLAY_PLAYLIST : PLAY_LIBRARY;
 	update_statusline();
 }
 
@@ -1274,6 +1296,7 @@ static const struct {
 	DN(output_plugin)
 	DN(passwd)
 	DN(pl_sort)
+	DT(play_library)
 	DT(play_mode)
 	DT(play_sorted)
 	DT(display_artist_sort_name)
