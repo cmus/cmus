@@ -1550,9 +1550,9 @@ static void cmd_win_activate(char *arg)
 			shuffle_insert(shuffle_root, previous, next);
 		/* update lib/pl mode */
 		if (cur_view < 2)
-			play_library = 1;
+			play_mode = PLAY_LIBRARY;
 		if (cur_view == 2)
-			play_library = 0;
+			play_mode = PLAY_PLAYLIST;
 
 		player_play_file(info);
 	}

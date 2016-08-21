@@ -66,8 +66,8 @@ enum {
 };
 
 enum {
-	PLAY_PLAYLIST,
 	PLAY_LIBRARY,
+	PLAY_PLAYLIST,
 	NR_PLAY_MODES
 };
 
@@ -136,7 +136,7 @@ extern int show_playback_position;
 extern int show_remaining_time;
 extern int set_term_title;
 extern int wrap_search;
-extern int play_library;
+extern int play_mode;
 extern int repeat;
 extern int shuffle;
 extern int follow;

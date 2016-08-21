@@ -171,11 +171,11 @@ Right hand side of the status line (second row from the bottom, black text on
 a grey background) consists of the following fields:
 
 @pre
-aaa_mode & play_sorted & play_library | continue follow repeat shuffle
+aaa_mode & play_sorted & play_mode=library | continue follow repeat shuffle
 @endpre
 
-NOTE: *aaa_mode* and *play_sorted* will be displayed only if *play_library* is
-*true* because these are meaningless when playing the playlists (view 3).
+NOTE: *aaa_mode* and *play_sorted* will be displayed only if *play_mode* is
+*library* because these are meaningless when playing the playlists (view 3).
 
 Pressing *m*, *o*, *M*, *C*, *r* and *s* keys should make it easier to
 understand what all those fields mean.
@@ -208,7 +208,7 @@ l, right                    seek +5
 h, left                     seek -5
 m                           toggle aaa_mode
 C                           toggle continue
-M                           toggle play_library
+M                           toggle play_mode
 o                           toggle play_sorted
 r                           toggle repeat
 ^R                          toggle repeat_current
@@ -1012,12 +1012,12 @@ pl_sort () [`Sort Keys`]
 	Sort keys for the playlist view (3).  Empty value disables sorting and
 	enables manually moving tracks.
 
-play_library (true)
-	Play tracks from the library instead of playlist.
+play_mode (library playlist)
+	Play tracks from the library or from the playlist.
 
 play_sorted (false)
 	Play tracks from the library in the sorted view (2) order instead of
-	tree view (1) order.  Used only when play_library is true.
+	tree view (1) order.  Used only when *play_mode* is *library*.
 
 repeat (false)
 	Repeat after all tracks played.

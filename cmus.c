@@ -87,7 +87,7 @@ void cmus_prev(void)
 {
 	struct track_info *info;
 
-	if (play_library) {
+	if (play_mode == PLAY_LIBRARY) {
 		info = lib_goto_prev();
 	} else {
 		info = pl_goto_prev();
@@ -392,7 +392,7 @@ static struct track_info *cmus_get_next_from_main_thread(void)
 {
 	struct track_info *ti = play_queue_remove();
 	if (!ti)
-		ti = play_library ? lib_goto_next() : pl_goto_next();
+		ti = (play_mode == PLAY_LIBRARY) ? lib_goto_next() : pl_goto_next();
 	return ti;
 }
 

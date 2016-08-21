@@ -25,7 +25,7 @@ bind common F push filter
 bind common G win-bottom
 bind common I echo {}
 bind common L push live-filter 
-bind common M toggle play_library
+bind common M toggle play_mode
 bind common N search-prev
 bind common P win-mv-before
 bind common [ vol +1% +0

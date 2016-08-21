@@ -644,7 +644,7 @@ const struct format_option *get_global_fopts(void)
 	int buffer_fill, vol, vol_left, vol_right;
 	int duration = -1;
 
-	fopt_set_time(&track_fopts[TF_TOTAL], play_library ? lib_editable.total_time :
+	fopt_set_time(&track_fopts[TF_TOTAL], (play_mode == PLAY_LIBRARY) ? lib_editable.total_time :
 			pl_playing_total_time(), 0);
 
 	fopt_set_str(&track_fopts[TF_FOLLOW], follow_strs[follow]);
@@ -1966,7 +1966,7 @@ static void update(void)
 	}
 
 	/* total time changed? */
-	if (play_library) {
+	if (play_mode == PLAY_LIBRARY) {
 		needs_status_update += lib_editable.shared->win->changed;
 		lib_editable.shared->win->changed = 0;
 	} else {

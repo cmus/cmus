@@ -69,7 +69,7 @@ int show_playback_position = 1;
 int show_remaining_time = 0;
 int set_term_title = 1;
 int wrap_search = 1;
-int play_library = PLAY_LIBRARY;
+int play_mode = PLAY_LIBRARY;
 int repeat = 0;
 int shuffle = 0;
 int follow = 0;
@@ -230,7 +230,7 @@ static const struct {
 		"%{?stream?buf: %{buffer} }"
 		"%{?show_current_bitrate & bitrate>=0? %{bitrate} kbps }"
 		"%="
-		"%{?repeat_current?repeat current?%{?play_library?%{playlist_mode} from %{?play_sorted?sorted }library?playlist}}"
+		"%{?repeat_current?repeat current?%{?play_mode=\"library\"?%{playlist_mode} from %{?play_sorted?sorted }library?playlist}}"
 		" | %1{continue}%1{follow}%1{repeat}%1{shuffle} "
 	},
 	[FMT_PLAYLIST_ALT]	= { "altformat_playlist"	, " %f%= %d "						},
@@ -560,26 +560,26 @@ const char * const play_mode_names[NR_PLAY_MODES + 1] = {
 	"playlist", "library", NULL
 };
 
-static void get_play_library(void *data, char *buf)
+static void get_play_mode(void *data, char *buf)
 {
-	strcpy(buf, play_mode_names[play_library]);
+	strcpy(buf, play_mode_names[play_mode]);
 }
 
-static void set_play_library(void *data, const char *buf)
+static void set_play_mode(void *data, const char *buf)
 {
 	int tmp;
 
 	if (!parse_enum(buf, 0, NR_PLAY_MODES - 1, play_mode_names, &tmp))
 		return;
 
-	play_library = tmp;
+	play_mode = tmp;
 
 	update_statusline();
 }
 
-static void toggle_play_library(void *data)
+static void toggle_play_mode(void *data)
 {
-	play_library = (play_library + 1) % NR_PLAY_MODES;
+	play_mode = (play_mode + 1) % NR_PLAY_MODES;
 	update_statusline();
 }
 
@@ -607,7 +607,7 @@ static void toggle_play_sorted(void *data)
 	/* shuffle would override play_sorted... */
 	if (play_sorted) {
 		/* play_sorted makes no sense in playlist */
-		play_library = 1;
+		play_mode = PLAY_LIBRARY;
 		shuffle = 0;
 	}
 
@@ -671,7 +671,7 @@ static void set_aaa_mode(void *data, const char *buf)
 static void toggle_aaa_mode(void *data)
 {
 	/* aaa mode makes no sense in playlist */
-	play_library = 1;
+	play_mode = PLAY_LIBRARY;
 
 	aaa_mode++;
 	aaa_mode %= 3;
@@ -1274,7 +1274,7 @@ static const struct {
 	DN(output_plugin)
 	DN(passwd)
 	DN(pl_sort)
-	DT(play_library)
+	DT(play_mode)
 	DT(play_sorted)
 	DT(display_artist_sort_name)
 	DT(repeat)
