@@ -113,6 +113,7 @@ struct track_info *lib_goto_prev(void);
 void lib_add_track(struct track_info *track_info, void *opaque);
 void lib_set_filter(struct expr *expr);
 void lib_set_live_filter(const char *str);
+void lib_set_add_filter(struct expr *expr);
 int lib_remove(struct track_info *ti);
 void lib_clear_store(void);
 void lib_reshuffle(void);

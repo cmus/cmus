@@ -143,6 +143,7 @@ char *window_title_format = NULL;
 char *window_title_alt_format = NULL;
 char *id3_default_charset = NULL;
 char *icecast_default_charset = NULL;
+char *lib_add_filter = NULL;
 
 static void buf_int(char *buf, int val, size_t size)
 {
@@ -1079,6 +1080,32 @@ static void toggle_mpris(void *data)
 	mpris ^= 1;
 }
 
+static void get_lib_add_filter(void *data, char *buf)
+{
+	strcpy(buf, lib_add_filter ? lib_add_filter : "");
+}
+
+static void set_lib_add_filter(void *data, const char *buf)
+{
+	struct expr *expr = NULL;
+
+	if (strlen(buf)) {
+		/* parse expression if non-empty string given */
+		expr = expr_parse(buf);
+
+		if (!expr)
+			return;
+	}
+
+	if (lib_add_filter != NULL)
+		free(lib_add_filter);
+
+	lib_add_filter = malloc(strlen(buf) + 1);
+	strcpy(lib_add_filter, buf);
+
+	lib_set_add_filter(expr);
+}
+
 /* }}} */
 
 /* special callbacks (id set) {{{ */
@@ -1298,6 +1325,7 @@ static const struct {
 	DT(skip_track_info)
 	DT(mouse)
 	DT(mpris)
+	DN(lib_add_filter)
 	{ NULL, NULL, NULL, NULL, 0 }
 };
 
