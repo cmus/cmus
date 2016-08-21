@@ -40,6 +40,7 @@ char *lib_live_filter = NULL;
 
 struct rb_root lib_shuffle_root;
 static struct expr *filter = NULL;
+static struct expr *add_filter = NULL;
 static int remove_from_hash = 1;
 
 static struct expr *live_filter_expr = NULL;
@@ -160,10 +161,16 @@ static int is_filtered(struct track_info *ti)
 
 void lib_add_track(struct track_info *ti, void *opaque)
 {
+	if (add_filter && !expr_eval(add_filter, ti)) {
+		/* filter any files exluded by lib_add_filter */
+		return;
+	}
+
 	if (!hash_insert(ti)) {
 		/* duplicate files not allowed */
 		return;
 	}
+
 	if (!is_filtered(ti))
 		views_add_track(ti);
 }
@@ -503,6 +510,13 @@ void lib_set_filter(struct expr *expr)
 		expr_free(filter);
 	filter = expr;
 	do_lib_filter(clear_before);
+}
+
+void lib_set_add_filter(struct expr *expr)
+{
+	if (add_filter)
+		expr_free(add_filter);
+	add_filter = expr;
 }
 
 static struct tree_track *get_sel_track(void)
