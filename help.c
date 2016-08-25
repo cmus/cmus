@@ -230,7 +230,8 @@ void help_select(void)
 		break;
 	case HE_OPTION:
 		snprintf(buf, sizeof(buf), "set %s=", ent->option->name);
-		ent->option->get(ent->option->data, buf + strlen(buf));
+		size_t len = strlen(buf);
+		ent->option->get(ent->option->data, buf + len, sizeof(buf) - len);
 		cmdline_set_text(buf);
 		enter_command_mode();
 		break;

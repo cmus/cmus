@@ -376,26 +376,26 @@ static void set_mixer_option(void *data, const char *val)
 	}
 }
 
-static void get_dsp_option(void *data, char *buf)
+static void get_dsp_option(void *data, char *buf, size_t size)
 {
 	const struct output_plugin_opt *o = data;
 	char *val = NULL;
 
 	o->get(&val);
 	if (val) {
-		strcpy(buf, val);
+		strscpy(buf, val, size);
 		free(val);
 	}
 }
 
-static void get_mixer_option(void *data, char *buf)
+static void get_mixer_option(void *data, char *buf, size_t size)
 {
 	const struct mixer_plugin_opt *o = data;
 	char *val = NULL;
 
 	o->get(&val);
 	if (val) {
-		strcpy(buf, val);
+		strscpy(buf, val, size);
 		free(val);
 	}
 }

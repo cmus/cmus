@@ -674,9 +674,9 @@ void pl_reshuffle(void)
 		shuffle_list_reshuffle(&pl_playing->shuffle_root);
 }
 
-void pl_get_sort_str(char *buf)
+void pl_get_sort_str(char *buf, size_t size)
 {
-	strcpy(buf, pl_editable_shared.sort_str);
+	strscpy(buf, pl_editable_shared.sort_str, size);
 }
 
 void pl_set_sort_str(const char *buf)

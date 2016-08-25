@@ -941,7 +941,8 @@ static void print_help(struct window *win, int row, struct iter *iter)
 	case HE_OPTION:
 		opt = e->option;
 		snprintf(buf, sizeof(buf), " %-29s ", opt->name);
-		opt->get(opt->data, buf + strlen(buf));
+		size_t len = strlen(buf);
+		opt->get(opt->data, buf + len, sizeof(buf) - len);
 		break;
 	}
 	pos = format_str(print_buffer, buf, COLS - 1);

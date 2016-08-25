@@ -304,4 +304,16 @@ static inline void clear_pipe(int pipe, size_t bytes)
 	read(pipe, buf, bytes_to_read);
 }
 
+static inline ssize_t strscpy(char *dst, const char *src, size_t size)
+{
+	for (size_t i = 0; i < size; i++) {
+		dst[i] = src[i];
+		if (src[i] == 0)
+			return i;
+	}
+	if (size > 0)
+		dst[size - 1] = 0;
+	return -1;
+}
+
 #endif

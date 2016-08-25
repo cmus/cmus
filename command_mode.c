@@ -447,7 +447,7 @@ static void cmd_set(char *arg)
 
 		opt = option_find(arg);
 		if (opt) {
-			opt->get(opt->data, buf);
+			opt->get(opt->data, buf, OPTION_MAX_SIZE);
 			info_msg("setting: '%s=%s'", arg, buf);
 		}
 	}
@@ -2390,7 +2390,7 @@ static void expand_options(const char *str)
 					tails = xnew(char *, 1);
 
 					buf[0] = 0;
-					opt->get(opt->data, buf);
+					opt->get(opt->data, buf, OPTION_MAX_SIZE);
 					tails[0] = xstrdup(buf);
 
 					tabexp.head = xstrdup(str);

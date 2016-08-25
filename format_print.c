@@ -259,7 +259,7 @@ static const char *str_val(const char *key, const struct format_option *fopts, c
 	} else {
 		opt = option_find_silent(key);
 		if (opt) {
-			opt->get(opt->data, buf);
+			opt->get(opt->data, buf, OPTION_MAX_SIZE);
 			val = buf;
 		}
 	}
@@ -287,8 +287,6 @@ static int format_eval_cond(struct expr* expr, const struct format_option *fopts
 	const char *key;
 	const struct format_option *fo;
 	const struct cmus_opt *opt;
-	/* FIXME:
-	 * it can be overflowed in theory, but we can't find out option's size */
 	char buf[OPTION_MAX_SIZE];
 
 	if (expr->left) {
@@ -361,7 +359,7 @@ static int format_eval_cond(struct expr* expr, const struct format_option *fopts
 		return !fo->empty;
 	opt = option_find_silent(key);
 	if (opt) {
-		opt->get(opt->data, buf);
+		opt->get(opt->data, buf, OPTION_MAX_SIZE);
 		if (strcmp(buf, "false") != 0 && strlen(buf) != 0)
 			return 1;
 	}

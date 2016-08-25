@@ -42,7 +42,7 @@ void pl_add_file_to_marked_pl(const char *file);
 void pl_add_track_to_marked_pl(struct track_info *ti);
 void pl_rename_selected_pl(const char *name);
 void pl_create(const char *name);
-void pl_get_sort_str(char *buf);
+void pl_get_sort_str(char *buf, size_t size);
 void pl_set_sort_str(const char *buf);
 void pl_clear(void);
 struct track_info *pl_goto_next(void);
