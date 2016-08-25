@@ -744,9 +744,9 @@ static void print_track(struct window *win, int row, struct iter *iter)
 		int pos;
 		struct fp_len len;
 
-		/* FIXME:
-		 * replace A_BOLD by something useful */
-		bkgdset(A_BOLD);
+		/* Output the album name in the same color as unselected
+		 * track name, but with BOLD attribute. */
+		bkgdset(pairs[CURSED_WIN] | A_BOLD);
 
 		fill_track_fopts_album(album);
 
