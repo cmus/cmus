@@ -415,7 +415,7 @@ check_ffmpeg()
 		cflags="$cflags -DHAVE_FFMPEG_AVCODEC_H"
 	fi
 	topdir=`dirname "$0"`
-	ffmpeg_code=`cat "$topdir"/ffmpeg.c | sed 's/\\\n//g'`
+	ffmpeg_code=`cat "$topdir"/ip/ffmpeg.c | sed 's/\\\n//g'`
 	msg_checking "for successful build of ffmpeg.c"
 	if try_compile_link "$ffmpeg_code" $cflags $libs
 	then
