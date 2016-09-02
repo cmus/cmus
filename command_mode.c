@@ -44,9 +44,6 @@
 #include "list.h"
 #include "debug.h"
 #include "load_dir.h"
-#ifdef HAVE_CONFIG
-#include "config/datadir.h"
-#endif
 #include "help.h"
 #include "op.h"
 #include "mpris.h"
@@ -771,7 +768,7 @@ static void cmd_colorscheme(char *arg)
 
 	snprintf(filename, sizeof(filename), "%s/%s.theme", cmus_config_dir, arg);
 	if (source_file(filename) == -1) {
-		snprintf(filename, sizeof(filename), DATADIR "/cmus/%s.theme", arg);
+		snprintf(filename, sizeof(filename), "%s/%s.theme", cmus_data_dir, arg);
 		if (source_file(filename) == -1)
 			error_msg("sourcing %s: %s", filename, strerror(errno));
 	}
@@ -2488,7 +2485,7 @@ static void expand_colorscheme(const char *str)
 	PTR_ARRAY(array);
 
 	load_themes(cmus_config_dir, str, &array);
-	load_themes(DATADIR "/cmus", str, &array);
+	load_themes(cmus_data_dir, str, &array);
 
 	if (array.count) {
 		ptr_array_sort(&array, strptrcmp);

@@ -26,9 +26,8 @@
 #include "debug.h"
 #include "ui_curses.h"
 #include "options.h"
-#ifdef HAVE_CONFIG
-#include "config/libdir.h"
-#endif
+#include "xstrjoin.h"
+#include "misc.h"
 
 #include <string.h>
 #include <strings.h>
@@ -55,7 +54,7 @@ struct output_plugin {
 	unsigned int mixer_open : 1;
 };
 
-static const char * const plugin_dir = LIBDIR "/cmus/op";
+static const char *plugin_dir;
 static LIST_HEAD(op_head);
 static struct output_plugin *op = NULL;
 
@@ -85,6 +84,7 @@ void op_load_plugins(void)
 	DIR *dir;
 	struct dirent *d;
 
+	plugin_dir = xstrjoin(cmus_lib_dir, "/op");
 	dir = opendir(plugin_dir);
 	if (dir == NULL) {
 		error_msg("couldn't open directory `%s': %s", plugin_dir, strerror(errno));

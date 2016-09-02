@@ -21,6 +21,8 @@
 #include "xmalloc.h"
 #include "xstrjoin.h"
 #include "ui_curses.h"
+#include "config/libdir.h"
+#include "config/datadir.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -36,6 +38,8 @@
 const char *cmus_config_dir = NULL;
 const char *cmus_playlist_dir = NULL;
 const char *cmus_socket_path = NULL;
+const char *cmus_data_dir = NULL;
+const char *cmus_lib_dir = NULL;
 const char *home_dir = NULL;
 const char *user_name = NULL;
 
@@ -262,6 +266,14 @@ int misc_init(void)
 			cmus_socket_path = xstrjoin(xdg_runtime_dir, "/cmus-socket");
 		}
 	}
+
+	cmus_lib_dir = getenv("CMUS_LIB_DIR");
+	if (!cmus_lib_dir)
+		cmus_lib_dir = LIBDIR "/cmus";
+
+	cmus_data_dir = getenv("CMUS_DATA_DIR");
+	if (!cmus_data_dir)
+		cmus_data_dir = DATADIR "/cmus";
 
 	free(xdg_runtime_dir);
 	return 0;

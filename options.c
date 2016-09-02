@@ -35,9 +35,7 @@
 #include "prog.h"
 #include "output.h"
 #include "input.h"
-#ifdef HAVE_CONFIG
-#include "config/datadir.h"
-#endif
+#include "xstrjoin.h"
 #include "track_info.h"
 #include "cache.h"
 #include "debug.h"
@@ -1447,7 +1445,7 @@ void options_load(void)
 	/* load autosave config */
 	snprintf(filename, sizeof(filename), "%s/autosave", cmus_config_dir);
 	if (source_file(filename) == -1) {
-		const char *def = DATADIR "/cmus/rc";
+		char *def = xstrjoin(cmus_data_dir, "/rc");
 
 		if (errno != ENOENT)
 			error_msg("loading %s: %s", filename, strerror(errno));
@@ -1455,6 +1453,8 @@ void options_load(void)
 		/* load defaults */
 		if (source_file(def) == -1)
 			die_errno("loading %s", def);
+
+		free(def);
 	}
 
 	/* load optional static config */
