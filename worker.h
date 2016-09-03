@@ -27,6 +27,7 @@
 typedef int (*worker_match_cb)(uint32_t type, void *job_data, void *opaque);
 
 void worker_init(void);
+void worker_start(void);
 void worker_exit(void);
 
 void worker_add_job(uint32_t type, void (*job_cb)(void *job_data),

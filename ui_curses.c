@@ -2332,8 +2332,8 @@ static void init_all(void)
 
 	lib_init();
 	searchable = tree_searchable;
-	pl_init();
 	cmus_init();
+	pl_init();
 	browser_init();
 	filters_init();
 	help_init();
@@ -2376,6 +2376,8 @@ static void init_all(void)
 
 	cmus_add(lib_add_track, lib_autosave_filename, FILE_TYPE_PL,
 			JOB_TYPE_LIB, 0, NULL);
+
+	worker_start();
 }
 
 static void exit_all(void)
