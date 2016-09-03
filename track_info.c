@@ -28,6 +28,7 @@
 #include "ui_curses.h"
 
 #include <string.h>
+#include <stdatomic.h>
 #include <math.h>
 
 static void track_info_free(struct track_info *ti)
@@ -47,12 +48,13 @@ static void track_info_free(struct track_info *ti)
 
 struct track_info *track_info_new(const char *filename)
 {
-	static uint64_t cur_uid = 0;
-	cur_uid++;
+	static _Atomic uint64_t cur_uid = 1;
+	uint64_t uid = atomic_fetch_add_explicit(&cur_uid, 1, memory_order_relaxed);
+	BUG_ON(uid == 0);
 
 	struct track_info *ti;
 	ti = xnew(struct track_info, 1);
-	ti->uid = cur_uid;
+	ti->uid = uid;
 	ti->filename = xstrdup(filename);
 	ti->ref = 1;
 	ti->play_count = 0;
@@ -110,15 +112,15 @@ void track_info_set_comments(struct track_info *ti, struct keyval *comments) {
 
 void track_info_ref(struct track_info *ti)
 {
-	BUG_ON(ti->ref < 1);
-	ti->ref++;
+	int prev = atomic_fetch_add_explicit(&ti->ref, 1, memory_order_relaxed);
+	BUG_ON(prev < 1);
 }
 
 void track_info_unref(struct track_info *ti)
 {
-	BUG_ON(ti->ref < 1);
-	ti->ref--;
-	if (ti->ref == 0)
+	int prev = atomic_fetch_sub_explicit(&ti->ref, 1, memory_order_relaxed);
+	BUG_ON(prev < 1);
+	if (prev == 1)
 		track_info_free(ti);
 }
 

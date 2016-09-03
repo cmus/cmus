@@ -35,7 +35,7 @@ struct track_info {
 	long bitrate;
 	char *codec;
 	char *codec_profile;
-	int ref;
+	_Atomic int ref;
 	char *filename;
 
 	int tracknumber;
