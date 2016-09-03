@@ -31,7 +31,7 @@ enum ui_input_mode {
 
 #include <signal.h>
 
-extern sig_atomic_t cmus_running;
+extern volatile sig_atomic_t cmus_running;
 extern int ui_initialized;
 extern enum ui_input_mode input_mode;
 extern int cur_view;

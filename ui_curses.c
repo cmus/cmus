@@ -89,7 +89,7 @@ char *tgoto(const char *cap, int col, int row);
 
 /* globals. documented in ui_curses.h */
 
-sig_atomic_t cmus_running = 1;
+volatile sig_atomic_t cmus_running = 1;
 int ui_initialized = 0;
 enum ui_input_mode input_mode = NORMAL_MODE;
 int cur_view = TREE_VIEW;
@@ -1840,7 +1840,7 @@ static void spawn_status_program(void)
 		free(argv[i]);
 }
 
-static sig_atomic_t ctrl_c_pressed = 0;
+static volatile sig_atomic_t ctrl_c_pressed = 0;
 
 static void sig_int(int sig)
 {
@@ -1852,7 +1852,7 @@ static void sig_shutdown(int sig)
 	cmus_running = 0;
 }
 
-static sig_atomic_t needs_to_resize = 1;
+static volatile sig_atomic_t needs_to_resize = 1;
 
 static void sig_winch(int sig)
 {
