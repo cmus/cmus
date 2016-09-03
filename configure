@@ -11,7 +11,8 @@ check_cflags()
 	for i in -Wold-style-definition \
 		-Wno-pointer-sign \
 		-Werror-implicit-function-declaration \
-		-Wno-unused-parameter
+		-Wno-unused-parameter \
+		-Wno-missing-field-initializers
 	do
 		check_cc_flag $i
 	done
