@@ -2142,7 +2142,7 @@ static void main_loop(void)
 		update();
 
 		/* Timeout must be so small that screen updates seem instant.
-		 * Only affects changes done in other threads (worker, player).
+		 * Only affects changes done in other threads (player).
 		 *
 		 * Too small timeout makes window updates too fast (wastes CPU).
 		 *
@@ -2155,11 +2155,6 @@ static void main_loop(void)
 		if (player_info.status == PLAYER_STATUS_PLAYING) {
 			// player position updates need to be fast
 			tv.tv_usec = 100e3;
-		}
-
-		if (!tv.tv_usec && worker_has_job_by_type(JOB_TYPE_ANY)) {
-			// playlist is loading. screen needs to be updated
-			tv.tv_usec = 250e3;
 		}
 
 		FD_ZERO(&set);
