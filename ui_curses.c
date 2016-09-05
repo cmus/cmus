@@ -2185,11 +2185,7 @@ static void main_loop(void)
 			}
 		}
 
-		if (tv.tv_usec) {
-			rc = select(fd_high + 1, &set, NULL, NULL, &tv);
-		} else {
-			rc = select(fd_high + 1, &set, NULL, NULL, NULL);
-		}
+		rc = select(fd_high + 1, &set, NULL, NULL, tv.tv_usec ? &tv : NULL);
 		if (poll_mixer) {
 			int ol = volume_l;
 			int or = volume_r;
