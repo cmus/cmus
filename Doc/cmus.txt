@@ -465,7 +465,7 @@ pl-export <filename>
 
 pl-import [filename]
 	Imports a playlist into the playlist view. The argument can be omitted in
-    the browser view.
+	the browser view.
 
 pl-rename <name>
 	Renames the selected playlist.
