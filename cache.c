@@ -400,34 +400,6 @@ int cache_close(void)
 	return rc;
 }
 
-static struct track_info *ip_get_ti(const char *filename)
-{
-	struct track_info *ti = NULL;
-	struct input_plugin *ip;
-	struct keyval *comments;
-	int rc;
-
-	ip = ip_new(filename);
-	rc = ip_open(ip);
-	if (rc) {
-		ip_delete(ip);
-		return NULL;
-	}
-
-	rc = ip_read_comments(ip, &comments);
-	if (!rc) {
-		ti = track_info_new(filename);
-		track_info_set_comments(ti, comments);
-		ti->duration = ip_duration(ip);
-		ti->bitrate = ip_bitrate(ip);
-		ti->codec = ip_codec(ip);
-		ti->codec_profile = ip_codec_profile(ip);
-		ti->mtime = ip_is_remote(ip) ? -1 : file_get_mtime(filename);
-	}
-	ip_delete(ip);
-	return ti;
-}
-
 struct track_info *cache_get_ti(const char *filename, int force)
 {
 	unsigned int hash = hash_str(filename);
