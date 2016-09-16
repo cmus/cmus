@@ -316,4 +316,13 @@ static inline ssize_t strscpy(char *dst, const char *src, size_t size)
 	return -1;
 }
 
+static inline void timespec_add(struct timespec *time, const struct timespec *rel)
+{
+	long ns_per_sec = 1000 * 1000 * 1000;
+	long overflow = (time->tv_nsec + rel->tv_nsec) / ns_per_sec;
+
+	time->tv_sec += rel->tv_sec + overflow;
+	time->tv_nsec += rel->tv_nsec - overflow * ns_per_sec;
+}
+
 #endif
