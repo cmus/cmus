@@ -22,7 +22,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <unistd.h>
-#include <libkern/OSAtomic.h>
+#include <stdatomic.h>
 #include <AudioUnit/AudioUnit.h>
 #include <CoreAudio/CoreAudio.h>
 
@@ -131,7 +131,7 @@ static void coreaudio_ring_buffer_destroy(coreaudio_ring_buffer_t *rbuf)
 
 static size_t coreaudio_ring_buffer_read_available(coreaudio_ring_buffer_t *rbuf)
 {
-	OSMemoryBarrier();
+	atomic_thread_fence(memory_order_seq_cst);
 	return ((rbuf->write_index - rbuf->read_index) & rbuf->big_mask);
 }
 
@@ -169,7 +169,7 @@ static size_t coreaudio_ring_buffer_write_regions(coreaudio_ring_buffer_t *rbuf,
 
 static size_t coreaudio_ring_buffer_advance_write_index(coreaudio_ring_buffer_t *rbuf, size_t num_of_bytes)
 {
-	OSMemoryBarrier();
+	atomic_thread_fence(memory_order_seq_cst);
 	return rbuf->write_index = (rbuf->write_index + num_of_bytes) & rbuf->big_mask;
 }
 
@@ -197,7 +197,7 @@ static size_t coreaudio_ring_buffer_read_regions(coreaudio_ring_buffer_t *rbuf, 
 
 static size_t coreaudio_ring_buffer_advance_read_index(coreaudio_ring_buffer_t *rbuf, size_t num_of_bytes)
 {
-	OSMemoryBarrier();
+	atomic_thread_fence(memory_order_seq_cst);
 	return rbuf->read_index = (rbuf->read_index + num_of_bytes) & rbuf->big_mask;
 }
 
@@ -748,16 +748,6 @@ static int coreaudio_mixer_get_volume(int *l, int *r)
 		return -OP_ERROR_ERRNO;
 	}
 	return OP_ERROR_SUCCESS;
-}
-
-static int coreaudio_mixer_set_option(int key, const char *val)
-{
-	return -OP_ERROR_NOT_OPTION;
-}
-
-static int coreaudio_mixer_get_option(int key, char **val)
-{
-	return -OP_ERROR_NOT_OPTION;
 }
 
 static int coreaudio_mixer_open(int *volume_max)
