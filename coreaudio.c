@@ -699,6 +699,12 @@ static int coreaudio_close(void)
 	return OP_ERROR_SUCCESS;
 }
 
+static int coreaudio_drop(void)
+{
+	coreaudio_ring_buffer_flush(&coreaudio_ring_buffer);
+	return OP_ERROR_SUCCESS;
+}
+
 static int coreaudio_write(const char *buf, int cnt)
 {
 	return coreaudio_ring_buffer_write(&coreaudio_ring_buffer, buf, cnt);
@@ -834,6 +840,7 @@ const struct output_plugin_ops op_pcm_ops = {
 	.exit         = coreaudio_exit,
 	.open         = coreaudio_open,
 	.close        = coreaudio_close,
+	.drop         = coreaudio_drop,
 	.write        = coreaudio_write,
 	.pause        = coreaudio_pause,
 	.unpause      = coreaudio_unpause,
