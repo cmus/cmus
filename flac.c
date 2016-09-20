@@ -204,8 +204,8 @@ static FLAC__StreamDecoderWriteStatus write_cb(const Dec *dec, const FLAC__Frame
 	struct input_plugin_data *ip_data = data;
 	struct flac_private *priv = ip_data->private;
 	int frames, bytes, size, channels, bits, depth;
-	int ch, nch, i, j = 0;
-	char *dest; int32_t src; const char *src_ptr;
+	int ch, nch, i = 0;
+	char *dest; int32_t src;
 
 	if (ip_data->sf == 0) {
 		return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
@@ -237,13 +237,9 @@ static FLAC__StreamDecoderWriteStatus write_cb(const Dec *dec, const FLAC__Frame
 	dest = priv->buf + priv->buf_wpos;
 	for (i = 0; i < frames; i++) {
 		for (ch = 0; ch < channels; ch++) {
-			src = LE32(buf[ch % nch][i] << (bits - depth));
-			src_ptr = (void *)&src;
-			for (j = 0; j < bits / 8; j++) {
-				*dest = *src_ptr;
-				dest++;
-				src_ptr++;
-			}
+			src = LE32(buf[ch % nch][i] << (bits -depth));
+			memcpy(dest, &src, bits / 8);
+			dest += bits / 8;
 		}
 	}
 
