@@ -710,21 +710,52 @@ static int coreaudio_write(const char *buf, int cnt)
 	return coreaudio_ring_buffer_write(&coreaudio_ring_buffer, buf, cnt);
 }
 
+static OSStatus coreaudio_get_device_stereo_channels(AudioDeviceID dev_id, UInt32 *channels) {
+	AudioObjectPropertyAddress aopa = {
+		kAudioDevicePropertyPreferredChannelsForStereo,
+		kAudioObjectPropertyScopeOutput,
+		kAudioObjectPropertyElementMaster
+	};
+	UInt32 size = sizeof(UInt32[2]);
+	OSStatus err = AudioObjectGetPropertyData(dev_id,
+						  &aopa,
+						  0,
+						  NULL,
+						  &size,
+						  channels);
+	return err;
+} 
+
 static int coreaudio_mixer_set_volume(int l, int r)
 {
-	int v = l > r ? r : l;
-	Float32 vol = v * 1.0f / coreaudio_max_volume;
-	if (vol > 1.0f)
-		vol = 1.0f;
-	if (vol < 0.0f)
-		vol = 0.0f;
+	UInt32 channels[2];
+	OSStatus err = coreaudio_get_device_stereo_channels(coreaudio_device_id, channels);
+	if (err != noErr) {
+		d_print("Cannot get channel information: %d\n", err);
+		errno = ENODEV;
+		return -OP_ERROR_ERRNO;
+	}
+	Float32 vol[2];
+	for (int i = 0; i < 2; i++) {
+		vol[i]  = (i == 0 ? l : r) * 1.0f / coreaudio_max_volume;
+		if (vol[i] > 1.0f)
+			vol[i] = 1.0f;
+		if (vol[i] < 0.0f)
+			vol[i] = 0.0f;
+		AudioObjectPropertyAddress aopa = {
+			.mSelector	= kAudioDevicePropertyVolumeScalar,
+			.mScope		= kAudioObjectPropertyScopeOutput,
+			.mElement	= channels[i]
+		};
 
-	OSStatus err = AudioUnitSetParameter(coreaudio_audio_unit,
-					     kHALOutputParam_Volume,
-					     kAudioUnitScope_Global,
-					     0,
-					     vol,
-					     0);
+		UInt32 size = sizeof(vol[i]);
+		err |= AudioObjectSetPropertyData(coreaudio_device_id,
+						  &aopa,
+						  0,
+						  NULL,
+						  size,
+						  vol + i);
+	}
 	if (err != noErr) {
 		errno = ENODEV;
 		return -OP_ERROR_ERRNO;
@@ -734,21 +765,38 @@ static int coreaudio_mixer_set_volume(int l, int r)
 
 static int coreaudio_mixer_get_volume(int *l, int *r)
 {
-	Float32 vol = 0;
-	OSStatus err = AudioUnitGetParameter(coreaudio_audio_unit,
-					     kHALOutputParam_Volume,
-					     kAudioUnitScope_Global,
-					     0,
-					     &vol);
-
-	int volume = vol * coreaudio_max_volume;
-	if (volume > coreaudio_max_volume)
-		volume = coreaudio_max_volume;
-	if (volume < 0)
-		volume = 0;
-	*l = volume;
-	*r = volume;
-
+	UInt32 channels[2];
+	OSStatus err = coreaudio_get_device_stereo_channels(coreaudio_device_id, channels);
+	if (err != noErr) {
+		d_print("Cannot get channel information: %d\n", err);
+		errno = ENODEV;
+		return -OP_ERROR_ERRNO;
+	}
+	Float32 vol[2] = {.0, .0};
+	for (int i = 0; i < 2; i++) {
+		AudioObjectPropertyAddress aopa = {
+			.mSelector	= kAudioDevicePropertyVolumeScalar,
+			.mScope		= kAudioObjectPropertyScopeOutput,
+			.mElement	= channels[i]
+		};
+		UInt32 size = sizeof(vol[i]);
+		err |= AudioObjectGetPropertyData(coreaudio_device_id,
+						  &aopa,
+						  0,
+						  NULL,
+						  &size,
+						  vol + i);
+		int volume = vol[i] * coreaudio_max_volume;
+		if (volume > coreaudio_max_volume)
+			volume = coreaudio_max_volume;
+		if (volume < 0)
+			volume = 0;
+		if (i == 0) {
+			*l = volume;
+		} else {
+			*r = volume;
+		}
+	}
 	if (err != noErr) {
 		errno = ENODEV;
 		return -OP_ERROR_ERRNO;
