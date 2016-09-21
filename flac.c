@@ -190,12 +190,10 @@ static int eof_cb(const Dec *dec, void *data)
 
 #if defined(WORDS_BIGENDIAN)
 
-#define LE16(x) swap_uint16(x)
 #define LE32(x) swap_uint32(x)
 
 #else
 
-#define LE16(x)	(x)
 #define LE32(x)	(x)
 
 #endif
@@ -206,7 +204,8 @@ static FLAC__StreamDecoderWriteStatus write_cb(const Dec *dec, const FLAC__Frame
 	struct input_plugin_data *ip_data = data;
 	struct flac_private *priv = ip_data->private;
 	int frames, bytes, size, channels, bits, depth;
-	int ch, nch, i, j = 0;
+	int ch, nch, i = 0;
+	char *dest; int32_t src;
 
 	if (ip_data->sf == 0) {
 		return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
@@ -235,50 +234,13 @@ static FLAC__StreamDecoderWriteStatus write_cb(const Dec *dec, const FLAC__Frame
 	if (!depth)
 		depth = bits;
 	nch = frame->header.channels;
-	if (depth == 8) {
-		char *b = priv->buf + priv->buf_wpos;
-
-		for (i = 0; i < frames; i++) {
-			for (ch = 0; ch < channels; ch++)
-				b[j++] = buf[ch % nch][i];
+	dest = priv->buf + priv->buf_wpos;
+	for (i = 0; i < frames; i++) {
+		for (ch = 0; ch < channels; ch++) {
+			src = LE32(buf[ch % nch][i] << (bits -depth));
+			memcpy(dest, &src, bits / 8);
+			dest += bits / 8;
 		}
-	} else if (depth == 16) {
-		int16_t *b = (void *)(priv->buf + priv->buf_wpos);
-
-		for (i = 0; i < frames; i++) {
-			for (ch = 0; ch < channels; ch++)
-				b[j++] = LE16(buf[ch % nch][i]);
-		}
-	} else if (depth == 32) {
-		int32_t *b = (void *)(priv->buf + priv->buf_wpos);
-
-		for (i = 0; i < frames; i++) {
-			for (ch = 0; ch < channels; ch++)
-				b[j++] = LE32(buf[ch % nch][i]);
-		}
-	} else if (depth == 12) { /* -> 16 */
-		int16_t *b = (void *)(priv->buf + priv->buf_wpos);
-
-		for (i = 0; i < frames; i++) {
-			for (ch = 0; ch < channels; ch++)
-				b[j++] = LE16(buf[ch % nch][i] << 4);
-		}
-	} else if (depth == 20) { /* -> 32 */
-		int32_t *b = (void *)(priv->buf + priv->buf_wpos);
-
-		for (i = 0; i < frames; i++) {
-			for (ch = 0; ch < channels; ch++)
-				b[j++] = LE32(buf[ch % nch][i] << 12);
-		}
-	} else if (depth == 24) { /* -> 32 */
-		int32_t *b = (void *)(priv->buf + priv->buf_wpos);
-
-		for (i = 0; i < frames; i++) {
-			for (ch = 0; ch < channels; ch++)
-				b[j++] = LE32(buf[ch % nch][i] << 8);
-		}
-	} else {
-		d_print("bits per sample changed to %d\n", depth);
 	}
 
 	priv->buf_wpos += bytes;
@@ -304,15 +266,17 @@ static void metadata_cb(const Dec *dec, const FLAC__StreamMetadata *metadata, vo
 
 			switch (si->bits_per_sample) {
 			case 8:
-			case 16:
-			case 32:
-				bits = si->bits_per_sample;
+				bits = 8;
 				break;
 			case 12:
+			case 16:
 				bits = 16;
 				break;
 			case 20:
 			case 24:
+				bits = 24;
+				break;
+			case 32:
 				bits = 32;
 				break;
 			}
