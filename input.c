@@ -33,9 +33,7 @@
 #include "debug.h"
 #include "ui_curses.h"
 #include "locking.h"
-#ifdef HAVE_CONFIG
-#include "config/libdir.h"
-#endif
+#include "xstrjoin.h"
 
 #include <unistd.h>
 #include <stdbool.h>
@@ -95,7 +93,7 @@ struct ip {
 	const struct input_plugin_opt *options;
 };
 
-static const char * const plugin_dir = LIBDIR "/cmus/ip";
+static const char *plugin_dir;
 static LIST_HEAD(ip_head);
 
 /* protects ip->priority and ip_head */
@@ -497,6 +495,7 @@ void ip_load_plugins(void)
 	DIR *dir;
 	struct dirent *d;
 
+	plugin_dir = xstrjoin(cmus_lib_dir, "/ip");
 	dir = opendir(plugin_dir);
 	if (dir == NULL) {
 		error_msg("couldn't open directory `%s': %s", plugin_dir, strerror(errno));
