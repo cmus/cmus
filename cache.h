@@ -25,6 +25,7 @@
 extern struct fifo_mutex cache_mutex;
 
 #define cache_lock() fifo_mutex_lock(&cache_mutex)
+#define cache_yield() fifo_mutex_yield(&cache_mutex)
 #define cache_unlock() fifo_mutex_unlock(&cache_mutex)
 
 int cache_init(void);

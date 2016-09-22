@@ -477,6 +477,8 @@ struct track_info **cache_refresh(int *count, int force)
 		struct stat st;
 		int rc = 0;
 
+		cache_yield();
+
 		/*
 		 * If no-one else has reference to tis[i] then it is set to NULL
 		 * otherwise:
