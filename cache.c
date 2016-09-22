@@ -83,7 +83,7 @@ static struct track_info *hash_table[HASH_SIZE];
 static char *cache_filename;
 static int total;
 
-pthread_mutex_t cache_mutex = CMUS_MUTEX_INITIALIZER;
+struct fifo_mutex cache_mutex = FIFO_MUTEX_INITIALIZER;
 
 
 static void add_ti(struct track_info *ti, unsigned int hash)
