@@ -32,6 +32,7 @@
 #include <stdint.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <stdbool.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -286,7 +287,7 @@ static int ti_filename_cmp(const void *a, const void *b)
 	return strcmp(ai->filename, bi->filename);
 }
 
-static struct track_info **get_track_infos(void)
+static struct track_info **get_track_infos(bool reference)
 {
 	struct track_info **tis;
 	int i, c;
@@ -297,6 +298,8 @@ static struct track_info **get_track_infos(void)
 		struct track_info *ti = hash_table[i];
 
 		while (ti) {
+			if (reference)
+				track_info_ref(ti);
 			tis[c++] = ti;
 			ti = ti->next;
 		}
@@ -383,7 +386,7 @@ int cache_close(void)
 		return -1;
 	}
 
-	tis = get_track_infos();
+	tis = get_track_infos(false);
 
 	gbuf_grow(&buf, 64 * 1024 - 1);
 	gbuf_add_bytes(&buf, cache_header, sizeof(cache_header));
@@ -465,7 +468,7 @@ struct track_info *cache_get_ti(const char *filename, int force)
 
 struct track_info **cache_refresh(int *count, int force)
 {
-	struct track_info **tis = get_track_infos();
+	struct track_info **tis = get_track_infos(true);
 	int i, n = total;
 
 	for (i = 0; i < n; i++) {
@@ -487,13 +490,13 @@ struct track_info **cache_refresh(int *count, int force)
 			rc = stat(ti->filename, &st);
 			if (!rc && !force && ti->mtime == st.st_mtime) {
 				// unchanged
+				track_info_unref(ti);
 				tis[i] = NULL;
 				continue;
 			}
 		}
 
 		hash = hash_str(ti->filename);
-		track_info_ref(ti);
 		do_cache_remove_ti(ti, hash);
 
 		if (!rc) {
