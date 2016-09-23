@@ -501,7 +501,7 @@ struct track_info **cache_refresh(int *count, int force)
 			struct track_info *new_ti;
 
 			// clear cache-only entries
-			if (force && ti->ref == 1) {
+			if (force && track_info_unique_ref(ti)) {
 				track_info_unref(ti);
 				tis[i] = NULL;
 				continue;
@@ -511,7 +511,7 @@ struct track_info **cache_refresh(int *count, int force)
 			if (new_ti) {
 				add_ti(new_ti, hash);
 
-				if (ti->ref == 1) {
+				if (track_info_unique_ref(ti)) {
 					track_info_unref(ti);
 					tis[i] = NULL;
 				} else {
@@ -524,7 +524,7 @@ struct track_info **cache_refresh(int *count, int force)
 		}
 
 		// deleted
-		if (ti->ref == 1) {
+		if (track_info_unique_ref(ti)) {
 			track_info_unref(ti);
 			tis[i] = NULL;
 		} else {
