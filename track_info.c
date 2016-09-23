@@ -124,6 +124,11 @@ void track_info_unref(struct track_info *ti)
 		track_info_free(ti);
 }
 
+bool track_info_unique_ref(struct track_info *ti)
+{
+	return atomic_load_explicit(&ti->ref, memory_order_relaxed) == 1;
+}
+
 int track_info_has_tag(const struct track_info *ti)
 {
 	return ti->artist || ti->album || ti->title;
