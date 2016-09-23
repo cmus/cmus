@@ -992,7 +992,7 @@ icecast_default_charset (ISO-8859-1)
 	NOTE:  This is used only if the metadata is not valid UTF-8.
 
 lib_add_filter (`Filter`)
-	Apply filter when adding to library view. See *FILTERS*.
+	Apply filter when adding files to the library. See *FILTERS*.
 
 lib_sort (artist album discnumber tracknumber title filename) [`Sort Keys`]
 	Sort keys for the sorted library view (2).

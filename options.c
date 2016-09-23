@@ -1100,8 +1100,7 @@ static void set_lib_add_filter(void *data, const char *buf)
 	if (lib_add_filter != NULL)
 		free(lib_add_filter);
 
-	lib_add_filter = malloc(strlen(buf) + 1);
-	strcpy(lib_add_filter, buf);
+	lib_add_filter = xstrdup(buf);
 
 	lib_set_add_filter(expr);
 }
