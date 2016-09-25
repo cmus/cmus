@@ -247,6 +247,17 @@ static AudioUnit coreaudio_audio_unit = NULL;
 static UInt32 coreaudio_buffer_frame_size = 1;
 static coreaudio_ring_buffer_t coreaudio_ring_buffer = {0, 0, 0, 0, 0, NULL};
 static UInt32 coreaudio_stero_channels[2];
+static int coreaudio_mixer_pipe_in = 0;
+static int coreaudio_mixer_pipe_out = 0;
+
+static OSStatus coreaudio_device_volume_change_listener(AudioObjectID inObjectID,
+							UInt32 inNumberAddresses,
+							const AudioObjectPropertyAddress inAddresses[],
+							void *inClientData)
+{
+	notify_via_pipe(coreaudio_mixer_pipe_in);
+	return noErr;
+}
 
 static OSStatus coreaudio_play_callback(void *user_data,
 					AudioUnitRenderActionFlags *flags,
@@ -760,6 +771,7 @@ static int coreaudio_mixer_set_volume(int l, int r)
 
 static int coreaudio_mixer_get_volume(int *l, int *r)
 {
+	clear_pipe(coreaudio_mixer_pipe_out, -1);
 	Float32 vol[2] = {.0, .0};
 	OSStatus err = 0;
 	for (int i = 0; i < 2; i++) {
@@ -802,12 +814,60 @@ static int coreaudio_mixer_open(int *volume_max)
 		errno = ENODEV;
 		return -OP_ERROR_ERRNO;
 	}
+	for (int i = 0; i < 2; i++) {
+		AudioObjectPropertyAddress aopa = {
+			.mSelector	= kAudioDevicePropertyVolumeScalar,
+			.mScope		= kAudioObjectPropertyScopeOutput,
+			.mElement	= coreaudio_stero_channels[i]
+		};
+		err |= AudioObjectAddPropertyListener(coreaudio_device_id,
+						      &aopa,
+						      coreaudio_device_volume_change_listener,
+						      NULL);
+	}
+	if (err != noErr) {
+		d_print("Cannot add property listener: %d\n", err);
+		errno = ENODEV;
+		return -OP_ERROR_ERRNO;
+	}
+	init_pipes(&coreaudio_mixer_pipe_out, &coreaudio_mixer_pipe_in);
+	return OP_ERROR_SUCCESS;
+}
+
+static int coreaudio_mixer_close(void)
+{
+	OSStatus err = noErr;
+	for (int i = 0; i < 2; i++) {
+		AudioObjectPropertyAddress aopa = {
+			.mSelector	= kAudioDevicePropertyVolumeScalar,
+			.mScope		= kAudioObjectPropertyScopeOutput,
+			.mElement	= coreaudio_stero_channels[i]
+		};
+	
+		err |= AudioObjectRemovePropertyListener(coreaudio_device_id,
+							 &aopa,
+							 coreaudio_device_volume_change_listener,
+							 NULL);
+	}
+	if (err != noErr) {
+		d_print("Cannot remove property listener: %d\n", err);
+		errno = ENODEV;
+		return -OP_ERROR_ERRNO;
+	}
+	close(coreaudio_mixer_pipe_out);
+	close(coreaudio_mixer_pipe_in);
 	return OP_ERROR_SUCCESS;
 }
 
 static int coreaudio_mixer_dummy(void)
 {
 	return OP_ERROR_SUCCESS;
+}
+
+static int coreaudio_mixer_get_fds(int *fds)
+{
+	fds[0] = coreaudio_mixer_pipe_out;
+	return 1;
 }
 
 static int coreaudio_pause(void)
@@ -895,7 +955,8 @@ const struct mixer_plugin_ops op_mixer_ops = {
 	.init       = coreaudio_mixer_dummy,
 	.exit       = coreaudio_mixer_dummy,
 	.open       = coreaudio_mixer_open,
-	.close      = coreaudio_mixer_dummy,
+	.close      = coreaudio_mixer_close,
+	.get_fds    = coreaudio_mixer_get_fds,
 	.set_volume = coreaudio_mixer_set_volume,
 	.get_volume = coreaudio_mixer_get_volume,
 };
