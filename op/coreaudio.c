@@ -246,6 +246,7 @@ static AudioStreamBasicDescription coreaudio_format_description;
 static AudioUnit coreaudio_audio_unit = NULL;
 static UInt32 coreaudio_buffer_frame_size = 1;
 static coreaudio_ring_buffer_t coreaudio_ring_buffer = {0, 0, 0, 0, 0, NULL};
+static UInt32 coreaudio_stero_channels[2];
 
 static OSStatus coreaudio_play_callback(void *user_data,
 					AudioUnitRenderActionFlags *flags,
@@ -728,14 +729,8 @@ static OSStatus coreaudio_get_device_stereo_channels(AudioDeviceID dev_id, UInt3
 
 static int coreaudio_mixer_set_volume(int l, int r)
 {
-	UInt32 channels[2];
-	OSStatus err = coreaudio_get_device_stereo_channels(coreaudio_device_id, channels);
-	if (err != noErr) {
-		d_print("Cannot get channel information: %d\n", err);
-		errno = ENODEV;
-		return -OP_ERROR_ERRNO;
-	}
 	Float32 vol[2];
+	OSStatus err = 0;
 	for (int i = 0; i < 2; i++) {
 		vol[i]  = (i == 0 ? l : r) * 1.0f / coreaudio_max_volume;
 		if (vol[i] > 1.0f)
@@ -745,7 +740,7 @@ static int coreaudio_mixer_set_volume(int l, int r)
 		AudioObjectPropertyAddress aopa = {
 			.mSelector	= kAudioDevicePropertyVolumeScalar,
 			.mScope		= kAudioObjectPropertyScopeOutput,
-			.mElement	= channels[i]
+			.mElement	= coreaudio_stero_channels[i]
 		};
 
 		UInt32 size = sizeof(vol[i]);
@@ -765,19 +760,13 @@ static int coreaudio_mixer_set_volume(int l, int r)
 
 static int coreaudio_mixer_get_volume(int *l, int *r)
 {
-	UInt32 channels[2];
-	OSStatus err = coreaudio_get_device_stereo_channels(coreaudio_device_id, channels);
-	if (err != noErr) {
-		d_print("Cannot get channel information: %d\n", err);
-		errno = ENODEV;
-		return -OP_ERROR_ERRNO;
-	}
 	Float32 vol[2] = {.0, .0};
+	OSStatus err = 0;
 	for (int i = 0; i < 2; i++) {
 		AudioObjectPropertyAddress aopa = {
 			.mSelector	= kAudioDevicePropertyVolumeScalar,
 			.mScope		= kAudioObjectPropertyScopeOutput,
-			.mElement	= channels[i]
+			.mElement	= coreaudio_stero_channels[i]
 		};
 		UInt32 size = sizeof(vol[i]);
 		err |= AudioObjectGetPropertyData(coreaudio_device_id,
@@ -807,6 +796,12 @@ static int coreaudio_mixer_get_volume(int *l, int *r)
 static int coreaudio_mixer_open(int *volume_max)
 {
 	*volume_max = coreaudio_max_volume;
+	OSStatus err = coreaudio_get_device_stereo_channels(coreaudio_device_id, coreaudio_stero_channels);
+	if (err != noErr) {
+		d_print("Cannot get channel information: %d\n", err);
+		errno = ENODEV;
+		return -OP_ERROR_ERRNO;
+	}
 	return OP_ERROR_SUCCESS;
 }
 
