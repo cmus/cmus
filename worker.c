@@ -36,11 +36,17 @@ struct worker_job {
 	void *data;
 };
 
+enum worker_state {
+	WORKER_PAUSED,
+	WORKER_RUNNING,
+	WORKER_STOPPED,
+};
+
 static LIST_HEAD(worker_job_head);
 static pthread_mutex_t worker_mutex = CMUS_MUTEX_INITIALIZER;
 static pthread_cond_t worker_cond = PTHREAD_COND_INITIALIZER;
 static pthread_t worker_thread;
-static int running = 1;
+static enum worker_state state = WORKER_PAUSED;
 static int cancel_current = 0;
 
 /*
@@ -59,10 +65,10 @@ static void *worker_loop(void *arg)
 
 	worker_lock();
 	while (1) {
-		if (list_empty(&worker_job_head)) {
+		if (state != WORKER_RUNNING || list_empty(&worker_job_head)) {
 			int rc;
 
-			if (!running)
+			if (state == WORKER_STOPPED)
 				break;
 
 			rc = pthread_cond_wait(&worker_cond, &worker_mutex);
@@ -103,13 +109,22 @@ void worker_init(void)
 	BUG_ON(rc);
 }
 
-void worker_exit(void)
+static void worker_set_state(enum worker_state s)
 {
 	worker_lock();
-	running = 0;
+	state = s;
 	pthread_cond_signal(&worker_cond);
 	worker_unlock();
+}
 
+void worker_start(void)
+{
+	worker_set_state(WORKER_RUNNING);
+}
+
+void worker_exit(void)
+{
+	worker_set_state(WORKER_STOPPED);
 	pthread_join(worker_thread, NULL);
 }
 

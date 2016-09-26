@@ -4,14 +4,15 @@
 
 check_cflags()
 {
-	check_cc_flag -std=gnu99 -pipe -Wall -Wshadow -Wcast-align -Wpointer-arith \
+	check_cc_flag -std=gnu11 -pipe -Wall -Wshadow -Wcast-align -Wpointer-arith \
 		-Wwrite-strings -Wundef -Wmissing-prototypes -Wredundant-decls \
 		-Wextra -Wno-sign-compare -Wformat-security
 
 	for i in -Wold-style-definition \
 		-Wno-pointer-sign \
 		-Werror-implicit-function-declaration \
-		-Wno-unused-parameter
+		-Wno-unused-parameter \
+		-Wno-missing-field-initializers
 	do
 		check_cc_flag $i
 	done
@@ -409,7 +410,7 @@ check_ffmpeg()
 	fi
 	# ffmpeg api changes so frequently that it is best to compile the module
 	libs="$LDDLFLAGS $FFMPEG_LIBS"
-	cflags="-std=gnu99 $SOFLAGS $FFMPEG_CFLAGS"
+	cflags="-std=gnu11 $SOFLAGS $FFMPEG_CFLAGS"
 	if test "$HAVE_FFMPEG_AVCODEC_H" = y
 	then
 		cflags="$cflags -DHAVE_FFMPEG_AVCODEC_H"
