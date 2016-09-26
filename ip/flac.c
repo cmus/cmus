@@ -23,18 +23,7 @@
 #include "utils.h"
 
 #include <FLAC/export.h>
-
-#ifdef FLAC_API_VERSION_CURRENT
-/* flac 1.1.3 */
-#define FLAC_NEW_API 1
-#endif
-
-#ifdef FLAC_NEW_API
 #include <FLAC/stream_decoder.h>
-#else
-#include <FLAC/seekable_stream_decoder.h>
-#endif
-
 #include <FLAC/metadata.h>
 #include <stdint.h>
 #include <sys/types.h>
@@ -48,17 +37,10 @@
 /* Reduce typing.  Namespaces are nice but FLAC API is fscking ridiculous.  */
 
 /* functions, types, enums */
-#ifdef FLAC_NEW_API
 #define F(s) FLAC__stream_decoder_ ## s
 #define T(s) FLAC__StreamDecoder ## s
 #define Dec FLAC__StreamDecoder
 #define E(s) FLAC__STREAM_DECODER_ ## s
-#else
-#define F(s) FLAC__seekable_stream_decoder_ ## s
-#define T(s) FLAC__SeekableStreamDecoder ## s
-#define Dec FLAC__SeekableStreamDecoder
-#define E(s) FLAC__SEEKABLE_STREAM_DECODER_ ## s
-#endif
 
 struct flac_private {
 	/* file/stream position and length */
@@ -80,11 +62,7 @@ struct flac_private {
 	unsigned int ignore_next_write : 1;
 };
 
-#ifdef FLAC_NEW_API
 static T(ReadStatus) read_cb(const Dec *dec, unsigned char *buf, size_t *size, void *data)
-#else
-static T(ReadStatus) read_cb(const Dec *dec, unsigned char *buf, unsigned *size, void *data)
-#endif
 {
 	struct input_plugin_data *ip_data = data;
 	struct flac_private *priv = ip_data->private;
@@ -92,18 +70,10 @@ static T(ReadStatus) read_cb(const Dec *dec, unsigned char *buf, unsigned *size,
 
 	if (priv->pos == priv->len) {
 		*size = 0;
-#ifdef FLAC_NEW_API
 		return E(READ_STATUS_END_OF_STREAM);
-#else
-		return E(READ_STATUS_OK);
-#endif
 	}
 	if (*size == 0)
-#ifdef FLAC_NEW_API
 		return E(READ_STATUS_CONTINUE);
-#else
-		return E(READ_STATUS_OK);
-#endif
 
 	rc = read(ip_data->fd, buf, *size);
 	if (rc == -1) {
@@ -111,34 +81,18 @@ static T(ReadStatus) read_cb(const Dec *dec, unsigned char *buf, unsigned *size,
 		if (errno == EINTR || errno == EAGAIN) {
 			/* FIXME: not sure how the flac decoder handles this */
 			d_print("interrupted\n");
-#ifdef FLAC_NEW_API
 			return E(READ_STATUS_CONTINUE);
-#else
-			return E(READ_STATUS_OK);
-#endif
 		}
-#ifdef FLAC_NEW_API
 		return E(READ_STATUS_ABORT);
-#else
-		return E(READ_STATUS_ERROR);
-#endif
 	}
 
 	priv->pos += rc;
 	*size = rc;
 	if (rc == 0) {
 		/* should not happen */
-#ifdef FLAC_NEW_API
 		return E(READ_STATUS_END_OF_STREAM);
-#else
-		return E(READ_STATUS_OK);
-#endif
 	}
-#ifdef FLAC_NEW_API
 	return E(READ_STATUS_CONTINUE);
-#else
-	return E(READ_STATUS_OK);
-#endif
 }
 
 static T(SeekStatus) seek_cb(const Dec *dec, uint64_t offset, void *data)
@@ -388,29 +342,10 @@ static int flac_open(struct input_plugin_data *ip_data)
 	}
 	ip_data->private = priv;
 
-#ifndef FLAC_NEW_API
-	F(set_read_callback)(dec, read_cb);
-	F(set_seek_callback)(dec, seek_cb);
-	F(set_tell_callback)(dec, tell_cb);
-	F(set_length_callback)(dec, length_cb);
-	F(set_eof_callback)(dec, eof_cb);
-	F(set_write_callback)(dec, write_cb);
-	F(set_metadata_callback)(dec, metadata_cb);
-	F(set_error_callback)(dec, error_cb);
-	F(set_client_data)(dec, ip_data);
-#endif
-
-#ifdef FLAC_NEW_API
 	FLAC__stream_decoder_set_metadata_respond_all(dec);
 	if (FLAC__stream_decoder_init_stream(dec, read_cb, seek_cb, tell_cb,
 				length_cb, eof_cb, write_cb, metadata_cb,
 				error_cb, ip_data) != E(INIT_STATUS_OK)) {
-#else
-	/* FLAC__METADATA_TYPE_STREAMINFO already accepted */
-	F(set_metadata_respond)(dec, FLAC__METADATA_TYPE_VORBIS_COMMENT);
-
-	if (F(init)(dec) != E(OK)) {
-#endif
 		int save = errno;
 
 		d_print("init failed\n");
