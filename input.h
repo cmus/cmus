@@ -22,6 +22,7 @@
 #include "keyval.h"
 #include "sf.h"
 #include "channelmap.h"
+#include "track_info.h"
 
 struct input_plugin;
 
@@ -70,6 +71,7 @@ int ip_bitrate(struct input_plugin *ip);
 int ip_current_bitrate(struct input_plugin *ip);
 char *ip_codec(struct input_plugin *ip);
 char *ip_codec_profile(struct input_plugin *ip);
+struct track_info *ip_get_ti(const char *filename);
 
 sample_format_t ip_get_sf(struct input_plugin *ip);
 void ip_get_channel_map(struct input_plugin *ip, channel_position_t *channel_map);

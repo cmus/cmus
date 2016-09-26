@@ -22,7 +22,7 @@ FFMPEG_CFLAGS += $(shell pkg-config --cflags libswresample)
 FFMPEG_LIBS += $(shell pkg-config --libs libswresample)
 
 CMUS_LIBS = $(PTHREAD_LIBS) $(NCURSES_LIBS) $(ICONV_LIBS) $(DL_LIBS) $(DISCID_LIBS) \
-			$(CUE_LIBS) -lm $(COMPAT_LIBS) $(LIBSYSTEMD_LIBS)
+			$(CUE_LIBS) -lm -lrt $(COMPAT_LIBS) $(LIBSYSTEMD_LIBS)
 
 input.o main.o ui_curses.o op/pulse.lo: .version
 input.o main.o ui_curses.o op/pulse.lo: CFLAGS += -DVERSION=\"$(VERSION)\"

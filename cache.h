@@ -25,6 +25,7 @@
 extern pthread_mutex_t cache_mutex;
 
 #define cache_lock() cmus_mutex_lock(&cache_mutex)
+#define cache_timedlock(timeout) cmus_mutex_timedlock(&cache_mutex, timeout)
 #define cache_unlock() cmus_mutex_unlock(&cache_mutex)
 
 int cache_init(void);

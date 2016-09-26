@@ -17,9 +17,14 @@
  */
 
 #include "locking.h"
+#include "utils.h"
 #include "debug.h"
 
 #include <string.h>
+#include <time.h>
+
+#define LOCK_BUG_TEXT "error locking mutex: %s\n"
+#define UNLOCK_BUG_TEXT "error unlocking mutex: %s\n"
 
 pthread_t main_thread;
 
@@ -27,33 +32,53 @@ void cmus_mutex_lock(pthread_mutex_t *mutex)
 {
 	int rc = pthread_mutex_lock(mutex);
 	if (unlikely(rc))
-		BUG("error locking mutex: %s\n", strerror(rc));
+		BUG(LOCK_BUG_TEXT, strerror(rc));
+}
+
+int cmus_mutex_timedlock(pthread_mutex_t *mutex, const struct timespec *rel)
+{
+	struct timespec abs;
+	int rc;
+
+	rc = clock_gettime(CLOCK_REALTIME, &abs);
+	if (unlikely(rc))
+		BUG(LOCK_BUG_TEXT, strerror(errno));
+
+	timespec_add(&abs, rel);
+
+	rc = pthread_mutex_timedlock(mutex, &abs);
+	if (rc) {
+		if (likely(rc == ETIMEDOUT))
+			return -1;
+		BUG(LOCK_BUG_TEXT, strerror(rc));
+	}
+	return 0;
 }
 
 void cmus_mutex_unlock(pthread_mutex_t *mutex)
 {
 	int rc = pthread_mutex_unlock(mutex);
 	if (unlikely(rc))
-		BUG("error unlocking mutex: %s\n", strerror(rc));
+		BUG(UNLOCK_BUG_TEXT, strerror(rc));
 }
 
 void cmus_rwlock_rdlock(pthread_rwlock_t *lock)
 {
 	int rc = pthread_rwlock_rdlock(lock);
 	if (unlikely(rc))
-		BUG("error locking mutex: %s\n", strerror(rc));
+		BUG(LOCK_BUG_TEXT, strerror(rc));
 }
 
 void cmus_rwlock_wrlock(pthread_rwlock_t *lock)
 {
 	int rc = pthread_rwlock_wrlock(lock);
 	if (unlikely(rc))
-		BUG("error locking mutex: %s\n", strerror(rc));
+		BUG(LOCK_BUG_TEXT, strerror(rc));
 }
 
 void cmus_rwlock_unlock(pthread_rwlock_t *lock)
 {
 	int rc = pthread_rwlock_unlock(lock);
 	if (unlikely(rc))
-		BUG("error unlocking mutex: %s\n", strerror(rc));
+		BUG(UNLOCK_BUG_TEXT, strerror(rc));
 }

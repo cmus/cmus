@@ -100,10 +100,14 @@ void cmus_prev(void)
 void cmus_play_file(const char *filename)
 {
 	struct track_info *ti;
+	struct timespec timeout = { .tv_nsec = 100 * 1000 * 1000 };
 
-	cache_lock();
-	ti = cache_get_ti(filename, 0);
-	cache_unlock();
+	if (cache_timedlock(&timeout)) {
+		ti = ip_get_ti(filename);
+	} else {
+		ti = cache_get_ti(filename, 0);
+		cache_unlock();
+	}
 	if (!ti) {
 		error_msg("Couldn't get file information for %s\n", filename);
 		return;
