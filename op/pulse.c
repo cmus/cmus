@@ -33,6 +33,9 @@ static pa_channel_map		 pa_cmap;
 static pa_cvolume		 pa_vol;
 static pa_sample_spec		 pa_ss;
 
+static int			 mixer_notify_in;
+static int			 mixer_notify_out;
+
 /* configuration */
 static int pa_restore_volume = 1;
 
@@ -157,7 +160,7 @@ static void _pa_sink_input_info_cb(pa_context *c,
 {
 	if (i) {
 		memcpy(&pa_vol, &i->volume, sizeof(pa_vol));
-		pa_threaded_mainloop_signal(pa_ml, 0);
+		notify_via_pipe(mixer_notify_in);
 	}
 }
 
@@ -237,6 +240,17 @@ static int _pa_stream_drain(void)
 	return _pa_wait_unlock(pa_stream_drain(pa_s, _pa_stream_success_cb, NULL));
 }
 
+static void _pa_ctx_subscription_cb(pa_context *ctx, pa_subscription_event_type_t t,
+		uint32_t idx, void *userdata)
+{
+	pa_subscription_event_type_t type = t & PA_SUBSCRIPTION_EVENT_TYPE_MASK;
+	if (type != PA_SUBSCRIPTION_EVENT_CHANGE)
+		return;
+
+	if (pa_s && idx == pa_stream_get_index(pa_s))
+		pa_context_get_sink_input_info(ctx, idx, _pa_sink_input_info_cb, NULL);
+}
+
 static int _pa_create_context(void)
 {
 	pa_mainloop_api	*api;
@@ -269,6 +283,13 @@ static int _pa_create_context(void)
 			goto out_fail_connected;
 		pa_threaded_mainloop_wait(pa_ml);
 	}
+
+	pa_context_set_subscribe_callback(pa_ctx, _pa_ctx_subscription_cb, NULL);
+	pa_operation *op = pa_context_subscribe(pa_ctx, PA_SUBSCRIPTION_MASK_SINK_INPUT,
+			NULL, NULL);
+	if (!op)
+		goto out_fail_connected;
+	pa_operation_unref(op);
 
 	pa_threaded_mainloop_unlock(pa_ml);
 
@@ -386,6 +407,9 @@ static int op_pulse_open(sample_format_t sf, const channel_position_t *channel_m
 	if (pa_stream_get_state(pa_s) != PA_STREAM_READY)
 		goto out_fail;
 
+	pa_context_get_sink_input_info(pa_ctx, pa_stream_get_index(pa_s),
+			_pa_sink_input_info_cb, NULL);
+
 	pa_threaded_mainloop_unlock(pa_ml);
 
 	return OP_ERROR_SUCCESS;
@@ -475,11 +499,16 @@ static int op_pulse_mixer_init(void)
 
 	pa_cvolume_reset(&pa_vol, 2);
 
+	init_pipes(&mixer_notify_out, &mixer_notify_in);
+
 	return OP_ERROR_SUCCESS;
 }
 
 static int op_pulse_mixer_exit(void)
 {
+	close(mixer_notify_out);
+	close(mixer_notify_in);
+
 	return OP_ERROR_SUCCESS;
 }
 
@@ -497,7 +526,8 @@ static int op_pulse_mixer_close(void)
 
 static int op_pulse_mixer_get_fds(int *fds)
 {
-	return -OP_ERROR_NOT_SUPPORTED;
+	fds[0] = mixer_notify_out;
+	return 1;
 }
 
 static int op_pulse_mixer_set_volume(int l, int r)
@@ -531,24 +561,15 @@ static int op_pulse_mixer_set_volume(int l, int r)
 
 static int op_pulse_mixer_get_volume(int *l, int *r)
 {
-	int rc = OP_ERROR_SUCCESS;
+	clear_pipe(mixer_notify_out, -1);
 
 	if (!pa_s && pa_restore_volume)
 		return -OP_ERROR_NOT_OPEN;
 
-	if (pa_s) {
-		pa_threaded_mainloop_lock(pa_ml);
-
-		rc = _pa_wait_unlock(pa_context_get_sink_input_info(pa_ctx,
-								    pa_stream_get_index(pa_s),
-								    _pa_sink_input_info_cb,
-								    NULL));
-	}
-
 	*l = pa_cvolume_get_position(&pa_vol, &pa_cmap, PA_CHANNEL_POSITION_FRONT_LEFT);
 	*r = pa_cvolume_get_position(&pa_vol, &pa_cmap, PA_CHANNEL_POSITION_FRONT_RIGHT);
 
-	return rc;
+	return OP_ERROR_SUCCESS;
 }
 
 static int op_pulse_set_restore_volume(const char *val)
