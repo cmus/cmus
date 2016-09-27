@@ -44,7 +44,7 @@ static struct track_info_priv *track_info_to_priv(struct track_info *ti)
 
 struct track_info *track_info_new(const char *filename)
 {
-	static _Atomic uint64_t cur_uid = 1;
+	static _Atomic uint64_t cur_uid = ATOMIC_VAR_INIT(1);
 	uint64_t uid = atomic_fetch_add_explicit(&cur_uid, 1, memory_order_relaxed);
 	BUG_ON(uid == 0);
 
