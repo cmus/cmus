@@ -30,38 +30,36 @@
 #include <string.h>
 #include <stdatomic.h>
 #include <math.h>
+#include <stdatomic.h>
 
-static void track_info_free(struct track_info *ti)
+struct track_info_priv {
+	struct track_info ti;
+	_Atomic uint32_t ref_count;
+};
+
+static struct track_info_priv *track_info_to_priv(struct track_info *ti)
 {
-	keyvals_free(ti->comments);
-	free(ti->filename);
-	free(ti->codec);
-	free(ti->codec_profile);
-	free(ti->collkey_artist);
-	free(ti->collkey_album);
-	free(ti->collkey_title);
-	free(ti->collkey_genre);
-	free(ti->collkey_comment);
-	free(ti->collkey_albumartist);
-	free(ti);
+	return container_of(ti, struct track_info_priv, ti);
 }
 
 struct track_info *track_info_new(const char *filename)
 {
-	static _Atomic uint64_t cur_uid = 1;
+	static _Atomic uint64_t cur_uid = ATOMIC_VAR_INIT(1);
 	uint64_t uid = atomic_fetch_add_explicit(&cur_uid, 1, memory_order_relaxed);
 	BUG_ON(uid == 0);
 
-	struct track_info *ti;
-	ti = xnew(struct track_info, 1);
+	struct track_info_priv *priv = xnew(struct track_info_priv, 1);
+	atomic_init(&priv->ref_count, 1);
+
+	struct track_info *ti = &priv->ti;
 	ti->uid = uid;
 	ti->filename = xstrdup(filename);
-	ti->ref = 1;
 	ti->play_count = 0;
 	ti->comments = NULL;
 	ti->bpm = -1;
 	ti->codec = NULL;
 	ti->codec_profile = NULL;
+
 	return ti;
 }
 
@@ -112,16 +110,34 @@ void track_info_set_comments(struct track_info *ti, struct keyval *comments) {
 
 void track_info_ref(struct track_info *ti)
 {
-	int prev = atomic_fetch_add_explicit(&ti->ref, 1, memory_order_relaxed);
-	BUG_ON(prev < 1);
+	struct track_info_priv *priv = track_info_to_priv(ti);
+	atomic_fetch_add_explicit(&priv->ref_count, 1, memory_order_relaxed);
 }
 
 void track_info_unref(struct track_info *ti)
 {
-	int prev = atomic_fetch_sub_explicit(&ti->ref, 1, memory_order_relaxed);
-	BUG_ON(prev < 1);
-	if (prev == 1)
-		track_info_free(ti);
+	struct track_info_priv *priv = track_info_to_priv(ti);
+	uint32_t prev = atomic_fetch_sub_explicit(&priv->ref_count, 1,
+			memory_order_acq_rel);
+	if (prev == 1) {
+		keyvals_free(ti->comments);
+		free(ti->filename);
+		free(ti->codec);
+		free(ti->codec_profile);
+		free(ti->collkey_artist);
+		free(ti->collkey_album);
+		free(ti->collkey_title);
+		free(ti->collkey_genre);
+		free(ti->collkey_comment);
+		free(ti->collkey_albumartist);
+		free(priv);
+	}
+}
+
+bool track_info_unique_ref(struct track_info *ti)
+{
+	struct track_info_priv *priv = track_info_to_priv(ti);
+	return atomic_load_explicit(&priv->ref_count, memory_order_relaxed) == 1;
 }
 
 int track_info_has_tag(const struct track_info *ti)

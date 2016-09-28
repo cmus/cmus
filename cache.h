@@ -22,10 +22,11 @@
 #include "track_info.h"
 #include "locking.h"
 
-extern pthread_mutex_t cache_mutex;
+extern struct fifo_mutex cache_mutex;
 
-#define cache_lock() cmus_mutex_lock(&cache_mutex)
-#define cache_unlock() cmus_mutex_unlock(&cache_mutex)
+#define cache_lock() fifo_mutex_lock(&cache_mutex)
+#define cache_yield() fifo_mutex_yield(&cache_mutex)
+#define cache_unlock() fifo_mutex_unlock(&cache_mutex)
 
 int cache_init(void);
 int cache_close(void);
