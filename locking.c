@@ -65,7 +65,7 @@ void cmus_rwlock_unlock(pthread_rwlock_t *lock)
 		BUG("error unlocking mutex: %s\n", strerror(rc));
 }
 
-static void fifo_mutex_relock(struct fifo_mutex *fifo, bool holding_lock)
+void fifo_mutex_lock(struct fifo_mutex *fifo)
 {
 	struct fifo_waiter self = {
 		.cond = PTHREAD_COND_INITIALIZER,
@@ -77,8 +77,7 @@ static void fifo_mutex_relock(struct fifo_mutex *fifo, bool holding_lock)
 	if (old_tail)
 		atomic_store_explicit(&old_tail->next, &self, memory_order_release);
 
-	if (!holding_lock)
-		cmus_mutex_lock(&fifo->mutex);
+	cmus_mutex_lock(&fifo->mutex);
 	if (old_tail) {
 		while (fifo->head != &self)
 			pthread_cond_wait(&self.cond, &fifo->mutex);
@@ -96,11 +95,6 @@ static void fifo_mutex_relock(struct fifo_mutex *fifo, bool holding_lock)
 	fifo->head = next;
 }
 
-void fifo_mutex_lock(struct fifo_mutex *fifo)
-{
-	fifo_mutex_relock(fifo, false);
-}
-
 void fifo_mutex_unlock(struct fifo_mutex *fifo)
 {
 	if (fifo->head)
@@ -110,10 +104,8 @@ void fifo_mutex_unlock(struct fifo_mutex *fifo)
 
 void fifo_mutex_yield(struct fifo_mutex *fifo)
 {
-	if (fifo->head) {
+	if (fifo->head || atomic_load_explicit(&fifo->tail, memory_order_relaxed)) {
 		fifo_mutex_unlock(fifo);
 		fifo_mutex_lock(fifo);
-	} else {
-		fifo_mutex_relock(fifo, true);
 	}
 }
