@@ -245,6 +245,19 @@ static inline uint32_t read_le32(const char *buf)
 	return b[0] | (b[1] << 8) | (b[2] << 16) | (b[3] << 24);
 }
 
+static inline uint32_t read_le24(const char *buf)
+{
+	const unsigned char *b = (const unsigned char *)buf;
+
+	return b[0] | (b[1] << 8) | (b[2] << 16);
+}
+
+static inline int32_t read_le24i(const char *buf)
+{
+	uint32_t a = read_le24(buf); 
+	return (a & 0x800000) ? 0xFF000000 | a : a;
+}
+
 static inline uint16_t read_le16(const char *buf)
 {
 	const unsigned char *b = (const unsigned char *)buf;
