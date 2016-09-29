@@ -91,6 +91,13 @@ static jack_default_audio_sample_t read_sample_le16(const char *buffer)
 	return (jack_default_audio_sample_t)s / (jack_default_audio_sample_t)upper_bound;
 }
 
+static jack_default_audio_sample_t read_sample_le24(const char *buffer)
+{
+	int32_t s = read_le24i(buffer);
+	uint32_t upper_bound = 0x7FFFFF + (s < 0);
+	return (jack_default_audio_sample_t) s / (jack_default_audio_sample_t)upper_bound;
+}
+
 static jack_default_audio_sample_t read_sample_le32(const char *buffer)
 {
 	int32_t s = (int32_t)read_le32(buffer);
@@ -103,6 +110,13 @@ static jack_default_audio_sample_t read_sample_le16u(const char *buffer)
 	uint32_t u = read_le16(buffer);
 	return (((jack_default_audio_sample_t) u)
 		/ ((jack_default_audio_sample_t) UINT16_MAX)) * 2.0 - 2.0;
+}
+
+static jack_default_audio_sample_t read_sample_le24u(const char *buffer)
+{
+	uint32_t u = read_le24(buffer);
+	return (((jack_default_audio_sample_t) u)
+		/ ((jack_default_audio_sample_t) 0xFFFFFFU)) * 2.0 - 2.0;
 }
 
 static jack_default_audio_sample_t read_sample_le32u(const char *buffer)
@@ -403,6 +417,9 @@ static int op_jack_open(sample_format_t sf, const channel_position_t *cm)
 	if (bits == 16) {
 		sample_bytes = 2;
 		read_sample = sf_get_signed(sf) ? &read_sample_le16 : &read_sample_le16u;
+	} else if (bits == 24) {
+		sample_bytes = 3;
+		read_sample = sf_get_signed(sf) ? &read_sample_le24 : &read_sample_le24u;
 	} else if (bits == 32) {
 		sample_bytes = 4;
 		read_sample = sf_get_signed(sf) ? &read_sample_le32 : &read_sample_le32u;
