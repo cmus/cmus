@@ -341,8 +341,13 @@ static struct track_info *pl_play_selected_track(void)
 
 static struct track_info *pl_play_first_in_pl_playing(void)
 {
-	if (!pl_playing || pl_empty(pl_playing))
+	if (!pl_playing)
+		pl_playing = pl_visible;
+
+	if (pl_empty(pl_playing)) {
+		pl_playing = NULL;
 		return NULL;
+	}
 
 	return pl_play_track(pl_playing, pl_get_first_track(pl_playing));
 }
