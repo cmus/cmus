@@ -1535,7 +1535,7 @@ static void cmd_win_activate(char *arg)
 		browser_enter();
 		break;
 	case FILTERS_VIEW:
-		filters_activate();
+		filters_activate(1);
 		break;
 	case HELP_VIEW:
 		help_select();
