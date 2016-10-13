@@ -85,7 +85,7 @@ void filters_set_live(const char *val);
 
 void filters_activate_names(const char *str);
 
-void filters_activate(void);
+void filters_activate(int win_activate);
 void filters_toggle_filter(void);
 void filters_delete_filter(void);
 

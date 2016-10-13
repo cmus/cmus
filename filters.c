@@ -131,7 +131,7 @@ static void edit_sel_filter(void)
 	enter_command_mode();
 }
 
-void filters_activate(void)
+void filters_activate(int win_activate)
 {
 	struct filter_entry *f;
 	struct expr *e, *expr = NULL;
@@ -142,8 +142,13 @@ void filters_activate(void)
 		if (f->act_stat != f->sel_stat)
 			unchanged = 0;
 	}
-	if (unchanged)
-		edit_sel_filter();
+
+	if (unchanged) {
+		if (win_activate)
+			edit_sel_filter();
+		else
+			return;
+	}
 
 	/* mark visited and AND together all selected filters
 	 * mark any other filters unvisited */
@@ -275,7 +280,7 @@ void filters_activate_names(const char *str)
 		for_each_name(str, select_filter);
 
 	/* activate selected */
-	filters_activate();
+	filters_activate(0);
 }
 
 void filters_toggle_filter(void)
