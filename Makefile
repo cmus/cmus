@@ -22,13 +22,12 @@ FFMPEG_CFLAGS += $(shell pkg-config --cflags libswresample)
 FFMPEG_LIBS += $(shell pkg-config --libs libswresample)
 
 CMUS_LIBS = $(PTHREAD_LIBS) $(NCURSES_LIBS) $(ICONV_LIBS) $(DL_LIBS) $(DISCID_LIBS) \
-			$(CUE_LIBS) -lm $(COMPAT_LIBS) $(LIBSYSTEMD_LIBS)
+			-lm $(COMPAT_LIBS) $(LIBSYSTEMD_LIBS)
 
 input.o main.o ui_curses.o op/pulse.lo: .version
 input.o main.o ui_curses.o op/pulse.lo: CFLAGS += -DVERSION=\"$(VERSION)\"
 main.o server.o: CFLAGS += -DDEFAULT_PORT=3000
 discid.o: CFLAGS += $(DISCID_CFLAGS)
-job.o cue_utils.o: CFLAGS += $(CUE_CFLAGS)
 mpris.o: CFLAGS += $(LIBSYSTEMD_CFLAGS)
 
 .version: Makefile
@@ -114,7 +113,6 @@ $(wavpack-objs):	CFLAGS += $(WAVPACK_CFLAGS)
 $(mp4-objs):		CFLAGS += $(MP4_CFLAGS)
 $(aac-objs):		CFLAGS += $(AAC_CFLAGS)
 $(ffmpeg-objs):		CFLAGS += $(FFMPEG_CFLAGS)
-$(cue-objs):		CFLAGS += $(CUE_CFLAGS)
 $(vtx-objs):		CFLAGS += $(VTX_CFLAGS)
 
 ip/cdio.so: $(cdio-objs) $(libcmus-y)
