@@ -458,38 +458,38 @@ Options:
   DEBUG           Debugging level (0-2)  [$DEBUG]
 
 Optional Features: y/n
-  CONFIG_CDDB     	libcddb CDDA identification                     [auto]
-  CONFIG_CDIO     	libcdio CDDA input                              [auto]
-  CONFIG_DISCID   	libdiscid CDDA identification                   [auto]
-  CONFIG_FLAC     	Free Lossless Audio Codec (.flac, .fla)         [auto]
-  CONFIG_MAD      	MPEG Audio Decoder (.mp3, .mp2, streams)        [auto]
-  CONFIG_MODPLUG  	libmodplug (.mod, .x3m, ...)                    [auto]
-  CONFIG_MIKMOD   	libmikmod (.mod, .x3m, ...)                     [n]
-  CONFIG_MPC      	libmpcdec (Musepack .mpc, .mpp, .mp+)           [auto]
-  CONFIG_VORBIS   	Ogg/Vorbis (.ogg, application/ogg, audio/x-ogg) [auto]
-  CONFIG_TREMOR   	Use Tremor as Ogg/Vorbis input plugin           [n]
-  CONFIG_OPUS   	Opus (.opus)                                    [auto]
-  CONFIG_WAV      	WAV                                             [y]
-  CONFIG_WAVPACK  	WavPack (.wv, audio/x-wavpack)                  [auto]
-  CONFIG_MP4      	MPEG-4 AAC (.mp4, .m4a, .m4b)                   [auto]
-  CONFIG_AAC      	AAC (.aac, audio/aac, audio/aacp)               [auto]
-  CONFIG_FFMPEG   	FFMPEG (.shn, .wma)                             [auto]
-  CONFIG_VTX    	libayemu (.vtx)                                 [auto]
-  CONFIG_CUE    	CUE sheets (.cue)                               [y]
+  CONFIG_AAC            AAC (.aac, audio/aac, audio/aacp)               [auto]
+  CONFIG_ALSA           ALSA                                            [auto]
+  CONFIG_AO             Libao cross-platform audio library              [auto]
+  CONFIG_ARTS           ARTS                                            [auto]
+  CONFIG_CDDB           libcddb CDDA identification                     [auto]
+  CONFIG_CDIO           libcdio CDDA input                              [auto]
+  CONFIG_COREAUDIO      CoreAudio                                       [auto]
+  CONFIG_CUE            CUE sheets (.cue)                               [y]
+  CONFIG_DISCID         libdiscid CDDA identification                   [auto]
+  CONFIG_FFMPEG         FFMPEG (.shn, .wma)                             [auto]
+  CONFIG_FLAC           Free Lossless Audio Codec (.flac, .fla)         [auto]
+  CONFIG_JACK           JACK                                            [auto]
+  CONFIG_MAD            MPEG Audio Decoder (.mp3, .mp2, streams)        [auto]
+  CONFIG_MIKMOD         libmikmod (.mod, .x3m, ...)                     [n]
+  CONFIG_MODPLUG        libmodplug (.mod, .x3m, ...)                    [auto]
+  CONFIG_MP4            MPEG-4 AAC (.mp4, .m4a, .m4b)                   [auto]
+  CONFIG_MPC            libmpcdec (Musepack .mpc, .mpp, .mp+)           [auto]
+  CONFIG_MPRIS          MPRIS                                           [auto]
+  CONFIG_OPUS           Opus (.opus)                                    [auto]
+  CONFIG_OSS            Open Sound System                               [auto]
+  CONFIG_PULSE          native PulseAudio output                        [auto]
   CONFIG_ROAR           native RoarAudio output                         [auto]
-  CONFIG_PULSE    	native PulseAudio output                        [auto]
-  CONFIG_ALSA     	ALSA                                            [auto]
-  CONFIG_JACK     	JACK                                            [auto]
-  CONFIG_SAMPLERATE	Use libsamplerate to resample to JACK's rate    [auto]
-  CONFIG_AO       	Libao cross-platform audio library              [auto]
-  CONFIG_COREAUDIO    	CoreAudio                                       [auto]
-  CONFIG_ARTS     	ARTS                                            [auto]
-  CONFIG_OSS      	Open Sound System                               [auto]
-  CONFIG_SNDIO    	Sndio                                           [auto]
-  CONFIG_SUN      	Sun Audio                                       [auto]
-  CONFIG_WAVEOUT  	Windows Wave Out                                [auto]
-  CONFIG_MPRIS  	MPRIS                                           [auto]
-  USE_FALLBACK_IP	Use a specific IP for every unrecognized	[n]
+  CONFIG_SAMPLERATE     Use libsamplerate to resample to JACK's rate    [auto]
+  CONFIG_SNDIO          Sndio                                           [auto]
+  CONFIG_SUN            Sun Audio                                       [auto]
+  CONFIG_TREMOR         Use Tremor as Ogg/Vorbis input plugin           [n]
+  CONFIG_VORBIS         Ogg/Vorbis (.ogg, application/ogg, audio/x-ogg) [auto]
+  CONFIG_VTX            libayemu (.vtx)                                 [auto]
+  CONFIG_WAVEOUT        Windows Wave Out                                [auto]
+  CONFIG_WAVPACK        WavPack (.wv, audio/x-wavpack)                  [auto]
+  CONFIG_WAV            WAV                                             [y]
+  USE_FALLBACK_IP       Use a specific IP for every unrecognized        [n]
                         input format. Currently set to FFMPEG.
 
 Also many standard variables like CC, LD, CFLAGS, LDFLAGS are recognized.
@@ -592,7 +592,12 @@ config_header config/xmalloc.h HAVE_STRDUP HAVE_STRNDUP
 CFLAGS="${CFLAGS} -DHAVE_CONFIG"
 
 makefile_vars bindir datadir libdir mandir exampledir
-makefile_vars CONFIG_CDIO CONFIG_FLAC CONFIG_MAD CONFIG_MIKMOD CONFIG_MODPLUG CONFIG_MPC CONFIG_VORBIS CONFIG_OPUS CONFIG_WAVPACK CONFIG_WAV CONFIG_MP4 CONFIG_AAC CONFIG_FFMPEG CONFIG_CUE CONFIG_VTX
-makefile_vars CONFIG_ROAR CONFIG_PULSE CONFIG_ALSA CONFIG_JACK CONFIG_SAMPLERATE CONFIG_AO CONFIG_COREAUDIO CONFIG_ARTS CONFIG_OSS CONFIG_SNDIO CONFIG_SUN CONFIG_WAVEOUT CONFIG_MPRIS
+makefile_vars \
+	CONFIG_AAC CONFIG_ALSA CONFIG_AO CONFIG_ARTS CONFIG_CDIO \
+	CONFIG_COREAUDIO CONFIG_CUE CONFIG_FFMPEG CONFIG_FLAC CONFIG_JACK \
+	CONFIG_MAD CONFIG_MIKMOD CONFIG_MODPLUG CONFIG_MP4 CONFIG_MPC \
+	CONFIG_MPRIS CONFIG_OPUS CONFIG_OSS CONFIG_PULSE CONFIG_ROAR \
+	CONFIG_SAMPLERATE CONFIG_SNDIO CONFIG_SUN CONFIG_VORBIS CONFIG_VTX \
+	CONFIG_WAV CONFIG_WAVEOUT CONFIG_WAVPACK
 
 generate_config_mk
