@@ -30,7 +30,7 @@ ssize_t write_all(int fd, const void *buf, size_t count);
  *
  * returns buffer or NULL if empty file or failed
  */
-char *mmap_file(const char *filename, int *size);
+char *mmap_file(const char *filename, ssize_t *size);
 
 void buffer_for_each_line(const char *buf, int size,
 		int (*cb)(void *data, const char *line),

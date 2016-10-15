@@ -368,7 +368,8 @@ static int handle_line(void *data, const char *line)
 static void add_pl(const char *filename)
 {
 	char *buf;
-	int size, reverse;
+	ssize_t size;
+	int reverse;
 
 	buf = mmap_file(filename, &size);
 	if (size == -1)
