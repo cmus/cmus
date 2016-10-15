@@ -20,6 +20,7 @@
 #include "utils.h"
 #include "cue_utils.h"
 #include "xmalloc.h"
+#include "cue.h"
 
 #include <stdio.h>
 
@@ -51,27 +52,11 @@ char *associated_cue(const char *filename)
 
 int cue_get_ntracks(const char *filename)
 {
-	int n;
-	FILE *cue;
-	Cd *cd;
-
-	cue = fopen(filename, "r");
-	if (cue == NULL)
+	struct cue_sheet *cd = cue_from_file(filename);
+	if (!cd)
 		return -1;
-
-	disable_stdio();
-	cd = cue_parse_file(cue);
-	enable_stdio();
-	if (cd == NULL) {
-		fclose(cue);
-		return -1;
-	}
-
-	n = cd_get_ntrack(cd);
-
-	cd_delete(cd);
-	fclose(cue);
-
+	size_t n = cd->num_tracks;
+	cue_free(cd);
 	return n;
 }
 

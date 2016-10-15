@@ -23,10 +23,19 @@
 #include "comment.h"
 #include "xmalloc.h"
 #include "cue_utils.h"
+#include "config/cue.h"
 
 #include <stdio.h>
 #include <fcntl.h>
 
+/*
+ * warning: this header does not contain include guards!
+ */
+#ifdef CONFIG_CUE2
+#include <libcue.h>
+#else
+#include <libcue/libcue.h>
+#endif
 
 struct cue_private {
 	struct input_plugin *child;
