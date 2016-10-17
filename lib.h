@@ -61,6 +61,11 @@ struct album {
 	int date;
 	/* min date of the tracks added to this album */
 	int min_date;
+
+	/* distinguishes albums having the same name,
+	 * but residing in different directories
+	 * <= 0 means undefined */
+	int dup_id;
 };
 
 struct artist {

@@ -43,6 +43,9 @@ struct track_iter {
 	struct album *album;
 };
 
+static int album_for_each_track(struct album *album, int (*cb)(void *data, struct track_info *ti),
+		void *data, int reverse);
+
 static inline int tree_album_selected(void)
 {
 	return iter_to_album(&lib_tree_win->sel) != NULL;
@@ -553,6 +556,7 @@ static struct album *album_new(struct artist *artist, const char *name,
 	album->collkey_sort_name = u_strcasecoll_key0(sort_name);
 	album->date = date;
 	album->min_date = date;
+	album->dup_id = 0;
 	rb_root_init(&album->track_root);
 	album->artist = artist;
 
@@ -566,6 +570,25 @@ static void album_free(struct album *album)
 	free(album->collkey_name);
 	free(album->collkey_sort_name);
 	free(album);
+}
+
+static int special_assign_album_filename(void *data, struct track_info *ti) {
+	char **album_filename = (char**) data;
+	*album_filename = ti->filename;
+	return 1;
+}
+
+static int album_path_disagrees(struct album *album, const char *filename) {
+	char *album_filename;
+	char ca, cf;
+	char *sa, *sf;
+
+	album_for_each_track(album, special_assign_album_filename, (void*) &album_filename, 0);
+	while ((ca = *album_filename++) && (cf = *filename++) && ca == cf) {}
+	sa = strchr(--album_filename, '/');
+	sf = strchr(--filename, '/');
+	int ret = sa || sf;
+	return ret;
 }
 
 static int track_selectable(struct iter *iter)
@@ -656,9 +679,25 @@ static inline const char *album_sort_collkey(const struct album *a)
         return a->collkey_name;
 }
 
+static inline int special_album_cmp_dup(const struct album *a, const struct album *b)
+{
+		int a_dup = a->dup_id;
+		int b_dup = b->dup_id;
+		if (a_dup <= 0 || b_dup <= 0)
+			return 0;
+		if (a_dup < b_dup)
+			return -1;
+		else if (a_dup > b_dup)
+			return +1;
+		return 0;
+}
+
 static int special_album_cmp(const struct album *a, const struct album *b)
 {
-	return special_name_cmp(a->name, album_sort_collkey(a), b->name, album_sort_collkey(b));
+	int ret = special_name_cmp(a->name, album_sort_collkey(a), b->name, album_sort_collkey(b));
+	if (!ret)
+		ret = special_album_cmp_dup(a, b);
+	return ret;
 }
 
 static int special_album_cmp_date(const struct album *a, const struct album *b)
@@ -672,7 +711,10 @@ static int special_album_cmp_date(const struct album *a, const struct album *b)
 	if (cmp)
 		return cmp;
 
-	return strcmp(album_sort_collkey(a), album_sort_collkey(b));
+	int ret = strcmp(album_sort_collkey(a), album_sort_collkey(b));
+	if (!ret)
+		ret = special_album_cmp_dup(a, b);
+	return ret;
 }
 
 /* has to follow the same logic as artist_sort_name() */
@@ -810,15 +852,21 @@ static struct album *do_find_album(const struct album *album,
 	return NULL;
 }
 
-static struct album *find_album(const struct album *album)
+static struct album *find_album(struct album *album, char *filename, int *album_dup_count)
 {
 	struct album *a;
 	struct rb_node *tmp;
 
+	*album_dup_count = 0;
 	/* do a linear search because we want find albums with different date */
 	rb_for_each_entry(a, tmp, &album->artist->album_root, tree_node) {
-		if (special_album_cmp(album, a) == 0)
-			return a;
+		if (special_album_cmp(album, a) == 0) {
+			if (!album_path_disagrees(a, filename)) {
+				*album_dup_count = -1;
+				return a;
+			}
+			*album_dup_count = 1 + *album_dup_count;
+		}
 	}
 	return NULL;
 }
@@ -836,6 +884,7 @@ static void add_album(struct album *album)
 			      album->artist->is_compilation ? special_album_cmp
 							    : special_album_cmp_date,
 			      &new, &parent);
+
 	if (!found) {
 		rb_link_node(&album->tree_node, parent, new);
 		rb_insert_color(&album->tree_node, &album->artist->album_root);
@@ -926,6 +975,7 @@ void tree_add_track(struct tree_track *track)
 	struct album *album, *new_album;
 	int date;
 	int is_va_compilation = 0;
+	int album_dup_count = 0;
 
 	date = ti->originaldate;
 	if (date < 0)
@@ -950,11 +1000,18 @@ void tree_add_track(struct tree_track *track)
 	if (artist) {
 		artist_free(new_artist);
 		new_album = album_new(artist, album_name, albumsort_name, date);
-		album = find_album(new_album);
-		if (album)
-			album_free(new_album);
-	} else
+		album = find_album(new_album, ti->filename, &album_dup_count);
+		new_album->dup_id = album_dup_count + 1;
+		if (album) {
+			if (album_dup_count < 0)
+				album_free(new_album);
+			else
+				album = NULL;
+		}
+	} else {
 		new_album = album_new(new_artist, album_name, albumsort_name, date);
+		new_album->dup_id = 1;
+	}
 
 	if (artist) {
 		int changed = 0;
