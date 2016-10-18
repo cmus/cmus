@@ -681,15 +681,15 @@ static inline const char *album_sort_collkey(const struct album *a)
 
 static inline int special_album_cmp_dup(const struct album *a, const struct album *b)
 {
-		int a_dup = a->dup_id;
-		int b_dup = b->dup_id;
-		if (a_dup <= 0 || b_dup <= 0)
-			return 0;
-		if (a_dup < b_dup)
-			return -1;
-		else if (a_dup > b_dup)
-			return +1;
+	int a_dup = a->dup_id;
+	int b_dup = b->dup_id;
+	if (a_dup <= 0 || b_dup <= 0)
 		return 0;
+	if (a_dup < b_dup)
+		return -1;
+	else if (a_dup > b_dup)
+		return +1;
+	return 0;
 }
 
 static int special_album_cmp(const struct album *a, const struct album *b)
