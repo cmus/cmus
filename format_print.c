@@ -140,7 +140,10 @@ static void print_time(int t)
 	stack[p++] = s / 10 + '0';
 	stack[p++] = ':';
 	stack[p++] = m % 10 + '0';
-	stack[p++] = m / 10 + '0';
+	if (m / 10 || h || time_show_leading_zero)
+		stack[p++] = m / 10 + '0';
+	else
+		stack[p++] = ' ';
 	if (h) {
 		stack[p++] = ':';
 		do {
