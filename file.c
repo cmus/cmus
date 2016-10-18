@@ -70,7 +70,7 @@ ssize_t write_all(int fd, const void *buf, size_t count)
 	return count_save;
 }
 
-char *mmap_file(const char *filename, int *size)
+char *mmap_file(const char *filename, ssize_t *size)
 {
 	struct stat st;
 	char *buf;
@@ -171,7 +171,7 @@ int file_for_each_line(const char *filename,
 		void *data)
 {
 	char *buf;
-	int size;
+	ssize_t size;
 
 	buf = mmap_file(filename, &size);
 	if (size == -1)

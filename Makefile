@@ -22,13 +22,12 @@ FFMPEG_CFLAGS += $(shell pkg-config --cflags libswresample)
 FFMPEG_LIBS += $(shell pkg-config --libs libswresample)
 
 CMUS_LIBS = $(PTHREAD_LIBS) $(NCURSES_LIBS) $(ICONV_LIBS) $(DL_LIBS) $(DISCID_LIBS) \
-			$(CUE_LIBS) -lm $(COMPAT_LIBS) $(LIBSYSTEMD_LIBS)
+			-lm $(COMPAT_LIBS) $(LIBSYSTEMD_LIBS)
 
 input.o main.o ui_curses.o op/pulse.lo: .version
 input.o main.o ui_curses.o op/pulse.lo: CFLAGS += -DVERSION=\"$(VERSION)\"
 main.o server.o: CFLAGS += -DDEFAULT_PORT=3000
 discid.o: CFLAGS += $(DISCID_CFLAGS)
-job.o cue_utils.o: CFLAGS += $(CUE_CFLAGS)
 mpris.o: CFLAGS += $(LIBSYSTEMD_CFLAGS)
 
 .version: Makefile
@@ -37,17 +36,14 @@ mpris.o: CFLAGS += $(LIBSYSTEMD_CFLAGS)
 
 # programs {{{
 cmus-y := \
-	ape.o browser.o buffer.o cache.o cmdline.o cmus.o command_mode.o comment.o \
-	channelmap.o convert.lo debug.o discid.o editable.o expr.o filters.o \
-	format_print.o gbuf.o glob.o help.o history.o http.o id3.o input.o job.o \
-	keys.o keyval.o lib.o load_dir.o locking.o mergesort.o misc.o options.o \
-	output.o pcm.o pl.o play_queue.o player.o \
-	rbtree.o read_wrapper.o server.o search.o \
-	search_mode.o spawn.o tabexp.o tabexp_file.o \
-	track.o track_info.o tree.o u_collate.o uchar.o ui_curses.o \
-	window.o worker.o xstrjoin.o
+	ape.o browser.o buffer.o cache.o channelmap.o cmdline.o cmus.o command_mode.o \
+	comment.o convert.lo cue.o cue_utils.o debug.o discid.o editable.o expr.o \
+	filters.o format_print.o gbuf.o glob.o help.o history.o http.o id3.o input.o \
+	job.o keys.o keyval.o lib.o load_dir.o locking.o mergesort.o misc.o options.o \
+	output.o pcm.o player.o play_queue.o pl.o rbtree.o read_wrapper.o search_mode.o \
+	search.o server.o spawn.o tabexp_file.o tabexp.o track_info.o track.o tree.o \
+	uchar.o u_collate.o ui_curses.o window.o worker.o xstrjoin.o
 
-cmus-$(CONFIG_CUE) += cue_utils.o
 cmus-$(CONFIG_MPRIS) += mpris.o
 
 $(cmus-y): CFLAGS += $(PTHREAD_CFLAGS) $(NCURSES_CFLAGS) $(ICONV_CFLAGS) $(DL_CFLAGS)
@@ -117,7 +113,6 @@ $(wavpack-objs):	CFLAGS += $(WAVPACK_CFLAGS)
 $(mp4-objs):		CFLAGS += $(MP4_CFLAGS)
 $(aac-objs):		CFLAGS += $(AAC_CFLAGS)
 $(ffmpeg-objs):		CFLAGS += $(FFMPEG_CFLAGS)
-$(cue-objs):		CFLAGS += $(CUE_CFLAGS)
 $(vtx-objs):		CFLAGS += $(VTX_CFLAGS)
 
 ip/cdio.so: $(cdio-objs) $(libcmus-y)

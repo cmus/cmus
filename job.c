@@ -35,12 +35,7 @@
 #include "discid.h"
 #include "xstrjoin.h"
 #include "ui_curses.h"
-#ifdef HAVE_CONFIG
-#include "config/cue.h"
-#endif
-#ifdef CONFIG_CUE
 #include "cue_utils.h"
-#endif
 
 #include <string.h>
 #include <unistd.h>
@@ -166,15 +161,12 @@ static void add_ti(struct track_info *ti)
 	ti_buffer[ti_buffer_fill++] = ti;
 }
 
-#ifdef CONFIG_CUE
 static int add_file_cue(const char *filename);
-#endif
 
 static void add_file(const char *filename, int force)
 {
 	struct track_info *ti;
 
-#ifdef CONFIG_CUE
 	if (!is_cue_url(filename)) {
 		if (force || lookup_cache_entry(filename, hash_str(filename)) == NULL) {
 			int done = add_file_cue(filename);
@@ -182,7 +174,6 @@ static void add_file(const char *filename, int force)
 				return;
 		}
 	}
-#endif
 
 	cache_lock();
 	ti = cache_get_ti(filename, force);
@@ -192,7 +183,6 @@ static void add_file(const char *filename, int force)
 		add_ti(ti);
 }
 
-#ifdef CONFIG_CUE
 static int add_file_cue(const char *filename)
 {
 	int n_tracks;
@@ -218,7 +208,6 @@ static int add_file_cue(const char *filename)
 	free(cue_filename);
 	return 1;
 }
-#endif
 
 static void add_url(const char *url)
 {
@@ -368,7 +357,8 @@ static int handle_line(void *data, const char *line)
 static void add_pl(const char *filename)
 {
 	char *buf;
-	int size, reverse;
+	ssize_t size;
+	int reverse;
 
 	buf = mmap_file(filename, &size);
 	if (size == -1)

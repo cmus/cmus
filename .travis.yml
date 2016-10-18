@@ -26,7 +26,6 @@ addons:
             - libcdio-dev
             - libcdio-cdda-dev
             - libcddb2-dev
-            - libcue-dev
             # - libopus-dev
             - libflac-dev
             - libvorbis-dev
