@@ -1297,15 +1297,25 @@ static void print_re_error(int errcode, regex_t *re, const char *re_src) {
 
 static void get_album_path_ignore_re(void *data, char *buf, size_t size)
 {
-	char **patternp = data;
+	char **pattern = data;
 
-	strscpy(buf, *patternp, size);
+	fprintf(stderr, "HERE_get %p\n", pattern);
+	fprintf(stderr, "HERE_get '%s'\n", *pattern);
+	strscpy(buf, *pattern, size);
 }
 
 static void set_album_path_ignore_re(void *data, const char *buf)
 {
+	static int ever_called = 0;
+	char **patternp = data;
 	int rc;
-	fprintf(stderr, "HERE\n");
+
+	fprintf(stderr, "HERE %d %p\n", ever_called, patternp);
+	if (ever_called)
+		free(*patternp);
+	fprintf(stderr, "HERE freed\n");
+	*patternp = xstrdup(buf);
+	fprintf(stderr, "HERE '%s' %p\n", *patternp, *patternp);
 
 	rc = regcomp(&album_path_ignore_re, buf, REG_EXTENDED);
 	if (rc) {
@@ -1313,6 +1323,7 @@ static void set_album_path_ignore_re(void *data, const char *buf)
 		exit(1);
 	}
 	fprintf(stderr, "HERE\n");
+	ever_called = 1;
 }
 
 /* }}} */
@@ -1494,7 +1505,12 @@ void options_add(void)
 		option_add(attr_names[i], &attrs[i], get_attr, set_attr, NULL,
 				0);
 
-	set_album_path_ignore_re(NULL, "cd[0-9]");
+	{
+		struct cmus_opt *opt;
+		opt = option_find("album_path_ignore_re");
+		opt->data = xmalloc(sizeof(void*));
+		set_album_path_ignore_re(opt->data, "cd[0-9]");
+	}
 
 	ip_add_options();
 	op_add_options();
