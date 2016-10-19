@@ -30,6 +30,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <strings.h>
+#include <sys/types.h>
+#include <regex.h>
 
 struct searchable *tree_searchable;
 struct window *lib_tree_win;
@@ -572,6 +574,46 @@ static void album_free(struct album *album)
 	free(album);
 }
 
+static void print_re_error(int errcode, regex_t *re) {
+	size_t len;
+	char *buf;
+
+	len = regerror(errcode, re, NULL, 0);
+	buf = malloc(len+1);
+	regerror(errcode, re, buf, len+1);
+}
+
+static void eat_album_path_ignores(char *s) {
+	regex_t re;
+	regmatch_t m0;
+	int rc;
+	const char re_src[] = "/cd[0-9]/";
+
+	fprintf(stderr, "Compiling re '%s'\r\n", re_src);
+	rc = regcomp(&re, re_src, REG_EXTENDED);
+	if (rc) {
+		print_re_error(rc, &re);
+		exit(1);
+	}
+
+	while (1) {
+		int l, l_m, l_tail;
+		int i;
+
+		l = strlen(s);
+		fprintf(stderr, "Before matching: '%s'\r\n", s);
+		rc = regexec(&re, s, 1, &m0, 0);
+		if (rc == REG_NOMATCH || m0.rm_so < 0)
+			break;
+
+		l_m = m0.rm_eo - m0.rm_so;
+		l_tail = l - l_m - m0.rm_so;
+		for (i = 0; i <= l_tail; i++)
+			s[m0.rm_so + i] = s[m0.rm_eo + i];
+		fprintf(stderr, "After matching: %d '%s'\r\n", (int)m0.rm_so, s);
+	}
+}
+
 static int special_assign_album_filename(void *data, struct track_info *ti) {
 	char **album_filename = (char**) data;
 	*album_filename = ti->filename;
@@ -580,14 +622,31 @@ static int special_assign_album_filename(void *data, struct track_info *ti) {
 
 static int album_path_disagrees(struct album *album, const char *filename) {
 	char *album_filename;
+	char *album_filename_1, *filename_1;
+	char *album_filename_2, *filename_2;
 	char ca, cf;
 	char *sa, *sf;
+	int ret;
 
 	album_for_each_track(album, special_assign_album_filename, (void*) &album_filename, 0);
-	while ((ca = *album_filename++) && (cf = *filename++) && ca == cf) {}
-	sa = strchr(--album_filename, '/');
-	sf = strchr(--filename, '/');
-	int ret = sa || sf;
+
+	album_filename_1 = strdup(album_filename);
+	filename_1 = strdup(filename);
+
+	eat_album_path_ignores(album_filename_1);
+	eat_album_path_ignores(filename_1);
+
+	album_filename_2 = album_filename_1;
+	filename_2 = filename_1;
+
+	while ((ca = *album_filename_2++) && (cf = *filename_2++) && ca == cf) {}
+	sa = strchr(--album_filename_2, '/');
+	sf = strchr(--filename_2, '/');
+	ret = sa || sf;
+
+	free(album_filename_1);
+	free(filename_1);
+
 	return ret;
 }
 
