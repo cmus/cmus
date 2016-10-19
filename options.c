@@ -1475,6 +1475,8 @@ void options_add(void)
 		option_add(attr_names[i], &attrs[i], get_attr, set_attr, NULL,
 				0);
 
+	set_album_path_ignore_re(NULL, "cd[0-9]");
+
 	ip_add_options();
 	op_add_options();
 }
