@@ -583,11 +583,11 @@ static void print_re_error(int errcode, regex_t *re) {
 	regerror(errcode, re, buf, len+1);
 }
 
-static void eat_album_path_ignores(char *s) {
+static void eat_dirs_ignored_in_album_path(char *s) {
 	regex_t re;
 	regmatch_t m0;
 	int rc;
-	const char re_src[] = "/cd[0-9]/";
+	const char re_src[] = "cd[0-9]";
 
 	fprintf(stderr, "Compiling re '%s'\r\n", re_src);
 	rc = regcomp(&re, re_src, REG_EXTENDED);
@@ -603,14 +603,32 @@ static void eat_album_path_ignores(char *s) {
 		l = strlen(s);
 		fprintf(stderr, "Before matching: '%s'\r\n", s);
 		rc = regexec(&re, s, 1, &m0, 0);
-		if (rc == REG_NOMATCH || m0.rm_so < 0)
-			break;
 
-		l_m = m0.rm_eo - m0.rm_so;
-		l_tail = l - l_m - m0.rm_so;
-		for (i = 0; i <= l_tail; i++)
-			s[m0.rm_so + i] = s[m0.rm_eo + i];
-		fprintf(stderr, "After matching: %d '%s'\r\n", (int)m0.rm_so, s);
+		fprintf(stderr, "match code: %d %d\r\n", rc, REG_NOMATCH);
+		if (rc == REG_NOMATCH || m0.rm_so < 0) {
+			break;
+		};
+
+		char ch_before, ch_after;
+		fprintf(stderr, "here\r\n");
+		ch_before = (m0.rm_so >= 1) ? s[m0.rm_so-1] : 0;
+		fprintf(stderr, "ch_before '%c'\r\n", ch_before);
+		ch_after = (m0.rm_eo >= 1) ? s[m0.rm_eo] : 0;
+		fprintf(stderr, "ch_after '%c'\r\n", ch_after);
+
+		if ((ch_before != '/' && ch_before != '\\') ||
+			(ch_after != '/' && ch_after != '\\'))
+		{
+			fprintf(stderr, "Before advance: '%s'\r\n", s);
+			s += m0.rm_eo;
+			fprintf(stderr, "After advance: '%s'\r\n", s);
+		} else {
+			l_m = m0.rm_eo - m0.rm_so;
+			l_tail = l - l_m - m0.rm_so;
+			for (i = 0; i <= l_tail; i++)
+				s[m0.rm_so + i] = s[m0.rm_eo + i];
+			fprintf(stderr, "After matching: %d '%s'\r\n", (int)m0.rm_so, s);
+		}
 	}
 }
 
@@ -630,11 +648,11 @@ static int album_path_disagrees(struct album *album, const char *filename) {
 
 	album_for_each_track(album, special_assign_album_filename, (void*) &album_filename, 0);
 
-	album_filename_1 = strdup(album_filename);
-	filename_1 = strdup(filename);
+	album_filename_1 = xstrdup(album_filename);
+	filename_1 = xstrdup(filename);
 
-	eat_album_path_ignores(album_filename_1);
-	eat_album_path_ignores(filename_1);
+	eat_dirs_ignored_in_album_path(album_filename_1);
+	eat_dirs_ignored_in_album_path(filename_1);
 
 	album_filename_2 = album_filename_1;
 	filename_2 = filename_1;
