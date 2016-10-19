@@ -30,8 +30,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <strings.h>
-#include <sys/types.h>
-#include <regex.h>
 
 struct searchable *tree_searchable;
 struct window *lib_tree_win;
@@ -574,27 +572,12 @@ static void album_free(struct album *album)
 	free(album);
 }
 
-static void print_re_error(int errcode, regex_t *re) {
-	size_t len;
-	char *buf;
-
-	len = regerror(errcode, re, NULL, 0);
-	buf = malloc(len+1);
-	regerror(errcode, re, buf, len+1);
-}
-
 static void eat_dirs_ignored_in_album_path(char *s) {
-	regex_t re;
 	regmatch_t m0;
 	int rc;
 	const char re_src[] = "cd[0-9]";
 
 	fprintf(stderr, "Compiling re '%s'\r\n", re_src);
-	rc = regcomp(&re, re_src, REG_EXTENDED);
-	if (rc) {
-		print_re_error(rc, &re);
-		exit(1);
-	}
 
 	while (1) {
 		int l, l_m, l_tail;
@@ -602,7 +585,7 @@ static void eat_dirs_ignored_in_album_path(char *s) {
 
 		l = strlen(s);
 		fprintf(stderr, "Before matching: '%s'\r\n", s);
-		rc = regexec(&re, s, 1, &m0, 0);
+		rc = regexec(&album_path_ignore_re, s, 1, &m0, 0);
 
 		fprintf(stderr, "match code: %d %d\r\n", rc, REG_NOMATCH);
 		if (rc == REG_NOMATCH || m0.rm_so < 0) {

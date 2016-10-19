@@ -144,6 +144,7 @@ char *window_title_alt_format = NULL;
 char *id3_default_charset = NULL;
 char *icecast_default_charset = NULL;
 char *lib_add_filter = NULL;
+regex_t album_path_ignore_re;
 
 static void buf_int(char *buf, int val, size_t size)
 {
@@ -1267,6 +1268,37 @@ static void set_format(void *data, const char *buf)
 	update_full();
 }
 
+static void print_re_error(int errcode, regex_t *re, const char *re_src) {
+	size_t len;
+	char *buf;
+
+	len = regerror(errcode, re, NULL, 0);
+	buf = malloc(len+1);
+	regerror(errcode, re, buf, len+1);
+	fprintf(stderr, "Failed to compile regex '%s': %s\n", re_src, buf);
+	exit(1);
+}
+
+static void get_album_path_ignore_re(void *data, char *buf, size_t size)
+{
+	char **patternp = data;
+
+	strscpy(buf, *patternp, size);
+}
+
+static void set_album_path_ignore_re(void *data, const char *buf)
+{
+	int rc;
+	fprintf(stderr, "HERE\n");
+
+	rc = regcomp(&album_path_ignore_re, buf, REG_EXTENDED);
+	if (rc) {
+		print_re_error(rc, &album_path_ignore_re, buf);
+		exit(1);
+	}
+	fprintf(stderr, "HERE\n");
+}
+
 /* }}} */
 
 #define DN(name) { #name, get_ ## name, set_ ## name, NULL, 0 },
@@ -1323,6 +1355,7 @@ static const struct {
 	DT(mouse)
 	DT(mpris)
 	DN(lib_add_filter)
+	DN(album_path_ignore_re)
 	{ NULL, NULL, NULL, NULL, 0 }
 };
 
