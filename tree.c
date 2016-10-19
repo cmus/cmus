@@ -921,7 +921,7 @@ static struct album *find_album(struct album *album, char *filename, int *album_
 	/* do a linear search because we want find albums with different date */
 	rb_for_each_entry(a, tmp, &album->artist->album_root, tree_node) {
 		if (special_album_cmp(album, a) == 0) {
-			if (!album_path_disagrees(a, filename)) {
+			if (!separate_albums_by_path || !album_path_disagrees(a, filename)) {
 				*album_dup_count = -1;
 				return a;
 			}

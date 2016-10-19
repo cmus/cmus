@@ -144,6 +144,7 @@ extern int rewind_offset;
 extern int skip_track_info;
 extern int mouse;
 extern int mpris;
+extern int separate_albums_by_path;
 extern regex_t album_path_ignore_re;
 
 extern const char * const aaa_mode_names[];
