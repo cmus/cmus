@@ -480,7 +480,6 @@ struct cue_sheet *cue_from_file(const char *file)
 		return NULL;
 	struct cue_sheet *rv = cue_parse(buf, size);
 	munmap(buf, size);
-	free(buf);
 	return rv;
 }
 
