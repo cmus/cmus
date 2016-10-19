@@ -1311,8 +1311,10 @@ static void set_album_path_ignore_re(void *data, const char *buf)
 	int rc;
 
 	fprintf(stderr, "HERE %d %p\n", ever_called, patternp);
-	if (ever_called)
+	if (ever_called) {
 		free(*patternp);
+		regfree(&album_path_ignore_re);
+	}
 	fprintf(stderr, "HERE freed\n");
 	*patternp = xstrdup(buf);
 	fprintf(stderr, "HERE '%s' %p\n", *patternp, *patternp);
