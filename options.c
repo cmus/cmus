@@ -1503,7 +1503,8 @@ void options_add(void)
 		struct cmus_opt *opt;
 		opt = option_find("album_path_ignore_re");
 		opt->data = xmalloc(sizeof(void*));
-		set_album_path_ignore_re(opt->data, "cd[0-9]");
+		set_album_path_ignore_re(opt->data,
+				"[^[:alnum:]]*\\([cC][dD]|[dD][iI][sS][cCkK]\\)[^[:alnum:]]*[[:alnum:]]\\+[^[:alnum:]]*");
 	}
 
 	ip_add_options();
