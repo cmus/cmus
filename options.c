@@ -1289,7 +1289,7 @@ static void print_re_error(int errcode, regex_t *re, const char *re_src) {
 	char *buf;
 
 	len = regerror(errcode, re, NULL, 0);
-	buf = malloc(len+1);
+	buf = xmalloc(len+1);
 	regerror(errcode, re, buf, len+1);
 	fprintf(stderr, "Failed to compile regex '%s': %s\n", re_src, buf);
 	exit(1);
