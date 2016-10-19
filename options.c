@@ -1299,8 +1299,6 @@ static void get_album_path_ignore_re(void *data, char *buf, size_t size)
 {
 	char **pattern = data;
 
-	fprintf(stderr, "HERE_get %p\n", pattern);
-	fprintf(stderr, "HERE_get '%s'\n", *pattern);
 	strscpy(buf, *pattern, size);
 }
 
@@ -1310,21 +1308,17 @@ static void set_album_path_ignore_re(void *data, const char *buf)
 	char **patternp = data;
 	int rc;
 
-	fprintf(stderr, "HERE %d %p\n", ever_called, patternp);
 	if (ever_called) {
 		free(*patternp);
 		regfree(&album_path_ignore_re);
 	}
-	fprintf(stderr, "HERE freed\n");
 	*patternp = xstrdup(buf);
-	fprintf(stderr, "HERE '%s' %p\n", *patternp, *patternp);
 
 	rc = regcomp(&album_path_ignore_re, buf, REG_EXTENDED);
 	if (rc) {
 		print_re_error(rc, &album_path_ignore_re, buf);
 		exit(1);
 	}
-	fprintf(stderr, "HERE\n");
 	ever_called = 1;
 }
 
@@ -1436,8 +1430,6 @@ void option_add(const char *name, const void *data, opt_get_cb get,
 {
 	struct cmus_opt *opt = xnew(struct cmus_opt, 1);
 	struct list_head *item;
-
-	fprintf(stderr, "adding %s\n", name);
 
 	opt->name = name;
 	opt->data = (void *)data;
@@ -1584,7 +1576,6 @@ void options_exit(void)
 
 		buf[0] = 0;
 		opt->get(opt->data, buf, OPTION_MAX_SIZE);
-		fprintf(stderr, "saving %s\n", opt->name);
 		fprintf(f, "set %s=%s\n", opt->name, buf);
 	}
 
