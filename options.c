@@ -1504,7 +1504,11 @@ void options_add(void)
 		opt = option_find("album_path_ignore_re");
 		opt->data = xmalloc(sizeof(void*));
 		set_album_path_ignore_re(opt->data,
-				"[^[:alnum:]]*\\([cC][dD]|[dD][iI][sS][cCkK]\\)[^[:alnum:]]*[[:alnum:]]\\+[^[:alnum:]]*");
+				/* The regexp being intended:
+				 *  "[^[:alnum:]]*([cC][dD]|[dD][iI][sS][cCkK])[^[:alnum:]]*[[:alnum:]]+[^[:alnum:]]*"
+				 * The [^...]* construct, however, does not seem to work with either POSIX or glibc.
+				 * */
+				"([cC][dD]|[dD][iI][sS][cCkK])[[:alnum:]]+");
 	}
 
 	ip_add_options();
