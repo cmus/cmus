@@ -82,6 +82,7 @@ int auto_expand_albums_selcur = 1;
 int show_all_tracks = 1;
 int mouse = 0;
 int mpris = 1;
+int separate_albums_by_path = 1;
 
 int colors[NR_COLORS] = {
 	-1,
@@ -1104,6 +1105,21 @@ static void set_lib_add_filter(void *data, const char *buf)
 	lib_set_add_filter(expr);
 }
 
+static void get_separate_albums_by_path(void *data, char *buf, size_t size)
+{
+	strscpy(buf, bool_names[separate_albums_by_path], size);
+}
+
+static void set_separate_albums_by_path(void *data, const char *buf)
+{
+	parse_bool(buf, &separate_albums_by_path);
+}
+
+static void toggle_separate_albums_by_path(void *data)
+{
+	separate_albums_by_path ^= 1;
+}
+
 /* }}} */
 
 /* special callbacks (id set) {{{ */
@@ -1356,6 +1372,7 @@ static const struct {
 	DT(mpris)
 	DN(lib_add_filter)
 	DN(album_path_ignore_re)
+	DT(separate_albums_by_path)
 	{ NULL, NULL, NULL, NULL, 0 }
 };
 
@@ -1406,6 +1423,8 @@ void option_add(const char *name, const void *data, opt_get_cb get,
 {
 	struct cmus_opt *opt = xnew(struct cmus_opt, 1);
 	struct list_head *item;
+
+	fprintf(stderr, "adding %s\n", name);
 
 	opt->name = name;
 	opt->data = (void *)data;
@@ -1547,6 +1566,7 @@ void options_exit(void)
 
 		buf[0] = 0;
 		opt->get(opt->data, buf, OPTION_MAX_SIZE);
+		fprintf(stderr, "saving %s\n", opt->name);
 		fprintf(f, "set %s=%s\n", opt->name, buf);
 	}
 
