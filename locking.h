@@ -34,10 +34,10 @@ extern pthread_t main_thread;
 #define CMUS_COND_INITIALIZER PTHREAD_COND_INITIALIZER
 #define CMUS_RWLOCK_INITIALIZER PTHREAD_RWLOCK_INITIALIZER
 
-#define FIFO_MUTEX_INITIALIZER ((struct fifo_mutex) { \
+#define FIFO_MUTEX_INITIALIZER { \
 		.mutex = PTHREAD_MUTEX_INITIALIZER, \
 		.tail = ATOMIC_VAR_INIT(NULL), \
-	})
+	}
 
 void cmus_mutex_lock(pthread_mutex_t *mutex);
 void cmus_mutex_unlock(pthread_mutex_t *mutex);
