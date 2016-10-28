@@ -397,9 +397,11 @@ static int flac_read(struct input_plugin_data *ip_data, char *buffer, int count)
 		BUG_ON(avail < 0);
 		if (avail > 0)
 			break;
-		if (priv->pos == priv->len)
+		FLAC__bool internal_error = !F(process_single)(priv->dec);
+		FLAC__StreamDecoderState state = F(get_state)(priv->dec);
+		if (state == E(END_OF_STREAM))
 			return 0;
-		if (!F(process_single)(priv->dec)) {
+		if (state == E(ABORTED) || state == E(OGG_ERROR) || internal_error) {
 			d_print("process_single failed\n");
 			return -1;
 		}
