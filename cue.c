@@ -404,13 +404,13 @@ static struct cue_sheet *cue_parser_to_sheet(struct cue_parser *p)
 	size_t idx = 0;
 	struct cue_track_proto *t, *prev;
 	list_for_each_entry(t, &p->tracks, node) {
-		s->tracks[idx].offset = t->index1 / 75;
+		s->tracks[idx].offset = t->index1 / 75.0;
 		s->tracks[idx].length = -1;
 
 		if (idx > 0) {
 			int32_t postgap = prev->postgap != -1 ? prev->postgap : 0;
 			s->tracks[idx - 1].length =
-				(t->index0 - prev->index1 - postgap) / 75;
+				(t->index0 - prev->index1 - postgap) / 75.0;
 		}
 
 		cue_meta_move(&s->tracks[idx].meta, &t->meta);

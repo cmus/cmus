@@ -30,8 +30,8 @@ struct cue_meta {
 };
 
 struct cue_track {
-	uint32_t offset;
-	int32_t length;
+	double offset;
+	double length;
 	struct cue_meta meta;
 };
 
