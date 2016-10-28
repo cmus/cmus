@@ -127,7 +127,7 @@ static int cue_open(struct input_plugin_data *ip_data)
 	if (rc)
 		goto ip_open_failed;
 
-	if (t->length > 0)
+	if (t->length >= 0)
 		priv->end_offset = priv->start_offset + t->length;
 	else
 		priv->end_offset = ip_duration(priv->child);
