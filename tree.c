@@ -611,17 +611,36 @@ static int special_assign_album_filename(void *data, struct track_info *ti) {
 }
 
 static int album_path_disagrees(struct album *album, const char *filename) {
+	static char *albfp_eaten, *albfp_eaten_diff;
+	static char *filen_eaten, *filen_eaten_diff;
+	static size_t albfp_alloc = 0, albfp_len;
+	static size_t filen_alloc = 0, filen_len;
+
 	char *album_filepath;
-	char *albfp_eaten, *albfp_eaten_diff;
-	char *filen_eaten, *filen_eaten_diff;
 	char ca, cf;
 	char *sa, *sf;
 	int ret;
 
 	album_for_each_track(album, special_assign_album_filename, (void*) &album_filepath, 0);
 
-	albfp_eaten = xstrdup(album_filepath);
-	filen_eaten = xstrdup(filename);
+	albfp_len = strlen(album_filepath);
+	filen_len = strlen(filename);
+
+	if (!albfp_alloc) {
+		albfp_alloc = 200;
+		albfp_eaten = malloc(albfp_alloc);
+		filen_alloc = 200;
+		filen_eaten = malloc(filen_alloc);
+	}
+	while ((albfp_len >= albfp_alloc) || (filen_len >= filen_alloc)) {
+		albfp_alloc *= 1.5;
+		albfp_eaten = realloc(albfp_eaten, albfp_alloc);
+		filen_alloc *= 1.5;
+		filen_eaten = realloc(filen_eaten, filen_alloc);
+	}
+
+	strcpy(albfp_eaten, album_filepath);
+	strcpy(filen_eaten, filename);
 
 	eat_dirs_ignored_in_album_path(albfp_eaten);
 	eat_dirs_ignored_in_album_path(filen_eaten);
@@ -633,9 +652,6 @@ static int album_path_disagrees(struct album *album, const char *filename) {
 	sa = strchr(--albfp_eaten_diff, '/');
 	sf = strchr(--filen_eaten_diff, '/');
 	ret = sa || sf;
-
-	free(albfp_eaten);
-	free(filen_eaten);
 
 	return ret;
 }

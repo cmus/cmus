@@ -796,6 +796,8 @@ album_path_ignore_re [`Extended Regexp`]
 	Regexp to use when separate_albums_by_path is on.
 	Any directories it matches (entirely) in a track filename
 	are excluded from pathname comparison.
+	Usability note: the [^...]* construct should not be used,
+	as it does not work with either POSIX or glibc.
 
 altformat_current [`Format String`]
 	Alternative format string for the line displaying currently playing
