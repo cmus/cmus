@@ -21,7 +21,6 @@
 
 #include "list.h"
 
-#include <sys/types.h>
 #include <regex.h>
 
 #define OPTION_MAX_SIZE	4096
