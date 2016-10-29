@@ -913,11 +913,11 @@ static struct album *do_find_album(const struct album *album,
 	return NULL;
 }
 
-/* album_dup_count return values:
- *   0 => there are no albums matching the filename; NULL is returned
- *  -1 => there is an album allowing the filename; it is returned
- *  >0 => there are album_dup_count duplicated albums for filename; NULL is returned
- * */
+/* Values must be negative */
+enum find_album_result {
+	FIND_ALBUM_ALLOWED_FILENAME = -1,
+};
+
 static struct album *find_album(struct album *album, char *filename, int *album_dup_count)
 {
 	struct album *a;
@@ -928,7 +928,7 @@ static struct album *find_album(struct album *album, char *filename, int *album_
 	rb_for_each_entry(a, tmp, &album->artist->album_root, tree_node) {
 		if (special_album_cmp(album, a) == 0) {
 			if (!separate_albums_by_path || !album_path_disagrees(a, filename)) {
-				*album_dup_count = -1;
+				*album_dup_count = FIND_ALBUM_ALLOWED_FILENAME;
 				return a;
 			}
 			*album_dup_count = 1 + *album_dup_count;
@@ -1069,7 +1069,7 @@ void tree_add_track(struct tree_track *track)
 		album = find_album(new_album, ti->filename, &album_dup_count);
 		new_album->dup_id = album_dup_count + 1;
 		if (album) {
-			if (album_dup_count < 0)
+			if (album_dup_count == FIND_ALBUM_ALLOWED_FILENAME)
 				album_free(new_album);
 			else
 				album = NULL;
