@@ -897,6 +897,11 @@ static struct album *do_find_album(const struct album *album,
 	return NULL;
 }
 
+/* album_dup_count return values:
+ *   0 => there are no albums matching the filename; NULL is returned
+ *  -1 => there is an album allowing the filename; it is returned
+ *  >0 => there are album_dup_count duplicated albums for filename; NULL is returned
+ * */
 static struct album *find_album(struct album *album, char *filename, int *album_dup_count)
 {
 	struct album *a;
