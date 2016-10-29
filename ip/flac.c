@@ -357,11 +357,9 @@ static int flac_open(struct input_plugin_data *ip_data)
 	}
 
 	ip_data->sf = 0;
-	while (priv->buf_wpos == 0 && priv->pos < priv->len) {
-		if (!F(process_single)(priv->dec)) {
-			free_priv(ip_data);
-			return -IP_ERROR_ERRNO;
-		}
+	if (!F(process_until_end_of_metadata)(priv->dec)) {
+		free_priv(ip_data);
+		return -IP_ERROR_ERRNO;
 	}
 
 	if (!ip_data->sf) {
