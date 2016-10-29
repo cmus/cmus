@@ -734,11 +734,7 @@ static inline int special_album_cmp_dup(const struct album *a, const struct albu
 	int b_dup = b->dup_id;
 	if (a_dup <= 0 || b_dup <= 0)
 		return 0;
-	if (a_dup < b_dup)
-		return -1;
-	else if (a_dup > b_dup)
-		return +1;
-	return 0;
+	return a_dup - b_dup;
 }
 
 static int special_album_cmp(const struct album *a, const struct album *b)
