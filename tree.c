@@ -628,15 +628,15 @@ static int album_path_disagrees(struct album *album, const char *filename) {
 
 	if (!albfp_alloc) {
 		albfp_alloc = 200;
-		albfp_eaten = malloc(albfp_alloc);
+		albfp_eaten = xmalloc(albfp_alloc);
 		filen_alloc = 200;
-		filen_eaten = malloc(filen_alloc);
+		filen_eaten = xmalloc(filen_alloc);
 	}
 	while ((albfp_len >= albfp_alloc) || (filen_len >= filen_alloc)) {
 		albfp_alloc *= 1.5;
-		albfp_eaten = realloc(albfp_eaten, albfp_alloc);
+		albfp_eaten = xrealloc(albfp_eaten, albfp_alloc);
 		filen_alloc *= 1.5;
-		filen_eaten = realloc(filen_eaten, filen_alloc);
+		filen_eaten = xrealloc(filen_eaten, filen_alloc);
 	}
 
 	strcpy(albfp_eaten, album_filepath);
