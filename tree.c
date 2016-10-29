@@ -611,31 +611,31 @@ static int special_assign_album_filename(void *data, struct track_info *ti) {
 }
 
 static int album_path_disagrees(struct album *album, const char *filename) {
-	char *album_filename;
-	char *album_filename_1, *filename_1;
-	char *album_filename_2, *filename_2;
+	char *album_filepath;
+	char *albfp_eaten, *albfp_eaten_diff;
+	char *filen_eaten, *filen_eaten_diff;
 	char ca, cf;
 	char *sa, *sf;
 	int ret;
 
-	album_for_each_track(album, special_assign_album_filename, (void*) &album_filename, 0);
+	album_for_each_track(album, special_assign_album_filename, (void*) &album_filepath, 0);
 
-	album_filename_1 = xstrdup(album_filename);
-	filename_1 = xstrdup(filename);
+	albfp_eaten = xstrdup(album_filepath);
+	filen_eaten = xstrdup(filename);
 
-	eat_dirs_ignored_in_album_path(album_filename_1);
-	eat_dirs_ignored_in_album_path(filename_1);
+	eat_dirs_ignored_in_album_path(albfp_eaten);
+	eat_dirs_ignored_in_album_path(filen_eaten);
 
-	album_filename_2 = album_filename_1;
-	filename_2 = filename_1;
+	albfp_eaten_diff = albfp_eaten;
+	filen_eaten_diff = filen_eaten;
 
-	while ((ca = *album_filename_2++) && (cf = *filename_2++) && ca == cf) {}
-	sa = strchr(--album_filename_2, '/');
-	sf = strchr(--filename_2, '/');
+	while ((ca = *albfp_eaten_diff++) && (cf = *filen_eaten_diff++) && ca == cf) {}
+	sa = strchr(--albfp_eaten_diff, '/');
+	sf = strchr(--filen_eaten_diff, '/');
 	ret = sa || sf;
 
-	free(album_filename_1);
-	free(filename_1);
+	free(albfp_eaten);
+	free(filen_eaten);
 
 	return ret;
 }
