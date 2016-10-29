@@ -636,6 +636,7 @@ struct track_info *pl_play_selected_row(void)
 	 * insert a track into a foreign shuffle list.
 	 */
 
+	int was_in_track_window = pl_cursor_in_track_window;
 	if (!pl_cursor_in_track_window)
 		window_goto_top(pl_editable_shared.win);
 
@@ -650,6 +651,8 @@ struct track_info *pl_play_selected_row(void)
 			simple_track_to_shuffle_track(pl_playing_track);
 		shuffle_insert(&pl_playing->shuffle_root, prev_st, cur_st);
 	}
+
+	pl_cursor_in_track_window = was_in_track_window;
 
 	return rv;
 }
