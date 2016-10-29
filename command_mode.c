@@ -1473,7 +1473,8 @@ static void cmd_win_add_p(char *arg)
 	} else if (cur_view == BROWSER_VIEW) {
 		char *sel = get_browser_add_file();
 		if (sel) {
-			pl_add_file_to_marked_pl(sel);
+			if (pl_add_file_to_marked_pl(sel))
+				window_down(browser_win, 1);
 			free(sel);
 		}
 	}
