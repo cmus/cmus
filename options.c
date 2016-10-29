@@ -1284,15 +1284,13 @@ static void set_format(void *data, const char *buf)
 	update_full();
 }
 
-static void print_re_error(int errcode, regex_t *re, const char *re_src) {
-	size_t len;
-	char *buf;
+static void print_re_error(int errcode, regex_t *re, const char *re_src)
+{
+	size_t len = regerror(errcode, re, NULL, 0);
+	char *buf = xmalloc(len+1);
 
-	len = regerror(errcode, re, NULL, 0);
-	buf = xmalloc(len+1);
 	regerror(errcode, re, buf, len+1);
 	fprintf(stderr, "Failed to compile regex '%s': %s\n", re_src, buf);
-	exit(1);
 }
 
 static void get_album_path_ignore_re(void *data, char *buf, size_t size)
