@@ -1096,7 +1096,7 @@ status_display_program () [command]
 	`/usr/share/doc/cmus/examples/cmus-status-display`.
 
 time_show_leading_zero (true)
-	Pad shorter durations with a leading 0 instead of a leading space
+	Pad durations of less than 10 minutes with a leading 0
 
 wrap_search (true)
 	Controls whether the search wraps around the end.
