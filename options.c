@@ -56,9 +56,9 @@ const char DEFAULT_ALBUM_PATH_IGNORE_RE[] =
 		/* The regexp being intended:
 		 *  "[^[:alnum:]]*([cC][dD]|[dD][iI][sS][cCkK])[^[:alnum:]]*[[:alnum:]]+[^[:alnum:]]*"
 		 * The [^...]* construct, however, does not seem to work with either POSIX or glibc.
+		 * Do a subset of this instead. "([-_]*|.)" at beginning or end also doesn't work.
 		 * */
-		"([cC][dD]|[dD][iI][sS][cCkK])[[:alnum:]]+";
-
+		"([cC][dD]|[dD][iI][sS][cCkK])([-_. \t]*|.)[[:alnum:]]+";
 
 /* initialized option variables */
 
