@@ -213,13 +213,15 @@ static void pl_add_cb(struct track_info *ti, void *opaque)
 	pl_add_track(opaque, ti);
 }
 
-void pl_add_file_to_marked_pl(const char *file)
+int pl_add_file_to_marked_pl(const char *file)
 {
 	char *full = NULL;
 	enum file_type type = cmus_detect_ft(file, &full);
-	if (type != FILE_TYPE_INVALID)
+	int not_invalid = type != FILE_TYPE_INVALID;
+	if (not_invalid)
 		cmus_add(pl_add_cb, full, type, JOB_TYPE_PL, 0, pl_marked);
 	free(full);
+	return not_invalid;
 }
 
 void pl_add_track_to_marked_pl(struct track_info *ti)
@@ -634,6 +636,7 @@ struct track_info *pl_play_selected_row(void)
 	 * insert a track into a foreign shuffle list.
 	 */
 
+	int was_in_track_window = pl_cursor_in_track_window;
 	if (!pl_cursor_in_track_window)
 		window_goto_top(pl_editable_shared.win);
 
@@ -648,6 +651,8 @@ struct track_info *pl_play_selected_row(void)
 			simple_track_to_shuffle_track(pl_playing_track);
 		shuffle_insert(&pl_playing->shuffle_root, prev_st, cur_st);
 	}
+
+	pl_cursor_in_track_window = was_in_track_window;
 
 	return rv;
 }
