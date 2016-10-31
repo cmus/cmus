@@ -43,6 +43,9 @@ struct track_iter {
 	struct album *album;
 };
 
+static int album_for_each_track(struct album *album, int (*cb)(void *data, struct track_info *ti),
+		void *data, int reverse);
+
 static inline int tree_album_selected(void)
 {
 	return iter_to_album(&lib_tree_win->sel) != NULL;
@@ -553,6 +556,7 @@ static struct album *album_new(struct artist *artist, const char *name,
 	album->collkey_sort_name = u_strcasecoll_key0(sort_name);
 	album->date = date;
 	album->min_date = date;
+	album->dup_id = 0;
 	rb_root_init(&album->track_root);
 	album->artist = artist;
 
@@ -566,6 +570,90 @@ static void album_free(struct album *album)
 	free(album->collkey_name);
 	free(album->collkey_sort_name);
 	free(album);
+}
+
+static void eat_dirs_ignored_in_album_path(char *s) {
+	regmatch_t m0;
+	int rc;
+
+	while (1) {
+		int l, l_m, l_tail;
+		int i;
+
+		l = strlen(s);
+		rc = regexec(&album_path_ignore_re, s, 1, &m0, 0);
+
+		if (rc == REG_NOMATCH || m0.rm_so < 0) {
+			break;
+		};
+
+		char ch_before, ch_after;
+		ch_before = (m0.rm_so >= 1) ? s[m0.rm_so-1] : 0;
+		ch_after = (m0.rm_eo >= 1) ? s[m0.rm_eo] : 0;
+
+		if ((ch_before != '/' && ch_before != '\\') ||
+			(ch_after != '/' && ch_after != '\\'))
+		{
+			s += m0.rm_eo;
+		} else {
+			l_m = m0.rm_eo - m0.rm_so;
+			l_tail = l - l_m - m0.rm_so;
+			for (i = 0; i <= l_tail; i++)
+				s[m0.rm_so + i] = s[m0.rm_eo + i];
+		}
+	}
+}
+
+static int special_assign_album_filename(void *data, struct track_info *ti) {
+	char **album_filename = (char**) data;
+	*album_filename = ti->filename;
+	return 1;
+}
+
+static int album_path_disagrees(struct album *album, const char *filename) {
+	static char *albfp_eaten, *albfp_eaten_diff;
+	static char *filen_eaten, *filen_eaten_diff;
+	static size_t albfp_alloc = 0, albfp_len;
+	static size_t filen_alloc = 0, filen_len;
+
+	char *album_filepath;
+	char ca, cf;
+	char *sa, *sf;
+	int ret;
+
+	album_for_each_track(album, special_assign_album_filename, (void*) &album_filepath, 0);
+
+	albfp_len = strlen(album_filepath);
+	filen_len = strlen(filename);
+
+	if (!albfp_alloc) {
+		albfp_alloc = 200;
+		albfp_eaten = xmalloc(albfp_alloc);
+		filen_alloc = 200;
+		filen_eaten = xmalloc(filen_alloc);
+	}
+	while ((albfp_len >= albfp_alloc) || (filen_len >= filen_alloc)) {
+		albfp_alloc *= 1.5;
+		albfp_eaten = xrealloc(albfp_eaten, albfp_alloc);
+		filen_alloc *= 1.5;
+		filen_eaten = xrealloc(filen_eaten, filen_alloc);
+	}
+
+	strcpy(albfp_eaten, album_filepath);
+	strcpy(filen_eaten, filename);
+
+	eat_dirs_ignored_in_album_path(albfp_eaten);
+	eat_dirs_ignored_in_album_path(filen_eaten);
+
+	albfp_eaten_diff = albfp_eaten;
+	filen_eaten_diff = filen_eaten;
+
+	while ((ca = *albfp_eaten_diff++) && (cf = *filen_eaten_diff++) && ca == cf) {}
+	sa = strchr(--albfp_eaten_diff, '/');
+	sf = strchr(--filen_eaten_diff, '/');
+	ret = sa || sf;
+
+	return ret;
 }
 
 static int track_selectable(struct iter *iter)
@@ -656,9 +744,21 @@ static inline const char *album_sort_collkey(const struct album *a)
         return a->collkey_name;
 }
 
+static inline int special_album_cmp_dup(const struct album *a, const struct album *b)
+{
+	int a_dup = a->dup_id;
+	int b_dup = b->dup_id;
+	if (a_dup <= 0 || b_dup <= 0)
+		return 0;
+	return a_dup - b_dup;
+}
+
 static int special_album_cmp(const struct album *a, const struct album *b)
 {
-	return special_name_cmp(a->name, album_sort_collkey(a), b->name, album_sort_collkey(b));
+	int ret = special_name_cmp(a->name, album_sort_collkey(a), b->name, album_sort_collkey(b));
+	if (!ret)
+		ret = special_album_cmp_dup(a, b);
+	return ret;
 }
 
 static int special_album_cmp_date(const struct album *a, const struct album *b)
@@ -672,7 +772,10 @@ static int special_album_cmp_date(const struct album *a, const struct album *b)
 	if (cmp)
 		return cmp;
 
-	return strcmp(album_sort_collkey(a), album_sort_collkey(b));
+	int ret = strcmp(album_sort_collkey(a), album_sort_collkey(b));
+	if (!ret)
+		ret = special_album_cmp_dup(a, b);
+	return ret;
 }
 
 /* has to follow the same logic as artist_sort_name() */
@@ -810,15 +913,26 @@ static struct album *do_find_album(const struct album *album,
 	return NULL;
 }
 
-static struct album *find_album(const struct album *album)
+/* Values must be negative */
+enum find_album_result {
+	FIND_ALBUM_ALLOWED_FILENAME = -1,
+};
+
+static struct album *find_album(struct album *album, char *filename, int *album_dup_count)
 {
 	struct album *a;
 	struct rb_node *tmp;
 
+	*album_dup_count = 0;
 	/* do a linear search because we want find albums with different date */
 	rb_for_each_entry(a, tmp, &album->artist->album_root, tree_node) {
-		if (special_album_cmp(album, a) == 0)
-			return a;
+		if (special_album_cmp(album, a) == 0) {
+			if (!separate_albums_by_path || !album_path_disagrees(a, filename)) {
+				*album_dup_count = FIND_ALBUM_ALLOWED_FILENAME;
+				return a;
+			}
+			*album_dup_count = 1 + *album_dup_count;
+		}
 	}
 	return NULL;
 }
@@ -836,6 +950,7 @@ static void add_album(struct album *album)
 			      album->artist->is_compilation ? special_album_cmp
 							    : special_album_cmp_date,
 			      &new, &parent);
+
 	if (!found) {
 		rb_link_node(&album->tree_node, parent, new);
 		rb_insert_color(&album->tree_node, &album->artist->album_root);
@@ -926,6 +1041,7 @@ void tree_add_track(struct tree_track *track)
 	struct album *album, *new_album;
 	int date;
 	int is_va_compilation = 0;
+	int album_dup_count = 0;
 
 	date = ti->originaldate;
 	if (date < 0)
@@ -950,11 +1066,18 @@ void tree_add_track(struct tree_track *track)
 	if (artist) {
 		artist_free(new_artist);
 		new_album = album_new(artist, album_name, albumsort_name, date);
-		album = find_album(new_album);
-		if (album)
-			album_free(new_album);
-	} else
+		album = find_album(new_album, ti->filename, &album_dup_count);
+		new_album->dup_id = album_dup_count + 1;
+		if (album) {
+			if (album_dup_count == FIND_ALBUM_ALLOWED_FILENAME)
+				album_free(new_album);
+			else
+				album = NULL;
+		}
+	} else {
 		new_album = album_new(new_artist, album_name, albumsort_name, date);
+		new_album->dup_id = 1;
+	}
 
 	if (artist) {
 		int changed = 0;

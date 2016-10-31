@@ -52,6 +52,14 @@
 #include <curses.h>
 #endif
 
+const char DEFAULT_ALBUM_PATH_IGNORE_RE[] =
+		/* The regexp being intended:
+		 *  "[^[:alnum:]]*([cC][dD]|[dD][iI][sS][cCkK])[^[:alnum:]]*[[:alnum:]]+[^[:alnum:]]*"
+		 * The [^...]* construct, however, does not seem to work with either POSIX or glibc.
+		 * Do a subset of this instead. "([-_]*|.)" at beginning or end also doesn't work.
+		 * */
+		"([cC][dD]|[dD][iI][sS][cCkK])([-_. \t]*|.)[[:alnum:]]+";
+
 /* initialized option variables */
 
 char *cdda_device = NULL;
@@ -82,6 +90,7 @@ int auto_expand_albums_selcur = 1;
 int show_all_tracks = 1;
 int mouse = 0;
 int mpris = 1;
+int separate_albums_by_path = 1;
 
 int colors[NR_COLORS] = {
 	-1,
@@ -144,6 +153,7 @@ char *window_title_alt_format = NULL;
 char *id3_default_charset = NULL;
 char *icecast_default_charset = NULL;
 char *lib_add_filter = NULL;
+regex_t album_path_ignore_re;
 
 static void buf_int(char *buf, int val, size_t size)
 {
@@ -1103,6 +1113,21 @@ static void set_lib_add_filter(void *data, const char *buf)
 	lib_set_add_filter(expr);
 }
 
+static void get_separate_albums_by_path(void *data, char *buf, size_t size)
+{
+	strscpy(buf, bool_names[separate_albums_by_path], size);
+}
+
+static void set_separate_albums_by_path(void *data, const char *buf)
+{
+	parse_bool(buf, &separate_albums_by_path);
+}
+
+static void toggle_separate_albums_by_path(void *data)
+{
+	separate_albums_by_path ^= 1;
+}
+
 /* }}} */
 
 /* special callbacks (id set) {{{ */
@@ -1267,6 +1292,42 @@ static void set_format(void *data, const char *buf)
 	update_full();
 }
 
+static void print_re_error(int errcode, regex_t *re, const char *re_src)
+{
+	size_t len = regerror(errcode, re, NULL, 0);
+	char *buf = xmalloc(len+1);
+
+	regerror(errcode, re, buf, len+1);
+	fprintf(stderr, "Failed to compile regex '%s': %s\n", re_src, buf);
+}
+
+static void get_album_path_ignore_re(void *data, char *buf, size_t size)
+{
+	char **pattern = data;
+
+	strscpy(buf, *pattern, size);
+}
+
+static void set_album_path_ignore_re(void *data, const char *buf)
+{
+	static int ever_called = 0;
+	char **patternp = data;
+	int rc;
+
+	if (ever_called) {
+		free(*patternp);
+		regfree(&album_path_ignore_re);
+	}
+	*patternp = xstrdup(buf);
+
+	rc = regcomp(&album_path_ignore_re, buf, REG_EXTENDED);
+	if (rc) {
+		print_re_error(rc, &album_path_ignore_re, buf);
+		exit(1);
+	}
+	ever_called = 1;
+}
+
 /* }}} */
 
 #define DN(name) { #name, get_ ## name, set_ ## name, NULL, 0 },
@@ -1323,6 +1384,8 @@ static const struct {
 	DT(mouse)
 	DT(mpris)
 	DN(lib_add_filter)
+	DN(album_path_ignore_re)
+	DT(separate_albums_by_path)
 	{ NULL, NULL, NULL, NULL, 0 }
 };
 
@@ -1441,6 +1504,13 @@ void options_add(void)
 	for (i = 0; i < NR_ATTRS; i++)
 		option_add(attr_names[i], &attrs[i], get_attr, set_attr, NULL,
 				0);
+
+	{
+		struct cmus_opt *opt;
+		opt = option_find("album_path_ignore_re");
+		opt->data = xmalloc(sizeof(void*));
+		set_album_path_ignore_re(opt->data, DEFAULT_ALBUM_PATH_IGNORE_RE);
+	}
 
 	ip_add_options();
 	op_add_options();

@@ -21,6 +21,8 @@
 
 #include "list.h"
 
+#include <regex.h>
+
 #define OPTION_MAX_SIZE	4096
 
 typedef void (*opt_get_cb)(void *data, char *buf, size_t size);
@@ -141,6 +143,8 @@ extern int rewind_offset;
 extern int skip_track_info;
 extern int mouse;
 extern int mpris;
+extern int separate_albums_by_path;
+extern regex_t album_path_ignore_re;
 
 extern const char * const aaa_mode_names[];
 extern const char * const view_names[NR_VIEWS + 1];
