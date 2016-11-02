@@ -82,6 +82,7 @@ int auto_expand_albums_selcur = 1;
 int show_all_tracks = 1;
 int mouse = 0;
 int mpris = 1;
+int time_show_leading_zero = 1;
 
 int colors[NR_COLORS] = {
 	-1,
@@ -1080,6 +1081,24 @@ static void toggle_mpris(void *data)
 	mpris ^= 1;
 }
 
+static void get_time_show_leading_zero(void *data, char *buf, size_t size)
+{
+	strscpy(buf, bool_names[time_show_leading_zero], size);
+}
+
+static void set_time_show_leading_zero(void *data, const char *buf)
+{
+	if (!parse_bool(buf, &time_show_leading_zero))
+		return;
+	update_statusline();
+}
+
+static void toggle_time_show_leading_zero(void *data)
+{
+	time_show_leading_zero ^= 1;
+	update_statusline();
+}
+
 static void get_lib_add_filter(void *data, char *buf, size_t size)
 {
 	strscpy(buf, lib_add_filter ? lib_add_filter : "", size);
@@ -1322,6 +1341,7 @@ static const struct {
 	DT(skip_track_info)
 	DT(mouse)
 	DT(mpris)
+	DT(time_show_leading_zero)
 	DN(lib_add_filter)
 	{ NULL, NULL, NULL, NULL, 0 }
 };
