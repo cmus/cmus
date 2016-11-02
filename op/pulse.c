@@ -270,7 +270,7 @@ static int _pa_create_context(void)
 
 	pa_context_set_state_callback(pa_ctx, _pa_context_running_cb, NULL);
 
-	rc = pa_context_connect(pa_ctx, NULL, PA_CONTEXT_NOFAIL, NULL);
+	rc = pa_context_connect(pa_ctx, NULL, PA_CONTEXT_NOFLAGS, NULL);
 	if (rc)
 		goto out_fail;
 
