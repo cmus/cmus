@@ -587,13 +587,9 @@ static void eat_dirs_ignored_in_album_path(char *s) {
 			break;
 		};
 
-		char ch_before, ch_after;
-		ch_before = (m0.rm_so >= 1) ? s[m0.rm_so-1] : 0;
-		ch_after = (m0.rm_eo >= 1) ? s[m0.rm_eo] : 0;
+		char ch_after = (m0.rm_eo >= 1) ? s[m0.rm_eo] : 0;
 
-		if ((ch_before != '/' && ch_before != '\\') ||
-			(ch_after != '/' && ch_after != '\\'))
-		{
+		if (ch_after != '/' && ch_after != '\\') {
 			s += m0.rm_eo;
 		} else {
 			l_m = m0.rm_eo - m0.rm_so;
