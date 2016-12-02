@@ -21,12 +21,8 @@ check_cflags()
 
 check_sndio()
 {
-	case `uname -s` in
-	OpenBSD|FreeBSD)
-		check_library SNDIO "" "-lsndio"
-		return $?
-	esac
-	return 1
+	check_library SNDIO "" "-lsndio"
+	return $?
 }
 
 check_coreaudio()
