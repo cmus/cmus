@@ -47,6 +47,7 @@ bind common g win-top
 bind common h seek -5
 bind common home win-top
 bind common i win-sel-cur
+bind common @ win-set-sel
 bind common j win-down
 bind common k win-up
 bind common l seek +5

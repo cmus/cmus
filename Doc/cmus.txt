@@ -246,6 +246,7 @@ tab            win-next
 ^Y             win-scroll-up
 D, delete      win-remove
 i              win-sel-cur
+\@              win-set-sel
 space          win-toggle
 g, home        win-top
 k, up          win-up
@@ -708,6 +709,12 @@ win-scroll-up (*^Y*)
 win-sel-cur (*i*)
 	Select the current track (position in library or playlist, not
 	necessarily same as the currently playing track).  Works only in views
+	1-3, does nothing in other views.
+
+win-set-sel (*\@*)
+	Set the current track (position in library or playlist, not
+	necessarily same as the currently playing track) to the current
+	selection; this is the inverse of win-sel-cur.  Works only in views
 	1-3, does nothing in other views.
 
 win-toggle (*space*)
