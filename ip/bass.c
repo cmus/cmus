@@ -20,6 +20,7 @@
 #include "xmalloc.h"
 #include "comment.h"
 #include "bass.h"
+#include "uchar.h"
 
 #define BITS (16)
 #define FREQ (44100)
@@ -52,7 +53,11 @@ static int bass_open(struct input_plugin_data *ip_data)
 	if (!bass_init())
 		return -IP_ERROR_INTERNAL;
 
-	flags = BASS_MUSIC_DECODE | BASS_MUSIC_RAMP | BASS_MUSIC_PRESCAN;
+	flags = BASS_MUSIC_DECODE;
+	flags |= BASS_MUSIC_RAMP;
+	flags |= BASS_MUSIC_PRESCAN;
+	flags |= BASS_MUSIC_STOPBACK;
+
 	chan = BASS_MusicLoad(FALSE, ip_data->filename, 0, 0, flags, 0);
 
 	if (!chan) {
@@ -101,6 +106,17 @@ static int bass_seek(struct input_plugin_data *ip_data, double offset)
 	return 0;
 }
 
+static unsigned char *encode_ascii_string(const char *str)
+{
+	unsigned char *ret;
+	int n;
+
+	ret = malloc(strlen(str) + 1);
+	n = u_to_ascii(ret, str, strlen(str));
+	ret[n] = '\0';
+	return ret;
+}
+
 static int bass_read_comments(struct input_plugin_data *ip_data,
 				struct keyval **comments)
 {
@@ -110,7 +126,7 @@ static int bass_read_comments(struct input_plugin_data *ip_data,
 
 	val = BASS_ChannelGetTags(priv->chan, BASS_TAG_MUSIC_NAME);
 	if (val && val[0])
-		comments_add_const(&c, "title", val);
+		comments_add_const(&c, "title", encode_ascii_string(val));
 	keyvals_terminate(&c);
 	*comments = c.keyvals;
 	return 0;
