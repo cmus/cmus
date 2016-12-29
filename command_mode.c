@@ -706,12 +706,7 @@ static void cmd_unbind(char *arg)
 	if (*key == 0)
 		goto err;
 
-	/* remove trailing spaces from key */
-	char *key_end = key + strlen(key);
-	while (isspace(*(key_end-1))) {
-		key_end--;
-	}
-	*key_end = 0;
+	strip_trailing_spaces(key);
 
 	key_unbind(arg, key, flag == 'f');
 	return;
@@ -732,12 +727,7 @@ static void cmd_showbind(char *arg)
 	if (*key == 0)
 		goto err;
 
-	/* remove trailing spaces from key */
-	char *key_end = key + strlen(key);
-	while (isspace(*(key_end-1))) {
-		key_end--;
-	}
-	*key_end = 0;
+	strip_trailing_spaces(key);
 
 	show_binding(arg, key);
 	return;
