@@ -137,6 +137,15 @@ static inline int ends_with(const char *str, const char *suffix)
 	return strstr(str, suffix) + strlen(suffix) == str + strlen(str);
 }
 
+static inline void strip_trailing_spaces(char *str)
+{
+	char *end = str + strlen(str);
+	while (end > str && is_space(*(end-1))) {
+		end--;
+	}
+	*end = 0;
+}
+
 static inline uint32_t hash_str(const char *s)
 {
 	const unsigned char *p = (const unsigned char *)s;
