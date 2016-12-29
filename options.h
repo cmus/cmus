@@ -116,6 +116,7 @@ enum {
 extern char *cdda_device;
 extern char *output_plugin;
 extern char *status_display_program;
+extern char *artfile_name;
 extern char *server_password;
 extern int auto_expand_albums_follow;
 extern int auto_expand_albums_search;

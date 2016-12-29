@@ -57,6 +57,7 @@
 char *cdda_device = NULL;
 char *output_plugin = NULL;
 char *status_display_program = NULL;
+char *artfile_name = NULL;
 char *server_password;
 int auto_reshuffle = 1;
 int confirm_run = 1;
@@ -460,6 +461,20 @@ static void set_status_display_program(void *data, const char *buf)
 	status_display_program = NULL;
 	if (buf[0])
 		status_display_program = expand_filename(buf);
+}
+
+static void get_artfile_name(void *data, char *buf, size_t size)
+{
+	if (artfile_name)
+		strscpy(buf, artfile_name, size);
+}
+
+static void set_artfile_name(void *data, const char *buf)
+{
+	free(artfile_name);
+	artfile_name = NULL;
+	if (buf[0])
+		artfile_name = xstrdup(buf);
 }
 
 /* }}} */
@@ -1337,6 +1352,7 @@ static const struct {
 	DT(softvol)
 	DN(softvol_state)
 	DN_FLAGS(status_display_program, OPT_PROGRAM_PATH)
+	DN(artfile_name)
 	DT(wrap_search)
 	DT(skip_track_info)
 	DT(mouse)
@@ -1483,6 +1499,7 @@ void options_load(void)
 	int i;
 
 	/* initialize those that can't be statically initialized */
+	artfile_name = xstrdup("cover.jpg");
 	cdda_device = get_default_cdda_device();
 	for (i = 0; str_defaults[i].name; i++)
 		option_set(str_defaults[i].name, str_defaults[i].value);

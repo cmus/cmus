@@ -385,6 +385,30 @@ static int mpris_metadata(sd_bus *_bus, const char *_path,
 		if (ti->discnumber != -1)
 			CK(mpris_msg_append_si_dict(reply, "xesam:discNumber",
 						ti->discnumber));
+		if (ti->filename && artfile_name) {
+			char filename[512];
+			char art_path[512] = "file://";
+			int num_tokens = 1;
+
+			strcpy(filename, ti->filename);
+			for (int i = 1; i < strlen(filename); i++) 
+				if (filename[i] == '/') num_tokens++;
+
+			char* tokens[num_tokens];
+			tokens[0] = strtok(filename, "/");
+
+			for (int i = 1; i < num_tokens; i++)
+				tokens[i] = strtok(NULL, "/");
+
+			for (int i = 0; i < num_tokens-1; i++) {
+				strcat(art_path, "/");
+				strcat(art_path, tokens[i]);
+			}
+			strcat(art_path, "/");
+			strcat(art_path, artfile_name);
+			CK(mpris_msg_append_ss_dict(reply, "mpris:artUrl",
+						art_path));
+		}
 	}
 
 	CK(sd_bus_message_close_container(reply));
