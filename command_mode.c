@@ -706,7 +706,12 @@ static void cmd_unbind(char *arg)
 	if (*key == 0)
 		goto err;
 
-	/* FIXME: remove spaces at end */
+	/* remove trailing spaces from key */
+	char *key_end = key + strlen(key);
+	while (isspace(*(key_end-1))) {
+		key_end--;
+	}
+	*key_end = 0;
 
 	key_unbind(arg, key, flag == 'f');
 	return;
@@ -727,7 +732,12 @@ static void cmd_showbind(char *arg)
 	if (*key == 0)
 		goto err;
 
-	/* FIXME: remove spaces at end */
+	/* remove trailing spaces from key */
+	char *key_end = key + strlen(key);
+	while (isspace(*(key_end-1))) {
+		key_end--;
+	}
+	*key_end = 0;
 
 	show_binding(arg, key);
 	return;
