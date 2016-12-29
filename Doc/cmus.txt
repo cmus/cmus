@@ -200,6 +200,8 @@ x                           player-play
 z                           player-prev
 v                           player-stop
 ^L                          refresh
+/                           search-start
+?                           search-b-start
 n                           search-next
 N                           search-prev
 .                           seek +1m
