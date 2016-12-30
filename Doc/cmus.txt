@@ -817,8 +817,8 @@ altformat_trackwin [`Format String`]
 
 artfile_name (cover.jpg)
 	Cover art file name for the MPRIS interface. Can also display files up or down
-	the directory tree (e.g. *album-art/front-cover.jpg* or *../artist.jpg*).
-	Currently does not support file names with whitespace.
+	the directory tree (e.g. *album-art/front cover.jpg* or *../artist.jpg*). Use
+	whitespaces without backslashes and quotation marks (e.g. *name of album.jpg*).
 
 buffer_seconds (10) [1-300]
 	Size of player buffer in seconds.

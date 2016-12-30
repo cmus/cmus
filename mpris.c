@@ -20,11 +20,13 @@
 #include "mpris.h"
 #include "ui_curses.h"
 #include "cmus.h"
+#include "misc.h"
 #include "player.h"
 #include "options.h"
 #include "output.h"
 #include "track_info.h"
 #include "utils.h"
+#include "xmalloc.h"
 
 #define CK(v) \
 do { \
@@ -341,6 +343,28 @@ static int mpris_msg_append_sas_dict(sd_bus_message *m, const char *a,
 	return 0;
 }
 
+static char* mpris_build_artfile_path(struct track_info *ti) {
+	const char art_schema[] = "file://";
+	int len_art_schema = strlen(art_schema);
+
+	char *filepath = NULL;
+	filepath = xstrdup(ti->filename);
+	const char *filename = get_filename(filepath);
+	int len_filedir = strlen(filepath) - strlen(filename);
+
+	/* global variable artfile_name defined in options */
+	int len_artpath = len_filedir;
+	len_artpath += strlen(artfile_name);
+
+	char *art_path = xmalloc(len_art_schema + len_artpath + 1);
+	strcpy(art_path, art_schema);
+	strncat(art_path, filepath, len_filedir);
+	art_path[len_art_schema + len_filedir] = '\0';
+	strcat(art_path, artfile_name);
+
+	return art_path;
+}
+
 static int mpris_metadata(sd_bus *_bus, const char *_path,
 		const char *_interface, const char *_property,
 		sd_bus_message *reply, void *_userdata,
@@ -386,26 +410,8 @@ static int mpris_metadata(sd_bus *_bus, const char *_path,
 			CK(mpris_msg_append_si_dict(reply, "xesam:discNumber",
 						ti->discnumber));
 		if (ti->filename && artfile_name) {
-			char filename[512];
-			char art_path[512] = "file://";
-			int num_tokens = 1;
-
-			strcpy(filename, ti->filename);
-			for (int i = 1; i < strlen(filename); i++) 
-				if (filename[i] == '/') num_tokens++;
-
-			char* tokens[num_tokens];
-			tokens[0] = strtok(filename, "/");
-
-			for (int i = 1; i < num_tokens; i++)
-				tokens[i] = strtok(NULL, "/");
-
-			for (int i = 0; i < num_tokens-1; i++) {
-				strcat(art_path, "/");
-				strcat(art_path, tokens[i]);
-			}
-			strcat(art_path, "/");
-			strcat(art_path, artfile_name);
+			char *art_path = NULL;
+			art_path = mpris_build_artfile_path(ti);
 			CK(mpris_msg_append_ss_dict(reply, "mpris:artUrl",
 						art_path));
 		}
