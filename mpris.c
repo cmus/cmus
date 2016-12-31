@@ -345,15 +345,15 @@ static int mpris_msg_append_sas_dict(sd_bus_message *m, const char *a,
 
 static char* mpris_build_artfile_path(struct track_info *ti) {
 	const char art_schema[] = "file://";
-	int len_art_schema = strlen(art_schema);
+	size_t len_art_schema = strlen(art_schema);
 
 	char *filepath = NULL;
 	filepath = xstrdup(ti->filename);
 	const char *filename = get_filename(filepath);
-	int len_filedir = strlen(filepath) - strlen(filename);
+	size_t len_filedir = strlen(filepath) - strlen(filename);
 
 	/* global variable artfile_name defined in options */
-	int len_artpath = len_filedir;
+	size_t len_artpath = len_filedir;
 	len_artpath += strlen(artfile_name);
 
 	char *art_path = xmalloc(len_art_schema + len_artpath + 1);
