@@ -112,11 +112,12 @@ this:
 @endpre
 
 Use the up and down arrow keys to select a track you'd like to hear, and press
-Enter to play it. Here's some keys to control play:
+Enter to play it. Here are some keys to control playback:
 
 Press *c* to pause/unpause
 Press right/left to seek by 10 seconds
 Press *<*/*>* seek by one minute
+Press *z* to play the previous track and *b* to play the next track
 
 cmus has some great options to control what plays next (if anything) when the
 track ends. The state of these settings are shown in the bottom right corner.
