@@ -127,9 +127,23 @@ static inline int strcmp0(const char *str1, const char *str2)
 	return strcmp(str1, str2);
 }
 
+static inline int is_space(const char ch)
+{
+	return (ch == ' ' || ch == '\t');
+}
+
 static inline int ends_with(const char *str, const char *suffix)
 {
 	return strstr(str, suffix) + strlen(suffix) == str + strlen(str);
+}
+
+static inline void strip_trailing_spaces(char *str)
+{
+	char *end = str + strlen(str);
+	while (end > str && is_space(*(end-1))) {
+		end--;
+	}
+	*end = 0;
 }
 
 static inline uint32_t hash_str(const char *s)
