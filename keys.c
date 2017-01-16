@@ -667,9 +667,17 @@ void normal_mode_ch(uchar ch)
 	if (handle_key(key_bindings[CTX_COMMON], k))
 		return;
 
-	/* binding can be overridden but has default magic */
-	if (ch == ':') {
+	/* these can be overridden but have default magic */
+	switch (ch) {
+	case ':':
 		enter_command_mode();
+		return;
+	case '/':
+		enter_search_mode();
+		return;
+	case '?':
+		enter_search_backward_mode();
+		return;
 	}
 }
 
