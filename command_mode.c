@@ -1400,6 +1400,16 @@ static void cmd_search_prev(char *arg)
 	}
 }
 
+static void cmd_search_start(char *arg)
+{
+	enter_search_mode();
+}
+
+static void cmd_search_b_start(char *arg)
+{
+	enter_search_backward_mode();
+}
+
 static int sorted_for_each_sel(track_info_cb cb, void *data, int reverse)
 {
 	return editable_for_each_sel(&lib_editable, cb, data, reverse);
@@ -2539,8 +2549,10 @@ struct command commands[] = {
 	{ "refresh",               cmd_refresh,          0, 0,  NULL,                 0, 0          },
 	{ "run",                   cmd_run,              1, -1, expand_program_paths, 0, CMD_UNSAFE },
 	{ "save",                  cmd_save,             0, 1,  expand_load_save,     0, CMD_UNSAFE },
+	{ "search-b-start",        cmd_search_b_start,   0, 0,  NULL,                 0, 0          },
 	{ "search-next",           cmd_search_next,      0, 0,  NULL,                 0, 0          },
 	{ "search-prev",           cmd_search_prev,      0, 0,  NULL,                 0, 0          },
+	{ "search-start",          cmd_search_start,     0, 0,  NULL,                 0, 0          },
 	{ "seek",                  cmd_seek,             1, 1,  NULL,                 0, 0          },
 	{ "set",                   cmd_set,              1, 1,  expand_options,       0, 0          },
 	{ "shell",                 cmd_shell,            1, -1, expand_program_paths, 0, CMD_UNSAFE },
