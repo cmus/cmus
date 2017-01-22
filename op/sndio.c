@@ -86,6 +86,7 @@ static int sndio_set_sf(sample_format_t sf)
 		break;
 	case 24:
 		par.bits = 24;
+		par.bps = 3;
 		break;
 	case 16:
 		par.bits = 16;
