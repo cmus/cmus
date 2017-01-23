@@ -147,6 +147,8 @@ static int show_cursor;
 static int cursor_x;
 static int cursor_y;
 
+static const int default_esc_delay = 25;
+
 static char *title_buf = NULL;
 
 enum {
@@ -2315,6 +2317,10 @@ static void init_curses(void)
 		}
 	}
 	update_mouse();
+
+	if (!getenv("ESCDELAY")) {
+		set_escdelay(default_esc_delay);
+	}
 }
 
 static void init_all(void)
