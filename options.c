@@ -83,6 +83,7 @@ int show_all_tracks = 1;
 int mouse = 0;
 int mpris = 1;
 int time_show_leading_zero = 1;
+int resolve_symlinks = 1;
 
 int colors[NR_COLORS] = {
 	-1,
@@ -1122,6 +1123,21 @@ static void set_lib_add_filter(void *data, const char *buf)
 	lib_set_add_filter(expr);
 }
 
+static void get_resolve_symlinks(void *data, char *buf, size_t size)
+{
+	strscpy(buf, bool_names[resolve_symlinks], size);
+}
+
+static void set_resolve_symlinks(void *data, const char *buf)
+{
+	parse_bool(buf, &resolve_symlinks);
+}
+
+static void toggle_resolve_symlinks(void *data)
+{
+	resolve_symlinks ^= 1;
+}
+
 /* }}} */
 
 /* special callbacks (id set) {{{ */
@@ -1343,6 +1359,7 @@ static const struct {
 	DT(mpris)
 	DT(time_show_leading_zero)
 	DN(lib_add_filter)
+	DT(resolve_symlinks)
 	{ NULL, NULL, NULL, NULL, 0 }
 };
 
