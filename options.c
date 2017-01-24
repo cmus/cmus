@@ -1165,7 +1165,7 @@ static void set_start_view(void *data, const char *buf)
 {
 	int view;
 
-	if (parse_enum(buf, 0, NR_VIEWS, view_names, &view)) {
+	if (parse_enum(buf, 0, NR_VIEWS - 1, view_names, &view)) {
 		start_view = view;
 	}
 }
