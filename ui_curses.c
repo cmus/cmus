@@ -147,6 +147,8 @@ static int show_cursor;
 static int cursor_x;
 static int cursor_y;
 
+static const int default_esc_delay = 25;
+
 static char *title_buf = NULL;
 
 enum {
@@ -2315,6 +2317,10 @@ static void init_curses(void)
 		}
 	}
 	update_mouse();
+
+	if (!getenv("ESCDELAY")) {
+		set_escdelay(default_esc_delay);
+	}
 }
 
 static void init_all(void)
@@ -2372,6 +2378,8 @@ static void init_all(void)
 		resume_load();
 		cmus_add(play_queue_append, play_queue_autosave_filename,
 				FILE_TYPE_PL, JOB_TYPE_QUEUE, 0, NULL);
+	} else {
+		set_view(start_view);
 	}
 
 	cmus_add(lib_add_track, lib_autosave_filename, FILE_TYPE_PL,

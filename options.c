@@ -84,6 +84,7 @@ int mouse = 0;
 int mpris = 1;
 int time_show_leading_zero = 1;
 int resolve_symlinks = 1;
+int start_view = TREE_VIEW;
 
 int colors[NR_COLORS] = {
 	-1,
@@ -1171,6 +1172,20 @@ static void set_color(void *data, const char *buf)
 	update_full();
 }
 
+static void get_start_view(void *data, char *buf, size_t size)
+{
+	strscpy(buf, view_names[start_view], size);
+}
+
+static void set_start_view(void *data, const char *buf)
+{
+	int view;
+
+	if (parse_enum(buf, 0, NR_VIEWS - 1, view_names, &view)) {
+		start_view = view;
+	}
+}
+
 static void get_attr(void *data, char *buf, size_t size)
 {
 	int attr = *(int *)data;
@@ -1360,6 +1375,7 @@ static const struct {
 	DT(time_show_leading_zero)
 	DN(lib_add_filter)
 	DT(resolve_symlinks)
+	DN(start_view)
 	{ NULL, NULL, NULL, NULL, 0 }
 };
 

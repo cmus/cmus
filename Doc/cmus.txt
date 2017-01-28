@@ -1096,6 +1096,9 @@ softvol_state (100 100)
 	option is not usually changed directly since *vol* command does same
 	thing if *softvol* is true.
 
+start_view (tree) [tree, sorted, playlist, queue, browser, filters, settings]
+	Specify the view that gets shown when cmus starts.
+
 status_display_program () [command]
 	This command, if not empty, is run every time cmus' status changes.
 	It can be used to display currently playing track on desktop
