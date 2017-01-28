@@ -2378,6 +2378,8 @@ static void init_all(void)
 		resume_load();
 		cmus_add(play_queue_append, play_queue_autosave_filename,
 				FILE_TYPE_PL, JOB_TYPE_QUEUE, 0, NULL);
+	} else {
+		set_view(start_view);
 	}
 
 	cmus_add(lib_add_track, lib_autosave_filename, FILE_TYPE_PL,
