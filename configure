@@ -256,7 +256,7 @@ check_opus()
 
 check_wavpack()
 {
-	pkg_config WAVPACK "wavpack" "" "-lwavpack"
+	pkg_config WAVPACK "wavpack >= 4.40" "" "-lwavpack"
 	return $?
 }
 
