@@ -2,9 +2,47 @@
 
 . scripts/configure.sh || exit 1
 
+c11_code="
+#include <stdatomic.h>
+
+int main(void)
+{
+#ifdef __STDC_NO_ATOMICS__
+#error No C11 atomics
+#endif
+	_Atomic int res = ATOMIC_VAR_INIT(0);
+
+	return res;
+}
+"
+
+check_c11()
+{
+	msg_checking "for C11 (with atomics support)"
+
+	for flag in -std=gnu11 -std=gnu1x -std=c11 ""
+	do
+		if try_compile_link "$c11_code" $flag
+		then
+			EXTRA_CFLAGS="$EXTRA_CFLAGS $flag"
+			msg_result yes
+			working_c11=y
+			break
+		fi
+	done
+
+	if test -z "$working_c11"
+	then
+		msg_result no
+		return 1
+	fi
+
+	return 0
+}
+
 check_cflags()
 {
-	check_cc_flag -std=gnu11 -pipe -Wall -Wshadow -Wcast-align -Wpointer-arith \
+	check_cc_flag -pipe -Wall -Wshadow -Wcast-align -Wpointer-arith \
 		-Wwrite-strings -Wundef -Wmissing-prototypes -Wredundant-decls \
 		-Wextra -Wno-sign-compare -Wformat-security
 
@@ -394,7 +432,7 @@ check_ffmpeg()
 	fi
 	# ffmpeg api changes so frequently that it is best to compile the module
 	libs="$LDDLFLAGS $FFMPEG_LIBS"
-	cflags="-std=gnu11 $SOFLAGS $FFMPEG_CFLAGS"
+	cflags="$SOFLAGS $FFMPEG_CFLAGS"
 	if test "$HAVE_FFMPEG_AVCODEC_H" = y
 	then
 		cflags="$cflags -DHAVE_FFMPEG_AVCODEC_H"
@@ -510,6 +548,7 @@ var_default exampledir "${datadir}/doc/cmus/examples"
 
 check check_cc
 check check_host_cc
+check check_c11
 check check_cflags
 check check_cc_depgen
 check check_endianness
