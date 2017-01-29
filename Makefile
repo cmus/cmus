@@ -16,7 +16,9 @@ all: main plugins man
 -include config.mk
 include scripts/lib.mk
 
-CFLAGS += -D_FILE_OFFSET_BITS=64 -I"${topdir}"
+# $(topdir) must be included at the earliest possible stage, to avoid
+# conflicts with system headers.
+CFLAGS := -I"$(topdir)" -D_FILE_OFFSET_BITS=64 $(CFLAGS)
 
 FFMPEG_CFLAGS += $(shell pkg-config --cflags libswresample)
 FFMPEG_LIBS += $(shell pkg-config --libs libswresample)
