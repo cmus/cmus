@@ -233,6 +233,10 @@ static struct expr *expr_new(int type)
 	new->parent = NULL;
 	new->left = NULL;
 	new->right = NULL;
+	new->estr.glob_head.next = NULL;
+	new->estr.glob_head.prev = NULL;
+	new->estr.op = SOP_EQ;
+
 	return new;
 }
 
