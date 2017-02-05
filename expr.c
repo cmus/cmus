@@ -229,10 +229,6 @@ static struct expr *expr_new(int type)
 	struct expr *new = xnew0(struct expr, 1);
 
 	new->type = type;
-	new->key = NULL;
-	new->parent = NULL;
-	new->left = NULL;
-	new->right = NULL;
 
 	return new;
 }
