@@ -379,7 +379,7 @@ static struct expr *format_parse_cond(const char* format, int size)
 static uchar format_skip_cond_expr(const char *format, int *s)
 {
 	uchar r = 0;
-	while (*format) {
+	while (format[*s]) {
 		uchar u = u_get_char(format, s);
 		if (u == '}' || u == '?') {
 			return u;
