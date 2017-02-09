@@ -20,7 +20,7 @@ check_c11()
 {
 	msg_checking "for C11 (with atomics support)"
 
-	for flag in -std=gnu11 -std=gnu1x -std=c11 ""
+	for flag in -std=gnu11 -std=c11 ""
 	do
 		if try_compile_link "$c11_code" $flag
 		then
