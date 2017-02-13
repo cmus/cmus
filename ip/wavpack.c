@@ -211,9 +211,7 @@ static int wavpack_open(struct input_plugin_data *ip_data)
 		| sf_channels(WavpackGetReducedChannels(priv->wpc))
 		| sf_bits(WavpackGetBitsPerSample(priv->wpc))
 		| sf_signed(1);
-#if CUR_STREAM_VERS > 0x404
 	channel_mask = WavpackGetChannelMask(priv->wpc);
-#endif
 	channel_map_init_waveex(sf_get_channels(ip_data->sf), channel_mask, ip_data->channel_map);
 	return 0;
 }

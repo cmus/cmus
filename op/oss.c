@@ -20,6 +20,7 @@
 #include "sf.h"
 #include "xmalloc.h"
 #include "debug.h"
+#include "utils.h"
 
 #if defined(__OpenBSD__)
 #include <soundcard.h>
@@ -48,6 +49,7 @@ static int oss_reset(void)
 	return 0;
 }
 
+#if defined(__linux__)
 /* defined only in OSSv4, but seem to work in OSSv3 (Linux) */
 #ifndef AFMT_S32_LE
 #define AFMT_S32_LE	0x00001000
@@ -58,10 +60,54 @@ static int oss_reset(void)
 #ifndef AFMT_S24_PACKED
 #define AFMT_S24_PACKED	0x00040000
 #endif
+#endif
+
+struct oss_fmt {
+	int fmt, bits, sig, be;
+};
+static struct oss_fmt oss_fmts[] = {
+	{ AFMT_S16_BE, 16, 1, 1 },
+	{ AFMT_S16_LE, 16, 1, 0 },
+#ifdef AFMT_S24_PACKED
+	{ AFMT_S24_PACKED, 24, 1, 0 },
+#endif
+#ifdef AFMT_S24_BE
+	{ AFMT_S24_BE, 24, 1, 1 },
+#endif
+#ifdef AFMT_S24_LE
+	{ AFMT_S24_LE, 24, 1, 0 },
+#endif
+#ifdef AFMT_S32_BE
+	{ AFMT_S32_BE, 32, 1, 1 },
+#endif
+#ifdef AFMT_S32_LE
+	{ AFMT_S32_LE, 32, 1, 0 },
+#endif
+
+	{ AFMT_U16_BE, 16, 0, 1 },
+	{ AFMT_U16_LE, 16, 0, 0 },
+#ifdef AFMT_U24_BE
+	{ AFMT_U24_BE, 24, 0, 1 },
+#endif
+#ifdef AFMT_U24_LE
+	{ AFMT_U24_LE, 24, 0, 0 },
+#endif
+#ifdef AFMT_U32_BE
+	{ AFMT_U32_BE, 32, 0, 1 },
+#endif
+#ifdef AFMT_U32_LE
+	{ AFMT_U32_LE, 32, 0, 0 },
+#endif		
+	{ AFMT_S8, 8, 1, 0 },
+	{ AFMT_S8, 8, 1, 1 },
+	{ AFMT_U8, 8, 0, 0 },
+	{ AFMT_U8, 8, 0, 1 },
+};
 
 static int oss_set_sf(sample_format_t sf)
 {
-	int tmp, log2_fragment_size, nr_fragments, bytes_per_second;
+	int found, tmp, log2_fragment_size, nr_fragments, bytes_per_second;
+	size_t i;
 
 	oss_reset();
 	oss_sf = sf;
@@ -76,35 +122,17 @@ static int oss_set_sf(sample_format_t sf)
 		return -1;
 #endif
 
-	if (sf_get_bits(oss_sf) == 16) {
-		if (sf_get_signed(oss_sf)) {
-			if (sf_get_bigendian(oss_sf)) {
-				tmp = AFMT_S16_BE;
-			} else {
-				tmp = AFMT_S16_LE;
-			}
-		} else {
-			if (sf_get_bigendian(oss_sf)) {
-				tmp = AFMT_U16_BE;
-			} else {
-				tmp = AFMT_U16_LE;
-			}
+	found = 0;
+	for (i = 0; i < N_ELEMENTS(oss_fmts); i++) {
+		if (sf_get_bits(oss_sf) == oss_fmts[i].bits &&
+		    sf_get_signed(oss_sf) == oss_fmts[i].sig &&
+		    sf_get_bigendian(oss_sf) == oss_fmts[i].be) {
+			found = 1;
+			tmp = oss_fmts[i].fmt;
+			break;
 		}
-	} else if (sf_get_bits(oss_sf) == 8) {
-		if (sf_get_signed(oss_sf)) {
-			tmp = AFMT_S8;
-		} else {
-			tmp = AFMT_U8;
-		}
-	} else if (sf_get_bits(oss_sf) == 32 && sf_get_signed(oss_sf)) {
-		if (sf_get_bigendian(oss_sf)) {
-			tmp = AFMT_S32_BE;
-		} else {
-			tmp = AFMT_S32_LE;
-		}
-	} else if (sf_get_bits(oss_sf) == 24 && sf_get_signed(oss_sf) && !sf_get_bigendian(oss_sf)) {
-		tmp = AFMT_S24_PACKED;
-	} else {
+	}
+	if (!found) {
 		d_print("unsupported sample format: %c%u_%s\n",
 			sf_get_signed(oss_sf) ? 'S' : 'U', sf_get_bits(oss_sf),
 			sf_get_bigendian(oss_sf) ? "BE" : "LE");
