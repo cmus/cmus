@@ -259,6 +259,7 @@ enum {
 	TF_COMMENT,
 	TF_DURATION,
 	TF_DURATION_SEC,
+	TF_ALBUMDURATION,
 	TF_BITRATE,
 	TF_CODEC,
 	TF_CODEC_PROFILE,
@@ -316,6 +317,7 @@ static struct format_option track_fopts[NR_TFS + 1] = {
 	DEF_FO_STR('c', "comment", 0),
 	DEF_FO_TIME('d', "duration", 0),
 	DEF_FO_INT('\0', "duration_sec", 1),
+	DEF_FO_TIME('\0', "albumduration", 0),
 	DEF_FO_INT('\0', "bitrate", 0),
 	DEF_FO_STR('\0', "codec", 0),
 	DEF_FO_STR('\0', "codec_profile", 0),
@@ -617,6 +619,19 @@ static void fill_track_fopts_track_info(struct track_info *info)
 	fopt_set_int(&track_fopts[TF_BPM], info->bpm, info->bpm == -1);
 }
 
+static int get_album_length(struct album *album)
+{
+	struct tree_track *track;
+	struct rb_node *tmp;
+	int duration = 0;
+
+	rb_for_each_entry(track, tmp, &album->track_root, tree_node) {
+		duration += tree_track_info(track)->duration;
+	}
+
+	return duration;
+}
+
 static void fill_track_fopts_album(struct album *album)
 {
 	fopt_set_int(&track_fopts[TF_YEAR], album->min_date / 10000, album->min_date <= 0);
@@ -624,6 +639,7 @@ static void fill_track_fopts_album(struct album *album)
 	fopt_set_str(&track_fopts[TF_ALBUMARTIST], album->artist->name);
 	fopt_set_str(&track_fopts[TF_ARTIST], album->artist->name);
 	fopt_set_str(&track_fopts[TF_ALBUM], album->name);
+	fopt_set_time(&track_fopts[TF_ALBUMDURATION], get_album_length(album), 0);
 }
 
 static void fill_track_fopts_artist(struct artist *artist)
