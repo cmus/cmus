@@ -7,7 +7,7 @@ https://cmus.github.io/
 
 Copyright © 2004-2008 Timo Hirvonen <tihirvon@gmail.com>
 
-Copyright © 2008-2016 Various Authors
+Copyright © 2008-2017 Various Authors
 
 
 Configuration
@@ -80,20 +80,23 @@ And
 Mailing List
 ------------
 
-To subscribe to cmus-devel@lists.sourceforge.net visit
-http://lists.sourceforge.net/lists/listinfo/cmus-devel
+To subscribe to cmus-devel@lists.sourceforge.net or view the archive visit
+http://lists.sourceforge.net/lists/listinfo/cmus-devel.
 
-The list is open but moderated (you can post to the list without
-subscribing but it's not recommended because I have to accept each email
-from non-subscribed users).  Traffic of the list is extremely low.
-Please use the [issues](https://github.com/cmus/cmus/issues) page for any problems, suggestions, or bug reports.
+The mailing list now serves as an archive for old releases and issues.
+Please use the github [issues](https://github.com/cmus/cmus/issues)
+page for any problems, suggestions, or bug reports.
+
 
 Reporting Bugs
 --------------
 
-After a crash send bug report with last lines of `~/cmus-debug.txt` to
-cmus-devel@lists.sourceforge.net.  The file exists only if you
-configured cmus with maximum debug level (`./configure DEBUG=2`).
+Bugs should be reported using the Github [issue tracker](https://github.com/cmus/cmus/issues).
+When creating a new issue, a template will be shown containing instructions on how to collect
+the necessary information.
+
+Additional debug information can be found in `~/cmus-debug.txt` if you configured cmus with
+maximum debug level (`./configure DEBUG=2`). In case of a crash the last lines may be helpful.
 
 
 Git Repository
@@ -111,5 +114,6 @@ cmus uses the [Linux kernel coding style](http://www.kernel.org/doc/Documentatio
 Use hard tabs.  Tabs are _always_ 8 characters wide.  Keep the style consistent with rest of the
 code.
 
-Use `git format-patch` to generate patches from your commits.
-Alternatively you can use `diff -up` if you don't want to use git.
+Bug fixes and implementations of new features should be suggested as a
+[pull request](https://github.com/cmus/cmus/pulls) directly on Github.
+
