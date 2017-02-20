@@ -76,6 +76,7 @@ flac-objs		:= ip/flac.lo
 mad-objs		:= ip/mad.lo ip/nomad.lo
 mikmod-objs		:= ip/mikmod.lo
 modplug-objs		:= ip/modplug.lo
+bass-objs		:= ip/bass.lo
 mpc-objs		:= ip/mpc.lo
 vorbis-objs		:= ip/vorbis.lo
 opus-objs		:= ip/opus.lo
@@ -92,6 +93,7 @@ ip-$(CONFIG_FLAC)	+= ip/flac.so
 ip-$(CONFIG_MAD)	+= ip/mad.so
 ip-$(CONFIG_MIKMOD)	+= ip/mikmod.so
 ip-$(CONFIG_MODPLUG)	+= ip/modplug.so
+ip-$(CONFIG_BASS)	+= ip/bass.so
 ip-$(CONFIG_MPC)	+= ip/mpc.so
 ip-$(CONFIG_VORBIS)	+= ip/vorbis.so
 ip-$(CONFIG_OPUS)	+= ip/opus.so
@@ -108,6 +110,7 @@ $(flac-objs):		CFLAGS += $(FLAC_CFLAGS)
 $(mad-objs):		CFLAGS += $(MAD_CFLAGS)
 $(mikmod-objs):		CFLAGS += $(MIKMOD_CFLAGS)
 $(modplug-objs):	CFLAGS += $(MODPLUG_CFLAGS)
+$(bass-objs):		CFLAGS += $(BASS_CFLAGS)
 $(mpc-objs):		CFLAGS += $(MPC_CFLAGS)
 $(vorbis-objs):		CFLAGS += $(VORBIS_CFLAGS)
 $(opus-objs):		CFLAGS += $(OPUS_CFLAGS)
@@ -131,6 +134,9 @@ ip/mikmod.so: $(mikmod-objs) $(libcmus-y)
 
 ip/modplug.so: $(modplug-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(MODPLUG_LIBS))
+
+ip/bass.so: $(bass-objs) $(libcmus-y)
+	$(call cmd,ld_dl,$(BASS_LIBS))
 
 ip/mpc.so: $(mpc-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(MPC_LIBS))

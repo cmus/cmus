@@ -261,6 +261,13 @@ check_modplug()
 	return 0
 }
 
+check_bass()
+{
+    check_header bass.h &&
+    check_library BASS "" "-lbass"
+    return $?
+}
+
 check_vtx()
 {
 	check_header ayemu.h &&
@@ -474,6 +481,7 @@ DEBUG=1
 HAVE_CDDB=n
 CONFIG_TREMOR=n
 CONFIG_MIKMOD=n
+CONFIG_BASS=n
 USE_FALLBACK_IP=n
 HAVE_BYTESWAP_H=n
 HAVE_STRDUP=n
@@ -506,6 +514,7 @@ Optional Features: y/n
   CONFIG_JACK           JACK                                            [auto]
   CONFIG_MAD            MPEG Audio Decoder (.mp3, .mp2, streams)        [auto]
   CONFIG_MIKMOD         libmikmod (.mod, .x3m, ...)                     [n]
+  CONFIG_BASS           libbass (.mod, .x3m, ...)                       [n]
   CONFIG_MODPLUG        libmodplug (.mod, .x3m, ...)                    [auto]
   CONFIG_MP4            MPEG-4 AAC (.mp4, .m4a, .m4b)                   [auto]
   CONFIG_MPC            libmpcdec (Musepack .mpc, .mpp, .mp+)           [auto]
@@ -568,6 +577,7 @@ check check_flac       CONFIG_FLAC
 check check_mad        CONFIG_MAD
 check check_mikmod     CONFIG_MIKMOD
 check check_modplug    CONFIG_MODPLUG
+check check_bass       CONFIG_BASS
 check check_mpc        CONFIG_MPC
 check check_vorbis     CONFIG_VORBIS
 check check_opus       CONFIG_OPUS
@@ -633,6 +643,6 @@ makefile_vars \
 	CONFIG_MAD CONFIG_MIKMOD CONFIG_MODPLUG CONFIG_MP4 CONFIG_MPC \
 	CONFIG_MPRIS CONFIG_OPUS CONFIG_OSS CONFIG_PULSE CONFIG_ROAR \
 	CONFIG_SAMPLERATE CONFIG_SNDIO CONFIG_SUN CONFIG_VORBIS CONFIG_VTX \
-	CONFIG_WAV CONFIG_WAVEOUT CONFIG_WAVPACK
+	CONFIG_WAV CONFIG_WAVEOUT CONFIG_WAVPACK CONFIG_BASS
 
 generate_config_mk
