@@ -239,7 +239,7 @@ static const struct {
 	[FMT_PLAYLIST_VA]	= { "format_playlist_va"	, " %-21%A %3n. %t (%a)%= %y %d %{?X!=0?%3X ?    }"	},
 	[FMT_TITLE_ALT]		= { "altformat_title"		, "%f"							},
 	[FMT_TITLE]		= { "format_title"		, "%a - %l - %t (%y)"					},
-	[FMT_TRACKWIN_ALBUM]	= { "format_trackwin_album"	, " %l "						},
+	[FMT_TRACKWIN_ALBUM]	= { "format_trackwin_album"	, " %l %= %{albumduration} "				},
 	[FMT_TRACKWIN_ALT]	= { "altformat_trackwin"	, " %f%= %d "						},
 	[FMT_TRACKWIN]		= { "format_trackwin"		, "%3n. %t%= %y %d "					},
 	[FMT_TRACKWIN_VA]	= { "format_trackwin_va"	, "%3n. %t (%a)%= %y %d "				},

@@ -1161,6 +1161,7 @@ Special Keys:
 	%d  %{duration}		@br
 	%f  %{path}		@br
 	%F  %{filename}		@br
+	    %{albumduration}    @br
 	    %{originaldate}	@br
 	    %{maxdate}		@br
 	    %{bpm}		@br
