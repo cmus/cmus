@@ -864,11 +864,8 @@ static void album_add_track(struct album *album, struct tree_track *track)
 		parent = *new;
 		if (result < 0)
 			new = &((*new)->rb_left);
-		else if (result > 0)
-			new = &((*new)->rb_right);
 		else
-			/* only add to tree if not there already */
-			return;
+			new = &((*new)->rb_right);
 	}
 
 	rb_link_node(&track->tree_node, parent, new);
