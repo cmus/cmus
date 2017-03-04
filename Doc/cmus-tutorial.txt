@@ -123,7 +123,7 @@ cmus has some great options to control what plays next (if anything) when the
 track ends. The state of these settings are shown in the bottom right corner.
 The first of these shows what collection of tracks (currently "all from
 library") we are playing. Press *m* to cycle through the different options for
-this setting. To the right of that (past the "|") cmus shows the state of three
+this setting. To the right of that (past the "|") cmus shows the state of four
 toggles. Only toggles which are "on" are shown, so now we only see the *C*.
 Here are the toggles:
 
@@ -142,6 +142,11 @@ the beginning. Press *r* to toggle this setting.
 
     If this is on, cmus will choose a random order to play all the tracks
 once. Press *s* to toggle this option.
+
+[F]ollow
+
+    If this is on, cmus will select the currently playing track on track change.
+Press *f* to toggle this option.
 
 
 @h1 Step 4: Managing The Queue

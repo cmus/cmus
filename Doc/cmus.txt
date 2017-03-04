@@ -216,6 +216,7 @@ r                           toggle repeat
 ^R                          toggle repeat_current
 t                           toggle show_remaining_time
 s                           toggle shuffle
+f                           toggle follow
 F                           push filter<space>
 L                           push live-filter<space>
 u                           update-cache
