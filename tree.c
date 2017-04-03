@@ -914,6 +914,20 @@ static void remove_artist(struct artist *artist)
 	rb_erase(&artist->tree_node, &lib_artist_root);
 }
 
+static const char* effective_tree_artist_name(const struct track_info *ti) {
+    if (composer_as_artist && ti->composer != NULL && strcmp(ti->composer, "") != 0)
+	return ti->composer;
+    else
+	return tree_artist_name(ti);
+}
+
+static const char* effective_artistsort_name(const struct track_info *ti) {
+    if (composer_as_artist && ti->composer != NULL && strcmp(ti->composer, "") != 0)
+	return ti->composer;
+    else
+	return ti->artistsort;
+}
+
 void tree_add_track(struct tree_track *track)
 {
 	const struct track_info *ti = tree_track_info(track);
@@ -933,8 +947,8 @@ void tree_add_track(struct tree_track *track)
 		album_name = "<Stream>";
 	} else {
 		album_name	= tree_album_name(ti);
-		artist_name	= tree_artist_name(ti);
-		artistsort_name	= ti->artistsort;
+		artist_name	= effective_tree_artist_name(ti);
+		artistsort_name	= effective_artistsort_name(ti);
 		albumsort_name	= ti->albumsort;
 
 		is_va_compilation = ti->is_va_compilation;

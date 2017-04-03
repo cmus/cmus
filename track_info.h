@@ -55,6 +55,7 @@ struct track_info {
 	const char *artistsort;
 	const char *albumsort;
 	const char *media;
+	const char *composer;
 
 	char *collkey_artist;
 	char *collkey_album;
