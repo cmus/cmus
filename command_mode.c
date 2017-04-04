@@ -2909,6 +2909,12 @@ void command_mode_ch(uchar ch)
 		}
 		input_mode = NORMAL_MODE;
 		break;
+	case 0x10: // ^P
+		command_mode_key(KEY_UP);
+		return;
+	case 0xE: // ^N
+		command_mode_key(KEY_DOWN);
+		return;
 	case 0x0A:
 		if (cmdline.blen) {
 			run_command(cmdline.line);
