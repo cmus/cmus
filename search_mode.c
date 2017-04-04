@@ -178,6 +178,12 @@ void search_mode_ch(uchar ch)
 	case 0x0B:
 		cmdline_clear_end();
 		break;
+	case 0x10: // ^P
+		search_mode_key(KEY_UP);
+		return;
+	case 0xE: // ^N
+		search_mode_key(KEY_DOWN);
+		return;
 	case 0x15:
 		cmdline_backspace_to_bol();
 		break;
