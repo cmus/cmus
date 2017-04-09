@@ -88,6 +88,11 @@ Please use the github [issues](https://github.com/cmus/cmus/issues)
 page for any problems, suggestions, or bug reports.
 
 
+Community
+------------
+Reddit: https://www.reddit.com/r/cmus/
+
+
 Reporting Bugs
 --------------
 
