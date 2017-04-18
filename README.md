@@ -110,7 +110,7 @@ https://github.com/cmus/cmus
 Hacking
 -------
 
-cmus uses the [Linux kernel coding style](http://www.kernel.org/doc/Documentation/CodingStyle).
+cmus uses the [Linux kernel coding style](https://www.kernel.org/doc/html/latest/process/coding-style.html).
 Use hard tabs.  Tabs are _always_ 8 characters wide.  Keep the style consistent with rest of the
 code.
 
