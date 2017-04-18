@@ -2030,27 +2030,27 @@ static int filter_supported(const char *name, const struct stat *s)
 
 static void expand_files(const char *str)
 {
-	expand_files_and_dirs(str, filter_any);
+	expand_files_and_dirs(str, filter_any, 0);
 }
 
 static void expand_directories(const char *str)
 {
-	expand_files_and_dirs(str, filter_directories);
+	expand_files_and_dirs(str, filter_directories, 0);
 }
 
 static void expand_playable(const char *str)
 {
-	expand_files_and_dirs(str, filter_playable);
+	expand_files_and_dirs(str, filter_playable, 0);
 }
 
 static void expand_playlist(const char *str)
 {
-	expand_files_and_dirs(str, filter_playlist);
+	expand_files_and_dirs(str, filter_playlist, 0);
 }
 
 static void expand_supported(const char *str)
 {
-	expand_files_and_dirs(str, filter_supported);
+	expand_files_and_dirs(str, filter_supported, TABEXP_GLOB);
 }
 
 static void expand_add(const char *str)

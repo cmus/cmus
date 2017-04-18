@@ -21,8 +21,13 @@
 
 #include <sys/stat.h>
 
+enum tabexp_flags {
+	TABEXP_GLOB = 1 << 0,
+};
+
 void expand_files_and_dirs(const char *src,
-		int (*filter)(const char *name, const struct stat *s));
+		int (*filter)(const char *name, const struct stat *s),
+		int flags);
 void expand_env_path(const char *src,
 		int (*filter)(const char *name, const struct stat *s));
 
