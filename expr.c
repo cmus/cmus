@@ -17,7 +17,7 @@
  */
 
 #include "expr.h"
-#include "glob.h"
+#include "xglob.h"
 #include "uchar.h"
 #include "track_info.h"
 #include "comment.h"

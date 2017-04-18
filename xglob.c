@@ -16,7 +16,7 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "glob.h"
+#include "xglob.h"
 #include "uchar.h"
 #include "list.h"
 #include "xmalloc.h"
