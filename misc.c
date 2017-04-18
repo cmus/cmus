@@ -150,6 +150,36 @@ const char *unescape(const char *str)
 	return buf;
 }
 
+/* prepends glob metacharacters '[]*?' with a backslash */
+const char *escape_glob(const char *str)
+{
+	static char *buf = NULL;
+	static size_t alloc = 0;
+	size_t len = strlen(str);
+	size_t need = len * 2 + 1;
+	int s, d;
+
+	if (need > alloc) {
+		alloc = (need + 16) & ~(16 - 1);
+		buf = xrealloc(buf, alloc);
+	}
+
+	d = 0;
+	for (s = 0; str[s]; s++) {
+		if (str[s] == '[' || str[s] == ']' ||
+		    str[s] == '*' || str[s] == '?') {
+			buf[d++] = '\\';
+			buf[d++] = str[s];
+			continue;
+		}
+
+		buf[d++] = str[s];
+	}
+	buf[d] = 0;
+	return buf;
+}
+
+
 static int dir_exists(const char *dirname)
 {
 	DIR *dir;
