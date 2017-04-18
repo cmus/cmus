@@ -1339,7 +1339,9 @@ static void cmd_p_pause_playback(char *arg)
 static void cmd_p_play(char *arg)
 {
 	if (arg) {
-		cmus_play_file(arg);
+		char *tmp = expand_filename(arg);
+		cmus_play_file(tmp);
+		free(tmp);
 	} else {
 		player_play();
 	}
