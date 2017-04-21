@@ -206,12 +206,12 @@ void cmdline_delete_word(const char *delim)
 		cmdline.line + bpos,
 		cmdline.blen - bpos + 1);
 	cmdline.blen -= bpos - cmdline.bpos;
-	cmdline.clen -= cdiff;-=
+	cmdline.clen -= cdiff;
 }
 
 void cmdline_backward_delete_word(const char *delim)
 {
-	int bpos, cdiff = 0;-=
+	int bpos, cdiff = 0;
 
 	bpos = next_word(cmdline.line, cmdline.bpos, &cdiff, delim, -1);
 
