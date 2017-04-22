@@ -411,6 +411,8 @@ static int flac_read(struct input_plugin_data *ip_data, char *buffer, int count)
 static int flac_seek(struct input_plugin_data *ip_data, double offset)
 {
 	struct flac_private *priv = ip_data->private;
+	priv->buf_rpos = 0;
+	priv->buf_wpos = 0;
 	uint64_t sample;
 
 	sample = (uint64_t)(offset * (double)sf_get_rate(ip_data->sf) + 0.5);
@@ -418,8 +420,6 @@ static int flac_seek(struct input_plugin_data *ip_data, double offset)
 		if (F(get_state(priv->dec)) == FLAC__STREAM_DECODER_SEEK_ERROR) {
 			if (!F(flush)(priv->dec))
 				d_print("failed to flush\n");
-			priv->buf_rpos = 0;
-			priv->buf_wpos = 0;
 		}
 		return -IP_ERROR_ERRNO;
 	}
