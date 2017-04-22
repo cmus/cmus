@@ -58,8 +58,6 @@ struct flac_private {
 	struct keyval *comments;
 	double duration;
 	long bitrate;
-
-	unsigned int ignore_next_write : 1;
 };
 
 static T(ReadStatus) read_cb(const Dec *dec, unsigned char *buf, size_t *size, void *data)
@@ -160,15 +158,6 @@ static FLAC__StreamDecoderWriteStatus write_cb(const Dec *dec, const FLAC__Frame
 	int frames, bytes, size, channels, bits, depth;
 	int ch, nch, i = 0;
 	char *dest; int32_t src;
-
-	if (ip_data->sf == 0) {
-		return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
-	}
-
-	if (priv->ignore_next_write) {
-		priv->ignore_next_write = 0;
-		return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
-	}
 
 	frames = frame->header.blocksize;
 	channels = sf_get_channels(ip_data->sf);
@@ -417,21 +406,23 @@ static int flac_read(struct input_plugin_data *ip_data, char *buffer, int count)
 }
 
 /* Flush the input and seek to an absolute sample. Decoding will resume at the
- * given sample. Note that because of this, the next write callback may contain
- * a partial block.
+ * given sample.
  */
 static int flac_seek(struct input_plugin_data *ip_data, double offset)
 {
 	struct flac_private *priv = ip_data->private;
+	priv->buf_rpos = 0;
+	priv->buf_wpos = 0;
 	uint64_t sample;
 
 	sample = (uint64_t)(offset * (double)sf_get_rate(ip_data->sf) + 0.5);
 	if (!F(seek_absolute)(priv->dec, sample)) {
+		if (F(get_state(priv->dec)) == FLAC__STREAM_DECODER_SEEK_ERROR) {
+			if (!F(flush)(priv->dec))
+				d_print("failed to flush\n");
+		}
 		return -IP_ERROR_ERRNO;
 	}
-	priv->ignore_next_write = 1;
-	priv->buf_rpos = 0;
-	priv->buf_wpos = 0;
 	return 0;
 }
 
