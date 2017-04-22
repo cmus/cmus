@@ -198,7 +198,7 @@ static int cue_read(struct input_plugin_data *ip_data, char *buffer, int count)
 	priv->current_offset += len;
 
 	if (priv->current_offset >= priv->end_offset)
-		rc = lround(rem_len * sf_get_second_size(sf));
+		rc = lround(rem_len * sf_get_rate(sf)) * sf_get_frame_size(sf);
 
 	return rc;
 }
