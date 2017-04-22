@@ -414,19 +414,14 @@ static int flac_seek(struct input_plugin_data *ip_data, double offset)
 	uint64_t sample;
 
 	sample = (uint64_t)(offset * (double)sf_get_rate(ip_data->sf) + 0.5);
-        if (!F(seek_absolute)(priv->dec, sample)) {
-            return -IP_ERROR_ERRNO;
-        }
-	while (F(get_state(priv->dec)) == FLAC__STREAM_DECODER_SEEK_ERROR) {
-		if (!F(flush)(priv->dec)) {
-			d_print("failed to flush\n");
-			return -IP_ERROR_ERRNO;
+	if (!F(seek_absolute)(priv->dec, sample)) {
+		if (F(get_state(priv->dec)) == FLAC__STREAM_DECODER_SEEK_ERROR) {
+			if (!F(flush)(priv->dec))
+				d_print("failed to flush\n");
+			priv->buf_rpos = 0;
+			priv->buf_wpos = 0;
 		}
-		priv->buf_rpos = 0;
-		priv->buf_wpos = 0;
-		if (!F(seek_absolute)(priv->dec, sample)) {
-			return -IP_ERROR_ERRNO;
-		}
+		return -IP_ERROR_ERRNO;
 	}
 	return 0;
 }
