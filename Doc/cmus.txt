@@ -1007,7 +1007,7 @@ mouse (false)
 	old version of Ncurses.
 
 mpris (true)
-	Enable MPRIS support.
+	Enable MPRIS support. See *D-Bus Interface (MPRIS)*
 
 	NOTE: This flag has no effect if cmus was compiled without MPRIS support.
 
@@ -1525,6 +1525,18 @@ USER
 USERNAME
 	Fallback for *USER*.
 
+@h1 D-Bus Interface (MPRIS)
+
+cmus provides a D-Bus interface following the Media Player Remote Interfacing Specification (MPRIS) v2:
+	https://www.freedesktop.org/wiki/Specifications/mpris-spec/
+
+It exposes the `/org/mpris/MediaPlayer2` object path with the interfaces
+`org.mpris.MediaPlayer2` and `org.mpris.MediaPlayer2.Player`.
+The unique bus name is `org.mpris.MediaPlayer2.cmus`.
+
+Metadata fields follow the naming convention of the specification:
+	https://www.freedesktop.org/wiki/Specifications/mpris-spec/metadata/
+Additionally, the `cmus:stream_title` field is exposed if appropriate.
 
 @h1 BUGS
 
