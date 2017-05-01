@@ -113,7 +113,10 @@ int colors[NR_COLORS] = {
 
 	COLOR_WHITE | BRIGHT,
 	COLOR_BLUE,
-	COLOR_WHITE | BRIGHT
+	COLOR_WHITE | BRIGHT,
+	-1,
+
+	-1
 };
 
 int attrs[NR_ATTRS] = {
@@ -125,7 +128,9 @@ int attrs[NR_ATTRS] = {
 	A_NORMAL,
 	A_NORMAL,
 	A_NORMAL,
-	A_NORMAL
+	A_NORMAL,
+	A_NORMAL,
+	A_BOLD
 };
 
 /* uninitialized option variables */
@@ -1385,7 +1390,9 @@ static const char * const color_names[NR_COLORS] = {
 	"color_win_sel_bg",
 	"color_win_sel_fg",
 	"color_win_title_bg",
-	"color_win_title_fg"
+	"color_win_title_fg",
+	"color_trackwin_album_bg",
+	"color_trackwin_album_fg"
 };
 
 static const char * const attr_names[NR_ATTRS] = {
@@ -1398,7 +1405,8 @@ static const char * const attr_names[NR_ATTRS] = {
 	"color_win_inactive_cur_sel_attr",
 	"color_win_inactive_sel_attr",
 	"color_win_sel_attr",
-	"color_win_title_attr"
+	"color_win_title_attr",
+	"color_trackwin_album_attr"
 };
 
 LIST_HEAD(option_head);
