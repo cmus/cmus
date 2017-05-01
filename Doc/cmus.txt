@@ -923,6 +923,15 @@ color_win_title_fg (white) [`Color`]
 color_win_title_attr (default) [`Attributes`]
 	Attributes of window titles (topmost line of the screen).
 
+color_trackwin_album_bg (default) [`Color`]
+	Background color of the album row shown in the track window.
+
+color_trackwin_album_fg (default) [`Color`]
+	Foreground color of the album row shown in the track window.
+
+color_trackwin_album_attr (bold) [`Attributes`]
+	Attributes of the album row shown in the track window.
+
 confirm_run (true)
 	Ask for confirmation before executing *:run*
 

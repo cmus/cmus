@@ -172,6 +172,8 @@ enum {
 	CURSED_ERROR,
 	CURSED_INFO,
 
+	CURSED_TRACKWIN_ALBUM,
+
 	NR_CURSED
 };
 
@@ -194,7 +196,9 @@ static unsigned char cursed_to_bg_idx[NR_CURSED] = {
 	COLOR_TITLELINE_BG,
 	COLOR_WIN_BG,
 	COLOR_CMDLINE_BG,
-	COLOR_CMDLINE_BG
+	COLOR_CMDLINE_BG,
+
+	COLOR_TRACKWIN_ALBUM_BG
 };
 
 static unsigned char cursed_to_fg_idx[NR_CURSED] = {
@@ -216,7 +220,9 @@ static unsigned char cursed_to_fg_idx[NR_CURSED] = {
 	COLOR_TITLELINE_FG,
 	COLOR_WIN_DIR,
 	COLOR_ERROR,
-	COLOR_INFO
+	COLOR_INFO,
+
+	COLOR_TRACKWIN_ALBUM_FG
 };
 
 static unsigned char cursed_to_attr_idx[NR_CURSED] = {
@@ -238,7 +244,9 @@ static unsigned char cursed_to_attr_idx[NR_CURSED] = {
 	COLOR_TITLELINE_ATTR,
 	COLOR_WIN_ATTR,
 	COLOR_CMDLINE_ATTR,
-	COLOR_CMDLINE_ATTR
+	COLOR_CMDLINE_ATTR,
+
+	COLOR_TRACKWIN_ALBUM_ATTR
 };
 
 /* index is CURSED_*, value is fucking color pair */
@@ -762,9 +770,7 @@ static void print_track(struct window *win, int row, struct iter *iter)
 		int pos;
 		struct fp_len len;
 
-		/* Output the album name in the same color as unselected
-		 * track name, but with BOLD attribute. */
-		bkgdset(pairs[CURSED_WIN] | A_BOLD);
+		bkgdset(pairs[CURSED_TRACKWIN_ALBUM]);
 
 		fill_track_fopts_album(album);
 
