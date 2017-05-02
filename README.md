@@ -1,5 +1,4 @@
-cmus — C\* Music Player
-=======================
+#cmus — C\* Music Player
 
 https://cmus.github.io/
 
@@ -10,8 +9,7 @@ Copyright © 2004-2008 Timo Hirvonen <tihirvon@gmail.com>
 Copyright © 2008-2017 Various Authors
 
 
-Configuration
--------------
+##Configuration
 
 List available optional features
 
@@ -43,8 +41,7 @@ script:
 The Tremor library is supposed to be used on hardware that has no FPU.
 
 
-Building
---------
+##Building
 
     $ make
 
@@ -53,9 +50,9 @@ Or on some BSD systems you need to explicitly use GNU make:
     $ gmake
 
 
-Installation
-------------
+##Installation
 
+####Copiling
     $ make install
 
 Or to install to a temporary directory:
@@ -66,9 +63,13 @@ This is useful when creating binary packages.
 
 Remember to replace `make` with `gmake` if needed.
 
+####Authomatic
 
-Manuals
--------
+- Debian Like: `sudo apt-get install cmus`
+- Arch Linux: `sudo pacman -S cmus`
+- OS X: `brew install cmus`
+
+##Manuals
 
     $ man cmus-tutorial
 
@@ -77,8 +78,7 @@ And
     $ man cmus
 
 
-Mailing List
-------------
+##Mailing List
 
 To subscribe to cmus-devel@lists.sourceforge.net or view the archive visit
 http://lists.sourceforge.net/lists/listinfo/cmus-devel.
@@ -88,8 +88,7 @@ Please use the github [issues](https://github.com/cmus/cmus/issues)
 page for any problems, suggestions, or bug reports.
 
 
-Reporting Bugs
---------------
+##Reporting Bugs
 
 Bugs should be reported using the Github [issue tracker](https://github.com/cmus/cmus/issues).
 When creating a new issue, a template will be shown containing instructions on how to collect
@@ -99,16 +98,14 @@ Additional debug information can be found in `~/cmus-debug.txt` if you configure
 maximum debug level (`./configure DEBUG=2`). In case of a crash the last lines may be helpful.
 
 
-Git Repository
---------------
+##Git Repository
 
 https://github.com/cmus/cmus
 
     $ git clone https://github.com/cmus/cmus.git
 
 
-Hacking
--------
+##Hacking
 
 cmus uses the [Linux kernel coding style](https://www.kernel.org/doc/html/latest/process/coding-style.html).
 Use hard tabs.  Tabs are _always_ 8 characters wide.  Keep the style consistent with rest of the

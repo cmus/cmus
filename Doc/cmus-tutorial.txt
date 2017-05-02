@@ -261,4 +261,3 @@ version online:
 
 There are more commands and features not covered here like loading and saving
 playlists, controlling cmus remotely with `cmus-remote`, etc.
-
