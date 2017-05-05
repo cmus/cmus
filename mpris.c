@@ -437,7 +437,7 @@ static const sd_bus_vtable media_player2_player_vt[] = {
 	MPRIS_PROP("MinimumRate", "d", mpris_rate),
 	MPRIS_PROP("MaximumRate", "d", mpris_rate),
 	MPRIS_PROP("CanGoNext", "b", mpris_read_true),
-	MPRIS_PROP("CanGoPrev", "b", mpris_read_true),
+	MPRIS_PROP("CanGoPrevious", "b", mpris_read_true),
 	MPRIS_PROP("CanPlay", "b", mpris_read_true),
 	MPRIS_PROP("CanPause", "b", mpris_read_true),
 	MPRIS_PROP("CanSeek", "b", mpris_read_true),
