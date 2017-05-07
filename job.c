@@ -42,6 +42,8 @@
 #include <errno.h>
 #include <sys/mman.h>
 
+extern int resolve_symlinks;
+
 enum job_result_var {
 	JOB_RES_ADD,
 	JOB_RES_UPDATE,
@@ -166,6 +168,11 @@ static int add_file_cue(const char *filename);
 static void add_file(const char *filename, int force)
 {
 	struct track_info *ti;
+	char buf[PATH_MAX];
+
+	if (resolve_symlinks) {
+		filename = realpath(filename, buf);
+	}
 
 	if (!is_cue_url(filename)) {
 		if (force || lookup_cache_entry(filename, hash_str(filename)) == NULL) {

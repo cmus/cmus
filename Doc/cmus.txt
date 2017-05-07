@@ -1050,6 +1050,11 @@ replaygain_limit (true)
 replaygain_preamp (0.0)
 	Replay gain preamplification in decibels.
 
+resolve_symlinks (true)
+	Resolve any symlinks filenames before adding them to the library. This
+	prevents duplicates resulting from files reachable by multiple paths.
+	The path displayed by %f format is the real path of the added file.
+
 resume (false)
 	Resume playback on startup.
 
