@@ -83,6 +83,7 @@ int show_all_tracks = 1;
 int mouse = 0;
 int mpris = 1;
 int time_show_leading_zero = 1;
+int composer_as_artist = 0;
 int start_view = TREE_VIEW;
 
 int colors[NR_COLORS] = {
@@ -1105,6 +1106,69 @@ static void toggle_time_show_leading_zero(void *data)
 	update_statusline();
 }
 
+static void get_composer_as_artist(void *data, char *buf, size_t size)
+{
+	strscpy(buf, bool_names[composer_as_artist], size);
+}
+
+struct tree_track_list {
+    struct tree_track_list *next;
+    struct tree_track *track;
+};
+
+static void rebuild_tree(void) {
+	/* going to pull all the tracks out of the tree and then add them back in */
+	struct tree_track_list *tree_track_list = NULL;
+	struct rb_node *tmp1, *tmp2, *tmp3;
+	struct artist *artist;
+	struct album *album;
+	struct tree_track *tree_track;
+
+	rb_for_each_entry(artist, tmp1, &lib_artist_root, tree_node) {
+		rb_for_each_entry(album, tmp2, &artist->album_root, tree_node) {
+			rb_for_each_entry(tree_track, tmp3, &album->track_root, tree_node) {
+				struct tree_track_list *tmp = tree_track_list;
+				tree_track_list = xnew(struct tree_track_list, 1);
+				*tree_track_list = (struct tree_track_list){.next = tmp, .track = tree_track};
+			}
+		}
+	}
+
+	while (lib_artist_root.rb_node != NULL) {
+		rb_erase(lib_artist_root.rb_node, &lib_artist_root);
+	}
+
+	window_set_contents(lib_tree_win, &lib_artist_root);
+
+	while (tree_track_list != NULL) {
+		tree_track = tree_track_list->track;
+
+		/* we're leaking the album and artist memory here */
+		tree_add_track(tree_track);
+
+		struct tree_track_list *next = tree_track_list->next;
+		free(tree_track_list);
+		tree_track_list = next;
+	}
+
+	window_set_contents(lib_tree_win, &lib_artist_root);
+}
+
+static void set_composer_as_artist(void *data, const char *buf)
+{
+	bool old_composer_as_artist = composer_as_artist;
+	if (!parse_bool(buf, &composer_as_artist))
+		return;
+	if (old_composer_as_artist != composer_as_artist)
+		rebuild_tree();
+}
+
+static void toggle_composer_as_artist(void *data)
+{
+	composer_as_artist ^= 1;
+	rebuild_tree();
+}
+
 static void get_lib_add_filter(void *data, char *buf, size_t size)
 {
 	strscpy(buf, lib_add_filter ? lib_add_filter : "", size);
@@ -1362,6 +1426,7 @@ static const struct {
 	DT(mouse)
 	DT(mpris)
 	DT(time_show_leading_zero)
+	DT(composer_as_artist)
 	DN(lib_add_filter)
 	DN(start_view)
 	{ NULL, NULL, NULL, NULL, 0 }

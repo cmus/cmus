@@ -146,6 +146,7 @@ extern int skip_track_info;
 extern int mouse;
 extern int mpris;
 extern int time_show_leading_zero;
+extern int composer_as_artist;
 extern int start_view;
 
 extern const char * const aaa_mode_names[];
