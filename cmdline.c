@@ -175,7 +175,7 @@ static int next_word(const char *str, int bpos, int *cdiff, const char *delim, i
 
 		if (u_strchr(delim, ch)) {
 			if (!skip_delim) {
-				bpos -= bpos - oldp;
+				bpos = bpos - oldp;
 				break;
 			}
 		} else
