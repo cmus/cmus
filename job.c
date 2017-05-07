@@ -41,6 +41,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <sys/mman.h>
+#include <glob.h>
 
 enum job_result_var {
 	JOB_RES_ADD,
@@ -375,6 +376,35 @@ static void add_pl(const char *filename)
 	}
 }
 
+static void add_glob(const char *pattern)
+{
+	char *filename;
+	struct stat st;
+	glob_t files;
+
+	if (glob(pattern, 0, NULL, &files)) {
+		d_print("error: invalid glob pattern: %s\n", pattern);
+		globfree(&files);
+		return;
+	}
+
+	for (size_t i = 0; i < files.gl_pathc; i++) {
+		filename = files.gl_pathv[i];
+
+		if (stat(filename, &st))
+			continue;
+
+		if (S_ISDIR(st.st_mode))
+			add_dir(filename, filename);
+		else if (cmus_is_playlist(filename))
+			add_pl(filename);
+		else if (S_ISREG(st.st_mode))
+			add_file(filename, 0);
+	}
+
+	globfree(&files);
+}
+
 static void do_add_job(void *data)
 {
 	jd = data;
@@ -390,6 +420,9 @@ static void do_add_job(void *data)
 		break;
 	case FILE_TYPE_DIR:
 		add_dir(jd->name, jd->name);
+		break;
+	case FILE_TYPE_GLOB:
+		add_glob(jd->name);
 		break;
 	case FILE_TYPE_FILE:
 		add_file(jd->name, jd->force);

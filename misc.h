@@ -35,6 +35,7 @@ int strptrcoll(const void *a, const void *b);
 int misc_init(void);
 const char *escape(const char *str);
 const char *unescape(const char *str);
+const char *escape_glob(const char *str);
 const char *get_filename(const char *path);
 
 /*

@@ -18,7 +18,7 @@
 
 #include "format_print.h"
 #include "expr.h"
-#include "glob.h"
+#include "xglob.h"
 #include "utils.h"
 #include "options.h"
 #include "uchar.h"

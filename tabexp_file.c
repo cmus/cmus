@@ -73,9 +73,11 @@ static char *get_full_dir_name(const char *dir)
 	return full;
 }
 
+
 static void load_dir(struct ptr_array *array,
 		const char *dirname, const char *start,
-		int (*filter)(const char *, const struct stat *))
+		int (*filter)(const char *, const struct stat *),
+		int flags)
 {
 	int start_len = strlen(start);
 	struct directory dir;
@@ -104,14 +106,11 @@ static void load_dir(struct ptr_array *array,
 			continue;
 
 		if (S_ISDIR(dir.st.st_mode)) {
-			int len = strlen(name);
-
-			str = xnew(char, len + 2);
-			memcpy(str, name, len);
-			str[len++] = '/';
-			str[len] = 0;
+			if (flags & TABEXP_GLOB)
+				name = xstrdup(escape_glob(name));
+			str = xstrjoin(name, "/");
 		} else {
-			str = xstrdup(name);
+			str = (flags & TABEXP_GLOB) ? xstrdup(escape_glob(name)) : xstrdup(name);
 		}
 		ptr_array_add(array, str);
 	}
@@ -125,17 +124,17 @@ out:
  * filtered with 'filter'
  */
 static void tabexp_load_dir(const char *dirname, const char *start,
-		int (*filter)(const char *, const struct stat *))
+		int (*filter)(const char *, const struct stat *), int flags)
 {
 	PTR_ARRAY(array);
 
 	/* tabexp is reseted */
-	load_dir(&array, dirname, start, filter);
+	load_dir(&array, dirname, start, filter, flags);
 
 	if (array.count) {
 		ptr_array_sort(&array, strptrcmp);
 
-		tabexp.head = xstrdup(dirname);
+		tabexp.head = (flags & TABEXP_GLOB) ? xstrdup(escape_glob(dirname)) : xstrdup(dirname);
 		tabexp.tails = array.ptrs;
 		tabexp.count = array.count;
 	}
@@ -156,7 +155,7 @@ static void tabexp_load_env_path(const char *env_path, const char *start,
 			*n = '\0';
 		if (strcmp(p, "") == 0 && getcwd(cwd, sizeof(cwd)))
 			p = cwd;
-		load_dir(&array, p, start, filter);
+		load_dir(&array, p, start, filter, 0);
 		p = n + 1;
 	} while (n);
 
@@ -173,9 +172,12 @@ static void tabexp_load_env_path(const char *env_path, const char *start,
 }
 
 void expand_files_and_dirs(const char *src,
-		int (*filter)(const char *name, const struct stat *s))
+		int (*filter)(const char *name, const struct stat *s),
+		int flags)
 {
 	char *slash;
+	if (flags & TABEXP_GLOB)
+		src = xstrdup(unescape(src));
 
 	/* split src to dir and file */
 	slash = strrchr(src, '/');
@@ -187,7 +189,7 @@ void expand_files_and_dirs(const char *src,
 		dir = xstrndup(src, slash - src + 1);
 		file = slash + 1;
 		/* get all dentries starting with file from dir */
-		tabexp_load_dir(dir, file, filter);
+		tabexp_load_dir(dir, file, filter, flags);
 		free(dir);
 	} else {
 		if (src[0] == '~') {
@@ -200,7 +202,7 @@ void expand_files_and_dirs(const char *src,
 				tabexp.count = 1;
 			}
 		} else {
-			tabexp_load_dir("", src, filter);
+			tabexp_load_dir("", src, filter, flags);
 		}
 	}
 }

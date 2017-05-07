@@ -46,6 +46,7 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <strings.h>
+#include <glob.h>
 
 /* save_playlist_cb, save_ext_playlist_cb */
 typedef int (*save_tracks_cb)(void *data, struct track_info *ti);
@@ -116,6 +117,7 @@ enum file_type cmus_detect_ft(const char *name, char **ret)
 {
 	char *absolute;
 	struct stat st;
+	glob_t matches;
 
 	if (is_http_url(name) || is_cue_url(name)) {
 		*ret = xstrdup(name);
@@ -131,6 +133,17 @@ enum file_type cmus_detect_ft(const char *name, char **ret)
 	absolute = path_absolute(name);
 	if (absolute == NULL)
 		return FILE_TYPE_INVALID;
+
+	if (glob(absolute, GLOB_NOSORT, NULL, &matches) == 0) {
+		if (matches.gl_pathc == 1) {
+			absolute = xstrdup(matches.gl_pathv[0]);
+		} else {
+			*ret = absolute;
+			globfree(&matches);
+			return FILE_TYPE_GLOB;
+		}
+	}
+	globfree(&matches);
 
 	/* stat follows symlinks, lstat does not */
 	if (stat(absolute, &st) == -1) {
