@@ -727,9 +727,6 @@ void pl_rename_selected_pl(const char *name)
 
 void pl_clear(void)
 {
-	if (!pl_cursor_in_track_window)
-		return;
-
 	pl_clear_visible_pl();
 }
 
