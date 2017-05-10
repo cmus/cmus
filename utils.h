@@ -38,6 +38,8 @@
 #include <stdint.h>
 #ifdef HAVE_BYTESWAP_H
 #include <byteswap.h>
+#elif defined(__APPLE__)
+#include <libkern/OSByteOrder.h>
 #endif
 
 
@@ -223,6 +225,9 @@ static inline int is_freeform_true(const char *c)
 /* e.g. OpenBSD */
 #elif defined(swap16)
 # define bswap16 swap16
+/* e.g. Mac OS X */
+#elif defined(OSSwapInt16)
+# define bswap16 OSSwapInt16
 #else
 # define bswap16(x) \
 	((((x) >> 8) & 0xff) | (((x) & 0xff) << 8))
@@ -241,6 +246,9 @@ static inline uint16_t swap_uint16(uint16_t x)
 /* e.g. OpenBSD */
 #elif defined(swap32)
 # define bswap32 swap32
+/* e.g. Mac OS X */
+#elif defined(OSSwapInt32)
+# define bswap32 OSSwapInt32
 #else
 # define bswap32(x) \
 	((((x) & 0xff000000) >> 24) | (((x) & 0x00ff0000) >>  8) |	\
