@@ -52,6 +52,21 @@ Or on some BSD systems you need to explicitly use GNU make:
 
     $ gmake
 
+For being able to use the audio plugins you need to have these dev libraries present on your machine: 
+(Debian / Ubuntu)
+  * build-essential
+  * ncurses-dev
+  * libpulse-dev
+  * libroar-dev
+  * libalsaplayer-dev
+  * libasound2-dev
+  * libfaad-dev  (ffmpeg)
+  * libmad0-dev (mp3)
+
+Also you may want to set your output to an audio device in the cmus autosave config file (~/.cmus/autosave or !/.config/cms/autosave)
+For instance to pulse audio:
+
+```set output_plugin=pulse```
 
 Installation
 ------------
