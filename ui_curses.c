@@ -1953,6 +1953,9 @@ static void update(void)
 	if (player_info.status_changed)
 		mpris_playback_status_changed();
 
+	if (player_info.seeked)
+		mpris_seeked();
+
 	if (player_info.file_changed || player_info.metadata_changed)
 		mpris_metadata_changed();
 

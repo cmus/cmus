@@ -27,7 +27,6 @@
 #include "debug.h"
 #include "compiler.h"
 #include "options.h"
-#include "mpris.h"
 #include "cmus.h"
 
 #include <stdio.h>
@@ -1289,8 +1288,11 @@ void player_seek(double offset, int relative, int start_playing)
 			d_print("error: ip_seek returned %d\n", rc);
 		}
 	}
-	mpris_seeked();
 	player_unlock();
+
+	player_info_priv_lock();
+	player_info_priv.seeked = 1;
+	player_info_priv_unlock();
 }
 
 /*
@@ -1466,6 +1468,7 @@ void player_info_snapshot(void)
 	player_info_priv.status_changed = 0;
 	player_info_priv.position_changed = 0;
 	player_info_priv.buffer_fill_changed = 0;
+	player_info_priv.seeked = 0;
 	player_info_priv.error_msg = NULL;
 
 	player_info_priv_unlock();

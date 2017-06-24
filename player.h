@@ -69,6 +69,7 @@ struct player_info {
 	unsigned int status_changed : 1;
 	unsigned int position_changed : 1;
 	unsigned int buffer_fill_changed : 1;
+	unsigned int seeked : 1;
 };
 
 extern char player_metadata[255 * 16 + 1];
