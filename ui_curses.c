@@ -51,6 +51,7 @@
 #include "mixer.h"
 #include "mpris.h"
 #include "locking.h"
+#include "delegate.h"
 #ifdef HAVE_CONFIG
 #include "config/curses.h"
 #include "config/iconv.h"
@@ -2368,6 +2369,7 @@ static void init_all(void)
 	cmdline_init();
 	commands_init();
 	search_mode_init();
+	delegate_init();
 
 	/* almost everything must be initialized now */
 	options_load();
@@ -2414,6 +2416,7 @@ static void exit_all(void)
 {
 	endwin();
 
+	delegate_exit();
 	if (resume_cmus)
 		resume_exit();
 	options_exit();
