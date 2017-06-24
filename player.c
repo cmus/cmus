@@ -28,6 +28,7 @@
 #include "compiler.h"
 #include "options.h"
 #include "cmus.h"
+#include "delegate.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -1076,7 +1077,7 @@ void player_exit(void)
 	buffer_free();
 }
 
-void player_stop(void)
+DELEGATE_0(player_stop)
 {
 	player_lock();
 	_consumer_stop();
@@ -1085,7 +1086,7 @@ void player_stop(void)
 	player_unlock();
 }
 
-void player_play(void)
+DELEGATE_0(player_play)
 {
 	int prebuffer;
 
@@ -1110,7 +1111,7 @@ void player_play(void)
 	player_unlock();
 }
 
-void player_pause(void)
+DELEGATE_0(player_pause)
 {
 	if (ip && ip_is_remote(ip) && consumer_status == CS_PLAYING) {
 		/* pausing not allowed */
@@ -1139,13 +1140,13 @@ void player_pause(void)
 	player_unlock();
 }
 
-void player_pause_playback(void)
+DELEGATE_0(player_pause_playback)
 {
 	if (consumer_status == CS_PLAYING)
 		player_pause();
 }
 
-void player_set_file(struct track_info *ti)
+DELEGATE_1(player_set_file, struct track_info *, ti)
 {
 	player_lock();
 	_producer_set_file(ti);
@@ -1171,7 +1172,7 @@ out:
 	player_unlock();
 }
 
-void player_play_file(struct track_info *ti)
+DELEGATE_1(player_play_file, struct track_info *, ti)
 {
 	player_lock();
 	_producer_set_file(ti);
@@ -1210,7 +1211,7 @@ void player_file_changed(struct track_info *ti)
 	_file_changed(ti);
 }
 
-void player_seek(double offset, int relative, int start_playing)
+DELEGATE_3(player_seek, double, offset, int, relative, int, start_playing)
 {
 	int stopped = 0;
 	player_lock();
@@ -1298,7 +1299,7 @@ void player_seek(double offset, int relative, int start_playing)
 /*
  * change output plugin without stopping playback
  */
-void player_set_op(char *name)
+DELEGATE_1(player_set_op, char *, name)
 {
 	int rc;
 
@@ -1348,7 +1349,7 @@ out:
 	player_unlock();
 }
 
-void player_set_buffer_chunks(unsigned int nr_chunks)
+DELEGATE_1(player_set_buffer_chunks, unsigned int, nr_chunks)
 {
 	player_lock();
 	_producer_stop();
@@ -1366,7 +1367,7 @@ int player_get_buffer_chunks(void)
 	return buffer_nr_chunks;
 }
 
-void player_set_soft_volume(int l, int r)
+DELEGATE_2(player_set_soft_volume, int, l, int, r)
 {
 	consumer_lock();
 	soft_vol_l = l;
@@ -1374,7 +1375,7 @@ void player_set_soft_volume(int l, int r)
 	consumer_unlock();
 }
 
-void player_set_soft_vol(int soft)
+DELEGATE_1(player_set_soft_vol, int, soft)
 {
 	consumer_lock();
 	/* don't mess with scale_pos if soft_vol or replaygain is already enabled */
@@ -1413,7 +1414,7 @@ int player_set_vol(int l, int lf, int r, int rf)
 	return rc;
 }
 
-void player_set_rg(enum replaygain rg)
+DELEGATE_1(player_set_rg, enum replaygain, rg)
 {
 	player_lock();
 	/* don't mess with scale_pos if soft_vol or replaygain is already enabled */
@@ -1428,7 +1429,7 @@ void player_set_rg(enum replaygain rg)
 	player_unlock();
 }
 
-void player_set_rg_limit(int limit)
+DELEGATE_1(player_set_rg_limit, int, limit)
 {
 	player_lock();
 	replaygain_limit = limit;
@@ -1440,7 +1441,7 @@ void player_set_rg_limit(int limit)
 	player_unlock();
 }
 
-void player_set_rg_preamp(double db)
+DELEGATE_1(player_set_rg_preamp, double, db)
 {
 	player_lock();
 	replaygain_preamp = db;
