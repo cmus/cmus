@@ -2377,7 +2377,10 @@ static void init_all(void)
 		mpris_init();
 
 	/* finally we can set the output plugin */
-	player_set_op(output_plugin);
+	if (output_plugin)
+		player_set_op(xstrdup(output_plugin));
+	else
+		player_set_op(NULL);
 	if (!soft_vol)
 		mixer_open();
 

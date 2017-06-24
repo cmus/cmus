@@ -1296,7 +1296,7 @@ void player_seek(double offset, int relative, int start_playing)
 /*
  * change output plugin without stopping playback
  */
-void player_set_op(const char *name)
+void player_set_op(char *name)
 {
 	int rc;
 
@@ -1325,8 +1325,7 @@ void player_set_op(const char *name)
 			player_op_error(rc, "selecting output plugin '%s'", name);
 		else
 			player_op_error(rc, "selecting any output plugin");
-		player_unlock();
-		return;
+		goto out;
 	}
 
 	if (consumer_status == CS_PLAYING || consumer_status == CS_PAUSED) {
@@ -1336,13 +1335,14 @@ void player_set_op(const char *name)
 			_consumer_status_update(CS_STOPPED);
 			_producer_stop();
 			player_op_error(rc, "opening audio device");
-			player_unlock();
-			return;
+			goto out;
 		}
 		if (consumer_status == CS_PAUSED)
 			op_pause();
 	}
 
+out:
+	free(name);
 	player_unlock();
 }
 
