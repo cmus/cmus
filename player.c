@@ -813,8 +813,8 @@ static void _consumer_handle_eof(void)
 		} else {
 			_producer_stop();
 			_consumer_drain_and_stop();
-			_player_status_changed();
 		}
+		_player_status_changed();
 		return;
 	}
 
