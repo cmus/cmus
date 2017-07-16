@@ -468,8 +468,8 @@ static int open_file_locked(struct input_plugin *ip)
 		if (!ops)
 			break;
 
-		ip_reset(ip, 0);
 		d_print("fallback: try next plugin for `%s'\n", ip->data.filename);
+		ip_reset(ip, 0);
 	}
 
 	return rc;

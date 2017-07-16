@@ -383,14 +383,17 @@ void sort_keys_to_str(const sort_key_t *keys, char *buf, size_t bufsize)
 
 	for (i = 0; keys[i] != SORT_INVALID; i++) {
 		const char *key = sort_key_to_str(keys[i]);
-		int len = strlen(key);
 
-		if ((int)bufsize - pos - len - 2 < 0)
-			break;
+		if (key != NULL) {
+			int len = strlen(key);
 
-		memcpy(buf + pos, key, len);
-		pos += len;
-		buf[pos++] = ' ';
+			if ((int)bufsize - pos - len - 2 < 0)
+				break;
+
+			memcpy(buf + pos, key, len);
+			pos += len;
+			buf[pos++] = ' ';
+		}
 	}
 	if (pos > 0)
 		pos--;
