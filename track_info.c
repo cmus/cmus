@@ -30,7 +30,6 @@
 #include <string.h>
 #include <stdatomic.h>
 #include <math.h>
-#include <stdatomic.h>
 
 struct track_info_priv {
 	struct track_info ti;
