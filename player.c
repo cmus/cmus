@@ -1118,6 +1118,20 @@ void player_pause(void)
 		player_stop();
 		return;
 	}
+
+	bool fade_enabled = mixer_fade_enabled();
+	if (fade_enabled) {
+		if (consumer_status == CS_PAUSED) {
+			if (mixer_fadein() != 0) {
+				fade_enabled = false;
+			}
+		} else {
+			if (mixer_fadeout() != 0) {
+				fade_enabled = false;
+			}
+		}
+	}
+
 	player_lock();
 
 	if (consumer_status == CS_STOPPED) {
@@ -1138,6 +1152,14 @@ void player_pause(void)
 	_consumer_pause();
 	_player_status_changed();
 	player_unlock();
+
+	if (fade_enabled) {
+		if (consumer_status == CS_PLAYING) {
+			mixer_fadein_end();
+		} else {
+			mixer_fadeout_end();
+		}
+	}
 }
 
 void player_pause_playback(void)

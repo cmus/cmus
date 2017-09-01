@@ -84,6 +84,7 @@ int mouse = 0;
 int mpris = 1;
 int time_show_leading_zero = 1;
 int start_view = TREE_VIEW;
+int fade_duration = 100;
 
 int colors[NR_COLORS] = {
 	-1,
@@ -1175,6 +1176,19 @@ static void set_start_view(void *data, const char *buf)
 	}
 }
 
+static void get_fade_duration(void *data, char *buf, size_t size)
+{
+	buf_int(buf, fade_duration, size);
+}
+
+static void set_fade_duration(void *data, const char *buf)
+{
+	int offset;
+
+	if (parse_int(buf, 0, 1000, &offset))
+		fade_duration = offset;
+}
+
 static void get_attr(void *data, char *buf, size_t size)
 {
 	int attr = *(int *)data;
@@ -1364,6 +1378,7 @@ static const struct {
 	DT(time_show_leading_zero)
 	DN(lib_add_filter)
 	DN(start_view)
+	DN(fade_duration)
 	{ NULL, NULL, NULL, NULL, 0 }
 };
 

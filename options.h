@@ -147,6 +147,7 @@ extern int mouse;
 extern int mpris;
 extern int time_show_leading_zero;
 extern int start_view;
+extern int fade_duration;
 
 extern const char * const aaa_mode_names[];
 extern const char * const view_names[NR_VIEWS + 1];

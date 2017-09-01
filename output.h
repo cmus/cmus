@@ -22,6 +22,8 @@
 #include "sf.h"
 #include "channelmap.h"
 
+#include <stdbool.h>
+
 extern int volume_max;
 extern int volume_l;
 extern int volume_r;
@@ -86,6 +88,11 @@ void mixer_close(void);
 int mixer_set_volume(int left, int right);
 int mixer_read_volume(void);
 int mixer_get_fds(int *fds);
+bool mixer_fade_enabled(void);
+int mixer_fadeout(void);
+int mixer_fadeout_end(void);
+int mixer_fadein(void);
+int mixer_fadein_end(void);
 
 void op_add_options(void);
 char *op_get_error_msg(int rc, const char *arg);
