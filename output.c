@@ -335,6 +335,23 @@ bool mixer_fade_enabled(void)
 	return op != NULL && op->mixer_open && fade_duration >= FADE_STEP_MSEC;
 }
 
+static int mixer_fade(int from_l, int from_r, int to_l, int to_r)
+{
+	int fade_steps = fade_duration / FADE_STEP_MSEC;
+	int l_step_size = (to_l - from_l) / fade_steps;
+	int r_step_size = (to_r - from_r) / fade_steps;
+
+	int l = from_l, r = from_r;
+	for (int i = 0; i < fade_steps; i++) {
+		l += l_step_size;
+		r += r_step_size;
+		mixer_set_volume(l, r);
+		ms_sleep(FADE_STEP_MSEC);
+	}
+
+	return mixer_set_volume(to_l, to_r);
+}
+
 int mixer_fadeout(void)
 {
 	int rc;
@@ -345,20 +362,7 @@ int mixer_fadeout(void)
 
 	fade_initial_l = volume_l;
 	fade_initial_r = volume_r;
-
-	int fade_steps = fade_duration / FADE_STEP_MSEC;
-	int l_step_size = fade_initial_l / fade_steps;
-	int r_step_size = fade_initial_r / fade_steps;
-
-	int l = fade_initial_l, r = fade_initial_r;
-	for (int i = 0; i < fade_steps; i++) {
-		l -= l_step_size;
-		r -= r_step_size;
-		mixer_set_volume(l, r);
-		ms_sleep(FADE_STEP_MSEC);
-	}
-
-	return mixer_set_volume(0, 0);
+	return mixer_fade(volume_l, volume_r, 0, 0);
 }
 
 int mixer_fadeout_end(void)
@@ -381,19 +385,7 @@ int mixer_fadein(void)
 
 int mixer_fadein_end(void)
 {
-	int fade_steps = fade_duration / FADE_STEP_MSEC;
-	int l_step_size = fade_initial_l / fade_steps;
-	int r_step_size = fade_initial_r / fade_steps;
-
-	int l = 0, r = 0;
-	for (int i = 0; i < fade_steps; i++) {
-		l += l_step_size;
-		r += r_step_size;
-		mixer_set_volume(l, r);
-		ms_sleep(FADE_STEP_MSEC);
-	}
-
-	return mixer_set_volume(fade_initial_l, fade_initial_r);
+	return mixer_fade(0, 0, fade_initial_l, fade_initial_r);
 }
 
 extern int soft_vol;
