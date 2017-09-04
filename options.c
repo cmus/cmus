@@ -84,7 +84,7 @@ int mouse = 0;
 int mpris = 1;
 int time_show_leading_zero = 1;
 int start_view = TREE_VIEW;
-int fade_duration = 100;
+int fade_duration = 0;
 
 int colors[NR_COLORS] = {
 	-1,
