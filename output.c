@@ -337,9 +337,12 @@ bool mixer_fade_enabled(void)
 
 int mixer_fadeout(void)
 {
-	if ((errno = mixer_read_volume()) != 0) {
-		return errno;
-	}
+	int rc;
+
+	rc = mixer_read_volume();
+	if (rc)
+		return rc;
+
 	fade_initial_l = volume_l;
 	fade_initial_r = volume_r;
 
@@ -365,9 +368,12 @@ int mixer_fadeout_end(void)
 
 int mixer_fadein(void)
 {
-	if ((errno = mixer_read_volume()) != 0) {
-		return errno;
-	}
+	int rc;
+
+	rc = mixer_read_volume();
+	if (rc)
+		return rc;
+
 	fade_initial_l = volume_l;
 	fade_initial_r = volume_r;
 	return mixer_set_volume(0, 0);
