@@ -946,6 +946,11 @@ display_artist_sort_name (false)
 	regular ones in tree view (e.g. "Artist, The" instead of "The Artist"),
 	so that artists column looks alphabetically sorted.
 
+fade_duration (0)
+	Fade output when pausing/unpausing. Duration is in milliseconds.
+
+	NOTE: has no effect if output_plugin doesn't support volume control.
+
 follow (false)
 	If enabled, always select the currently playing track on track change.
 
