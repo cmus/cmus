@@ -332,7 +332,7 @@ int mixer_get_fds(int *fds)
 
 bool mixer_fade_enabled(void)
 {
-	return op != NULL && op->mixer_open && fade_duration > 0;
+	return op != NULL && op->mixer_open && fade_duration >= FADE_STEP_MSEC;
 }
 
 int mixer_fadeout(void)
