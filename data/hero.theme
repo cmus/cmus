@@ -1,0 +1,45 @@
+### cmus Theme made by TitanHero, visit my github https://github/TitanHero
+### or https://github.com/TitanHero/hero_theme
+###
+### Feel free for change all that do you want
+###
+###    _  __                        _                    
+###   / |/ /__ _  _____ ____  ___ _(_)  _____   __ _____ 
+###  /    / -_) |/ / -_) __/ / _ `/ / |/ / -_) / // / _ \
+### /_/|_/\__/|___/\__/_/    \_, /_/|___/\__/  \_,_/ .__/
+###                         /___/                 /_/ 
+###
+
+ set color_cmdline_attr=underline
+ set color_cmdline_bg=black
+ set color_cmdline_fg=lightyellow
+ set color_cur_sel_attr=reverse
+ set color_error=red
+ set color_info=lightblue
+ set color_separator=lightmagenta
+ set color_statusline_attr=underline
+ set color_statusline_bg=cyan
+ set color_statusline_fg=white
+ set color_titleline_attr=reverse
+ set color_titleline_bg=magenta
+ set color_titleline_fg=lightgreen
+ set color_win_attr=default
+ set color_win_bg=default
+ set color_win_cur=lightred
+ set color_win_cur_sel_attr=default
+ set color_win_cur_sel_bg=cyan
+ set color_win_cur_sel_fg=lightgreen
+ set color_win_dir=green
+ set color_win_fg=default
+ set color_win_inactive_cur_sel_attr=reverse
+ set color_win_inactive_cur_sel_bg=green
+ set color_win_inactive_cur_sel_fg=lightcyan
+ set color_win_inactive_sel_attr=reverse
+ set color_win_inactive_sel_bg=cyan
+ set color_win_inactive_sel_fg=lightgreen
+ set color_win_sel_attr=bold
+ set color_win_sel_bg=magenta
+ set color_win_sel_fg=lightcyan
+ set color_win_title_attr=underline
+ set color_win_title_bg=black
+ set color_win_title_fg=lightcyan
