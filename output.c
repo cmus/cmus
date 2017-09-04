@@ -63,6 +63,9 @@ int volume_max = 0;
 int volume_l = -1;
 int volume_r = -1;
 
+#define FADE_STEP_MSEC 10
+static int fade_initial_l, fade_initial_r;
+
 static void add_plugin(struct output_plugin *plugin)
 {
 	struct list_head *item = op_head.next;
@@ -332,9 +335,6 @@ bool mixer_fade_enabled(void)
 	return op != NULL && op->mixer_open && fade_duration > 0;
 }
 
-#define FADE_STEP_MSEC 10
-
-int fade_initial_l, fade_initial_r;
 int mixer_fadeout(void)
 {
 	if ((errno = mixer_read_volume()) != 0) {
