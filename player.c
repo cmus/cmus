@@ -1122,13 +1122,11 @@ void player_pause(void)
 	bool fade_enabled = mixer_fade_enabled();
 	if (fade_enabled) {
 		if (consumer_status == CS_PAUSED) {
-			if (mixer_fadein() != 0) {
+			if (mixer_fadein())
 				fade_enabled = false;
-			}
 		} else {
-			if (mixer_fadeout() != 0) {
+			if (mixer_fadeout())
 				fade_enabled = false;
-			}
 		}
 	}
 
@@ -1154,11 +1152,10 @@ void player_pause(void)
 	player_unlock();
 
 	if (fade_enabled) {
-		if (consumer_status == CS_PLAYING) {
+		if (consumer_status == CS_PLAYING)
 			mixer_fadein_end();
-		} else {
+		else
 			mixer_fadeout_end();
-		}
 	}
 }
 
