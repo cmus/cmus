@@ -697,10 +697,10 @@ win-bottom (*G*, *end*)
 win-down [NUM] (*j*, *down*)
 	Goto down NUM (default 1) rows in the current window.
 
-win-half-page-down
+win-half-page-down (*^D*)
 	Goto down half a page in the current window.
 
-win-half-page-up
+win-half-page-up (*^U*)
 	Goto up half a page in the current window.
 
 win-mv-after (*p*)
