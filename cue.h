@@ -27,6 +27,7 @@ struct cue_meta {
 	char *genre;
 	char *date;
 	char *comment;
+	char *compilation;
 };
 
 struct cue_track {
