@@ -632,6 +632,9 @@ update-cache [-f]
 	-f
 		Update all files. Same as quit, rm -f $XDG_CONFIG_HOME/cmus/cache, start cmus.
 
+version
+	print version
+
 view <name or 1-7>
 	Switches active view.
 
