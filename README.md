@@ -66,6 +66,23 @@ This is useful when creating binary packages.
 
 Remember to replace `make` with `gmake` if needed.
 
+Alternative ways of nstallation:
+--------------------------------
+MacOS/OSX with [Homebrew](https://brew.sh/):
+
+    $ brew install cmus
+
+Debian/Ubuntu:
+
+    $ apt-get install cmus
+
+Arch:
+
+    $ pacman-S cmus
+
+NixOS (or using its pacakge manager [Nix](https://nixos.org/nix/) which can be installed on any Linux distribution:
+
+    $ nix-env -i cmus
 
 Manuals
 -------
