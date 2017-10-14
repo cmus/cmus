@@ -78,7 +78,7 @@ Debian/Ubuntu:
 
 Arch:
 
-    $ pacman-S cmus
+    $ pacman -S cmus
 
 NixOS (or using its pacakge manager [Nix](https://nixos.org/nix/) which can be installed on any Linux distribution:
 
