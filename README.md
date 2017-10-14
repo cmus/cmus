@@ -66,7 +66,7 @@ This is useful when creating binary packages.
 
 Remember to replace `make` with `gmake` if needed.
 
-Alternative ways of nstallation:
+Alternative ways of installation:
 --------------------------------
 MacOS/OSX with [Homebrew](https://brew.sh/):
 
