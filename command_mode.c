@@ -2418,7 +2418,44 @@ static void expand_options(const char *str)
 	/* tabexp is resetted */
 	len = strlen(str);
 	sep = strchr(str, '=');
-	if (len > 1 && sep) {
+
+	/* support no<option> */
+	if (!strncmp(str, "no", 2)) {
+		int pos = 0;
+		tails = xnew(char *, nr_options);
+
+		list_for_each_entry(opt, &option_head, node) {
+			if (strncmp(str, opt->name, len) == 0)
+				tails[pos++] = xstrdup(opt->name + len);
+
+			else if (strncmp(str+2, opt->name, len-2) == 0) {
+				if (opt->flags & OPT_BOOL)
+					tails[pos++] = xstrdup(opt->name + len-2);
+			}
+		}
+		if (pos > 0) {
+			tabexp.head = xstrdup(str);
+			tabexp.tails = tails;
+			tabexp.count = pos;
+		}
+	} else if (!sep || len <= 1) {
+		/* expand variable */
+		int pos;
+
+		tails = xnew(char *, nr_options);
+		pos = 0;
+		list_for_each_entry(opt, &option_head, node) {
+			if (strncmp(str, opt->name, len) == 0)
+				tails[pos++] = xstrdup(opt->name + len);
+		}
+		if (pos > 0) {
+			tabexp.head = xstrdup(str);
+			tabexp.tails = tails;
+			tabexp.count = pos;
+		} else {
+			free(tails);
+		}
+	} else if (len > 1 && sep) {
 		/* expand value */
 		char *var = xstrndup(str, sep - str);
 
@@ -2443,23 +2480,6 @@ static void expand_options(const char *str)
 			}
 		}
 		free(var);
-	} else {
-		/* expand variable */
-		int pos;
-
-		tails = xnew(char *, nr_options);
-		pos = 0;
-		list_for_each_entry(opt, &option_head, node) {
-			if (strncmp(str, opt->name, len) == 0)
-				tails[pos++] = xstrdup(opt->name + len);
-		}
-		if (pos > 0) {
-			tabexp.head = xstrdup(str);
-			tabexp.tails = tails;
-			tabexp.count = pos;
-		} else {
-			free(tails);
-		}
 	}
 }
 
