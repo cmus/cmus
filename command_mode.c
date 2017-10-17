@@ -2454,14 +2454,6 @@ static void expand_options(const char *str)
 				tails[pos++] = xstrdup(opt->name + len);
 		}
 		if (pos > 0) {
-			if (pos == 1) {
-				/* only one variable matches, add '=' */
-				char *tmp = xstrjoin(tails[0], "=");
-
-				free(tails[0]);
-				tails[0] = tmp;
-			}
-
 			tabexp.head = xstrdup(str);
 			tabexp.tails = tails;
 			tabexp.count = pos;
