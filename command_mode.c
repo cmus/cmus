@@ -408,44 +408,74 @@ static void cmd_save(char *arg)
 	view_save(flag_to_view(flag), arg, to_stdout, flag == 'L', extended);
 }
 
+static void cmd_toggle(char *arg);
+
 static void cmd_set(char *arg)
 {
 	char *value = NULL;
 	int i;
+	char suffix = 0;
+	struct cmus_opt *opt;
 
 	for (i = 0; arg[i]; i++) {
 		if (arg[i] == '=') {
 			arg[i] = 0;
 			value = &arg[i + 1];
 			break;
+		} else if (arg[i] == '?' || arg[i] == '!') {
+			suffix = arg[i];
+			arg[i] = 0;
+			break;
 		}
 	}
-	if (value) {
-		option_set(arg, value);
-		help_win->changed = 1;
-		if (cur_view == TREE_VIEW) {
-			lib_track_win->changed = 1;
-			lib_tree_win->changed = 1;
-		} else if (cur_view == PLAYLIST_VIEW) {
-			pl_mark_for_redraw();
+
+	opt = option_find_silent(arg);
+	if (opt != NULL) {
+		if (value) {
+			option_set(arg, value);
+			help_win->changed = 1;
+			if (cur_view == TREE_VIEW) {
+				lib_track_win->changed = 1;
+				lib_tree_win->changed = 1;
+			} else if (cur_view == PLAYLIST_VIEW) {
+				pl_mark_for_redraw();
+			} else {
+				current_win()->changed = 1;
+			}
+			update_titleline();
+			update_statusline();
+		} else if (suffix) {
+			/* support "set <option>?" and "set <option>!" */
+			if (suffix == '?') {
+				char buf[OPTION_MAX_SIZE];
+				opt->get(opt->data, buf, OPTION_MAX_SIZE);
+				info_msg("setting: '%s=%s'", arg, buf);
+			} else {
+				cmd_toggle(arg);
+			}
 		} else {
-			current_win()->changed = 1;
+			if (opt->flags & OPT_BOOL) {
+				option_set(arg, "true");
+			} else {
+				char buf[OPTION_MAX_SIZE];
+				opt->get(opt->data, buf, OPTION_MAX_SIZE);
+				info_msg("setting: '%s=%s'", arg, buf);
+			}
 		}
-		update_titleline();
-		update_statusline();
 	} else {
-		struct cmus_opt *opt;
-		char buf[OPTION_MAX_SIZE];
-
-		/* support "set <option>?" */
-		i--;
-		if (arg[i] == '?')
-			arg[i] = 0;
-
-		opt = option_find(arg);
-		if (opt) {
-			opt->get(opt->data, buf, OPTION_MAX_SIZE);
-			info_msg("setting: '%s=%s'", arg, buf);
+		/* support no<option> */
+		if (!strncmp(arg, "no", 2)) {
+			opt = option_find_silent(arg+2);
+			if (opt != NULL) {
+				if (opt->flags & OPT_BOOL)
+					opt->set(opt->data, "false");
+				else
+					error_msg("%s is not a boolean option", arg+2);
+			} else {
+				error_msg("no such option %s", arg);
+			}
+		} else {
+			error_msg("no such option %s", arg);
 		}
 	}
 }

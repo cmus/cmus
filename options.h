@@ -29,6 +29,7 @@ typedef void (*opt_toggle_cb)(void *data);
 
 enum {
 	OPT_PROGRAM_PATH = 1 << 0,
+	OPT_BOOL         = 1 << 1
 };
 
 struct cmus_opt {
