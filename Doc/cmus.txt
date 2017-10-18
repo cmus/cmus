@@ -593,8 +593,16 @@ set <option>=<value>
 	Set value of an option. See *OPTIONS*.
 
 set <option>
-	Display option value.  Vim compatible *set <option>?* is also
+	Set option to true if it's a boolean option.  Otherwise,
+	display option value.  Vim compatible *set <option>?* is also
 	supported.
+
+set <option>!
+	Toggle value of a toggle-able option (all booleans and tristate
+	*aaa_mode*).
+
+set no<option>
+	set option to false if it's a boolean option
 
 shell <command>
 	Execute a command via /bin/sh.
