@@ -1306,6 +1306,11 @@ static void cmd_pl_rename(char *arg)
 		info_msg(":pl-rename only works in view 3");
 }
 
+static void cmd_version(char *arg)
+{
+	info_msg(VERSION);
+}
+
 static void cmd_view(char *arg)
 {
 	int view;
@@ -2566,6 +2571,7 @@ struct command commands[] = {
 	{ "unbind",                cmd_unbind,           1, 1,  expand_unbind_args,   0, 0          },
 	{ "unmark",                cmd_unmark,           0, 0,  NULL,                 0, 0          },
 	{ "update-cache",          cmd_update_cache,     0, 1,  NULL,                 0, 0          },
+	{ "version",               cmd_version,          0, 0,  NULL,                 0, 0          },
 	{ "view",                  cmd_view,             1, 1,  NULL,                 0, 0          },
 	{ "vol",                   cmd_vol,              1, 2,  NULL,                 0, 0          },
 	{ "w",                     cmd_save,             0, 1,  expand_load_save,     0, CMD_UNSAFE },
