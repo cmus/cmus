@@ -466,23 +466,34 @@ static void cmd_set(char *arg)
 				info_msg("setting: '%s=%s'", arg, buf);
 			}
 		}
-	} else {
+	} else if (!strncmp(arg, "no", 2)) {
 		/* support no<option> */
-		if (!strncmp(arg, "no", 2)) {
-			opt = option_find_silent(arg+2);
-			if (opt != NULL) {
-				if (opt->flags & OPT_BOOL) {
-					opt->set(opt->data, "false");
-					option_changed();
-				} else {
-					error_msg("%s is not a boolean option", arg+2);
-				}
+		opt = option_find_silent(arg+2);
+		if (opt != NULL) {
+			if (opt->flags & OPT_BOOL) {
+				opt->set(opt->data, "false");
+				option_changed();
 			} else {
-				error_msg("no such option %s", arg+2);
+				error_msg("%s is not a boolean option", arg+2);
 			}
 		} else {
 			error_msg("no such option %s", arg);
 		}
+	} else if (!strncmp(arg, "inv", 3)) {
+		/* support inv<option> */
+		opt = option_find_silent(arg+3);
+		if (opt != NULL) {
+			if (opt->flags & OPT_BOOL) {
+				opt->toggle(opt->data);
+				option_changed();
+			} else {
+				error_msg("%s is not a boolean option", arg+3);
+			}
+		} else {
+			error_msg("no such option %s", arg);
+		}
+	} else {
+		error_msg("no such option %s", arg);
 	}
 }
 
@@ -2427,6 +2438,18 @@ static void expand_options(const char *str)
 			else if (strncmp(str+2, opt->name, len-2) == 0) {
 				if (opt->flags & OPT_BOOL)
 					tails[pos++] = xstrdup(opt->name + len-2);
+			}
+		}
+	} else if (!strncmp(str, "inv", 3)) {
+		tails = xnew(char *, nr_options);
+
+		list_for_each_entry(opt, &option_head, node) {
+			if (strncmp(str, opt->name, len) == 0)
+				tails[pos++] = xstrdup(opt->name + len);
+
+			else if (strncmp(str+3, opt->name, len-3) == 0) {
+				if (opt->flags & OPT_BOOL)
+					tails[pos++] = xstrdup(opt->name + len-3);
 			}
 		}
 	} else if (!sep || len <= 1) {
