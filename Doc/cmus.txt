@@ -602,7 +602,10 @@ set <option>!
 	*aaa_mode*).
 
 set no<option>
-	set option to false if it's a boolean option
+	Set option to false if it's a boolean option.
+
+set inv<option>
+	Toggle option if it's a boolean option.
 
 shell <command>
 	Execute a command via /bin/sh.
