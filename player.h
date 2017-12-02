@@ -69,6 +69,7 @@ struct player_info {
 	unsigned int status_changed : 1;
 	unsigned int position_changed : 1;
 	unsigned int buffer_fill_changed : 1;
+	unsigned int seeked : 1;
 };
 
 extern char player_metadata[255 * 16 + 1];
@@ -99,7 +100,7 @@ void player_stop(void);
 void player_pause(void);
 void player_pause_playback(void);
 void player_seek(double offset, int relative, int start_playing);
-void player_set_op(const char *name);
+void player_set_op(char *name);
 void player_set_buffer_chunks(unsigned int nr_chunks);
 int player_get_buffer_chunks(void);
 void player_info_snapshot(void);
