@@ -27,8 +27,8 @@
 #include "debug.h"
 #include "compiler.h"
 #include "options.h"
+#include "mpris.h"
 #include "cmus.h"
-#include "delegate.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -1077,7 +1077,7 @@ void player_exit(void)
 	buffer_free();
 }
 
-DELEGATE_0(player_stop)
+void player_stop(void)
 {
 	player_lock();
 	_consumer_stop();
@@ -1086,7 +1086,7 @@ DELEGATE_0(player_stop)
 	player_unlock();
 }
 
-DELEGATE_0(player_play)
+void player_play(void)
 {
 	int prebuffer;
 
@@ -1111,7 +1111,7 @@ DELEGATE_0(player_play)
 	player_unlock();
 }
 
-DELEGATE_0(player_pause)
+void player_pause(void)
 {
 	if (ip && ip_is_remote(ip) && consumer_status == CS_PLAYING) {
 		/* pausing not allowed */
@@ -1140,13 +1140,13 @@ DELEGATE_0(player_pause)
 	player_unlock();
 }
 
-DELEGATE_0(player_pause_playback)
+void player_pause_playback(void)
 {
 	if (consumer_status == CS_PLAYING)
 		player_pause();
 }
 
-DELEGATE_1(player_set_file, struct track_info *, ti)
+void player_set_file(struct track_info *ti)
 {
 	player_lock();
 	_producer_set_file(ti);
@@ -1172,7 +1172,7 @@ out:
 	player_unlock();
 }
 
-DELEGATE_1(player_play_file, struct track_info *, ti)
+void player_play_file(struct track_info *ti)
 {
 	player_lock();
 	_producer_set_file(ti);
@@ -1211,7 +1211,7 @@ void player_file_changed(struct track_info *ti)
 	_file_changed(ti);
 }
 
-DELEGATE_3(player_seek, double, offset, int, relative, int, start_playing)
+void player_seek(double offset, int relative, int start_playing)
 {
 	int stopped = 0;
 	player_lock();
@@ -1289,17 +1289,14 @@ DELEGATE_3(player_seek, double, offset, int, relative, int, start_playing)
 			d_print("error: ip_seek returned %d\n", rc);
 		}
 	}
+	mpris_seeked();
 	player_unlock();
-
-	player_info_priv_lock();
-	player_info_priv.seeked = 1;
-	player_info_priv_unlock();
 }
 
 /*
  * change output plugin without stopping playback
  */
-DELEGATE_1(player_set_op, char *, name)
+void player_set_op(const char *name)
 {
 	int rc;
 
@@ -1328,7 +1325,8 @@ DELEGATE_1(player_set_op, char *, name)
 			player_op_error(rc, "selecting output plugin '%s'", name);
 		else
 			player_op_error(rc, "selecting any output plugin");
-		goto out;
+		player_unlock();
+		return;
 	}
 
 	if (consumer_status == CS_PLAYING || consumer_status == CS_PAUSED) {
@@ -1338,18 +1336,17 @@ DELEGATE_1(player_set_op, char *, name)
 			_consumer_status_update(CS_STOPPED);
 			_producer_stop();
 			player_op_error(rc, "opening audio device");
-			goto out;
+			player_unlock();
+			return;
 		}
 		if (consumer_status == CS_PAUSED)
 			op_pause();
 	}
 
-out:
-	free(name);
 	player_unlock();
 }
 
-DELEGATE_1(player_set_buffer_chunks, unsigned int, nr_chunks)
+void player_set_buffer_chunks(unsigned int nr_chunks)
 {
 	player_lock();
 	_producer_stop();
@@ -1367,7 +1364,7 @@ int player_get_buffer_chunks(void)
 	return buffer_nr_chunks;
 }
 
-DELEGATE_2(player_set_soft_volume, int, l, int, r)
+void player_set_soft_volume(int l, int r)
 {
 	consumer_lock();
 	soft_vol_l = l;
@@ -1375,7 +1372,7 @@ DELEGATE_2(player_set_soft_volume, int, l, int, r)
 	consumer_unlock();
 }
 
-DELEGATE_1(player_set_soft_vol, int, soft)
+void player_set_soft_vol(int soft)
 {
 	consumer_lock();
 	/* don't mess with scale_pos if soft_vol or replaygain is already enabled */
@@ -1414,7 +1411,7 @@ int player_set_vol(int l, int lf, int r, int rf)
 	return rc;
 }
 
-DELEGATE_1(player_set_rg, enum replaygain, rg)
+void player_set_rg(enum replaygain rg)
 {
 	player_lock();
 	/* don't mess with scale_pos if soft_vol or replaygain is already enabled */
@@ -1429,7 +1426,7 @@ DELEGATE_1(player_set_rg, enum replaygain, rg)
 	player_unlock();
 }
 
-DELEGATE_1(player_set_rg_limit, int, limit)
+void player_set_rg_limit(int limit)
 {
 	player_lock();
 	replaygain_limit = limit;
@@ -1441,7 +1438,7 @@ DELEGATE_1(player_set_rg_limit, int, limit)
 	player_unlock();
 }
 
-DELEGATE_1(player_set_rg_preamp, double, db)
+void player_set_rg_preamp(double db)
 {
 	player_lock();
 	replaygain_preamp = db;
@@ -1469,7 +1466,6 @@ void player_info_snapshot(void)
 	player_info_priv.status_changed = 0;
 	player_info_priv.position_changed = 0;
 	player_info_priv.buffer_fill_changed = 0;
-	player_info_priv.seeked = 0;
 	player_info_priv.error_msg = NULL;
 
 	player_info_priv_unlock();

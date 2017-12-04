@@ -51,7 +51,6 @@
 #include "mixer.h"
 #include "mpris.h"
 #include "locking.h"
-#include "delegate.h"
 #ifdef HAVE_CONFIG
 #include "config/curses.h"
 #include "config/iconv.h"
@@ -1953,9 +1952,6 @@ static void update(void)
 	if (player_info.status_changed)
 		mpris_playback_status_changed();
 
-	if (player_info.seeked)
-		mpris_seeked();
-
 	if (player_info.file_changed || player_info.metadata_changed)
 		mpris_metadata_changed();
 
@@ -2372,7 +2368,6 @@ static void init_all(void)
 	cmdline_init();
 	commands_init();
 	search_mode_init();
-	delegate_init();
 
 	/* almost everything must be initialized now */
 	options_load();
@@ -2380,10 +2375,7 @@ static void init_all(void)
 		mpris_init();
 
 	/* finally we can set the output plugin */
-	if (output_plugin)
-		player_set_op(xstrdup(output_plugin));
-	else
-		player_set_op(NULL);
+	player_set_op(output_plugin);
 	if (!soft_vol)
 		mixer_open();
 
@@ -2422,7 +2414,6 @@ static void exit_all(void)
 {
 	endwin();
 
-	delegate_exit();
 	if (resume_cmus)
 		resume_exit();
 	options_exit();
