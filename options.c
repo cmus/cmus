@@ -377,7 +377,7 @@ static void set_output_plugin(void *data, const char *buf)
 	if (ui_initialized) {
 		if (!soft_vol)
 			mixer_close();
-		player_set_op(xstrdup(buf));
+		player_set_op(buf);
 		if (!soft_vol)
 			mixer_open();
 	} else {
