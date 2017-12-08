@@ -43,6 +43,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <dlfcn.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <strings.h>
@@ -59,6 +60,11 @@ static pthread_mutex_t cmus_next_file_mutex = CMUS_MUTEX_INITIALIZER;
 static pthread_cond_t cmus_next_file_cond = CMUS_COND_INITIALIZER;
 static int cmus_next_file_provided;
 static struct track_info *cmus_next_file;
+
+static int x11_init_done = 0;
+static void *(*x11_open)(void *) = NULL;
+static int (*x11_raise)(void *, int) = NULL;
+static int (*x11_close)(void *) = NULL;
 
 int cmus_init(void)
 {
@@ -440,4 +446,60 @@ void cmus_provide_next_track(void)
 void cmus_track_request_init(void)
 {
 	init_pipes(&cmus_next_track_request_fd, &cmus_next_track_request_fd_priv);
+}
+
+static int cmus_can_raise_vte_x11(void)
+{
+	return getenv("DISPLAY") && getenv("WINDOWID");
+}
+
+int cmus_can_raise_vte(void)
+{
+	return cmus_can_raise_vte_x11();
+}
+
+static int cmus_raise_vte_x11_error(void)
+{
+	return 0;
+}
+
+void cmus_raise_vte(void)
+{
+	if (cmus_can_raise_vte_x11()) {
+		if (!x11_init_done) {
+			void *x11;
+
+			x11_init_done = 1;
+			x11 = dlopen("libX11.so", RTLD_LAZY);
+
+			if (x11) {
+				int (*x11_error)(void *);
+
+				x11_error = dlsym(x11, "XSetErrorHandler");
+				x11_open = dlsym(x11, "XOpenDisplay");
+				x11_raise = dlsym(x11, "XRaiseWindow");
+				x11_close = dlsym(x11, "XCloseDisplay");
+
+				if (x11_error) {
+					x11_error(cmus_raise_vte_x11_error);
+				}
+			}
+		}
+
+		if (x11_open && x11_raise && x11_close) {
+			char *xid_str;
+			long int xid = 0;
+
+			xid_str = getenv("WINDOWID");
+			if (!str_to_int(xid_str, &xid) && xid != 0) {
+				void *display;
+
+				display = x11_open(NULL);
+				if (display) {
+					x11_raise(display, (int) xid);
+					x11_close(display);
+				}
+			}
+		}
+	}
 }

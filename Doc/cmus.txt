@@ -519,6 +519,9 @@ quit [-i] (*q*, *:wq*)
 	@li -i
 	ask before exiting
 
+raise-vte
+	Raise the virtual terminal emulator window.  Works only in X session.
+
 rand
 	Randomizes (shuffles) the tracks in the library, playlist or queue view.
 

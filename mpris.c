@@ -68,6 +68,22 @@ static int mpris_write_ignore(sd_bus *_bus, const char *_path,
 	return sd_bus_reply_method_return(value, "");
 }
 
+static int mpris_raise_vte(sd_bus_message *m, void *_userdata,
+		sd_bus_error *_ret_error)
+{
+	cmus_raise_vte();
+	return sd_bus_reply_method_return(m, "");
+}
+
+static int mpris_can_raise_vte(sd_bus *_bus, const char *_path,
+		const char *_interface, const char *_property,
+		sd_bus_message *reply, void *_userdata,
+		sd_bus_error *_ret_error)
+{
+	uint32_t b = cmus_can_raise_vte();
+	return sd_bus_message_append_basic(reply, 'b', &b);
+}
+
 static int mpris_identity(sd_bus *_bus, const char *_path,
 		const char *_interface, const char *_property,
 		sd_bus_message *reply, void *_userdata,
@@ -404,12 +420,12 @@ static int mpris_metadata(sd_bus *_bus, const char *_path,
 
 static const sd_bus_vtable media_player2_vt[] = {
 	SD_BUS_VTABLE_START(0),
-	SD_BUS_METHOD("Raise", "", "", mpris_msg_ignore, 0),
+	SD_BUS_METHOD("Raise", "", "", mpris_raise_vte, 0),
 	SD_BUS_METHOD("Quit", "", "", mpris_msg_ignore, 0),
 	MPRIS_PROP("CanQuit", "b", mpris_read_false),
 	MPRIS_WPROP("Fullscreen", "b", mpris_read_false, mpris_write_ignore),
 	MPRIS_PROP("CanSetFullscreen", "b", mpris_read_false),
-	MPRIS_PROP("CanRaise", "b", mpris_read_false),
+	MPRIS_PROP("CanRaise", "b", mpris_can_raise_vte),
 	MPRIS_PROP("HasTrackList", "b", mpris_read_false),
 	MPRIS_PROP("Identity", "s", mpris_identity),
 	MPRIS_PROP("SupportedUriSchemes", "as", mpris_uri_schemes),
