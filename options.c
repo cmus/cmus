@@ -131,6 +131,7 @@ int attrs[NR_ATTRS] = {
 	A_NORMAL,
 	A_NORMAL,
 	A_BOLD,
+	A_NORMAL,
 };
 
 /* uninitialized option variables */
@@ -1407,6 +1408,7 @@ static const char * const attr_names[NR_ATTRS] = {
 	"color_win_sel_attr",
 	"color_win_title_attr",
 	"color_trackwin_album_attr",
+	"color_win_cur_attr",
 };
 
 LIST_HEAD(option_head);

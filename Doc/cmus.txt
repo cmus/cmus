@@ -869,6 +869,9 @@ color_win_bg (default) [`Color`]
 color_win_cur (lightyellow) [`Color`]
 	Color of currently playing track.
 
+color_win_cur_attr (default) [`Attributes`]
+	Currently playing track attributes.
+
 color_win_cur_sel_bg (blue) [`Color`]
 	Background color of the selected row which is also the currently
 	playing track in active window.
