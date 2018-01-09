@@ -1374,6 +1374,11 @@ static void cmd_pwd(char *arg)
 	}
 }
 
+static void cmd_raise_vte(char *arg)
+{
+	cmus_raise_vte();
+}
+
 static void cmd_rand(char *arg)
 {
 	switch (cur_view) {
@@ -2551,6 +2556,7 @@ struct command commands[] = {
 	{ "pl-rename",             cmd_pl_rename,        1, -1, NULL,                 0, 0          },
 	{ "push",                  cmd_push,             1, -1, expand_commands,      0, 0          },
 	{ "pwd",                   cmd_pwd,              0, 0,  NULL,                 0, 0          },
+	{ "raise-vte",             cmd_raise_vte,        0, 0,  NULL,                 0, 0          },
 	{ "rand",                  cmd_rand,             0, 0,  NULL,                 0, 0          },
 	{ "quit",                  cmd_quit,             0, 1,  NULL,                 0, 0          },
 	{ "refresh",               cmd_refresh,          0, 0,  NULL,                 0, 0          },

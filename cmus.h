@@ -90,4 +90,7 @@ struct track_info *cmus_get_next_track(void);
 void cmus_provide_next_track(void);
 void cmus_track_request_init(void);
 
+int cmus_can_raise_vte(void);
+void cmus_raise_vte(void);
+
 #endif
