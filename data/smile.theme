@@ -1,0 +1,43 @@
+#             Theme made by TitanHero/\ Tema hecho por TitanHero
+#      Feel free to modify it at will /\  Sientete libre de modificarlo a voluntad
+#  _  _                        _                     
+#   \| |_____ _____ _ _   __ _(_)_ _____   _  _ _ __ 
+#   .` / -_) V / -_) '_| / _` | \ V / -_) | || | '_ \
+# |_|\_\___|\_/\___|_|   \__, |_|\_/\___|  \_,_| .__/
+#                       |___/                 |_|   
+
+
+
+set color_cmdline_attr=underline
+set color_cmdline_bg=black
+set color_cmdline_fg=lightgreen
+set color_cur_sel_attr=underline
+set color_error=red
+set color_info=lightmagenta
+set color_separator=lightyellow
+set color_statusline_attr=reverse
+set color_statusline_bg=magenta
+set color_statusline_fg=lightred
+set color_titleline_attr=blink
+set color_titleline_bg=magenta
+set color_titleline_fg=lightcyan
+set color_win_attr=reverse
+set color_win_bg=cyan
+set color_win_cur=lightred
+set color_win_cur_sel_attr=underline
+set color_win_cur_sel_bg=magenta
+set color_win_cur_sel_fg=lightgreen
+set color_win_dir=white
+set color_win_fg=lightcyan
+set color_win_inactive_cur_sel_attr=default
+set color_win_inactive_cur_sel_bg=magenta
+set color_win_inactive_cur_sel_fg=lightred
+set color_win_inactive_sel_attr=reverse
+set color_win_inactive_sel_bg=magenta
+set color_win_inactive_sel_fg=lightred
+set color_win_sel_attr=underline
+set color_win_sel_bg=cyan
+set color_win_sel_fg=lightgreen
+set color_win_title_attr=reverse
+set color_win_title_bg=cyan
+set color_win_title_fg=lightgreen
