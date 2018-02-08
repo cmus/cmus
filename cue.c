@@ -479,14 +479,25 @@ struct cue_sheet *cue_from_file(const char *file)
 {
 	ssize_t size;
 	char *buf = mmap_file(file, &size);
+	bool bom_detected = false;
+
 	if (size == -1)
 		return NULL;
 
 	// ignore BOM
-	if (size >= 3 && memcmp(buf, "\xEF\xBB\xBF", 3) == 0)
+	if (size >= 3 && memcmp(buf, "\xEF\xBB\xBF", 3) == 0) {
 		buf += 3;
+		size -= 3;
+		bom_detected = true;
+	}
 
 	struct cue_sheet *rv = cue_parse(buf, size);
+
+	if (bom_detected) {
+		buf -= 3;
+		size += 3;
+	}
+
 	munmap(buf, size);
 	return rv;
 }
