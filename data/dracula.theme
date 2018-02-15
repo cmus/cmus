@@ -1,0 +1,24 @@
+### 'Dracula' theme for CMus (for 255 color terms)
+set color_cmdline_bg=default
+set color_cmdline_fg=231
+set color_error=009
+set color_info=231
+set color_separator=004
+set color_statusline_bg=default
+set color_statusline_fg=231
+set color_titleline_bg=010
+set color_titleline_fg=236
+set color_win_bg=default
+set color_win_cur=010
+set color_win_cur_sel_bg=010
+set color_win_cur_sel_fg=016
+set color_win_dir=004
+set color_win_fg=004
+set color_win_inactive_cur_sel_bg=default
+set color_win_inactive_cur_sel_fg=014
+set color_win_inactive_sel_bg=default
+set color_win_inactive_sel_fg=014
+set color_win_sel_bg=004
+set color_win_sel_fg=236
+set color_win_title_bg=default
+set color_win_title_fg=014
