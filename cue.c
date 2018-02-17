@@ -485,9 +485,7 @@ struct cue_sheet *cue_from_file(const char *file)
 
 	// Check for UTF-8 BOM, and skip ahead if found
 	if (size >= 3 && memcmp(buf, "\xEF\xBB\xBF", 3) == 0) {
-		ssize_t postbom_size = size - 3;
-		char *postbom_buf = cue_strdup(&buf[3], postbom_size);
-		rv = cue_parse(postbom_buf, postbom_size);
+		rv = cue_parse(buf + 3, size - 3);
 	} else {
 		rv = cue_parse(buf, size);
 	}
