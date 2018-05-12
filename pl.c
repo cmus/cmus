@@ -229,6 +229,14 @@ void pl_add_track_to_marked_pl(struct track_info *ti)
 	pl_add_track(pl_marked, ti);
 }
 
+void pl_add_track_to_named_pl(const char *name, struct track_info *ti)
+{
+	struct playlist *pl;
+	list_for_each_entry(pl, &pl_head, node)
+		if (strcmp(name, pl->name) == 0)
+			pl_add_track(pl, ti);
+}
+
 static int pl_list_compare(const struct list_head *l, const struct list_head *r)
 {
 	struct playlist *pl = pl_from_list(l);
@@ -274,6 +282,9 @@ static void pl_load_all(void)
 static void pl_create_default(void)
 {
 	struct playlist *pl = pl_new("default");
+	list_add_tail(&pl->node, &pl_head);
+
+	pl = pl_new("play_history");
 	list_add_tail(&pl->node, &pl_head);
 }
 

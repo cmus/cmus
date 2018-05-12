@@ -75,6 +75,7 @@ static inline void pl_add_track_to_marked_pl2(struct track_info *ti,
 {
 	pl_add_track_to_marked_pl(ti);
 }
+void pl_add_track_to_named_pl(const char *name, struct track_info *ti);
 
 /* cmd wrappers */
 

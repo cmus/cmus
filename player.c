@@ -18,6 +18,7 @@
 
 #include "player.h"
 #include "buffer.h"
+#include "pl.h"
 #include "input.h"
 #include "output.h"
 #include "sf.h"
@@ -420,6 +421,7 @@ static inline void file_changed(struct track_info *ti)
 {
 	if (ti) {
 		d_print("file: %s\n", ti->filename);
+		pl_add_track_to_named_pl("play_history", ti);
 	} else {
 		d_print("unloaded\n");
 	}
