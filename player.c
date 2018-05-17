@@ -422,7 +422,7 @@ static inline void file_changed(struct track_info *ti)
 	if (ti) {
 		d_print("file: %s\n", ti->filename);
         if (player_info_priv.status == PLAYER_STATUS_PLAYING)
-			pl_add_track_to_named_pl("play_history", ti);
+			pl_add_track_to_named_pl("play_history", ti, 1);
 	} else {
 		d_print("unloaded\n");
 	}

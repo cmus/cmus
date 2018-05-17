@@ -198,19 +198,22 @@ static void pl_free(struct playlist *pl)
 	free(pl);
 }
 
-static void pl_add_track(struct playlist *pl, struct track_info *ti)
+static void pl_add_track(struct playlist *pl, struct track_info *ti, int before)
 {
 	struct shuffle_track *track = xnew(struct shuffle_track, 1);
 
 	track_info_ref(ti);
 	simple_track_init(&track->simple_track, ti);
 	shuffle_list_add(track, &pl->shuffle_root);
-	editable_add(&pl->editable, &track->simple_track);
+    if (before)
+        editable_add_before(&pl->editable, &track->simple_track);
+    else
+        editable_add(&pl->editable, &track->simple_track);
 }
 
 static void pl_add_cb(struct track_info *ti, void *opaque)
 {
-	pl_add_track(opaque, ti);
+	pl_add_track(opaque, ti, 0);
 }
 
 int pl_add_file_to_marked_pl(const char *file)
@@ -226,15 +229,15 @@ int pl_add_file_to_marked_pl(const char *file)
 
 void pl_add_track_to_marked_pl(struct track_info *ti)
 {
-	pl_add_track(pl_marked, ti);
+	pl_add_track(pl_marked, ti, 0);
 }
 
-void pl_add_track_to_named_pl(const char *name, struct track_info *ti)
+void pl_add_track_to_named_pl(const char *name, struct track_info *ti, int before)
 {
 	struct playlist *pl;
 	list_for_each_entry(pl, &pl_head, node)
 		if (strcmp(name, pl->name) == 0)
-			pl_add_track(pl, ti);
+			pl_add_track(pl, ti, before);
 }
 
 static int pl_list_compare(const struct list_head *l, const struct list_head *r)
