@@ -1246,8 +1246,11 @@ void player_seek(double offset, int relative, int start_playing)
 				new_pos = 0.0;
 			if (offset > 0.0) {
 				/* seeking forward */
-				if (new_pos > duration - 5.0)
-					new_pos = duration - 5.0;
+				if (new_pos > duration) {
+					player_unlock();
+					cmus_next();
+					return;
+				}
 				if (new_pos < 0.0)
 					new_pos = 0.0;
 				if (new_pos < pos - 0.5) {
