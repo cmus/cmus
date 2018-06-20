@@ -40,6 +40,10 @@ int track_is_compilation(const struct keyval *comments)
 	if (c && is_freeform_true(c))
 		return 1;
 
+	c = keyvals_get_val(comments, "partofacompilation");
+	if (c && is_freeform_true(c))
+		return 1;
+
 	aa = keyvals_get_val(comments, "albumartist");
 	if (aa && is_various_artists(aa))
 		return 1;
@@ -67,6 +71,10 @@ int track_is_va_compilation(const struct keyval *comments)
 		return 1;
 
 	c = keyvals_get_val(comments, "compilation");
+	if (c && is_freeform_true(c))
+		return 1;
+
+	c = keyvals_get_val(comments, "partofacompilation");
 	if (c && is_freeform_true(c))
 		return 1;
 
@@ -176,7 +184,7 @@ int comments_get_date(const struct keyval *comments, const char *key)
 
 static const char *interesting[] = {
 	"artist", "album", "title", "tracknumber", "discnumber", "genre",
-	"date", "compilation", "albumartist", "artistsort", "albumartistsort",
+	"date", "compilation", "partofacompilation", "albumartist", "artistsort", "albumartistsort",
 	"albumsort",
 	"originaldate",
 	"replaygain_track_gain",
