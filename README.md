@@ -1,8 +1,7 @@
-### This fork adds 2 extra themes(color schemes) to cmus
 
 cmus — C\* Music Player
 =======================
-
+### This fork adds 2 extra themes(color schemes) to cmus
 
 https://cmus.github.io/
 
