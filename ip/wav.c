@@ -16,12 +16,12 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ip.h"
-#include "file.h"
-#include "xmalloc.h"
-#include "debug.h"
-#include "utils.h"
-#include "comment.h"
+#include "../ip.h"
+#include "../file.h"
+#include "../xmalloc.h"
+#include "../debug.h"
+#include "../utils.h"
+#include "../comment.h"
 
 #include <stdio.h>
 #include <string.h>

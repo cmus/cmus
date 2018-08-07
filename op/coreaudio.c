@@ -26,12 +26,12 @@
 #include <AudioUnit/AudioUnit.h>
 #include <CoreAudio/CoreAudio.h>
 
-#include "debug.h"
-#include "op.h"
-#include "mixer.h"
-#include "sf.h"
-#include "utils.h"
-#include "xmalloc.h"
+#include "../debug.h"
+#include "../op.h"
+#include "../mixer.h"
+#include "../sf.h"
+#include "../utils.h"
+#include "../xmalloc.h"
 
 
 /////////////////////////////////////////////////////////////////////////////

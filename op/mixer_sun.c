@@ -26,11 +26,11 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "debug.h"
-#include "mixer.h"
-#include "op.h"
-#include "sf.h"
-#include "xmalloc.h"
+#include "../debug.h"
+#include "../mixer.h"
+#include "../op.h"
+#include "../sf.h"
+#include "../xmalloc.h"
 
 static int sun_mixer_device_id = -1;
 static int sun_mixer_channels = -1;

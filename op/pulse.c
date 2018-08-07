@@ -20,11 +20,11 @@
 
 #include <pulse/pulseaudio.h>
 
-#include "op.h"
-#include "mixer.h"
-#include "debug.h"
-#include "utils.h"
-#include "xmalloc.h"
+#include "../op.h"
+#include "../mixer.h"
+#include "../debug.h"
+#include "../utils.h"
+#include "../xmalloc.h"
 
 static pa_threaded_mainloop	*pa_ml;
 static pa_context		*pa_ctx;

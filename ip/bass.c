@@ -16,11 +16,11 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ip.h"
-#include "xmalloc.h"
-#include "comment.h"
-#include "bass.h"
-#include "uchar.h"
+#include "../ip.h"
+#include "../xmalloc.h"
+#include "../comment.h"
+#include "../bass.h"
+#include "../uchar.h"
 
 #define BITS (16)
 #define FREQ (44100)

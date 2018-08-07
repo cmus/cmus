@@ -18,14 +18,14 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ip.h"
-#include "file.h"
-#include "xmalloc.h"
-#include "debug.h"
-#include "utils.h"
-#include "options.h"
-#include "comment.h"
-#include "discid.h"
+#include "../ip.h"
+#include "../file.h"
+#include "../xmalloc.h"
+#include "../debug.h"
+#include "../utils.h"
+#include "../options.h"
+#include "../comment.h"
+#include "../discid.h"
 
 #include <cdio/cdio.h>
 #include <cdio/logging.h>
@@ -45,12 +45,12 @@
 #undef HAVE_CDDB
 
 #ifdef HAVE_CONFIG
-#include "config/cdio.h"
+#include "../config/cdio.h"
 #endif
 
 #ifdef HAVE_CDDB
-#include "http.h"
-#include "xstrjoin.h"
+#include "../http.h"
+#include "../xstrjoin.h"
 #include <cddb/cddb.h>
 #endif
 

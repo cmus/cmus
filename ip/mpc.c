@@ -18,15 +18,15 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ip.h"
-#include "ape.h"
-#include "comment.h"
-#include "file.h"
-#include "xmalloc.h"
-#include "read_wrapper.h"
+#include "../ip.h"
+#include "../ape.h"
+#include "../comment.h"
+#include "../file.h"
+#include "../xmalloc.h"
+#include "../read_wrapper.h"
 
 #ifdef HAVE_CONFIG
-#include "config/mpc.h"
+#include "../config/mpc.h"
 #endif
 
 #if MPC_SV8

@@ -19,12 +19,12 @@
 
 #include <roaraudio.h>
 
-#include "op.h"
-#include "mixer.h"
-#include "xmalloc.h"
-#include "utils.h"
-#include "misc.h"
-#include "debug.h"
+#include "../op.h"
+#include "../mixer.h"
+#include "../xmalloc.h"
+#include "../utils.h"
+#include "../misc.h"
+#include "../debug.h"
 
 // we do not use native 2^16-1 here as they use signed ints with 16 bit
 // so we use 2^(16-1)-1 here.

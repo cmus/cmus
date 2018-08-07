@@ -19,7 +19,7 @@
 #ifndef CMUS_AAC_H
 #define CMUS_AAC_H
 
-#include "channelmap.h"
+#include "../channelmap.h"
 #include <neaacdec.h>
 
 static inline channel_position_t channel_position_aac(unsigned char c)

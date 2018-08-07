@@ -28,17 +28,17 @@
 #include <stdbool.h>
 
 #if HAVE_CONFIG
-#include "config/samplerate.h"
+#include "../config/samplerate.h"
 #ifdef HAVE_SAMPLERATE
 #include <samplerate.h>
 #endif
 #endif
 
-#include "op.h"
-#include "utils.h"
-#include "channelmap.h"
-#include "xmalloc.h"
-#include "debug.h"
+#include "../op.h"
+#include "../utils.h"
+#include "../channelmap.h"
+#include "../xmalloc.h"
+#include "../debug.h"
 
 #define CHANNELS 2
 #define BUFFER_MULTIPLYER (sizeof(jack_default_audio_sample_t) * 16)

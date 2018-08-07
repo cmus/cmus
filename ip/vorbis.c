@@ -16,14 +16,14 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ip.h"
-#include "xmalloc.h"
-#include "read_wrapper.h"
-#include "debug.h"
+#include "../ip.h"
+#include "../xmalloc.h"
+#include "../read_wrapper.h"
+#include "../debug.h"
 #ifdef HAVE_CONFIG
-#include "config/tremor.h"
+#include "../config/tremor.h"
 #endif
-#include "comment.h"
+#include "../comment.h"
 
 #ifdef CONFIG_TREMOR
 #include <tremor/ivorbisfile.h>
