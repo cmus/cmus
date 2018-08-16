@@ -30,6 +30,10 @@ can be controlled from the outside via *cmus-remote*(1).
 	NOTE: Don't use this option to run multiple instances as same user.
 	That would corrupt the track metadata cache.
 
+--passwd PASSWD
+	Set the password for TCP/IP connections.  Must be set if you are listening
+	from host[:port].  Used in conjunction with --listen.
+
 --plugins
 	List available plugins and exit.
 
