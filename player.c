@@ -806,7 +806,7 @@ static void _consumer_handle_eof(void)
 
 	if (player_info_priv.ti) {
 		player_info_priv.ti->play_count++;
-		pl_add_track_to_named_pl("play_history", ti, 1);
+		pl_add_track_to_named_pl("play_history", player_info_priv.ti, 1);
 	}
 
 
