@@ -286,8 +286,11 @@ static void pl_create_default(void)
 {
 	struct playlist *pl = pl_new("default");
 	list_add_tail(&pl->node, &pl_head);
+}
 
-	pl = pl_new("play_history");
+static void pl_create_play_history(void)
+{
+	struct playlist *pl = pl_new("play_history");
 	list_add_tail(&pl->node, &pl_head);
 }
 
@@ -570,6 +573,9 @@ void pl_init(void)
 	pl_load_all();
 	if (list_empty(&pl_head))
 		pl_create_default();
+
+	if (!pl_name_exists("play_history"))
+		pl_create_play_history();
 
 	pl_sort_all();
 
