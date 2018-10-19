@@ -252,7 +252,10 @@ int misc_init(void)
 	}
 	make_dir(cmus_config_dir);
 
-	cmus_playlist_dir = xstrjoin(cmus_config_dir, "/playlists");
+	cmus_playlist_dir = getenv("CMUS_PLAYLIST_DIR");
+	if (!cmus_playlist_dir)
+		cmus_playlist_dir = xstrjoin(cmus_config_dir, "/playlists");
+
 	int playlist_dir_is_new = dir_exists(cmus_playlist_dir) == 0;
 	make_dir(cmus_playlist_dir);
 	if (playlist_dir_is_new)
