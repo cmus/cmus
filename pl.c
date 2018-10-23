@@ -256,7 +256,7 @@ static void pl_load_one(const char *file)
 	free(full);
 }
 
-static void pl_load_all(void)
+void pl_load_all(void)
 {
 	struct directory dir;
 	if (dir_open(&dir, cmus_playlist_dir))
@@ -273,6 +273,21 @@ static void pl_load_all(void)
 		pl_load_one(file);
 	}
 	dir_close(&dir);
+}
+
+/*
+ * Find the playlist struct corresponding to a given name. Return null if no
+ * such playlist exists. Note that `name' is stricly the playlist name, not the
+ * full path to the file.
+ */
+static struct playlist *pl_for_name(const char *name)
+{
+	struct playlist *pl;
+	list_for_each_entry(pl, &pl_head, node) {
+		if (strcmp(pl->name, name) == 0)
+			return pl;
+	}
+	return 0;
 }
 
 static void pl_create_default(void)
@@ -398,6 +413,49 @@ static int pl_match_add_job(uint32_t type, void *job_data, void *opaque)
 static void pl_cancel_add_jobs(struct playlist *pl)
 {
 	worker_remove_jobs_by_cb(pl_match_add_job, pl);
+}
+
+/*
+ * (Re)load all files in cmus_playlist_dir.
+ *
+ * Walk cmus_playlist_dir; for each playlist file therein, either re-load the
+ * corresponding playlist in `pl_head' (if there is one), or load it (if there
+ * is not).
+ */
+void pl_reload(void)
+{
+	pl_mark_for_redraw();
+
+	struct directory dir;
+	if (dir_open(&dir, cmus_playlist_dir))
+		die_errno("error: cannot open playlist directory %s",
+			  cmus_playlist_dir);
+	const char *file;
+	while ((file = dir_read(&dir))) {
+		if (strcmp(file, ".") == 0 || strcmp(file, "..") == 0)
+			continue;
+		if (!S_ISREG(dir.st.st_mode)) {
+			error_msg("error: %s in %s is not a regular file", file,
+				  cmus_playlist_dir);
+			continue;
+		}
+		struct playlist *pl = pl_for_name(file);
+		if (pl != 0) {
+			if (pl == pl_playing)
+				pl_playing_track = NULL;
+			editable_clear(&pl->editable);
+			pl_cancel_add_jobs(pl);
+			char *full = pl_name_to_pl_file(file);
+			cmus_add(pl_add_cb, full, FILE_TYPE_PL, JOB_TYPE_PL, 0,
+				 pl);
+			free(full);
+		} else {
+			pl_load_one(file);
+		}
+	}
+	dir_close(&dir);
+
+	pl_sort_all();
 }
 
 static int pl_save_cb(track_info_cb cb, void *data, void *opaque)
