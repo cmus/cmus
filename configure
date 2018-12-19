@@ -287,9 +287,9 @@ check_vorbis()
 	fi
 }
 
-check_libsystemd()
+check_logind()
 {
-	pkg_config LIBSYSTEMD "libsystemd"
+	pkg_config LOGIND "libsystemd" || pkg_config LOGIND "libelogind >= 239.3"
 	return $?
 }
 
@@ -581,7 +581,7 @@ check check_bass       CONFIG_BASS
 check check_mpc        CONFIG_MPC
 check check_vorbis     CONFIG_VORBIS
 check check_opus       CONFIG_OPUS
-check check_libsystemd CONFIG_MPRIS
+check check_logind     CONFIG_MPRIS
 check check_wavpack    CONFIG_WAVPACK
 check check_mp4        CONFIG_MP4
 check check_aac        CONFIG_AAC
