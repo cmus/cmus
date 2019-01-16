@@ -118,7 +118,7 @@ static int error_count = 0;
 
 static char *server_address = NULL;
 
-static char print_buffer[512];
+static char print_buffer[1024];
 
 /* destination buffer for utf8_encode_to_buf and utf8_decode */
 static char conv_buffer[512];
