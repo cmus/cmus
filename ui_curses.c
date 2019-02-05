@@ -2506,6 +2506,8 @@ int main(int argc, char *argv[])
 
 	setlocale(LC_CTYPE, "");
 	setlocale(LC_COLLATE, "");
+  bindtextdomain ("cmus", getenv("LANG"));
+  textdomain ("cmus");
 	charset = getenv("CMUS_CHARSET");
 	if (!charset || !charset[0]) {
 #ifdef CODESET

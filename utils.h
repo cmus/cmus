@@ -36,10 +36,13 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdint.h>
+#include <libintl.h>
 #ifdef HAVE_BYTESWAP_H
 #include <byteswap.h>
 #endif
 
+/* gettext macro */
+#define _(STRING) gettext(STRING)
 
 #define N_ELEMENTS(array) (sizeof(array) / sizeof((array)[0]))
 
@@ -268,7 +271,7 @@ static inline uint32_t read_le24(const char *buf)
 
 static inline int32_t read_le24i(const char *buf)
 {
-	uint32_t a = read_le24(buf); 
+	uint32_t a = read_le24(buf);
 	return (a & 0x800000) ? 0xFF000000 | a : a;
 }
 
