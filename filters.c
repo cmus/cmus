@@ -304,7 +304,7 @@ void filters_delete_filter(void)
 		struct filter_entry *e;
 
 		e = iter_to_filter_entry(&iter);
-		if (yes_no_query("Delete filter '%s'? [y/N]", e->name)) {
+		if (yes_no_query("Delete filter '%s'? [y/N]", e->name) == UI_QUERY_ANSWER_YES) {
 			window_row_vanishes(filters_win, &iter);
 			list_del(&e->node);
 			free_filter(e);

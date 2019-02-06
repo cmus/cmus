@@ -891,7 +891,7 @@ static void set_ip_priority(void *data, const char *val)
 			static const char *msg =
 				"Metadata might become inconsistent "
 				"after this change. Continue? [y/N]";
-			if (!yes_no_query("%s", msg)) {
+			if (yes_no_query("%s", msg) != UI_QUERY_ANSWER_YES) {
 				info_msg("Aborted");
 				return;
 			}
