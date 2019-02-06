@@ -1624,11 +1624,11 @@ int yes_no_query(const char *format, ...)
 	while (1) {
 		int ch = getch();
 
-		if (ch == ERR || ch == 0)
-			continue;
-		if (ch == 'y')
+		if (ch == 'y' || !cmus_running) {
 			ret = 1;
-		break;
+			break;
+		} else if (ch == ERR || ch == 0)
+			continue;
 	}
 	update_commandline();
 	return ret;
@@ -1873,6 +1873,7 @@ static void sig_int(int sig)
 
 static void sig_shutdown(int sig)
 {
+	d_print("sig_shutdown %d\n", sig);
 	cmus_running = 0;
 }
 
