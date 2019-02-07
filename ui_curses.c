@@ -2506,8 +2506,8 @@ int main(int argc, char *argv[])
 
 	setlocale(LC_CTYPE, "");
 	setlocale(LC_COLLATE, "");
-  bindtextdomain ("cmus", getenv("LANG"));
-  textdomain ("cmus");
+	setlocale(LC_MESSAGES, "");
+
 	charset = getenv("CMUS_CHARSET");
 	if (!charset || !charset[0]) {
 #ifdef CODESET
@@ -2520,6 +2520,10 @@ int main(int argc, char *argv[])
 		using_utf8 = 1;
 
 	misc_init();
+
+  bindtextdomain ("cmus", cmus_locale_dir);
+  textdomain ("cmus");
+
 	if (server_address == NULL)
 		server_address = xstrdup(cmus_socket_path);
 	debug_init();

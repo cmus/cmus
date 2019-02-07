@@ -39,6 +39,7 @@ const char *cmus_config_dir = NULL;
 const char *cmus_playlist_dir = NULL;
 const char *cmus_socket_path = NULL;
 const char *cmus_data_dir = NULL;
+const char *cmus_locale_dir = NULL;
 const char *cmus_lib_dir = NULL;
 const char *home_dir = NULL;
 const char *user_name = NULL;
@@ -277,6 +278,10 @@ int misc_init(void)
 	cmus_data_dir = getenv("CMUS_DATA_DIR");
 	if (!cmus_data_dir)
 		cmus_data_dir = DATADIR "/cmus";
+
+	cmus_locale_dir = getenv("CMUS_LOCALE_DIR");
+	if (!cmus_locale_dir)
+		cmus_locale_dir = DATADIR "/cmus/locale";
 
 	free(xdg_runtime_dir);
 	return 0;
