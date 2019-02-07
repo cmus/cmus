@@ -212,7 +212,10 @@ void view_save(int view, char *arg, int to_stdout, int filtered, int extended)
 		do_save(lib_for_each_ti, arg, dest, save_ti);
 		break;
 	case PLAYLIST_VIEW:
-		pl_save();
+		if (arg)
+			pl_export_selected_pl(arg);
+		else
+			pl_save();
 		break;
 	case QUEUE_VIEW:
 		if (worker_has_job_by_type(JOB_TYPE_QUEUE))
