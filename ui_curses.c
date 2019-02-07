@@ -1794,6 +1794,59 @@ static void clear_error(void)
 
 /* screen updates }}} */
 
+static int fill_status_program_track_info_args(char **argv, int i, struct track_info *ti)
+{
+	/* returns first free argument index */
+
+	const char *stream_title = NULL;
+	if (player_info.status == PLAYER_STATUS_PLAYING && is_http_url(ti->filename))
+		stream_title = get_stream_title();
+
+	static const char *keys[] = {
+		"artist", "albumartist", "album", "discnumber", "tracknumber", "title",
+		"date",	"musicbrainz_trackid", NULL
+	};
+	int j;
+
+	if (is_http_url(ti->filename)) {
+		argv[i++] = xstrdup("url");
+	} else {
+		argv[i++] = xstrdup("file");
+	}
+	argv[i++] = xstrdup(ti->filename);
+
+	if (track_info_has_tag(ti)) {
+		for (j = 0; keys[j]; j++) {
+			const char *key = keys[j];
+			const char *val;
+
+			if (strcmp(key, "title") == 0 && stream_title)
+				/*
+				 * StreamTitle overrides radio station name
+				 */
+				val = stream_title;
+			else
+				val = keyvals_get_val(ti->comments, key);
+
+			if (val) {
+				argv[i++] = xstrdup(key);
+				argv[i++] = xstrdup(val);
+			}
+		}
+		if (ti->duration > 0) {
+			char buf[32];
+			snprintf(buf, sizeof(buf), "%d", ti->duration);
+			argv[i++] = xstrdup("duration");
+			argv[i++] = xstrdup(buf);
+		}
+	} else if (stream_title) {
+		argv[i++] = xstrdup("title");
+		argv[i++] = xstrdup(stream_title);
+	}
+
+	return i;
+}
+
 static void spawn_status_program_inner(const char *status_text, struct track_info *ti)
 {
 	if (status_display_program == NULL || status_display_program[0] == 0)
@@ -1808,51 +1861,7 @@ static void spawn_status_program_inner(const char *status_text, struct track_inf
 	argv[i++] = xstrdup(status_text);
 
 	if (ti) {
-		const char *stream_title = NULL;
-		if (player_info.status == PLAYER_STATUS_PLAYING && is_http_url(ti->filename))
-			stream_title = get_stream_title();
-
-		static const char *keys[] = {
-			"artist", "albumartist", "album", "discnumber", "tracknumber", "title",
-			"date",	"musicbrainz_trackid", NULL
-		};
-		int j;
-
-		if (is_http_url(ti->filename)) {
-			argv[i++] = xstrdup("url");
-		} else {
-			argv[i++] = xstrdup("file");
-		}
-		argv[i++] = xstrdup(ti->filename);
-
-		if (track_info_has_tag(ti)) {
-			for (j = 0; keys[j]; j++) {
-				const char *key = keys[j];
-				const char *val;
-
-				if (strcmp(key, "title") == 0 && stream_title)
-					/*
-					 * StreamTitle overrides radio station name
-					 */
-					val = stream_title;
-				else
-					val = keyvals_get_val(ti->comments, key);
-
-				if (val) {
-					argv[i++] = xstrdup(key);
-					argv[i++] = xstrdup(val);
-				}
-			}
-			if (ti->duration > 0) {
-				char buf[32];
-				snprintf(buf, sizeof(buf), "%d", ti->duration);
-				argv[i++] = xstrdup("duration");
-				argv[i++] = xstrdup(buf);
-			}
-		} else if (stream_title) {
-			argv[i++] = xstrdup("title");
-			argv[i++] = xstrdup(stream_title);
-		}
+		i = fill_status_program_track_info_args(argv, i, ti);
 	}
 	argv[i++] = NULL;
 
