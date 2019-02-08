@@ -1014,7 +1014,7 @@ static void update_window(struct window *win, int x, int y, int w, const char *t
 static void update_tree_window(void)
 {
 	update_window(lib_tree_win, tree_win_x, 0, tree_win_w,
-			"Artist / Album", print_tree);
+			_("Artist / Album"), print_tree);
 }
 
 static void update_track_window(void)
@@ -1023,7 +1023,7 @@ static void update_track_window(void)
 
 	/* it doesn't matter what format options we use because the format
 	 * string does not contain any format charaters */
-	format_print(title, track_win_w - 2, "Track%=Library", track_fopts);
+	format_print(title, track_win_w - 2, _("Track%=Library"), track_fopts);
 	update_window(lib_track_win, track_win_x, 0, track_win_w, title,
 			print_track);
 }
@@ -1051,7 +1051,7 @@ static void print_pl_list(struct window *win, int row, struct iter *iter)
 
 static void update_pl_list(struct window *win)
 {
-	update_window(win, tree_win_x, 0, tree_win_w, "Playlist",
+	update_window(win, tree_win_x, 0, tree_win_w, _("Playlist"),
 			print_pl_list);
 }
 
@@ -1066,7 +1066,7 @@ static void update_pl_tracks(struct window *win)
 	get_global_fopts();
 	fopt_set_time(&track_fopts[TF_TOTAL], pl_visible_total_time(), 0);
 
-	format_print(title, track_win_w - 2, "Track%=%{total}", track_fopts);
+	format_print(title, track_win_w - 2, _("Track%=%{total}"), track_fopts);
 	update_window(win, track_win_x, 0, track_win_w, title, print_editable);
 
 	editable_active = 1;
@@ -1104,15 +1104,15 @@ static void update_editable_window(struct editable *e, const char *title, const 
 			utf8_encode_to_buf(filename);
 			filename = conv_buffer;
 		}
-		snprintf(buf, sizeof(buf), "%s %s - %d tracks", title,
+		snprintf(buf, sizeof(buf), _("%s %s - %d tracks"), title,
 				pretty(filename), e->nr_tracks);
 	} else {
-		snprintf(buf, sizeof(buf), "%s - %d tracks", title, e->nr_tracks);
+		snprintf(buf, sizeof(buf), _("%s - %d tracks"), title, e->nr_tracks);
 	}
 
 	if (e->nr_marked) {
 		pos = strlen(buf);
-		snprintf(buf + pos, sizeof(buf) - pos, " (%d marked)", e->nr_marked);
+		snprintf(buf + pos, sizeof(buf) - pos, _(" (%d marked)"), e->nr_marked);
 	}
 	pos = strlen(buf);
 	snprintf(buf + pos, sizeof(buf) - pos, " %s%s",
@@ -1125,13 +1125,13 @@ static void update_editable_window(struct editable *e, const char *title, const 
 static void update_sorted_window(void)
 {
 	current_track = (struct simple_track *)lib_cur_track;
-	update_editable_window(&lib_editable, "Library", lib_filename);
+	update_editable_window(&lib_editable, _("Library"), lib_filename);
 }
 
 static void update_play_queue_window(void)
 {
 	current_track = NULL;
-	update_editable_window(&pq_editable, "Play Queue", NULL);
+	update_editable_window(&pq_editable, _("Play Queue"), NULL);
 }
 
 static void update_browser_window(void)
@@ -1146,18 +1146,18 @@ static void update_browser_window(void)
 		utf8_encode_to_buf(browser_dir);
 		dirname = conv_buffer;
 	}
-	snprintf(title, sizeof(title), "Browser - %s", dirname);
+	snprintf(title, sizeof(title), _("Browser - %s"), dirname);
 	update_window(browser_win, 0, 0, COLS, title, print_browser);
 }
 
 static void update_filters_window(void)
 {
-	update_window(filters_win, 0, 0, COLS, "Library Filters", print_filter);
+	update_window(filters_win, 0, 0, COLS, _("Library Filters"), print_filter);
 }
 
 static void update_help_window(void)
 {
-	update_window(help_win, 0, 0, COLS, "Settings", print_help);
+	update_window(help_win, 0, 0, COLS, _("Settings"), print_help);
 }
 
 static void draw_separator(void)
@@ -1548,7 +1548,7 @@ void update_filterline(void)
 		char buf[512];
 		int w;
 		bkgdset(pairs[CURSED_STATUSLINE]);
-		snprintf(buf, sizeof(buf), "filtered: %s", lib_live_filter);
+		snprintf(buf, sizeof(buf), _("filtered: %s"), lib_live_filter);
 		w = clamp(strlen(buf) + 2, COLS/4, COLS/2);
 		sprint(LINES-4, COLS-w, buf, w);
 	}
@@ -1576,7 +1576,7 @@ void error_msg(const char *format, ...)
 {
 	va_list ap;
 
-	strcpy(error_buf, "Error: ");
+	strcpy(error_buf, _("Error: "));
 	va_start(ap, format);
 	vsnprintf(error_buf + 7, sizeof(error_buf) - 7, format, ap);
 	va_end(ap);
@@ -1637,26 +1637,26 @@ int yes_no_query(const char *format, ...)
 
 void search_not_found(void)
 {
-	const char *what = "Track";
+	const char *what = _("Track");
 
 	if (search_restricted) {
 		switch (cur_view) {
 		case TREE_VIEW:
-			what = "Artist/album";
+			what = _("Artist/album");
 			break;
 		case SORTED_VIEW:
 		case PLAYLIST_VIEW:
 		case QUEUE_VIEW:
-			what = "Title";
+			what = _("Title");
 			break;
 		case BROWSER_VIEW:
-			what = "File/Directory";
+			what = _("File/Directory");
 			break;
 		case FILTERS_VIEW:
-			what = "Filter";
+			what = _("Filter");
 			break;
 		case HELP_VIEW:
-			what = "Binding/command/option";
+			what = _("Binding/command/option");
 			break;
 		}
 	} else {
@@ -1665,20 +1665,20 @@ void search_not_found(void)
 		case SORTED_VIEW:
 		case PLAYLIST_VIEW:
 		case QUEUE_VIEW:
-			what = "Track";
+			what = _("Track");
 			break;
 		case BROWSER_VIEW:
-			what = "File/Directory";
+			what = _("File/Directory");
 			break;
 		case FILTERS_VIEW:
-			what = "Filter";
+			what = _("Filter");
 			break;
 		case HELP_VIEW:
-			what = "Binding/command/option";
+			what = _("Binding/command/option");
 			break;
 		}
 	}
-	info_msg("%s not found: %s", what, search_str ? search_str : "");
+	info_msg(_("%s not found: %s"), what, search_str ? search_str : "");
 }
 
 void set_client_fd(int fd)
