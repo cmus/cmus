@@ -1,0 +1,595 @@
+# cmus internationalization template
+# Copyright 2004-2006 Timo Hirvonen
+# Copyright 2008-2016 Various Authors
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as
+# published by the Free Software Foundation; either version 2 of the
+# License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, see <http://www.gnu.org/licenses/>.
+# Nahuel José <nahueljose@gmail.com>, 2019.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: cmus v2.8.0-1-g7f12156\n"
+"Report-Msgid-Bugs-To: nahueljose@gmail.com\n"
+"POT-Creation-Date: 2019-02-08 15:51-0300\n"
+"PO-Revision-Date: 2019-02-08 16:08-0300\n"
+"Last-Translator: Nahuel <nahueljose@gmail.com>\n"
+"Language-Team: Spanish\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 2.2.1\n"
+"X-Poedit-KeywordsList: _\n"
+"X-Poedit-Basepath: ../..\n"
+"X-Poedit-SearchPath-0: .\n"
+"X-Poedit-SearchPathExcluded-0: .git\n"
+
+#: browser.c:344 browser.c:380
+#, c-format
+msgid "could not open directory '%s': %s\n"
+msgstr "no se pudo abrir el directorio '%s': %s\n"
+
+#: browser.c:387
+#, c-format
+msgid "could not read playlist '%s': %s\n"
+msgstr "nose pudo leer la playlist '%s': %s\n"
+
+#: browser.c:452
+#, c-format
+msgid "Delete file '%s'? [y/N]"
+msgstr "Borrar archivo '%s'? [s/N]"
+
+#: browser.c:454
+#, c-format
+msgid "deleting '%s': %s"
+msgstr "borrando '%s': %s"
+
+#: browser.c:480
+#, c-format
+msgid "could not update contents '%s': %s\n"
+msgstr "no se pudo actualizar el contenido '%s': %s\n"
+
+#: cmus.c:114
+#, c-format
+msgid "Couldn't get file information for %s\n"
+msgstr "No se pudo obtener la información del archivo %s\n"
+
+#: cmus.c:224
+msgid "saving to stdout works only remotely"
+msgstr ""
+
+#: command_mode.c:84
+msgid ":clear only works in views 1-4"
+msgstr ":clear solo funciona en las vistas 1-4"
+
+#: command_mode.c:96
+#, c-format
+msgid "adding '%s': %s"
+msgstr ""
+
+#: command_mode.c:120
+msgid ":add only works in views 1-4"
+msgstr ":add solo funciona en las vistas 1-4"
+
+#: command_mode.c:130
+#, c-format
+msgid "loading '%s': %s"
+msgstr ""
+
+#: command_mode.c:139
+#, c-format
+msgid "loading '%s': not a playlist file"
+msgstr ""
+
+#: command_mode.c:163
+msgid ":load only works in views 1-2"
+msgstr ":load solo funciona en las vistas 1-2"
+
+#: command_mode.c:182
+msgid "need a file as argument, no default stored yet"
+msgstr ""
+
+#: command_mode.c:187
+#, c-format
+msgid "saving '%s': %s"
+msgstr "guardando '%s': %s"
+
+#: command_mode.c:227
+msgid ":save only works in views 1 - 4"
+msgstr ":save solo funciona en las vistas 1-4"
+
+#: command_mode.c:232
+msgid "can't save when tracks are being added"
+msgstr "no se puede guardar cuando se están agregando pistas"
+
+#: command_mode.c:267
+#, c-format
+msgid "invalid option -%c"
+msgstr "opción inválida -%c"
+
+#: command_mode.c:364 command_mode.c:390 command_mode.c:2853 server.c:163
+msgid "not enough arguments\n"
+msgstr "faltan argumentos\n"
+
+#: command_mode.c:377 command_mode.c:2857
+msgid "too many arguments\n"
+msgstr "demasiados argumentos\n"
+
+#: command_mode.c:451
+#, c-format
+msgid "setting: '%s=%s'"
+msgstr "ajuste: '%s=%s'"
+
+#: command_mode.c:464
+#, c-format
+msgid "%s is not toggle option"
+msgstr ""
+
+#: command_mode.c:549
+msgid "expecting one argument: [+-]INTEGER[mh] or [+-]H:MM:SS"
+msgstr ""
+
+#: command_mode.c:574
+msgid "To get started with cmus, read cmus-tutorial(7) and cmus(1) man pages"
+msgstr "Para empezar a usar cmus, lea las páginas de man de cmus-tutorial(7) y cmus(1)"
+
+#: command_mode.c:590
+msgid ":invert only works in views 2-4"
+msgstr ":invert solo funciona en las vistas 2-4"
+
+#: command_mode.c:607
+msgid ":mark only works in views 2-4"
+msgstr ":mark solo funciona en las vistas 2-4"
+
+#: command_mode.c:624
+msgid ":unmark only works in views 2-4"
+msgstr ":unmark solo funciona en las vistas 2-4"
+
+#: command_mode.c:642 command_mode.c:650
+#, c-format
+msgid "could not cd to '%s': %s"
+msgstr "no se pudo hacer cd a '%s': %s"
+
+#: command_mode.c:689
+msgid "expecting 3 arguments (context, key and function)\n"
+msgstr "se esperan 3 argumentos (contexto, tecla y función)\n"
+
+#: command_mode.c:717 command_mode.c:738
+msgid "expecting 2 arguments (context and key)\n"
+msgstr "se esperan 2 argumentos (contexto y tecla)\n"
+
+#: command_mode.c:745
+msgid "Quit cmus? [y/N]"
+msgstr "¿Salir de cmus? [s/N]"
+
+#: command_mode.c:748
+msgid "Tracks are being added. Quit and truncate playlist(s)? [y/N]"
+msgstr ""
+
+#: command_mode.c:764 command_mode.c:776
+#, c-format
+msgid "sourcing %s: %s"
+msgstr ""
+
+#: command_mode.c:823
+msgid "`\"' expected"
+msgstr ""
+
+#: command_mode.c:914
+msgid "`'' expected"
+msgstr ""
+
+#: command_mode.c:957
+msgid "{} can be used only once"
+msgstr ""
+
+#: command_mode.c:990
+msgid "Command execution is supported only in views 1-4"
+msgstr ""
+
+#: command_mode.c:1046
+#, c-format
+msgid "Execute %s for the %d selected files? [y/N]"
+msgstr ""
+
+#: command_mode.c:1047 input.c:895
+msgid "Aborted"
+msgstr ""
+
+#: command_mode.c:1055
+#, c-format
+msgid "executing %s: %s"
+msgstr ""
+
+#: command_mode.c:1061
+#, c-format
+msgid "%s returned %d"
+msgstr ""
+
+#: command_mode.c:1064
+#, c-format
+msgid "%s received signal %d"
+msgstr ""
+
+#: command_mode.c:1093
+#, c-format
+msgid "executing '%s': %s"
+msgstr ""
+
+#: command_mode.c:1121 command_mode.c:1224 command_mode.c:1376 input.c:852
+#: input.c:894 output.c:335 ui_curses.c:1223
+#, c-format
+msgid "%s"
+msgstr ""
+
+#: command_mode.c:1126
+msgid "echo with {} in its arguments is supported only in views 1-4"
+msgstr ""
+
+#: command_mode.c:1154
+#, c-format
+msgid "%s%s%s"
+msgstr ""
+
+#: command_mode.c:1233
+#, c-format
+msgid "expecting 1 or 2 arguments (total or L and R volumes [+-]INTEGER[%%])\n"
+msgstr ""
+
+#: command_mode.c:1271
+msgid ":pl-export only works in view 3"
+msgstr ""
+
+#: command_mode.c:1279
+msgid "For convenience, you can not add \"..\" directory from the browser view"
+msgstr ""
+
+#: command_mode.c:1296
+msgid "not enough arguments"
+msgstr "faltan argumentos"
+
+#: command_mode.c:1309
+msgid ":pl-rename only works in view 3"
+msgstr ""
+
+#: command_mode.c:1702 command_mode.c:1780
+msgid "invalid argument\n"
+msgstr ""
+
+#: command_mode.c:1909 command_mode.c:1972
+msgid "argument must be positive integer"
+msgstr ""
+
+#: command_mode.c:2841
+msgid "unknown command\n"
+msgstr "comando desconocido\n"
+
+#: command_mode.c:2849
+msgid "ambiguous command\n"
+msgstr ""
+
+#: filters.c:163 filters.c:354 filters.c:428
+#, c-format
+msgid "error parsing filter %s: %s"
+msgstr ""
+
+#: filters.c:197 filters.c:440
+#, c-format
+msgid "recursion detected in filter %s"
+msgstr ""
+
+#: filters.c:199 filters.c:442
+#, c-format
+msgid "error parsing filter: %s"
+msgstr ""
+
+#: filters.c:237
+msgid "filter name too long"
+msgstr ""
+
+#: filters.c:252
+#, c-format
+msgid "no such filter %s"
+msgstr "no existe el filtro: %s"
+
+#: filters.c:307
+#, c-format
+msgid "Delete filter '%s'? [y/N]"
+msgstr ""
+
+#: filters.c:339
+msgid "invalid argument ('key=value' expected)"
+msgstr ""
+
+#: filters.c:346
+msgid "invalid filter name (can only contain 'a-zA-Z0-9_-' characters)"
+msgstr ""
+
+#: help.c:115
+msgid "Keybindings"
+msgstr "Atajos"
+
+#: help.c:119
+msgid "Unbound Commands"
+msgstr "Comandos no Asignados"
+
+#: help.c:123
+msgid "Options"
+msgstr "Opciones"
+
+#: help.c:276
+msgid "Remove selected binding? [y/N]"
+msgstr "Quitar atajo seleccionado? [s/N]"
+
+#: input.c:501 output.c:90
+#, c-format
+msgid "couldn't open directory `%s': %s"
+msgstr "no se pudo abrir el directorio `%s': %s"
+
+#: input.c:540 output.c:124
+#, c-format
+msgid "%s: missing symbol"
+msgstr ""
+
+#: input.c:544 output.c:128
+#, c-format
+msgid "%s: incompatible plugin version"
+msgstr ""
+
+#: input.c:886
+msgid "non-negative integer expected"
+msgstr ""
+
+#: input.c:900
+msgid "Run \":update-cache -f\" to refresh the metadata."
+msgstr ""
+
+#: keys.c:439
+#, c-format
+msgid "invalid context '%s'"
+msgstr ""
+
+#: keys.c:451
+#, c-format
+msgid "invalid key '%s'"
+msgstr "tecla inválida '%s'"
+
+#: keys.c:483
+msgid "No such binding"
+msgstr ""
+
+#: keys.c:485
+#, c-format
+msgid "bind %s %s %s"
+msgstr ""
+
+#: keys.c:542
+#, c-format
+msgid "key %s already bound in context %s"
+msgstr ""
+
+#: keys.c:581
+#, c-format
+msgid "key %s not bound in context %s"
+msgstr "key %s not bound in context %s"
+
+#: options.c:166
+#, c-format
+msgid "integer in range %d..%d expected"
+msgstr ""
+
+#: options.c:192
+#, c-format
+msgid "name or integer in range %d..%d expected"
+msgstr ""
+
+#: options.c:404
+msgid "unsafe password"
+msgstr ""
+
+#: options.c:423
+msgid "floating point number expected (dB)"
+msgstr ""
+
+#: options.c:455
+msgid "two integers in range 0..100 expected"
+msgstr ""
+
+#: options.c:1301
+msgid "invalid format string"
+msgstr ""
+
+#: options.c:1447
+#, c-format
+msgid "no such option %s"
+msgstr ""
+
+#: options.c:1522 options.c:1535 options.c:1657
+#, c-format
+msgid "loading %s: %s"
+msgstr ""
+
+#: pl.c:265
+#, c-format
+msgid "error: %s in %s is not a regular file"
+msgstr ""
+
+#: pl.c:422
+msgid "cannot delete the last playlist"
+msgstr ""
+
+#: pl.c:426
+msgid "Delete selected playlist? [y/N]"
+msgstr ""
+
+#: pl.c:511
+msgid "playlists cannot contain the '/' character"
+msgstr ""
+
+#: pl.c:516
+#, c-format
+msgid "another playlist named %s already exists"
+msgstr ""
+
+#: pl.c:588
+#, c-format
+msgid "\"%s\" is not a valid path"
+msgstr ""
+
+#: pl.c:594
+#, c-format
+msgid "a playlist named \"%s\" already exists "
+msgstr ""
+
+#: pl.c:599
+#, c-format
+msgid "adding \"%s\" as \"%s\""
+msgstr ""
+
+#: pl.c:612
+msgid "File exists. Overwrite? [y/N]"
+msgstr ""
+
+#: pl.c:772
+#, c-format
+msgid ":%s only works in the track window"
+msgstr ""
+
+#: pl.c:829
+msgid "Reload this playlist? [y/N]"
+msgstr ""
+
+#: search.c:73
+msgid "search hit BOTTOM, continuing at TOP"
+msgstr "la búsqueda llegó al FIN, continuando al INICIO"
+
+#: track_info.c:351
+#, c-format
+msgid "invalid sort key '%s'"
+msgstr ""
+
+#: tree.c:881
+msgid "<Various Artists>"
+msgstr "<Artistas Varios>"
+
+#: tree.c:883 tree.c:893
+msgid "<No Name>"
+msgstr "<Sin Nombre>"
+
+#: tree.c:933 tree.c:934
+msgid "<Stream>"
+msgstr "<Stream>"
+
+#: ui_curses.c:1017
+msgid "Artist / Album"
+msgstr "Artista / Album"
+
+#: ui_curses.c:1026
+msgid "Track%=Library"
+msgstr "Pista%=Biblioteca"
+
+#: ui_curses.c:1054
+msgid "Playlist"
+msgstr "Playlist"
+
+#: ui_curses.c:1069
+msgid "Track%=%{total}"
+msgstr "Pista%=%{total}"
+
+#: ui_curses.c:1095
+msgid "sorted by "
+msgstr "ordenado por "
+
+#: ui_curses.c:1106
+#, c-format
+msgid "%s %s - %d tracks"
+msgstr "%s %s - %d pistas"
+
+#: ui_curses.c:1109
+#, c-format
+msgid "%s - %d tracks"
+msgstr "%s - %d pistas"
+
+#: ui_curses.c:1114
+#, c-format
+msgid " (%d marked)"
+msgstr " (%d marcadas)"
+
+#: ui_curses.c:1127
+msgid "Library"
+msgstr "Biblioteca"
+
+#: ui_curses.c:1133
+msgid "Play Queue"
+msgstr "Cola de Reproducción"
+
+#: ui_curses.c:1148
+#, c-format
+msgid "Browser - %s"
+msgstr "Explorador - %s"
+
+#: ui_curses.c:1154
+msgid "Library Filters"
+msgstr "Filtros de Biblioteca"
+
+#: ui_curses.c:1159
+msgid "Settings"
+msgstr "Ajustes"
+
+#: ui_curses.c:1550
+#, c-format
+msgid "filtered: %s"
+msgstr "filtrados: %s"
+
+#: ui_curses.c:1578
+msgid "Error: "
+msgstr "Error: "
+
+#: ui_curses.c:1627
+msgid "y"
+msgstr "s"
+
+#: ui_curses.c:1641 ui_curses.c:1669
+msgid "Track"
+msgstr "Pista"
+
+#: ui_curses.c:1646
+msgid "Artist/album"
+msgstr "Artista/album"
+
+#: ui_curses.c:1651
+msgid "Title"
+msgstr "Título"
+
+#: ui_curses.c:1654 ui_curses.c:1672
+msgid "File/Directory"
+msgstr "Archivo/Directorio"
+
+#: ui_curses.c:1657 ui_curses.c:1675
+msgid "Filter"
+msgstr "Filtro"
+
+#: ui_curses.c:1660 ui_curses.c:1678
+msgid "Binding/command/option"
+msgstr "Atajo/comando/opción"
+
+#: ui_curses.c:1682
+#, c-format
+msgid "%s not found: %s"
+msgstr "No se encontró %s: %s"
+
+#: ui_curses.c:1871
+#, c-format
+msgid "couldn't run `%s': %s"
+msgstr "no se pudo ejecutar `%s': %s"
