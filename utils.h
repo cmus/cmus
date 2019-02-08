@@ -331,7 +331,7 @@ static inline void clear_pipe(int pipe, size_t bytes)
 	char buf[128];
 	size_t bytes_to_read = min_u(sizeof(buf), bytes);
 	if (read(pipe, buf, bytes_to_read) < 0) {
-		d_print("read from pipe failed. errno = %d", errno);
+		d_print("read from pipe failed. errno = %d\n", errno);
 	}
 }
 
