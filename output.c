@@ -91,7 +91,7 @@ void op_load_plugins(void)
 		return;
 	}
 	while ((d = (struct dirent *) readdir(dir)) != NULL) {
-		char filename[256];
+		char filename[512];
 		struct output_plugin *plug;
 		void *so, *symptr;
 		char *ext;
