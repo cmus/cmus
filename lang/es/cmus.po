@@ -20,8 +20,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: cmus v2.8.0-1-g7f12156\n"
 "Report-Msgid-Bugs-To: nahueljose@gmail.com\n"
-"POT-Creation-Date: 2019-02-07 22:44-0300\n"
-"PO-Revision-Date: 2019-02-07 22:46-0300\n"
+"POT-Creation-Date: 2019-02-07 23:30-0300\n"
+"PO-Revision-Date: 2019-02-07 23:31-0300\n"
 "Last-Translator: Nahuel <nahueljose@gmail.com>\n"
 "Language-Team: Spanish\n"
 "Language: es\n"
@@ -29,6 +29,11 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 2.2.1\n"
+"X-Poedit-KeywordsList: _\n"
+"X-Poedit-Basepath: ../..\n"
+"X-Poedit-SearchPath-0: .\n"
+"X-Poedit-SearchPathExcluded-0: .git\n"
 
 #: command_mode.c:742
 msgid "Quit cmus? [y/N]"
@@ -50,80 +55,84 @@ msgstr "Playlist"
 msgid "Track%=%{total}"
 msgstr "Pista%=%{total}"
 
-#: ui_curses.c:1107
+#: ui_curses.c:1095
+msgid "sorted by "
+msgstr "ordenado por "
+
+#: ui_curses.c:1106
 #, c-format
 msgid "%s %s - %d tracks"
 msgstr "%s %s - %d pistas"
 
-#: ui_curses.c:1110
+#: ui_curses.c:1109
 #, c-format
 msgid "%s - %d tracks"
 msgstr "%s - %d pistas"
 
-#: ui_curses.c:1115
+#: ui_curses.c:1114
 #, c-format
 msgid " (%d marked)"
 msgstr " (%d marcadas)"
 
-#: ui_curses.c:1128
+#: ui_curses.c:1127
 msgid "Library"
 msgstr "Biblioteca"
 
-#: ui_curses.c:1134
+#: ui_curses.c:1133
 msgid "Play Queue"
 msgstr "Cola de Reproducción"
 
-#: ui_curses.c:1149
+#: ui_curses.c:1148
 #, c-format
 msgid "Browser - %s"
 msgstr "Explorador - %s"
 
-#: ui_curses.c:1155
+#: ui_curses.c:1154
 msgid "Library Filters"
 msgstr "Filtros de Biblioteca"
 
-#: ui_curses.c:1160
+#: ui_curses.c:1159
 msgid "Settings"
 msgstr "Ajustes"
 
-#: ui_curses.c:1551
+#: ui_curses.c:1550
 #, c-format
 msgid "filtered: %s"
 msgstr "filtrados: %s"
 
-#: ui_curses.c:1579
+#: ui_curses.c:1578
 msgid "Error: "
 msgstr "Error: "
 
-#: ui_curses.c:1626
+#: ui_curses.c:1625
 msgid "y"
 msgstr "s"
 
-#: ui_curses.c:1640 ui_curses.c:1668
+#: ui_curses.c:1639 ui_curses.c:1667
 msgid "Track"
 msgstr "Pista"
 
-#: ui_curses.c:1645
+#: ui_curses.c:1644
 msgid "Artist/album"
 msgstr "Artista/album"
 
-#: ui_curses.c:1650
+#: ui_curses.c:1649
 msgid "Title"
 msgstr "Título"
 
-#: ui_curses.c:1653 ui_curses.c:1671
+#: ui_curses.c:1652 ui_curses.c:1670
 msgid "File/Directory"
 msgstr "Archivo/Directorio"
 
-#: ui_curses.c:1656 ui_curses.c:1674
+#: ui_curses.c:1655 ui_curses.c:1673
 msgid "Filter"
 msgstr "Filtro"
 
-#: ui_curses.c:1659 ui_curses.c:1677
+#: ui_curses.c:1658 ui_curses.c:1676
 msgid "Binding/command/option"
 msgstr "Atajo/comando/opción"
 
-#: ui_curses.c:1681
+#: ui_curses.c:1680
 #, c-format
 msgid "%s not found: %s"
 msgstr "No se encontró %s: %s"
