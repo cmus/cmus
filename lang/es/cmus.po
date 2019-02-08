@@ -21,7 +21,7 @@ msgstr ""
 "Project-Id-Version: cmus v2.8.0-1-g7f12156\n"
 "Report-Msgid-Bugs-To: nahueljose@gmail.com\n"
 "POT-Creation-Date: 2019-02-08 15:51-0300\n"
-"PO-Revision-Date: 2019-02-08 17:18-0300\n"
+"PO-Revision-Date: 2019-02-08 17:22-0300\n"
 "Last-Translator: Nahuel <nahueljose@gmail.com>\n"
 "Language-Team: Spanish\n"
 "Language: es\n"
@@ -48,7 +48,7 @@ msgstr "nose pudo leer la playlist '%s': %s\n"
 #: browser.c:452
 #, c-format
 msgid "Delete file '%s'? [y/N]"
-msgstr "Borrar archivo '%s'? [s/N]"
+msgstr "¿Borrar archivo '%s'? [s/N]"
 
 #: browser.c:454
 #, c-format
@@ -175,7 +175,7 @@ msgstr "¿Salir de cmus? [s/N]"
 
 #: command_mode.c:748
 msgid "Tracks are being added. Quit and truncate playlist(s)? [y/N]"
-msgstr "Se están agregando pistas. Salir y truncar playlist? [s/N]"
+msgstr "Se están agregando pistas ¿Salir y truncar playlist? [s/N]"
 
 #: command_mode.c:764 command_mode.c:776
 #, c-format
@@ -201,7 +201,7 @@ msgstr "Ejecución de comandos solo soportada en vistas  1-4"
 #: command_mode.c:1046
 #, c-format
 msgid "Execute %s for the %d selected files? [y/N]"
-msgstr "Ejecutar %s para los %d archivos seleccionados? [y/N]"
+msgstr "¿Ejecutar %s para los %d archivos seleccionados? [s/N]"
 
 #: command_mode.c:1047 input.c:895
 msgid "Aborted"
@@ -330,7 +330,7 @@ msgstr "Opciones"
 
 #: help.c:276
 msgid "Remove selected binding? [y/N]"
-msgstr "Quitar atajo seleccionado? [s/N]"
+msgstr "¿Quitar atajo seleccionado? [s/N]"
 
 #: input.c:501 output.c:90
 #, c-format
@@ -459,7 +459,7 @@ msgstr ""
 
 #: pl.c:612
 msgid "File exists. Overwrite? [y/N]"
-msgstr ""
+msgstr "El archivo existe ¿Sobreescribir? [s/N]"
 
 #: pl.c:772
 #, c-format
