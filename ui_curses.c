@@ -1623,10 +1623,11 @@ int yes_no_query(const char *format, ...)
 
 	while (1) {
 		int ch = getch();
+		char *user_input = _("y");
 
 		if (ch == ERR || ch == 0)
 			continue;
-		if (ch == 'y')
+		if (ch == user_input[0])
 			ret = 1;
 		break;
 	}
