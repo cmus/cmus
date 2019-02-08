@@ -321,14 +321,18 @@ static inline void init_pipes(int *out, int *in)
 static inline void notify_via_pipe(int pipe)
 {
 	char buf = 0;
-	write(pipe, &buf, 1);
+	if (write(pipe, &buf, 1) != 1) {
+		d_print("failed to write to pipe errno = %d\n", errno);
+	}
 }
 
 static inline void clear_pipe(int pipe, size_t bytes)
 {
 	char buf[128];
 	size_t bytes_to_read = min_u(sizeof(buf), bytes);
-	read(pipe, buf, bytes_to_read);
+	if (read(pipe, buf, bytes_to_read) < 0) {
+		d_print("failed to clear pipe. errno = %d", errno);
+	}
 }
 
 static inline ssize_t strscpy(char *dst, const char *src, size_t size)

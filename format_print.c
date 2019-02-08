@@ -185,7 +185,7 @@ static void print_str(const char *src)
 
 			if (ws_len < 0) {
 				int w, c = -ws_len;
-				uchar u;
+				uchar u = 0;
 
 				while (c > 0) {
 					u = u_get_char(src, &s);

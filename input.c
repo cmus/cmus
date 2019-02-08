@@ -504,7 +504,7 @@ void ip_load_plugins(void)
 
 	ip_wrlock();
 	while ((d = (struct dirent *) readdir(dir)) != NULL) {
-		char filename[256];
+		char filename[512];
 		struct ip *ip;
 		void *so;
 		char *ext;
