@@ -492,6 +492,7 @@ static char *auto_artist_sort_name(const char *name)
 	const char *name_orig = name;
 	char *buf;
 
+	/* todo: improve this to support localization */
 	if (strncasecmp(name, "the ", 4) != 0)
 		return NULL;
 
@@ -877,9 +878,9 @@ static const char *tree_artist_name(const struct track_info* ti)
 	const char *val = ti->albumartist;
 
 	if (ti->is_va_compilation)
-		val = "<Various Artists>";
+		val = _("<Various Artists>");
 	if (!val || strcmp(val, "") == 0)
-		val = "<No Name>";
+		val = _("<No Name>");
 
 	return val;
 }
@@ -889,7 +890,7 @@ static const char *tree_album_name(const struct track_info* ti)
 	const char *val = ti->album;
 
 	if (!val || strcmp(val, "") == 0)
-		val = "<No Name>";
+		val = _("<No Name>");
 
 	return val;
 }
@@ -929,8 +930,8 @@ void tree_add_track(struct tree_track *track)
 		date = ti->date;
 
 	if (is_http_url(ti->filename)) {
-		artist_name = "<Stream>";
-		album_name = "<Stream>";
+		artist_name = _("<Stream>");
+		album_name = _("<Stream>");
 	} else {
 		album_name	= tree_album_name(ti);
 		artist_name	= tree_artist_name(ti);

@@ -19,7 +19,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: cmus v2.8.0-1-g7f12156\n"
 "Report-Msgid-Bugs-To: nahueljose@gmail.com\n"
-"POT-Creation-Date: 2019-02-07 23:31-0300\n"
+"POT-Creation-Date: 2019-02-08 15:03-0300\n"
 "PO-Revision-Date: 2019-02-05 20:04-0300\n"
 "Last-Translator: Nahuel José <nahueljose@gmail.com>\n"
 "Language-Team: Nahuel José <nahueljose@gmail.com>\n"
@@ -32,8 +32,20 @@ msgstr ""
 "X-Poedit-SearchPath-0: .\n"
 "X-Poedit-SearchPathExcluded-0: .git\n"
 
-#: command_mode.c:742
+#: command_mode.c:745
 msgid "Quit cmus? [y/N]"
+msgstr ""
+
+#: tree.c:881
+msgid "<Various Artists>"
+msgstr ""
+
+#: tree.c:883 tree.c:893
+msgid "<No Name>"
+msgstr ""
+
+#: tree.c:933 tree.c:934
+msgid "<Stream>"
 msgstr ""
 
 #: ui_curses.c:1017
