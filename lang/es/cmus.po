@@ -20,8 +20,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: cmus v2.8.0-1-g7f12156\n"
 "Report-Msgid-Bugs-To: nahueljose@gmail.com\n"
-"POT-Creation-Date: 2019-02-05 20:04-0300\n"
-"PO-Revision-Date: 2019-02-05 20:10-0300\n"
+"POT-Creation-Date: 2019-02-07 22:44-0300\n"
+"PO-Revision-Date: 2019-02-07 22:46-0300\n"
 "Last-Translator: Nahuel <nahueljose@gmail.com>\n"
 "Language-Team: Spanish\n"
 "Language: es\n"
@@ -33,3 +33,103 @@ msgstr ""
 #: command_mode.c:742
 msgid "Quit cmus? [y/N]"
 msgstr "¿Salir de cmus? [s/N]"
+
+#: ui_curses.c:1017
+msgid "Artist / Album"
+msgstr "Artista / Album"
+
+#: ui_curses.c:1026
+msgid "Track%=Library"
+msgstr "Pista%=Biblioteca"
+
+#: ui_curses.c:1054
+msgid "Playlist"
+msgstr "Playlist"
+
+#: ui_curses.c:1069
+msgid "Track%=%{total}"
+msgstr "Pista%=%{total}"
+
+#: ui_curses.c:1107
+#, c-format
+msgid "%s %s - %d tracks"
+msgstr "%s %s - %d pistas"
+
+#: ui_curses.c:1110
+#, c-format
+msgid "%s - %d tracks"
+msgstr "%s - %d pistas"
+
+#: ui_curses.c:1115
+#, c-format
+msgid " (%d marked)"
+msgstr " (%d marcadas)"
+
+#: ui_curses.c:1128
+msgid "Library"
+msgstr "Biblioteca"
+
+#: ui_curses.c:1134
+msgid "Play Queue"
+msgstr "Cola de Reproducción"
+
+#: ui_curses.c:1149
+#, c-format
+msgid "Browser - %s"
+msgstr "Explorador - %s"
+
+#: ui_curses.c:1155
+msgid "Library Filters"
+msgstr "Filtros de Biblioteca"
+
+#: ui_curses.c:1160
+msgid "Settings"
+msgstr "Ajustes"
+
+#: ui_curses.c:1551
+#, c-format
+msgid "filtered: %s"
+msgstr "filtrados: %s"
+
+#: ui_curses.c:1579
+msgid "Error: "
+msgstr "Error: "
+
+#: ui_curses.c:1626
+msgid "y"
+msgstr "s"
+
+#: ui_curses.c:1640 ui_curses.c:1668
+msgid "Track"
+msgstr "Pista"
+
+#: ui_curses.c:1645
+msgid "Artist/album"
+msgstr "Artista/album"
+
+#: ui_curses.c:1650
+msgid "Title"
+msgstr "Título"
+
+#: ui_curses.c:1653 ui_curses.c:1671
+msgid "File/Directory"
+msgstr "Archivo/Directorio"
+
+#: ui_curses.c:1656 ui_curses.c:1674
+msgid "Filter"
+msgstr "Filtro"
+
+#: ui_curses.c:1659 ui_curses.c:1677
+msgid "Binding/command/option"
+msgstr "Atajo/comando/opción"
+
+#: ui_curses.c:1681
+#, c-format
+msgid "%s not found: %s"
+msgstr "No se encontró %s: %s"
+
+#~ msgid "not enough arguments\n"
+#~ msgstr "faltan argumentos\n"
+
+#~ msgid "not enough arguments"
+#~ msgstr "faltan argumentos"
