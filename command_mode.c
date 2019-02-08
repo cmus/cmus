@@ -742,7 +742,7 @@ static void cmd_quit(char *arg)
 {
 	int flag = parse_flags((const char **)&arg, "i");
 	if (!worker_has_job_by_type(JOB_TYPE_ANY)) {
-		if (flag != 'i' || yes_no_query(_("Quit cmus? [y/N]")))
+		if (flag != 'i' || yes_no_query("Quit cmus? [y/N]"))
 			cmus_running = 0;
 	} else {
 		if (yes_no_query("Tracks are being added. Quit and truncate playlist(s)? [y/N]"))

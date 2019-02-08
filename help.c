@@ -28,6 +28,7 @@
 #include "ui_curses.h"
 #include "options.h"
 #include "cmdline.h"
+#include "utils.h"
 
 #include <stdio.h>
 
@@ -272,7 +273,7 @@ void help_remove(void)
 	ent = iter_to_help_entry(&sel);
 	switch (ent->type) {
 	case HE_BOUND:
-		if (yes_no_query(_("Remove selected binding? [y/N]")))
+		if (yes_no_query("Remove selected binding? [y/N]"))
 			key_unbind(key_context_names[ent->binding->ctx],
 					ent->binding->key->name, 0);
 		break;

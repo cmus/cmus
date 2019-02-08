@@ -1558,7 +1558,7 @@ void info_msg(const char *format, ...)
 	va_list ap;
 
 	va_start(ap, format);
-	vsnprintf(error_buf, sizeof(error_buf), format, ap);
+	vsnprintf(error_buf, sizeof(error_buf), _(format), ap);
 	va_end(ap);
 
 	if (client_fd != -1) {
@@ -1574,10 +1574,11 @@ void info_msg(const char *format, ...)
 void error_msg(const char *format, ...)
 {
 	va_list ap;
+	const char *error_key = _("Error: ");
 
-	strcpy(error_buf, _("Error: "));
+	strcpy(error_buf, error_key);
 	va_start(ap, format);
-	vsnprintf(error_buf + 7, sizeof(error_buf) - 7, format, ap);
+	vsnprintf(error_buf + strlen(error_key), sizeof(error_buf) - strlen(error_key), _(format), ap);
 	va_end(ap);
 
 	d_print("%s\n", error_buf);
@@ -1605,7 +1606,7 @@ int yes_no_query(const char *format, ...)
 	int ret = 0;
 
 	va_start(ap, format);
-	vsnprintf(buffer, sizeof(buffer), format, ap);
+	vsnprintf(buffer, sizeof(buffer), _(format), ap);
 	va_end(ap);
 
 	move(LINES - 1, 0);
