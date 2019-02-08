@@ -1090,10 +1090,9 @@ static const char *pretty(const char *path)
 	return buf;
 }
 
-static const char * const sorted_names[2] = { "", "sorted by " };
-
 static void update_editable_window(struct editable *e, const char *title, const char *filename)
 {
+	const char * sorted_names[2] = { "", _("sorted by ") };
 	char buf[512];
 	int pos;
 
