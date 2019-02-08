@@ -21,7 +21,7 @@ msgstr ""
 "Project-Id-Version: cmus v2.8.0-1-g7f12156\n"
 "Report-Msgid-Bugs-To: nahueljose@gmail.com\n"
 "POT-Creation-Date: 2019-02-08 15:51-0300\n"
-"PO-Revision-Date: 2019-02-08 16:08-0300\n"
+"PO-Revision-Date: 2019-02-08 17:18-0300\n"
 "Last-Translator: Nahuel <nahueljose@gmail.com>\n"
 "Language-Team: Spanish\n"
 "Language: es\n"
@@ -76,7 +76,7 @@ msgstr ":clear solo funciona en las vistas 1-4"
 #: command_mode.c:96
 #, c-format
 msgid "adding '%s': %s"
-msgstr ""
+msgstr "agregando  '%s': %s"
 
 #: command_mode.c:120
 msgid ":add only works in views 1-4"
@@ -85,12 +85,12 @@ msgstr ":add solo funciona en las vistas 1-4"
 #: command_mode.c:130
 #, c-format
 msgid "loading '%s': %s"
-msgstr ""
+msgstr "cargando '%s': %s"
 
 #: command_mode.c:139
 #, c-format
 msgid "loading '%s': not a playlist file"
-msgstr ""
+msgstr "cargando '%s': no es un archivo de playlist"
 
 #: command_mode.c:163
 msgid ":load only works in views 1-2"
@@ -98,7 +98,7 @@ msgstr ":load solo funciona en las vistas 1-2"
 
 #: command_mode.c:182
 msgid "need a file as argument, no default stored yet"
-msgstr ""
+msgstr "se necesita un archivo como argumento, ninguno almacenado por defecto aún"
 
 #: command_mode.c:187
 #, c-format
@@ -175,7 +175,7 @@ msgstr "¿Salir de cmus? [s/N]"
 
 #: command_mode.c:748
 msgid "Tracks are being added. Quit and truncate playlist(s)? [y/N]"
-msgstr ""
+msgstr "Se están agregando pistas. Salir y truncar playlist? [s/N]"
 
 #: command_mode.c:764 command_mode.c:776
 #, c-format
@@ -196,36 +196,36 @@ msgstr ""
 
 #: command_mode.c:990
 msgid "Command execution is supported only in views 1-4"
-msgstr ""
+msgstr "Ejecución de comandos solo soportada en vistas  1-4"
 
 #: command_mode.c:1046
 #, c-format
 msgid "Execute %s for the %d selected files? [y/N]"
-msgstr ""
+msgstr "Ejecutar %s para los %d archivos seleccionados? [y/N]"
 
 #: command_mode.c:1047 input.c:895
 msgid "Aborted"
-msgstr ""
+msgstr "Abortado"
 
 #: command_mode.c:1055
 #, c-format
 msgid "executing %s: %s"
-msgstr ""
+msgstr "ejecutando %s: %s"
 
 #: command_mode.c:1061
 #, c-format
 msgid "%s returned %d"
-msgstr ""
+msgstr "%s devolvió %d"
 
 #: command_mode.c:1064
 #, c-format
 msgid "%s received signal %d"
-msgstr ""
+msgstr "%s recibió la señal %d"
 
 #: command_mode.c:1093
 #, c-format
 msgid "executing '%s': %s"
-msgstr ""
+msgstr "ejecutando '%s': %s"
 
 #: command_mode.c:1121 command_mode.c:1224 command_mode.c:1376 input.c:852
 #: input.c:894 output.c:335 ui_curses.c:1223
@@ -235,7 +235,7 @@ msgstr ""
 
 #: command_mode.c:1126
 msgid "echo with {} in its arguments is supported only in views 1-4"
-msgstr ""
+msgstr "echo with {} in its arguments is supported only in views 1-4"
 
 #: command_mode.c:1154
 #, c-format
@@ -249,11 +249,11 @@ msgstr ""
 
 #: command_mode.c:1271
 msgid ":pl-export only works in view 3"
-msgstr ""
+msgstr ":pl-export solo funciona en la vista 3"
 
 #: command_mode.c:1279
 msgid "For convenience, you can not add \"..\" directory from the browser view"
-msgstr ""
+msgstr "Por conveniencia no se puede agregar el directorio \"..\" desde la vista de explorador"
 
 #: command_mode.c:1296
 msgid "not enough arguments"
@@ -261,15 +261,15 @@ msgstr "faltan argumentos"
 
 #: command_mode.c:1309
 msgid ":pl-rename only works in view 3"
-msgstr ""
+msgstr ":pl-rename solo funciona en la vista 3"
 
 #: command_mode.c:1702 command_mode.c:1780
 msgid "invalid argument\n"
-msgstr ""
+msgstr "argumento inválido\n"
 
 #: command_mode.c:1909 command_mode.c:1972
 msgid "argument must be positive integer"
-msgstr ""
+msgstr "el argumento debe ser un entero positivo"
 
 #: command_mode.c:2841
 msgid "unknown command\n"
@@ -277,26 +277,26 @@ msgstr "comando desconocido\n"
 
 #: command_mode.c:2849
 msgid "ambiguous command\n"
-msgstr ""
+msgstr "comando ambiguo\n"
 
 #: filters.c:163 filters.c:354 filters.c:428
 #, c-format
 msgid "error parsing filter %s: %s"
-msgstr ""
+msgstr "error interpretando filtro %s: %s"
 
 #: filters.c:197 filters.c:440
 #, c-format
 msgid "recursion detected in filter %s"
-msgstr ""
+msgstr "se detectó recursión en el filtro %s"
 
 #: filters.c:199 filters.c:442
 #, c-format
 msgid "error parsing filter: %s"
-msgstr ""
+msgstr "error interpretando filtro: %s"
 
 #: filters.c:237
 msgid "filter name too long"
-msgstr ""
+msgstr "nombre de filtro demasiado largo"
 
 #: filters.c:252
 #, c-format
@@ -306,15 +306,15 @@ msgstr "no existe el filtro: %s"
 #: filters.c:307
 #, c-format
 msgid "Delete filter '%s'? [y/N]"
-msgstr ""
+msgstr "¿Borrar filtro '%s'? [s/N]"
 
 #: filters.c:339
 msgid "invalid argument ('key=value' expected)"
-msgstr ""
+msgstr "argumento inválido (se espera 'key=value')"
 
 #: filters.c:346
 msgid "invalid filter name (can only contain 'a-zA-Z0-9_-' characters)"
-msgstr ""
+msgstr "nombre de filtro inválido (solo puede contener los caracteres  'a-zA-Z0-9_-')"
 
 #: help.c:115
 msgid "Keybindings"
@@ -358,7 +358,7 @@ msgstr ""
 #: keys.c:439
 #, c-format
 msgid "invalid context '%s'"
-msgstr ""
+msgstr "contexto inválido '%s'"
 
 #: keys.c:451
 #, c-format
@@ -367,12 +367,12 @@ msgstr "tecla inválida '%s'"
 
 #: keys.c:483
 msgid "No such binding"
-msgstr ""
+msgstr "No existe atajo"
 
 #: keys.c:485
 #, c-format
 msgid "bind %s %s %s"
-msgstr ""
+msgstr "bind %s %s %s"
 
 #: keys.c:542
 #, c-format
@@ -413,7 +413,7 @@ msgstr ""
 #: options.c:1447
 #, c-format
 msgid "no such option %s"
-msgstr ""
+msgstr "no existe opción %s"
 
 #: options.c:1522 options.c:1535 options.c:1657
 #, c-format
@@ -431,7 +431,7 @@ msgstr ""
 
 #: pl.c:426
 msgid "Delete selected playlist? [y/N]"
-msgstr ""
+msgstr "¿Borrar playlist seleccionada? [s/N]"
 
 #: pl.c:511
 msgid "playlists cannot contain the '/' character"
