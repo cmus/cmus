@@ -54,6 +54,7 @@
 #ifdef HAVE_CONFIG
 #include "config/curses.h"
 #include "config/iconv.h"
+#include "config/libintl.h"
 #endif
 
 #include <unistd.h>
@@ -74,6 +75,9 @@
 #include <stdarg.h>
 #include <math.h>
 #include <sys/time.h>
+#ifdef HAVE_LIBINTL
+#include <libintl.h>
+#endif
 
 #if defined(__sun__) || defined(__CYGWIN__)
 /* TIOCGWINSZ */
@@ -1623,7 +1627,7 @@ int yes_no_query(const char *format, ...)
 
 	while (1) {
 		int ch = getch();
-		char *user_input = _("y");
+		const char *user_input = _("y");
 
 		if (ch == ERR || ch == 0)
 			continue;
@@ -2534,8 +2538,10 @@ int main(int argc, char *argv[])
 
 	misc_init();
 
+	#ifdef HAVE_LIBINTL
   bindtextdomain ("cmus", cmus_locale_dir);
   textdomain ("cmus");
+	#endif
 
 	if (server_address == NULL)
 		server_address = xstrdup(cmus_socket_path);

@@ -567,6 +567,7 @@ check check_pthread
 check check_rtsched
 check check_ncurses
 check check_iconv
+check check_libintl
 check_header byteswap.h && HAVE_BYTESWAP_H=y
 check_string_function "strdup" && HAVE_STRDUP=y
 check_string_function "strndup" && HAVE_STRNDUP=y
@@ -633,6 +634,7 @@ config_header config/utils.h HAVE_BYTESWAP_H
 config_header config/iconv.h HAVE_ICONV
 config_header config/samplerate.h HAVE_SAMPLERATE
 config_header config/xmalloc.h HAVE_STRDUP HAVE_STRNDUP
+config_header config/libintl.h HAVE_LIBINTL
 
 CFLAGS="${CFLAGS} -DHAVE_CONFIG"
 
