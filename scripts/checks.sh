@@ -714,16 +714,11 @@ check_libintl()
 	msg_checking "for working libintl"
 	if try_compile_link '
 #include <stdio.h>
-#include <stdlib.h>
 #include <libintl.h>
-#include <locale.h>
 
 int main(int argc, char *argv[]) {
-  setlocale (LC_ALL, "");
   bindtextdomain ("cmus_configure", "/usr/share/locale/");
   textdomain ("cmus_configure");
-  printf(gettext("gettext works\n"));
-
   return 0;
 }'
 	then
