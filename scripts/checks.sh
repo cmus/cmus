@@ -486,7 +486,7 @@ __compile_failed()
 }
 
 # tries to link against a lib
-# 
+#
 # @function:  some function
 # @flags:     extra flags (optional)
 check_function()
@@ -702,6 +702,37 @@ int main(int argc, char *argv[]) {
 		msg_error "Your system doesn't have iconv!"
 		msg_error "This means that no charset conversion can be done, so all"
 		msg_error "your tracks need to be encoded in your system charset!"
+	fi
+
+	return 0
+}
+
+# check for libintl
+check_libintl()
+{
+	HAVE_LIBINTL=n
+	msg_checking "for working libintl"
+	if try_compile_link '
+#include <stdio.h>
+#include <stdlib.h>
+#include <libintl.h>
+#include <locale.h>
+
+int main(int argc, char *argv[]) {
+  setlocale (LC_ALL, "");
+  bindtextdomain ("cmus_configure", "/usr/share/locale/");
+  textdomain ("cmus_configure");
+  printf(gettext("gettext works\n"));
+
+  return 0;
+}'
+	then
+		msg_result "yes"
+		HAVE_LIBINTL=y
+	else
+		msg_result "no"
+		msg_error "Your system doesn't have libintl!"
+		msg_error "This means that no localization can be made on the UI!"
 	fi
 
 	return 0
