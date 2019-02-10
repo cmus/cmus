@@ -492,7 +492,6 @@ static char *auto_artist_sort_name(const char *name)
 	const char *name_orig = name;
 	char *buf;
 
-	/* todo: improve this to support localization */
 	if (strncasecmp(name, "the ", 4) != 0)
 		return NULL;
 

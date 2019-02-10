@@ -2539,8 +2539,8 @@ int main(int argc, char *argv[])
 	misc_init();
 
 	#ifdef HAVE_LIBINTL
-  bindtextdomain ("cmus", cmus_locale_dir);
-  textdomain ("cmus");
+	bindtextdomain ("cmus", cmus_locale_dir);
+	textdomain ("cmus");
 	#endif
 
 	if (server_address == NULL)
