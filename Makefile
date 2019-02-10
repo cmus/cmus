@@ -264,7 +264,7 @@ quiet_cmd_ttman = MAN    $@
 
 data		= $(wildcard data/*)
 
-clean		+= *.o ip/*.lo op/*.lo ip/*.so op/*.so cmus libcmus.a cmus.def cmus.base cmus.exp cmus-remote Doc/*.o Doc/ttman Doc/*.1 Doc/*.7 .install.log
+clean		+= *.o ip/*.lo op/*.lo ip/*.so op/*.so *.lo cmus libcmus.a cmus.def cmus.base cmus.exp cmus-remote Doc/*.o Doc/ttman Doc/*.1 Doc/*.7 .install.log
 distclean	+= .version config.mk config/*.h tags
 
 main: cmus cmus-remote
