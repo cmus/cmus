@@ -487,6 +487,7 @@ HAVE_BYTESWAP_H=n
 HAVE_STRDUP=n
 HAVE_STRNDUP=n
 HAVE_SAMPLERATE=n
+HAVE_LIBINTL=n
 # unset CONFIG_* variables: if check succeeds 'y', otherwise 'n'
 
 USAGE="
@@ -567,7 +568,7 @@ check check_pthread
 check check_rtsched
 check check_ncurses
 check check_iconv
-check check_libintl
+check_header libintl.h && check_libintl && HAVE_LIBINTL=y
 check_header byteswap.h && HAVE_BYTESWAP_H=y
 check_string_function "strdup" && HAVE_STRDUP=y
 check_string_function "strndup" && HAVE_STRNDUP=y
