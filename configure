@@ -447,7 +447,7 @@ check_ffmpeg()
 	topdir=`dirname "$0"`
 	ffmpeg_code=`cat "$topdir"/ip/ffmpeg.c | sed 's/\\\n//g'`
 	msg_checking "for successful build of ffmpeg.c"
-	if try_compile_link "$ffmpeg_code" $cflags $libs
+	if try_compile_link "$ffmpeg_code" $cflags -I$topdir/ip $libs
 	then
 		msg_result yes
 		return 0

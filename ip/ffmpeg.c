@@ -16,13 +16,13 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ip.h"
-#include "xmalloc.h"
-#include "debug.h"
-#include "utils.h"
-#include "comment.h"
+#include "../ip.h"
+#include "../xmalloc.h"
+#include "../debug.h"
+#include "../utils.h"
+#include "../comment.h"
 #ifdef HAVE_CONFIG
-#include "config/ffmpeg.h"
+#include "../config/ffmpeg.h"
 #endif
 
 #include <stdio.h>

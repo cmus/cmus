@@ -15,11 +15,11 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "comment.h"
-#include "debug.h"
-#include "ip.h"
-#include "utils.h"
-#include "xmalloc.h"
+#include "../comment.h"
+#include "../debug.h"
+#include "../ip.h"
+#include "../utils.h"
+#include "../xmalloc.h"
 #include <ayemu.h>
 #include <string.h>
 

@@ -16,11 +16,11 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "op.h"
-#include "xmalloc.h"
-#include "utils.h"
-#include "misc.h"
-#include "debug.h"
+#include "../op.h"
+#include "../xmalloc.h"
+#include "../utils.h"
+#include "../misc.h"
+#include "../debug.h"
 
 /*
  * <ao/ao.h> uses FILE but doesn't include stdio.h.

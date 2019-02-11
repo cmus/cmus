@@ -18,11 +18,11 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "op.h"
-#include "sf.h"
-#include "utils.h"
-#include "xmalloc.h"
-#include "debug.h"
+#include "../op.h"
+#include "../sf.h"
+#include "../utils.h"
+#include "../xmalloc.h"
+#include "../debug.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>

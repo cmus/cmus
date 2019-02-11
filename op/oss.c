@@ -16,11 +16,11 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "op.h"
-#include "sf.h"
-#include "xmalloc.h"
-#include "debug.h"
-#include "utils.h"
+#include "../op.h"
+#include "../sf.h"
+#include "../xmalloc.h"
+#include "../debug.h"
+#include "../utils.h"
 
 #if defined(__OpenBSD__)
 #include <soundcard.h>

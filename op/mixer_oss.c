@@ -16,11 +16,11 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "mixer.h"
-#include "op.h"
-#include "utils.h"
-#include "xmalloc.h"
-#include "debug.h"
+#include "../mixer.h"
+#include "../op.h"
+#include "../utils.h"
+#include "../xmalloc.h"
+#include "../debug.h"
 
 #include <strings.h>
 #include <unistd.h>

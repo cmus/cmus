@@ -16,11 +16,11 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ip.h"
-#include "comment.h"
-#include "xmalloc.h"
-#include "debug.h"
-#include "utils.h"
+#include "../ip.h"
+#include "../comment.h"
+#include "../xmalloc.h"
+#include "../debug.h"
+#include "../utils.h"
 
 #include <FLAC/export.h>
 #include <FLAC/stream_decoder.h>

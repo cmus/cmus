@@ -27,10 +27,10 @@
 #include <unistd.h>
 #include <sndio.h>
 
-#include "op.h"
-#include "mixer.h"
-#include "sf.h"
-#include "xmalloc.h"
+#include "../op.h"
+#include "../mixer.h"
+#include "../sf.h"
+#include "../xmalloc.h"
 
 static sample_format_t sndio_sf;
 static struct sio_par par;
