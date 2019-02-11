@@ -519,7 +519,7 @@ const int ip_priority = 30;
 const char *const ip_extensions[] = {
 	"aa", "aac", "ac3", "aif", "aifc", "aiff", "ape", "au", "fla", "flac",
 	"m4a", "m4b", "mka", "mkv", "mp+", "mp2", "mp3", "mp4", "mpc", "mpp",
-	"ogg", "shn", "tak", "tta", "wav", "webm", "wma", "wv",
+	"ogg", "opus", "shn", "tak", "tta", "wav", "webm", "wma", "wv",
 #ifdef USE_FALLBACK_IP
 	"*",
 #endif
