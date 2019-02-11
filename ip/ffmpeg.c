@@ -128,9 +128,11 @@ static void ffmpeg_init(void)
 
 	av_log_set_level(AV_LOG_QUIET);
 
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 18, 100)
 	/* We could register decoders explicitly to save memory, but we have to
 	 * be careful about compatibility. */
 	av_register_all();
+#endif
 }
 
 static int ffmpeg_open(struct input_plugin_data *ip_data)
@@ -143,6 +145,9 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 	AVCodec *codec;
 	AVCodecContext *cc = NULL;
 	AVFormatContext *ic = NULL;
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
+	AVCodecParameters *cp = NULL;
+#endif
 	SwrContext *swr = NULL;
 
 	ffmpeg_init();
@@ -162,11 +167,20 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 		}
 
 		for (i = 0; i < ic->nb_streams; i++) {
+
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
+			cp = ic->streams[i]->codecpar;
+			if (cp->codec_type == AVMEDIA_TYPE_AUDIO) {
+				stream_index = i;
+				break;
+			}
+#else
 			cc = ic->streams[i]->codec;
 			if (cc->codec_type == AVMEDIA_TYPE_AUDIO) {
 				stream_index = i;
 				break;
 			}
+#endif
 		}
 
 		if (stream_index == -1) {
@@ -175,7 +189,13 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 			break;
 		}
 
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
+		codec = avcodec_find_decoder(cp->codec_id);
+		cc = avcodec_alloc_context3(codec);
+		avcodec_parameters_to_context(cc, cp);
+#else
 		codec = avcodec_find_decoder(cc->codec_id);
+#endif
 		if (!codec) {
 			d_print("codec not found: %d, %s\n", cc->codec_id, avcodec_get_name(cc->codec_id));
 			err = -IP_ERROR_UNSUPPORTED_FILE_TYPE;
@@ -196,6 +216,9 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 
 	if (err < 0) {
 		/* Clean up.  cc is never opened at this point.  (See above assumption.) */
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
+		avcodec_free_context(&cc);
+#endif
 		avformat_close_input(&ic);
 		return err;
 	}
@@ -207,6 +230,9 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 	priv->input = ffmpeg_input_create();
 	if (priv->input == NULL) {
 		avcodec_close(cc);
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
+		avcodec_free_context(&cc);
+#endif
 		avformat_close_input(&ic);
 		free(priv);
 		return -IP_ERROR_INTERNAL;
@@ -252,6 +278,9 @@ static int ffmpeg_close(struct input_plugin_data *ip_data)
 	struct ffmpeg_private *priv = ip_data->private;
 
 	avcodec_close(priv->codec_context);
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
+	avcodec_free_context(&priv->codec_context);
+#endif
 	avformat_close_input(&priv->input_context);
 	swr_free(&priv->swr);
 	ffmpeg_input_free(priv->input);
@@ -305,7 +334,20 @@ static int ffmpeg_fill_buffer(AVFormatContext *ic, AVCodecContext *cc, struct ff
 			AVPacket avpkt;
 			av_new_packet(&avpkt, input->curr_pkt_size);
 			memcpy(avpkt.data, input->curr_pkt_buf, input->curr_pkt_size);
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
+			if (avcodec_send_packet(cc, &avpkt) == 0) {
+				got_frame = !avcodec_receive_frame(cc, frame);
+				if (got_frame)
+					len = input->curr_pkt_size;
+				else
+					len = 0;
+			} else {
+				got_frame = 0;
+				len = 0;
+			}
+#else
 			len = avcodec_decode_audio4(cc, frame, &got_frame, &avpkt);
+#endif
 #if LIBAVCODEC_VERSION_MAJOR >= 56
 			av_packet_unref(&avpkt);
 #else
