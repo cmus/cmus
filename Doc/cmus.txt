@@ -381,6 +381,10 @@ bind [-f] <context> <key> <command>
 	example *i* selects the current track in views 1-3 but in browser it
 	is overridden to toggle showing of hidden files.
 
+	When setting custom bindings in `$XDG_CONFIG_HOME/cmus/rc`, it is
+	recommended to use the -f option, or else bind may fail due to an
+	existing binding in the autosave or system-level config files.
+
 browser-up (*backspace*)
 	Change to parent directory in browser view (5). This command only
 	makes sense to be bound to the *browser* key context although it's
