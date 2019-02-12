@@ -289,7 +289,7 @@ check_vorbis()
 
 check_libsystemd()
 {
-	pkg_config LIBSYSTEMD "libsystemd"
+	pkg_config LIBSYSTEMD "libsystemd" || pkg_config LIBSYSTEMD "libelogind >= 239.3"
 	return $?
 }
 
