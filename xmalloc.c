@@ -31,9 +31,14 @@ void malloc_fail(void)
 	exit(42);
 }
 
-#ifndef HAVE_STRNDUP
 char *xstrndup(const char *str, size_t n)
 {
+#ifdef HAVE_STRNDUP
+	char *s = strndup(str, n);
+	if (unlikely(s == NULL))
+		malloc_fail();
+	return s;
+#else
 	size_t len;
 	char *s;
 
@@ -43,5 +48,5 @@ char *xstrndup(const char *str, size_t n)
 	memcpy(s, str, len);
 	s[len] = 0;
 	return s;
-}
 #endif
+}

@@ -73,17 +73,7 @@ static inline char * CMUS_MALLOC xstrdup(const char *str)
 #endif
 }
 
-#ifdef HAVE_STRNDUP
-static inline char * CMUS_MALLOC xstrndup(const char *str, size_t n)
-{
-	char *s = strndup(str, n);
-	if (unlikely(s == NULL))
-		malloc_fail();
-	return s;
-}
-#else
 char * CMUS_MALLOC xstrndup(const char *str, size_t n);
-#endif
 
 static inline void free_str_array(char **array)
 {
