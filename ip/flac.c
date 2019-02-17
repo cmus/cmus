@@ -217,6 +217,8 @@ static void metadata_cb(const Dec *dec, const FLAC__StreamMetadata *metadata, vo
 				break;
 			case 20:
 			case 24:
+				bits = 24;
+				break;
 			case 32:
 				bits = 32;
 				break;
