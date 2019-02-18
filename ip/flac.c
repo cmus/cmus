@@ -208,22 +208,9 @@ static void metadata_cb(const Dec *dec, const FLAC__StreamMetadata *metadata, vo
 			const FLAC__StreamMetadata_StreamInfo *si = &metadata->data.stream_info;
 			int bits = 0;
 
-			priv->bps = si->bits_per_sample;
-			switch (si->bits_per_sample) {
-			case 8:
-				bits = 8;
-				break;
-			case 12:
-			case 16:
-				bits = 16;
-				break;
-			case 20:
-			case 24:
-				bits = 24;
-				break;
-			case 32:
-				bits = 32;
-				break;
+			if (si->bits_per_sample >= 4 && si->bits_per_sample <= 32) {
+				bits = priv->bps = si->bits_per_sample;
+				bits = 8 * ((bits + 7) / 8);
 			}
 
 			ip_data->sf = sf_rate(si->sample_rate) |
