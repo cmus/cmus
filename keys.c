@@ -24,11 +24,16 @@
 #include "ui_curses.h"
 #include "command_mode.h"
 #include "xmalloc.h"
+#include "utils.h"
 
 #include "window.h"
 #include "options.h"
 #include "editable.h"
 #include "lib.h"
+
+#ifdef HAVE_LIBINTL
+#include <libintl.h>
+#endif
 
 const char * const key_context_names[NR_CTXS + 1] = {
 	"browser",

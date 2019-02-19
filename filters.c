@@ -27,9 +27,13 @@
 #include "file.h"
 #include "ui_curses.h"
 #include "xmalloc.h"
+#include "utils.h"
 
 #include <stdio.h>
 #include <ctype.h>
+#ifdef HAVE_LIBINTL
+#include <libintl.h>
+#endif
 
 struct window *filters_win;
 struct searchable *filters_searchable;
