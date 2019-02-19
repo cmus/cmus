@@ -710,7 +710,6 @@ int main(int argc, char *argv[]) {
 # check for libintl
 check_libintl()
 {
-	HAVE_LIBINTL=n
 	msg_checking "for working libintl"
 	if try_compile_link '
 #include <stdio.h>
@@ -723,12 +722,13 @@ int main(int argc, char *argv[]) {
 }'
 	then
 		msg_result "yes"
-		HAVE_LIBINTL=y
+
+		return 0
 	else
 		msg_result "no"
 		msg_error "Your system doesn't have libintl!"
 		msg_error "This means that no localization can be made on the UI!"
-	fi
 
-	return 0
+		return 1
+	fi
 }
