@@ -25,6 +25,7 @@
 #include "misc.h"
 #include "options.h"
 #include "uchar.h"
+#include "utils.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -33,6 +34,9 @@
 #include <string.h>
 #include <errno.h>
 #include <sys/mman.h>
+#ifdef HAVE_LIBINTL
+#include <libintl.h>
+#endif
 
 struct window *browser_win;
 struct searchable *browser_searchable;
