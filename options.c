@@ -59,6 +59,7 @@ char *output_plugin = NULL;
 char *status_display_program = NULL;
 char *server_password;
 int auto_reshuffle = 1;
+int autosave = 1;
 int confirm_run = 1;
 int resume_cmus = 0;
 int show_hidden = 0;
@@ -486,6 +487,21 @@ static void set_auto_reshuffle(void *data, const char *buf)
 static void toggle_auto_reshuffle(void *data)
 {
 	auto_reshuffle ^= 1;
+}
+
+static void get_autosave(void *data, char *buf, size_t size)
+{
+	strscpy(buf, bool_names[autosave], size);
+}
+
+static void set_autosave(void *data, const char *buf)
+{
+	parse_bool(buf, &autosave);
+}
+
+static void toggle_autosave(void *data)
+{
+	autosave ^= 1;
 }
 
 static void get_follow(void *data, char *buf, size_t size)
@@ -1322,6 +1338,7 @@ static const struct {
 } simple_options[] = {
 	DT(aaa_mode)
 	DT(auto_reshuffle)
+    DT(autosave)
 	DN_FLAGS(device, OPT_PROGRAM_PATH)
 	DN(buffer_seconds)
 	DN(scroll_offset)
@@ -1538,6 +1555,9 @@ void options_load(void)
 
 void options_exit(void)
 {
+    if (!autosave) {
+        return;
+    }
 	struct cmus_opt *opt;
 	struct filter_entry *filt;
 	char filename_tmp[512];

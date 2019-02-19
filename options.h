@@ -127,6 +127,7 @@ extern int auto_expand_albums_search;
 extern int auto_expand_albums_selcur;
 extern int show_all_tracks;
 extern int auto_reshuffle;
+extern int autosave;
 extern int confirm_run;
 extern int resume_cmus;
 extern int show_hidden;
