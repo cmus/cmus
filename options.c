@@ -1338,7 +1338,7 @@ static const struct {
 } simple_options[] = {
 	DT(aaa_mode)
 	DT(auto_reshuffle)
-    DT(autosave)
+	DT(autosave)
 	DN_FLAGS(device, OPT_PROGRAM_PATH)
 	DN(buffer_seconds)
 	DN(scroll_offset)
@@ -1555,9 +1555,9 @@ void options_load(void)
 
 void options_exit(void)
 {
-    if (!autosave) {
-        return;
-    }
+	if (!autosave) {
+		return;
+	}
 	struct cmus_opt *opt;
 	struct filter_entry *filt;
 	char filename_tmp[512];
