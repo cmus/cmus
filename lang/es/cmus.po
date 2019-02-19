@@ -20,8 +20,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: cmus v2.8.0-1-g7f12156\n"
 "Report-Msgid-Bugs-To: nahueljose@gmail.com\n"
-"POT-Creation-Date: 2019-02-08 15:51-0300\n"
-"PO-Revision-Date: 2019-02-08 17:22-0300\n"
+"POT-Creation-Date: 2019-02-19 13:29-0300\n"
+"PO-Revision-Date: 2019-02-19 13:29-0300\n"
 "Last-Translator: Nahuel <nahueljose@gmail.com>\n"
 "Language-Team: Spanish\n"
 "Language: es\n"
@@ -29,7 +29,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Poedit 2.2.1\n"
+"X-Generator: Poedit 1.8.7.1\n"
 "X-Poedit-KeywordsList: _\n"
 "X-Poedit-Basepath: ../..\n"
 "X-Poedit-SearchPath-0: .\n"
@@ -98,7 +98,8 @@ msgstr ":load solo funciona en las vistas 1-2"
 
 #: command_mode.c:182
 msgid "need a file as argument, no default stored yet"
-msgstr "se necesita un archivo como argumento, ninguno almacenado por defecto aún"
+msgstr ""
+"se necesita un archivo como argumento, ninguno almacenado por defecto aún"
 
 #: command_mode.c:187
 #, c-format
@@ -118,11 +119,11 @@ msgstr "no se puede guardar cuando se están agregando pistas"
 msgid "invalid option -%c"
 msgstr "opción inválida -%c"
 
-#: command_mode.c:364 command_mode.c:390 command_mode.c:2853 server.c:163
+#: command_mode.c:364 command_mode.c:390 command_mode.c:2856 server.c:163
 msgid "not enough arguments\n"
 msgstr "faltan argumentos\n"
 
-#: command_mode.c:377 command_mode.c:2857
+#: command_mode.c:377 command_mode.c:2860
 msgid "too many arguments\n"
 msgstr "demasiados argumentos\n"
 
@@ -142,7 +143,9 @@ msgstr ""
 
 #: command_mode.c:574
 msgid "To get started with cmus, read cmus-tutorial(7) and cmus(1) man pages"
-msgstr "Para empezar a usar cmus, lea las páginas de man de cmus-tutorial(7) y cmus(1)"
+msgstr ""
+"Para empezar a usar cmus, lea las páginas de man de cmus-tutorial(7) y "
+"cmus(1)"
 
 #: command_mode.c:590
 msgid ":invert only works in views 2-4"
@@ -169,113 +172,104 @@ msgstr "se esperan 3 argumentos (contexto, tecla y función)\n"
 msgid "expecting 2 arguments (context and key)\n"
 msgstr "se esperan 2 argumentos (contexto y tecla)\n"
 
-#: command_mode.c:745
+#: command_mode.c:746
 msgid "Quit cmus? [y/N]"
 msgstr "¿Salir de cmus? [s/N]"
 
-#: command_mode.c:748
+#: command_mode.c:750
 msgid "Tracks are being added. Quit and truncate playlist(s)? [y/N]"
 msgstr "Se están agregando pistas ¿Salir y truncar playlist? [s/N]"
 
-#: command_mode.c:764 command_mode.c:776
+#: command_mode.c:767 command_mode.c:779
 #, c-format
 msgid "sourcing %s: %s"
 msgstr ""
 
-#: command_mode.c:823
+#: command_mode.c:826
 msgid "`\"' expected"
 msgstr ""
 
-#: command_mode.c:914
+#: command_mode.c:917
 msgid "`'' expected"
 msgstr ""
 
-#: command_mode.c:957
+#: command_mode.c:960
 msgid "{} can be used only once"
 msgstr ""
 
-#: command_mode.c:990
+#: command_mode.c:993
 msgid "Command execution is supported only in views 1-4"
 msgstr "Ejecución de comandos solo soportada en vistas  1-4"
 
-#: command_mode.c:1046
+#: command_mode.c:1049
 #, c-format
 msgid "Execute %s for the %d selected files? [y/N]"
 msgstr "¿Ejecutar %s para los %d archivos seleccionados? [s/N]"
 
-#: command_mode.c:1047 input.c:895
+#: command_mode.c:1050 input.c:895
 msgid "Aborted"
 msgstr "Abortado"
 
-#: command_mode.c:1055
+#: command_mode.c:1058
 #, c-format
 msgid "executing %s: %s"
 msgstr "ejecutando %s: %s"
 
-#: command_mode.c:1061
+#: command_mode.c:1064
 #, c-format
 msgid "%s returned %d"
 msgstr "%s devolvió %d"
 
-#: command_mode.c:1064
+#: command_mode.c:1067
 #, c-format
 msgid "%s received signal %d"
 msgstr "%s recibió la señal %d"
 
-#: command_mode.c:1093
+#: command_mode.c:1096
 #, c-format
 msgid "executing '%s': %s"
 msgstr "ejecutando '%s': %s"
 
-#: command_mode.c:1121 command_mode.c:1224 command_mode.c:1376 input.c:852
-#: input.c:894 output.c:335 ui_curses.c:1223
-#, c-format
-msgid "%s"
-msgstr ""
-
-#: command_mode.c:1126
+#: command_mode.c:1129
 msgid "echo with {} in its arguments is supported only in views 1-4"
 msgstr "echo with {} in its arguments is supported only in views 1-4"
 
-#: command_mode.c:1154
-#, c-format
-msgid "%s%s%s"
-msgstr ""
-
-#: command_mode.c:1233
+#: command_mode.c:1236
 #, c-format
 msgid "expecting 1 or 2 arguments (total or L and R volumes [+-]INTEGER[%%])\n"
 msgstr ""
 
-#: command_mode.c:1271
+#: command_mode.c:1274
 msgid ":pl-export only works in view 3"
 msgstr ":pl-export solo funciona en la vista 3"
 
-#: command_mode.c:1279
+#: command_mode.c:1282
 msgid "For convenience, you can not add \"..\" directory from the browser view"
-msgstr "Por conveniencia no se puede agregar el directorio \"..\" desde la vista de explorador"
+msgstr ""
+"Por conveniencia no se puede agregar el directorio \"..\" desde la vista de "
+"explorador"
 
-#: command_mode.c:1296
+#: command_mode.c:1299
 msgid "not enough arguments"
 msgstr "faltan argumentos"
 
-#: command_mode.c:1309
+#: command_mode.c:1312
 msgid ":pl-rename only works in view 3"
 msgstr ":pl-rename solo funciona en la vista 3"
 
-#: command_mode.c:1702 command_mode.c:1780
+#: command_mode.c:1705 command_mode.c:1783
 msgid "invalid argument\n"
 msgstr "argumento inválido\n"
 
-#: command_mode.c:1909 command_mode.c:1972
+#: command_mode.c:1912 command_mode.c:1975
 msgid "argument must be positive integer"
 msgstr "el argumento debe ser un entero positivo"
 
-#: command_mode.c:2841
+#: command_mode.c:2844
 msgid "unknown command\n"
 msgstr "comando desconocido\n"
 
-#: command_mode.c:2849
+#: command_mode.c:2852
 msgid "ambiguous command\n"
 msgstr "comando ambiguo\n"
 
@@ -314,7 +308,8 @@ msgstr "argumento inválido (se espera 'key=value')"
 
 #: filters.c:346
 msgid "invalid filter name (can only contain 'a-zA-Z0-9_-' characters)"
-msgstr "nombre de filtro inválido (solo puede contener los caracteres  'a-zA-Z0-9_-')"
+msgstr ""
+"nombre de filtro inválido (solo puede contener los caracteres  'a-zA-Z0-9_-')"
 
 #: help.c:115
 msgid "Keybindings"
@@ -349,6 +344,11 @@ msgstr ""
 
 #: input.c:886
 msgid "non-negative integer expected"
+msgstr ""
+
+#: input.c:894
+#, c-format
+msgid "%s"
 msgstr ""
 
 #: input.c:900
@@ -470,126 +470,125 @@ msgstr ""
 msgid "Reload this playlist? [y/N]"
 msgstr ""
 
-#: search.c:73
-msgid "search hit BOTTOM, continuing at TOP"
-msgstr "la búsqueda llegó al FIN, continuando al INICIO"
-
 #: track_info.c:351
 #, c-format
 msgid "invalid sort key '%s'"
 msgstr ""
 
-#: tree.c:881
+#: tree.c:880
 msgid "<Various Artists>"
 msgstr "<Artistas Varios>"
 
-#: tree.c:883 tree.c:893
+#: tree.c:882 tree.c:892
 msgid "<No Name>"
 msgstr "<Sin Nombre>"
 
-#: tree.c:933 tree.c:934
+#: tree.c:932 tree.c:933
 msgid "<Stream>"
 msgstr "<Stream>"
 
-#: ui_curses.c:1017
+#: ui_curses.c:1021
 msgid "Artist / Album"
 msgstr "Artista / Album"
 
-#: ui_curses.c:1026
+#: ui_curses.c:1030
 msgid "Track%=Library"
 msgstr "Pista%=Biblioteca"
 
-#: ui_curses.c:1054
+#: ui_curses.c:1058
 msgid "Playlist"
 msgstr "Playlist"
 
-#: ui_curses.c:1069
+#: ui_curses.c:1073
 msgid "Track%=%{total}"
 msgstr "Pista%=%{total}"
 
-#: ui_curses.c:1095
+#: ui_curses.c:1099
 msgid "sorted by "
 msgstr "ordenado por "
 
-#: ui_curses.c:1106
+#: ui_curses.c:1110
 #, c-format
 msgid "%s %s - %d tracks"
 msgstr "%s %s - %d pistas"
 
-#: ui_curses.c:1109
+#: ui_curses.c:1113
 #, c-format
 msgid "%s - %d tracks"
 msgstr "%s - %d pistas"
 
-#: ui_curses.c:1114
+#: ui_curses.c:1118
 #, c-format
 msgid " (%d marked)"
 msgstr " (%d marcadas)"
 
-#: ui_curses.c:1127
+#: ui_curses.c:1131
 msgid "Library"
 msgstr "Biblioteca"
 
-#: ui_curses.c:1133
+#: ui_curses.c:1137
 msgid "Play Queue"
 msgstr "Cola de Reproducción"
 
-#: ui_curses.c:1148
+#: ui_curses.c:1152
 #, c-format
 msgid "Browser - %s"
 msgstr "Explorador - %s"
 
-#: ui_curses.c:1154
+#: ui_curses.c:1158
 msgid "Library Filters"
 msgstr "Filtros de Biblioteca"
 
-#: ui_curses.c:1159
+#: ui_curses.c:1163
 msgid "Settings"
 msgstr "Ajustes"
 
-#: ui_curses.c:1550
+#: ui_curses.c:1554
 #, c-format
 msgid "filtered: %s"
 msgstr "filtrados: %s"
 
-#: ui_curses.c:1578
+#: ui_curses.c:1581
 msgid "Error: "
 msgstr "Error: "
 
-#: ui_curses.c:1627
+#: ui_curses.c:1630
 msgid "y"
 msgstr "s"
 
-#: ui_curses.c:1641 ui_curses.c:1669
+#: ui_curses.c:1654 ui_curses.c:1682
 msgid "Track"
 msgstr "Pista"
 
-#: ui_curses.c:1646
+#: ui_curses.c:1659
 msgid "Artist/album"
 msgstr "Artista/album"
 
-#: ui_curses.c:1651
+#: ui_curses.c:1664
 msgid "Title"
 msgstr "Título"
 
-#: ui_curses.c:1654 ui_curses.c:1672
+#: ui_curses.c:1667 ui_curses.c:1685
 msgid "File/Directory"
 msgstr "Archivo/Directorio"
 
-#: ui_curses.c:1657 ui_curses.c:1675
+#: ui_curses.c:1670 ui_curses.c:1688
 msgid "Filter"
 msgstr "Filtro"
 
-#: ui_curses.c:1660 ui_curses.c:1678
+#: ui_curses.c:1673 ui_curses.c:1691
 msgid "Binding/command/option"
 msgstr "Atajo/comando/opción"
 
-#: ui_curses.c:1682
+#: ui_curses.c:1695
 #, c-format
 msgid "%s not found: %s"
 msgstr "No se encontró %s: %s"
 
-#: ui_curses.c:1871
+#: ui_curses.c:1884
 #, c-format
 msgid "couldn't run `%s': %s"
 msgstr "no se pudo ejecutar `%s': %s"
+
+#~ msgid "search hit BOTTOM, continuing at TOP"
+#~ msgstr "la búsqueda llegó al FIN, continuando al INICIO"
