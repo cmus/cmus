@@ -16,14 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ip.h"
-#include "debug.h"
-#include "input.h"
-#include "utils.h"
-#include "comment.h"
-#include "xmalloc.h"
-#include "cue_utils.h"
-#include "cue.h"
+#include "../ip.h"
+#include "../debug.h"
+#include "../input.h"
+#include "../utils.h"
+#include "../comment.h"
+#include "../xmalloc.h"
+#include "../cue_utils.h"
+#include "../cue.h"
 
 #include <stdio.h>
 #include <fcntl.h>

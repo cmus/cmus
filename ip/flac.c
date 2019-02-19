@@ -16,11 +16,11 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ip.h"
-#include "comment.h"
-#include "xmalloc.h"
-#include "debug.h"
-#include "utils.h"
+#include "../ip.h"
+#include "../comment.h"
+#include "../xmalloc.h"
+#include "../debug.h"
+#include "../utils.h"
 
 #include <FLAC/export.h>
 #include <FLAC/stream_decoder.h>
@@ -58,6 +58,7 @@ struct flac_private {
 	struct keyval *comments;
 	double duration;
 	long bitrate;
+	int bps;
 };
 
 static T(ReadStatus) read_cb(const Dec *dec, unsigned char *buf, size_t *size, void *data)
@@ -175,12 +176,12 @@ static FLAC__StreamDecoderWriteStatus write_cb(const Dec *dec, const FLAC__Frame
 
 	depth = frame->header.bits_per_sample;
 	if (!depth)
-		depth = bits;
+		depth = priv->bps;
 	nch = frame->header.channels;
 	dest = priv->buf + priv->buf_wpos;
 	for (i = 0; i < frames; i++) {
 		for (ch = 0; ch < channels; ch++) {
-			src = LE32(buf[ch % nch][i] << (bits -depth));
+			src = LE32(buf[ch % nch][i] << (bits - depth));
 			memcpy(dest, &src, bits / 8);
 			dest += bits / 8;
 		}
@@ -207,21 +208,9 @@ static void metadata_cb(const Dec *dec, const FLAC__StreamMetadata *metadata, vo
 			const FLAC__StreamMetadata_StreamInfo *si = &metadata->data.stream_info;
 			int bits = 0;
 
-			switch (si->bits_per_sample) {
-			case 8:
-				bits = 8;
-				break;
-			case 12:
-			case 16:
-				bits = 16;
-				break;
-			case 20:
-			case 24:
-				bits = 24;
-				break;
-			case 32:
-				bits = 32;
-				break;
+			if (si->bits_per_sample >= 4 && si->bits_per_sample <= 32) {
+				bits = priv->bps = si->bits_per_sample;
+				bits = 8 * ((bits + 7) / 8);
 			}
 
 			ip_data->sf = sf_rate(si->sample_rate) |
@@ -306,7 +295,8 @@ static int flac_open(struct input_plugin_data *ip_data)
 	const struct flac_private priv_init = {
 		.dec      = dec,
 		.duration = -1,
-		.bitrate  = -1
+		.bitrate  = -1,
+		.bps      = 0
 	};
 
 	if (!dec)

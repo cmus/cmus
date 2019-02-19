@@ -165,6 +165,17 @@ int u_copy_chars(char *dst, const char *src, int *width);
 int u_to_ascii(char *dst, const char *src, int len);
 
 /*
+ * @dst    destination buffer
+ * @src    null-terminated string
+ *
+ * Copies src into dst, changing all invalid utf8 bytes into <xx>,
+ * where xx is the value of the byte in hex.
+ *
+ * Expects dst to be large enough to fit src + the conversions.
+ */
+void u_to_utf8(char *dst, const char *src);
+
+/*
  * @str    null-terminated UTF-8 string, must be long enough
  * @width  how much to skip
  *

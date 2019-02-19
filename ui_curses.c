@@ -1603,7 +1603,7 @@ void error_msg(const char *format, ...)
 	}
 }
 
-int yes_no_query(const char *format, ...)
+enum ui_query_answer yes_no_query(const char *format, ...)
 {
 	char buffer[512];
 	va_list ap;
@@ -1629,11 +1629,21 @@ int yes_no_query(const char *format, ...)
 		int ch = getch();
 		const char *user_input = _("y");
 
-		if (ch == ERR || ch == 0)
+		if (ch == ERR || ch == 0) {
+			if (!cmus_running) {
+				ret = UI_QUERY_ANSWER_ERROR;
+				break;
+			}
 			continue;
-		if (ch == user_input[0])
-			ret = 1;
-		break;
+		}
+
+		if (ch == user_input[0]) {
+			ret = UI_QUERY_ANSWER_YES;
+			break;
+		} else {
+			ret = UI_QUERY_ANSWER_NO;
+			break;
+		}
 	}
 	update_commandline();
 	return ret;
@@ -1890,6 +1900,7 @@ static void sig_int(int sig)
 
 static void sig_shutdown(int sig)
 {
+	d_print("sig_shutdown %d\n", sig);
 	cmus_running = 0;
 }
 

@@ -27,9 +27,9 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "op.h"
-#include "sf.h"
-#include "xmalloc.h"
+#include "../op.h"
+#include "../sf.h"
+#include "../xmalloc.h"
 
 static sample_format_t sun_sf;
 static int sun_fd = -1;

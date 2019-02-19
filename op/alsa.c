@@ -48,11 +48,11 @@
  * SND_PCM_STATE_DISCONNECTED = 8,
  */
 
-#include "op.h"
-#include "utils.h"
-#include "xmalloc.h"
-#include "sf.h"
-#include "debug.h"
+#include "../op.h"
+#include "../utils.h"
+#include "../xmalloc.h"
+#include "../sf.h"
+#include "../debug.h"
 
 #define ALSA_PCM_NEW_HW_PARAMS_API
 #define ALSA_PCM_NEW_SW_PARAMS_API

@@ -16,12 +16,12 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ip.h"
-#include "xmalloc.h"
-#include "debug.h"
-#include "id3.h"
-#include "comment.h"
-#include "read_wrapper.h"
+#include "../ip.h"
+#include "../xmalloc.h"
+#include "../debug.h"
+#include "../id3.h"
+#include "../comment.h"
+#include "../read_wrapper.h"
 #include "aac.h"
 
 #include <neaacdec.h>

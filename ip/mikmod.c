@@ -19,11 +19,11 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ip.h"
-#include "xmalloc.h"
+#include "../ip.h"
+#include "../xmalloc.h"
 #include <mikmod.h>
-#include "debug.h"
-#include "comment.h"
+#include "../debug.h"
+#include "../comment.h"
 
 struct mik_private {
 	MODULE *file;

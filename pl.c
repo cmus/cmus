@@ -423,7 +423,7 @@ static void pl_delete_selected_pl(void)
 		return;
 	}
 
-	if (!yes_no_query("Delete selected playlist? [y/N]"))
+	if (yes_no_query("Delete selected playlist? [y/N]") != UI_QUERY_ANSWER_YES)
 		return;
 
 	struct playlist *pl = pl_visible;
@@ -609,7 +609,7 @@ void pl_import(const char *path)
 void pl_export_selected_pl(const char *path)
 {
 	char *tmp = expand_filename(path);
-	if (access(tmp, F_OK) != 0 || yes_no_query("File exists. Overwrite? [y/N]"))
+	if (access(tmp, F_OK) != 0 || yes_no_query("File exists. Overwrite? [y/N]") == UI_QUERY_ANSWER_YES)
 		cmus_save(pl_save_cb, tmp, pl_visible);
 	free(tmp);
 }
@@ -826,7 +826,7 @@ void pl_win_toggle(void)
 
 void pl_win_update(void)
 {
-	if (!yes_no_query("Reload this playlist? [y/N]"))
+	if (yes_no_query("Reload this playlist? [y/N]") != UI_QUERY_ANSWER_YES)
 		return;
 
 	pl_clear_visible_pl();

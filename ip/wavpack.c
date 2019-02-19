@@ -16,14 +16,14 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ip.h"
-#include "ape.h"
-#include "id3.h"
-#include "xmalloc.h"
-#include "read_wrapper.h"
-#include "debug.h"
-#include "buffer.h"
-#include "comment.h"
+#include "../ip.h"
+#include "../ape.h"
+#include "../id3.h"
+#include "../xmalloc.h"
+#include "../read_wrapper.h"
+#include "../debug.h"
+#include "../buffer.h"
+#include "../comment.h"
 
 #include <wavpack/wavpack.h>
 
