@@ -262,7 +262,7 @@ static void pl_load_all(void)
 		if (strcmp(file, ".") == 0 || strcmp(file, "..") == 0)
 			continue;
 		if (!S_ISREG(dir.st.st_mode)) {
-			error_msg("error: %s in %s is not a regular file", file,
+			error_msg(_("error: %s in %s is not a regular file"), file,
 					cmus_playlist_dir);
 			continue;
 		}
@@ -419,11 +419,11 @@ static void pl_save_all(void)
 static void pl_delete_selected_pl(void)
 {
 	if (list_len(&pl_head) == 1) {
-		error_msg("cannot delete the last playlist");
+		error_msg(_("cannot delete the last playlist"));
 		return;
 	}
 
-	if (yes_no_query("Delete selected playlist? [y/N]") != UI_QUERY_ANSWER_YES)
+	if (yes_no_query(_("Delete selected playlist? [y/N]")) != UI_QUERY_ANSWER_YES)
 		return;
 
 	struct playlist *pl = pl_visible;
@@ -508,12 +508,12 @@ static int pl_name_exists(const char *name)
 static int pl_check_new_pl_name(const char *name)
 {
 	if (strchr(name, '/')) {
-		error_msg("playlists cannot contain the '/' character");
+		error_msg(_("playlists cannot contain the '/' character"));
 		return 0;
 	}
 
 	if (pl_name_exists(name)) {
-		error_msg("another playlist named %s already exists", name);
+		error_msg(_("another playlist named %s already exists"), name);
 		return 0;
 	}
 
@@ -585,18 +585,18 @@ void pl_import(const char *path)
 {
 	const char *file = get_filename(path);
 	if (!file) {
-		error_msg("\"%s\" is not a valid path", path);
+		error_msg(_("\"%s\" is not a valid path"), path);
 		return;
 	}
 
 	char *name = pl_create_name(file);
 	if (!name) {
-		error_msg("a playlist named \"%s\" already exists ", file);
+		error_msg(_("a playlist named \"%s\" already exists "), file);
 		return;
 	}
 
 	if (strcmp(name, file) != 0)
-		info_msg("adding \"%s\" as \"%s\"", file, name);
+		info_msg(_("adding \"%s\" as \"%s\""), file, name);
 
 	struct playlist *pl = pl_new(name);
 	cmus_add(pl_add_cb, path, FILE_TYPE_PL, JOB_TYPE_PL, 0, pl);
@@ -609,7 +609,7 @@ void pl_import(const char *path)
 void pl_export_selected_pl(const char *path)
 {
 	char *tmp = expand_filename(path);
-	if (access(tmp, F_OK) != 0 || yes_no_query("File exists. Overwrite? [y/N]") == UI_QUERY_ANSWER_YES)
+	if (access(tmp, F_OK) != 0 || yes_no_query(_("File exists. Overwrite? [y/N]")) == UI_QUERY_ANSWER_YES)
 		cmus_save(pl_save_cb, tmp, pl_visible);
 	free(tmp);
 }
@@ -769,7 +769,7 @@ int pl_for_each_sel(track_info_cb cb, void *data, int reverse)
 }
 
 #define pl_tw_only(cmd) if (!pl_cursor_in_track_window) { \
-	info_msg(":%s only works in the track window", cmd); \
+	info_msg(_(":%s only works in the track window"), cmd); \
 } else
 
 void pl_invert_marks(void)
@@ -826,7 +826,7 @@ void pl_win_toggle(void)
 
 void pl_win_update(void)
 {
-	if (yes_no_query("Reload this playlist? [y/N]") != UI_QUERY_ANSWER_YES)
+	if (yes_no_query(_("Reload this playlist? [y/N]")) != UI_QUERY_ANSWER_YES)
 		return;
 
 	pl_clear_visible_pl();

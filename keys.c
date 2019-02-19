@@ -436,7 +436,7 @@ static int find_context(const char *name)
 		if (strcmp(name, key_context_names[i]) == 0)
 			return i;
 	}
-	error_msg("invalid context '%s'", name);
+	error_msg(_("invalid context '%s'"), name);
 	return -1;
 }
 
@@ -448,7 +448,7 @@ static const struct key *find_key(const char *name)
 		if (strcmp(name, key_table[i].name) == 0)
 			return &key_table[i];
 	}
-	error_msg("invalid key '%s'", name);
+	error_msg(_("invalid key '%s'"), name);
 	return NULL;
 }
 
@@ -480,9 +480,9 @@ void show_binding(const char *context, const char *key)
 
 	b = find_binding(c, k);
 	if (b == NULL) {
-		info_msg("No such binding");
+		info_msg(_("No such binding"));
 	} else {
-		info_msg("bind %s %s %s", context, key, b->cmd);
+		info_msg(_("bind %s %s %s"), context, key, b->cmd);
 	}
 }
 
@@ -539,7 +539,7 @@ int key_bind(const char *context, const char *key, const char *cmd, int force)
 	help_add_bound(b);
 	return 0;
 bound:
-	error_msg("key %s already bound in context %s", key, key_context_names[c]);
+	error_msg(_("key %s already bound in context %s"), key, key_context_names[c]);
 	return -1;
 }
 
@@ -578,7 +578,7 @@ int key_unbind(const char *context, const char *key, int force)
 		b = b->next;
 	}
 	if (!force) {
-		error_msg("key %s not bound in context %s", key, context);
+		error_msg(_("key %s not bound in context %s"), key, context);
 		return -1;
 	}
 	return 0;

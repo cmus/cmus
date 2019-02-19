@@ -341,7 +341,7 @@ void browser_up(void)
 			browser_up();
 			return;
 		}
-		error_msg("could not open directory '%s': %s\n", new, strerror(errno));
+		error_msg(_("could not open directory '%s': %s\n"), new, strerror(errno));
 		free(new);
 		free(pos);
 		return;
@@ -377,14 +377,14 @@ static void browser_cd(const char *dir)
 	if (new[len - 1] == '/')
 		new[len - 1] = 0;
 	if (browser_load(new))
-		error_msg("could not open directory '%s': %s\n", dir, strerror(errno));
+		error_msg(_("could not open directory '%s': %s\n"), dir, strerror(errno));
 	free(new);
 }
 
 static void browser_cd_playlist(const char *filename)
 {
 	if (browser_load(filename))
-		error_msg("could not read playlist '%s': %s\n", filename, strerror(errno));
+		error_msg(_("could not read playlist '%s': %s\n"), filename, strerror(errno));
 }
 
 void browser_enter(void)
@@ -449,9 +449,9 @@ void browser_delete(void)
 		char *name;
 
 		name = fullname(browser_dir, e->name);
-		if (yes_no_query("Delete file '%s'? [y/N]", e->name) == UI_QUERY_ANSWER_YES) {
+		if (yes_no_query(_("Delete file '%s'? [y/N]"), e->name) == UI_QUERY_ANSWER_YES) {
 			if (unlink(name) == -1) {
-				error_msg("deleting '%s': %s", e->name, strerror(errno));
+				error_msg(_("deleting '%s': %s"), e->name, strerror(errno));
 			} else {
 				window_row_vanishes(browser_win, &sel);
 				list_del(&e->node);
@@ -477,7 +477,7 @@ void browser_reload(void)
 
 	/* have to use tmp  */
 	if (browser_load(tmp)) {
-		error_msg("could not update contents '%s': %s\n", tmp, strerror(errno));
+		error_msg(_("could not update contents '%s': %s\n"), tmp, strerror(errno));
 		free(tmp);
 		free(sel);
 		return;

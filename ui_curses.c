@@ -1881,7 +1881,7 @@ static void spawn_status_program_inner(const char *status_text, struct track_inf
 	argv[i++] = NULL;
 
 	if (spawn(argv, NULL, 0) == -1)
-		error_msg("couldn't run `%s': %s", status_display_program, strerror(errno));
+		error_msg(_("couldn't run `%s': %s"), status_display_program, strerror(errno));
 	for (i = 0; argv[i]; i++)
 		free(argv[i]);
 }

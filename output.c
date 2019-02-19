@@ -87,7 +87,7 @@ void op_load_plugins(void)
 	plugin_dir = xstrjoin(cmus_lib_dir, "/op");
 	dir = opendir(plugin_dir);
 	if (dir == NULL) {
-		error_msg("couldn't open directory `%s': %s", plugin_dir, strerror(errno));
+		error_msg(_("couldn't open directory `%s': %s"), plugin_dir, strerror(errno));
 		return;
 	}
 	while ((d = (struct dirent *) readdir(dir)) != NULL) {
@@ -121,11 +121,11 @@ void op_load_plugins(void)
 		symptr = dlsym(so, "op_priority");
 		abi_version_ptr = dlsym(so, "op_abi_version");
 		if (!plug->pcm_ops || !plug->pcm_options || !symptr) {
-			error_msg("%s: missing symbol", filename);
+			error_msg(_("%s: missing symbol"), filename);
 			err = true;
 		}
 		if (!abi_version_ptr || *abi_version_ptr != OP_ABI_VERSION) {
-			error_msg("%s: incompatible plugin version", filename);
+			error_msg(_("%s: incompatible plugin version"), filename);
 			err = true;
 		}
 		if (err) {

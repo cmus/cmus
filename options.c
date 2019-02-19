@@ -163,7 +163,7 @@ static int parse_int(const char *buf, int minval, int maxval, int *val)
 	long int tmp;
 
 	if (str_to_int(buf, &tmp) == -1 || tmp < minval || tmp > maxval) {
-		error_msg("integer in range %d..%d expected", minval, maxval);
+		error_msg(_("integer in range %d..%d expected"), minval, maxval);
 		return 0;
 	}
 	*val = tmp;
@@ -189,7 +189,7 @@ int parse_enum(const char *buf, int minval, int maxval, const char * const names
 		}
 	}
 err:
-	error_msg("name or integer in range %d..%d expected", minval, maxval);
+	error_msg(_("name or integer in range %d..%d expected"), minval, maxval);
 	return 0;
 }
 
@@ -401,7 +401,7 @@ static void set_passwd(void *data, const char *buf)
 		free(server_password);
 		server_password = NULL;
 	} else if (len < 6) {
-		error_msg("unsafe password");
+		error_msg(_("unsafe password"));
 	} else {
 		free(server_password);
 		server_password = xstrdup(buf);
@@ -420,7 +420,7 @@ static void set_replaygain_preamp(void *data, const char *buf)
 
 	val = strtod(buf, &end);
 	if (end == buf) {
-		error_msg("floating point number expected (dB)");
+		error_msg(_("floating point number expected (dB)"));
 		return;
 	}
 	player_set_rg_preamp(val);
@@ -452,7 +452,7 @@ static void set_softvol_state(void *data, const char *buf)
 	player_set_soft_volume(l, r);
 	return;
 err:
-	error_msg("two integers in range 0..100 expected");
+	error_msg(_("two integers in range 0..100 expected"));
 }
 
 static void get_status_display_program(void *data, char *buf, size_t size)
@@ -1298,7 +1298,7 @@ static void set_format(void *data, const char *buf)
 	char **fmtp = data;
 
 	if (!track_format_valid(buf)) {
-		error_msg("invalid format string");
+		error_msg(_("invalid format string"));
 		return;
 	}
 	free(*fmtp);
@@ -1444,7 +1444,7 @@ struct cmus_opt *option_find(const char *name)
 {
 	struct cmus_opt *opt = option_find_silent(name);
 	if (opt == NULL)
-		error_msg("no such option %s", name);
+		error_msg(_("no such option %s"), name);
 	return opt;
 }
 
@@ -1519,7 +1519,7 @@ void options_load(void)
 		char *def = xstrjoin(cmus_data_dir, "/rc");
 
 		if (errno != ENOENT)
-			error_msg("loading %s: %s", filename, strerror(errno));
+			error_msg(_("loading %s: %s"), filename, strerror(errno));
 
 		/* load defaults */
 		if (source_file(def) == -1)
@@ -1532,7 +1532,7 @@ void options_load(void)
 	snprintf(filename, sizeof(filename), "%s/rc", cmus_config_dir);
 	if (source_file(filename) == -1) {
 		if (errno != ENOENT)
-			error_msg("loading %s: %s", filename, strerror(errno));
+			error_msg(_("loading %s: %s"), filename, strerror(errno));
 	}
 }
 
@@ -1654,7 +1654,7 @@ void resume_load(void)
 	snprintf(filename, sizeof(filename), "%s/resume", cmus_config_dir);
 	if (file_for_each_line(filename, handle_resume_line, &resume) == -1) {
 		if (errno != ENOENT)
-			error_msg("loading %s: %s", filename, strerror(errno));
+			error_msg(_("loading %s: %s"), filename, strerror(errno));
 		return;
 	}
 	if (resume.view >= 0 && resume.view != cur_view)

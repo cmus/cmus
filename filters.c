@@ -160,7 +160,7 @@ void filters_activate(int win_activate)
 		f->visited = 1;
 		e = expr_parse(f->filter);
 		if (e == NULL) {
-			error_msg("error parsing filter %s: %s", f->name, expr_error());
+			error_msg(_("error parsing filter %s: %s"), f->name, expr_error());
 			if (expr)
 				expr_free(expr);
 			return;
@@ -194,9 +194,9 @@ void filters_activate(int win_activate)
 	recursive_filter = NULL;
 	if (expr && expr_check_leaves(&expr, get_filter)) {
 		if (recursive_filter) {
-			error_msg("recursion detected in filter %s", recursive_filter);
+			error_msg(_("recursion detected in filter %s"), recursive_filter);
 		} else {
-			error_msg("error parsing filter: %s", expr_error());
+			error_msg(_("error parsing filter: %s"), expr_error());
 		}
 		expr_free(expr);
 		return;
@@ -234,7 +234,7 @@ static int for_each_name(const char *str, int (*cb)(const char *name, int sel_st
 		if (len == 0)
 			return 0;
 		if (len >= sizeof(buf)) {
-			error_msg("filter name too long");
+			error_msg(_("filter name too long"));
 			return -1;
 		}
 
@@ -249,7 +249,7 @@ static int for_each_name(const char *str, int (*cb)(const char *name, int sel_st
 static int ensure_filter_name(const char *name, int sel_stat)
 {
 	if (find_filter(name) == NULL) {
-		error_msg("no such filter %s", name);
+		error_msg(_("no such filter %s"), name);
 		return -1;
 	}
 	return 0;
@@ -304,7 +304,7 @@ void filters_delete_filter(void)
 		struct filter_entry *e;
 
 		e = iter_to_filter_entry(&iter);
-		if (yes_no_query("Delete filter '%s'? [y/N]", e->name) == UI_QUERY_ANSWER_YES) {
+		if (yes_no_query(_("Delete filter '%s'? [y/N]"), e->name) == UI_QUERY_ANSWER_YES) {
 			window_row_vanishes(filters_win, &iter);
 			list_del(&e->node);
 			free_filter(e);
@@ -336,14 +336,14 @@ static void do_filters_set_filter(const char *keyval)
 
 	if (eq == NULL) {
 		if (ui_initialized)
-			error_msg("invalid argument ('key=value' expected)");
+			error_msg(_("invalid argument ('key=value' expected)"));
 		return;
 	}
 	key = xstrndup(keyval, eq - keyval);
 	val = xstrdup(eq + 1);
 	if (!validate_filter_name(key)) {
 		if (ui_initialized)
-			error_msg("invalid filter name (can only contain 'a-zA-Z0-9_-' characters)");
+			error_msg(_("invalid filter name (can only contain 'a-zA-Z0-9_-' characters)"));
 		free(key);
 		free(val);
 		return;
@@ -351,7 +351,7 @@ static void do_filters_set_filter(const char *keyval)
 	expr = expr_parse(val);
 	if (expr == NULL) {
 		if (ui_initialized)
-			error_msg("error parsing filter %s: %s", val, expr_error());
+			error_msg(_("error parsing filter %s: %s"), val, expr_error());
 		free(key);
 		free(val);
 		return;
@@ -425,7 +425,7 @@ struct expr *parse_filter(const char *val)
 	if (val) {
 		e = expr_parse(val);
 		if (e == NULL) {
-			error_msg("error parsing filter %s: %s", val, expr_error());
+			error_msg(_("error parsing filter %s: %s"), val, expr_error());
 			return NULL;
 		}
 	}
@@ -437,9 +437,9 @@ struct expr *parse_filter(const char *val)
 	recursive_filter = NULL;
 	if (e && expr_check_leaves(&e, get_filter)) {
 		if (recursive_filter) {
-			error_msg("recursion detected in filter %s", recursive_filter);
+			error_msg(_("recursion detected in filter %s"), recursive_filter);
 		} else {
-			error_msg("error parsing filter: %s", expr_error());
+			error_msg(_("error parsing filter: %s"), expr_error());
 		}
 		expr_free(e);
 		return NULL;

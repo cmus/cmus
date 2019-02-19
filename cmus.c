@@ -111,7 +111,7 @@ void cmus_play_file(const char *filename)
 	ti = cache_get_ti(filename, 0);
 	cache_unlock();
 	if (!ti) {
-		error_msg("Couldn't get file information for %s\n", filename);
+		error_msg(_("Couldn't get file information for %s\n"), filename);
 		return;
 	}
 
@@ -221,7 +221,7 @@ static int do_cmus_save(for_each_ti_cb for_each_ti, const char *filename,
 
 	if (strcmp(filename, "-") == 0) {
 		if (get_client_fd() == -1) {
-			error_msg("saving to stdout works only remotely");
+			error_msg(_("saving to stdout works only remotely"));
 			return 0;
 		}
 		fd = dup(get_client_fd());
