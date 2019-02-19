@@ -20,8 +20,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: cmus v2.8.0-1-g7f12156\n"
 "Report-Msgid-Bugs-To: nahueljose@gmail.com\n"
-"POT-Creation-Date: 2019-02-19 13:29-0300\n"
-"PO-Revision-Date: 2019-02-19 13:29-0300\n"
+"POT-Creation-Date: 2019-02-19 15:11-0300\n"
+"PO-Revision-Date: 2019-02-19 15:11-0300\n"
 "Last-Translator: Nahuel <nahueljose@gmail.com>\n"
 "Language-Team: Spanish\n"
 "Language: es\n"
@@ -35,27 +35,27 @@ msgstr ""
 "X-Poedit-SearchPath-0: .\n"
 "X-Poedit-SearchPathExcluded-0: .git\n"
 
-#: browser.c:344 browser.c:380
+#: browser.c:348 browser.c:384
 #, c-format
 msgid "could not open directory '%s': %s\n"
 msgstr "no se pudo abrir el directorio '%s': %s\n"
 
-#: browser.c:387
+#: browser.c:391
 #, c-format
 msgid "could not read playlist '%s': %s\n"
 msgstr "nose pudo leer la playlist '%s': %s\n"
 
-#: browser.c:452
+#: browser.c:456
 #, c-format
 msgid "Delete file '%s'? [y/N]"
 msgstr "¿Borrar archivo '%s'? [s/N]"
 
-#: browser.c:454
+#: browser.c:458
 #, c-format
 msgid "deleting '%s': %s"
 msgstr "borrando '%s': %s"
 
-#: browser.c:480
+#: browser.c:484
 #, c-format
 msgid "could not update contents '%s': %s\n"
 msgstr "no se pudo actualizar el contenido '%s': %s\n"
@@ -273,40 +273,40 @@ msgstr "comando desconocido\n"
 msgid "ambiguous command\n"
 msgstr "comando ambiguo\n"
 
-#: filters.c:163 filters.c:354 filters.c:428
+#: filters.c:167 filters.c:358 filters.c:432
 #, c-format
 msgid "error parsing filter %s: %s"
 msgstr "error interpretando filtro %s: %s"
 
-#: filters.c:197 filters.c:440
+#: filters.c:201 filters.c:444
 #, c-format
 msgid "recursion detected in filter %s"
 msgstr "se detectó recursión en el filtro %s"
 
-#: filters.c:199 filters.c:442
+#: filters.c:203 filters.c:446
 #, c-format
 msgid "error parsing filter: %s"
 msgstr "error interpretando filtro: %s"
 
-#: filters.c:237
+#: filters.c:241
 msgid "filter name too long"
 msgstr "nombre de filtro demasiado largo"
 
-#: filters.c:252
+#: filters.c:256
 #, c-format
 msgid "no such filter %s"
 msgstr "no existe el filtro: %s"
 
-#: filters.c:307
+#: filters.c:311
 #, c-format
 msgid "Delete filter '%s'? [y/N]"
 msgstr "¿Borrar filtro '%s'? [s/N]"
 
-#: filters.c:339
+#: filters.c:343
 msgid "invalid argument ('key=value' expected)"
 msgstr "argumento inválido (se espera 'key=value')"
 
-#: filters.c:346
+#: filters.c:350
 msgid "invalid filter name (can only contain 'a-zA-Z0-9_-' characters)"
 msgstr ""
 "nombre de filtro inválido (solo puede contener los caracteres  'a-zA-Z0-9_-')"
@@ -355,31 +355,31 @@ msgstr ""
 msgid "Run \":update-cache -f\" to refresh the metadata."
 msgstr ""
 
-#: keys.c:439
+#: keys.c:444
 #, c-format
 msgid "invalid context '%s'"
 msgstr "contexto inválido '%s'"
 
-#: keys.c:451
+#: keys.c:456
 #, c-format
 msgid "invalid key '%s'"
 msgstr "tecla inválida '%s'"
 
-#: keys.c:483
+#: keys.c:488
 msgid "No such binding"
 msgstr "No existe atajo"
 
-#: keys.c:485
+#: keys.c:490
 #, c-format
 msgid "bind %s %s %s"
 msgstr "bind %s %s %s"
 
-#: keys.c:542
+#: keys.c:547
 #, c-format
 msgid "key %s already bound in context %s"
 msgstr ""
 
-#: keys.c:581
+#: keys.c:586
 #, c-format
 msgid "key %s not bound in context %s"
 msgstr "key %s not bound in context %s"
