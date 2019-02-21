@@ -520,16 +520,6 @@ int u_to_ascii(char *dst, const char *src, int len)
 	return i;
 }
 
-void u_to_utf8(char *dst, const char *src)
-{
-	int s = 0, d = 0;
-	uchar u;
-	do {
-		u = u_get_char(src, &s);
-		u_set_char(dst, &d, u);
-	} while (u!=0);
-}
-
 int u_skip_chars(const char *str, int *width)
 {
 	int w = *width;

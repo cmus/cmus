@@ -25,7 +25,6 @@
 #include "output.h"
 #include "track_info.h"
 #include "utils.h"
-#include "uchar.h"
 
 #define CK(v) \
 do { \
@@ -375,44 +374,24 @@ static int mpris_metadata(sd_bus *_bus, const char *_path,
 		dur *= 1000 * 1000;
 		CK(mpris_msg_append_sx_dict(reply, "mpris:length", dur));
 
-		//The dbus connection closes if invalid data is sent.
-		//As a *temporary* fix, ensure all strings are encoded in utf8.
-		if (ti->artist) {
-			char corrected[u_str_width(ti->artist)];
-			u_to_utf8(corrected, ti->artist);
-			CK(mpris_msg_append_sas_dict(reply,
-					"xesam:artist", corrected));
-		}
-		if (ti->title) {
-			char corrected[u_str_width(ti->title)];
-			u_to_utf8(corrected, ti->title);
-			CK(mpris_msg_append_sas_dict(reply,
-					"xesam:title", corrected));
-		}
-		if (ti->album) {
-			char corrected[u_str_width(ti->album)];
-			u_to_utf8(corrected, ti->album);
-			CK(mpris_msg_append_sas_dict(reply,
-					"xesam:album", corrected));
-		}
-		if (ti->albumartist) {
-			char corrected[u_str_width(ti->albumartist)];
-			u_to_utf8(corrected, ti->albumartist);
-			CK(mpris_msg_append_sas_dict(reply,
-					"xesam:albumArtist", corrected));
-		}
-		if (ti->genre) {
-			char corrected[u_str_width(ti->genre)];
-			u_to_utf8(corrected, ti->genre);
-			CK(mpris_msg_append_sas_dict(reply,
-					"xesam:genre", corrected));
-		}
-		if (ti->comment) {
-			char corrected[u_str_width(ti->comment)];
-			u_to_utf8(corrected, ti->comment);
-			CK(mpris_msg_append_sas_dict(reply,
-					"xesam:comment", corrected));
-		}
+		if (ti->artist)
+			CK(mpris_msg_append_sas_dict(reply, "xesam:artist",
+						ti->artist));
+		if (ti->title)
+			CK(mpris_msg_append_ss_dict(reply, "xesam:title",
+						ti->title));
+		if (ti->album)
+			CK(mpris_msg_append_ss_dict(reply, "xesam:album",
+						ti->album));
+		if (ti->albumartist)
+			CK(mpris_msg_append_sas_dict(reply, "xesam:albumArtist",
+						ti->albumartist));
+		if (ti->genre)
+			CK(mpris_msg_append_sas_dict(reply, "xesam:genre",
+						ti->genre));
+		if (ti->comment)
+			CK(mpris_msg_append_sas_dict(reply, "xesam:comment",
+						ti->comment));
 		if (ti->bpm != -1)
 			CK(mpris_msg_append_si_dict(reply, "xesam:audioBPM",
 						ti->bpm));
