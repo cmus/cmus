@@ -242,7 +242,7 @@ single_char:
 
 int u_char_width(uchar u)
 {
-	if (unlikely(u < 0x20))
+	if (unlikely(u < 0x20 || u == 0x7f))
 		goto control;
 
 	/* Combining Diacritical Marks */
@@ -496,10 +496,10 @@ void u_set_char(char *str, int *idx, uchar uch)
 {
 	int i = *idx;
 
-	if (unlikely(uch <= 0x0000001fU))
+	if (unlikely(uch <= 0x0000001fU || uch == 0x0000007fU))
 		goto invalid;
 
-	if (uch <= 0x0000007fU) {
+	if (uch < 0x0000007fU) {
 		str[i++] = uch;
 		*idx = i;
 		return;
