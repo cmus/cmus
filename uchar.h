@@ -72,6 +72,14 @@ int u_char_width(uchar uch);
 int u_is_valid(const char *str);
 
 /*
+ * @src  null-terminated string
+ *
+ * Returns a string with valid utf8 bytes, where every invalid byte in src is
+ * changed to <xx>.
+ */
+const char *ensure_utf8(const char *src);
+
+/*
  * @str  valid, null-terminated UTF-8 string
  *
  * Returns position of next unicode character in @str.
@@ -163,6 +171,19 @@ int u_copy_chars(char *dst, const char *src, int *width);
  * Returns number of bytes written to @dst.
  */
 int u_to_ascii(char *dst, const char *src, int len);
+
+/*
+ * @dst  destination buffer
+ * @src  null-terminated string
+ *
+ * Copies src into dst, changing all invalid utf8 bytes into <xx>,
+ * where xx is the value of the byte in hex.
+ *
+ * Expects dst to be large enough to fit src + the conversions.
+ *
+ * Returns dst.
+ */
+const char *u_to_utf8(char *dst, const char *src);
 
 /*
  * @str    null-terminated UTF-8 string, must be long enough

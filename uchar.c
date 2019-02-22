@@ -135,6 +135,70 @@ int u_is_valid(const char *str)
 	return 1;
 }
 
+const char *ensure_utf8(const char *src)
+{
+	const unsigned char *s = (const unsigned char *)src;
+	char *buffer;
+	int i = 0, is_valid = 1;
+	int strlen = 1; //Start at 1 to account for \0
+
+	if (src == NULL)
+		return NULL;
+
+	while (s[i]) {
+		unsigned char ch = s[i++];
+		int len = len_tab[ch];
+
+		if (len <= 0) {
+			is_valid = 0;
+			//If it's invalid unicode, it will be store as <xx>.
+			strlen += 4;
+			continue;
+		}
+
+		if (len > 1) {
+			/* len - 1 10xxxxxx bytes */
+			uchar u;
+			int c;
+
+			len--;
+			u = ch & first_byte_mask[len];
+			c = len;
+			do {
+				ch = s[i];
+				if (len_tab[ch] != 0) {
+					is_valid = 0;
+					strlen += 4;
+					break;
+				}
+				u = (u << 6) | (ch & 0x3f);
+				i++;
+			} while (--c);
+
+			if (u < min_val[len] || u > max_val[len]) {
+				is_valid = 0;
+				strlen += 4 * (len + 1);
+			}
+
+			continue;
+		}
+
+		//Although control charcters are valid, they are printed as <xx>.
+		if ((ch > 0 && ch < 0x20) || ch == 0x7f) {
+			strlen += 4;
+			continue;
+		}
+
+		strlen += 1;
+	}
+
+	if (is_valid)
+		return src;
+
+	buffer = malloc(strlen);
+	return u_to_utf8(buffer,src);
+}
+
 size_t u_strlen(const char *str)
 {
 	size_t len;
@@ -518,6 +582,18 @@ int u_to_ascii(char *dst, const char *src, int len)
 		dst[i] = (u < 128) ? u : '?';
 	}
 	return i;
+}
+
+const char *u_to_utf8(char *dst, const char *src)
+{
+	int s = 0, d = 0;
+	uchar u;
+	do {
+		u = u_get_char(src, &s);
+		u_set_char(dst, &d, u);
+	} while (u != 0);
+
+	return dst;
 }
 
 int u_skip_chars(const char *str, int *width)

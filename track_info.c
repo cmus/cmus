@@ -64,20 +64,20 @@ struct track_info *track_info_new(const char *filename)
 
 void track_info_set_comments(struct track_info *ti, struct keyval *comments) {
 	ti->comments = comments;
-	ti->artist = keyvals_get_val(comments, "artist");
-	ti->album = keyvals_get_val(comments, "album");
-	ti->title = keyvals_get_val(comments, "title");
+	ti->artist = ensure_utf8(keyvals_get_val(comments, "artist"));
+	ti->album = ensure_utf8(keyvals_get_val(comments, "album"));
+	ti->title = ensure_utf8(keyvals_get_val(comments, "title"));
 	ti->tracknumber = comments_get_int(comments, "tracknumber");
 	ti->discnumber = comments_get_int(comments, "discnumber");
 	ti->date = comments_get_date(comments, "date");
 	ti->originaldate = comments_get_date(comments, "originaldate");
-	ti->genre = keyvals_get_val(comments, "genre");
-	ti->comment = keyvals_get_val(comments, "comment");
-	ti->albumartist = comments_get_albumartist(comments);
-	ti->artistsort = comments_get_artistsort(comments);
-	ti->albumsort = keyvals_get_val(comments, "albumsort");
+	ti->genre = ensure_utf8(keyvals_get_val(comments, "genre"));
+	ti->comment = ensure_utf8(keyvals_get_val(comments, "comment"));
+	ti->albumartist = ensure_utf8(comments_get_albumartist(comments));
+	ti->artistsort = ensure_utf8(comments_get_artistsort(comments));
+	ti->albumsort = ensure_utf8(keyvals_get_val(comments, "albumsort"));
 	ti->is_va_compilation = track_is_va_compilation(comments);
-	ti->media = keyvals_get_val(comments, "media");
+	ti->media = ensure_utf8(keyvals_get_val(comments, "media"));
 
 	int bpm = comments_get_int(comments, "bpm");
 	if (ti->bpm == 0 || ti->bpm == -1) {
@@ -91,7 +91,7 @@ void track_info_set_comments(struct track_info *ti, struct keyval *comments) {
 
 	if (track_info_has_tag(ti) && ti->title == NULL) {
 		/* best guess */
-		ti->title = path_basename(ti->filename);
+		ti->title = ensure_utf8(path_basename(ti->filename));
 	}
 
 	ti->rg_track_gain = comments_get_double(comments, "replaygain_track_gain");
