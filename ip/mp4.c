@@ -485,6 +485,11 @@ static int mp4_read_comments(struct input_plugin_data *ip_data,
 		snprintf(buf, 6, "%u", tags->disk->index);
 		comments_add_const(&c, "discnumber", buf);
 	}
+	if (tags->tempo) {
+		char buf[6];
+		snprintf(buf, 6, "%u", *tags->tempo);
+		comments_add_const(&c, "bpm", buf);
+	}
 
 	MP4TagsFree(tags);
 
