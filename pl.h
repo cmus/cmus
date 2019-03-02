@@ -63,6 +63,8 @@ int pl_get_cursor_in_track_window(void);
 int pl_visible_is_marked(void);
 const char *pl_marked_pl_name(void);
 void pl_set_marked_pl_by_name(const char *name);
+const char *pl_playing_pl_name(void);
+void pl_resume(const char *name, struct track_info *ti);
 
 void pl_mark_for_redraw(void);
 int pl_needs_redraw(void);

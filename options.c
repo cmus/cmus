@@ -1604,6 +1604,8 @@ struct resume {
 	char *live_filter;
 	char *browser_dir;
 	char *marked_pl;
+	char *pl_playing;
+	char *pl_playing_track;
 };
 
 static int handle_resume_line(void *data, const char *line)
@@ -1637,7 +1639,15 @@ static int handle_resume_line(void *data, const char *line)
 	} else if (strcmp(cmd, "marked-pl") == 0) {
 		free(resume->marked_pl);
 		resume->marked_pl = xstrdup(unescape(arg));
+	} else if (strcmp(cmd, "pl_playing") == 0) {
+		free(resume->pl_playing);
+		resume->pl_playing = xstrdup(unescape(arg));
+	} else if (strcmp(cmd, "pl_playing_track") == 0) {
+		free(resume->pl_playing_track);
+		resume->pl_playing_track = xstrdup(unescape(arg));
 	}
+
+
 
 	free(arg);
 out:
@@ -1701,6 +1711,9 @@ void resume_load(void)
 		pl_set_marked_pl_by_name(resume.marked_pl);
 		free(resume.marked_pl);
 	}
+	if (resume.pl_playing_track && resume.pl_playing){
+		pl_resume(resume.pl_playing, cache_get_ti(resume.pl_playing_track, 0));
+	}
 }
 
 void resume_exit(void)
@@ -1736,6 +1749,11 @@ void resume_exit(void)
 	fprintf(f, "browser-dir %s\n", escape(browser_dir));
 
 	fprintf(f, "marked-pl %s\n", escape(pl_marked_pl_name()));
+
+	if(pl_get_playing_track()){
+		fprintf(f, "pl_playing_track %s\n", escape(pl_get_playing_track()->info->filename));
+		fprintf(f, "pl_playing %s\n", escape(pl_playing_pl_name()));
+	}
 
 	fclose(f);
 

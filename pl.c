@@ -889,6 +889,11 @@ struct simple_track *pl_get_playing_track(void)
 	return pl_playing_track;
 }
 
+struct playlist *pl_get_pl_playing(void)
+{
+	return pl_playing;
+}
+
 void pl_update_track(struct track_info *old, struct track_info *new)
 {
 	struct playlist *pl;
@@ -921,13 +926,29 @@ const char *pl_marked_pl_name(void)
 	return pl_marked->name;
 }
 
-void pl_set_marked_pl_by_name(const char *name)
+struct playlist *pl_get_pl_by_name(const char *name)
 {
 	struct playlist *pl;
 	list_for_each_entry(pl, &pl_head, node) {
 		if (strcmp(pl->name, name) == 0) {
-			pl_marked = pl;
-			return;
+			return pl;
 		}
 	}
+}
+
+void pl_set_marked_pl_by_name(const char *name)
+{
+	pl_marked = pl_get_pl_by_name(name);
+}
+
+const char *pl_playing_pl_name(void)
+{
+	return pl_playing->name;
+}
+
+void pl_resume(const char *name, struct track_info *ti)
+{
+
+	struct playlist *pl = pl_get_pl_by_name(name);
+	// ...
 }
