@@ -229,8 +229,13 @@ check_flac()
 
 check_mad()
 {
-	pkg_config MAD "mad" "" "-lmad -lm"
-	return $?
+	if test "$CONFIG_TREMOR" = y
+	then
+		pkg_config MAD "mad" "" "-lmad -lm"
+		return $?
+	else
+		return 0
+	fi
 }
 
 mikmod_code="
@@ -480,6 +485,7 @@ prefix=/usr/local
 DEBUG=1
 HAVE_CDDB=n
 CONFIG_TREMOR=n
+CONFIG_MAD=n
 CONFIG_MIKMOD=n
 CONFIG_BASS=n
 USE_FALLBACK_IP=n
@@ -512,7 +518,7 @@ Optional Features: y/n
   CONFIG_FFMPEG         FFMPEG (.shn, .wma)                             [auto]
   CONFIG_FLAC           Free Lossless Audio Codec (.flac, .fla)         [auto]
   CONFIG_JACK           JACK                                            [auto]
-  CONFIG_MAD            MPEG Audio Decoder (.mp3, .mp2, streams)        [auto]
+  CONFIG_MAD            MPEG Audio Decoder (.mp3, .mp2, streams)        [n]
   CONFIG_MIKMOD         libmikmod (.mod, .x3m, ...)                     [n]
   CONFIG_BASS           libbass (.mod, .x3m, ...)                       [n]
   CONFIG_MODPLUG        libmodplug (.mod, .x3m, ...)                    [auto]
