@@ -183,7 +183,7 @@ int u_to_ascii(char *dst, const char *src, int len);
  *
  * Returns dst.
  */
-const char *u_to_utf8(char *dst, const char *src);
+void u_to_utf8(char *dst, const char *src);
 
 /*
  * @str    null-terminated UTF-8 string, must be long enough

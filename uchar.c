@@ -196,7 +196,8 @@ const char *ensure_utf8(const char *src)
 		return src;
 
 	buffer = malloc(strlen);
-	return u_to_utf8(buffer,src);
+	u_to_utf8(buffer, src);
+	return buffer;
 }
 
 size_t u_strlen(const char *str)
@@ -584,7 +585,7 @@ int u_to_ascii(char *dst, const char *src, int len)
 	return i;
 }
 
-const char *u_to_utf8(char *dst, const char *src)
+void u_to_utf8(char *dst, const char *src)
 {
 	int s = 0, d = 0;
 	uchar u;
@@ -592,8 +593,6 @@ const char *u_to_utf8(char *dst, const char *src)
 		u = u_get_char(src, &s);
 		u_set_char(dst, &d, u);
 	} while (u != 0);
-
-	return dst;
 }
 
 int u_skip_chars(const char *str, int *width)
