@@ -743,8 +743,7 @@ static void cmd_quit(char *arg)
 	int flag = parse_flags((const char **)&arg, "i");
 	enum ui_query_answer answer;
 	if (!worker_has_job_by_type(JOB_TYPE_ANY)) {
-		answer =  yes_no_query(_("Quit cmus? [y/N]"));
-		if (flag != 'i' || answer != UI_QUERY_ANSWER_NO)
+		if (flag != 'i' || yes_no_query(_("Quit cmus? [y/N]")) != UI_QUERY_ANSWER_NO)
 			cmus_running = 0;
 	} else {
 		answer = yes_no_query(_("Tracks are being added. Quit and truncate playlist(s)? [y/N]"));
