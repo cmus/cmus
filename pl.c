@@ -849,7 +849,7 @@ void pl_invert_marks(void)
 void pl_mark(char *arg)
 {
 	pl_tw_only("mark")
-		editable_invert_marks(&pl_visible->editable);
+		editable_mark(&pl_visible->editable, arg);
 }
 
 void pl_unmark(void)
