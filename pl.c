@@ -132,8 +132,12 @@ static int pl_search_matches(void *data, struct iter *iter, const char *text)
 
 	char **words = get_words(text);
 	for (size_t i = 0; words[i]; i++) {
-		if (u_strcasestr_base(pl->name, words[i])) {
-			matched = 1;
+
+		/* set in the loop to deal with empty search string */
+		matched = 1;
+
+		if (!u_strcasestr_base(pl->name, words[i])) {
+			matched = 0;
 			break;
 		}
 	}
