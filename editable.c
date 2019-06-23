@@ -247,8 +247,8 @@ static void move_sel(struct editable *e, struct list_head *after)
 	editable_track_to_iter(e, to_simple_track(after->next), &iter);
 
 	if (editable_owns_shared(e)) {
-		window_set_sel(e->shared->win, &iter);
 		window_changed(e->shared->win);
+		window_set_sel(e->shared->win, &iter);
 	}
 }
 
