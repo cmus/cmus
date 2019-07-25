@@ -44,6 +44,17 @@ cmus-y := \
 	search.o server.o spawn.o tabexp_file.o tabexp.o track_info.o track.o tree.o \
 	uchar.o u_collate.o ui_curses.o window.o worker.o xstrjoin.o
 
+cmus-t := \
+	test/ape.o \
+	test/buffer.o \
+	test/main.o
+
+# objects from cmus-y, which are ready for testing
+cmus-ty := \
+	buffer.o locking.o debug.o prog.o \
+	ape.o file.o spawn.o read_wrapper.o \
+	keyval.o gbuf.o
+
 cmus-$(CONFIG_MPRIS) += mpris.o
 
 $(cmus-y): CFLAGS += $(PTHREAD_CFLAGS) $(NCURSES_CFLAGS) $(ICONV_CFLAGS) $(DL_CFLAGS)
@@ -270,6 +281,13 @@ distclean	+= .version config.mk config/*.h tags
 main: cmus cmus-remote
 plugins: $(ip-y) $(op-y)
 man: $(man1) $(man7)
+
+test: main $(cmus-t) test-bin test-run
+	$(call, cmd)
+test-bin:
+	$(LD) -o test/cmus-test $(cmus-ty) $(cmus-t) xmalloc.o $(CMUS_LIBS)
+test-run:
+	./test/cmus-test
 
 install-main: main
 	$(INSTALL) -m755 $(bindir) cmus cmus-remote
