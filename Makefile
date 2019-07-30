@@ -47,13 +47,14 @@ cmus-y := \
 cmus-t := \
 	test/ape.o \
 	test/buffer.o \
+	test/cue.o \
 	test/main.o
 
 # objects from cmus-y, which are ready for testing
 cmus-ty := \
 	buffer.o locking.o debug.o prog.o \
 	ape.o file.o spawn.o read_wrapper.o \
-	keyval.o gbuf.o
+	keyval.o gbuf.o cue.o
 
 cmus-$(CONFIG_MPRIS) += mpris.o
 
