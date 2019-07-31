@@ -48,6 +48,7 @@ cmus-t := \
 	test/ape.o \
 	test/buffer.o \
 	test/cue.o \
+	test/utils.o \
 	test/main.o
 
 # objects from cmus-y, which are ready for testing
