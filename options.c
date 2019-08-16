@@ -524,6 +524,24 @@ static void toggle_continue(void *data)
 	update_statusline();
 }
 
+static void get_continue_album(void *data, char *buf, size_t size)
+{
+	strscpy(buf, bool_names[player_cont_album], size);
+}
+
+static void set_continue_album(void *data, const char *buf)
+{
+	if (!parse_bool(buf, &player_cont_album))
+		return;
+	update_statusline();
+}
+
+static void toggle_continue_album(void *data)
+{
+	player_cont_album ^= 1;
+	update_statusline();
+}
+
 static void get_repeat_current(void *data, char *buf, size_t size)
 {
 	strscpy(buf, bool_names[player_repeat_current], size);
@@ -1328,6 +1346,7 @@ static const struct {
 	DN(rewind_offset)
 	DT(confirm_run)
 	DT(continue)
+	DT(continue_album)
 	DT(smart_artist_sort)
 	DN(id3_default_charset)
 	DN(icecast_default_charset)

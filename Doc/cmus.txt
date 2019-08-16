@@ -955,6 +955,9 @@ confirm_run (true)
 continue (true)
 	Continue playing after current track finishes.
 
+continue_album (true)
+	Continue playing next album after current album finishes.
+
 device (/dev/cdrom)
 	CDDA device file.
 
