@@ -78,6 +78,9 @@ static struct player_info player_info_priv = {
 /* continue playing after track is finished? */
 int player_cont = 1;
 
+/* continue playing after album is finished? */
+int player_cont_album = 1;
+
 /* repeat current track forever? */
 int player_repeat_current;
 
@@ -823,7 +826,7 @@ static void _consumer_handle_eof(void)
 		ip = ip_new(ti->filename);
 		_producer_status_update(PS_STOPPED);
 		/* PS_STOPPED, CS_PLAYING */
-		if (player_cont) {
+		if (player_cont && (player_cont_album == 1 || strcmp(player_info_priv.ti->album,ti->album) == 0)) {
 			_producer_play();
 			if (producer_status == PS_UNLOADED) {
 				_consumer_stop();
