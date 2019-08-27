@@ -37,7 +37,7 @@
 #endif
 
 #ifndef AVCODEC_MAX_AUDIO_FRAME_SIZE
-#define AVCODEC_MAX_AUDIO_FRAME_SIZE 192000
+#define AVCODEC_MAX_AUDIO_FRAME_SIZE 1920000
 #endif
 
 struct ffmpeg_input {
@@ -302,10 +302,7 @@ static int ffmpeg_fill_buffer(AVFormatContext *ic, AVCodecContext *cc, struct ff
 #else
 	AVFrame *frame = avcodec_alloc_frame();
 #endif
-	int got_frame;
 	while (1) {
-		int len;
-
 		if (input->curr_pkt_size <= 0) {
 #if LIBAVCODEC_VERSION_MAJOR >= 56
 			av_packet_unref(&input->pkt);
@@ -335,48 +332,71 @@ static int ffmpeg_fill_buffer(AVFormatContext *ic, AVCodecContext *cc, struct ff
 			av_new_packet(&avpkt, input->curr_pkt_size);
 			memcpy(avpkt.data, input->curr_pkt_buf, input->curr_pkt_size);
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
-			if (avcodec_send_packet(cc, &avpkt) == 0) {
-				got_frame = !avcodec_receive_frame(cc, frame);
-				if (got_frame)
-					len = input->curr_pkt_size;
-				else
-					len = 0;
-			} else {
-				got_frame = 0;
-				len = 0;
+			if (avcodec_send_packet(cc, &avpkt) != 0) {
+				av_packet_unref(&avpkt);
+				continue;
 			}
-#else
-			len = avcodec_decode_audio4(cc, frame, &got_frame, &avpkt);
 #endif
+			int frames = 0;
+            int len;
+			while (1) {
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
+				if(avcodec_receive_frame(cc, frame)) {
+					break;
+				} else {
+					if (frames++ == 0) {
+						len = input->curr_pkt_size;
+						input->curr_pkt_size -= len;
+						input->curr_pkt_buf += len;
+					}
+				}
+#else
+                int got_frame;
+				len = avcodec_decode_audio4(cc, frame, &got_frame, &avpkt);
+				if (len < 0) {
+					/* this is often reached when seeking, not sure why */
+					//input->curr_pkt_size = 0;
+					break;
+				}
+				if (input->curr_pkt_size != 0) {
+					input->curr_pkt_size -= len;
+					input->curr_pkt_buf += len;
+					if (input->curr_pkt_size == 0) {
 #if LIBAVCODEC_VERSION_MAJOR >= 56
-			av_packet_unref(&avpkt);
+						av_packet_unref(&avpkt);
 #else
-			av_free_packet(&avpkt);
+						avcodec_free_frame(&frame);
 #endif
-		}
-		if (len < 0) {
-			/* this is often reached when seeking, not sure why */
-			input->curr_pkt_size = 0;
-			continue;
-		}
-		input->curr_pkt_size -= len;
-		input->curr_pkt_buf += len;
-		if (got_frame) {
-			int res = swr_convert(swr,
-					&output->buffer,
-					frame->nb_samples,
-					(const uint8_t **)frame->extended_data,
-					frame->nb_samples);
-			if (res < 0)
-				res = 0;
-			output->buffer_pos = output->buffer;
-			output->buffer_used_len = res * cc->channels * sizeof(int16_t);
+						av_new_packet(&avpkt, 0);
+					}
+				}
+				if (!got_frame) {
+					break;
+				} else {
+					frames++;
+				}
+#endif
+				uint8_t* buffer_pos = output->buffer + output->buffer_used_len;
+				int res = swr_convert(swr,
+						&buffer_pos,
+						frame->nb_samples,
+						(const uint8_t **)frame->extended_data,
+						frame->nb_samples);
+				if (res < 0)
+					res = 0;
+				output->buffer_pos = output->buffer;
+				output->buffer_used_len += res * cc->channels * sizeof(int16_t);
+			}
+			if (frames > 0) {
 #if LIBAVCODEC_VERSION_MAJOR >= 56
-			av_frame_free(&frame);
+				av_packet_unref(&avpkt);
+				av_frame_free(&frame);
 #else
-			avcodec_free_frame(&frame);
+				av_free_packet(&avpkt);
+				avcodec_free_frame(&frame);
 #endif
-			return output->buffer_used_len;
+				return output->buffer_used_len;
+			}
 		}
 	}
 	/* This should never get here. */
