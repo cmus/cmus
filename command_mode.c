@@ -1196,6 +1196,33 @@ err:
 	return -1;
 }
 
+static void cmd_mute(char *arg)
+{
+    static int l_prev = 0,  r_prev = 0;
+    int l = 0, r = 0;
+
+    if (volume_l == 0 && volume_r == 0) {
+        // unmute
+        l = l_prev;
+        r = r_prev;
+    } else {
+        l_prev = volume_l;
+        r_prev = volume_r;
+    }
+
+    int rc = player_set_vol(l, 0, r, 0);
+    if (rc != OP_ERROR_SUCCESS) {
+        char *msg = op_get_error_msg(rc, "can't change volume");
+        error_msg("%s", msg);
+        free(msg);
+    } else {
+        mpris_volume_changed();
+    }
+    update_statusline();
+    return;
+}
+
+
 /*
  * :vol value [value]
  *
@@ -2585,6 +2612,7 @@ struct command commands[] = {
 	{ "version",               cmd_version,          0, 0,  NULL,                 0, 0          },
 	{ "view",                  cmd_view,             1, 1,  NULL,                 0, 0          },
 	{ "vol",                   cmd_vol,              1, 2,  NULL,                 0, 0          },
+    { "mute",                  cmd_mute,             0, 0,  NULL,                 0, 0          },
 	{ "w",                     cmd_save,             0, 1,  expand_load_save,     0, CMD_UNSAFE },
 	{ "win-activate",          cmd_win_activate,     0, 0,  NULL,                 0, 0          },
 	{ "win-add-l",             cmd_win_add_l,        0, 0,  NULL,                 0, 0          },
