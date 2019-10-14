@@ -59,6 +59,7 @@ static struct history cmd_history;
 static char *cmd_history_filename;
 static char *history_search_text = NULL;
 static int arg_expand_cmd = -1;
+static int mute_vol_l = 0, mute_vol_r = 0;
 
 /* view {{{ */
 
@@ -1198,28 +1199,26 @@ err:
 
 static void cmd_mute(char *arg)
 {
-    static int l_prev = 0,  r_prev = 0;
-    int l = 0, r = 0;
+	int l = 0, r = 0;
 
-    if (volume_l == 0 && volume_r == 0) {
-        // unmute
-        l = l_prev;
-        r = r_prev;
-    } else {
-        l_prev = volume_l;
-        r_prev = volume_r;
-    }
+	if (volume_l == 0 && volume_r == 0) {
+		// unmute
+		l = mute_vol_l;
+		r = mute_vol_r;
+	} else {
+		mute_vol_l = volume_l;
+		mute_vol_r = volume_r;
+	}
 
-    int rc = player_set_vol(l, 0, r, 0);
-    if (rc != OP_ERROR_SUCCESS) {
-        char *msg = op_get_error_msg(rc, "can't change volume");
-        error_msg("%s", msg);
-        free(msg);
-    } else {
-        mpris_volume_changed();
-    }
-    update_statusline();
-    return;
+	int rc = player_set_vol(l, 0, r, 0);
+	if (rc != OP_ERROR_SUCCESS) {
+		char *msg = op_get_error_msg(rc, "can't change volume");
+		error_msg("%s", msg);
+		free(msg);
+	} else {
+		mpris_volume_changed();
+	}
+	update_statusline();
 }
 
 
@@ -2612,7 +2611,7 @@ struct command commands[] = {
 	{ "version",               cmd_version,          0, 0,  NULL,                 0, 0          },
 	{ "view",                  cmd_view,             1, 1,  NULL,                 0, 0          },
 	{ "vol",                   cmd_vol,              1, 2,  NULL,                 0, 0          },
-    { "mute",                  cmd_mute,             0, 0,  NULL,                 0, 0          },
+	{ "mute",                  cmd_mute,             0, 0,  NULL,                 0, 0          },
 	{ "w",                     cmd_save,             0, 1,  expand_load_save,     0, CMD_UNSAFE },
 	{ "win-activate",          cmd_win_activate,     0, 0,  NULL,                 0, 0          },
 	{ "win-add-l",             cmd_win_add_l,        0, 0,  NULL,                 0, 0          },
