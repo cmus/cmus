@@ -468,6 +468,9 @@ lqueue [NUM]
 mark <filter-expression>
 	Mark tracks in playlist and queue view by using a filter expression.
 
+mute
+	Mutes the sound output.	A second call un-mutes the output.
+
 pl-create <name>
 	Creates a new playlist.
 
