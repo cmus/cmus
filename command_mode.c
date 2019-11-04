@@ -1353,9 +1353,8 @@ static void cmd_view(char *arg)
 
 static void cmd_push(char *arg)
 {
-	if (arg) {
+	if (arg)
 		cmdline_set_text(arg);
-	}
 	enter_command_mode();
 }
 
