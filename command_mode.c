@@ -1353,7 +1353,8 @@ static void cmd_view(char *arg)
 
 static void cmd_push(char *arg)
 {
-	cmdline_set_text(arg);
+	if (arg)
+		cmdline_set_text(arg);
 	enter_command_mode();
 }
 
@@ -2586,7 +2587,7 @@ struct command commands[] = {
 	{ "pl-export",             cmd_pl_export,        1, -1, NULL,                 0, 0          },
 	{ "pl-import",             cmd_pl_import,        0, -1, NULL,                 0, 0          },
 	{ "pl-rename",             cmd_pl_rename,        1, -1, NULL,                 0, 0          },
-	{ "push",                  cmd_push,             1, -1, expand_commands,      0, 0          },
+	{ "push",                  cmd_push,             0, -1, expand_commands,      0, 0          },
 	{ "pwd",                   cmd_pwd,              0, 0,  NULL,                 0, 0          },
 	{ "raise-vte",             cmd_raise_vte,        0, 0,  NULL,                 0, 0          },
 	{ "rand",                  cmd_rand,             0, 0,  NULL,                 0, 0          },
