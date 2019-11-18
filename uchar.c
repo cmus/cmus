@@ -428,7 +428,7 @@ void u_set_char_raw(char *str, int *idx, uchar uch)
  * Printing functions, these lose information
  */
 
-void u_set_char(char *str, int *idx, uchar uch)
+void u_set_char(char *str, size_t *idx, uchar uch)
 {
 	int i = *idx;
 
@@ -476,10 +476,11 @@ invalid:
 	}
 }
 
-int u_copy_chars(char *dst, const char *src, int *width)
+size_t u_copy_chars(char *dst, const char *src, int *width)
 {
 	int w = *width;
-	int si = 0, di = 0;
+	int si = 0;
+	size_t di = 0;
 	int cw;
 	uchar u;
 
@@ -522,7 +523,8 @@ int u_to_ascii(char *dst, const char *src, int len)
 
 void u_to_utf8(char *dst, const char *src)
 {
-	int s = 0, d = 0;
+	int s = 0;
+	size_t d = 0;
 	uchar u;
 	do {
 		u = u_get_char(src, &s);

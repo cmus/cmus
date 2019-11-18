@@ -137,7 +137,7 @@ uchar u_get_char(const char *str, int *idx);
  * @uch  unicode character
  */
 void u_set_char_raw(char *str, int *idx, uchar uch);
-void u_set_char(char *str, int *idx, uchar uch);
+void u_set_char(char *str, size_t *idx, uchar uch);
 
 /*
  * @dst    destination buffer
@@ -150,7 +150,7 @@ void u_set_char(char *str, int *idx, uchar uch);
  *
  * Returns number of _bytes_ copied.
  */
-int u_copy_chars(char *dst, const char *src, int *width);
+size_t u_copy_chars(char *dst, const char *src, int *width);
 
 /*
  * @dst    destination buffer

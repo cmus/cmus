@@ -216,7 +216,8 @@ static void print_str(const char *src)
 
 		}
 	} else {
-		int s = 0, d = 0;
+		int s = 0;
+		size_t d = 0;
 		uchar u;
 
 		while (1) {
@@ -471,7 +472,7 @@ static void format_parse(int str_width, const char *format, const struct format_
 		u = u_get_char(format, &s);
 		if (u != '%') {
 			gbuf_grow(str, 4);
-			u_set_char(str->buffer, (int *)&str->len, u);
+			u_set_char(str->buffer, &str->len, u);
 			(*len) += u_char_width(u);
 			continue;
 		}
@@ -594,7 +595,7 @@ static void format_write(char *buf, int str_width)
 		strcpy(buf + pos + ws_len, r_str.buffer);
 	} else {
 		int l_space = str_width - str_len.rlen;
-		int pos = 0;
+		size_t pos = 0;
 		int idx = 0;
 
 		if (l_space > 0)
