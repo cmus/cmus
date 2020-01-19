@@ -287,10 +287,10 @@ static int utf16_is_special(uchar uch)
 	return utf16_is_hsurrogate(uch) || utf16_is_lsurrogate(uch) || utf16_is_bom(uch);
 }
 
-static char *utf16_to_utf8(const unsigned char *buf, int buf_size)
+static char *utf16_to_utf8(const unsigned char *buf, size_t buf_size)
 {
 	char *out;
-	int i, idx;
+	size_t i, idx;
 	int little_endian = 0;
 
 	if (buf_size < 2)
