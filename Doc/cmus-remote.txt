@@ -29,10 +29,8 @@ If *-C* is given, all command line arguments are treated as raw commands.
 --server SOCKET
 	Connect using socket *SOCKET* instead of `$XDG_RUNTIME_DIR/cmus-socket`.
 
---server SOCKET --passwd PASSWORD
-	In some situations a password is needed to access a server's connection.
-	Example: If you run `cmus-remote --server SOCKET` and get an 
-	"cmus-remote: password required for tcp/ip connection" output.
+--passwd PASSWD
+	password to use for TCP/IP connection
 
 --help
 	Display usage information and exit.
