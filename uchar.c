@@ -532,6 +532,28 @@ void u_to_utf8(char *dst, const char *src)
 	} while (u!=0);
 }
 
+int u_print_size(uchar uch)
+{
+	int s = u_char_size(uch);
+	/* control characters and invalid unicode set as <XX> */
+	if (uch < 0x0000001fU && uch != 0){
+		return 4;
+	}
+	return s;
+}
+
+int u_str_print_size(const char *str)
+{
+	int l = 0;
+	int idx = 0;
+	uchar u;
+	do {
+		u = u_get_char(str, &idx);
+		l += u_print_size(u);
+	} while (u!=0);
+	return l;
+}
+
 int u_skip_chars(const char *str, int *width)
 {
 	int w = *width;
