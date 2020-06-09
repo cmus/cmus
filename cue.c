@@ -412,7 +412,7 @@ static struct cue_sheet *cue_parser_to_sheet(struct cue_parser *p)
 		if (idx > 0) {
 			int32_t postgap = prev->postgap != -1 ? prev->postgap : 0;
 			s->tracks[idx - 1].length =
-				(t->index0 - prev->index1 - postgap) / 75.0;
+				(t->index1 - prev->index1 - postgap) / 75.0;
 		}
 
 		cue_meta_move(&s->tracks[idx].meta, &t->meta);
