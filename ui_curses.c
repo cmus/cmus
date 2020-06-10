@@ -924,7 +924,15 @@ static void print_filter(struct window *win, int row, struct iter *iter)
 		e_filter = conv_buffer;
 	}
 
+	#if defined(__GNUC__) && (__GNUC__ >= 7)
+		#pragma GCC diagnostic push
+		#pragma GCC diagnostic ignored "-Wformat-truncation"
+	#endif
+	/* truncated to COLS-1 in format_str call below */
 	snprintf(buf, sizeof(buf), "%c%c%c%-15s  %s", ch1, ch2, ch3, e->name, e_filter);
+	#if defined(__GNUC__) && (__GNUC__ >= 7)
+		#pragma GCC diagnostic pop
+	#endif
 	pos = format_str(print_buffer, buf, COLS - 1);
 	print_buffer[pos++] = ' ';
 	print_buffer[pos] = 0;
@@ -1105,8 +1113,16 @@ static void update_editable_window(struct editable *e, const char *title, const 
 			utf8_encode_to_buf(filename);
 			filename = conv_buffer;
 		}
+		#if defined(__GNUC__) && (__GNUC__ >= 7)
+			#pragma GCC diagnostic push
+			#pragma GCC diagnostic ignored "-Wformat-truncation"
+		#endif
+		/* truncated to COLS in update_window call below */
 		snprintf(buf, sizeof(buf), "%s %s - %d tracks", title,
 				pretty(filename), e->nr_tracks);
+		#if defined(__GNUC__) && (__GNUC__ >= 7)
+			#pragma GCC diagnostic pop
+		#endif
 	} else {
 		snprintf(buf, sizeof(buf), "%s - %d tracks", title, e->nr_tracks);
 	}
@@ -1147,7 +1163,15 @@ static void update_browser_window(void)
 		utf8_encode_to_buf(browser_dir);
 		dirname = conv_buffer;
 	}
+	#if defined(__GNUC__) && (__GNUC__ >= 7)
+		#pragma GCC diagnostic push
+		#pragma GCC diagnostic ignored "-Wformat-truncation"
+	#endif
+	/* truncated to COLS in update_window call below */
 	snprintf(title, sizeof(title), "Browser - %s", dirname);
+	#if defined(__GNUC__) && (__GNUC__ >= 7)
+		#pragma GCC diagnostic pop
+	#endif
 	update_window(browser_win, 0, 0, COLS, title, print_browser);
 }
 
