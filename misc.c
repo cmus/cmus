@@ -361,3 +361,21 @@ void shuffle_array(void *array, size_t n, size_t size)
 		memcpy(arr + i * size, tmp, size);
 	}
 }
+
+// taken from https://github.com/dnmfarrell/URI-Encode-C
+size_t uri_encode(const char *src, const size_t len, char *dst)
+{
+	size_t i = 0, j = 0;
+	while (i < len)
+	{
+		const char octet = src[i++];
+		const int32_t code = ((int32_t *) uri_encode_tbl) [(unsigned char) octet];
+		if (code) {
+			*((int32_t *) &dst[j]) = code;
+			j += 3;
+		}
+		else dst[j++] = octet;
+	}
+	dst[j] = '\0';
+	return j;
+}

@@ -26,6 +26,8 @@
 #include "track_info.h"
 #include "utils.h"
 #include "uchar.h"
+#include "misc.h"
+#include "xmalloc.h"
 
 #define CK(v) \
 do { \
@@ -425,6 +427,22 @@ static int mpris_metadata(sd_bus *_bus, const char *_path,
 		if (is_http_url(ti->filename))
 			CK(mpris_msg_append_ss_dict(reply, "cmus:stream_title",
 						get_stream_title()));
+		
+		if (ti->filename) {
+			size_t len = strlen(ti->filename);
+			size_t buf_size = (3 * len) + 1;
+
+			char uri[buf_size];
+			uri_encode(ti->filename, len, uri);
+
+			char scheme[] = "file://";
+			char xesam_url[buf_size + sizeof(scheme)];
+			strcpy(xesam_url, scheme);
+			strcat(xesam_url, uri);
+
+			CK(mpris_msg_append_ss_dict(reply, "xesam:url",
+						xesam_url));
+		}
 	}
 
 	CK(sd_bus_message_close_container(reply));
