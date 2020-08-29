@@ -27,7 +27,7 @@
 #include "utils.h"
 #include "uchar.h"
 #include "misc.h"
-#include "xmalloc.h"
+#include "xstrjoin.h"
 
 #define CK(v) \
 do { \
@@ -430,16 +430,10 @@ static int mpris_metadata(sd_bus *_bus, const char *_path,
 		
 		if (ti->filename) {
 			size_t len = strlen(ti->filename);
-			size_t buf_size = (3 * len) + 1;
-
-			char uri[buf_size];
+			char uri[(3 * len) + 1];
 			uri_encode(ti->filename, len, uri);
 
-			char scheme[] = "file://";
-			char xesam_url[buf_size + sizeof(scheme)];
-			strcpy(xesam_url, scheme);
-			strcat(xesam_url, uri);
-
+			const char *xesam_url = xstrjoin("file://", uri); // TODO use is_url, and so to determine what scheme to use
 			CK(mpris_msg_append_ss_dict(reply, "xesam:url",
 						xesam_url));
 		}
