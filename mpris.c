@@ -433,9 +433,21 @@ static int mpris_metadata(sd_bus *_bus, const char *_path,
 			char uri[(3 * len) + 1];
 			uri_encode(ti->filename, len, uri);
 
-			const char *xesam_url = xstrjoin("file://", uri); // TODO use is_url, and so to determine what scheme to use
+			char *xesam_url = xstrjoin("file://", uri); // TODO use is_url, and so to determine what scheme to use
 			CK(mpris_msg_append_ss_dict(reply, "xesam:url",
 						xesam_url));
+			free(xesam_url);
+		}
+
+		if (ti->albumart) { // TODO if not albumart embedded in file, check if art is in song directory
+			size_t len = strlen(ti->albumart);
+			char uri[(3 * len) + 1];
+			uri_encode(ti->albumart, len, uri);
+
+			char *mpris_arturl = xstrjoin("file://", uri); // TODO use is_url, and so to determine what scheme to use
+			CK(mpris_msg_append_ss_dict(reply, "mpris:artUrl",
+						mpris_arturl));
+			free(mpris_arturl);
 		}
 	}
 

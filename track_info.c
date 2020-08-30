@@ -78,6 +78,7 @@ void track_info_set_comments(struct track_info *ti, struct keyval *comments) {
 	ti->albumsort = keyvals_get_val(comments, "albumsort");
 	ti->is_va_compilation = track_is_va_compilation(comments);
 	ti->media = keyvals_get_val(comments, "media");
+	ti->albumart = keyvals_get_val(comments, "albumart");
 
 	int bpm = comments_get_int(comments, "bpm");
 	if (ti->bpm == 0 || ti->bpm == -1) {
@@ -290,6 +291,7 @@ static const struct {
 	{ "codec_profile",	SORT_CODEC_PROFILE	},
 	{ "media",		SORT_MEDIA		},
 	{ "bpm",		SORT_BPM		},
+	{ "albumart",		SORT_ALBUMART	},
 	{ "-artist",		REV_SORT_ARTIST		},
 	{ "-album",		REV_SORT_ALBUM		},
 	{ "-title",		REV_SORT_TITLE		},
@@ -312,6 +314,7 @@ static const struct {
 	{ "-codec_profile",	REV_SORT_CODEC_PROFILE	},
 	{ "-media",		REV_SORT_MEDIA		},
 	{ "-bpm",		REV_SORT_BPM		},
+	{ "-albumart",		REV_SORT_ALBUMART	},
 	{ NULL,                 SORT_INVALID            }
 };
 

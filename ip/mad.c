@@ -134,7 +134,7 @@ static int mad_read_comments(struct input_plugin_data *ip_data,
 	d_print("filename: %s\n", ip_data->filename);
 
 	id3_init(&id3);
-	rc = id3_read_tags(&id3, fd, ID3_V1 | ID3_V2);
+	rc = id3_read_tags(&id3, fd, ID3_V1 | ID3_V2, ip_data->filename);
 	save = errno;
 	close(fd);
 	errno = save;

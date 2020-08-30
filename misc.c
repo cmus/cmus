@@ -41,6 +41,7 @@ const char *cmus_socket_path = NULL;
 const char *cmus_data_dir = NULL;
 const char *cmus_lib_dir = NULL;
 const char *home_dir = NULL;
+const char *cmus_albumart_dir = NULL;
 
 char **get_words(const char *text)
 {
@@ -269,6 +270,15 @@ int misc_init(void)
 	cmus_data_dir = getenv("CMUS_DATA_DIR");
 	if (!cmus_data_dir)
 		cmus_data_dir = DATADIR "/cmus";
+
+	cmus_albumart_dir = get_non_empty_env("CMUS_ALBUMART_DIR");
+	if (!cmus_albumart_dir)
+		cmus_albumart_dir = xstrjoin(cmus_config_dir, "/albumart");
+
+	int albumart_dir_is_new = dir_exists(cmus_albumart_dir) == 0;
+	if (albumart_dir_is_new) {
+		make_dir(cmus_albumart_dir);
+	}
 
 	free(xdg_runtime_dir);
 	return 0;
