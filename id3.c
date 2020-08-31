@@ -982,16 +982,16 @@ static void decode_ufid(struct id3tag *id3, const char *buf, int len)
 	add_v2(id3, ID3_MUSICBRAINZ_TRACKID, ufid);
 }
 
-static void decode_apic(struct id3tag *id3, const char *buf, int len, int encoding, const char *filepath)
+static int decode_apic(struct id3tag *id3, const char *buf, int len, int encoding, const char *filepath)
 {
 	const char *filename = get_filename(filepath);
 	if (!filename)
-		return;
+		return 0;
 	
 	char *temp = xstrdup(filename);
 	char *test = strrchr(temp, '.');
 	if (!test)
-		return;
+		return 0;
 	*test = '\0';
 	char *albumart_path = xstrjoin(cmus_albumart_dir, "/", temp);
 	free(temp);
@@ -999,7 +999,7 @@ static void decode_apic(struct id3tag *id3, const char *buf, int len, int encodi
 	// skip MIME type
 	size_t slen = id3_skiplen(buf, len, encoding);
 	if (slen >= len)
-		return;
+		return 0;
 	buf += slen;
 	len -= slen;
 
@@ -1010,7 +1010,7 @@ static void decode_apic(struct id3tag *id3, const char *buf, int len, int encodi
 	// skip Description
 	slen = id3_skiplen(buf, len, encoding);
 	if (slen >= len)
-		return;
+		return 0;
 	buf += slen;
 	len -= slen;
 
@@ -1019,9 +1019,10 @@ static void decode_apic(struct id3tag *id3, const char *buf, int len, int encodi
 	close(fd);
 	
 	add_v2(id3, ID3_APIC, albumart_path);
+	return 1;
 }
 
-static void v2_add_frame(struct id3tag *id3, struct v2_frame_header *fh, const char *buf, const char *filepath)
+static void v2_add_frame(struct id3tag *id3, struct v2_frame_header *fh, const char *buf, const char *filepath, int *apic_decoded)
 {
 	int encoding;
 	int len;
@@ -1050,8 +1051,8 @@ static void v2_add_frame(struct id3tag *id3, struct v2_frame_header *fh, const c
 		decode_comment(id3, buf, len, encoding);
 	} else if (!strncmp(fh->id, "COM", 3)) {
 		decode_comment(id3, buf, len, encoding);
-	} else if (!strncmp(fh->id, "APIC", 4)) {
-		decode_apic(id3, buf, len, encoding, filepath);
+	} else if (!*apic_decoded && !strncmp(fh->id, "APIC", 4)) {
+		*apic_decoded = decode_apic(id3, buf, len, encoding, filepath);
 	}
 }
 
@@ -1115,6 +1116,7 @@ static int v2_read(struct id3tag *id3, int fd, const struct v2_header *header, c
 	if (header->ver_major == 2)
 		frame_header_size = 6;
 
+	int apic_decoded = 0;
 	i = frame_start;
 	while (i < buf_size - frame_header_size) {
 		struct v2_frame_header fh;
@@ -1152,7 +1154,7 @@ static int v2_read(struct id3tag *id3, int fd, const struct v2_header *header, c
 		if ((fh.flags & V2_FRAME_UNSYNC) || (header->flags & V2_HEADER_UNSYNC))
 			unsync((unsigned char *)(buf + i), (int *)&fh.size);
 
-		v2_add_frame(id3, &fh, buf + i, filepath);
+		v2_add_frame(id3, &fh, buf + i, filepath, &apic_decoded);
 
 		i += len_unsync;
 	}
