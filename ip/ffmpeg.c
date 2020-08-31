@@ -21,6 +21,9 @@
 #include "../debug.h"
 #include "../utils.h"
 #include "../comment.h"
+#include "../misc.h"
+#include "../file.h"
+#include "../xstrjoin.h"
 #ifdef HAVE_CONFIG
 #include "../config/ffmpeg.h"
 #endif
@@ -436,6 +439,26 @@ static void ffmpeg_read_metadata(struct growing_keyvals *c, AVDictionary *metada
 	}
 }
 
+static int extract_albumart(AVStream *stream, const char *filepath) {
+	const char *filename = get_filename(filepath);
+	if (!filename)
+		return 0;
+	
+	char *temp = xstrdup(filename);
+	char *test = strrchr(temp, '.');
+	if (!test)
+		return 0;
+	*test = '\0';
+	char *albumart_path = xstrjoin(cmus_albumart_dir, "/", temp);
+	free(temp);
+
+	int fd = open(albumart_path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+	write_all(fd, stream->attached_pic.data, stream->attached_pic.size);
+	close(fd);
+
+	return 1;
+}
+
 static int ffmpeg_read_comments(struct input_plugin_data *ip_data, struct keyval **comments)
 {
 	struct ffmpeg_private *priv = ip_data->private;
@@ -444,8 +467,12 @@ static int ffmpeg_read_comments(struct input_plugin_data *ip_data, struct keyval
 	GROWING_KEYVALS(c);
 
 	ffmpeg_read_metadata(&c, ic->metadata);
+	int albumart_extracted = 0;
 	for (unsigned i = 0; i < ic->nb_streams; i++) {
 		ffmpeg_read_metadata(&c, ic->streams[i]->metadata);
+		if (!albumart_extracted && ic->streams[i]->disposition & AV_DISPOSITION_ATTACHED_PIC) {
+			albumart_extracted = extract_albumart(ic->streams[i], ip_data->filename);
+		}
 	}
 
 	keyvals_terminate(&c);
