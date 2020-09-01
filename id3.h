@@ -63,6 +63,9 @@ struct id3tag {
 	char v1[128];
 	char *v2[NUM_ID3_KEYS];
 
+	const char *apic;
+	int apic_len;
+
 	unsigned int has_v1 : 1;
 	unsigned int has_v2 : 1;
 };

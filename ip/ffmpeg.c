@@ -439,24 +439,32 @@ static void ffmpeg_read_metadata(struct growing_keyvals *c, AVDictionary *metada
 	}
 }
 
-static int extract_albumart(AVStream *stream, const char *filepath) {
-	const char *filename = get_filename(filepath);
-	if (!filename)
-		return 0;
-	
-	char *temp = xstrdup(filename);
-	char *test = strrchr(temp, '.');
-	if (!test)
-		return 0;
-	*test = '\0';
-	char *albumart_path = xstrjoin(cmus_albumart_dir, "/", temp);
-	free(temp);
+static char *get_albumart(AVPacket *albumart_pkt, const char *filepath, int filepath_is_album)
+{
+	char *albumart_path;
 
-	int fd = open(albumart_path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-	write_all(fd, stream->attached_pic.data, stream->attached_pic.size);
-	close(fd);
+	if (filepath_is_album) {
+		albumart_path = xstrjoin(cmus_albumart_dir, "/", filepath);
+	} else {
+		const char *filename = get_filename(filepath);
+		if (!filename)
+			return NULL;
+		
+		char *temp = xstrdup(filename);
+		char *ext = strrchr(temp, '.');
+		if (ext)
+			*ext = '\0';
+		albumart_path = xstrjoin(cmus_albumart_dir, "/", temp);
+		free(temp);
+	}
 
-	return 1;
+	int fd = open(albumart_path, O_CREAT | O_WRONLY | O_EXCL | O_TRUNC, S_IRUSR | S_IWUSR);
+	if (fd >= 0) {
+		write_all(fd, albumart_pkt->data, albumart_pkt->size);
+		close(fd);
+	}
+
+	return albumart_path;
 }
 
 static int ffmpeg_read_comments(struct input_plugin_data *ip_data, struct keyval **comments)
@@ -467,12 +475,21 @@ static int ffmpeg_read_comments(struct input_plugin_data *ip_data, struct keyval
 	GROWING_KEYVALS(c);
 
 	ffmpeg_read_metadata(&c, ic->metadata);
-	int albumart_extracted = 0;
+	AVPacket *albumart_pkt = NULL;
 	for (unsigned i = 0; i < ic->nb_streams; i++) {
 		ffmpeg_read_metadata(&c, ic->streams[i]->metadata);
-		if (!albumart_extracted && ic->streams[i]->disposition & AV_DISPOSITION_ATTACHED_PIC) {
-			albumart_extracted = extract_albumart(ic->streams[i], ip_data->filename);
-		}
+		if (!albumart_pkt && ic->streams[i]->disposition & AV_DISPOSITION_ATTACHED_PIC)
+			albumart_pkt = &(ic->streams[i]->attached_pic);
+	}
+
+	if (albumart_pkt) {
+		const char *album = keyvals_get_val_growing(&c, "album");
+		char *albumart;
+		if (album)
+			albumart = get_albumart(albumart_pkt, album, 1);
+		else
+			albumart = get_albumart(albumart_pkt, ip_data->filename, 0);
+		comments_add(&c, "albumart", albumart);
 	}
 
 	keyvals_terminate(&c);

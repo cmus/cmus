@@ -982,24 +982,15 @@ static void decode_ufid(struct id3tag *id3, const char *buf, int len)
 	add_v2(id3, ID3_MUSICBRAINZ_TRACKID, ufid);
 }
 
-static int decode_apic(struct id3tag *id3, const char *buf, int len, int encoding, const char *filepath)
+static void decode_apic(struct id3tag *id3, const char *buf, int len, int encoding)
 {
-	const char *filename = get_filename(filepath);
-	if (!filename)
-		return 0;
-	
-	char *temp = xstrdup(filename);
-	char *test = strrchr(temp, '.');
-	if (!test)
-		return 0;
-	*test = '\0';
-	char *albumart_path = xstrjoin(cmus_albumart_dir, "/", temp);
-	free(temp);
-	
+	if (id3->apic)
+		return;
+
 	// skip MIME type
 	size_t slen = id3_skiplen(buf, len, encoding);
 	if (slen >= len)
-		return 0;
+		return;
 	buf += slen;
 	len -= slen;
 
@@ -1010,19 +1001,15 @@ static int decode_apic(struct id3tag *id3, const char *buf, int len, int encodin
 	// skip Description
 	slen = id3_skiplen(buf, len, encoding);
 	if (slen >= len)
-		return 0;
+		return;
 	buf += slen;
 	len -= slen;
 
-	int fd = open(albumart_path, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-	write_all(fd, buf, len);
-	close(fd);
-	
-	add_v2(id3, ID3_APIC, albumart_path);
-	return 1;
+	id3->apic = buf;
+	id3->apic_len = len;
 }
 
-static void v2_add_frame(struct id3tag *id3, struct v2_frame_header *fh, const char *buf, const char *filepath, int *apic_decoded)
+static void v2_add_frame(struct id3tag *id3, struct v2_frame_header *fh, const char *buf)
 {
 	int encoding;
 	int len;
@@ -1051,8 +1038,8 @@ static void v2_add_frame(struct id3tag *id3, struct v2_frame_header *fh, const c
 		decode_comment(id3, buf, len, encoding);
 	} else if (!strncmp(fh->id, "COM", 3)) {
 		decode_comment(id3, buf, len, encoding);
-	} else if (!*apic_decoded && !strncmp(fh->id, "APIC", 4)) {
-		*apic_decoded = decode_apic(id3, buf, len, encoding, filepath);
+	} else if (!strncmp(fh->id, "APIC", 4)) {
+		decode_apic(id3, buf, len, encoding);
 	}
 }
 
@@ -1084,7 +1071,7 @@ static void unsync(unsigned char *buf, int *lenp)
 	*lenp = d;
 }
 
-static int v2_read(struct id3tag *id3, int fd, const struct v2_header *header, const char *filepath)
+static int v2_read(struct id3tag *id3, int fd, const struct v2_header *header)
 {
 	char *buf;
 	int rc, buf_size;
@@ -1116,7 +1103,6 @@ static int v2_read(struct id3tag *id3, int fd, const struct v2_header *header, c
 	if (header->ver_major == 2)
 		frame_header_size = 6;
 
-	int apic_decoded = 0;
 	i = frame_start;
 	while (i < buf_size - frame_header_size) {
 		struct v2_frame_header fh;
@@ -1154,7 +1140,7 @@ static int v2_read(struct id3tag *id3, int fd, const struct v2_header *header, c
 		if ((fh.flags & V2_FRAME_UNSYNC) || (header->flags & V2_HEADER_UNSYNC))
 			unsync((unsigned char *)(buf + i), (int *)&fh.size);
 
-		v2_add_frame(id3, &fh, buf + i, filepath, &apic_decoded);
+		v2_add_frame(id3, &fh, buf + i);
 
 		i += len_unsync;
 	}
@@ -1188,7 +1174,7 @@ int id3_tag_size(const char *buf, int buf_size)
 
 void id3_init(struct id3tag *id3)
 {
-	const struct id3tag t = { .has_v1 = 0, .has_v2 = 0 };
+	const struct id3tag t = { .apic_len = 0, .has_v1 = 0, .has_v2 = 0 };
 	*id3 = t;
 }
 
@@ -1198,6 +1184,36 @@ void id3_free(struct id3tag *id3)
 
 	for (i = 0; i < NUM_ID3_KEYS; i++)
 		free(id3->v2[i]);
+}
+
+static void add_apic(struct id3tag *id3, const char *filepath)
+{
+	char *albumart_path;
+	char *album = id3_get_comment(id3, ID3_ALBUM);
+
+	if (album) {
+		albumart_path = xstrjoin(cmus_albumart_dir, "/", album);
+		free(album);
+	} else {
+		const char *filename = get_filename(filepath);
+		if (!filename)
+			return;
+		
+		char *temp = xstrdup(filename);
+		char *ext = strrchr(temp, '.');
+		if (ext)
+			*ext = '\0';
+		
+		albumart_path = xstrjoin(cmus_albumart_dir, "/", temp);
+		free(temp);
+	}
+
+	int apic_fd = open(albumart_path, O_CREAT | O_WRONLY | O_EXCL | O_TRUNC, S_IRUSR | S_IWUSR);
+	if (apic_fd >= 0) {
+		write_all(apic_fd, id3->apic, id3->apic_len);
+		close(apic_fd);
+	}
+	add_v2(id3, ID3_APIC, albumart_path);
 }
 
 int id3_read_tags(struct id3tag *id3, int fd, unsigned int flags, const char *filepath)
@@ -1213,7 +1229,7 @@ int id3_read_tags(struct id3tag *id3, int fd, unsigned int flags, const char *fi
 		if (rc == -1)
 			goto rc_error;
 		if (v2_header_parse(&header, buf)) {
-			rc = v2_read(id3, fd, &header, filepath);
+			rc = v2_read(id3, fd, &header);
 			if (rc)
 				goto rc_error;
 			/* get v1 if needed */
@@ -1237,7 +1253,7 @@ int id3_read_tags(struct id3tag *id3, int fd, unsigned int flags, const char *fi
 					off = lseek(fd, -((off_t) header.size + 138), SEEK_END);
 					if (off == -1)
 						goto error;
-					rc = v2_read(id3, fd, &header, filepath);
+					rc = v2_read(id3, fd, &header);
 					if (rc)
 						goto rc_error;
 				}
@@ -1246,7 +1262,7 @@ int id3_read_tags(struct id3tag *id3, int fd, unsigned int flags, const char *fi
 				off = lseek(fd, -((off_t) header.size + 10), SEEK_END);
 				if (off == -1)
 					goto error;
-				rc = v2_read(id3, fd, &header, filepath);
+				rc = v2_read(id3, fd, &header);
 				if (rc)
 					goto rc_error;
 			}
@@ -1262,6 +1278,10 @@ int id3_read_tags(struct id3tag *id3, int fd, unsigned int flags, const char *fi
 			goto rc_error;
 		id3->has_v1 = is_v1(id3->v1);
 	}
+
+	if (id3->apic)
+		add_apic(id3, filepath);
+
 	return 0;
 error:
 	rc = -1;
