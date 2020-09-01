@@ -21,6 +21,9 @@
 #include "../xmalloc.h"
 #include "../debug.h"
 #include "../utils.h"
+#include "../xstrjoin.h"
+#include "../misc.h"
+#include "../file.h"
 
 #include <FLAC/export.h>
 #include <FLAC/stream_decoder.h>
@@ -56,9 +59,14 @@ struct flac_private {
 	unsigned int buf_rpos;
 
 	struct keyval *comments;
+	int metadata_acquired;
+
 	double duration;
 	long bitrate;
 	int bps;
+
+	FLAC__StreamMetadata *apic;
+	struct growing_keyvals *c;
 };
 
 static T(ReadStatus) read_cb(const Dec *dec, unsigned char *buf, size_t *size, void *data)
@@ -191,6 +199,34 @@ static FLAC__StreamDecoderWriteStatus write_cb(const Dec *dec, const FLAC__Frame
 	return FLAC__STREAM_DECODER_WRITE_STATUS_CONTINUE;
 }
 
+static char *get_albumart(FLAC__StreamMetadata *apic, const char *filepath, int filepath_is_album)
+{
+	char *albumart_path;
+
+	if (filepath_is_album) {
+		albumart_path = xstrjoin(cmus_albumart_dir, "/", filepath);
+	} else {
+		const char *filename = get_filename(filepath);
+		if (!filename)
+			return NULL;
+		
+		char *temp = xstrdup(filename);
+		char *ext = strrchr(temp, '.');
+		if (ext)
+			*ext = '\0';
+		albumart_path = xstrjoin(cmus_albumart_dir, "/", temp);
+		free(temp);
+	}
+
+	int fd = open(albumart_path, O_CREAT | O_WRONLY | O_EXCL | O_TRUNC, S_IRUSR | S_IWUSR);
+	if (fd >= 0) {
+		write_all(fd, apic->data.picture.data, apic->data.picture.data_length);
+		close(fd);
+	}
+
+	return albumart_path;
+}
+
 /* You should make a copy of metadata with FLAC__metadata_object_clone() if you will
  * need it elsewhere. Since metadata blocks can potentially be large, by
  * default the decoder only calls the metadata callback for the STREAMINFO
@@ -226,10 +262,9 @@ static void metadata_cb(const Dec *dec, const FLAC__StreamMetadata *metadata, vo
 		break;
 	case FLAC__METADATA_TYPE_VORBIS_COMMENT:
 		d_print("VORBISCOMMENT\n");
-		if (priv->comments) {
+		if (priv->metadata_acquired) {
 			d_print("Ignoring\n");
 		} else {
-			GROWING_KEYVALS(c);
 			int i, nr;
 
 			nr = metadata->data.vorbis_comment.num_comments;
@@ -242,12 +277,16 @@ static void metadata_cb(const Dec *dec, const FLAC__StreamMetadata *metadata, vo
 					continue;
 				key = xstrndup(str, val - str);
 				val = xstrdup(val + 1);
-				comments_add(&c, key, val);
+				comments_add(priv->c, key, val);
 				free(key);
 			}
-			keyvals_terminate(&c);
-			priv->comments = c.keyvals;
+
+			priv->metadata_acquired = 1;
 		}
+		break;
+	case FLAC__METADATA_TYPE_PICTURE:
+		if (!priv->apic)
+			priv->apic = FLAC__metadata_object_clone(metadata);
 		break;
 	default:
 		d_print("something else\n");
@@ -296,7 +335,8 @@ static int flac_open(struct input_plugin_data *ip_data)
 		.dec      = dec,
 		.duration = -1,
 		.bitrate  = -1,
-		.bps      = 0
+		.bps      = 0,
+		.metadata_acquired = 0
 	};
 
 	if (!dec)
@@ -320,6 +360,9 @@ static int flac_open(struct input_plugin_data *ip_data)
 		priv->len = off;
 	}
 	ip_data->private = priv;
+
+	GROWING_KEYVALS(c);
+	priv->c = &c;
 
 	FLAC__stream_decoder_set_metadata_respond_all(dec);
 	if (FLAC__stream_decoder_init_stream(dec, read_cb, seek_cb, tell_cb,
@@ -355,6 +398,21 @@ static int flac_open(struct input_plugin_data *ip_data)
 			sf_get_rate(ip_data->sf),
 			sf_get_channels(ip_data->sf),
 			sf_get_bits(ip_data->sf));
+
+	if (priv->apic) {
+		const char *album = keyvals_get_val_growing(priv->c, "album");
+		char *albumart;
+		if (album)
+			albumart = get_albumart(priv->apic, album, 1);
+		else
+			albumart = get_albumart(priv->apic, ip_data->filename, 0);
+		comments_add(&c, "albumart", albumart);
+		FLAC__metadata_object_delete(priv->apic);
+	}
+
+	keyvals_terminate(priv->c);
+	priv->comments = priv->c->keyvals;
+
 	return 0;
 }
 
