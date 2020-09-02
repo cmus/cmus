@@ -24,6 +24,9 @@
 #include "../config/tremor.h"
 #endif
 #include "../comment.h"
+#include "../misc.h"
+#include "../file.h"
+#include "../xstrjoin.h"
 
 #ifdef CONFIG_TREMOR
 #include <tremor/ivorbisfile.h>
@@ -290,6 +293,55 @@ static int vorbis_seek(struct input_plugin_data *ip_data, double offset)
 	return 0;
 }
 
+static char *get_albumart(const char *apic, const char *filepath, int filepath_is_album)
+{
+	char *albumart_path;
+
+	if (filepath_is_album) {
+		albumart_path = xstrjoin(cmus_albumart_dir, "/", filepath);
+	} else {
+		const char *filename = get_filename(filepath);
+		if (!filename)
+			return NULL;
+		
+		char *temp = xstrdup(filename);
+		char *ext = strrchr(temp, '.');
+		if (ext)
+			*ext = '\0';
+		albumart_path = xstrjoin(cmus_albumart_dir, "/", temp);
+		free(temp);
+	}
+
+	char *apic_decoded;
+	int apic_decoded_len = 0;
+	if (!b64_decode(apic, &apic_decoded, &apic_decoded_len)) {
+		return NULL;
+	}
+
+	char *apic_data = apic_decoded;
+	apic_data += 4; // skip picture type
+
+	uint32_t mime_len = swap_endianness(*(uint32_t *) apic_data);
+	apic_data += 4 + mime_len; // skip MIME type string length and MIME type string
+	
+	uint32_t desc_len = swap_endianness(*(uint32_t *) apic_data);
+	apic_data += 4 + desc_len; // skip description string length and description string
+
+	apic_data += 16; // skip width, height, color depth, and nb of colors
+
+	uint32_t apic_len = swap_endianness(*(uint32_t *) apic_data);
+	apic_data += 4; // skip picture data length
+
+	int fd = open(albumart_path, O_CREAT | O_WRONLY | O_EXCL | O_TRUNC, S_IRUSR | S_IWUSR);
+	if (fd >= 0) {
+		write_all(fd, apic_data, apic_len);
+		close(fd);
+	}
+
+	free(apic_decoded);
+	return albumart_path;
+}
+
 static int vorbis_read_comments(struct input_plugin_data *ip_data,
 		struct keyval **comments)
 {
@@ -305,6 +357,8 @@ static int vorbis_read_comments(struct input_plugin_data *ip_data,
 		*comments = keyvals_new(0);
 		return 0;
 	}
+
+	const char *apic = NULL;
 	for (i = 0; i < vc->comments; i++) {
 		const char *str = vc->user_comments[i];
 		const char *eq = strchr(str, '=');
@@ -316,9 +370,25 @@ static int vorbis_read_comments(struct input_plugin_data *ip_data,
 		}
 
 		key = xstrndup(str, eq - str);
-		comments_add_const(&c, key, eq + 1);
+
+		if (!strcmp(key, "METADATA_BLOCK_PICTURE"))
+			apic = eq + 1;
+		else
+			comments_add_const(&c, key, eq + 1);
+
 		free(key);
 	}
+
+	if (apic) {
+		const char *album = keyvals_get_val_growing(&c, "album");
+		char *albumart;
+		if (album)
+			albumart = get_albumart(apic, album, 1);
+		else
+			albumart = get_albumart(apic, ip_data->filename, 0);
+		comments_add(&c, "albumart", albumart);
+	}
+
 	keyvals_terminate(&c);
 	*comments = c.keyvals;
 	return 0;
