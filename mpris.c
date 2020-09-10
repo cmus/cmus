@@ -28,6 +28,7 @@
 #include "uchar.h"
 #include "misc.h"
 #include "xstrjoin.h"
+#include "xmalloc.h"
 
 #define CK(v) \
 do { \
@@ -439,7 +440,7 @@ static int mpris_metadata(sd_bus *_bus, const char *_path,
 			free(xesam_url);
 		}
 
-		if (ti->albumart) { // TODO if not albumart embedded in file, check if art is in song directory
+		if (ti->albumart) {
 			size_t len = strlen(ti->albumart);
 			char uri[(3 * len) + 1];
 			uri_encode(ti->albumart, len, uri);
@@ -448,6 +449,29 @@ static int mpris_metadata(sd_bus *_bus, const char *_path,
 			CK(mpris_msg_append_ss_dict(reply, "mpris:artUrl",
 						mpris_arturl));
 			free(mpris_arturl);
+		} else {
+			char *temp = xstrdup(ti->filename);
+			char *dir = strrchr(temp, '/');
+			if (dir)
+				*dir = '\0';
+			struct stat statbuf;
+
+			char *albumart = xstrjoin(temp, "/cover.jpg");
+
+			int rc = stat(albumart, &statbuf);
+			if (!rc && statbuf.st_mode & S_IWUSR) {
+				size_t len = strlen(albumart);
+				char uri[(3 * len) + 1];
+				uri_encode(albumart, len, uri);
+				
+				char *mpris_arturl = xstrjoin("file://", uri);
+				CK(mpris_msg_append_ss_dict(reply, "mpris:artUrl",
+							mpris_arturl));
+				free(mpris_arturl);
+			}
+			
+			free(temp);
+			free(albumart);
 		}
 	}
 
