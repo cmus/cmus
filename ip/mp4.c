@@ -26,6 +26,9 @@
 #endif
 #include "../comment.h"
 #include "aac.h"
+#include "misc.h"
+#include "file.h"
+#include "xstrjoin.h"
 
 #if USE_MPEG4IP
 #include <mp4.h>
@@ -377,6 +380,34 @@ static int mp4_seek(struct input_plugin_data *ip_data, double offset)
 	return 0;
 }
 
+static char *get_albumart(MP4TagArtwork *apic, const char *filepath, int filepath_is_album)
+{
+	char *albumart_path;
+
+	if (filepath_is_album) {
+		albumart_path = xstrjoin(cmus_albumart_dir, "/", filepath);
+	} else {
+		const char *filename = get_filename(filepath);
+		if (!filename)
+			return NULL;
+		
+		char *temp = xstrdup(filename);
+		char *ext = strrchr(temp, '.');
+		if (ext)
+			*ext = '\0';
+		albumart_path = xstrjoin(cmus_albumart_dir, "/", temp);
+		free(temp);
+	}
+
+	int fd = open(albumart_path, O_CREAT | O_WRONLY | O_EXCL | O_TRUNC, S_IRUSR | S_IWUSR);
+	if (fd >= 0) {
+		write_all(fd, apic->data, apic->size);
+		close(fd);
+	}
+
+	return albumart_path;
+}
+
 static int mp4_read_comments(struct input_plugin_data *ip_data,
 		struct keyval **comments)
 {
@@ -489,6 +520,16 @@ static int mp4_read_comments(struct input_plugin_data *ip_data,
 		char buf[6];
 		snprintf(buf, 6, "%u", *tags->tempo);
 		comments_add_const(&c, "bpm", buf);
+	}
+	if (tags->artwork) {
+		char *albumart;
+		if (tags->album)
+			albumart = get_albumart(tags->artwork, tags->album, 1);
+		else
+			albumart = get_albumart(tags->artwork, ip_data->filename, 0);
+		
+		if (albumart)
+			comments_add(&c, "albumart", albumart);
 	}
 
 	MP4TagsFree(tags);
