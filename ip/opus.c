@@ -324,7 +324,9 @@ static int opus_read_comments(struct input_plugin_data *ip_data,
 			albumart = get_albumart(apic, album, 1);
 		else
 			albumart = get_albumart(apic, ip_data->filename, 0);
-		comments_add(&c, "albumart", albumart);
+
+		if (albumart)
+			comments_add(&c, "albumart", albumart);
 	}
 
 	keyvals_terminate(&c);

@@ -489,7 +489,9 @@ static int ffmpeg_read_comments(struct input_plugin_data *ip_data, struct keyval
 			albumart = get_albumart(albumart_pkt, album, 1);
 		else
 			albumart = get_albumart(albumart_pkt, ip_data->filename, 0);
-		comments_add(&c, "albumart", albumart);
+		
+		if (albumart)
+			comments_add(&c, "albumart", albumart);
 	}
 
 	keyvals_terminate(&c);
