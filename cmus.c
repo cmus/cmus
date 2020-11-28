@@ -397,7 +397,7 @@ int cmus_playlist_for_each(const char *buf, int size, int reverse,
 static struct track_info *cmus_get_next_from_main_thread(void)
 {
 	struct track_info *ti = play_queue_remove();
-	if (!ti)
+	if (!ti && !stop_after_queue)
 		ti = play_library ? lib_goto_next() : pl_goto_next();
 	return ti;
 }
