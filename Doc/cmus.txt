@@ -1134,6 +1134,9 @@ status_display_program () [command]
 	background or panel for example.  See
 	`/usr/share/doc/cmus/examples/cmus-status-display`.
 
+stop_after_queue (false)
+	Stop playback when end of play queue is reached.
+
 time_show_leading_zero (true)
 	Pad durations of less than 10 minutes with a leading 0
 
