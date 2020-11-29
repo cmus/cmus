@@ -314,7 +314,12 @@ static struct simple_track *pl_get_first_track(struct playlist *pl)
 {
 	/* pl is not empty */
 
-	return to_simple_track(pl->editable.head.next);
+	if (shuffle) {
+		struct shuffle_track *st = shuffle_list_get_next(&pl->shuffle_root, NULL, pl_dummy_filter);
+		return &st->simple_track;
+	} else {
+		return to_simple_track(pl->editable.head.next);
+	}
 }
 
 static struct track_info *pl_play_track(struct playlist *pl, struct simple_track *t)
@@ -641,13 +646,23 @@ struct track_info *pl_play_selected_row(void)
 	 */
 
 	int was_in_track_window = pl_cursor_in_track_window;
-	if (!pl_cursor_in_track_window)
+
+	struct track_info *rv = NULL;
+
+	if (!pl_cursor_in_track_window) {
+		if (shuffle && !pl_empty(pl_visible)) {
+			struct shuffle_track *st = shuffle_list_get_next(&pl_visible->shuffle_root, NULL, pl_dummy_filter);
+			struct simple_track *track = &st->simple_track;
+			rv = pl_play_track(pl_visible, track);
+		}
 		window_goto_top(pl_editable_shared.win);
+	}
+
+	if (!rv)
+		rv = pl_play_selected_track();
 
 	struct playlist *prev_pl = pl_playing;
 	struct simple_track *prev_track = pl_playing_track;
-
-	struct track_info *rv = pl_play_selected_track();
 
 	if (shuffle && rv && (pl_playing == prev_pl) && prev_track) {
 		struct shuffle_track *prev_st = simple_track_to_shuffle_track(prev_track);
