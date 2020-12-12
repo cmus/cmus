@@ -64,6 +64,8 @@ static const enum key_context view_to_context[] = {
 #define KEY_MSCRL_DOWN			3
 #define KEY_MLB_CLICK_SEL		(KEY_MLB_CLICK|KEY_M_FLAG_SEL)
 #define KEY_MRB_CLICK_SEL 		(KEY_MRB_CLICK|KEY_M_FLAG_SEL)
+#define KEY_MLB_CLICK_BAR		(KEY_MLB_CLICK|KEY_M_FLAG_BAR)
+#define KEY_MRB_CLICK_BAR 		(KEY_MRB_CLICK|KEY_M_FLAG_BAR)
 #define KEY_MSCRL_UP_BAR		(KEY_MSCRL_UP|KEY_M_FLAG_BAR)
 #define KEY_MSCRL_DOWN_BAR		(KEY_MSCRL_DOWN|KEY_M_FLAG_BAR)
 
@@ -425,8 +427,10 @@ const struct key key_table[] = {
 	{ "~",			KEY_IS_CHAR,		126	},
 	{ "mlb_click",		KEY_MOUSE,		KEY_MLB_CLICK		},
 	{ "mlb_click_selected",	KEY_MOUSE,		KEY_MLB_CLICK_SEL	},
+	{ "mlb_click_bar",	KEY_MOUSE,		KEY_MLB_CLICK_BAR	},
 	{ "mrb_click",		KEY_MOUSE,		KEY_MRB_CLICK		},
 	{ "mrb_click_selected",	KEY_MOUSE,		KEY_MRB_CLICK_SEL	},
+	{ "mrb_click_bar",	KEY_MOUSE,		KEY_MRB_CLICK_BAR	},
 	{ "mouse_scroll_up",	KEY_MOUSE,		KEY_MSCRL_UP		},
 	{ "mouse_scroll_up_bar",	KEY_MOUSE,		KEY_MSCRL_UP_BAR		},
 	{ "mouse_scroll_down",	KEY_MOUSE,		KEY_MSCRL_DOWN		},
