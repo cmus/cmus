@@ -84,6 +84,7 @@ int mouse = 0;
 int mpris = 1;
 int time_show_leading_zero = 1;
 int start_view = TREE_VIEW;
+int tree_width_percent = 33;
 
 int colors[NR_COLORS] = {
 	-1,
@@ -467,6 +468,20 @@ static void set_status_display_program(void *data, const char *buf)
 	status_display_program = NULL;
 	if (buf[0])
 		status_display_program = expand_filename(buf);
+}
+
+static void get_tree_width_percent(void *data, char *buf, size_t size)
+{
+	buf_int(buf, tree_width_percent, size);
+}
+
+static void set_tree_width_percent(void *data, const char *buf)
+{
+	int percent;
+
+	if (parse_int(buf, 1, 99, &percent))
+		tree_width_percent = percent;
+	update_size();
 }
 
 /* }}} */
@@ -1384,6 +1399,7 @@ static const struct {
 	DT(time_show_leading_zero)
 	DN(lib_add_filter)
 	DN(start_view)
+	DN(tree_width_percent)
 	{ NULL, NULL, NULL, NULL, 0 }
 };
 

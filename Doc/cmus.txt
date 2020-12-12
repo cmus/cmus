@@ -1137,6 +1137,9 @@ status_display_program () [command]
 time_show_leading_zero (true)
 	Pad durations of less than 10 minutes with a leading 0
 
+tree_width_percent (33) [1-99]
+	Percentage of window to use for left pane.
+
 wrap_search (true)
 	Controls whether the search wraps around the end.
 
