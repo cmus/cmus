@@ -55,14 +55,17 @@ static const enum key_context view_to_context[] = {
 
 #define KEY_IS_CHAR -255
 
+#define KEY_M_FLAG_SEL 8
+#define KEY_M_FLAG_BAR 16
+
 #define KEY_MLB_CLICK			0
-#define KEY_MLB_CLICK_SEL		1
-#define KEY_MRB_CLICK 			2
-#define KEY_MRB_CLICK_SEL 		3
-#define KEY_MSCRL_UP	 		4
-#define KEY_MSCRL_UP_BAR		5
-#define KEY_MSCRL_DOWN			6
-#define KEY_MSCRL_DOWN_BAR		7
+#define KEY_MRB_CLICK 			1
+#define KEY_MSCRL_UP	 		2
+#define KEY_MSCRL_DOWN			3
+#define KEY_MLB_CLICK_SEL		(KEY_MLB_CLICK|KEY_M_FLAG_SEL)
+#define KEY_MRB_CLICK_SEL 		(KEY_MRB_CLICK|KEY_M_FLAG_SEL)
+#define KEY_MSCRL_UP_BAR		(KEY_MSCRL_UP|KEY_M_FLAG_BAR)
+#define KEY_MSCRL_DOWN_BAR		(KEY_MSCRL_DOWN|KEY_M_FLAG_BAR)
 
 /* key_table {{{
  *
@@ -624,7 +627,7 @@ static const struct key *keycode_to_key(int key)
 }
 
 #define DEF_ME_START if (event->bstate == 0) { return NULL; }
-#define DEF_ME_KEY(s, k) else if (event->bstate & s) { key = k + is_sel + is_bar; }
+#define DEF_ME_KEY(s, k) else if (event->bstate & s) { key = k | (is_sel?KEY_M_FLAG_SEL:0) | (is_bar?KEY_M_FLAG_BAR:0); }
 #define DEF_ME_END else { return NULL; }
 
 static const struct key *mevent_to_key(MEVENT *event, int is_sel, int is_bar)
@@ -708,46 +711,50 @@ static const struct key *normal_mode_mouse_handle(MEVENT* event)
 	struct window* win = NULL;
 	struct iter it, sel;
 
-	if (cur_view == TREE_VIEW) {
-		if (event->x >= track_win_x)
-			win = lib_track_win;
-		else if (event->x < track_win_x - 1)
-			win = lib_tree_win;
-		else
-			return NULL;
-		is_sel = (lib_cur_win == win);
-	} else {
-		win = current_win();
-		is_sel = 1;
-	}
-
-	if ((event->bstate & BUTTON4_PRESSED) || (event->bstate & BUTTON5_PRESSED)) {
+	if (event->y == LINES - 2) {
 		is_sel = 0;
 		need_sel = 0;
-		is_bar = (event->y == LINES - 2);
-		if (!is_bar) {
+		is_bar = 1;
+	} else {
+		is_bar = 0;
+
+		if (cur_view == TREE_VIEW) {
+			if (event->x >= track_win_x)
+				win = lib_track_win;
+			else if (event->x < track_win_x - 1)
+				win = lib_tree_win;
+			else
+				return NULL;
+			is_sel = (lib_cur_win == win);
+		} else {
+			win = current_win();
+			is_sel = 1;
+		}
+
+		if ((event->bstate & BUTTON4_PRESSED) || (event->bstate & BUTTON5_PRESSED)) {
+			is_sel = 0;
+			need_sel = 0;
 			if (event->y < 1 || event->y >= LINES - 3)
 				return NULL;
 			if (cur_view == TREE_VIEW && lib_cur_win != win)
 				tree_toggle_active_window();
-		}
-	} else {
-		if (event->y < 1 || event->y > window_get_nr_rows(win))
-			return NULL;
-		if (cur_view == TREE_VIEW && lib_cur_win != win)
-			tree_toggle_active_window();
-		if (!window_get_top(win, &it) || !window_get_sel(win, &sel))
-			return NULL;
-		while (i-- > 0)
-			if (!window_get_next(win, &it))
+		} else {
+			if (event->y < 1 || event->y > window_get_nr_rows(win))
 				return NULL;
-		while (win->selectable && !win->selectable(&it))
-			if (!window_get_next(win, &it))
+			if (cur_view == TREE_VIEW && lib_cur_win != win)
+				tree_toggle_active_window();
+			if (!window_get_top(win, &it) || !window_get_sel(win, &sel))
 				return NULL;
+			while (i-- > 0)
+				if (!window_get_next(win, &it))
+					return NULL;
+			while (win->selectable && !win->selectable(&it))
+				if (!window_get_next(win, &it))
+					return NULL;
 
-		is_sel = is_sel && iters_equal(&sel, &it);
-		need_sel = !iters_equal(&sel, &it);
-		is_bar = 0;
+			is_sel = is_sel && iters_equal(&sel, &it);
+			need_sel = !iters_equal(&sel, &it);
+		}
 	}
 
 	const struct key *k = mevent_to_key(event, is_sel, is_bar);
