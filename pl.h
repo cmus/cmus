@@ -32,6 +32,9 @@ struct pl_list_info {
 	unsigned current : 1;
 };
 
+extern struct window *pl_list_win;
+extern struct editable_shared pl_editable_shared;
+
 void pl_init(void);
 void pl_exit(void);
 void pl_save(void);

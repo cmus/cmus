@@ -46,7 +46,7 @@ struct playlist {
 
 static struct playlist *pl_visible; /* never NULL */
 static struct playlist *pl_marked; /* never NULL */
-static struct window *pl_list_win;
+struct window *pl_list_win;
 
 /* pl_playing_track shares its track_info reference with the playlist it's in.
  * pl_playing_track and pl_playing might be null but pl_playing_track != NULL
@@ -56,7 +56,7 @@ static struct simple_track *pl_playing_track;
 static struct playlist *pl_playing;
 
 static int pl_cursor_in_track_window;
-static struct editable_shared pl_editable_shared;
+struct editable_shared pl_editable_shared;
 static LIST_HEAD(pl_head); /* never empty */
 
 static struct searchable *pl_searchable;
