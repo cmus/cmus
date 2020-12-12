@@ -199,7 +199,7 @@ q                               quit -i
 ^C                              echo Type :quit<enter> to exit cmus.
 I                               echo {}
 b                               player-next
-c                               player-pause
+c, mlb_click_bar                player-pause
 x                               player-play
 z                               player-prev
 v                               player-stop
