@@ -1454,14 +1454,14 @@ static void cmd_search_b_start(char *arg)
 	enter_search_backward_mode();
 }
 
-static int sorted_for_each_sel(track_info_cb cb, void *data, int reverse)
+static int sorted_for_each_sel(track_info_cb cb, void *data, int reverse, int no_next)
 {
-	return editable_for_each_sel(&lib_editable, cb, data, reverse);
+	return editable_for_each_sel(&lib_editable, cb, data, reverse, no_next);
 }
 
-static int pq_for_each_sel(track_info_cb cb, void *data, int reverse)
+static int pq_for_each_sel(track_info_cb cb, void *data, int reverse, int no_next)
 {
-	return editable_for_each_sel(&pq_editable, cb, data, reverse);
+	return editable_for_each_sel(&pq_editable, cb, data, reverse, no_next);
 }
 
 static for_each_sel_ti_cb view_for_each_sel[4] = {
@@ -1485,7 +1485,7 @@ static int wrapper_cb(void *data, struct track_info *ti)
 	return 0;
 }
 
-static void add_from_browser(add_ti_cb add, int job_type)
+static void add_from_browser(add_ti_cb add, int job_type, bool no_next)
 {
 	char *sel = get_browser_add_file();
 
@@ -1496,7 +1496,8 @@ static void add_from_browser(add_ti_cb add, int job_type)
 		ft = cmus_detect_ft(sel, &ret);
 		if (ft != FILE_TYPE_INVALID) {
 			cmus_add(add, ret, ft, job_type, 0, NULL);
-			window_down(browser_win, 1);
+			if (!no_next)
+				window_down(browser_win, 1);
 		}
 		free(ret);
 		free(sel);
@@ -1505,29 +1506,37 @@ static void add_from_browser(add_ti_cb add, int job_type)
 
 static void cmd_win_add_l(char *arg)
 {
+	int flag = parse_flags((const char **)&arg, "n");
+	if (flag == -1)
+		return;
+
 	if (cur_view == TREE_VIEW || cur_view == SORTED_VIEW)
 		return;
 
 	if (cur_view <= QUEUE_VIEW) {
 		struct wrapper_cb_data add = { lib_add_track };
-		view_for_each_sel[cur_view](wrapper_cb, &add, 0);
+		view_for_each_sel[cur_view](wrapper_cb, &add, 0, flag == 'n');
 	} else if (cur_view == BROWSER_VIEW) {
-		add_from_browser(lib_add_track, JOB_TYPE_LIB);
+		add_from_browser(lib_add_track, JOB_TYPE_LIB, flag == 'n');
 	}
 }
 
 static void cmd_win_add_p(char *arg)
 {
+	int flag = parse_flags((const char **)&arg, "n");
+	if (flag == -1)
+		return;
+
 	if (cur_view == PLAYLIST_VIEW && pl_visible_is_marked())
 		return;
 
 	if (cur_view <= QUEUE_VIEW) {
 		struct wrapper_cb_data add = { pl_add_track_to_marked_pl2 };
-		view_for_each_sel[cur_view](wrapper_cb, &add, 0);
+		view_for_each_sel[cur_view](wrapper_cb, &add, 0, flag == 'n');
 	} else if (cur_view == BROWSER_VIEW) {
 		char *sel = get_browser_add_file();
 		if (sel) {
-			if (pl_add_file_to_marked_pl(sel))
+			if (pl_add_file_to_marked_pl(sel) && flag != 'n')
 				window_down(browser_win, 1);
 			free(sel);
 		}
@@ -1536,27 +1545,35 @@ static void cmd_win_add_p(char *arg)
 
 static void cmd_win_add_Q(char *arg)
 {
+	int flag = parse_flags((const char **)&arg, "n");
+	if (flag == -1)
+		return;
+
 	if (cur_view == QUEUE_VIEW)
 		return;
 
 	if (cur_view <= QUEUE_VIEW) {
 		struct wrapper_cb_data add = { play_queue_prepend };
-		view_for_each_sel[cur_view](wrapper_cb, &add, 1);
+		view_for_each_sel[cur_view](wrapper_cb, &add, 1, flag == 'n');
 	} else if (cur_view == BROWSER_VIEW) {
-		add_from_browser(play_queue_prepend, JOB_TYPE_QUEUE);
+		add_from_browser(play_queue_prepend, JOB_TYPE_QUEUE, flag == 'n');
 	}
 }
 
 static void cmd_win_add_q(char *arg)
 {
+	int flag = parse_flags((const char **)&arg, "n");
+	if (flag == -1)
+		return;
+
 	if (cur_view == QUEUE_VIEW)
 		return;
 
 	if (cur_view <= QUEUE_VIEW) {
 		struct wrapper_cb_data add = { play_queue_append };
-		view_for_each_sel[cur_view](wrapper_cb, &add, 0);
+		view_for_each_sel[cur_view](wrapper_cb, &add, 0, flag == 'n');
 	} else if (cur_view == BROWSER_VIEW) {
-		add_from_browser(play_queue_append, JOB_TYPE_QUEUE);
+		add_from_browser(play_queue_append, JOB_TYPE_QUEUE, flag == 'n');
 	}
 }
 
@@ -1787,7 +1804,7 @@ static void cmd_win_update_cache(char *arg)
 	if (cur_view != TREE_VIEW && cur_view != SORTED_VIEW)
 		return;
 
-	view_for_each_sel[cur_view](add_ti, &sel, 0);
+	view_for_each_sel[cur_view](add_ti, &sel, 0, 0);
 	if (sel.tis_nr == 0)
 		return;
 	sel.tis[sel.tis_nr] = NULL;
@@ -2615,10 +2632,10 @@ struct command commands[] = {
 	{ "vol",                   cmd_vol,              1, 2,  NULL,                 0, 0          },
 	{ "w",                     cmd_save,             0, 1,  expand_load_save,     0, CMD_UNSAFE },
 	{ "win-activate",          cmd_win_activate,     0, 0,  NULL,                 0, 0          },
-	{ "win-add-l",             cmd_win_add_l,        0, 0,  NULL,                 0, 0          },
-	{ "win-add-p",             cmd_win_add_p,        0, 0,  NULL,                 0, 0          },
-	{ "win-add-Q",             cmd_win_add_Q,        0, 0,  NULL,                 0, 0          },
-	{ "win-add-q",             cmd_win_add_q,        0, 0,  NULL,                 0, 0          },
+	{ "win-add-l",             cmd_win_add_l,        0, 1,  NULL,                 0, 0          },
+	{ "win-add-p",             cmd_win_add_p,        0, 1,  NULL,                 0, 0          },
+	{ "win-add-Q",             cmd_win_add_Q,        0, 1,  NULL,                 0, 0          },
+	{ "win-add-q",             cmd_win_add_q,        0, 1,  NULL,                 0, 0          },
 	{ "win-bottom",            cmd_win_bottom,       0, 0,  NULL,                 0, 0          },
 	{ "win-down",              cmd_win_down,         0, 1,  NULL,                 0, 0          },
 	{ "win-half-page-down",    cmd_win_hf_pg_down,   0, 0,  NULL,                 0, 0          },

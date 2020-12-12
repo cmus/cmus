@@ -685,29 +685,41 @@ win-activate (*enter*)
 	view 6 activate the selected filters.  In settings view (7) change
 	binding or variable.
 
-win-add-l (*a*)
+win-add-l [-n] (*a*)
 	Add the currently marked or selected track(s) (views 3-4), or the
 	currently selected file or directory (view 5) to the library.
 
 	Analogous to *:add -l*
 
-win-add-p (*y*)
+	-n
+		Don't move the selection to the next item.
+
+win-add-p [-n] (*y*)
 	Add the currently marked or selected track(s) (views 1-2, 4), or the
 	currently selected file or directory (view 5) to the marked playlist.
 
 	Analogous to *:add -p*
 
-win-add-Q (*E*)
+	-n
+		Don't move the selection to the next item.
+
+win-add-Q [-n] (*E*)
 	Prepend the currently marked or selected track(s) (views 1-3), or the
 	currently selected file or directory (view 5) to the play queue.
 
 	Analogous to *:add -Q*
 
-win-add-q (*e*)
+	-n
+		Don't move the selection to the next item.
+
+win-add-q [-n] (*e*)
 	Add the currently marked or selected track(s) (views 1-3), or the
 	currently selected file or directory (view 5) to the play queue.
 
 	Analogous to *:add -q*
+
+	-n
+		Don't move the selection to the next item.
 
 win-bottom (*G*, *end*)
 	Goto bottom of the current window.

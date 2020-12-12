@@ -1358,10 +1358,11 @@ int _tree_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data,
 	return rc;
 }
 
-int tree_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
+int tree_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse, int no_next)
 {
 	int rc = _tree_for_each_sel(cb, data, reverse);
 
-	window_down(lib_cur_win, 1);
+	if (!no_next)
+		window_down(lib_cur_win, 1);
 	return rc;
 }

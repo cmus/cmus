@@ -764,10 +764,10 @@ int _pl_for_each_sel(track_info_cb cb, void *data, int reverse)
 		return editable_for_each(&pl_visible->editable, cb, data, reverse);
 }
 
-int pl_for_each_sel(track_info_cb cb, void *data, int reverse)
+int pl_for_each_sel(track_info_cb cb, void *data, int reverse, int no_next)
 {
 	if (pl_cursor_in_track_window)
-		return editable_for_each_sel(&pl_visible->editable, cb, data, reverse);
+		return editable_for_each_sel(&pl_visible->editable, cb, data, reverse, no_next);
 	else
 		return editable_for_each(&pl_visible->editable, cb, data, reverse);
 }
