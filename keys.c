@@ -720,7 +720,7 @@ static const struct key *normal_mode_mouse_handle(MEVENT* event)
 			win = pl_list_win;
 		else
 		    return NULL;
-		is_sel = (pl_cursor_win() != win);
+		is_sel = (pl_cursor_win() == win);
 	} else {
 		win = current_win();
 		is_sel = 1;
