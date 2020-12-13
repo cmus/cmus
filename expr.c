@@ -35,14 +35,14 @@
 #include <limits.h>
 
 enum token_type {
-	/* speacial chars */
+	/* special chars */
 	TOK_NOT,
 	TOK_LT,
 	TOK_GT,
 
 #define NR_COMBINATIONS TOK_EQ
 
-	/* speacial chars */
+	/* special chars */
 	TOK_EQ,
 	TOK_AND,
 	TOK_OR,
