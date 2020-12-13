@@ -26,9 +26,9 @@
 #endif
 #include "../comment.h"
 #include "aac.h"
-#include "misc.h"
-#include "file.h"
-#include "xstrjoin.h"
+#include "../misc.h"
+#include "../file.h"
+#include "../xstrjoin.h"
 
 #if USE_MPEG4IP
 #include <mp4.h>
