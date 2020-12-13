@@ -65,6 +65,9 @@ If *-C* is given, all command line arguments are treated as raw commands.
 -k, --seek SEEK
 	Seek. See *seek* command in *cmus*(1).
 
+-f, --file FILE
+	Play from file.
+
 -Q
 	Get player status information.  Same as *-C status*.  Note that
 	*status* is a special command only available to cmus-remote.
