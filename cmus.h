@@ -38,7 +38,7 @@ typedef int (*track_info_cb)(void *data, struct track_info *ti);
 typedef int (*for_each_ti_cb)(track_info_cb cb, void *data, void *opaque);
 
 /* lib_for_each_sel, pl_for_each_sel, play_queue_for_each_sel */
-typedef int (*for_each_sel_ti_cb)(track_info_cb cb, void *data, int reverse, int no_next);
+typedef int (*for_each_sel_ti_cb)(track_info_cb cb, void *data, int reverse, int advance);
 
 /* lib_add_track, pl_add_track, play_queue_append, play_queue_prepend */
 typedef void (*add_ti_cb)(struct track_info *, void *opaque);

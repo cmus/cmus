@@ -410,12 +410,12 @@ int _editable_for_each_sel(struct editable *e, track_info_cb cb, void *data,
 }
 
 int editable_for_each_sel(struct editable *e, track_info_cb cb, void *data,
-		int reverse, int no_next)
+		int reverse, int advance)
 {
 	int rc;
 
 	rc = _editable_for_each_sel(e, cb, data, reverse);
-	if (!no_next && e->nr_marked == 0 && editable_owns_shared(e))
+	if (advance && e->nr_marked == 0 && editable_owns_shared(e))
 		window_down(e->shared->win, 1);
 	return rc;
 }

@@ -1454,14 +1454,14 @@ static void cmd_search_b_start(char *arg)
 	enter_search_backward_mode();
 }
 
-static int sorted_for_each_sel(track_info_cb cb, void *data, int reverse, int no_next)
+static int sorted_for_each_sel(track_info_cb cb, void *data, int reverse, int advance)
 {
-	return editable_for_each_sel(&lib_editable, cb, data, reverse, no_next);
+	return editable_for_each_sel(&lib_editable, cb, data, reverse, advance);
 }
 
-static int pq_for_each_sel(track_info_cb cb, void *data, int reverse, int no_next)
+static int pq_for_each_sel(track_info_cb cb, void *data, int reverse, int advance)
 {
-	return editable_for_each_sel(&pq_editable, cb, data, reverse, no_next);
+	return editable_for_each_sel(&pq_editable, cb, data, reverse, advance);
 }
 
 static for_each_sel_ti_cb view_for_each_sel[4] = {
@@ -1485,7 +1485,7 @@ static int wrapper_cb(void *data, struct track_info *ti)
 	return 0;
 }
 
-static void add_from_browser(add_ti_cb add, int job_type, bool no_next)
+static void add_from_browser(add_ti_cb add, int job_type, int advance)
 {
 	char *sel = get_browser_add_file();
 
@@ -1496,7 +1496,7 @@ static void add_from_browser(add_ti_cb add, int job_type, bool no_next)
 		ft = cmus_detect_ft(sel, &ret);
 		if (ft != FILE_TYPE_INVALID) {
 			cmus_add(add, ret, ft, job_type, 0, NULL);
-			if (!no_next)
+			if (advance)
 				window_down(browser_win, 1);
 		}
 		free(ret);
@@ -1515,9 +1515,9 @@ static void cmd_win_add_l(char *arg)
 
 	if (cur_view <= QUEUE_VIEW) {
 		struct wrapper_cb_data add = { lib_add_track };
-		view_for_each_sel[cur_view](wrapper_cb, &add, 0, flag == 'n');
+		view_for_each_sel[cur_view](wrapper_cb, &add, 0, flag != 'n');
 	} else if (cur_view == BROWSER_VIEW) {
-		add_from_browser(lib_add_track, JOB_TYPE_LIB, flag == 'n');
+		add_from_browser(lib_add_track, JOB_TYPE_LIB, flag != 'n');
 	}
 }
 
@@ -1532,7 +1532,7 @@ static void cmd_win_add_p(char *arg)
 
 	if (cur_view <= QUEUE_VIEW) {
 		struct wrapper_cb_data add = { pl_add_track_to_marked_pl2 };
-		view_for_each_sel[cur_view](wrapper_cb, &add, 0, flag == 'n');
+		view_for_each_sel[cur_view](wrapper_cb, &add, 0, flag != 'n');
 	} else if (cur_view == BROWSER_VIEW) {
 		char *sel = get_browser_add_file();
 		if (sel) {
@@ -1554,9 +1554,9 @@ static void cmd_win_add_Q(char *arg)
 
 	if (cur_view <= QUEUE_VIEW) {
 		struct wrapper_cb_data add = { play_queue_prepend };
-		view_for_each_sel[cur_view](wrapper_cb, &add, 1, flag == 'n');
+		view_for_each_sel[cur_view](wrapper_cb, &add, 1, flag != 'n');
 	} else if (cur_view == BROWSER_VIEW) {
-		add_from_browser(play_queue_prepend, JOB_TYPE_QUEUE, flag == 'n');
+		add_from_browser(play_queue_prepend, JOB_TYPE_QUEUE, flag != 'n');
 	}
 }
 
@@ -1571,9 +1571,9 @@ static void cmd_win_add_q(char *arg)
 
 	if (cur_view <= QUEUE_VIEW) {
 		struct wrapper_cb_data add = { play_queue_append };
-		view_for_each_sel[cur_view](wrapper_cb, &add, 0, flag == 'n');
+		view_for_each_sel[cur_view](wrapper_cb, &add, 0, flag != 'n');
 	} else if (cur_view == BROWSER_VIEW) {
-		add_from_browser(play_queue_append, JOB_TYPE_QUEUE, flag == 'n');
+		add_from_browser(play_queue_append, JOB_TYPE_QUEUE, flag != 'n');
 	}
 }
 
@@ -1804,7 +1804,7 @@ static void cmd_win_update_cache(char *arg)
 	if (cur_view != TREE_VIEW && cur_view != SORTED_VIEW)
 		return;
 
-	view_for_each_sel[cur_view](add_ti, &sel, 0, 0);
+	view_for_each_sel[cur_view](add_ti, &sel, 0, 1);
 	if (sel.tis_nr == 0)
 		return;
 	sel.tis[sel.tis_nr] = NULL;
