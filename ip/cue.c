@@ -255,6 +255,8 @@ static int cue_read_comments(struct input_plugin_data *ip_data, struct keyval **
 		comments_add_const(&c, "date", cd->meta.date);
 	if (cd->meta.compilation)
 		comments_add_const(&c, "compilation", cd->meta.compilation);
+	if (cd->meta.discnumber)
+		comments_add_const(&c, "discnumber", cd->meta.discnumber);
 
 	/*
 	 * TODO:
