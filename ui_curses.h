@@ -58,6 +58,7 @@ void update_statusline(void);
 void update_filterline(void);
 void update_colors(void);
 void update_full(void);
+void update_size(void);
 void info_msg(const char *format, ...) CMUS_FORMAT(1, 2);
 void error_msg(const char *format, ...) CMUS_FORMAT(1, 2);
 enum ui_query_answer yes_no_query(const char *format, ...) CMUS_FORMAT(1, 2);

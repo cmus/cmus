@@ -1152,6 +1152,40 @@ stop_after_queue (false)
 time_show_leading_zero (true)
 	Pad durations of less than 10 minutes with a leading 0
 
+tree_width_percent (33) [1-100]
+	Percentage of window to use for left pane.
+
+tree_width_max (0) [0-9999]
+	Restrict the size calculated from tree_width_percent. 0 disables this
+	option.
+
+	This affects the tree in the library view and the playlist list in the
+	playlist view.
+
+	Note that this value will be further constrained by the window width
+	and/or the minimum tree size.
+
+	For example, to set a fixed size of 60 columns:
+
+		@pre
+		set tree_width_percent=100
+		set tree_width_max=60
+		@endpre
+
+	Or, to be 33% wide, but at most 60 columns
+
+		@pre
+		set tree_width_percent=33
+		set tree_width_max=60
+		@endpre
+
+	Or, to always be 33% wide where possible (the default behavior):
+
+		@pre
+		set tree_width_percent=33
+		set tree_width_max=0
+		@endpre
+
 wrap_search (true)
 	Controls whether the search wraps around the end.
 
