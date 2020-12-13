@@ -105,6 +105,20 @@ size_t u_strlen_safe(const char *str);
 int u_str_width(const char *str);
 
 /*
+ * @uch  unicode character
+ *
+ * Retuns size of @uch if it were printed.
+ */
+int u_print_size(uchar uch);
+
+/*
+ * @str  null-terminated UTF-8 string
+ *
+ * Retuns size of @str if it were printed.
+ */
+int u_str_print_size(const char *str);
+
+/*
  * @str  null-terminated UTF-8 string
  * @len  number of characters to measure
  *
