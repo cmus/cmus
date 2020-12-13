@@ -29,6 +29,7 @@
 #include "options.h"
 #include "editable.h"
 #include "lib.h"
+#include "pl.h"
 
 const char * const key_context_names[NR_CTXS + 1] = {
 	"browser",
@@ -712,6 +713,14 @@ static const struct key *normal_mode_mouse_handle(MEVENT* event)
 		else
 			return NULL;
 		is_sel = (lib_cur_win == win);
+	} else if (cur_view == PLAYLIST_VIEW) {
+		if (event->x >= track_win_x)
+			win = pl_editable_shared.win;
+		else if (event->x < track_win_x)
+			win = pl_list_win;
+		else
+		    return NULL;
+		is_sel = (pl_cursor_win() == win);
 	} else {
 		win = current_win();
 		is_sel = 1;
@@ -724,11 +733,15 @@ static const struct key *normal_mode_mouse_handle(MEVENT* event)
 		need_sel = 0;
 		if (cur_view == TREE_VIEW && lib_cur_win != win)
 			tree_toggle_active_window();
+		if (cur_view == PLAYLIST_VIEW && pl_cursor_win() != win)
+			pl_win_next();
 	} else {
 		if (event->y < 1 || event->y > window_get_nr_rows(win))
 			return NULL;
 		if (cur_view == TREE_VIEW && lib_cur_win != win)
 			tree_toggle_active_window();
+		if (cur_view == PLAYLIST_VIEW && pl_cursor_win() != win)
+			pl_win_next();
 		if (!window_get_top(win, &it) || !window_get_sel(win, &sel))
 			return NULL;
 		while (i-- > 0)
