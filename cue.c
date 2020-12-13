@@ -192,6 +192,7 @@ CUE_PARSE_STR(genre)
 CUE_PARSE_STR(date)
 CUE_PARSE_STR(comment)
 CUE_PARSE_STR(compilation);
+CUE_PARSE_STR(discnumber);
 
 static void cue_parse_file(struct cue_parser *p)
 {
@@ -288,6 +289,7 @@ static void cue_parse_rem(struct cue_parser *p)
 		{ "GENRE",       cue_parse_genre       },
 		{ "COMMENT",     cue_parse_comment     },
 		{ "COMPILATION", cue_parse_compilation },
+		{ "DISCNUMBER",  cue_parse_discnumber  },
 		{ 0 },
 	};
 
