@@ -5,7 +5,7 @@ bind browser u win-update
 bind common mouse_scroll_up win-up
 bind common mouse_scroll_down win-down
 bind common mlb_click_selected win-activate
-bind common ! push shell 
+bind common ! push shell
 bind common + vol +10%
 bind common , seek -1m
 bind common - vol -10%
@@ -23,10 +23,10 @@ bind common ? search-b-start
 bind common C toggle continue
 bind common D win-remove
 bind common E win-add-Q
-bind common F push filter 
+bind common F push filter
 bind common G win-bottom
 bind common I echo {}
-bind common L push live-filter 
+bind common L push live-filter
 bind common M toggle play_library
 bind common N search-prev
 bind common P win-mv-before

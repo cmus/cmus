@@ -14,7 +14,7 @@
 #   - status (stopped, playing, paused) is always given
 #   - file or url is given only if track is 'loaded' in cmus
 #   - other keys/values are given only if they are available
-#  
+#
 
 output()
 {

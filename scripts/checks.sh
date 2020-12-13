@@ -486,7 +486,7 @@ __compile_failed()
 }
 
 # tries to link against a lib
-# 
+#
 # @function:  some function
 # @flags:     extra flags (optional)
 check_function()

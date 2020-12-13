@@ -141,7 +141,7 @@ void tree_expand_all(void);
 void tree_sel_update(int changed);
 void tree_sel_current(int auto_expand_albums);
 void tree_sel_first(void);
-void tree_sel_track(struct tree_track *t, int auto_expand_albums );
+void tree_sel_track(struct tree_track *t, int auto_expand_albums);
 int tree_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse, int advance);
 int _tree_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse);
 
