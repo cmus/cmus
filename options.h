@@ -148,6 +148,7 @@ extern int mouse;
 extern int mpris;
 extern int time_show_leading_zero;
 extern int start_view;
+extern int stop_after_queue;
 extern int tree_width_percent;
 extern int tree_width_max;
 

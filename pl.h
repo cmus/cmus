@@ -32,6 +32,9 @@ struct pl_list_info {
 	unsigned current : 1;
 };
 
+extern struct window *pl_list_win;
+extern struct editable_shared pl_editable_shared;
+
 void pl_init(void);
 void pl_exit(void);
 void pl_save(void);
@@ -51,7 +54,7 @@ struct track_info *pl_play_selected_row(void);
 void pl_select_playing_track(void);
 void pl_reshuffle(void);
 int _pl_for_each_sel(track_info_cb cb, void *data, int reverse);
-int pl_for_each_sel(track_info_cb cb, void *data, int reverse);
+int pl_for_each_sel(track_info_cb cb, void *data, int reverse, int advance);
 void pl_reload_visible(void);
 struct window *pl_cursor_win(void);
 void pl_set_nr_rows(int h);

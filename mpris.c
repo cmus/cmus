@@ -378,37 +378,37 @@ static int mpris_metadata(sd_bus *_bus, const char *_path,
 		//The dbus connection closes if invalid data is sent.
 		//As a *temporary* fix, ensure all strings are encoded in utf8.
 		if (ti->artist) {
-			char corrected[u_str_width(ti->artist)];
+			char corrected[u_str_print_size(ti->artist)];
 			u_to_utf8(corrected, ti->artist);
 			CK(mpris_msg_append_sas_dict(reply,
 					"xesam:artist", corrected));
 		}
 		if (ti->title) {
-			char corrected[u_str_width(ti->title)];
+			char corrected[u_str_print_size(ti->title)];
 			u_to_utf8(corrected, ti->title);
-			CK(mpris_msg_append_sas_dict(reply,
+			CK(mpris_msg_append_ss_dict(reply,
 					"xesam:title", corrected));
 		}
 		if (ti->album) {
-			char corrected[u_str_width(ti->album)];
+			char corrected[u_str_print_size(ti->album)];
 			u_to_utf8(corrected, ti->album);
-			CK(mpris_msg_append_sas_dict(reply,
+			CK(mpris_msg_append_ss_dict(reply,
 					"xesam:album", corrected));
 		}
 		if (ti->albumartist) {
-			char corrected[u_str_width(ti->albumartist)];
+			char corrected[u_str_print_size(ti->albumartist)];
 			u_to_utf8(corrected, ti->albumartist);
 			CK(mpris_msg_append_sas_dict(reply,
 					"xesam:albumArtist", corrected));
 		}
 		if (ti->genre) {
-			char corrected[u_str_width(ti->genre)];
+			char corrected[u_str_print_size(ti->genre)];
 			u_to_utf8(corrected, ti->genre);
 			CK(mpris_msg_append_sas_dict(reply,
 					"xesam:genre", corrected));
 		}
 		if (ti->comment) {
-			char corrected[u_str_width(ti->comment)];
+			char corrected[u_str_print_size(ti->comment)];
 			u_to_utf8(corrected, ti->comment);
 			CK(mpris_msg_append_sas_dict(reply,
 					"xesam:comment", corrected));
