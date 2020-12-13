@@ -84,6 +84,9 @@ int mouse = 0;
 int mpris = 1;
 int time_show_leading_zero = 1;
 int start_view = TREE_VIEW;
+int stop_after_queue = 0;
+int tree_width_percent = 33;
+int tree_width_max = 0;
 
 int colors[NR_COLORS] = {
 	-1,
@@ -467,6 +470,34 @@ static void set_status_display_program(void *data, const char *buf)
 	status_display_program = NULL;
 	if (buf[0])
 		status_display_program = expand_filename(buf);
+}
+
+static void get_tree_width_percent(void *data, char *buf, size_t size)
+{
+	buf_int(buf, tree_width_percent, size);
+}
+
+static void set_tree_width_percent(void *data, const char *buf)
+{
+	int percent;
+
+	if (parse_int(buf, 1, 100, &percent))
+		tree_width_percent = percent;
+	update_size();
+}
+
+static void get_tree_width_max(void *data, char *buf, size_t size)
+{
+	buf_int(buf, tree_width_max, size);
+}
+
+static void set_tree_width_max(void *data, const char *buf)
+{
+	int cols;
+
+	if (parse_int(buf, 0, 9999, &cols))
+		tree_width_max = cols;
+	update_size();
 }
 
 /* }}} */
@@ -1147,6 +1178,21 @@ static void set_lib_add_filter(void *data, const char *buf)
 	lib_set_add_filter(expr);
 }
 
+static void get_stop_after_queue(void *data, char *buf, size_t size)
+{
+	strscpy(buf, bool_names[stop_after_queue], size);
+}
+
+static void set_stop_after_queue(void *data, const char *buf)
+{
+	parse_bool(buf, &stop_after_queue);
+}
+
+static void toggle_stop_after_queue(void *data)
+{
+	stop_after_queue ^= 1;
+}
+
 /* }}} */
 
 /* special callbacks (id set) {{{ */
@@ -1384,6 +1430,9 @@ static const struct {
 	DT(time_show_leading_zero)
 	DN(lib_add_filter)
 	DN(start_view)
+	DT(stop_after_queue)
+	DN(tree_width_percent)
+	DN(tree_width_max)
 	{ NULL, NULL, NULL, NULL, 0 }
 };
 

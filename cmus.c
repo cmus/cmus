@@ -55,6 +55,7 @@ static char **playable_exts;
 static const char * const playlist_exts[] = { "m3u", "pl", "pls", NULL };
 
 int cmus_next_track_request_fd;
+static bool play_queue_active = false;
 static int cmus_next_track_request_fd_priv;
 static pthread_mutex_t cmus_next_file_mutex = CMUS_MUTEX_INITIALIZER;
 static pthread_cond_t cmus_next_file_cond = CMUS_COND_INITIALIZER;
@@ -397,8 +398,13 @@ int cmus_playlist_for_each(const char *buf, int size, int reverse,
 static struct track_info *cmus_get_next_from_main_thread(void)
 {
 	struct track_info *ti = play_queue_remove();
-	if (!ti)
-		ti = play_library ? lib_goto_next() : pl_goto_next();
+	if (ti) {
+		play_queue_active = true;
+	} else {
+		if (!play_queue_active || !stop_after_queue)
+			ti = play_library ? lib_goto_next() : pl_goto_next();
+		play_queue_active = false;
+	}
 	return ti;
 }
 
