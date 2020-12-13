@@ -386,13 +386,13 @@ static int mpris_metadata(sd_bus *_bus, const char *_path,
 		if (ti->title) {
 			char corrected[u_str_width(ti->title)];
 			u_to_utf8(corrected, ti->title);
-			CK(mpris_msg_append_sas_dict(reply,
+			CK(mpris_msg_append_ss_dict(reply,
 					"xesam:title", corrected));
 		}
 		if (ti->album) {
 			char corrected[u_str_width(ti->album)];
 			u_to_utf8(corrected, ti->album);
-			CK(mpris_msg_append_sas_dict(reply,
+			CK(mpris_msg_append_ss_dict(reply,
 					"xesam:album", corrected));
 		}
 		if (ti->albumartist) {
