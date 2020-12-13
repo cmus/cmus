@@ -222,7 +222,7 @@ static int doublecmp0(double a, double b)
 	return (x > 0) - (x < 0);
 }
 
-/* this function gets called *alot*, it must be very fast */
+/* this function gets called *a lot*, it must be very fast */
 int track_info_cmp(const struct track_info *a, const struct track_info *b, const sort_key_t *keys)
 {
 	int i, rev = 0, res = 0;

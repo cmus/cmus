@@ -325,7 +325,7 @@ supported by cmus.
 
 For mp3, the special-name tag would be the id3v2 *TPE2* frame. The
 mark-as-compilation tag is the *TCMP* frame (which is a user defined id3v2.3
-frame, used at least by amarok and apple's iTunes[tm]).
+frame, used at least by Amarok and Apple's iTunes[tm]).
 
 For vorbis style tags (for example in ogg vorbis and flac files), the
 special-name tag is *ALBUMARTIST* and the mark-as-compilation tag is
@@ -722,16 +722,16 @@ win-add-q [-n] (*e*)
 		Don't move the selection to the next item.
 
 win-bottom (*G*, *end*)
-	Goto bottom of the current window.
+	Go to bottom of the current window.
 
 win-down [NUM] (*j*, *down*)
-	Goto down NUM (default 1) rows in the current window.
+	Go to down NUM (default 1) rows in the current window.
 
 win-half-page-down (*^D*)
-	Goto down half a page in the current window.
+	Go to down half a page in the current window.
 
 win-half-page-up (*^U*)
-	Goto up half a page in the current window.
+	Go to up half a page in the current window.
 
 win-mv-after (*p*)
 	If no tracks are marked, move the selected track down one row. If any
@@ -748,16 +748,16 @@ win-next (*tab*)
 	Activate next window.  Only relevant in view 1.
 
 win-page-bottom
-	Goto the bottom of the visible part of the current window.
+	Go to the bottom of the visible part of the current window.
 
 win-page-down (*^F*, *page_down*)
-	Goto down one page in the current window.
+	Go to down one page in the current window.
 
 win-page-middle
-	Goto the middle of the visible part of the current window.
+	Go to the middle of the visible part of the current window.
 
 win-page-top
-	Goto the top of the visible part of the current window.
+	Go to the top of the visible part of the current window.
 
 win-page-up (*^B*, *page_up*)
 	Go up one page in the current window.
@@ -784,10 +784,10 @@ win-toggle (*space*)
 	value in view 7.
 
 win-top (*g*, *home*)
-	Goto top of the current window.
+	Go to top of the current window.
 
 win-up [NUM] (*k*, *up*)
-	Goto up NUM (default 1) rows in the current window.
+	Go up NUM (default 1) rows in the current window.
 
 win-update (*u*)
 	Checks the modification time of the files in the library, and updates
@@ -1372,7 +1372,7 @@ dsp.coreaudio.enable_hog_mode
 	Set true to set the device to hog mode. The default value is false.
 
 dsp.coreaudio.sync_sample_rate
-	Synchonize the device sample rate with the player, so no interpolation
+	Synchronize the device sample rate with the player, so no interpolation
 	will be applied to the stream.
 
 dsp.jack.server_name
@@ -1380,7 +1380,7 @@ dsp.jack.server_name
 
 dsp.jack.resampling_quality
 	Sets the quality of the re-sampling. 0 is low quality but fast, 1 is
-	medium quality, 2 (default) is high quality but more CPU intensiv. This
+	medium quality, 2 (default) is high quality but more CPU intensive. This
 	option is only available if cmus was compiled with libsamplerate
 	support.
 
@@ -1626,7 +1626,7 @@ After a crash last lines of `~/cmus-debug.txt` might
 contain useful information.  The file exists only if you configured cmus with
 maximum debug level (*./configure DEBUG=2*).
 
-Feature requests and bug reports should go to the github issue tracker:
+Feature requests and bug reports should go to the GitHub issue tracker:
 	https://github.com/cmus/cmus/issues
 
 
@@ -1638,7 +1638,7 @@ Feature requests and bug reports should go to the github issue tracker:
 @h1 AUTHORS
 
 cmus was mainly written by Timo Hirvonen <tihirvon\@gmail.com>.  Other
-contributers are listed in the `AUTHORS` file.
+contributors are listed in the `AUTHORS` file.
 
 This man page was written by Frank Terbeck <ft\@bewatermyfriend.org>,
 Timo Hirvonen <tihirvon\@gmail.com>, and Clay Barnes <clay.barnes\@gmail.com>.
