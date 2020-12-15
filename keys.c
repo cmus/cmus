@@ -59,6 +59,7 @@ static const enum key_context view_to_context[] = {
 #define KEY_M_TYPE_NONE 	(0<<3)
 #define KEY_M_TYPE_SEL		(1<<3)
 #define KEY_M_TYPE_BAR		(2<<3)
+#define KEY_M_TYPE_TIT		(3<<3)
 
 #define KEY_MLB_CLICK			0
 #define KEY_MRB_CLICK 			1
@@ -70,6 +71,10 @@ static const enum key_context view_to_context[] = {
 #define KEY_MRB_CLICK_BAR 		(KEY_MRB_CLICK|KEY_M_TYPE_BAR)
 #define KEY_MSCRL_UP_BAR		(KEY_MSCRL_UP|KEY_M_TYPE_BAR)
 #define KEY_MSCRL_DOWN_BAR		(KEY_MSCRL_DOWN|KEY_M_TYPE_BAR)
+#define KEY_MLB_CLICK_TIT		(KEY_MLB_CLICK|KEY_M_TYPE_TIT)
+#define KEY_MRB_CLICK_TIT 		(KEY_MRB_CLICK|KEY_M_TYPE_TIT)
+#define KEY_MSCRL_UP_TIT		(KEY_MSCRL_UP|KEY_M_TYPE_TIT)
+#define KEY_MSCRL_DOWN_TIT		(KEY_MSCRL_DOWN|KEY_M_TYPE_TIT)
 
 /* key_table {{{
  *
@@ -430,13 +435,17 @@ const struct key key_table[] = {
 	{ "mlb_click",		KEY_MOUSE,		KEY_MLB_CLICK		},
 	{ "mlb_click_selected",	KEY_MOUSE,		KEY_MLB_CLICK_SEL	},
 	{ "mlb_click_bar",	KEY_MOUSE,		KEY_MLB_CLICK_BAR	},
+	{ "mlb_click_tit",	KEY_MOUSE,		KEY_MLB_CLICK_TIT	},
 	{ "mrb_click",		KEY_MOUSE,		KEY_MRB_CLICK		},
 	{ "mrb_click_selected",	KEY_MOUSE,		KEY_MRB_CLICK_SEL	},
 	{ "mrb_click_bar",	KEY_MOUSE,		KEY_MRB_CLICK_BAR	},
+	{ "mrb_click_tit",	KEY_MOUSE,		KEY_MRB_CLICK_TIT	},
 	{ "mouse_scroll_up",	KEY_MOUSE,		KEY_MSCRL_UP		},
 	{ "mouse_scroll_up_bar",	KEY_MOUSE,		KEY_MSCRL_UP_BAR		},
+	{ "mouse_scroll_up_tit",	KEY_MOUSE,		KEY_MSCRL_UP_TIT		},
 	{ "mouse_scroll_down",	KEY_MOUSE,		KEY_MSCRL_DOWN		},
 	{ "mouse_scroll_down_bar",	KEY_MOUSE,		KEY_MSCRL_DOWN_BAR		},
+	{ "mouse_scroll_down_tit",	KEY_MOUSE,		KEY_MSCRL_DOWN_TIT		},
 	{ NULL,			0,			0	}
 };
 /* }}} */
@@ -717,7 +726,10 @@ static const struct key *normal_mode_mouse_handle(MEVENT* event)
 	struct window* win = NULL;
 	struct iter it, sel;
 
-	if (event->y == LINES - 2) {
+	if (event->y == 0) {
+		need_sel = 0;
+		type = KEY_M_TYPE_TIT;
+	} else if (event->y == LINES - 2) {
 		need_sel = 0;
 		type = KEY_M_TYPE_BAR;
 	} else {
