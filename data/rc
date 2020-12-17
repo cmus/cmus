@@ -83,6 +83,8 @@ bind common y win-add-p
 bind common z player-prev
 bind common { vol -1% -0
 bind common } vol -0 -1%
+bind common mouse_scroll_up_title left-view
+bind common mouse_scroll_down_title right-view
 fset 90s=date>=1990&date<2000
 fset classical=genre="Classical"
 fset unheard=play_count=0
