@@ -106,7 +106,7 @@ struct rb_node
 	struct rb_node *rb_right;
 	struct rb_node *rb_left;
 } __attribute__((aligned(sizeof(long))));
-    /* The alignment might seem pointless, but allegedly CRIS needs it */
+	/* The alignment might seem pointless, but allegedly CRIS needs it */
 
 struct rb_root
 {
@@ -153,7 +153,7 @@ void rb_replace_node(struct rb_node *victim, struct rb_node *new,
 static inline void rb_link_node(struct rb_node * node, struct rb_node * parent,
 				struct rb_node ** rb_link)
 {
-	node->rb_parent_color = (unsigned long )parent;
+	node->rb_parent_color = (unsigned long)parent;
 	node->rb_left = node->rb_right = NULL;
 
 	*rb_link = node;
