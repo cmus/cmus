@@ -655,8 +655,8 @@ struct track_info *pl_play_selected_row(void)
 			struct simple_track *track = &st->simple_track;
 			rv = pl_play_track(pl_visible, track);
 		}
-		window_goto_top(pl_editable_shared.win);
 	}
+	pl_select_playing_track();
 
 	if (!rv)
 		rv = pl_play_selected_track();
