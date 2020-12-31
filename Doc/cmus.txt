@@ -12,33 +12,33 @@ cmus [*options*]
 
 @h1 DESCRIPTION
 
-cmus is a small ncurses based music player.  It supports various output
-methods by output-plugins. cmus has completely configurable keybindings and
-can be controlled from the outside via *cmus-remote*(1).
+cmus is a lightweight ncurses music player. It supports various output methods
+by using dynamically-loaded output plugins. cmus has configurable keybindings
+and can be controlled externally using *cmus-remote*(1).
 
 @h1 OPTIONS
 
 --listen ADDR
-	Listen to ADDR (UNIX socket) instead of `$CMUS_SOCKET` or
-	`$XDG_RUNTIME_DIR/cmus-socket`.
-	ADDR is either a UNIX socket or host[:port].
+	Listen on ADDR (UNIX socket) instead of `$CMUS_SOCKET` or
+	`$XDG_RUNTIME_DIR/cmus-socket`. ADDR must be a UNIX socket or
+	host[:port].
 
-	*WARNING*: Using host[:port] is insecure even with password!
-	It might be useful though in LAN if you want multiple local users to
-	able to control cmus.  Never make cmus listen to the internet.
+	*WARNING*: Using host[:port] is insecure even with a password! It may be
+	on a LAN if you want multiple users to able to control cmus. Never
+	expose cmus to the internet.
 
 	NOTE: Don't use this option to run multiple instances as same user.
-	That would corrupt the track metadata cache.
+	Doing so would corrupt the track metadata cache.
 
 --passwd PASSWD
-	Set the password for TCP/IP connections.  Must be set if you are listening
-	from host[:port].  Used in conjunction with --listen.
+	Set the password for TCP/IP connections. Required if listening on
+	host[:port]. Used in conjunction with --listen.
 
 --plugins
 	List available plugins and exit.
 
 --show-cursor
-	Keep cursor always visible.  This is useful for screen readers.
+	Always display the cursor. This is useful for screen readers.
 
 --help
 	Display usage information and exit.
@@ -49,44 +49,45 @@ can be controlled from the outside via *cmus-remote*(1).
 
 @h1 VIEWS
 
-There are 7 views in cmus.  Press keys 1-7 to change active view.
+There are 7 views in cmus. Press keys 1-7 to change active view.
 
 Library view (1)
-	Display all tracks in so-called *library*. Tracks are sorted
-	artist/album tree.  Artist sorting is done alphabetically. Albums are
-	sorted by year.
+	Displays all tracks in the *library*. Tracks are sorted and displayed in
+	a tree grouped by artist/album. Artist sorting is done alphabetically.
+	Albums are sorted by year.
 
 Sorted library view (2)
-	Displays same content as view 1, but as a simple list which is
-	automatically sorted by user criteria.
+	Displays the same content as view 1, but as a simple list automatically
+	sorted by user criteria.
 
 Playlist view (3)
 	Displays editable playlists with optional sorting.
 
 Play Queue view (4)
-	Displays queue of tracks which are played next. These tracks are
-	played before anything else (i.e. the playlist or library).
+	Displays upcoming tracks. These tracks are played before anything else
+	(i.e. the playlist or library). Once the queue is empty, playback will
+	resume from the last position in the library.
 
 Browser (5)
-	Directory browser.  In this view, music can be added to either the
-	library, marked playlist or queue from the filesystem.
+	Displays the directory browser. In this view, music from the filesystem
+	can be added to the library, active playlist, or queue.
 
 Filters view (6)
-	Lists user defined filters.
+	Lists user-defined filters.
 
 Settings view (7)
-	Lists keybindings, unbound commands and options.  Remove bindings with
-	*D* or *del*, change bindings and variables with *enter* and toggle
+	Lists keybindings, unbound commands and options. Remove bindings with
+	*D* or *del*, change bindings and variables with *enter*, and toggle
 	variables with *space*.
 
 @h1 COMMAND LINE
 
-Everything in cmus is implemented as commands which can be typed at command
-line or bound to a key.  To enter command mode type *:*.  To execute a command
-press *ENTER* or to cancel press *ESC* or *CTRL-C*.  Use up/down arrows to
-browse command history.  Use *TAB* to complete commands and parameters, you can
-tab complete almost anything.  You don't need to type full command names if the
-command is unambiguous (no other commands starting with the same characters).
+Everything in cmus is implemented as commands which can be typed at command line
+or bound to a key. To enter command mode type *:*. To execute a command, press
+*ENTER*, and to cancel, press *ESC* or *CTRL-C*. Use up/down arrows to browse
+the command history. Use *TAB* to complete commands and parameters. You don't
+need to type full command name if it is unambiguous (no other commands starting
+with the same characters).
 
 Examples:
 
@@ -109,32 +110,32 @@ Examples:
 
 @h1 SEARCHING
 
-Search mode works like the command mode, to enter search mode press */* and
-then type the search words and press *ENTER*.  Press *n* to search next or *N*
-to search previous match using the same search words.  Type *?* to search
-backwards.
+Search mode works like the command mode. To enter search mode, press */* and
+type the query then press *ENTER*. Press *n* to move to the next result or *N*
+for the previous one. Type *?* to search backwards.
 
-In views 1-4 words are compared to artist, album and title tags. Type
-*//WORDS* or *??WORDS* to search only artists/albums in view 1 or titles in
-views 2-4. If the file doesn't have tags words are compared to filename
-without path.
+In views 1-4 the query is matched against the artist, album and title tags. Type
+*//WORDS* or *??WORDS* to search only artists/albums in view 1 and only titles
+in views 2-4. If the file doesn't have tags, words are compared to the filename
+excluding the path.
 
-Searching works in views 5-7 too and its logic should be pretty obvious.
+Searching also works in views 5-7.
 
 
 @h1 PLAYLIST EDITING
 
 @h2 Selecting Tracks
 
-Editing commands affect the currently marked tracks or if there are no marked
-tracks the currently selected track (or selected artist/album in view 1).
+Editing commands affect the currently marked tracks. If there are no marked
+tracks, the currently selected track (or selected artist/album in view 1) is
+used.
 
-Mark selected track by pressing *SPACE*.  Marked tracks appear with a gray
-background.  You can only mark tracks in the list views (2-4).
+To mark the selected track, press *SPACE*. Marked tracks appear with a gray
+background. You can only mark tracks in the list views (2-4).
 
 @h2 Copying Tracks Between Views
 
-You can copy marked or selected tracks from views 1-5.
+You can copy marked or selected tracks in views 1-5.
 
 @li *a*
 copy tracks to the library (1-2)
@@ -150,29 +151,28 @@ prepend tracks to the play queue (4)
 
 @h2 Moving Tracks
 
-In views 2-4 you can move tracks within the list. Note that moving is
-disabled if the view is auto-sorted (see *lib_sort* and *pl_sort* options).
+In views 2-4, tracks can be moved within the list. Note that moving is disabled
+if the view is auto-sorted (see *lib_sort* and *pl_sort* options).
 
-Pressing *p* moves marked tracks to the position immediately after the
-selected track.  *P* moves them to the position immediately before the
-selected track.  If there are no marked tracks then the selected track is
-moved down (*p*) or up (*P*).
+Pressing *p* moves marked tracks to the position immediately after the selected
+track. *P* moves them to the position immediately before the selected track. If
+there are no marked tracks, the selected track is moved down (*p*) or up (*P*).
 
-NOTE: Changing active filters reloads view 2 so it isn't a good idea to
-manually order tracks in the view.
+Note that changing active filters in view 2 reloads it, losing any changes made
+to the track order.
 
 @h2 Removing Tracks
 
-Press *D* or *delete* to remove marked or selected tracks in the current view
-(1-4).  The tracks will be removed immediately from the view without asking
-for confirmation.  In the browser and filters views the same keys are used to
-remove a file or filter (will ask for confirmation).
+Press *D* or *delete* to remove the marked or selected tracks in the current
+view (1-4). The tracks will be removed immediately from the view without asking
+for confirmation. In the browser and filters views, the same keys are used to
+remove a file or filter after asking for confirmation.
 
 
 @h1 STATUS LINE
 
-Right hand side of the status line (second row from the bottom, black text on
-a grey background) consists of the following fields:
+The right hand side of the status line (second row from the bottom, black text
+on a grey background) consists of the following fields:
 
 @pre
 aaa_mode & play_sorted & play_library | continue follow repeat shuffle
