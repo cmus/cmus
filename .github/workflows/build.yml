@@ -20,8 +20,8 @@ jobs:
         run: |
           brew install \
             libao ffmpeg libcddb libcdio libcue libdiscid faad2 flac jack mad \
-            libmodplug mp4v2 musepack ncurses opusfile libsamplerate libvorbis \
-            wavpack pkg-config
+            libmodplug mp4v2 musepack opusfile libsamplerate libvorbis wavpack \
+            pkg-config
       - name: Dependencies (apt)
         if: startswith(matrix.os, 'ubuntu-')
         run: |
