@@ -41,3 +41,13 @@ jobs:
         run: |
           CMUS_LIB_DIR="${PWD}" ./cmus --version
           CMUS_LIB_DIR="${PWD}" ./cmus --plugins
+      - name: Archive
+        run: |
+          mkdir tmp
+          make install DESTDIR=${PWD}/tmp
+          XZ_OPT=-9 tar -cJf cmus.tar.xz -C "${PWD}/tmp" .
+      - name: Upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: cmus (${{matrix.os}}, ${{matrix.cc}})
+          path: cmus.tar.xz
