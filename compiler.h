@@ -77,11 +77,11 @@
  *
  */
 #define container_of_portable(ptr, type, member) \
-	((type *)(void *)( (char *)(ptr) - offsetof(type,member) ))
+	((type *)(void *)( (char *)(ptr) - offsetof(type,member)))
 #undef container_of
 #if defined(__GNUC__)
 #define container_of(ptr, type, member) __extension__ ({		\
-	const __typeof__( ((type *)0)->member ) *_mptr = (ptr);	\
+	const __typeof__( ((type *)0)->member) *_mptr = (ptr);	\
 	container_of_portable(_mptr, type, member);})
 #else
 #define container_of(ptr, type, member) container_of_portable(ptr, type, member)

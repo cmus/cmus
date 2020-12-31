@@ -257,6 +257,8 @@ i                               win-sel-cur
 space                           win-toggle
 g, home                         win-top
 k, up, mouse_scroll_up          win-up
+mouse_scroll_up_title           left-view
+mouse_scroll_down_title         right-view
 @endpre
 
 @h2 Browser Context
