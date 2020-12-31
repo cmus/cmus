@@ -4,10 +4,14 @@ on: [push, pull_request]
 jobs:
   build:
     name: Build
-    runs-on: ubuntu-20.04
     strategy:
       matrix:
+        os: [ubuntu-20.04, macos-10.15]
         cc: [gcc, clang]
+        exclude:
+          - os: macos-10.15
+            cc: gcc
+    runs-on: ${{matrix.os}}
     steps:
       - name: Checkout
         uses: actions/checkout@v2
