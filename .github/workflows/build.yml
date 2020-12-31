@@ -37,3 +37,7 @@ jobs:
         run: |
           ./configure CC="${{matrix.cc}}"
           make
+      - name: Run
+        run: |
+          CMUS_LIB_DIR="${PWD}" ./cmus --version
+          CMUS_LIB_DIR="${PWD}" ./cmus --plugins
