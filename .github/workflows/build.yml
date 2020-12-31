@@ -15,6 +15,24 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+      - name: Dependencies (Homebrew)
+        if: startswith(matrix.os, 'macos-')
+        run: |
+          brew install \
+            libao ffmpeg libcddb libcdio libcue libdiscid faad2 flac jack mad \
+            libmodplug mp4v2 musepack ncurses opusfile libsamplerate libvorbis \
+            wavpack pkg-config
+      - name: Dependencies (apt)
+        if: startswith(matrix.os, 'ubuntu-')
+        run: |
+          sudo apt-get update -qyy
+          sudo apt-get install -qyy \
+            bash-completion libao-dev libasound2-dev libavcodec-dev \
+            libavformat-dev libswresample-dev libcddb2-dev libcdio-cdda-dev \
+            libcue-dev libdiscid-dev libfaad-dev libflac-dev libjack-dev \
+            libmad0-dev libmodplug-dev libmpcdec-dev libncursesw5-dev \
+            libopusfile-dev libpulse-dev libroar-dev libsamplerate0-dev \
+            libsndio-dev libvorbis-dev libwavpack-dev libsystemd-dev pkg-config
       - name: Build
         run: |
           ./configure CC="${{matrix.cc}}"
