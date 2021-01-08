@@ -125,6 +125,18 @@ int comments_get_int(const struct keyval *comments, const char *key)
 	return ival;
 }
 
+int comments_get_signed_int(const struct keyval *comments, const char *key, long int *ival)
+{
+	const char *val;
+
+	val = keyvals_get_val(comments, key);
+	if (val == NULL)
+		return -1;
+	while (*val && !(*val == '+' || *val == '-' || (*val >= '0' && *val <= '9')))
+		val++;
+	return str_to_int(val, ival);
+}
+
 double comments_get_double(const struct keyval *comments, const char *key)
 {
 	const char *val;
@@ -187,6 +199,8 @@ static const char *interesting[] = {
 	"date", "compilation", "partofacompilation", "albumartist", "artistsort", "albumartistsort",
 	"albumsort",
 	"originaldate",
+	"r128_track_gain",
+	"r128_album_gain",
 	"replaygain_track_gain",
 	"replaygain_track_peak",
 	"replaygain_album_gain",

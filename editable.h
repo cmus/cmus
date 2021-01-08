@@ -75,7 +75,7 @@ void editable_invert_marks(struct editable *e);
 int _editable_for_each_sel(struct editable *e, track_info_cb cb, void *data,
 		int reverse);
 int editable_for_each_sel(struct editable *e, track_info_cb cb, void *data,
-		int reverse);
+		int reverse, int advance);
 int editable_for_each(struct editable *e, track_info_cb cb, void *data,
 		int reverse);
 void editable_update_track(struct editable *e, struct track_info *old, struct track_info *new);

@@ -1,0 +1,53 @@
+name: Build
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: Build
+    strategy:
+      matrix:
+        os: [ubuntu-20.04, macos-10.15]
+        cc: [gcc, clang]
+        exclude:
+          - os: macos-10.15
+            cc: gcc
+    runs-on: ${{matrix.os}}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Dependencies (Homebrew)
+        if: startswith(matrix.os, 'macos-')
+        run: |
+          brew install \
+            libao ffmpeg libcddb libcdio libcue libdiscid faad2 flac jack mad \
+            libmodplug mp4v2 musepack opusfile libsamplerate libvorbis wavpack \
+            pkg-config
+      - name: Dependencies (apt)
+        if: startswith(matrix.os, 'ubuntu-')
+        run: |
+          sudo apt-get update -qyy
+          sudo apt-get install -qyy \
+            bash-completion libao-dev libasound2-dev libavcodec-dev \
+            libavformat-dev libswresample-dev libcddb2-dev libcdio-cdda-dev \
+            libcue-dev libdiscid-dev libfaad-dev libflac-dev libjack-dev \
+            libmad0-dev libmodplug-dev libmpcdec-dev libncursesw5-dev \
+            libopusfile-dev libpulse-dev libroar-dev libsamplerate0-dev \
+            libsndio-dev libvorbis-dev libwavpack-dev libsystemd-dev pkg-config
+      - name: Build
+        run: |
+          ./configure CC="${{matrix.cc}}"
+          make
+      - name: Run
+        run: |
+          CMUS_LIB_DIR="${PWD}" ./cmus --version
+          CMUS_LIB_DIR="${PWD}" ./cmus --plugins
+      - name: Archive
+        run: |
+          mkdir tmp
+          make install DESTDIR=${PWD}/tmp
+          XZ_OPT=-9 tar -cJf cmus.tar.xz -C "${PWD}/tmp" .
+      - name: Upload
+        uses: actions/upload-artifact@v2
+        with:
+          name: cmus (${{matrix.os}}, ${{matrix.cc}})
+          path: cmus.tar.xz

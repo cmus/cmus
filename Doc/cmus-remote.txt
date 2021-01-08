@@ -29,6 +29,9 @@ If *-C* is given, all command line arguments are treated as raw commands.
 --server SOCKET
 	Connect using socket *SOCKET* instead of `$XDG_RUNTIME_DIR/cmus-socket`.
 
+--passwd PASSWD
+	password to use for TCP/IP connection
+
 --help
 	Display usage information and exit.
 
@@ -64,6 +67,9 @@ If *-C* is given, all command line arguments are treated as raw commands.
 
 -k, --seek SEEK
 	Seek. See *seek* command in *cmus*(1).
+
+-f, --file FILE
+	Play from file.
 
 -Q
 	Get player status information.  Same as *-C status*.  Note that

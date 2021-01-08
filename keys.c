@@ -29,6 +29,7 @@
 #include "options.h"
 #include "editable.h"
 #include "lib.h"
+#include "pl.h"
 
 const char * const key_context_names[NR_CTXS + 1] = {
 	"browser",
@@ -55,12 +56,25 @@ static const enum key_context view_to_context[] = {
 
 #define KEY_IS_CHAR -255
 
+#define KEY_M_TYPE_NONE 	(0<<3)
+#define KEY_M_TYPE_SEL		(1<<3)
+#define KEY_M_TYPE_BAR		(2<<3)
+#define KEY_M_TYPE_TIT		(3<<3)
+
 #define KEY_MLB_CLICK			0
-#define KEY_MLB_CLICK_SEL		1
-#define KEY_MRB_CLICK 			2
-#define KEY_MRB_CLICK_SEL 		3
-#define KEY_MSCRL_UP	 		4
-#define KEY_MSCRL_DOWN			5
+#define KEY_MRB_CLICK 			1
+#define KEY_MSCRL_UP	 		2
+#define KEY_MSCRL_DOWN			3
+#define KEY_MLB_CLICK_SEL		(KEY_MLB_CLICK|KEY_M_TYPE_SEL)
+#define KEY_MRB_CLICK_SEL 		(KEY_MRB_CLICK|KEY_M_TYPE_SEL)
+#define KEY_MLB_CLICK_BAR		(KEY_MLB_CLICK|KEY_M_TYPE_BAR)
+#define KEY_MRB_CLICK_BAR 		(KEY_MRB_CLICK|KEY_M_TYPE_BAR)
+#define KEY_MSCRL_UP_BAR		(KEY_MSCRL_UP|KEY_M_TYPE_BAR)
+#define KEY_MSCRL_DOWN_BAR		(KEY_MSCRL_DOWN|KEY_M_TYPE_BAR)
+#define KEY_MLB_CLICK_TIT		(KEY_MLB_CLICK|KEY_M_TYPE_TIT)
+#define KEY_MRB_CLICK_TIT 		(KEY_MRB_CLICK|KEY_M_TYPE_TIT)
+#define KEY_MSCRL_UP_TIT		(KEY_MSCRL_UP|KEY_M_TYPE_TIT)
+#define KEY_MSCRL_DOWN_TIT		(KEY_MSCRL_DOWN|KEY_M_TYPE_TIT)
 
 /* key_table {{{
  *
@@ -420,10 +434,18 @@ const struct key key_table[] = {
 	{ "~",			KEY_IS_CHAR,		126	},
 	{ "mlb_click",		KEY_MOUSE,		KEY_MLB_CLICK		},
 	{ "mlb_click_selected",	KEY_MOUSE,		KEY_MLB_CLICK_SEL	},
+	{ "mlb_click_bar",	KEY_MOUSE,		KEY_MLB_CLICK_BAR	},
+	{ "mlb_click_title",	KEY_MOUSE,		KEY_MLB_CLICK_TIT	},
 	{ "mrb_click",		KEY_MOUSE,		KEY_MRB_CLICK		},
 	{ "mrb_click_selected",	KEY_MOUSE,		KEY_MRB_CLICK_SEL	},
+	{ "mrb_click_bar",	KEY_MOUSE,		KEY_MRB_CLICK_BAR	},
+	{ "mrb_click_title",	KEY_MOUSE,		KEY_MRB_CLICK_TIT	},
 	{ "mouse_scroll_up",	KEY_MOUSE,		KEY_MSCRL_UP		},
+	{ "mouse_scroll_up_bar",	KEY_MOUSE,		KEY_MSCRL_UP_BAR		},
+	{ "mouse_scroll_up_title",	KEY_MOUSE,		KEY_MSCRL_UP_TIT		},
 	{ "mouse_scroll_down",	KEY_MOUSE,		KEY_MSCRL_DOWN		},
+	{ "mouse_scroll_down_bar",	KEY_MOUSE,		KEY_MSCRL_DOWN_BAR		},
+	{ "mouse_scroll_down_title",	KEY_MOUSE,		KEY_MSCRL_DOWN_TIT		},
 	{ NULL,			0,			0	}
 };
 /* }}} */
@@ -620,10 +642,10 @@ static const struct key *keycode_to_key(int key)
 }
 
 #define DEF_ME_START if (event->bstate == 0) { return NULL; }
-#define DEF_ME_KEY(s, k) else if (event->bstate & s) { key = k + is_sel; }
+#define DEF_ME_KEY(s, k) else if (event->bstate & s) { key = k | type; }
 #define DEF_ME_END else { return NULL; }
 
-static const struct key *mevent_to_key(MEVENT *event, int is_sel)
+static const struct key *mevent_to_key(MEVENT *event, int type)
 {
 	int i, key = -255;
 
@@ -700,49 +722,69 @@ void normal_mode_key(int key)
 
 static const struct key *normal_mode_mouse_handle(MEVENT* event)
 {
-	int track_win_x = get_track_win_x(), i = event->y - 1, need_sel, is_sel;
+	int track_win_x = get_track_win_x(), i = event->y - 1, need_sel, type;
 	struct window* win = NULL;
 	struct iter it, sel;
 
-	if (cur_view == TREE_VIEW) {
-		if (event->x >= track_win_x)
-			win = lib_track_win;
-		else if (event->x < track_win_x - 1)
-			win = lib_tree_win;
-		else
-			return NULL;
-		is_sel = (lib_cur_win == win);
-	} else {
-		win = current_win();
-		is_sel = 1;
-	}
-
-	if ((event->bstate & BUTTON4_PRESSED) || (event->bstate & BUTTON5_PRESSED)) {
-		if (event->y < 1 || event->y >= LINES - 3)
-			return NULL;
-		is_sel = 0;
+	if (event->y == 0) {
 		need_sel = 0;
-		if (cur_view == TREE_VIEW && lib_cur_win != win)
-			tree_toggle_active_window();
+		type = KEY_M_TYPE_TIT;
+	} else if (event->y == LINES - 2) {
+		need_sel = 0;
+		type = KEY_M_TYPE_BAR;
 	} else {
-		if (event->y < 1 || event->y > window_get_nr_rows(win))
-			return NULL;
-		if (cur_view == TREE_VIEW && lib_cur_win != win)
-			tree_toggle_active_window();
-		if (!window_get_top(win, &it) || !window_get_sel(win, &sel))
-			return NULL;
-		while (i-- > 0)
-			if (!window_get_next(win, &it))
+		if (cur_view == TREE_VIEW) {
+			if (event->x >= track_win_x)
+				win = lib_track_win;
+			else if (event->x < track_win_x - 1)
+				win = lib_tree_win;
+			else
 				return NULL;
-		while (win->selectable && !win->selectable(&it))
-			if (!window_get_next(win, &it))
+			type = (lib_cur_win == win) ? KEY_M_TYPE_SEL : KEY_M_TYPE_NONE;
+		} else if (cur_view == PLAYLIST_VIEW) {
+			if (event->x >= track_win_x)
+				win = pl_editable_shared.win;
+			else if (event->x < track_win_x)
+				win = pl_list_win;
+			else
 				return NULL;
+			type = (pl_cursor_win() == win) ? KEY_M_TYPE_SEL : KEY_M_TYPE_NONE;
+		} else {
+			win = current_win();
+			type = KEY_M_TYPE_SEL;
+		}
 
-		is_sel = is_sel && iters_equal(&sel, &it);
-		need_sel = !iters_equal(&sel, &it);
+		if ((event->bstate & BUTTON4_PRESSED) || (event->bstate & BUTTON5_PRESSED)) {
+			need_sel = 0;
+			type = KEY_M_TYPE_NONE;
+			if (event->y < 1 || event->y >= LINES - 3)
+				return NULL;
+			if (cur_view == TREE_VIEW && lib_cur_win != win)
+				tree_toggle_active_window();
+			if (cur_view == PLAYLIST_VIEW && pl_cursor_win() != win)
+				pl_win_next();
+		} else {
+			if (event->y < 1 || event->y > window_get_nr_rows(win))
+				return NULL;
+			if (cur_view == TREE_VIEW && lib_cur_win != win)
+				tree_toggle_active_window();
+			if (cur_view == PLAYLIST_VIEW && pl_cursor_win() != win)
+				pl_win_next();
+			if (!window_get_top(win, &it) || !window_get_sel(win, &sel))
+				return NULL;
+			while (i-- > 0)
+				if (!window_get_next(win, &it))
+					return NULL;
+			while (win->selectable && !win->selectable(&it))
+				if (!window_get_next(win, &it))
+					return NULL;
+
+			type = (type == KEY_M_TYPE_SEL && iters_equal(&sel, &it)) ? KEY_M_TYPE_SEL : KEY_M_TYPE_NONE;
+			need_sel = !iters_equal(&sel, &it);
+		}
 	}
 
-	const struct key *k = mevent_to_key(event, is_sel);
+	const struct key *k = mevent_to_key(event, type);
 	if (k == NULL)
 		return NULL;
 

@@ -268,7 +268,7 @@ static inline uint32_t read_le24(const char *buf)
 
 static inline int32_t read_le24i(const char *buf)
 {
-	uint32_t a = read_le24(buf); 
+	uint32_t a = read_le24(buf);
 	return (a & 0x800000) ? 0xFF000000 | a : a;
 }
 

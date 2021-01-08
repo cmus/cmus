@@ -650,10 +650,10 @@ static int special_name_cmp(const char *a, const char *collkey_a,
 
 static inline const char *album_sort_collkey(const struct album *a)
 {
-        if (a->sort_name)
-                return a->collkey_sort_name;
+	if (a->sort_name)
+		return a->collkey_sort_name;
 
-        return a->collkey_name;
+	return a->collkey_name;
 }
 
 static int special_album_cmp(const struct album *a, const struct album *b)
@@ -678,13 +678,13 @@ static int special_album_cmp_date(const struct album *a, const struct album *b)
 /* has to follow the same logic as artist_sort_name() */
 static inline const char *artist_sort_collkey(const struct artist *a)
 {
-        if (a->sort_name)
-                return a->collkey_sort_name;
+	if (a->sort_name)
+		return a->collkey_sort_name;
 
-        if (smart_artist_sort && a->auto_sort_name)
-                return a->collkey_auto_sort_name;
+	if (smart_artist_sort && a->auto_sort_name)
+		return a->collkey_auto_sort_name;
 
-        return a->collkey_name;
+	return a->collkey_name;
 }
 
 static struct artist *do_find_artist(const struct artist *artist,
@@ -1259,7 +1259,7 @@ void tree_sel_first(void)
 	}
 }
 
-void tree_sel_track(struct tree_track *t, int auto_expand_albums )
+void tree_sel_track(struct tree_track *t, int auto_expand_albums)
 {
 	if (t) {
 		struct iter iter;
@@ -1358,10 +1358,11 @@ int _tree_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data,
 	return rc;
 }
 
-int tree_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse)
+int tree_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data, int reverse, int advance)
 {
 	int rc = _tree_for_each_sel(cb, data, reverse);
 
-	window_down(lib_cur_win, 1);
+	if (advance)
+		window_down(lib_cur_win, 1);
 	return rc;
 }

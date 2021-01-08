@@ -1907,6 +1907,10 @@ static void sig_winch(int sig)
 	needs_to_resize = 1;
 }
 
+void update_size(void) {
+	needs_to_resize = 1;
+}
+
 static int get_window_size(int *lines, int *columns)
 {
 	struct winsize ws;
@@ -1920,7 +1924,9 @@ static int get_window_size(int *lines, int *columns)
 
 static void resize_tree_view(int w, int h)
 {
-	tree_win_w = w / 3;
+	tree_win_w = w * ((float)tree_width_percent / 100.0f);
+	if (tree_width_max && tree_win_w > tree_width_max)
+		tree_win_w = tree_width_max;
 	track_win_w = w - tree_win_w - 1;
 	if (tree_win_w < 8)
 		tree_win_w = 8;
