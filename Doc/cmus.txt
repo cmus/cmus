@@ -298,7 +298,7 @@ groups are sorted by the date of the first track, then alphanumerically by the
 name of the album. If the date header is not set, the album will be placed on
 top of the list.
 
-Finally, each album is sorted by the track discnumber, tracknumber, then
+Finally, each album is sorted by the track *discnumber*, *tracknumber*, then
 filename (not the track name).
 
 
@@ -312,7 +312,7 @@ Optional parameters are in [brackets], required parameters in <angle brackets>
 and default key bindings are (parenthesized).
 
 add [-l] [-p] [-q] [-Q] <file|dir|url|playlist>
-	Add file/dir/url/playlist to the specified view or the current view.
+	Adds file/dir/url/playlist to the specified view or the current view.
 
 	@li -l
 	add to library
@@ -328,12 +328,12 @@ add [-l] [-p] [-q] [-Q] <file|dir|url|playlist>
 
 	Supported files are based on the loaded input plugins.
 
-	Supported URLs: Shoutcast (http://...), CDDA (cdda://...).
+	Supported URLs: Shoutcast (`http://`...), CDDA (`cdda://`...).
 
 	Supported playlist types: plain, .m3u, .pls.
 
 bind [-f] <context> <key> <command>
-	Add a key binding.
+	Adds a key binding.
 
 	@li -f
 	overwrite existing binding
@@ -356,8 +356,8 @@ bind [-f] <context> <key> <command>
 	and commands.
 
 browser-up (*backspace*)
-	Navigate the browser view to the parent directory (5). This command only
-	makes sense to be bound to the *browser* key context although it's
+	Navigates the browser view to the parent directory (5). This command
+	only makes sense to be bound to the *browser* key context although it's
 	possible to use this even if browser view is not active.
 
 cd [directory]
@@ -365,7 +365,7 @@ cd [directory]
 	displayed in the browser view.
 
 clear [-l] [-p] [-q]
-	Remove all tracks from the specified view or the current view.
+	Removes all tracks from a single view.
 
 	@li -l
 	clear library
@@ -376,54 +376,42 @@ clear [-l] [-p] [-q]
 	@li -q
 	clear play queue
 
+	If a view is not specified, the current view is used.
+
 colorscheme <name>
-	Change color scheme.  Color schemes are found in `/usr/share/cmus/` or
-	`$XDG_CONFIG_HOME/cmus/` and have .theme filename extension.
+	Changes the color scheme. Color schemes are found in `/usr/share/cmus/`
+	or `$XDG_CONFIG_HOME/cmus/` and have the extension *.theme*.
 
 echo <arg>...
-	Display arguments on the command line.
+	Displays the arguments on the command line.
 
-	If the arguments contain *{}* it is replaced with file name of the
-	first selected track.
-
-	NOTE: unlike with *run* the *{}* is replaced with only the first
-	selected filename.
-
-	Default bindings:
-
-		@pre
-		common  I   echo {}
-		common  ^C  echo Type :quit<enter> to exit cmus.
-		@endpre
+	*{}* it is replaced with file name of the first selected track.
 
 factivate <user-defined-filter>...
-	Select and activate the given user defined filters (displayed in the
-	filters view).  Filter names are separated by spaces.  This command is
-	mostly useful when bound to a key, to change active filters very
-	quickly.  If no arguments given then all filters are unactivated.
+	Selects and activates the given user defined filters (displayed in the
+	filters view). Filter names are separated by spaces. This command is
+	mostly useful when bound to a key to change active filters quickly. If
+	no arguments are provided, all filters are deactivated.
 
-	If you prefix a filter name with "!" then the filter value is negated
-	before activation.
+	Prefix a filter name with *!* to negate it.
 
 filter <filter-expression>
-	Use this command when you want to temporarily filter contents of the
-	library views without having separately define (fset) and activate the
-	filter.  The filter is not saved.
+	Temporarily filters a library view. The filter is not saved (use *fset*
+	and *factivate* for that).
 
 fset <name>=<filter-expression>
-	Define (or replace existing) filter and add it to filters view (6).
+	Defines or replaces an existing filter and adds it to the filters view
+	(6).
 
 invert
-	Invert the marking of tracks in playlist and queue views. See *mark*
+	Inverts the marking of tracks in playlist and queue views. See *mark*
 	and *unmark*.
 
 live-filter <simple-filter-expression|short-filter-expression>
-	Use this command when you want to temporarily filter contents of the
-	library views without having separately define (fset) and activate the
-	filter.  The filter is not saved.
+	Like filter, but uses simple filters and shows a preview as you type.
 
 load [-l] [-p] <playlist>
-	Load a playlist to the specified view or to the current view.
+	Loads a playlist to a view.
 
 	@li -l
 	load to library views
@@ -431,97 +419,102 @@ load [-l] [-p] <playlist>
 	@li -p
 	load to playlist view
 
+	If a view is not specified, the current view is used.
+
 lqueue [NUM]
-	Queue NUM (default 1) random albums from the library. See also
+	Queues NUM (default 1) random albums from the library. Also see
 	*tqueue*.
 
 mark <filter-expression>
-	Mark tracks in playlist and queue view by using a filter expression.
+	Marks tracks in playlist and queue view using a filter expression.
 
 mute
-	Mutes the sound output.	A second call un-mutes the output.
+	Toggles mute for the sound output.
 
 pl-create <name>
 	Creates a new playlist.
 
 pl-export <filename>
-	Exports the currently selected playlist.
+	Exports the currently selected playlist. The file will be overwritten if
+	it exists.
 
 pl-import [filename]
 	Imports a playlist into the playlist view. The argument can be omitted in
-	the browser view.
+	the file browser view.
 
 pl-rename <name>
 	Renames the selected playlist.
 
 player-next (*b*)
-	Skip to the next track.
+	Skips to the next track.
 
 player-pause (*c*)
-	Toggle pause.
+	Toggles pause.
 
 player-pause-playback
-	Pause if currently playing.
+	Pauses if currently playing.
 
 player-play [filename] (*x*)
-	Play the given track, or, if none is specified, [re]play the current
+	Plays the given track, or, if none is specified, [re]plays the current
 	track from the beginning.
 
 player-prev (*z*)
-	Skip to the previous track.
+	Skips to the previous track.
 
 player-stop (*v*)
-	Stop playback.
+	Stops playback.
 
 prev-view
-	Go to previously used view.
+	Goes to the previously used view.
 
 left-view
-	Go to view "to the left" of current one, e.g. view 4 -> view 3.
+	Goes to the to view to the left of current one (e.g. view 4 -> view 3)
 
 right-view
-	Go to view "to the right" of current one, e.g. view 3 -> view 4.
+	Goes to view to the right of current one (e.g. view 3 -> view 4).
 
 push [text]
-	Enter command mode with the command line pre-set to text. Example:
+	Enters command mode with the command line pre-set to text. Example:
 
 		bind common w push filter artist=
 
-	Text can contain spaces and even trailing spaces will be honored.
-	If no text is given it defaults to a blank command line.
-	This command can only be bound to a key but not used in the command
-	line directly.
+	Text can contain spaces, which will be used as-is (e.g. trailing spaces
+	will be preserved). If no text is given, it defaults to a blank command
+	line.
+	
+	This command can only be used from a keybinding.
 
 pwd
 	Prints the current working directory.
 
 quit [-i] (*q*, *:wq*)
-	Exit cmus.
+	Exits cmus.
 
 	@li -i
 	ask before exiting
 
 raise-vte
-	Raise the virtual terminal emulator window.  Works only in X session.
+	Raises the virtual terminal emulator window. Only works within a X
+	session.
 
 rand
 	Randomizes (shuffles) the tracks in the library, playlist or queue view.
 
 refresh (*^L*)
-	Redraw the terminal window.
+	Redraws the terminal window.
 
 run <command>
-	Run command for the marked tracks OR the selected one if none marked.
+	Runs a command for the marked tracks OR the selected one if none marked.
 
-	By default file names are appended to the command.  If the command
+	By default file names are appended to the command. If the command
 	contains *{}* it is replaced with list of filenames.
 
-	NOTE: In view 1 you can run a command for all files in the selected
+	Note: In view 1 you can run a command for all files in the selected
 	album or artist.
 
 save [-e]  [-l] [-L] [-p] [-q]  [file]  (*:w*)
-	Save the specified view's or the current view's contents to a playlist
-	file. In extended mode (-e), also save metadata.
+	Saves the contents of a view to a playlist file. In extended mode (-e),
+	also saves track metadata.
 
 	@li -l
 	save library views
@@ -535,19 +528,21 @@ save [-e]  [-l] [-L] [-p] [-q]  [file]  (*:w*)
 	@li -q
 	save queue view
 
+	If no view is specified, the current one is used.
+
 	If no filename given the old filename is used. "-" outputs to stdout
 	(works only remotely).
 
 search-next (*n*)
-	If a search pattern has been entered before, search forward for the
-	next match in the current view.  See *SEARCHING* above.
+	If there is an active search, goes to the next match in the current
+	view. See *SEARCHING* above.
 
 search-prev (*N*)
-	If a search pattern has been entered before, search backwards for the
-	previous match in the current view.  See *SEARCHING* above.
+	If there is an active search, goes to the previous match in the current
+	view.  See *SEARCHING* above.
 
 seek [+-](<num>[mh] | [HH:]MM:SS)
-	Seek to absolute or relative position.  Position can be given in
+	Seeks to an absolute or relative position, which can be given in
 	seconds, minutes (m), hours (h) or HH:MM:SS format where HH: is
 	optional.
 
@@ -563,72 +558,61 @@ seek [+-](<num>[mh] | [HH:]MM:SS)
 	Seek 90 seconds forward
 		:seek +1:30
 
-	Default bindings:
-
-		@pre
-		common  ,      :seek -1m
-		common  .      :seek +1m
-		common  l      :seek +5
-		common  h      :seek -5
-		common  right  :seek +5
-		common  left   :seek -5
-		@endpre
-
 set <option>=<value>
-	Set value of an option. See *OPTIONS*.
+	Sets the value of an option. See *OPTIONS*.
 
 set <option>
 	Display option value.  Vim compatible *set <option>?* is also
 	supported.
 
 shell <command>
-	Execute a command via /bin/sh.
+	Executes a command via /bin/sh -c.
 
 showbind <context> <key>
-	Show key binding.
+	Shows a key binding.
 
 shuffle
-	Reshuffle the shuffle lists for both library and playlist views.
+	Reshuffles the shuffle lists for both library and playlist views.
 
 source <filename>
-	Read and execute commands from <filename>.
+	Reads and executes commands from <filename>.
 
 toggle <option>
-	Toggle value of a toggle-able option (all booleans and tristate
+	Toggles the value of a toggle-able option (all booleans and tristate
 	*aaa_mode*).
 
 tqueue [NUM]
-	Queue NUM (default 1) random tracks from the library. See also
+	Queues NUM (default 1) random tracks from the library. See also
 	*lqueue*.
 
 unbind [-f] <context> <key>
-	Remove a key binding. Use tab to cycle through bound keys.
+	Removes a key binding. Use tab to cycle through bound keys.
 
 	-f
 		Don't throw an error if the binding is not known
 
 unmark
-	Unmark all tracks (see *mark*).
+	Unmarks all tracks (see *mark*).
 
 update-cache [-f]
-	Update track metadata cache ($XDG_CONFIG_HOME/cmus/cache). Only files
-	with changed modification time or removed files are considered.
+	Updates the track metadata cache ($XDG_CONFIG_HOME/cmus/cache). By
+	default, only deletions or files with a changed modification time are
+	updated.
 
 	-f
 		Update all files. Same as quit, rm -f $XDG_CONFIG_HOME/cmus/cache, start cmus.
 
 version
-	Print the version information.
+	Prints the version information.
 
 view <name or 1-7>
-	Switches active view.
+	Changes the active view.
 
 vol [+-]NUM[%] [[+-]NUM[%]]
-	Set, increase or decrease volume.
+	Changes the volume.
 
-	If you give *vol* just one argument it changes both channels.  Two
-	values make it possible to change the left and right channel
-	independently.
+	If a single argument is provided, both channels are changed. Otherwise,
+	the first/second values are for the left/right channels respectively.
 
 	To increase or decrease volume prefix the value with *-* or *+*,
 	otherwise value is treated as absolute volume.
@@ -637,27 +621,14 @@ vol [+-]NUM[%] [[+-]NUM[%]]
 	(suffixed with *%*) or as internal values (hardware may have volume in
 	range 0-31 for example).
 
-	Default bindings:
-
-		@pre
-		common  =  :vol +10%
-		common  +  :vol +10%
-		common  -  :vol -10%
-		common  [  :vol +1% +0%
-		common  ]  :vol +0% +1%
-		common  {  :vol -1% -0%
-		common  }  :vol -0% -1%
-		@endpre
-
 win-activate (*enter*)
-	In views 1-3 start playing the selected track.  In view 5 start
-	playing the selected track or change to the selected directory.  In
-	view 6 activate the selected filters.  In settings view (7) change
-	binding or variable.
+	In views, 1-3 plays the selected track. In view 5 starts, the selected
+	file or changes to the selected directory. In view 6, activates the
+	selected filters. In settings view (7), changes a binding or variable.
 
 win-add-l [-n] (*a*)
-	Add the currently marked or selected track(s) (views 3-4), or the
-	currently selected file or directory (view 5) to the library.
+	Adds the currently marked or selected track(s) (views 3-4), or the
+	currently selected file/directory (view 5), to the library.
 
 	Analogous to *:add -l*
 
@@ -665,8 +636,8 @@ win-add-l [-n] (*a*)
 		Don't move the selection to the next item.
 
 win-add-p [-n] (*y*)
-	Add the currently marked or selected track(s) (views 1-2, 4), or the
-	currently selected file or directory (view 5) to the marked playlist.
+	Adds the currently marked or selected track(s) (views 1-2, 4), or the
+	currently selected file or directory (view 5), to the marked playlist.
 
 	Analogous to *:add -p*
 
@@ -674,8 +645,8 @@ win-add-p [-n] (*y*)
 		Don't move the selection to the next item.
 
 win-add-Q [-n] (*E*)
-	Prepend the currently marked or selected track(s) (views 1-3), or the
-	currently selected file or directory (view 5) to the play queue.
+	Prepends the currently marked or selected track(s) (views 1-3), or the
+	currently selected file or directory (view 5), to the play queue.
 
 	Analogous to *:add -Q*
 
@@ -683,8 +654,8 @@ win-add-Q [-n] (*E*)
 		Don't move the selection to the next item.
 
 win-add-q [-n] (*e*)
-	Add the currently marked or selected track(s) (views 1-3), or the
-	currently selected file or directory (view 5) to the play queue.
+	Adds the currently marked or selected track(s) (views 1-3), or the
+	currently selected file or directory (view 5), to the play queue.
 
 	Analogous to *:add -q*
 
@@ -692,77 +663,77 @@ win-add-q [-n] (*e*)
 		Don't move the selection to the next item.
 
 win-bottom (*G*, *end*)
-	Go to bottom of the current window.
+	Goes to bottom of the current window.
 
 win-down [NUM] (*j*, *down*)
-	Go to down NUM (default 1) rows in the current window.
+	Goes down NUM (default 1) rows in the current window.
 
 win-half-page-down (*^D*)
-	Go to down half a page in the current window.
+	Goes down half a page in the current window.
 
 win-half-page-up (*^U*)
-	Go to up half a page in the current window.
+	Goes up half a page in the current window.
 
 win-mv-after (*p*)
-	If no tracks are marked, move the selected track down one row. If any
-	tracks are marked, move the marked tracks after the currently selected
-	track.  This command works in unsorted playlist and play queue view.
+	Moves the marked tracks below the selected track. If no tracks are
+	selected, selects the previous track. If no tracks are marked, moves the
+	selected track up by one. This command works in the playlist and queue
+	views.
 
 win-mv-before (*P*)
-	If no tracks are marked, move the selected track up one row. If any
-	tracks are marked, move the marked tracks before the currently
-	selected track.  This command works in unsorted playlist and play
-	queue view.
+	Moves the marked tracks above the selected track. If no tracks are
+	selected, selects the previous track. If no tracks are marked, moves the
+	selected track down by one. This command works in the playlist and queue
+	views.
 
 win-next (*tab*)
-	Activate next window.  Only relevant in view 1.
+	Activates the next window (i.e. tree/list). Only relevant in view 1.
 
 win-page-bottom
-	Go to the bottom of the visible part of the current window.
+	Goes to the bottom of the visible part of the current window.
 
 win-page-down (*^F*, *page_down*)
-	Go to down one page in the current window.
+	Goes to down one page in the current window.
 
 win-page-middle
-	Go to the middle of the visible part of the current window.
+	Goes to the middle of the visible part of the current window.
 
 win-page-top
-	Go to the top of the visible part of the current window.
+	Goes to the top of the visible part of the current window.
 
 win-page-up (*^B*, *page_up*)
-	Go up one page in the current window.
+	Goes up one page in the current window.
 
 win-remove (*D*, *delete*)
-	Remove the selected entry.  For tracks no confirmations are made.  For
-	playlists (view 3), files (view 5), filters (view 6) and bindings (view 7)
-	user has to confirm the action.
+	Removes the selected entry. For tracks, no confirmation is required. For
+	playlists (view 3), files (view 5), filters (view 6) and bindings (view
+	7) user must confirm the action.
 
 win-scroll-down (*^E*)
-	Scroll current window one row downwards.
+	Scrolls the current window one row downwards.
 
 win-scroll-up (*^Y*)
-	Scroll current window one row upwards.
+	Scrolls the current window one row upwards.
 
 win-sel-cur (*i*)
-	Select the current track (position in library or playlist, not
-	necessarily same as the currently playing track).  Works only in views
+	Selects the current track (position in library or playlist, not
+	necessarily same as the currently playing track). Works only in views
 	1-3, does nothing in other views.
 
 win-toggle (*space*)
-	Expand albums in library view (1), mark tracks in views 2-4, set the marked
-	playlist in view 3, toggle selection of a filter in view 6, toggle variable
-	value in view 7.
+	Expands albums in library view (1), marks tracks in views 2-4, sets the
+	marked playlist in view 3, toggles selection of a filter in view 6,
+	or toggles a variable's value in view 7.
 
 win-top (*g*, *home*)
-	Go to top of the current window.
+	Goes to top of the current window.
 
 win-up [NUM] (*k*, *up*)
-	Go up NUM (default 1) rows in the current window.
+	Goes up NUM (default 1) rows in the current window.
 
 win-update (*u*)
 	Checks the modification time of the files in the library, and updates
-	metadata for changed files.  Removes non-existent files from the
-	library.
+	metadata for changed files. Removes non-existent files from the library.
 
 	Reloads contents of directory in the browser view.
 
@@ -775,51 +746,53 @@ win-update-cache [-f]
 
 @h1 CONFIGURATION OPTIONS
 
-This section describes cmus' options that can be altered with the *set* and
-*toggle* commands. Default values are in parenthesis, possible values in
-brackets.
+This section describes configuration options used by cmus.
+
+These options can be changed using the *set* and *toggle* commands. Default
+values are (parenthesized), and the possible values are in [brackets].
 
 auto_expand_albums_follow, auto_expand_albums_search, auto_expand_albums_selcur (true)
-	If enabled, cmus will always open an artist and select the album when
-	following the currently played track or performing actions such as "search"
-	or "go to current track". This option is tightly coupled to the
-	show_all_tracks option. Any "auto_expand_albums_\* = false" implies
-	"show_all_tracks = true".
+	Always expand an artist and select the album when following the
+	currently played track or performing actions such as "search" or "go to
+	current track". This option is tightly coupled to the show_all_tracks
+	option. Any "auto_expand_albums_\* = false" implies "show_all_tracks =
+	true".
 
 auto_reshuffle (true)
-	Reshuffle playlist when end of shuffle list is reached.
+	Reshuffle a playlist when the end of a shuffled list is reached.
 
 aaa_mode (all) [all, artist, album]
-	Defines what tracks should be played in the library view.  Not used in
-	the other views. For example if set to *artist* the player behaves
-	like there were only the files of the currently playing artist in the
-	library.
+	Defines what tracks should be played in the library view. Not used in
+	the other views.
+	
+	For example, if set to *artist*, the player behaves like there were only
+	the files of the currently playing artist in the library.
 
 altformat_current [`Format String`]
 	Alternative format string for the line displaying currently playing
 	track.
 
-	NOTE: if empty, *format_current* is used instead.
+	Note: If empty, *format_current* is used instead.
 
 altformat_playlist [`Format String`]
 	Alternative format string for the list views (2-4).
 
-	NOTE: if empty, *format_playlist* is used instead.
+	Note: if empty, *format_playlist* is used instead.
 
 altformat_title [`Format String`]
-	Alternative format string for terminal title.
+	Alternative format string the for terminal title.
 
-	NOTE: not all terminals support changing window title.
+	Note: not all terminals support changing window title.
 
-	NOTE: if empty, *format_title* is used instead.
+	Note: if empty, *format_title* is used instead.
 
 altformat_trackwin [`Format String`]
 	Alternative format string for the tree view's (1) track window.
 
-	NOTE: if empty, *format_trackwin* is used instead.
+	Note: if empty, *format_trackwin* is used instead.
 
 buffer_seconds (10) [1-300]
-	Size of player buffer in seconds.
+	Size of the player buffer in seconds.
 
 color_cmdline_bg (default) [`Color`]
 	Command line background color.
@@ -965,7 +938,7 @@ format_playlist_va [`Format String`]
 	Format string for the list views (2-4), if a track is assumed to be a
 	part of compilation (see `LIBRARY VIEW SORTING` for details).
 
-	NOTE: if empty, *format_playlist* is used instead.
+	Note: If empty, *format_playlist* is used instead.
 
 format_statusline [`Format String`]
 	Format string for status line.
@@ -973,7 +946,7 @@ format_statusline [`Format String`]
 format_title [`Format String`]
 	Format string for terminal title.
 
-	NOTE: not all terminals support changing window title.
+	Note: Not all terminals support changing window title.
 
 format_trackwin [`Format String`]
 	Format string for the tree view's (1) track window.
@@ -982,11 +955,11 @@ format_trackwin_album [`Format String`]
 	Format string for albums in tree view's (1) track window.
 
 format_trackwin_va [`Format String`]
-	Format string for the tree view's (1) track window, if a track
-	is assumed to be a part of compilation (see `LIBRARY VIEW SORTING`
-	for details).
+	Format string for the tree view's (1) track window, if a track is
+	assumed to be a part of compilation (see `LIBRARY VIEW SORTING` for
+	details).
 
-	NOTE: if empty, *format_trackwin* is used instead.
+	Note: If empty, *format_trackwin* is used instead.
 
 format_treewin [`Format String`]
 	Format string for the tree view's (1) tree window.
@@ -995,21 +968,21 @@ format_treewin_artist [`Format String`]
 	Format string for artists in tree view's (1) tree window.
 
 smart_artist_sort (true)
-	If enabled, makes tree view sorting ignore "The" in front of artist
+	If enabled, makes the tree view sorting ignore "The" in front of artist
 	names, preventing artists starting with "The" from clumping together.
 	Real `artistsort` tags override this option, if present.
 
 id3_default_charset (ISO-8859-1)
 	Default character set to use for ID3v1 and broken ID3v2 tags.
 
-	NOTE:  This is used only if the tag is not valid UTF-8.
+	Note: This is used only if the tag is not valid UTF-8.
 
 icecast_default_charset (ISO-8859-1)
 	Default character set to use for non-UTF-8 icecast stream metadata.
 
-	NOTE:  This is used only if the metadata is not valid UTF-8.
+	Note: This is used only if the metadata is not valid UTF-8.
 
-lib_add_filter (`Filter`)
+lib_add_filter [`Filter`]
 	Apply filter when adding files to the library. See *FILTERS*.
 
 lib_sort (artist album discnumber tracknumber title filename) [`Sort Keys`]
@@ -1018,13 +991,13 @@ lib_sort (artist album discnumber tracknumber title filename) [`Sort Keys`]
 mouse (false)
 	Enable mouse support.
 
-	NOTE: Mouse wheel scrolling can lag if cmus is compiled with
-	old version of Ncurses.
+	Note: Mouse wheel scrolling can lag if cmus is compiled with
+	old version of ncurses.
 
 mpris (true)
 	Enable MPRIS support. See *D-Bus Interface (MPRIS)*
 
-	NOTE: This flag has no effect if cmus was compiled without MPRIS support.
+	Note: This flag has no effect if cmus was compiled without MPRIS support.
 
 output_plugin [roar, pulse, alsa, arts, oss, sndio, sun, coreaudio]
 	Name of output plugin.
@@ -1038,7 +1011,7 @@ play_library (true)
 
 play_sorted (false)
 	Play tracks from the library in the sorted view (2) order instead of
-	tree view (1) order.  Used only when play_library is true.
+	tree view (1) order. Used only when play_library is true.
 
 repeat (false)
 	Repeat after all tracks played.
@@ -1046,9 +1019,8 @@ repeat (false)
 repeat_current (false)
 	Repeat current track forever.
 
-replaygain (disabled)
-	Enable Replay Gain. Default is "disabled".
-	Set to "track", "album", "track-preferred" or "album-preferred".
+replaygain (disabled) [track, album, track-preferred, album-preferred]
+	Enable Replay Gain.
 
 replaygain_limit (true)
 	Use replay gain limiting when clipping.
@@ -1061,8 +1033,8 @@ resume (false)
 
 rewind_offset (5) [-1-9999]
 	If the position of the current track is smaller than rewind_offset,
-	player_prev jumps to the previous track. Otherwise, player_prev jumps
-	to the beginning of the current track. If rewind_offset=-1, player_prev
+	player_prev jumps to the previous track. Otherwise, player_prev jumps to
+	the beginning of the current track. If rewind_offset=-1, player_prev
 	always jumps to the previous track.
 
 scroll_offset (2) [0-9999]
@@ -1070,8 +1042,9 @@ scroll_offset (2) [0-9999]
 
 show_all_tracks (true)
 	Display all tracks of the artist when the artist is selected in the tree
-	view. This option is tightly coupled to the auto_expand_albums_\* options.
-	"show_all_tracks = false" implies "auto_expand_albums_\* = true".
+	view. This option is tightly coupled to the auto_expand_albums_\*
+	options. "show_all_tracks = false" implies "auto_expand_albums_\* =
+	true".
 
 show_hidden (false)
 	Display hidden files in browser.
@@ -1087,43 +1060,42 @@ show_remaining_time (false)
 	Display remaining time instead of elapsed time.
 
 shuffle (false)
-	Play in shuffled order.  Shuffle works in the library views (1-2) and
+	Play in shuffled order. Shuffle works in the library views (1-2) and
 	playlist view (3).
 
 skip_track_info (false)
-	Don't load metadata when adding tracks. Useful when using network file system
-	and having huge amount of files.
-	Tags can be loaded using 'update-cache' or 'win-update-cache' commands.
+	Don't load metadata when adding tracks. Useful when using network file
+	system and having huge amount of files. Tags can be loaded using
+	'update-cache' or 'win-update-cache' commands.
 
 softvol (false)
 	Use software volume control.
 
-	NOTE: You should probably set this to false when using *ao* as
+	Note: You should probably set this to false when using *ao* as
 	*output_plugin* to output to wav files.
 
 softvol_state (100 100)
-	Used to save left and right channel values for software volume
-	control.  Two integers in range 0..100 separated by a space.  This
-	option is not usually changed directly since *vol* command does same
-	thing if *softvol* is true.
+	Used to save left and right channel values for software volume control.
+	Two integers in range 0..100 separated by a space. This option is not
+	usually changed directly since *vol* command does same thing if
+	*softvol* is true.
 
 start_view (tree) [tree, sorted, playlist, queue, browser, filters, settings]
 	Specify the view that gets shown when cmus starts.
 
 status_display_program () [command]
-	This command, if not empty, is run every time cmus' status changes.
-	It can be used to display currently playing track on desktop
-	background or panel for example.  See
-	`/usr/share/doc/cmus/examples/cmus-status-display`.
+	This command, if set, is run for every status change. It can be used to
+	display currently playing track on desktop background or panel for
+	example. See `/usr/share/doc/cmus/examples/cmus-status-display`.
 
 stop_after_queue (false)
 	Stop playback when end of play queue is reached.
 
 time_show_leading_zero (true)
-	Pad durations of less than 10 minutes with a leading 0
+	Pad durations of less than 10 minutes with a leading 0.
 
 tree_width_percent (33) [1-100]
-	Percentage of window to use for left pane.
+	Percentage of the window width to use for left pane.
 
 tree_width_max (0) [0-9999]
 	Restrict the size calculated from tree_width_percent. 0 disables this
@@ -1161,7 +1133,7 @@ wrap_search (true)
 
 @h2 Colors
 
-Color is integer in range -1..255.
+Color is an integer in range -1..255.
 
 The following color names are recognized:
 
@@ -1197,7 +1169,7 @@ the other attributes will be used.
 Format strings control display of tracks in library, playlist and play queue
 views.
 
-NOTE: *altformat_\** options are used when there are no tags available.
+Note: *altformat_\** options are used when there are no tags available.
 
 Special Keys:
 
@@ -1285,7 +1257,7 @@ sort keys:
 	bitrate, codec, media, codec_profile, rg_track_gain, rg_track_peak,
 	rg_album_gain, rg_album_peak
 
-Note: Adding a '-' in front of the key will sort in reverse order
+Note: Adding a '-' in front of the key will reverse the sort order.
 
 
 @h1 PLUGIN OPTIONS
@@ -1306,8 +1278,8 @@ mixer.pulse.restore_volume
 	feature of PA. Defaults to "1"; set to "0" to turn off.
 
 dsp.ao.buffer_size
-	Buffer size, default is 16kB (but you may want to try bigger values if
-	you experience buffer under-runs).
+	The audio buffer size; defaults to 16kB, but you may want to try bigger
+	values if you experience buffer under-runs.
 
 dsp.ao.device_interface
 	Device interface for libao plugin to request a specific playback
@@ -1318,28 +1290,28 @@ dsp.ao.driver
 	Output driver for libao plugin.  Example values: "alsa09", "esd",
 	"irix", "oss", "sun", "aixs", "wav".
 
-	NOTE: of the file output drivers only "wav" is supported.
+	Note: of the file output drivers only "wav" is supported.
 
 dsp.ao.wav_counter
 	Counter used for making filename.  Used only if *dsp.ao.driver* is
-	"wav".  For example if this is 1 and *dsp.ao.wav_dir* is "/home/user"
-	then PCM data is outputted to "/home/user/01.wav".  This counter is
+	"wav". For example if this is 1 and *dsp.ao.wav_dir* is "/home/user"
+	then PCM data is outputted to "/home/user/01.wav". This counter is
 	incremented every time playback is stopped.
 
-	NOTE: you probably want to set *continue* to *false* (press *C*),
+	Note: You probably want to set *continue* to *false* (press *C*),
 	otherwise playback is not stopped between tracks and all PCM data is
-	outputted to one wav file (useful if you want to join files).  Also
+	outputted to one wav file (useful if you want to join files).c Also
 	unsetting shuffle and repeat might be good idea.
 
 dsp.ao.wav_dir
-	Output directory for libao plugin, default is your home directory.
-	Used only if *dsp.ao.driver* is "wav".
+	Output directory for libao plugin; default to the home directory. Used
+	only if *dsp.ao.driver* is "wav".
 
 dsp.coreaudio.device
 	Device for Core Audio output. Leave empty for default.
 
 dsp.coreaudio.enable_hog_mode
-	Set true to set the device to hog mode. The default value is false.
+	Set hog mode for the device. The default value is false.
 
 dsp.coreaudio.sync_sample_rate
 	Synchronize the device sample rate with the player, so no interpolation
@@ -1349,15 +1321,14 @@ dsp.jack.server_name
 	Connect to jackd with this name. Leave empty for default.
 
 dsp.jack.resampling_quality
-	Sets the quality of the re-sampling. 0 is low quality but fast, 1 is
-	medium quality, 2 (default) is high quality but more CPU intensive. This
-	option is only available if cmus was compiled with libsamplerate
-	support.
+	The re-sampling quality. 0 is low quality but fast, 1 is medium quality,
+	2 (default) is high quality but more CPU intensive. This option is only
+	available if cmus was compiled with libsamplerate support.
 
 input.cdio.cddb_url
-	CDDB URL (default: freedb.freedb.org:8880). Use HTTP protocol if prefixed
-	with "http://" (e.g.: http://freedb.musicbrainz.org:80/~cddb/cddb.cgi).
-	Set to an empty string to disable CDDB lookup completely.
+	CDDB URL (default: freedb.freedb.org:8880). Uses HTTP if prefixed with
+	"http://" (e.g.: http://freedb.musicbrainz.org:80/~cddb/cddb.cgi). Set
+	to an empty string to disable CDDB lookup completely.
 
 input.\*.priority
 	Sets the priority of the input plugin. If multiple plugins can play a
@@ -1392,17 +1363,17 @@ mixer.sun.device
 
 @h1 PLAYING AUDIO DISCS
 
-With the cdio input plugin enabled, it is possible to play Audio CDs and CD
-images. Just set the *device* option to either a device file (e.g. /dev/cdrom)
-or an image file (e.g. ~/cd.cue). Then add a new track using the CDDA URL
-scheme, e.g.:
+If the *cdio* input plugin is enabled, CDs and CD images can be played by
+setting the *device* option to a device file (e.g. /dev/cdrom) or an image file
+(e.g. ~/cd.cue). Then, add a new track using the CDDA URL scheme:
 
 	:add cdda://2
 
-To add the whole disc, use cdda:// (without track number). This is currently
-only working for audio discs, not images. Adding track ranges is also possible
-(cdda://1-3). To add images without changing the device option, it is possible
-to include the image path in the URL, e.g.:
+To add the entire disc, use cdda:// (without track number). This only works for
+audio discs, not images. Adding track ranges is also possible (cdda://1-3).
+
+To add images without changing the device option, include the image path in the
+URL:
 
 	:add cdda:///path/to/cd.cue/2-5
 
@@ -1413,13 +1384,12 @@ a CDDB server (see *input.cdio.cddb_url*).
 @h1 FILTERS
 
 Filters are used mostly for filtering contents of library views (1 & 2).
-Filters do not change the actual library content, i.e. *:save* command will
+Filters do not change the actual library content, i.e. the *:save* command will
 still save all tracks to playlist file whether they are visible or not.
 
 @h2 Types
 
-There are three types of filter expressions, each offering more
-expressiveness:
+There are three types of filter expressions, each offering more expressiveness:
 
 	@li *simple*
 	`e.g.` beatles
@@ -1430,15 +1400,15 @@ expressiveness:
 	@li *long*
 	`e.g.` artist="\*beatles\*"&album="R\*"
 
-Simple expressions are only available using *live-filter*. For other
-filter commands the type is auto-detected, so both short and long
-expressions can be used.
+Simple expressions are only available using *live-filter*. For other filter
+commands the type is auto-detected, so both short and long expressions can be
+used.
 
-Long expressions are lists of built-in filters or user defined filters
-separated with *&* (and) or *|* (or).  Parenthesis can be used group
-subexpressions and *!* negates result of the expression following it.
-Same is true for short expressions, but they can only be made of
-built-in filters. Also (and)-grouping is done implicitly.
+Long expressions are lists of built-in filters or user defined filters separated
+with *&* (and) or *|* (or). Parenthesises can be used group subexpressions and
+*!* negates result of the expression following it. The same is true for short
+expressions, but they can only consist of built-in filters. Also, (and)-grouping
+is done implicitly.
 
 @h2 Strings
 
@@ -1476,19 +1446,19 @@ For short expressions: *~T* and *~s*
 
 @h2 Defining Filters
 
-Filters can be defined with *fset* command.  User defined filters appear in
+Filters can be defined with the *fset* command. User defined filters appear in
 the filters view (6).
 
 Create a new filter which name is *ogg* and value *filename="\*.ogg"*
 	:fset ogg=filename="\*.ogg"
 
 Filter ogg and mp3 files from the 90s. Note the use of user defined filter
-*ogg*
+*ogg*.
 	:fset 90s-ogg-mp3=date>=1990&date<2000&(ogg|filename="\*.mp3")
 
 @h2 Activating Filters
 
-*factivate* changes visible contents of the library (views 1-2).
+*factivate* changes the visible contents of the library (views 1-2).
 
 Activate user defined filters *ogg* and *missing-tags*
 	:factivate ogg missing-tags
@@ -1496,15 +1466,15 @@ Activate user defined filters *ogg* and *missing-tags*
 Like above but negate value of *ogg* filter.
 	:factivate !ogg missing-tags
 
-Alternatively you can select the filters by pressing *space* in view 6 and
-then activate the selected filters by pressing *enter*.
+Alternatively, you can filters by pressing *space* in view 6, then activate them
+by pressing *enter*.
 
 @h2 Throw-away Filters
 
-*live-filter* and *filter* commands are useful when you want to use a filter only
-once and not save it.  It changes visible contents of the library (views 1-2).
-*filter* unactivates all filters in the filters view, while *live-filter* is
-applied in addition to all currently activated filters.
+The *live-filter* and *filter* commands are useful when you want to use a filter
+without saving it.  It changes visible contents of the library (views
+1-2). *filter* unactivates all filters in the filters view, while *live-filter*
+is applied in addition to all currently activated filters.
 
 Filter all rock (anything with *rock* in genre tag) music from 80s-
 	:filter date>=1980&genre="\*rock\*"
@@ -1527,43 +1497,49 @@ These commands work in views 2-4.
 
 @h1 FILES
 
-cmus reads its configuration from 3 different places.
+cmus reads its configuration from 3 different places in the following order:
 
 `$XDG_CONFIG_HOME/cmus/autosave`
-	This is the first file cmus loads.  cmus saves its state on exit to
-	this file so you shouldn't edit it.
+	This file is automatically created and overwritten by cmus on exit, so
+	it should not be modified by hand.
 
 `/usr/share/cmus/rc`
-	If the autosave file didn't exist, this file is read instead.
+	This file contains the default configuration.
+
+	If the autosave file did exist, this file is read instead.
 
 `$XDG_CONFIG_HOME/cmus/rc`
-	Static config file. This file is read immediately after the autosave
-	file, and is never modified by cmus.  You can override auto-saved
-	settings in this file.  This file is not limited to options, it can
-	contain other commands too.
+	This file is the static configuration file.
+
+	This file is read immediately after the autosave file, and is never
+	modified by cmus. You can override auto-saved settings in this file.
+	This file is not limited to options; it can contain other commands too.
 
 @h2 Color Schemes
 
-There are some color schemes (\*.theme) in `/usr/share/cmus`.  You can switch
-them using the *:colorscheme* command.  You can put your own color schemes to
-$XDG_CONFIG_HOME/cmus.
+Color schemes (\*.theme) are located in `/usr/share/cmus` or
+`$XDG_CONFIG_HOME/cmus`. You can switch them using the *:colorscheme* command
+with the basename of the theme file.
+
+Note: Colors are not automatically updated when the theme file changes since
+they are saved in the autosave file.
 
 @h2 Examples
 
-Example status display script (See *status_display_program* option) can be
-found in `/usr/share/doc/cmus/examples`.
+Example status display scripts (see *status_display_program*) can be found in
+`/usr/share/doc/cmus/examples`.
 
 
 @h1 ENVIRONMENT
 
 CMUS_CHARSET
-	Override cmus character set (default: \`locale charmap\`).
+	Override the character set used by cmus (default: \`locale charmap\`).
 
 CMUS_HOME
-	Override cmus config directory (default: $XDG_CONFIG_HOME/cmus).
+	Override the config directory (default: $XDG_CONFIG_HOME/cmus).
 
 CMUS_SOCKET
-	Override cmus socket path (default: $XDG_RUNTIME_DIR/cmus-socket).
+	Override the socket path (default: $XDG_RUNTIME_DIR/cmus-socket).
 
 HOME
 	Full path of the user's home directory.
@@ -1592,9 +1568,11 @@ Additionally, the `cmus:stream_title` field is exposed if appropriate.
 
 @h1 BUGS
 
-After a crash last lines of `~/cmus-debug.txt` might
-contain useful information.  The file exists only if you configured cmus with
-maximum debug level (*./configure DEBUG=2*).
+The file exists only if you configured cmus with the maximum debug level
+(*./configure DEBUG=2*).
+
+After a crash, the last lines of `~/cmus-debug.txt` may contain useful
+information.  
 
 Feature requests and bug reports should go to the GitHub issue tracker:
 	https://github.com/cmus/cmus/issues
