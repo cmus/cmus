@@ -178,19 +178,19 @@ on a grey background) consists of the following fields:
 aaa_mode & play_sorted & play_library | continue follow repeat shuffle
 @endpre
 
-NOTE: *aaa_mode* and *play_sorted* will be displayed only if *play_library* is
+NOTE: *aaa_mode* and *play_sorted* will be only displayed if *play_library* is
 *true* because these are meaningless when playing the playlists (view 3).
 
-Pressing *m*, *o*, *M*, *C*, *r* and *s* keys should make it easier to
-understand what all those fields mean.
+Pressing *m*, *o*, *M*, *C*, *r* and *s* should make it easier to understand
+what these fields mean.
 
 See CONFIGURATION OPTIONS section for more information about these options.
 
 
 @h1 KEYBINDINGS
 
-Here's list of default keybindings.  See *unbind* and *bind* commands in the
-COMMANDS section.
+Here's list of default keybindings. To change them, see the *unbind* and *bind*
+commands in the COMMANDS section.
 
 
 @h2 Common Context
@@ -270,76 +270,46 @@ u              win-update
 
 @h1 LIBRARY VIEW SORTING
 
-The library view (the tree-like one; not the sorted library view, for which
-the sorting is controlled by the user by setting lib_sort - see `CONFIGURATION
-OPTIONS`), is sorted automatically by cmus using the information found in the
-tagging information provided by the audio files.
+The library view (the tree-like one; not the sorted library view, which is
+configured with lib_sort - see `CONFIGURATION OPTIONS`), is sorted automatically
+using tags from the audio files.
 
-Generally, in the library view cmus uses three levels of sorting: the first
-level would be the artist name, the second one the album and finally the
-actual track.
+Note: Albums which feature various artists (e.g. samplers or compilations) are
+treated specially. If an album artist tag or the ID3v2 *TPE2* frame is set, it
+will be used instead of the real artist name. Otherwise, cmus determines if the
+album is a compilation (if *albumartist* or *artist* are set to *Various
+Artists*, *Various*, *VA*, or *V/A*; or if *compilation* or *partofacompilation*
+are set to a truthy value; or if the ID3v2 *TCMP* frame is set). If so, the
+album is named *<Various Artists>*.
 
-At first, cmus checks if the "filename" looks like an URL, if it does, the
-item is given the special artist and album name *<Stream>*.
+Note: If the filename is a URL, the artist/album tags are set to *<Stream>*. If
+it is a file, cmus sets the artist and/or album tags to *<No Name>* if they are
+not already set. These names will be treated the same way as other names for
+sorting.
 
-If it is a file, it is checked if the artist and album tags are set. If not,
-cmus assigns the special name *<No Name>* for the unset tag.
+In general, three levels of sorting are used in the library view: the artist
+name, then the album, and finally the track itself.
 
-As the first level, cmus sorts alphanumerically by the value of the artist
-tag. (<Stream> and <No Name> will be used as if they where normal names.)
-If a special sorting tag is available, its value will be used instead.
+First, cmus sorts alphanumerically by the value of the artist tag. If a special
+sorting tag is available, its value will be used instead.
 
-For album names, alphanumerical sorting is not the primary method, though.
-To decide, how the second level should be sorted, cmus looks at the date of
-the first track of each album. Sorting is done from young to old. Of course,
-if one artist happens to have more then one album from one year,
-alphanumerical sorting will be used after sorting by date.
+Next, cmus sorts by the album. Tracks are grouped by the album name, and the
+groups are sorted by the date of the first track, then alphanumerically by the
+name of the album. If the date header is not set, the album will be placed on
+top of the list.
 
-If the date header is not set, the album will be placed on top of the list (in
-fact, the internal integer value for unset album tags is -1).
-
-The method for third sorting level (the track) is very similar to album
-sorting. First two numerical values are checked (discnumber and tracknumber).
-If sorting is still ambiguous, sorting will be done alphanumerically by the
-value of the track's `filename` (not track name!).
-
-For simple albums, that is it. There is a special case, though. Albums, that
-feature various artists, also known as samplers or compilations.
-
-If a track belongs to a compilation is again decided by the existence and
-value of special tagging information. First, it is checked if cmus should use
-a special artist name (e.g.: `'Fatboy Slim'` for a DJ set). If so, that one
-will be used instead of the real artist name.
-
-If that special name tag is not set, cmus checks if another tag is
-set. If that is the case, the album will be given the special artist
-name *<Various Artists>*. Albums filed under *<Various Artists>* are sorted
-alphanumerically by album name instead of by date.
-
-That way, you do not end up with compilation tracks scattered around your
-library view.
-
-The problem with compilation tagging is, that there is no generic tag or
-method, that can be regarded as a standard across all different formats,
-supported by cmus.
-
-For mp3, the special-name tag would be the id3v2 *TPE2* frame. The
-mark-as-compilation tag is the *TCMP* frame (which is a user defined id3v2.3
-frame, used at least by Amarok and Apple's iTunes[tm]).
-
-For vorbis style tags (for example in ogg vorbis and flac files), the
-special-name tag is *ALBUMARTIST* and the mark-as-compilation tag is
-*COMPILATION*. Vorbis tags names are case insensitive.
+Finally, each album is sorted by the track discnumber, tracknumber, then
+filename (not the track name).
 
 
 @h1 COMMANDS
 
-This section describes cmus' commands.  You can bind a key to any of these
-commands, put these commands to configuration files and execute them in
-command mode.  Also cmus-remote uses these commands in its protocol.
+This section describes cmus' commands, which can be bound to keys and mouse
+events, put in configuration files, executed in command mode, or passed to
+cmus-remote.
 
-Optional parameters are in brackets, obligatory parameters in angle brackets
-and default key bindings in parenthesis.
+Optional parameters are in [brackets], required parameters in <angle brackets>
+and default key bindings are (parenthesized).
 
 add [-l] [-p] [-q] [-Q] <file|dir|url|playlist>
 	Add file/dir/url/playlist to the specified view or the current view.
@@ -356,10 +326,11 @@ add [-l] [-p] [-q] [-Q] <file|dir|url|playlist>
 	@li -Q
 	prepend to play queue
 
-	URL is a Shoutcast stream (http://...) or a CDDA URL (cdda://...)
-	(see *PLAYING AUDIO DISCS*).
+	Supported files are based on the loaded input plugins.
 
-	Supported playlist: plain, .m3u, .pls.
+	Supported URLs: Shoutcast (http://...), CDDA (cdda://...).
+
+	Supported playlist types: plain, .m3u, .pls.
 
 bind [-f] <context> <key> <command>
 	Add a key binding.
@@ -367,12 +338,8 @@ bind [-f] <context> <key> <command>
 	@li -f
 	overwrite existing binding
 
-	Use tab to expand contexts, keys and commands.  Command is any command
-	listed in this section.
-
-	Valid key contexts
-		common, library (1-2), playlist (3), queue (4), browser (5),
-		filters (6)
+	Valid contexts: common (i.e. all views), library (1-2), playlist (3),
+	queue (4), browser (5), filters (6)
 
 	There's one context for each view.  Common is a special context on
 	which bound keys work in every view.
@@ -385,14 +352,17 @@ bind [-f] <context> <key> <command>
 	recommended to use the -f option, or else bind may fail due to an
 	existing binding in the autosave or system-level config files.
 
+	Hint: You can press *tab* from command mode to expand contexts, keys,
+	and commands.
+
 browser-up (*backspace*)
-	Change to parent directory in browser view (5). This command only
+	Navigate the browser view to the parent directory (5). This command only
 	makes sense to be bound to the *browser* key context although it's
 	possible to use this even if browser view is not active.
 
 cd [directory]
-	Changes the current working directory.  Changes the directory
-	displayed in browser view too.
+	Changes the current working directory. Also changes the directory
+	displayed in the browser view.
 
 clear [-l] [-p] [-q]
 	Remove all tracks from the specified view or the current view.
