@@ -574,14 +574,14 @@ int u_skip_chars(const char *str, int *width)
 
 static inline uchar u_casefold_char(uchar ch)
 {
-        /* faster lookup for for A-Z, rest of ASCII unaffected */
-        if (ch < 0x0041)
-                return ch;
-        if (ch <= 0x005A)
-                return ch + 0x20;
+	/* faster lookup for for A-Z, rest of ASCII unaffected */
+	if (ch < 0x0041)
+		return ch;
+	if (ch <= 0x005A)
+		return ch + 0x20;
 #if defined(_WIN32) || defined(__STDC_ISO_10646__) || defined(__APPLE__)
-        if (ch < 128)
-                return ch;
+	if (ch < 128)
+		return ch;
 	ch = towlower(ch);
 #endif
 	return ch;

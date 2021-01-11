@@ -122,13 +122,13 @@ static struct {
 ''' % os.path.basename(sys.argv[0])
     for k in sorted(unidata.keys()):
         b = unidata[k]['decomp'][0]
-        buf += '\t{ %#6x, %#6x },\t// %s -> %s,\t%s\n' % \
+        buf += ('\t{ %#6x, %#6x },\t// %s -> %s,\t%s' % \
             (k, b,
             unichr(k).encode('utf-8'),
             unichr(b).encode('utf-8'),
             ', '.join([' %s (%x)' %
                 (unichr(d).encode('utf-8'), d)
-                    for d in unidata[k]['decomp'][1:]]))
+                    for d in unidata[k]['decomp'][1:]]))).rstrip()  + '\n'
     buf += '};'
     f.write(buf+'\n')
 

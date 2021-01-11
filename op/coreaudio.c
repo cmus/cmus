@@ -74,13 +74,13 @@
  */
 
 /*
- * The text above constitutes the entire PortAudio license; however, 
+ * The text above constitutes the entire PortAudio license; however,
  * the PortAudio community also makes the following non-binding requests:
  *
  * Any person wishing to distribute modifications to the Software is
  * requested to send the modifications to the original developer so that
- * they can be incorporated into the canonical version. It is also 
- * requested that these non-binding requests be included along with the 
+ * they can be incorporated into the canonical version. It is also
+ * requested that these non-binding requests be included along with the
  * license above.
  */
 
@@ -317,7 +317,7 @@ static AudioDeviceID coreaudio_find_device(const char *dev_name)
 	err = AudioObjectGetPropertyData(kAudioObjectSystemObject,
 					 &aopa,
 					 0,
-					 NULL, 
+					 NULL,
 					 &property_size,
 					 devices);
 	if (err != noErr)
@@ -573,7 +573,7 @@ static OSStatus coreaudio_init_audio_unit(AudioUnit *au,
 					  OSType os_type,
 					  AudioDeviceID dev_id)
 {
-	OSStatus err;	
+	OSStatus err;
 	AudioComponentDescription comp_desc = {
 		kAudioUnitType_Output,
 		os_type,
@@ -609,7 +609,7 @@ static OSStatus coreaudio_start_audio_unit(AudioUnit *au,
 					   int *frame_size,
 					   AudioStreamBasicDescription desc)
 {
-	
+
 	OSStatus err;
 	err = AudioUnitSetProperty(*au,
 				   kAudioUnitProperty_StreamFormat,
@@ -736,7 +736,7 @@ static OSStatus coreaudio_get_device_stereo_channels(AudioDeviceID dev_id, UInt3
 						  &size,
 						  channels);
 	return err;
-} 
+}
 
 static int coreaudio_mixer_set_volume(int l, int r)
 {
@@ -843,7 +843,7 @@ static int coreaudio_mixer_close(void)
 			.mScope		= kAudioObjectPropertyScopeOutput,
 			.mElement	= coreaudio_stereo_channels[i]
 		};
-	
+
 		err |= AudioObjectRemovePropertyListener(coreaudio_device_id,
 							 &aopa,
 							 coreaudio_device_volume_change_listener,

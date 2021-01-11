@@ -35,7 +35,7 @@ struct glob_item {
 };
 
 /* simplification:
- * 
+ *
  *   ??*? => ???*
  *   *?*  => ?*
  *   *?   => ?*

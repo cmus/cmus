@@ -42,11 +42,11 @@ addons:
         packages:
             - libmad
             - libcddb
-script: 
+script:
     - if [ ${TRAVIS_OS_NAME} == "linux" ] && [ ${TRAVIS_COMPILER} == "gcc" ] ; then
-        ./configure CC=/usr/bin/gcc-5 ; 
+        ./configure CC=/usr/bin/gcc-5 ;
       else
         ./configure ;
       fi
     - make
-    
+

@@ -349,7 +349,7 @@ char *expand_filename(const char *name)
 	}
 }
 
-void shuffle_array(void *array, size_t n, size_t size) 
+void shuffle_array(void *array, size_t n, size_t size)
 {
 	char tmp[size];
 	char *arr = array;
