@@ -162,7 +162,7 @@ static int is_filtered(struct track_info *ti)
 void lib_add_track(struct track_info *ti, void *opaque)
 {
 	if (add_filter && !expr_eval(add_filter, ti)) {
-		/* filter any files exluded by lib_add_filter */
+		/* filter any files excluded by lib_add_filter */
 		return;
 	}
 

@@ -1036,7 +1036,7 @@ static void unsync(unsigned char *buf, int *lenp)
 	if (s < len)
 		buf[d++] = buf[s++];
 
-	d_print("unsyncronization removed %d bytes\n", s - d);
+	d_print("de-synchronization removed %d bytes\n", s - d);
 	*lenp = d;
 }
 

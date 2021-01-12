@@ -394,7 +394,7 @@ void window_set_sel(struct window *win, struct iter *iter)
 
 		tmp = win->sel;
 		bottom_nr = sel_nr;
-		if (sel_nr >= top_nr + win->nr_rows) { /* seleced element not visible */
+		if (sel_nr >= top_nr + win->nr_rows) { /* selected element not visible */
 			while (sel_nr >= top_nr + win->nr_rows) {
 				win->get_next(&win->top);
 				top_nr++;
