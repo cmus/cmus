@@ -341,7 +341,7 @@ will be used instead of the real artist name. Otherwise, cmus determines if the
 album is a compilation (if *albumartist* or *artist* are set to *Various
 Artists*, *Various*, *VA*, or *V/A*; or if *compilation* or *partofacompilation*
 are set to a truthy value; or if the ID3v2 *TCMP* frame is set). If so, the
-album is named *<Various Artists>*.
+artist is named *<Various Artists>*.
 
 Note: If the filename is a URL, the artist/album tags are set to *<Stream>*. If
 it is a file, cmus sets the artist and/or album tags to *<No Name>* if they are
