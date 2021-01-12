@@ -1,16 +1,55 @@
-bind browser backspace browser-up
-bind browser space win-activate
-bind browser i toggle show_hidden
-bind browser u win-update
-bind common mouse_scroll_up win-up
-bind common mouse_scroll_down win-down
-bind common mlb_click_selected win-activate
-bind common ! push shell
+# Playback
+
+bind common b player-next
+bind common c player-pause
+bind common x player-play
+bind common z player-prev
+bind common v player-stop
+
+bind common ] vol +0 +1%
+bind common [ vol +1% +0
 bind common + vol +10%
-bind common , seek -1m
+bind common = vol +10%
+bind common } vol -0 -1%
+bind common { vol -1% -0
 bind common - vol -10%
+
+bind common , seek -1m
 bind common . seek +1m
-bind common / search-start
+
+bind common h seek -5
+bind common l seek +5
+
+bind common left seek -5
+bind common right seek +5
+
+bind common mlb_click_bar player-pause
+bind common mouse_scroll_up_bar seek +5
+bind common mouse_scroll_down_bar seek -5
+
+# Setting toggles
+
+bind common m toggle aaa_mode
+bind common C toggle continue
+bind common M toggle play_library
+bind common o toggle play_sorted
+bind common r toggle repeat
+bind common ^R toggle repeat_current
+bind common t toggle show_remaining_time
+bind common s toggle shuffle
+bind common f toggle follow
+
+# Commands
+
+bind common q quit -i
+bind common ^C echo Type :quit<enter> to exit cmus.
+bind common I echo {}
+
+# note: the single space at the end is intentional
+bind common ! push shell 
+
+# View/window navigation
+
 bind common 1 view tree
 bind common 2 view sorted
 bind common 3 view playlist
@@ -18,73 +57,69 @@ bind common 4 view queue
 bind common 5 view browser
 bind common 6 view filters
 bind common 7 view settings
-bind common = vol +10%
-bind common ? search-b-start
-bind common C toggle continue
-bind common D win-remove
-bind common E win-add-Q
-bind common F push filter
-bind common G win-bottom
-bind common I echo {}
-bind common L push live-filter
-bind common M toggle play_library
-bind common N search-prev
-bind common P win-mv-before
-bind common [ vol +1% +0
-bind common ] vol +0 +1%
-bind common ^B win-page-up
-bind common ^U win-half-page-up
-bind common ^C echo Type :quit<enter> to exit cmus.
-bind common ^E win-scroll-down
-bind common ^F win-page-down
-bind common ^D win-half-page-down
-bind common ^L refresh
-bind common ^R toggle repeat_current
-bind common ^Y win-scroll-up
-bind common a win-add-l
-bind common b player-next
-bind common c player-pause
-bind common mlb_click_bar player-pause
-bind common delete win-remove
-bind common down win-down
-bind common e win-add-q
-bind common end win-bottom
-bind common enter win-activate
-bind common f toggle follow
-bind common g win-top
-bind common h seek -5
-bind common home win-top
-bind common i win-sel-cur
-bind common j win-down
-bind common k win-up
-bind common l seek +5
-bind common left seek -5
-bind common mouse_scroll_down_bar seek -5
-bind common m toggle aaa_mode
-bind common n search-next
-bind common o toggle play_sorted
-bind common p win-mv-after
-bind common q quit -i
-bind common page_down win-page-down
-bind common page_up win-page-up
-bind common r toggle repeat
-bind common right seek +5
-bind common mouse_scroll_up_bar seek +5
-bind common s toggle shuffle
-bind common space win-toggle
-bind common t toggle show_remaining_time
-bind common tab win-next
-bind common u update-cache
-bind common U win-update-cache
-bind common up win-up
-bind common v player-stop
-bind common x player-play
-bind common y win-add-p
-bind common z player-prev
-bind common { vol -1% -0
-bind common } vol -0 -1%
+
 bind common mouse_scroll_up_title left-view
 bind common mouse_scroll_down_title right-view
+
+bind common tab win-next
+
+bind common ^L refresh
+
+# Navigation
+
+bind common ^Y win-scroll-up
+bind common ^E win-scroll-down
+bind common ^B win-page-up
+bind common ^F win-page-down
+bind common ^U win-half-page-up
+bind common ^D win-half-page-down
+
+bind common k win-up
+bind common j win-down
+bind common g win-top
+bind common G win-bottom
+
+bind common up win-up
+bind common down win-down
+bind common home win-top
+bind common end win-bottom
+bind common page_up win-page-up
+bind common page_down win-page-down
+
+bind common mouse_scroll_up win-up
+bind common mouse_scroll_down win-down
+
+# Selection
+
+bind common i win-sel-cur
+bind common enter win-activate
+bind common mlb_click_selected win-activate
+
+bind common space win-toggle
+bind common D win-remove
+bind common delete win-remove
+bind common p win-mv-after
+bind common P win-mv-before
+
+bind common E win-add-Q
+bind common a win-add-l
+bind common y win-add-p
+bind common e win-add-q
+
+bind common u update-cache
+bind common U win-update-cache
+
+# Filters
+
+bind common / search-start
+bind common ? search-b-start
+bind common n search-next
+bind common N search-prev
+
+# note: the single space at the end is intentional
+bind common F push filter 
+bind common L push live-filter 
+
 fset 90s=date>=1990&date<2000
 fset classical=genre="Classical"
 fset unheard=play_count=0
@@ -92,3 +127,10 @@ fset missing-tag=!stream&(artist=""|album=""|title=""|tracknumber=-1|date=-1)
 fset mp3=filename="*.mp3"
 fset ogg=filename="*.ogg"
 fset ogg-or-mp3=ogg|mp3
+
+# File browser
+
+bind browser backspace browser-up
+bind browser space win-activate
+bind browser i toggle show_hidden
+bind browser u win-update
