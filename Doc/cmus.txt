@@ -343,12 +343,12 @@ bind [-f] <context> <key> <command>
 	Valid contexts: common (i.e. all views), library (1-2), playlist (3),
 	queue (4), browser (5), filters (6)
 
-	There's one context for each view.  Common is a special context on
-	which bound keys work in every view.
+	There's one context for each view. Common is a special context on which
+	bound keys work in every view.
 
-	You can override specific keys in common context for a view.  For
-	example *i* selects the current track in views 1-3 but in browser it
-	is overridden to toggle showing of hidden files.
+	You can override specific keys in common context for a view. For example
+	*i* selects the current track in views 1-3 but in browser it is
+	overridden to toggle showing of hidden files.
 
 	When setting custom bindings in `$XDG_CONFIG_HOME/cmus/rc`, it is
 	recommended to use the -f option, or else bind may fail due to an
@@ -410,7 +410,8 @@ invert
 	and *unmark*.
 
 live-filter <simple-filter-expression|short-filter-expression>
-	Like filter, but uses simple filters and shows a preview as you type.
+	Like filter, but uses simple filters and shows a preview as you type. It
+	persists even after leaving command mode.
 
 load [-l] [-p] <playlist>
 	Loads a playlist to a view.
@@ -541,7 +542,7 @@ search-next (*n*)
 
 search-prev (*N*)
 	If there is an active search, goes to the previous match in the current
-	view.  See *SEARCHING* above.
+	view. See *SEARCHING* above.
 
 seek [+-](<num>[mh] | [HH:]MM:SS)
 	Seeks to an absolute or relative position, which can be given in
@@ -564,7 +565,7 @@ set <option>=<value>
 	Sets the value of an option. See *OPTIONS*.
 
 set <option>
-	Display option value.  Vim compatible *set <option>?* is also
+	Display option value. Vim compatible *set <option>?* is also
 	supported.
 
 shell <command>
@@ -1005,7 +1006,7 @@ output_plugin [roar, pulse, alsa, arts, oss, sndio, sun, coreaudio]
 	Name of output plugin.
 
 pl_sort () [`Sort Keys`]
-	Sort keys for the playlist view (3).  Empty value disables sorting and
+	Sort keys for the playlist view (3). Empty value disables sorting and
 	enables manually moving tracks.
 
 play_library (true)
@@ -1285,20 +1286,20 @@ dsp.ao.buffer_size
 
 dsp.ao.device_interface
 	Device interface for libao plugin to request a specific playback
-	device/sink/output.  This name will be in a format determined by the
+	device/sink/output. This name will be in a format determined by the
 	specific driver backend.
 
 dsp.ao.driver
-	Output driver for libao plugin.  Example values: "alsa09", "esd",
-	"irix", "oss", "sun", "aixs", "wav".
+	Output driver for libao plugin. Example values: "alsa09", "esd", "irix",
+	"oss", "sun", "aixs", "wav".
 
 	Note: of the file output drivers only "wav" is supported.
 
 dsp.ao.wav_counter
-	Counter used for making filename.  Used only if *dsp.ao.driver* is
-	"wav". For example if this is 1 and *dsp.ao.wav_dir* is "/home/user"
-	then PCM data is outputted to "/home/user/01.wav". This counter is
-	incremented every time playback is stopped.
+	Counter used for making filename. Used only if *dsp.ao.driver* is "wav".
+	For example if this is 1 and *dsp.ao.wav_dir* is "/home/user" then PCM
+	data is outputted to "/home/user/01.wav". This counter is incremented
+	every time playback is stopped.
 
 	Note: You probably want to set *continue* to *false* (press *C*),
 	otherwise playback is not stopped between tracks and all PCM data is
@@ -1474,9 +1475,10 @@ by pressing *enter*.
 @h2 Throw-away Filters
 
 The *live-filter* and *filter* commands are useful when you want to use a filter
-without saving it.  It changes visible contents of the library (views
-1-2). *filter* unactivates all filters in the filters view, while *live-filter*
-is applied in addition to all currently activated filters.
+without saving it. It changes the visible contents of the library (views 1-2).
+*filter* unactivates all filters in the filters view, while *live-filter* is
+applied in addition to all currently activated filters. It persists even after
+leaving command mode.
 
 Filter all rock (anything with *rock* in genre tag) music from 80s-
 	:filter date>=1980&genre="\*rock\*"
@@ -1587,7 +1589,7 @@ Feature requests and bug reports should go to the GitHub issue tracker:
 
 @h1 AUTHORS
 
-cmus was mainly written by Timo Hirvonen <tihirvon\@gmail.com>.  Other
+cmus was mainly written by Timo Hirvonen <tihirvon\@gmail.com>. Other
 contributors are listed in the `AUTHORS` file.
 
 This man page was written by Frank Terbeck <ft\@bewatermyfriend.org>,
