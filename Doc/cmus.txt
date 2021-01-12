@@ -1593,4 +1593,5 @@ cmus was mainly written by Timo Hirvonen <tihirvon\@gmail.com>. Other
 contributors are listed in the `AUTHORS` file.
 
 This man page was written by Frank Terbeck <ft\@bewatermyfriend.org>,
-Timo Hirvonen <tihirvon\@gmail.com>, and Clay Barnes <clay.barnes\@gmail.com>.
+Timo Hirvonen <tihirvon\@gmail.com>, Clay Barnes <clay.barnes\@gmail.com>, and
+Patrick Gaskin <patrick\@pgaskin.net>.
