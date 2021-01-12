@@ -234,6 +234,7 @@ L                               push live-filter<space>
 !                               push shell<space>
 
 u                               update-cache
+U                               win-update-cache
 
 1                               view tree
 2                               view sorted
@@ -283,6 +284,9 @@ mouse_scroll_up_title           left-view
 mouse_scroll_down_title         right-view
 
 i                               win-sel-cur
+
+^U                              win-half-page-up
+^D                              win-half-page-down
 @endpre
 
 @h2 Browser Context
