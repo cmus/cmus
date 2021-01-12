@@ -503,6 +503,9 @@ filter <filter-expression>
 fset <name>=<filter-expression>
 	Define (or replace existing) filter and add it to filters view (6).
 
+help
+	Shows information about help files.
+
 invert
 	Invert the marking of tracks in playlist and queue views. See *mark*
 	and *unmark*.
@@ -628,6 +631,11 @@ save [-e]  [-l] [-L] [-p] [-q]  [file]  (*:w*)
 	If no filename given the old filename is used. "-" outputs to stdout
 	(works only remotely).
 
+search-b-start
+	Enters backwards search mode. Cannot be used directly from command mode.
+
+	See *search-start*.
+
 search-next (*n*)
 	If a search pattern has been entered before, search forward for the
 	next match in the current view.  See *SEARCHING* above.
@@ -635,6 +643,12 @@ search-next (*n*)
 search-prev (*N*)
 	If a search pattern has been entered before, search backwards for the
 	previous match in the current view.  See *SEARCHING* above.
+
+search-start
+	Enters search mode. Cannot be used directly from command mode.
+
+	This is similar to live-filter, except it is temporary and only selects
+	the current match rather than filtering the entire view.
 
 seek [+-](<num>[mh] | [HH:]MM:SS)
 	Seek to absolute or relative position.  Position can be given in
@@ -738,6 +752,9 @@ vol [+-]NUM[%] [[+-]NUM[%]]
 		common  {  :vol -1% -0%
 		common  }  :vol -0% -1%
 		@endpre
+
+w
+	See *quit*. Intended for use while in command mode.
 
 win-activate (*enter*)
 	In views 1-3 start playing the selected track.  In view 5 start
@@ -861,6 +878,9 @@ win-update (*u*)
 win-update-cache [-f]
 	Same as *update-cache*, but only for marked / selected tracks.
 	Only works in views 1-2, does nothing in other views.
+
+wq
+	See *quit*. Intended for use from command mode.
 
 
 @h1 CONFIGURATION OPTIONS
