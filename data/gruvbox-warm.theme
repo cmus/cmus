@@ -1,9 +1,9 @@
 # colors from gruvbox: https://github.com/morhetz/gruvbox
 
-# default text color
+# default text color (note: looks best with #ebdbb2)
 set color_win_fg=default
 
-# overall background color
+# overall background color (note: looks best with #1d2021)
 set color_win_bg=default
 
 # command-line colors
