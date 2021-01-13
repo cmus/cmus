@@ -129,7 +129,7 @@ static void tabexp_load_dir(const char *dirname, const char *start,
 {
 	PTR_ARRAY(array);
 
-	/* tabexp is reseted */
+	/* tabexp is reset */
 	load_dir(&array, dirname, start, filter);
 
 	if (array.count) {
@@ -149,7 +149,7 @@ static void tabexp_load_env_path(const char *env_path, const char *start,
 	char cwd[1024];
 	char *p = path, *n;
 
-	/* tabexp is reseted */
+	/* tabexp is reset */
 	do {
 		n = strchr(p, ':');
 		if (n)

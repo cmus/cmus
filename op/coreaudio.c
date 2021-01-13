@@ -246,7 +246,7 @@ static AudioStreamBasicDescription coreaudio_format_description;
 static AudioUnit coreaudio_audio_unit = NULL;
 static UInt32 coreaudio_buffer_frame_size = 1;
 static coreaudio_ring_buffer_t coreaudio_ring_buffer = {0, 0, 0, 0, 0, NULL};
-static UInt32 coreaudio_stero_channels[2];
+static UInt32 coreaudio_stereo_channels[2];
 static int coreaudio_mixer_pipe_in = 0;
 static int coreaudio_mixer_pipe_out = 0;
 
@@ -751,7 +751,7 @@ static int coreaudio_mixer_set_volume(int l, int r)
 		AudioObjectPropertyAddress aopa = {
 			.mSelector	= kAudioDevicePropertyVolumeScalar,
 			.mScope		= kAudioObjectPropertyScopeOutput,
-			.mElement	= coreaudio_stero_channels[i]
+			.mElement	= coreaudio_stereo_channels[i]
 		};
 
 		UInt32 size = sizeof(vol[i]);
@@ -778,7 +778,7 @@ static int coreaudio_mixer_get_volume(int *l, int *r)
 		AudioObjectPropertyAddress aopa = {
 			.mSelector	= kAudioDevicePropertyVolumeScalar,
 			.mScope		= kAudioObjectPropertyScopeOutput,
-			.mElement	= coreaudio_stero_channels[i]
+			.mElement	= coreaudio_stereo_channels[i]
 		};
 		UInt32 size = sizeof(vol[i]);
 		err |= AudioObjectGetPropertyData(coreaudio_device_id,
@@ -808,7 +808,7 @@ static int coreaudio_mixer_get_volume(int *l, int *r)
 static int coreaudio_mixer_open(int *volume_max)
 {
 	*volume_max = coreaudio_max_volume;
-	OSStatus err = coreaudio_get_device_stereo_channels(coreaudio_device_id, coreaudio_stero_channels);
+	OSStatus err = coreaudio_get_device_stereo_channels(coreaudio_device_id, coreaudio_stereo_channels);
 	if (err != noErr) {
 		d_print("Cannot get channel information: %d\n", err);
 		errno = ENODEV;
@@ -818,7 +818,7 @@ static int coreaudio_mixer_open(int *volume_max)
 		AudioObjectPropertyAddress aopa = {
 			.mSelector	= kAudioDevicePropertyVolumeScalar,
 			.mScope		= kAudioObjectPropertyScopeOutput,
-			.mElement	= coreaudio_stero_channels[i]
+			.mElement	= coreaudio_stereo_channels[i]
 		};
 		err |= AudioObjectAddPropertyListener(coreaudio_device_id,
 						      &aopa,
@@ -841,7 +841,7 @@ static int coreaudio_mixer_close(void)
 		AudioObjectPropertyAddress aopa = {
 			.mSelector	= kAudioDevicePropertyVolumeScalar,
 			.mScope		= kAudioObjectPropertyScopeOutput,
-			.mElement	= coreaudio_stero_channels[i]
+			.mElement	= coreaudio_stereo_channels[i]
 		};
 
 		err |= AudioObjectRemovePropertyListener(coreaudio_device_id,

@@ -319,7 +319,7 @@ void u_prev_char_pos(const char *str, int *idx)
 	ch = s[--i];
 	len = len_tab[ch];
 	if (len != 0) {
-		/* start of byte sequence or invelid uchar */
+		/* start of byte sequence or invalid uchar */
 		goto one;
 	}
 

@@ -7,7 +7,7 @@ _ver1	= $(shell git describe --tags $(REV) 2>/dev/null)
 # SHA1
 _ver2	= $(shell git rev-parse --verify --short $(REV) 2>/dev/null)
 # hand-made
-_ver3	= v2.8.0
+_ver3	= v2.9.0-rc0
 
 VERSION	= $(or $(_ver0),$(_ver1),$(_ver2),$(_ver3))
 
