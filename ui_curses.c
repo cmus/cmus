@@ -955,7 +955,7 @@ static void print_help(struct window *win, int row, struct iter *iter)
 		snprintf(buf, sizeof(buf), " %s", e->text);
 		break;
 	case HE_BOUND:
-		snprintf(buf, sizeof(buf), " %-8s %-14s %s",
+		snprintf(buf, sizeof(buf), " %-8s %-23s %s",
 				key_context_names[e->binding->ctx],
 				e->binding->key->name,
 				e->binding->cmd);
