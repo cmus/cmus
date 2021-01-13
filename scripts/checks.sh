@@ -706,3 +706,29 @@ int main(int argc, char *argv[]) {
 
 	return 0
 }
+
+# check for libintl
+check_libintl()
+{
+	msg_checking "for working libintl"
+	if try_compile_link '
+#include <stdio.h>
+#include <libintl.h>
+
+int main(int argc, char *argv[]) {
+  bindtextdomain ("cmus_configure", "/usr/share/locale/");
+  textdomain ("cmus_configure");
+  return 0;
+}'
+	then
+		msg_result "yes"
+
+		return 0
+	else
+		msg_result "no"
+		msg_error "Your system doesn't have libintl!"
+		msg_error "This means that no localization can be made on the UI!"
+
+		return 1
+	fi
+}

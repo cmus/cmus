@@ -160,7 +160,7 @@ static int cmd_format_print(struct client *client, char *arg)
 		args = parse_cmd(arg, &args_idx, &ac);
 
 	if (args == NULL) {
-		error_msg("not enough arguments\n");
+		error_msg(_("not enough arguments\n"));
 		return write_all(client->fd, "\n", strlen("\n"));
 	}
 

@@ -10,6 +10,9 @@ cscope.out
 !.travis.yml
 !.github
 
+# gettext binaries
+*.mo
+
 # top-level ignores
 /*.spec
 /config

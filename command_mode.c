@@ -82,7 +82,7 @@ void view_clear(int view)
 		editable_clear(&pq_editable);
 		break;
 	default:
-		info_msg(":clear only works in views 1-4");
+		info_msg(_(":clear only works in views 1-4"));
 	}
 }
 
@@ -94,7 +94,7 @@ void view_add(int view, char *arg, int prepend)
 	tmp = expand_filename(arg);
 	ft = cmus_detect_ft(tmp, &name);
 	if (ft == FILE_TYPE_INVALID) {
-		error_msg("adding '%s': %s", tmp, strerror(errno));
+		error_msg(_("adding '%s': %s"), tmp, strerror(errno));
 		free(tmp);
 		return;
 	}
@@ -118,7 +118,7 @@ void view_add(int view, char *arg, int prepend)
 		}
 		break;
 	default:
-		info_msg(":add only works in views 1-4");
+		info_msg(_(":add only works in views 1-4"));
 	}
 	free(name);
 }
@@ -128,7 +128,7 @@ static char *view_load_prepare(char *arg)
 	char *name, *tmp = expand_filename(arg);
 	enum file_type ft = cmus_detect_ft(tmp, &name);
 	if (ft == FILE_TYPE_INVALID) {
-		error_msg("loading '%s': %s", tmp, strerror(errno));
+		error_msg(_("loading '%s': %s"), tmp, strerror(errno));
 		free(tmp);
 		return NULL;
 	}
@@ -137,7 +137,7 @@ static char *view_load_prepare(char *arg)
 	if (ft == FILE_TYPE_FILE)
 		ft = FILE_TYPE_PL;
 	if (ft != FILE_TYPE_PL) {
-		error_msg("loading '%s': not a playlist file", name);
+		error_msg(_("loading '%s': not a playlist file"), name);
 		free(name);
 		return NULL;
 	}
@@ -161,7 +161,7 @@ void view_load(int view, char *arg)
 		lib_filename = name;
 		break;
 	default:
-		info_msg(":load only works in views 1-2");
+		info_msg(_(":load only works in views 1-2"));
 		free(name);
 	}
 }
@@ -180,12 +180,12 @@ static void do_save(for_each_ti_cb for_each_ti, const char *arg, char **filename
 			*filenamep = filename;
 		}
 	} else if (!filename) {
-		error_msg("need a file as argument, no default stored yet");
+		error_msg(_("need a file as argument, no default stored yet"));
 		return;
 	}
 
 	if (save_ti(for_each_ti, filename, NULL) == -1)
-		error_msg("saving '%s': %s", filename, strerror(errno));
+		error_msg(_("saving '%s': %s"), filename, strerror(errno));
 }
 
 void view_save(int view, char *arg, int to_stdout, int filtered, int extended)
@@ -225,12 +225,12 @@ void view_save(int view, char *arg, int to_stdout, int filtered, int extended)
 		do_save(play_queue_for_each, arg, dest, save_ti);
 		break;
 	default:
-		info_msg(":save only works in views 1 - 4");
+		info_msg(_(":save only works in views 1 - 4"));
 	}
 	free(arg);
 	return;
 worker_running:
-	error_msg("can't save when tracks are being added");
+	error_msg(_("can't save when tracks are being added"));
 	free(arg);
 }
 
@@ -265,7 +265,7 @@ static int do_parse_flags(const char **strp, const char *flags, int only_last)
 
 		flag = str[1];
 		if (!strchr(flags, flag)) {
-			error_msg("invalid option -%c", flag);
+			error_msg(_("invalid option -%c"), flag);
 			return -1;
 		}
 
@@ -362,7 +362,7 @@ static void cmd_add(char *arg)
 	if (flag == -1)
 		return;
 	if (arg == NULL) {
-		error_msg("not enough arguments\n");
+		error_msg(_("not enough arguments\n"));
 		return;
 	}
 	view_add(flag_to_view(flag), arg, flag == 'Q');
@@ -375,7 +375,7 @@ static void cmd_clear(char *arg)
 	if (flag == -1)
 		return;
 	if (arg) {
-		error_msg("too many arguments\n");
+		error_msg(_("too many arguments\n"));
 		return;
 	}
 	view_clear(flag_to_view(flag));
@@ -388,7 +388,7 @@ static void cmd_load(char *arg)
 	if (flag == -1)
 		return;
 	if (arg == NULL) {
-		error_msg("not enough arguments\n");
+		error_msg(_("not enough arguments\n"));
 		return;
 	}
 	view_load(flag_to_view(flag), arg);
@@ -449,7 +449,7 @@ static void cmd_set(char *arg)
 		opt = option_find(arg);
 		if (opt) {
 			opt->get(opt->data, buf, OPTION_MAX_SIZE);
-			info_msg("setting: '%s=%s'", arg, buf);
+			info_msg(_("setting: '%s=%s'"), arg, buf);
 		}
 	}
 }
@@ -462,7 +462,7 @@ static void cmd_toggle(char *arg)
 		return;
 
 	if (opt->toggle == NULL) {
-		error_msg("%s is not toggle option", opt->name);
+		error_msg(_("%s is not toggle option"), opt->name);
 		return;
 	}
 	opt->toggle(opt->data);
@@ -547,7 +547,7 @@ inside:
 		return;
 	}
 err:
-	error_msg("expecting one argument: [+-]INTEGER[mh] or [+-]H:MM:SS");
+	error_msg(_("expecting one argument: [+-]INTEGER[mh] or [+-]H:MM:SS"));
 }
 
 static void cmd_factivate(char *arg)
@@ -572,7 +572,7 @@ static void cmd_fset(char *arg)
 
 static void cmd_help(char *arg)
 {
-	info_msg("To get started with cmus, read cmus-tutorial(7) and cmus(1) man pages");
+	info_msg(_("To get started with cmus, read cmus-tutorial(7) and cmus(1) man pages"));
 }
 
 static void cmd_invert(char *arg)
@@ -588,7 +588,7 @@ static void cmd_invert(char *arg)
 		editable_invert_marks(&pq_editable);
 		break;
 	default:
-		info_msg(":invert only works in views 2-4");
+		info_msg(_(":invert only works in views 2-4"));
 	}
 }
 
@@ -605,7 +605,7 @@ static void cmd_mark(char *arg)
 		editable_mark(&pq_editable, arg);
 		break;
 	default:
-		info_msg(":mark only works in views 2-4");
+		info_msg(_(":mark only works in views 2-4"));
 	}
 }
 
@@ -622,7 +622,7 @@ static void cmd_unmark(char *arg)
 		editable_unmark(&pq_editable);
 		break;
 	default:
-		info_msg(":unmark only works in views 2-4");
+		info_msg(_(":unmark only works in views 2-4"));
 	}
 }
 
@@ -640,7 +640,7 @@ static void cmd_cd(char *arg)
 		dir = expand_filename(arg);
 		absolute = path_absolute(dir);
 		if (chdir(dir) == -1) {
-			error_msg("could not cd to '%s': %s", dir, strerror(errno));
+			error_msg(_("could not cd to '%s': %s"), dir, strerror(errno));
 		} else {
 			browser_chdir(absolute);
 		}
@@ -648,7 +648,7 @@ static void cmd_cd(char *arg)
 		free(dir);
 	} else {
 		if (chdir(home_dir) == -1) {
-			error_msg("could not cd to '%s': %s", home_dir, strerror(errno));
+			error_msg(_("could not cd to '%s': %s"), home_dir, strerror(errno));
 		} else {
 			browser_chdir(home_dir);
 		}
@@ -687,7 +687,7 @@ static void cmd_bind(char *arg)
 		window_changed(help_win);
 	return;
 err:
-	error_msg("expecting 3 arguments (context, key and function)\n");
+	error_msg(_("expecting 3 arguments (context, key and function)\n"));
 }
 
 static void cmd_unbind(char *arg)
@@ -715,7 +715,7 @@ static void cmd_unbind(char *arg)
 	key_unbind(arg, key, flag == 'f');
 	return;
 err:
-	error_msg("expecting 2 arguments (context and key)\n");
+	error_msg(_("expecting 2 arguments (context and key)\n"));
 }
 
 static void cmd_showbind(char *arg)
@@ -736,7 +736,7 @@ static void cmd_showbind(char *arg)
 	show_binding(arg, key);
 	return;
 err:
-	error_msg("expecting 2 arguments (context and key)\n");
+	error_msg(_("expecting 2 arguments (context and key)\n"));
 }
 
 static void cmd_quit(char *arg)
@@ -744,10 +744,10 @@ static void cmd_quit(char *arg)
 	int flag = parse_flags((const char **)&arg, "i");
 	enum ui_query_answer answer;
 	if (!worker_has_job_by_type(JOB_TYPE_ANY)) {
-		if (flag != 'i' || yes_no_query("Quit cmus? [y/N]") != UI_QUERY_ANSWER_NO)
+		if (flag != 'i' || yes_no_query(_("Quit cmus? [y/N]")) != UI_QUERY_ANSWER_NO)
 			cmus_running = 0;
 	} else {
-		answer = yes_no_query("Tracks are being added. Quit and truncate playlist(s)? [y/N]");
+		answer = yes_no_query(_("Tracks are being added. Quit and truncate playlist(s)? [y/N]"));
 		if (answer != UI_QUERY_ANSWER_NO)
 			cmus_running = 0;
 	}
@@ -764,7 +764,7 @@ static void cmd_source(char *arg)
 	char *filename = expand_filename(arg);
 
 	if (source_file(filename) == -1)
-		error_msg("sourcing %s: %s", filename, strerror(errno));
+		error_msg(_("sourcing %s: %s"), filename, strerror(errno));
 	free(filename);
 }
 
@@ -776,7 +776,7 @@ static void cmd_colorscheme(char *arg)
 	if (source_file(filename) == -1) {
 		snprintf(filename, sizeof(filename), "%s/%s.theme", cmus_data_dir, arg);
 		if (source_file(filename) == -1)
-			error_msg("sourcing %s: %s", filename, strerror(errno));
+			error_msg(_("sourcing %s: %s"), filename, strerror(errno));
 	}
 }
 
@@ -823,7 +823,7 @@ static char *parse_quoted(const char **strp)
 	*dst = 0;
 	return ret;
 error:
-	error_msg("`\"' expected");
+	error_msg(_("`\"' expected"));
 	return NULL;
 }
 
@@ -914,7 +914,7 @@ static char *parse_one(const char **strp)
 	*strp = str;
 	return ret;
 sq_missing:
-	error_msg("`'' expected");
+	error_msg(_("`'' expected"));
 error:
 	free(ret);
 	return NULL;
@@ -957,7 +957,7 @@ skip_spaces:
 	*ac = nr;
 	return av;
 only_once_please:
-	error_msg("{} can be used only once");
+	error_msg(_("{} can be used only once"));
 error:
 	while (nr > 0)
 		free(av[--nr]);
@@ -990,7 +990,7 @@ static void cmd_run(char *arg)
 	struct track_info_selection sel = { .tis = NULL };
 
 	if (cur_view > QUEUE_VIEW) {
-		info_msg("Command execution is supported only in views 1-4");
+		info_msg(_("Command execution is supported only in views 1-4"));
 		return;
 	}
 
@@ -1046,8 +1046,8 @@ static void cmd_run(char *arg)
 
 	run = 1;
 	if (confirm_run && (sel.tis_nr > 1 || strcmp(argv[0], "rm") == 0)) {
-		if (yes_no_query("Execute %s for the %d selected files? [y/N]", arg, sel.tis_nr) != UI_QUERY_ANSWER_YES) {
-			info_msg("Aborted");
+		if (yes_no_query(_("Execute %s for the %d selected files? [y/N]"), arg, sel.tis_nr) != UI_QUERY_ANSWER_YES) {
+			info_msg(_("Aborted"));
 			run = 0;
 		}
 	}
@@ -1055,16 +1055,16 @@ static void cmd_run(char *arg)
 		int status;
 
 		if (spawn(argv, &status, 1)) {
-			error_msg("executing %s: %s", argv[0], strerror(errno));
+			error_msg(_("executing %s: %s"), argv[0], strerror(errno));
 		} else {
 			if (WIFEXITED(status)) {
 				int rc = WEXITSTATUS(status);
 
 				if (rc)
-					error_msg("%s returned %d", argv[0], rc);
+					error_msg(_("%s returned %d"), argv[0], rc);
 			}
 			if (WIFSIGNALED(status))
-				error_msg("%s received signal %d", argv[0], WTERMSIG(status));
+				error_msg(_("%s received signal %d"), argv[0], WTERMSIG(status));
 
 			switch (cur_view) {
 			case TREE_VIEW:
@@ -1093,7 +1093,7 @@ static void cmd_shell(char *arg)
 	const char * const argv[] = { "sh", "-c", arg, NULL };
 
 	if (spawn((char **) argv, NULL, 0))
-		error_msg("executing '%s': %s", arg, strerror(errno));
+		error_msg(_("executing '%s': %s"), arg, strerror(errno));
 }
 
 static int get_one_ti(void *data, struct track_info *ti)
@@ -1126,7 +1126,7 @@ static void cmd_echo(char *arg)
 	}
 
 	if (cur_view > QUEUE_VIEW) {
-		info_msg("echo with {} in its arguments is supported only in views 1-4");
+		info_msg(_("echo with {} in its arguments is supported only in views 1-4"));
 		return;
 	}
 
@@ -1258,7 +1258,7 @@ static void cmd_vol(char *arg)
 	return;
 err:
 	free_str_array(values);
-	error_msg("expecting 1 or 2 arguments (total or L and R volumes [+-]INTEGER[%%])\n");
+	error_msg(_("expecting 1 or 2 arguments (total or L and R volumes [+-]INTEGER[%%])\n"));
 }
 
 static void cmd_prev_view(char *arg)
@@ -1296,7 +1296,7 @@ static void cmd_pl_export(char *arg)
 	if (cur_view == PLAYLIST_VIEW)
 		pl_export_selected_pl(arg);
 	else
-		info_msg(":pl-export only works in view 3");
+		info_msg(_(":pl-export only works in view 3"));
 }
 
 static char *get_browser_add_file(void)
@@ -1304,7 +1304,7 @@ static char *get_browser_add_file(void)
 	char *sel = browser_get_sel();
 
 	if (sel && (ends_with(sel, "/../") || ends_with(sel, "/.."))) {
-		info_msg("For convenience, you can not add \"..\" directory from the browser view");
+		info_msg(_("For convenience, you can not add \"..\" directory from the browser view"));
 		free(sel);
 		sel = NULL;
 	}
@@ -1321,7 +1321,7 @@ static void cmd_pl_import(char *arg)
 	else if (cur_view == BROWSER_VIEW)
 		name = get_browser_add_file();
 	else
-		error_msg("not enough arguments");
+		error_msg(_("not enough arguments"));
 
 	if (name) {
 		pl_import(name);
@@ -1334,7 +1334,7 @@ static void cmd_pl_rename(char *arg)
 	if (cur_view == PLAYLIST_VIEW)
 		pl_rename_selected_pl(arg);
 	else
-		info_msg(":pl-rename only works in view 3");
+		info_msg(_(":pl-rename only works in view 3"));
 }
 
 static void cmd_version(char *arg)
@@ -1745,7 +1745,7 @@ static void cmd_win_down(char *arg)
 
 	if (arg) {
 		if ((num_rows = get_number(arg, &end)) == 0 || *end) {
-			error_msg("invalid argument\n");
+			error_msg(_("invalid argument\n"));
 			return;
 		}
 	}
@@ -1823,7 +1823,7 @@ static void cmd_win_up(char *arg)
 
 	if (arg) {
 		if ((num_rows = get_number(arg, &end)) == 0 || *end) {
-			error_msg("invalid argument\n");
+			error_msg(_("invalid argument\n"));
 			return;
 		}
 	}
@@ -1952,7 +1952,7 @@ static void cmd_lqueue(char *arg)
 		long int val;
 
 		if (str_to_int(arg, &val) || val <= 0) {
-			error_msg("argument must be positive integer");
+			error_msg(_("argument must be positive integer"));
 			return;
 		}
 		count = val;
@@ -2015,7 +2015,7 @@ static void cmd_tqueue(char *arg)
 		long int val;
 
 		if (str_to_int(arg, &val) || val <= 0) {
-			error_msg("argument must be positive integer");
+			error_msg(_("argument must be positive integer"));
 			return;
 		}
 		count = val;
@@ -2885,7 +2885,7 @@ void run_parsed_command(char *cmd, char *arg)
 		const struct command *c = &commands[i];
 
 		if (c->name == NULL) {
-			error_msg("unknown command\n");
+			error_msg(_("unknown command\n"));
 			break;
 		}
 		if (strncmp(cmd, c->name, cmd_len) == 0) {
@@ -2893,15 +2893,15 @@ void run_parsed_command(char *cmd, char *arg)
 			int exact = c->name[cmd_len] == 0;
 
 			if (!exact && next && strncmp(cmd, next, cmd_len) == 0) {
-				error_msg("ambiguous command\n");
+				error_msg(_("ambiguous command\n"));
 				break;
 			}
 			if (c->min_args > 0 && arg == NULL) {
-				error_msg("not enough arguments\n");
+				error_msg(_("not enough arguments\n"));
 				break;
 			}
 			if (c->max_args == 0 && arg) {
-				error_msg("too many arguments\n");
+				error_msg(_("too many arguments\n"));
 				break;
 			}
 			if (run_only_safe_commands && (c->flags & CMD_UNSAFE)) {

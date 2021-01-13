@@ -359,7 +359,7 @@ sort_key_t *parse_sort_keys(const char *value)
 
 		for (i = 0; ; i++) {
 			if (sort_key_map[i].str == NULL) {
-				error_msg("invalid sort key '%s'", buf);
+				error_msg(_("invalid sort key '%s'"), buf);
 				free(keys);
 				return NULL;
 			}

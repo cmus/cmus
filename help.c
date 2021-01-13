@@ -28,6 +28,7 @@
 #include "ui_curses.h"
 #include "options.h"
 #include "cmdline.h"
+#include "utils.h"
 
 #include <stdio.h>
 
@@ -111,15 +112,15 @@ static void help_add_defaults(void)
 {
 	struct cmus_opt *opt;
 
-	help_add_text("Keybindings");
+	help_add_text(_("Keybindings"));
 	help_add_text("-----------");
 	bound_head = help_head.prev;
 	help_add_text("");
-	help_add_text("Unbound Commands");
+	help_add_text(_("Unbound Commands"));
 	help_add_text("----------------");
 	unbound_head = help_head.prev;
 	help_add_text("");
-	help_add_text("Options");
+	help_add_text(_("Options"));
 	help_add_text("-------");
 
 	list_for_each_entry(opt, &option_head, node) {
@@ -272,7 +273,7 @@ void help_remove(void)
 	ent = iter_to_help_entry(&sel);
 	switch (ent->type) {
 	case HE_BOUND:
-		if (yes_no_query("Remove selected binding? [y/N]") == UI_QUERY_ANSWER_YES)
+		if (yes_no_query(_("Remove selected binding? [y/N]")) == UI_QUERY_ANSWER_YES)
 			key_unbind(key_context_names[ent->binding->ctx],
 					ent->binding->key->name, 0);
 		break;

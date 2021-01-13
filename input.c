@@ -498,7 +498,7 @@ void ip_load_plugins(void)
 	plugin_dir = xstrjoin(cmus_lib_dir, "/ip");
 	dir = opendir(plugin_dir);
 	if (dir == NULL) {
-		error_msg("couldn't open directory `%s': %s", plugin_dir, strerror(errno));
+		error_msg(_("couldn't open directory `%s': %s"), plugin_dir, strerror(errno));
 		return;
 	}
 
@@ -537,11 +537,11 @@ void ip_load_plugins(void)
 		ip->ops = dlsym(so, "ip_ops");
 		ip->options = dlsym(so, "ip_options");
 		if (!priority_ptr || !ip->extensions || !ip->mime_types || !ip->ops || !ip->options) {
-			error_msg("%s: missing symbol", filename);
+			error_msg(_("%s: missing symbol"), filename);
 			err = true;
 		}
 		if (!abi_version_ptr || *abi_version_ptr != IP_ABI_VERSION) {
-			error_msg("%s: incompatible plugin version", filename);
+			error_msg(_("%s: incompatible plugin version"), filename);
 			err = true;
 		}
 		if (err) {
@@ -883,7 +883,7 @@ static void set_ip_priority(void *data, const char *val)
 	struct ip *ip = data;
 
 	if (str_to_int(val, &tmp) == -1 || tmp < 0 || (long)(int)tmp != tmp) {
-		error_msg("non-negative integer expected");
+		error_msg(_("non-negative integer expected"));
 		return;
 	}
 	if (ui_initialized) {
@@ -891,13 +891,13 @@ static void set_ip_priority(void *data, const char *val)
 			static const char *msg =
 				"Metadata might become inconsistent "
 				"after this change. Continue? [y/N]";
-			if (yes_no_query("%s", msg) != UI_QUERY_ANSWER_YES) {
-				info_msg("Aborted");
+			if (yes_no_query(_("%s"), msg) != UI_QUERY_ANSWER_YES) {
+				info_msg(_("Aborted"));
 				return;
 			}
 			warned = true;
 		}
-		info_msg("Run \":update-cache -f\" to refresh the metadata.");
+		info_msg(_("Run \":update-cache -f\" to refresh the metadata."));
 	}
 
 	ip_wrlock();

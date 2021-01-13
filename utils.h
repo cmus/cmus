@@ -21,6 +21,7 @@
 
 #ifdef HAVE_CONFIG
 #include "config/utils.h"
+#include "config/libintl.h"
 #endif
 
 #include "compiler.h"
@@ -36,10 +37,19 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdint.h>
+#ifdef HAVE_LIBINTL
+#include <libintl.h>
+#endif
 #ifdef HAVE_BYTESWAP_H
 #include <byteswap.h>
 #endif
 
+/* gettext macro */
+#ifdef HAVE_LIBINTL
+#define _(str) gettext(str)
+#else
+#define _(str) str
+#endif
 
 #define N_ELEMENTS(array) (sizeof(array) / sizeof((array)[0]))
 

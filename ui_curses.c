@@ -54,6 +54,7 @@
 #ifdef HAVE_CONFIG
 #include "config/curses.h"
 #include "config/iconv.h"
+#include "config/libintl.h"
 #endif
 
 #include <unistd.h>
@@ -74,6 +75,9 @@
 #include <stdarg.h>
 #include <math.h>
 #include <sys/time.h>
+#ifdef HAVE_LIBINTL
+#include <libintl.h>
+#endif
 
 #if defined(__sun__) || defined(__CYGWIN__)
 /* TIOCGWINSZ */
@@ -1015,7 +1019,7 @@ static void update_window(struct window *win, int x, int y, int w, const char *t
 static void update_tree_window(void)
 {
 	update_window(lib_tree_win, tree_win_x, 0, tree_win_w,
-			"Artist / Album", print_tree);
+			_("Artist / Album"), print_tree);
 }
 
 static void update_track_window(void)
@@ -1024,7 +1028,7 @@ static void update_track_window(void)
 
 	/* it doesn't matter what format options we use because the format
 	 * string does not contain any format charaters */
-	format_print(title, track_win_w - 2, "Track%=Library", track_fopts);
+	format_print(title, track_win_w - 2, _("Track%=Library"), track_fopts);
 	update_window(lib_track_win, track_win_x, 0, track_win_w, title,
 			print_track);
 }
@@ -1052,7 +1056,7 @@ static void print_pl_list(struct window *win, int row, struct iter *iter)
 
 static void update_pl_list(struct window *win)
 {
-	update_window(win, tree_win_x, 0, tree_win_w, "Playlist",
+	update_window(win, tree_win_x, 0, tree_win_w, _("Playlist"),
 			print_pl_list);
 }
 
@@ -1067,7 +1071,7 @@ static void update_pl_tracks(struct window *win)
 	get_global_fopts();
 	fopt_set_time(&track_fopts[TF_TOTAL], pl_visible_total_time(), 0);
 
-	format_print(title, track_win_w - 2, "Track%=%{total}", track_fopts);
+	format_print(title, track_win_w - 2, _("Track%=%{total}"), track_fopts);
 	update_window(win, track_win_x, 0, track_win_w, title, print_editable);
 
 	editable_active = 1;
@@ -1091,10 +1095,9 @@ static const char *pretty(const char *path)
 	return buf;
 }
 
-static const char * const sorted_names[2] = { "", "sorted by " };
-
 static void update_editable_window(struct editable *e, const char *title, const char *filename)
 {
+	const char * sorted_names[2] = { "", _("sorted by ") };
 	char buf[512];
 	int pos;
 
@@ -1105,15 +1108,15 @@ static void update_editable_window(struct editable *e, const char *title, const 
 			utf8_encode_to_buf(filename);
 			filename = conv_buffer;
 		}
-		snprintf(buf, sizeof(buf), "%s %s - %d tracks", title,
+		snprintf(buf, sizeof(buf), _("%s %s - %d tracks"), title,
 				pretty(filename), e->nr_tracks);
 	} else {
-		snprintf(buf, sizeof(buf), "%s - %d tracks", title, e->nr_tracks);
+		snprintf(buf, sizeof(buf), _("%s - %d tracks"), title, e->nr_tracks);
 	}
 
 	if (e->nr_marked) {
 		pos = strlen(buf);
-		snprintf(buf + pos, sizeof(buf) - pos, " (%d marked)", e->nr_marked);
+		snprintf(buf + pos, sizeof(buf) - pos, _(" (%d marked)"), e->nr_marked);
 	}
 	pos = strlen(buf);
 	snprintf(buf + pos, sizeof(buf) - pos, " %s%s",
@@ -1126,13 +1129,13 @@ static void update_editable_window(struct editable *e, const char *title, const 
 static void update_sorted_window(void)
 {
 	current_track = (struct simple_track *)lib_cur_track;
-	update_editable_window(&lib_editable, "Library", lib_filename);
+	update_editable_window(&lib_editable, _("Library"), lib_filename);
 }
 
 static void update_play_queue_window(void)
 {
 	current_track = NULL;
-	update_editable_window(&pq_editable, "Play Queue", NULL);
+	update_editable_window(&pq_editable, _("Play Queue"), NULL);
 }
 
 static void update_browser_window(void)
@@ -1147,18 +1150,18 @@ static void update_browser_window(void)
 		utf8_encode_to_buf(browser_dir);
 		dirname = conv_buffer;
 	}
-	snprintf(title, sizeof(title), "Browser - %s", dirname);
+	snprintf(title, sizeof(title), _("Browser - %s"), dirname);
 	update_window(browser_win, 0, 0, COLS, title, print_browser);
 }
 
 static void update_filters_window(void)
 {
-	update_window(filters_win, 0, 0, COLS, "Library Filters", print_filter);
+	update_window(filters_win, 0, 0, COLS, _("Library Filters"), print_filter);
 }
 
 static void update_help_window(void)
 {
-	update_window(help_win, 0, 0, COLS, "Settings", print_help);
+	update_window(help_win, 0, 0, COLS, _("Settings"), print_help);
 }
 
 static void draw_separator(void)
@@ -1550,7 +1553,7 @@ void update_filterline(void)
 		char buf[512];
 		int w;
 		bkgdset(pairs[CURSED_STATUSLINE]);
-		snprintf(buf, sizeof(buf), "filtered: %s", lib_live_filter);
+		snprintf(buf, sizeof(buf), _("filtered: %s"), lib_live_filter);
 		w = clamp(strlen(buf) + 2, COLS/4, COLS/2);
 		sprint(LINES-4, COLS-w, buf, w);
 	}
@@ -1577,10 +1580,11 @@ void info_msg(const char *format, ...)
 void error_msg(const char *format, ...)
 {
 	va_list ap;
+	const char *error_key = _("Error: ");
 
-	strcpy(error_buf, "Error: ");
+	strcpy(error_buf, error_key);
 	va_start(ap, format);
-	vsnprintf(error_buf + 7, sizeof(error_buf) - 7, format, ap);
+	vsnprintf(error_buf + strlen(error_key), sizeof(error_buf) - strlen(error_key), format, ap);
 	va_end(ap);
 
 	d_print("%s\n", error_buf);
@@ -1625,6 +1629,8 @@ enum ui_query_answer yes_no_query(const char *format, ...)
 
 	while (1) {
 		int ch = getch();
+		const char *user_input = _("y");
+
 		if (ch == ERR || ch == 0) {
 			if (!cmus_running) {
 				ret = UI_QUERY_ANSWER_ERROR;
@@ -1633,7 +1639,7 @@ enum ui_query_answer yes_no_query(const char *format, ...)
 			continue;
 		}
 
-		if (ch == 'y') {
+		if (ch == user_input[0]) {
 			ret = UI_QUERY_ANSWER_YES;
 			break;
 		} else {
@@ -1647,26 +1653,26 @@ enum ui_query_answer yes_no_query(const char *format, ...)
 
 void search_not_found(void)
 {
-	const char *what = "Track";
+	const char *what = _("Track");
 
 	if (search_restricted) {
 		switch (cur_view) {
 		case TREE_VIEW:
-			what = "Artist/album";
+			what = _("Artist/album");
 			break;
 		case SORTED_VIEW:
 		case PLAYLIST_VIEW:
 		case QUEUE_VIEW:
-			what = "Title";
+			what = _("Title");
 			break;
 		case BROWSER_VIEW:
-			what = "File/Directory";
+			what = _("File/Directory");
 			break;
 		case FILTERS_VIEW:
-			what = "Filter";
+			what = _("Filter");
 			break;
 		case HELP_VIEW:
-			what = "Binding/command/option";
+			what = _("Binding/command/option");
 			break;
 		}
 	} else {
@@ -1675,20 +1681,20 @@ void search_not_found(void)
 		case SORTED_VIEW:
 		case PLAYLIST_VIEW:
 		case QUEUE_VIEW:
-			what = "Track";
+			what = _("Track");
 			break;
 		case BROWSER_VIEW:
-			what = "File/Directory";
+			what = _("File/Directory");
 			break;
 		case FILTERS_VIEW:
-			what = "Filter";
+			what = _("Filter");
 			break;
 		case HELP_VIEW:
-			what = "Binding/command/option";
+			what = _("Binding/command/option");
 			break;
 		}
 	}
-	info_msg("%s not found: %s", what, search_str ? search_str : "");
+	info_msg(_("%s not found: %s"), what, search_str ? search_str : "");
 }
 
 void set_client_fd(int fd)
@@ -1877,7 +1883,7 @@ static void spawn_status_program_inner(const char *status_text, struct track_inf
 	argv[i++] = NULL;
 
 	if (spawn(argv, NULL, 0) == -1)
-		error_msg("couldn't run `%s': %s", status_display_program, strerror(errno));
+		error_msg(_("couldn't run `%s': %s"), status_display_program, strerror(errno));
 	for (i = 0; argv[i]; i++)
 		free(argv[i]);
 }
@@ -2536,6 +2542,8 @@ int main(int argc, char *argv[])
 
 	setlocale(LC_CTYPE, "");
 	setlocale(LC_COLLATE, "");
+	setlocale(LC_MESSAGES, "");
+
 	charset = getenv("CMUS_CHARSET");
 	if (!charset || !charset[0]) {
 #ifdef CODESET
@@ -2548,6 +2556,12 @@ int main(int argc, char *argv[])
 		using_utf8 = 1;
 
 	misc_init();
+
+	#ifdef HAVE_LIBINTL
+	bindtextdomain ("cmus", cmus_locale_dir);
+	textdomain ("cmus");
+	#endif
+
 	if (server_address == NULL)
 		server_address = xstrdup(cmus_socket_path);
 	debug_init();
