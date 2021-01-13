@@ -146,7 +146,7 @@ static inline void list_del_init(struct list_head *entry)
 }
 
 /**
- * list_move - delete from one list and add as another's head
+ * list_move - delete from one list and add as another one's head
  * @list: the entry to move
  * @head: the head that will precede our entry
  */
@@ -157,7 +157,7 @@ static inline void list_move(struct list_head *list, struct list_head *head)
 }
 
 /**
- * list_move_tail - delete from one list and add as another's tail
+ * list_move_tail - delete from one list and add as another one's tail
  * @list: the entry to move
  * @head: the head that will follow our entry
  */
@@ -203,11 +203,11 @@ static inline void list_splice(struct list_head *list, struct list_head *head)
 }
 
 /**
- * list_splice_init - join two lists and reinitialise the emptied list.
+ * list_splice_init - join two lists and reinitialize the emptied list.
  * @list: the new list to add.
  * @head: the place to add it in the first list.
  *
- * The list at @list is reinitialised
+ * The list at @list is reinitialized
  */
 static inline void list_splice_init(struct list_head *list,
 				    struct list_head *head)

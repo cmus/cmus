@@ -160,7 +160,7 @@ static int op_jack_cb(jack_nframes_t frames, void *arg)
 		}
 	}
 
-	/* if there is less than frames awaylable play silence */
+	/* if there is less than frames available play silence */
 	if (paused || bytes_min < bytes_want) {
 		for (int i = 0; i < CHANNELS; i++) {
 			jack_default_audio_sample_t* jack_buf = jack_port_get_buffer(output_ports[i], frames);
@@ -214,7 +214,7 @@ static int op_jack_buffer_init(jack_nframes_t samples, void *arg)
 		if (ringbuffer[i] != NULL) {
 			size_t length = jack_ringbuffer_read_space(ringbuffer[i]);
 
-			/* actualy this could both read/write less than length.
+			/* actually this could both read/write less than length.
 			 * In that case, which should not happen[TM], there will
 			 * be a gap in playback.
 			 */
@@ -279,7 +279,7 @@ static int op_jack_init(void)
 	jack_options_t options = JackNullOption;
 	if (fail) {
 		/* since jackd failed, it will not be autostarted. Either jackd
-		 * was killed intentionaly or it died by heartattack.
+		 * was killed intentionally or it died by heartattack.
 		 * Until it is restarted, init will happily fail again
 		 * and again and again..
 		 */
@@ -340,7 +340,7 @@ static int op_jack_init(void)
 			break;
 		}
 		if (jack_connect(client, jack_port_name(output_ports[i]), ports[i])) {
-			d_print("connot connect port %s\n", ports[i]);
+			d_print("cannot connect port %s\n", ports[i]);
 			jack_free(ports);
 			return -OP_ERROR_INTERNAL;
 		}
