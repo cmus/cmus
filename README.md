@@ -86,14 +86,14 @@ To subscribe to cmus-devel@lists.sourceforge.net or view the archive visit
 http://lists.sourceforge.net/lists/listinfo/cmus-devel.
 
 The mailing list now serves as an archive for old releases and issues.
-Please use the github [issues](https://github.com/cmus/cmus/issues)
+Please use the GitHub [issues](https://github.com/cmus/cmus/issues)
 page for any problems, suggestions, or bug reports.
 
 
 Reporting Bugs
 --------------
 
-Bugs should be reported using the Github [issue tracker](https://github.com/cmus/cmus/issues).
+Bugs should be reported using the GitHub [issue tracker](https://github.com/cmus/cmus/issues).
 When creating a new issue, a template will be shown containing instructions on how to collect
 the necessary information.
 
@@ -117,5 +117,5 @@ Use hard tabs.  Tabs are _always_ 8 characters wide.  Keep the style consistent 
 code.
 
 Bug fixes and implementations of new features should be suggested as a
-[pull request](https://github.com/cmus/cmus/pulls) directly on Github.
+[pull request](https://github.com/cmus/cmus/pulls) directly on GitHub.
 

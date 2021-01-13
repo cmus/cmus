@@ -207,7 +207,7 @@ static int do_glob_match(struct list_head *head, struct list_head *first, const 
 		} else if (gitem->type == GLOB_STAR) {
 			/* after star there MUST be normal text (or nothing),
 			 * question marks have been moved before this star and
-			 * other stars have been sripped (see simplify)
+			 * other stars have been stripped (see simplify)
 			 */
 			struct list_head *next;
 			struct glob_item *next_gi;
