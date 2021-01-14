@@ -355,9 +355,9 @@ static int libcdio_read_comments(struct input_plugin_data *ip_data, struct keyva
 	GROWING_KEYVALS(c);
 	const char *artist = NULL, *albumartist = NULL, *album = NULL,
 		*title = NULL, *genre = NULL, *comment = NULL;
-	int track_comments_found = 0;
 	const cdtext_t *cdt;
 #ifdef HAVE_CDDB
+	bool track_comments_found = false;
 	cddb_conn_t *cddb_conn = NULL;
 	cddb_disc_t *cddb_disc = NULL;
 #endif
@@ -371,8 +371,10 @@ static int libcdio_read_comments(struct input_plugin_data *ip_data, struct keyva
 		genre = cdtext_get(cdt, CDTEXT_FIELD_GENRE, priv->track);
 		comment = cdtext_get(cdt, CDTEXT_FIELD_MESSAGE, priv->track);
 
+#ifdef HAVE_CDDB
 		if (title)
-			track_comments_found = 1;
+			track_comments_found = true;
+#endif
 
 		album = cdtext_get(cdt, CDTEXT_FIELD_TITLE, 0);
 		albumartist = cdtext_get(cdt, CDTEXT_FIELD_PERFORMER, 0);
@@ -387,11 +389,13 @@ static int libcdio_read_comments(struct input_plugin_data *ip_data, struct keyva
 	cdt = cdio_get_cdtext(priv->cdio, priv->track);
 	if (cdt) {
 		char * const *field = cdt->field;
-		track_comments_found = 1;
 		artist = field[CDTEXT_PERFORMER];
 		title = field[CDTEXT_TITLE];
 		genre = field[CDTEXT_GENRE];
 		comment = field[CDTEXT_MESSAGE];
+#ifdef HAVE_CDDB
+		track_comments_found = true;
+#endif
 	}
 	cdt = cdio_get_cdtext(priv->cdio, 0);
 	if (cdt) {
