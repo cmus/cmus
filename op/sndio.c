@@ -167,16 +167,6 @@ static int sndio_write(const char *buf, int cnt)
 	return rc;
 }
 
-static int op_sndio_set_option(int key, const char *val)
-{
-	return -OP_ERROR_NOT_OPTION;
-}
-
-static int op_sndio_get_option(int key, char **val)
-{
-	return -OP_ERROR_NOT_OPTION;
-}
-
 static int sndio_pause(void)
 {
 	if (!sndio_paused) {
