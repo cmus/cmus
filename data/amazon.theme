@@ -1,0 +1,24 @@
+# May, 2020 by @nitwit
+set color_win_fg=228
+set color_win_bg=234
+set color_cmdline_bg=234
+set color_cmdline_fg=220
+set color_error=9
+set color_info=136
+set color_separator=202
+set color_statusline_bg=232
+set color_statusline_fg=208
+set color_titleline_bg=232
+set color_titleline_fg=220
+set color_win_title_bg=232
+set color_win_title_fg=220
+set color_win_cur=9
+set color_win_cur_sel_bg=220
+set color_win_cur_sel_fg=88
+set color_win_inactive_cur_sel_bg=214
+set color_win_inactive_cur_sel_fg=88
+set color_win_sel_bg=220
+set color_win_sel_fg=232
+set color_win_inactive_sel_bg=166
+set color_win_inactive_sel_fg=232
+set color_win_dir=208
