@@ -41,7 +41,7 @@ static int coreaudio_max_volume = 100;
 static AudioDeviceID coreaudio_device_id = kAudioDeviceUnknown;
 static AudioStreamBasicDescription coreaudio_format_description;
 static AudioUnit coreaudio_audio_unit = NULL;
-static UInt32 coreaudio_buffer_size[2] = {0};
+static UInt32 coreaudio_buffer_size = 0;
 static char *coreaudio_buffer = NULL;
 static UInt32 coreaudio_stereo_channels[2];
 static int coreaudio_mixer_pipe_in = 0;
@@ -65,7 +65,8 @@ static OSStatus coreaudio_play_callback(void *user_data,
 {
 	coreaudio_buffer = buflist->mBuffers[0].mData;
 	d_print("mDataByteSize: %d\n", buflist->mBuffers[0].mDataByteSize);
-	coreaudio_buffer_size[0] = buflist->mBuffers[0].mDataByteSize;
+	buflist->mBuffers[0].mDataByteSize =
+		coreaudio_buffer_size = nframes * coreaudio_format_description.mBytesPerFrame;
 	d_print("nframes: %d; buffer size: %d\n", nframes, coreaudio_buffer_size);
 	/* wait until op_buffer_space() and op_write() completes */
 	while (coreaudio_buffer != NULL) {
@@ -73,7 +74,6 @@ static OSStatus coreaudio_play_callback(void *user_data,
 		ms_sleep(25);
 	}
 	d_print("callback finished waiting\n");
-	buflist->mBuffers[0].mDataByteSize = coreaudio_buffer_size[1];
 	return noErr;
 }
 
@@ -501,10 +501,10 @@ static int coreaudio_write(const char *buf, int cnt)
 	/* op_write() should only be called if op_buffer_space() returns a positive value; */
 	/* in our case that's when coreaudio_buffer points to the buffer */
 
+	/* cnt should be smaller than or equal to coreaudio_buffer_size */
 	memcpy(coreaudio_buffer, buf, cnt);
 	d_print("written to coreaudio: %d\n", cnt);
-	coreaudio_buffer_size[0] = 0;
-	coreaudio_buffer_size[1] = cnt;
+	coreaudio_buffer_size = 0;
 	coreaudio_buffer = NULL;
 	return cnt;
 }
@@ -680,7 +680,7 @@ static int coreaudio_unpause(void)
 static int coreaudio_buffer_space(void)
 {
 	d_print("get buffer: %d\n", coreaudio_buffer_size);
-	return coreaudio_buffer_size[0];
+	return coreaudio_buffer_size;
 }
 
 static int coreaudio_set_sync_sample_rate(const char *val)
