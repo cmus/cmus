@@ -24,6 +24,7 @@
 #include <unistd.h>
 #include <stdatomic.h>
 #include <AudioUnit/AudioUnit.h>
+#include <AudioUnit/AUComponent.h>
 #include <CoreAudio/CoreAudio.h>
 
 #include "../debug.h"
@@ -46,6 +47,8 @@ static char *coreaudio_buffer = NULL;
 static UInt32 coreaudio_stereo_channels[2];
 static int coreaudio_mixer_pipe_in = 0;
 static int coreaudio_mixer_pipe_out = 0;
+static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 
 static OSStatus coreaudio_device_volume_change_listener(AudioObjectID inObjectID,
 							UInt32 inNumberAddresses,
@@ -63,15 +66,24 @@ static OSStatus coreaudio_play_callback(void *user_data,
 					UInt32 nframes,
 					AudioBufferList *buflist)
 {
+	if (coreaudio_buffer_size < 0) {
+		d_print("unexpected; needs another error code?\n");
+
 	coreaudio_buffer = buflist->mBuffers[0].mData;
 	d_print("mDataByteSize: %d\n", buflist->mBuffers[0].mDataByteSize);
 	coreaudio_buffer_size = buflist->mBuffers[0].mDataByteSize;
+
 	/* wait until op_buffer_space() and op_write() completes */
-	while (coreaudio_buffer != NULL) {
-		d_print("callback waiting\n");
-		ms_sleep(25);
-	}
+	pthread_mutex_lock(&mutex);
+	d_print("callback starts waiting\n");
+	pthread_cond_wait(&cond, &mutex);
 	d_print("callback finished waiting\n");
+	pthread_mutex_unlock(&mutex);
+
+	if (coreaudio_buffer == NULL) {
+		coreaudio_buffer_size = -1;
+		return kAudioUnitErr_NoConnection;
+	}
 	return noErr;
 }
 
@@ -475,6 +487,7 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 		coreaudio_set_channel_position(coreaudio_device_id,
 					       coreaudio_format_description.mChannelsPerFrame,
 					       channel_map);
+	coreaudio_buffer_size = 0;
 	OSStatus err = coreaudio_start_audio_unit(&coreaudio_audio_unit,
 						  coreaudio_format_description);
 	if (err)
@@ -485,7 +498,13 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 static int coreaudio_close(void)
 {
 	AudioOutputUnitStop(coreaudio_audio_unit);
+	pthread_mutex_lock(&mutex);
+	coreaudio_buffer = NULL;
+	pthread_cond_signal(&cond);
+	pthread_mutex_unlock(&mutex);
 	AudioUnitUninitialize(coreaudio_audio_unit);
+	pthread_cond_destroy(&cond);
+	pthread_mutex_destroy(&mutex);
 	return OP_ERROR_SUCCESS;
 }
 
@@ -500,13 +519,19 @@ static int coreaudio_write(const char *buf, int cnt)
 	/* in our case that's when coreaudio_buffer points to the buffer */
 
 	/* cnt should be smaller than or equal to coreaudio_buffer_size */
-	memcpy(coreaudio_buffer, buf, cnt);
-	d_print("written to coreaudio: %d\n", cnt);
+	pthread_mutex_lock(&mutex);
+	if (coreaudio_buffer == NULL) { // this should never happen?
+		d_print("unexpected; race?\n");
+		coreaudio_buffer_size = 0;
+		return 0;
+	} else {
+		memcpy(coreaudio_buffer, buf, cnt);
+		d_print("written to coreaudio: %d\n", cnt);
+	}
+	pthread_cond_signal(&cond);
+	pthread_mutex_unlock(&mutex);
 	coreaudio_buffer_size -= cnt;
-	if (coreaudio_buffer_size == 0)
-		coreaudio_buffer = NULL;
-	else
-		coreaudio_buffer += cnt;
+	coreaudio_buffer += cnt;
 	return cnt;
 }
 
@@ -661,6 +686,10 @@ static int coreaudio_mixer_get_fds(int *fds)
 static int coreaudio_pause(void)
 {
 	OSStatus err = AudioOutputUnitStop(coreaudio_audio_unit);
+	pthread_mutex_lock(&mutex);
+	coreaudio_buffer = NULL;
+	pthread_cond_signal(&cond);
+	pthread_mutex_unlock(&mutex);
 	if (err != noErr) {
 		errno = ENODEV;
 		return -OP_ERROR_ERRNO;
