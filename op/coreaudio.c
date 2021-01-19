@@ -48,8 +48,8 @@ static char *coreaudio_buffer = NULL;
 static UInt32 coreaudio_stereo_channels[2];
 static int coreaudio_mixer_pipe_in = 0;
 static int coreaudio_mixer_pipe_out = 0;
-static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-static pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+static pthread_mutex_t mutex;
+static pthread_cond_t cond;
 
 static OSStatus coreaudio_device_volume_change_listener(AudioObjectID inObjectID,
 							UInt32 inNumberAddresses,
@@ -67,9 +67,6 @@ static OSStatus coreaudio_play_callback(void *user_data,
 					UInt32 nframes,
 					AudioBufferList *buflist)
 {
-	if (coreaudio_buffer_size < 0)
-		d_print("unexpected; needs another error code?\n");
-
 	coreaudio_buffer = buflist->mBuffers[0].mData;
 	d_print("mDataByteSize: %d\n", buflist->mBuffers[0].mDataByteSize);
 	coreaudio_buffer_size = buflist->mBuffers[0].mDataByteSize;
@@ -80,10 +77,8 @@ static OSStatus coreaudio_play_callback(void *user_data,
 	d_print("callback finished waiting\n");
 	pthread_mutex_unlock(&mutex);
 
-	if (coreaudio_buffer == NULL) {
-		coreaudio_buffer_size = -1;
+	if (coreaudio_buffer == NULL)
 		return kAudioUnitErr_NoConnection;
-	}
 	return noErr;
 }
 
@@ -487,7 +482,8 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 		coreaudio_set_channel_position(coreaudio_device_id,
 					       coreaudio_format_description.mChannelsPerFrame,
 					       channel_map);
-	coreaudio_buffer_size = 0;
+	mutex = PTHREAD_MUTEX_INITIALIZER;
+	cond = PTHREAD_COND_INITIALIZER;
 	OSStatus err = coreaudio_start_audio_unit(&coreaudio_audio_unit,
 						  coreaudio_format_description);
 	if (err)
