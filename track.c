@@ -17,6 +17,7 @@
  */
 
 #include "track.h"
+#include "lib.h"
 #include "iter.h"
 #include "search_mode.h"
 #include "window.h"
@@ -92,7 +93,7 @@ void shuffle_insert(struct rb_root *root, struct shuffle_info *previous, struct 
 }
 
 struct shuffle_info *shuffle_list_get_next(struct rb_root *root, struct shuffle_info *cur,
-		int (*filter_callback)(const struct simple_track *))
+		int (*filter_callback)(const struct album *))
 {
 	struct rb_node *node;
 
@@ -107,7 +108,7 @@ again:
 	while (node) {
 		struct shuffle_info *track = tree_node_to_shuffle_info(node);
 
-		if (filter_callback((struct simple_track *)track))
+		if (filter_callback == NULL || filter_callback(track->album))
 			return track;
 		node = rb_next(node);
 	}
@@ -121,7 +122,7 @@ again:
 }
 
 struct shuffle_info *shuffle_list_get_prev(struct rb_root *root, struct shuffle_info *cur,
-		int (*filter_callback)(const struct simple_track *))
+		int (*filter_callback)(const struct album *))
 {
 	struct rb_node *node;
 
@@ -136,7 +137,7 @@ again:
 	while (node) {
 		struct shuffle_info *track = tree_node_to_shuffle_info(node);
 
-		if (filter_callback((struct simple_track *)track))
+		if (filter_callback == NULL || filter_callback(track->album))
 			return track;
 		node = rb_prev(node);
 	}
@@ -150,7 +151,7 @@ again:
 }
 
 struct simple_track *simple_list_get_next(struct list_head *head, struct simple_track *cur,
-		int (*filter_callback)(const struct simple_track *))
+		int (*filter_callback)(const struct album *))
 {
 	struct list_head *item;
 
@@ -162,7 +163,7 @@ again:
 	while (item != head) {
 		struct simple_track *track = to_simple_track(item);
 
-		if (filter_callback(track))
+		if (filter_callback == NULL || filter_callback(((struct tree_track *)track)->album))
 			return track;
 		item = item->next;
 	}
@@ -173,7 +174,7 @@ again:
 }
 
 struct simple_track *simple_list_get_prev(struct list_head *head, struct simple_track *cur,
-		int (*filter_callback)(const struct simple_track *))
+		int (*filter_callback)(const struct album *))
 {
 	struct list_head *item;
 
@@ -185,7 +186,7 @@ again:
 	while (item != head) {
 		struct simple_track *track = to_simple_track(item);
 
-		if (filter_callback(track))
+		if (filter_callback == NULL || filter_callback(((struct tree_track *)track)->album))
 			return track;
 		item = item->prev;
 	}
@@ -320,16 +321,17 @@ static int compare_rand(const struct rb_node *a, const struct rb_node *b)
 	return 0;
 }
 
-static void shuffle_info_init(struct shuffle_info *track)
+static void shuffle_info_init(struct shuffle_info *info, struct album *album)
 {
-	track->rand = rand() / ((double) RAND_MAX + 1);
+	info->rand = rand() / ((double) RAND_MAX + 1);
+	info->album = album;
 }
 
-void shuffle_list_add(struct shuffle_info *track, struct rb_root *tree_root)
+void shuffle_list_add(struct shuffle_info *track, struct rb_root *tree_root, struct album *album)
 {
 	struct rb_node **new = &(tree_root->rb_node), *parent = NULL;
 
-	shuffle_info_init(track);
+	shuffle_info_init(track, album);
 
 	/* try to locate track in tree */
 	while (*new) {
@@ -342,7 +344,7 @@ void shuffle_list_add(struct shuffle_info *track, struct rb_root *tree_root)
 			new = &((*new)->rb_right);
 		else {
 			/* very unlikely, try again! */
-			shuffle_list_add(track, tree_root);
+			shuffle_list_add(track, tree_root, album);
 			return;
 		}
 	}
@@ -358,8 +360,9 @@ void shuffle_list_reshuffle(struct rb_root *tree_root)
 
 	rb_for_each_safe(node, tmp, tree_root) {
 		struct shuffle_info *track = tree_node_to_shuffle_info(node);
+		struct album *album = track->album;
 		rb_erase(node, tree_root);
-		shuffle_list_add(track, &tmptree);
+		shuffle_list_add(track, &tmptree, album);
 	}
 
 	tree_root->rb_node = tmptree.rb_node;

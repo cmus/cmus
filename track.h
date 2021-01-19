@@ -27,6 +27,7 @@
 
 struct shuffle_info {
 	struct rb_node tree_node;
+	struct album *album;
 	double rand;
 };
 
@@ -84,16 +85,16 @@ int simple_track_search_matches(void *data, struct iter *iter, const char *text)
 int _simple_track_search_matches(struct iter *iter, const char *text);
 
 struct shuffle_info *shuffle_list_get_next(struct rb_root *root, struct shuffle_info *cur,
-		int (*filter)(const struct simple_track *));
+		int (*filter)(const struct album *));
 
 struct shuffle_info *shuffle_list_get_prev(struct rb_root *root, struct shuffle_info *cur,
-		int (*filter)(const struct simple_track *));
+		int (*filter)(const struct album *));
 
 struct simple_track *simple_list_get_next(struct list_head *head, struct simple_track *cur,
-		int (*filter)(const struct simple_track *));
+		int (*filter)(const struct album *));
 
 struct simple_track *simple_list_get_prev(struct list_head *head, struct simple_track *cur,
-		int (*filter)(const struct simple_track *));
+		int (*filter)(const struct album *));
 
 void sorted_list_add_track(struct list_head *head, struct rb_root *tree_root, struct simple_track *track,
 		const sort_key_t *keys, int tiebreak);
@@ -108,7 +109,7 @@ int simple_list_for_each_marked(struct list_head *head, track_info_cb cb,
 int simple_list_for_each(struct list_head *head, track_info_cb cb,
 		void *data, int reverse);
 
-void shuffle_list_add(struct shuffle_info *track, struct rb_root *tree_root);
+void shuffle_list_add(struct shuffle_info *track, struct rb_root *tree_root, struct album *album);
 void shuffle_list_reshuffle(struct rb_root *tree_root);
 void shuffle_insert(struct rb_root *root, struct shuffle_info *previous, struct shuffle_info *new);
 

@@ -74,7 +74,7 @@ static void all_wins_changed(void)
 
 static void shuffle_add(struct tree_track *track)
 {
-	shuffle_list_add(&track->simple_track.shuffle_info, &lib_shuffle_root);
+	shuffle_list_add(&track->simple_track.shuffle_info, &lib_shuffle_root, track->album);
 }
 
 static void views_add_track(struct track_info *ti)
@@ -205,10 +205,8 @@ static struct tree_track *normal_get_last(void)
 	return artist_last_track(to_artist(rb_last(&lib_artist_root)));
 }
 
-static int aaa_mode_filter(const struct simple_track *track)
+static int aaa_mode_filter(const struct album *album)
 {
-	const struct album *album = ((struct tree_track *)track)->album;
-
 	if (aaa_mode == AAA_MODE_ALBUM)
 		return CUR_ALBUM == album;
 
