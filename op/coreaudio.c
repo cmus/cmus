@@ -18,6 +18,7 @@
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
+#include <pthread.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
@@ -526,12 +527,14 @@ static int coreaudio_write(const char *buf, int cnt)
 		return 0;
 	} else {
 		memcpy(coreaudio_buffer, buf, cnt);
+		coreaudio_buffer_size -= cnt;
+		if (coreaudio_buffer_size == 0)
+			pthread_cond_signal(&cond);
+		else
+			coreaudio_buffer += cnt;
 		d_print("written to coreaudio: %d\n", cnt);
 	}
-	pthread_cond_signal(&cond);
 	pthread_mutex_unlock(&mutex);
-	coreaudio_buffer_size -= cnt;
-	coreaudio_buffer += cnt;
 	return cnt;
 }
 
