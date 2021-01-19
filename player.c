@@ -355,7 +355,7 @@ static void update_rg_scale(void)
 	if (!player_info_priv.ti || !replaygain)
 		return;
 
-	bool avoid_album_gain = replaygain == RG_SMART && (!play_library || shuffle || cmus_queue_active());
+	bool avoid_album_gain = replaygain == RG_SMART && (!play_library || shuffle == SHUFFLE_TRACKS || cmus_queue_active());
 	
 	if (replaygain == RG_TRACK || replaygain == RG_TRACK_PREFERRED || avoid_album_gain) {
 		gain = player_info_priv.ti->rg_track_gain;

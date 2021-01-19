@@ -91,10 +91,10 @@ struct shuffle_info *shuffle_list_get_prev(struct rb_root *root, struct shuffle_
 		int (*filter)(const struct album *));
 
 struct simple_track *simple_list_get_next(struct list_head *head, struct simple_track *cur,
-		int (*filter)(const struct album *));
+		int (*filter)(const struct album *), bool allow_repeat);
 
 struct simple_track *simple_list_get_prev(struct list_head *head, struct simple_track *cur,
-		int (*filter)(const struct album *));
+		int (*filter)(const struct album *), bool allow_repeat);
 
 void sorted_list_add_track(struct list_head *head, struct rb_root *tree_root, struct simple_track *track,
 		const sort_key_t *keys, int tiebreak);

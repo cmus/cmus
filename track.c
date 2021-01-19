@@ -151,12 +151,15 @@ again:
 }
 
 struct simple_track *simple_list_get_next(struct list_head *head, struct simple_track *cur,
-		int (*filter_callback)(const struct album *))
+		int (*filter_callback)(const struct album *), bool allow_repeat)
 {
 	struct list_head *item;
 
-	if (cur == NULL)
+	if (cur == NULL) {
+		if (!allow_repeat)
+			return NULL;
 		return to_simple_track(head->next);
+	}
 
 	item = cur->node.next;
 again:
@@ -168,18 +171,21 @@ again:
 		item = item->next;
 	}
 	item = head->next;
-	if (repeat)
+	if (allow_repeat && repeat)
 		goto again;
 	return NULL;
 }
 
 struct simple_track *simple_list_get_prev(struct list_head *head, struct simple_track *cur,
-		int (*filter_callback)(const struct album *))
+		int (*filter_callback)(const struct album *), bool allow_repeat)
 {
 	struct list_head *item;
 
-	if (cur == NULL)
+	if (cur == NULL) {
+		if (!allow_repeat)
+			return NULL;
 		return to_simple_track(head->prev);
+	}
 
 	item = cur->node.prev;
 again:
@@ -191,7 +197,7 @@ again:
 		item = item->prev;
 	}
 	item = head->prev;
-	if (repeat)
+	if (allow_repeat && repeat)
 		goto again;
 	return NULL;
 }

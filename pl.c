@@ -359,7 +359,7 @@ static struct track_info *pl_play_first_in_pl_playing(void)
 
 static struct simple_track *pl_get_next(struct playlist *pl, struct simple_track *cur)
 {
-	return simple_list_get_next(&pl->editable.head, cur, NULL);
+	return simple_list_get_next(&pl->editable.head, cur, NULL, true);
 }
 
 static struct simple_track *pl_get_next_shuffled(struct playlist *pl,
@@ -373,7 +373,7 @@ static struct simple_track *pl_get_next_shuffled(struct playlist *pl,
 static struct simple_track *pl_get_prev(struct playlist *pl,
 		struct simple_track *cur)
 {
-	return simple_list_get_prev(&pl->editable.head, cur, NULL);
+	return simple_list_get_prev(&pl->editable.head, cur, NULL, true);
 }
 
 static struct simple_track *pl_get_prev_shuffled(struct playlist *pl,

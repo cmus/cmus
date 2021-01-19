@@ -46,6 +46,8 @@ static inline struct tree_track *to_tree_track(const struct rb_node *node)
 
 
 struct album {
+	struct shuffle_info shuffle_info;
+
 	/* position in album search tree */
 	struct rb_node tree_node;
 
@@ -93,6 +95,7 @@ enum aaa_mode {
 extern struct editable lib_editable;
 extern struct tree_track *lib_cur_track;
 extern struct rb_root lib_shuffle_root;
+extern struct rb_root lib_album_shuffle_root;
 extern enum aaa_mode aaa_mode;
 extern unsigned int play_sorted;
 extern char *lib_live_filter;
@@ -117,6 +120,7 @@ void lib_set_add_filter(struct expr *expr);
 int lib_remove(struct track_info *ti);
 void lib_clear_store(void);
 void lib_reshuffle(void);
+void lib_sort_artists(void);
 void lib_set_view(int view);
 int lib_for_each(int (*cb)(void *data, struct track_info *ti), void *data,
 		void *opaque);
@@ -130,9 +134,9 @@ struct track_info *lib_get_cur_stored_track(void);
 
 struct tree_track *tree_get_selected(void);
 struct track_info *tree_activate_selected(void);
-void tree_sort_artists(void);
-void tree_add_track(struct tree_track *track);
-void tree_remove(struct tree_track *track);
+void tree_sort_artists(void (*add_album_cb)(struct album *), void (*remove_album_cb)(struct album *));
+void tree_add_track(struct tree_track *track, void (*add_album_cb)(struct album *));
+void tree_remove(struct tree_track *track, void (*remove_album_cb)(struct album *));
 void tree_remove_sel(void);
 void tree_toggle_active_window(void);
 void tree_toggle_expand_artist(void);

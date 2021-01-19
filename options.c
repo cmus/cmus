@@ -657,11 +657,9 @@ static void toggle_play_sorted(void *data)
 {
 	play_sorted = play_sorted ^ 1;
 
-	/* shuffle would override play_sorted... */
 	if (play_sorted) {
 		/* play_sorted makes no sense in playlist */
 		play_library = 1;
-		shuffle = 0;
 	}
 
 	update_statusline();
@@ -675,13 +673,13 @@ static void get_smart_artist_sort(void *data, char *buf, size_t size)
 static void set_smart_artist_sort(void *data, const char *buf)
 {
 	if (parse_bool(buf, &smart_artist_sort))
-		tree_sort_artists();
+		lib_sort_artists();
 }
 
 static void toggle_smart_artist_sort(void *data)
 {
 	smart_artist_sort ^= 1;
-	tree_sort_artists();
+	lib_sort_artists();
 }
 
 static void get_display_artist_sort_name(void *data, char *buf, size_t size)
@@ -1008,25 +1006,43 @@ static void toggle_set_term_title(void *data)
 	set_term_title ^= 1;
 }
 
+const char * const shuffle_names[] = {
+	"off", "tracks", "albums", "false", "true", NULL
+};
+
 static void get_shuffle(void *data, char *buf, size_t size)
 {
-	strscpy(buf, bool_names[shuffle], size);
+	strscpy(buf, shuffle_names[shuffle], size);
 }
 
 static void set_shuffle(void *data, const char *buf)
 {
-	int old = shuffle;
-	if (!parse_bool(buf, &shuffle))
+	int tmp;
+
+	if (!parse_enum(buf, 0, 4, shuffle_names, &tmp))
 		return;
-	if (old != shuffle)
+
+	if (tmp == SHUFFLE_FALSE)
+		tmp = SHUFFLE_OFF;
+	else if (tmp == SHUFFLE_TRUE)
+		tmp = SHUFFLE_TRACKS;
+
+	if (tmp != shuffle)
 		mpris_shuffle_changed();
+
+	shuffle = tmp;
 	update_statusline();
 }
 
 static void toggle_shuffle(void *data)
 {
-	shuffle ^= 1;
-	mpris_shuffle_changed();
+	shuffle++;
+	shuffle %= 3;
+
+	/* album mode makes no sense in playlist */
+	if (!play_library && shuffle == SHUFFLE_ALBUMS)
+		shuffle = SHUFFLE_OFF;
+
 	update_statusline();
 }
 
