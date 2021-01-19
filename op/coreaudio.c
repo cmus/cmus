@@ -70,7 +70,7 @@ static OSStatus coreaudio_play_callback(void *user_data,
 	d_print("nframes: %d; buffer size: %d\n", nframes, coreaudio_buffer_size);
 	/* wait until op_buffer_space() and op_write() completes */
 	while (coreaudio_buffer != NULL) {
-		;
+		d_print("callback waiting\n");
 	}
 	d_print("callback finished waiting\n");
 	return noErr;
