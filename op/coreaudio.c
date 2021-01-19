@@ -66,6 +66,7 @@ static OSStatus coreaudio_play_callback(void *user_data,
 	coreaudio_buffer = buflist->mBuffers[0].mData;
 	d_print("mDataByteSize: %d\n", buflist->mBuffers[0].mDataByteSize);
 	coreaudio_buffer_size[0] = buflist->mBuffers[0].mDataByteSize;
+	d_print("nframes: %d; buffer size: %d\n", nframes, coreaudio_buffer_size);
 	/* wait until op_buffer_space() and op_write() completes */
 	while (coreaudio_buffer != NULL) {
 		d_print("callback waiting\n");
@@ -678,7 +679,7 @@ static int coreaudio_unpause(void)
 
 static int coreaudio_buffer_space(void)
 {
-	d_print("get buffer: %d\n", coreaudio_buffer_size[0]);
+	d_print("get buffer: %d\n", coreaudio_buffer_size);
 	return coreaudio_buffer_size[0];
 }
 
