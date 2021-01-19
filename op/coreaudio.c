@@ -64,6 +64,7 @@ static OSStatus coreaudio_play_callback(void *user_data,
 					AudioBufferList *buflist)
 {
 	coreaudio_buffer = buflist->mBuffers[0].mData;
+	d_print("mDataByteSize: %d\n", buflist->mBuffers[0].mDataByteSize);
 	buflist->mBuffers[0].mDataByteSize =
 		coreaudio_buffer_size = nframes * coreaudio_format_description.mBytesPerFrame;
 	d_print("nframes: %d; buffer size: %d\n", nframes, coreaudio_buffer_size);
@@ -71,6 +72,7 @@ static OSStatus coreaudio_play_callback(void *user_data,
 	while (coreaudio_buffer != NULL) {
 		;
 	}
+	d_print("callback finished waiting\n");
 	return noErr;
 }
 
