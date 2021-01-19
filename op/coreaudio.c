@@ -495,6 +495,7 @@ static int coreaudio_close(void)
 {
 	AudioOutputUnitStop(coreaudio_audio_unit);
 
+	coreaudio_buffer_size = 0;
 	coreaudio_buffer = NULL;
 	pthread_cond_signal(&cond);
 
@@ -515,7 +516,7 @@ static int coreaudio_write(const char *buf, int cnt)
 {
 	if (coreaudio_buffer == NULL) { // this should never happen?
 		d_print("unexpected; race?\n");
-		cnt = coreaudio_buffer_size = 0;
+		cnt = 0;
 	} else {
 		memcpy(coreaudio_buffer, buf, cnt);
 		coreaudio_buffer_size -= cnt;
@@ -680,6 +681,7 @@ static int coreaudio_pause(void)
 {
 	OSStatus err = AudioOutputUnitStop(coreaudio_audio_unit);
 
+	coreaudio_buffer_size = 0;
 	coreaudio_buffer = NULL;
 	pthread_cond_signal(&cond);
 
