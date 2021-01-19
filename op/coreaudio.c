@@ -67,14 +67,13 @@ static OSStatus coreaudio_play_callback(void *user_data,
 					UInt32 nframes,
 					AudioBufferList *buflist)
 {
-	if (coreaudio_buffer_size < 0) {
+	if (coreaudio_buffer_size < 0)
 		d_print("unexpected; needs another error code?\n");
 
 	coreaudio_buffer = buflist->mBuffers[0].mData;
 	d_print("mDataByteSize: %d\n", buflist->mBuffers[0].mDataByteSize);
 	coreaudio_buffer_size = buflist->mBuffers[0].mDataByteSize;
 
-	/* wait until op_buffer_space() and op_write() completes */
 	pthread_mutex_lock(&mutex);
 	d_print("callback starts waiting\n");
 	pthread_cond_wait(&cond, &mutex);
@@ -499,13 +498,17 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 static int coreaudio_close(void)
 {
 	AudioOutputUnitStop(coreaudio_audio_unit);
+
 	pthread_mutex_lock(&mutex);
 	coreaudio_buffer = NULL;
 	pthread_cond_signal(&cond);
 	pthread_mutex_unlock(&mutex);
+
 	AudioUnitUninitialize(coreaudio_audio_unit);
+
 	pthread_cond_destroy(&cond);
 	pthread_mutex_destroy(&mutex);
+
 	return OP_ERROR_SUCCESS;
 }
 
@@ -516,15 +519,10 @@ static int coreaudio_drop(void)
 
 static int coreaudio_write(const char *buf, int cnt)
 {
-	/* op_write() should only be called if op_buffer_space() returns a positive value; */
-	/* in our case that's when coreaudio_buffer points to the buffer */
-
-	/* cnt should be smaller than or equal to coreaudio_buffer_size */
 	pthread_mutex_lock(&mutex);
 	if (coreaudio_buffer == NULL) { // this should never happen?
 		d_print("unexpected; race?\n");
-		coreaudio_buffer_size = 0;
-		return 0;
+		cnt = coreaudio_buffer_size = 0;
 	} else {
 		memcpy(coreaudio_buffer, buf, cnt);
 		coreaudio_buffer_size -= cnt;
@@ -689,10 +687,12 @@ static int coreaudio_mixer_get_fds(int *fds)
 static int coreaudio_pause(void)
 {
 	OSStatus err = AudioOutputUnitStop(coreaudio_audio_unit);
+
 	pthread_mutex_lock(&mutex);
 	coreaudio_buffer = NULL;
 	pthread_cond_signal(&cond);
 	pthread_mutex_unlock(&mutex);
+
 	if (err != noErr) {
 		errno = ENODEV;
 		return -OP_ERROR_ERRNO;
