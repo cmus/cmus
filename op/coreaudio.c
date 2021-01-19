@@ -482,8 +482,8 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 		coreaudio_set_channel_position(coreaudio_device_id,
 					       coreaudio_format_description.mChannelsPerFrame,
 					       channel_map);
-	mutex = PTHREAD_MUTEX_INITIALIZER;
-	cond = PTHREAD_COND_INITIALIZER;
+	pthread_mutex_init(&mutex, NULL);
+	pthread_cond_init(&cond, NULL);
 	OSStatus err = coreaudio_start_audio_unit(&coreaudio_audio_unit,
 						  coreaudio_format_description);
 	if (err)
