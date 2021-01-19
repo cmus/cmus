@@ -71,11 +71,11 @@ static OSStatus coreaudio_play_callback(void *user_data,
 	d_print("mDataByteSize: %d\n", buflist->mBuffers[0].mDataByteSize);
 	coreaudio_buffer_size = buflist->mBuffers[0].mDataByteSize;
 
-	pthread_mutex_lock(&mutex);
 	d_print("callback starts waiting\n");
+	pthread_mutex_lock(&mutex);
 	pthread_cond_wait(&cond, &mutex);
-	d_print("callback finished waiting\n");
 	pthread_mutex_unlock(&mutex);
+	d_print("callback finished waiting\n");
 
 	if (coreaudio_buffer == NULL)
 		return kAudioUnitErr_NoConnection;
@@ -519,12 +519,12 @@ static int coreaudio_write(const char *buf, int cnt)
 		cnt = 0;
 	} else {
 		memcpy(coreaudio_buffer, buf, cnt);
+		d_print("written to coreaudio: %d\n", cnt);
 		coreaudio_buffer_size -= cnt;
 		if (coreaudio_buffer_size == 0)
 			pthread_cond_signal(&cond);
 		else
 			coreaudio_buffer += cnt;
-		d_print("written to coreaudio: %d\n", cnt);
 	}
 	return cnt;
 }
@@ -704,7 +704,6 @@ static int coreaudio_unpause(void)
 
 static int coreaudio_buffer_space(void)
 {
-	d_print("get buffer: %d\n", coreaudio_buffer_size);
 	return coreaudio_buffer_size;
 }
 
