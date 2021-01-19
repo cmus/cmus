@@ -71,6 +71,7 @@ static OSStatus coreaudio_play_callback(void *user_data,
 	/* wait until op_buffer_space() and op_write() completes */
 	while (coreaudio_buffer != NULL) {
 		d_print("callback waiting\n");
+		ms_sleep(25);
 	}
 	d_print("callback finished waiting\n");
 	return noErr;
