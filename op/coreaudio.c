@@ -66,6 +66,7 @@ static OSStatus coreaudio_play_callback(void *user_data,
 	coreaudio_buffer = buflist->mBuffers[0].mData;
 	buflist->mBuffers[0].mDataByteSize =
 		coreaudio_buffer_size = nframes * coreaudio_format_description.mBytesPerFrame;
+	d_print("nframes: %d; buffer size: %d\n", nframes, coreaudio_buffer_size);
 	/* wait until op_buffer_space() and op_write() completes */
 	while (coreaudio_buffer != NULL) {
 		;
@@ -499,6 +500,7 @@ static int coreaudio_write(const char *buf, int cnt)
 
 	/* cnt should be smaller than or equal to coreaudio_buffer_size */
 	memcpy(coreaudio_buffer, buf, cnt);
+	d_print("written to coreaudio: %d\n", cnt);
 	coreaudio_buffer_size = 0;
 	coreaudio_buffer = NULL;
 	return cnt;
@@ -674,6 +676,7 @@ static int coreaudio_unpause(void)
 
 static int coreaudio_buffer_space(void)
 {
+	d_print("get buffer: %d\n", coreaudio_buffer_size);
 	return coreaudio_buffer_size;
 }
 
