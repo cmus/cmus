@@ -26,7 +26,7 @@
 #include "rbtree.h"
 
 struct tree_track {
-	struct shuffle_track shuffle_track;
+	struct simple_track simple_track;
 
 	/* position in track search tree */
 	struct rb_node tree_node;

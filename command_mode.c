@@ -1580,23 +1580,23 @@ static void cmd_win_add_q(char *arg)
 static void cmd_win_activate(char *arg)
 {
 	struct track_info *info = NULL;
-	struct shuffle_track *previous = NULL, *next = NULL;
+	struct shuffle_info *previous = NULL, *next = NULL;
 	struct rb_root *shuffle_root = NULL;
 
 	if (cur_view == TREE_VIEW || cur_view == SORTED_VIEW) {
 		if (lib_cur_track)
-			previous = &lib_cur_track->shuffle_track;
+			previous = &lib_cur_track->simple_track.shuffle_info;
 		shuffle_root = &lib_shuffle_root;
 	}
 
 	switch (cur_view) {
 	case TREE_VIEW:
 		info = tree_activate_selected();
-		next = &lib_cur_track->shuffle_track;
+		next = &lib_cur_track->simple_track.shuffle_info;
 		break;
 	case SORTED_VIEW:
 		info = sorted_activate_selected();
-		next = &lib_cur_track->shuffle_track;
+		next = &lib_cur_track->simple_track.shuffle_info;
 		break;
 	case PLAYLIST_VIEW:
 		info = pl_play_selected_row();

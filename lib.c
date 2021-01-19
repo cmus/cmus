@@ -74,7 +74,7 @@ static void all_wins_changed(void)
 
 static void shuffle_add(struct tree_track *track)
 {
-	shuffle_list_add(&track->shuffle_track, &lib_shuffle_root);
+	shuffle_list_add(&track->simple_track.shuffle_info, &lib_shuffle_root);
 }
 
 static void views_add_track(struct track_info *ti)
@@ -327,7 +327,7 @@ static void free_lib_track(struct editable *e, struct list_head *item)
 	if (remove_from_hash)
 		hash_remove(ti);
 
-	rb_erase(&track->shuffle_track.tree_node, &lib_shuffle_root);
+	rb_erase(&track->simple_track.shuffle_info.tree_node, &lib_shuffle_root);
 	tree_remove(track);
 
 	track_info_unref(ti);
@@ -369,7 +369,7 @@ struct track_info *lib_goto_next(void)
 	}
 	if (shuffle) {
 		track = (struct tree_track *)shuffle_list_get_next(&lib_shuffle_root,
-				(struct shuffle_track *)lib_cur_track, aaa_mode_filter);
+				(struct shuffle_info *)lib_cur_track, aaa_mode_filter);
 	} else if (play_sorted) {
 		track = (struct tree_track *)simple_list_get_next(&lib_editable.head,
 				(struct simple_track *)lib_cur_track, aaa_mode_filter);
@@ -389,7 +389,7 @@ struct track_info *lib_goto_prev(void)
 	}
 	if (shuffle) {
 		track = (struct tree_track *)shuffle_list_get_prev(&lib_shuffle_root,
-				(struct shuffle_track *)lib_cur_track, aaa_mode_filter);
+				(struct shuffle_info *)lib_cur_track, aaa_mode_filter);
 	} else if (play_sorted) {
 		track = (struct tree_track *)simple_list_get_prev(&lib_editable.head,
 				(struct simple_track *)lib_cur_track, aaa_mode_filter);
