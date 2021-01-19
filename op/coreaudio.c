@@ -499,10 +499,8 @@ static int coreaudio_close(void)
 {
 	AudioOutputUnitStop(coreaudio_audio_unit);
 
-	pthread_mutex_lock(&mutex);
 	coreaudio_buffer = NULL;
 	pthread_cond_signal(&cond);
-	pthread_mutex_unlock(&mutex);
 
 	AudioUnitUninitialize(coreaudio_audio_unit);
 
@@ -519,7 +517,6 @@ static int coreaudio_drop(void)
 
 static int coreaudio_write(const char *buf, int cnt)
 {
-	pthread_mutex_lock(&mutex);
 	if (coreaudio_buffer == NULL) { // this should never happen?
 		d_print("unexpected; race?\n");
 		cnt = coreaudio_buffer_size = 0;
@@ -532,7 +529,6 @@ static int coreaudio_write(const char *buf, int cnt)
 			coreaudio_buffer += cnt;
 		d_print("written to coreaudio: %d\n", cnt);
 	}
-	pthread_mutex_unlock(&mutex);
 	return cnt;
 }
 
@@ -688,10 +684,8 @@ static int coreaudio_pause(void)
 {
 	OSStatus err = AudioOutputUnitStop(coreaudio_audio_unit);
 
-	pthread_mutex_lock(&mutex);
 	coreaudio_buffer = NULL;
 	pthread_cond_signal(&cond);
-	pthread_mutex_unlock(&mutex);
 
 	if (err != noErr) {
 		errno = ENODEV;
