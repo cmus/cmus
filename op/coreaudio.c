@@ -493,11 +493,11 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 }
 
 static void coreaudio_flush_buffer() {
-	if (coreaudio_buffer_size > 0 && coreaudio_partial_buffer) {
+	if (coreaudio_partial_buffer) {
 		memset(coreaudio_buffer, 0, coreaudio_buffer_size);
 		d_print("drain buffer with %d bytes of zeroes padded\n", coreaudio_buffer_size);
 	} else {
-		d_print("buffer dropped: %d\n", coreaudio_partial_buffer);
+		d_print("buffer dropped: %d\n", -1 * coreaudio_buffer_size);
 		coreaudio_buffer = NULL;
 	}
 	coreaudio_buffer_size = 0;
@@ -519,7 +519,7 @@ static int coreaudio_close(void)
 
 static int coreaudio_drop(void)
 {
-	coreaudio_buffer_size = 0;
+	coreaudio_partial_buffer = false;
 	coreaudio_flush_buffer();
 	return OP_ERROR_SUCCESS;
 }
