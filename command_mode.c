@@ -1393,6 +1393,16 @@ static void cmd_p_prev(char *arg)
 	}
 }
 
+static void cmd_p_next_album(char *arg)
+{
+	cmus_next_album();
+}
+
+static void cmd_p_prev_album(char *arg)
+{
+	cmus_prev_album();
+}
+
 static void cmd_p_stop(char *arg)
 {
 	player_stop();
@@ -2604,10 +2614,12 @@ struct command commands[] = {
 	{ "mark",                  cmd_mark,             0, 1,  NULL,                 0, 0          },
 	{ "mute",                  cmd_mute,             0, 0,  NULL,                 0, 0          },
 	{ "player-next",           cmd_p_next,           0, 0,  NULL,                 0, 0          },
+	{ "player-next-album",     cmd_p_next_album,     0, 0,  NULL,                 0, 0          },
 	{ "player-pause",          cmd_p_pause,          0, 0,  NULL,                 0, 0          },
 	{ "player-pause-playback", cmd_p_pause_playback, 0, 0,  NULL,                 0, 0          },
 	{ "player-play",           cmd_p_play,           0, 1,  expand_playable,      0, 0          },
 	{ "player-prev",           cmd_p_prev,           0, 0,  NULL,                 0, 0          },
+	{ "player-prev-album",     cmd_p_prev_album,     0, 0,  NULL,                 0, 0          },
 	{ "player-stop",           cmd_p_stop,           0, 0,  NULL,                 0, 0          },
 	{ "prev-view",             cmd_prev_view,        0, 0,  NULL,                 0, 0          },
 	{ "left-view",             cmd_left_view,        0, 0,  NULL,                 0, 0          },

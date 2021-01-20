@@ -201,6 +201,9 @@ x                       player-play
 z                       player-prev
 v                       player-stop
 
+B                       player-next-album
+Z                       player-prev-album
+
 ]                       vol +0 +1%
 [                       vol +1% +0
 +                       vol +10%
@@ -513,6 +516,10 @@ pl-rename <name>
 player-next (*b*)
 	Skips to the next track.
 
+player-next-album (*B*)
+	Skips to the next album. If *shuffle*=`tracks` or a playlist is active,
+	skips to the next track.
+
 player-pause (*c*)
 	Toggles pause.
 
@@ -525,6 +532,10 @@ player-play [filename] (*x*)
 
 player-prev (*z*)
 	Skips to the previous track.
+
+player-prev-album (*Z*)
+	Skips to the previous album. If *shuffle*=`tracks` or a playlist is active,
+	skips to the previous track.
 
 player-stop (*v*)
 	Stops playback.
