@@ -45,7 +45,6 @@ static AudioStreamBasicDescription coreaudio_format_description;
 static AudioUnit coreaudio_audio_unit = NULL;
 static UInt32 coreaudio_buffer_size = 0;
 static char *coreaudio_buffer = NULL;
-static bool coreaudio_partial_buffer = false;
 static UInt32 coreaudio_stereo_channels[2];
 static int coreaudio_mixer_pipe_in = 0;
 static int coreaudio_mixer_pipe_out = 0;
@@ -79,7 +78,7 @@ static OSStatus coreaudio_play_callback(void *user_data,
 	d_print("callback finished waiting\n");
 
 	if (coreaudio_buffer == NULL)
-		return kAudioUnitErr_NoConnection;
+		d_print("callback still running after stop; implement drain/drop?\n");
 	return noErr;
 }
 
@@ -493,16 +492,10 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 }
 
 static void coreaudio_flush_buffer() {
-	if (coreaudio_partial_buffer) {
-		memset(coreaudio_buffer, 0, coreaudio_buffer_size);
-		d_print("drain buffer with %d bytes of zeroes padded\n", coreaudio_buffer_size);
-	} else {
-		d_print("buffer dropped: %d\n", -1 * coreaudio_buffer_size);
-		coreaudio_buffer = NULL;
-	}
 	coreaudio_buffer_size = 0;
-	coreaudio_partial_buffer = false;
+	coreaudio_buffer = NULL;
 	pthread_cond_signal(&cond);
+	pthread_mutex_unlock(&mutex);
 }
 
 static int coreaudio_close(void)
@@ -519,28 +512,22 @@ static int coreaudio_close(void)
 
 static int coreaudio_drop(void)
 {
-	coreaudio_partial_buffer = false;
-	coreaudio_flush_buffer();
 	return OP_ERROR_SUCCESS;
 }
 
 static int coreaudio_write(const char *buf, int cnt)
 {
-	if (coreaudio_buffer == NULL) { // this should never happen?
-		d_print("unexpected; race?\n");
-		cnt = 0;
-	} else {
-		memcpy(coreaudio_buffer, buf, cnt);
-		d_print("written to coreaudio: %d\n", cnt);
-		coreaudio_buffer_size -= cnt;
-		if (coreaudio_buffer_size == 0) {
-			coreaudio_partial_buffer = false;
-			pthread_cond_signal(&cond);
-		} else {
-			coreaudio_partial_buffer = true;
-			coreaudio_buffer += cnt;
-		}
+	if (coreaudio_buffer == NULL) {
+		d_print("potential unexpected race!\n");
+		return 0;
 	}
+	memcpy(coreaudio_buffer, buf, cnt);
+	d_print("written to coreaudio: %d\n", cnt);
+	coreaudio_buffer_size -= cnt;
+	if (coreaudio_buffer_size == 0)
+		pthread_cond_signal(&cond);
+	else
+		coreaudio_buffer += cnt;
 	return cnt;
 }
 
