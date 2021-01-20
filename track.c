@@ -96,8 +96,11 @@ struct shuffle_track *shuffle_list_get_next(struct rb_root *root, struct shuffle
 {
 	struct rb_node *node;
 
-	if (!cur)
+	if (!cur) {
+		if (auto_reshuffle)
+			shuffle_list_reshuffle(root);
 		return tree_node_to_shuffle_track(rb_first(root));
+	}
 
 	node = rb_next(&cur->tree_node);
 again:
@@ -122,8 +125,11 @@ struct shuffle_track *shuffle_list_get_prev(struct rb_root *root, struct shuffle
 {
 	struct rb_node *node;
 
-	if (!cur)
+	if (!cur) {
+		if (auto_reshuffle)
+			shuffle_list_reshuffle(root);
 		return tree_node_to_shuffle_track(rb_last(root));
+	}
 
 	node = rb_prev(&cur->tree_node);
 again:
