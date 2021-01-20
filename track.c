@@ -172,7 +172,7 @@ struct simple_track *simple_list_get_prev(struct list_head *head, struct simple_
 	struct list_head *item;
 
 	if (cur == NULL)
-		return to_simple_track(head->next);
+		return to_simple_track(head->prev);
 
 	item = cur->node.prev;
 again:

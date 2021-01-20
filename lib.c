@@ -200,6 +200,11 @@ static struct tree_track *artist_last_track(const struct artist *artist)
 	return album_last_track(to_album(rb_last(&artist->album_root)));
 }
 
+static struct tree_track *normal_get_last(void)
+{
+	return artist_last_track(to_artist(rb_last(&lib_artist_root)));
+}
+
 static int aaa_mode_filter(const struct simple_track *track)
 {
 	const struct album *album = ((struct tree_track *)track)->album;
@@ -263,7 +268,7 @@ static struct tree_track *normal_get_next(void)
 static struct tree_track *normal_get_prev(void)
 {
 	if (lib_cur_track == NULL)
-		return normal_get_first();
+		return normal_get_last();
 
 	/* not first track of the album? */
 	if (rb_prev(&lib_cur_track->tree_node)) {
@@ -301,7 +306,7 @@ static struct tree_track *normal_get_prev(void)
 		return NULL;
 
 	/* last track */
-	return artist_last_track(to_artist(rb_last(&lib_artist_root)));
+	return normal_get_last();
 }
 
 /* set next/prev (tree) }}} */
