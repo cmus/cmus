@@ -495,6 +495,7 @@ static void coreaudio_flush_buffer() {
 	coreaudio_buffer_size = 0;
 	coreaudio_buffer = NULL;
 	pthread_cond_signal(&cond);
+	pthread_mutex_trylock(&mutex);
 	pthread_mutex_unlock(&mutex);
 }
 
