@@ -496,10 +496,7 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 }
 
 static void coreaudio_flush_buffer() {
-	int ret;
-
-	ret = pthread_mutex_trylock(&mutex);
-	if (ret) {
+	if (pthread_mutex_trylock(&mutex)) {
 	        memset(coreaudio_buffer, 0, coreaudio_buffer_size);
 		pthread_cond_signal(&cond);
 	}
