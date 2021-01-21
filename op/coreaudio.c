@@ -67,18 +67,22 @@ static OSStatus coreaudio_play_callback(void *user_data,
 					UInt32 nframes,
 					AudioBufferList *buflist)
 {
-	coreaudio_buffer = buflist->mBuffers[0].mData;
-	d_print("mDataByteSize: %d\n", buflist->mBuffers[0].mDataByteSize);
-	coreaudio_buffer_size = buflist->mBuffers[0].mDataByteSize;
 
-	d_print("callback starts waiting\n");
-	pthread_mutex_lock(&mutex);
-	pthread_cond_wait(&cond, &mutex);
-	pthread_mutex_unlock(&mutex);
-	d_print("callback finished waiting\n");
+	if (!pthread_mutex_trylock(&mutex)) {
+		d_print("callback starts\n");
 
-	if (coreaudio_buffer == NULL)
-		d_print("callback still running after stop; implement drain/drop?\n");
+		coreaudio_buffer = buflist->mBuffers[0].mData;
+		d_print("mDataByteSize: %d\n", buflist->mBuffers[0].mDataByteSize);
+		coreaudio_buffer_size = buflist->mBuffers[0].mDataByteSize;
+
+		pthread_cond_wait(&cond, &mutex);
+		pthread_mutex_unlock(&mutex);
+
+		d_print("callback finished\n");
+	} else {
+		d_print("drop buffer\n");
+		return kAudioUnitErr_NoConnection;
+	}
 	return noErr;
 }
 
@@ -492,11 +496,14 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 }
 
 static void coreaudio_flush_buffer() {
+	int ret;
+
+	ret = pthread_mutex_trylock(&mutex);
+	if (ret) {
+	        memset(coreaudio_buffer, 0, coreaudio_buffer_size);
+		pthread_cond_signal(&cond);
+	}
 	coreaudio_buffer_size = 0;
-	coreaudio_buffer = NULL;
-	pthread_cond_signal(&cond);
-	pthread_mutex_trylock(&mutex);
-	pthread_mutex_unlock(&mutex);
 }
 
 static int coreaudio_close(void)
@@ -506,6 +513,7 @@ static int coreaudio_close(void)
 
 	AudioUnitUninitialize(coreaudio_audio_unit);
 	pthread_cond_destroy(&cond);
+	pthread_mutex_unlock(&mutex);
 	pthread_mutex_destroy(&mutex);
 
 	return OP_ERROR_SUCCESS;
@@ -518,7 +526,7 @@ static int coreaudio_drop(void)
 
 static int coreaudio_write(const char *buf, int cnt)
 {
-	if (coreaudio_buffer == NULL) {
+	if (coreaudio_buffer_size == 0) {
 		d_print("potential unexpected race!\n");
 		return 0;
 	}
@@ -693,6 +701,7 @@ static int coreaudio_pause(void)
 
 static int coreaudio_unpause(void)
 {
+	pthread_mutex_unlock(&mutex);
 	OSStatus err = AudioOutputUnitStart(coreaudio_audio_unit);
 	if (err != noErr) {
 		errno = ENODEV;
