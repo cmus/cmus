@@ -82,7 +82,6 @@ static OSStatus coreaudio_play_callback(void *user_data,
 			while (!stopping); // wait until it's ready for the next callback
 			d_print("toggled\n");
 		}
-		d_print("passed\n");
 	} else {
 		if (stopping)
 			d_print("stopping\n");
