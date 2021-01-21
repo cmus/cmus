@@ -50,6 +50,8 @@ static int coreaudio_mixer_pipe_in = 0;
 static int coreaudio_mixer_pipe_out = 0;
 static pthread_mutex_t mutex;
 static pthread_cond_t cond;
+static bool stopping = false;
+static bool locked = false;
 
 static OSStatus coreaudio_device_volume_change_listener(AudioObjectID inObjectID,
 							UInt32 inNumberAddresses,
@@ -67,20 +69,41 @@ static OSStatus coreaudio_play_callback(void *user_data,
 					UInt32 nframes,
 					AudioBufferList *buflist)
 {
-	if (!pthread_mutex_trylock(&mutex)) {
-		d_print("callback starts\n");
-
+	if (!stopping && !pthread_mutex_trylock(&mutex)) {
 		coreaudio_buffer = buflist->mBuffers[0].mData;
 		d_print("mDataByteSize: %d\n", buflist->mBuffers[0].mDataByteSize);
 		coreaudio_buffer_size = buflist->mBuffers[0].mDataByteSize;
-
 		pthread_cond_wait(&cond, &mutex);
+		d_print("unblocked\n");
 		pthread_mutex_unlock(&mutex);
-
-		d_print("callback finished\n");
+		if (stopping) {
+			d_print("stopping\n");
+			stopping = false;
+			while (!stopping); // wait until it's ready for the next callback
+			d_print("toggled\n");
+		}
+		d_print("passed\n");
 	} else {
-		d_print("drop buffer\n");
+		if (stopping)
+			d_print("stopping\n");
+		else
+			d_print("main locked\n");
 		return kAudioUnitErr_NoConnection;
+	}
+	if (coreaudio_buffer_size == buflist->mBuffers[0].mDataByteSize) {
+		d_print("buffer untouched\n");
+		return kAudioUnitErr_NoConnection;
+	}
+	if (coreaudio_buffer == NULL) {
+		d_print("buffer nulled\n");
+		if (coreaudio_buffer_size > 0)
+			d_print("buffer dropped\n");
+		return kAudioUnitErr_NoConnection;
+	}
+	if (coreaudio_buffer_size > 0) {
+		memset(coreaudio_buffer, 0, coreaudio_buffer_size);
+		coreaudio_buffer_size = 0;
+		d_print("buffer drained\n");
 	}
 	return noErr;
 }
@@ -495,15 +518,15 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 }
 
 static void coreaudio_flush_buffer() {
-	if (pthread_mutex_trylock(&mutex)) {
-	        memset(coreaudio_buffer, 0, coreaudio_buffer_size);
-		coreaudio_buffer_size = 0;
-		pthread_cond_signal(&cond);
-		d_print("buffer flushed\n");
-	} else if (coreaudio_buffer_size > 0) {
-		d_print("something's wrong\n");
+	if (pthread_mutex_trylock(&mutex)) { // callback locked
+		stopping = true; // signifies stopping
+		while (stopping) // wait for unblocked signal
+			pthread_cond_signal(&cond);
+		// callback unlocked
+		d_print("toggling\n");
+		stopping = true; // singal received; toggle back
 	} else {
-		d_print("locked by main\n");
+		locked = true; // main locked
 	}
 }
 
@@ -514,14 +537,27 @@ static int coreaudio_close(void)
 
 	AudioUnitUninitialize(coreaudio_audio_unit);
 	pthread_cond_destroy(&cond);
-	pthread_mutex_unlock(&mutex);
+	if (locked) {
+		locked = false;
+		pthread_mutex_unlock(&mutex);
+	}
 	pthread_mutex_destroy(&mutex);
+	stopping = false;
 
 	return OP_ERROR_SUCCESS;
 }
 
 static int coreaudio_drop(void)
 {
+	coreaudio_buffer = NULL;
+	coreaudio_flush_buffer();
+	if (locked) {
+		locked = false;
+		pthread_mutex_unlock(&mutex);
+	} else {
+		stopping = false;
+		d_print("unstopped\n");
+	}
 	return OP_ERROR_SUCCESS;
 }
 
@@ -703,7 +739,11 @@ static int coreaudio_pause(void)
 
 static int coreaudio_unpause(void)
 {
-	pthread_mutex_unlock(&mutex);
+	if (locked) {
+		locked = false;
+		pthread_mutex_unlock(&mutex);
+	}
+	stopping = false;
 	d_print("unpausing\n");
 	OSStatus err = AudioOutputUnitStart(coreaudio_audio_unit);
 	if (err != noErr) {
