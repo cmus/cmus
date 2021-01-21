@@ -499,8 +499,11 @@ static void coreaudio_flush_buffer() {
 	        memset(coreaudio_buffer, 0, coreaudio_buffer_size);
 		coreaudio_buffer_size = 0;
 		pthread_cond_signal(&cond);
+		d_print("buffer flushed\n");
 	} else if (coreaudio_buffer_size > 0) {
 		d_print("something's wrong\n");
+	} else {
+		d_print("locked by main\n");
 	}
 }
 
@@ -691,6 +694,7 @@ static int coreaudio_pause(void)
 	OSStatus err = AudioOutputUnitStop(coreaudio_audio_unit);
 	coreaudio_flush_buffer();
 	if (err != noErr) {
+		d_print("pause failed\n");
 		errno = ENODEV;
 		return -OP_ERROR_ERRNO;
 	}
@@ -700,6 +704,7 @@ static int coreaudio_pause(void)
 static int coreaudio_unpause(void)
 {
 	pthread_mutex_unlock(&mutex);
+	d_print("unpausing\n");
 	OSStatus err = AudioOutputUnitStart(coreaudio_audio_unit);
 	if (err != noErr) {
 		errno = ENODEV;
