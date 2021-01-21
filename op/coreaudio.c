@@ -67,7 +67,6 @@ static OSStatus coreaudio_play_callback(void *user_data,
 					UInt32 nframes,
 					AudioBufferList *buflist)
 {
-
 	if (!pthread_mutex_trylock(&mutex)) {
 		d_print("callback starts\n");
 
