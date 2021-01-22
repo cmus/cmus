@@ -83,7 +83,6 @@ static OSStatus coreaudio_play_callback(void *user_data,
 			// even if no op_drop() implemented?
 		}
 		d_print("stopping: %d\n", stopping);
-		d_print("unblocked\n");
 		pthread_mutex_unlock(&mutex);
 		finished = true; // let write()/flush() go
 	} else {
