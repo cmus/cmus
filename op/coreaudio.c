@@ -76,16 +76,16 @@ static OSStatus coreaudio_play_callback(void *user_data,
 		pthread_cond_wait(&cond, &mutex);
 		d_print("unblocked\n");
 		pthread_mutex_unlock(&mutex);
-	} else {
-		if (stopping)
-			d_print("stopping\n");
-		else
-			d_print("main locked\n");
-		return kAudioUnitErr_NoConnection;
-	}
+	}/*  else { */
+	/* 	if (stopping) */
+	/* 		d_print("stopping\n"); */
+	/* 	else */
+	/* 		d_print("main locked\n"); */
+	/* 	return kAudioUnitErr_NoConnection; */
+	/* } */
 
-	if (coreaudio_buffer_size == buflist->mBuffers[0].mDataByteSize)
-		coreaudio_buffer = NULL;
+	/* if (coreaudio_buffer_size == buflist->mBuffers[0].mDataByteSize) */
+	/* 	coreaudio_buffer = NULL; */
 	if (coreaudio_buffer != NULL && coreaudio_buffer_size > 0)
 		memset(coreaudio_buffer, 0, coreaudio_buffer_size);
 	coreaudio_buffer_size = 0; // this must be ensured before we let flush() go
@@ -97,9 +97,9 @@ static OSStatus coreaudio_play_callback(void *user_data,
 		d_print("toggled\n");
 	}
 
-	if (coreaudio_buffer == NULL)
-		return kAudioUnitErr_NoConnection;
-	else
+	/* if (coreaudio_buffer == NULL) */
+	/* 	return kAudioUnitErr_NoConnection; */
+	/* else */
 		return noErr;
 }
 
