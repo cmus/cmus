@@ -74,7 +74,6 @@ static OSStatus coreaudio_play_callback(void *user_data,
 		coreaudio_buffer_size = buflist->mBuffers[0].mDataByteSize;
 		pthread_cond_wait(&cond, &mutex);
 		if (stopping) { // unblocked by flush(); do not move outer
-			d_print("stopping\n");
 			/* if (coreaudio_buffer_size == buflist->mBuffers[0].mDataByteSize) */
 			/* 	coreaudio_buffer = NULL; */
 			if (coreaudio_buffer != NULL && coreaudio_buffer_size > 0) // always larger?
@@ -82,8 +81,8 @@ static OSStatus coreaudio_play_callback(void *user_data,
 			coreaudio_buffer_size = 0; // this must be ensured before we let flush() go
 			stopping = false; // let flush() go
 			while (!stopping); // wait until it's ready for the next callback
-			d_print("toggled\n");
 		}
+		d_print("stopping: %d\n");
 		d_print("unblocked\n");
 		pthread_mutex_unlock(&mutex);
 	} else {
@@ -508,16 +507,18 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 }
 
 static void coreaudio_flush_buffer() {
+	int ret;
 	stopping = true; // signifies stopping
-	if (pthread_mutex_trylock(&mutex)) { // callback locked
+
+	if (ret = pthread_mutex_trylock(&mutex)) { // callback locked
 		while (stopping) // wait for unblocked signal
 			pthread_cond_signal(&cond);
 		// callback unlocked
-		d_print("toggling\n");
 		stopping = true; // singal received; toggle back
 	} else {
 		pthread_mutex_unlock(&mutex);
 	}
+	d_print("flushed: %d\n", ret);
 }
 
 static int coreaudio_close(void)
@@ -707,7 +708,6 @@ static int coreaudio_pause(void)
 	OSStatus err = AudioOutputUnitStop(coreaudio_audio_unit);
 	coreaudio_flush_buffer();
 	if (err != noErr) {
-		d_print("pause failed\n");
 		errno = ENODEV;
 		return -OP_ERROR_ERRNO;
 	}
@@ -717,7 +717,6 @@ static int coreaudio_pause(void)
 static int coreaudio_unpause(void)
 {
 	stopping = false;
-	d_print("unpausing\n");
 	OSStatus err = AudioOutputUnitStart(coreaudio_audio_unit);
 	if (err != noErr) {
 		errno = ENODEV;
