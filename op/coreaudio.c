@@ -87,6 +87,7 @@ static OSStatus coreaudio_play_callback(void *user_data,
 		pthread_mutex_unlock(&mutex);
 	} else {
 	        memset(buflist->mBuffers[0].mData, 0, buflist->mBuffers[0].mDataByteSize);
+		d_print("stopping: %d\n", stopping);
 		return noErr;
 		//return kAudioUnitErr_NoConnection;
 	}
