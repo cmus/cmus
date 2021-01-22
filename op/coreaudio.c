@@ -79,6 +79,7 @@ static OSStatus coreaudio_play_callback(void *user_data,
 		coreaudio_buffer_size = 0; // post-flush stopping
 		coreaudio_buffer = NULL; // post-flush stopping
 	}
+	d_print("stopping: %d\n", stopping);
 	pthread_mutex_unlock(&mutex);
 	if (coreaudio_buffer == NULL)
 		memset(buflist->mBuffers[0].mData, 0, buflist->mBuffers[0].mDataByteSize);
@@ -507,7 +508,7 @@ static void coreaudio_flush_buffer() {
 			coreaudio_buffer = NULL;
 		}
 	}
-	coreaudio_buffer_size = 0; // always before signal
+	coreaudio_buffer_size = 0; // always before signal (i.e. next non-stopping callback)
 	pthread_cond_signal(&cond); // deals with current callback (if any)
 	pthread_mutex_unlock(&mutex);
 }
@@ -539,9 +540,9 @@ static int coreaudio_write(const char *buf, int cnt)
 	d_print("written to coreaudio: %d\n", cnt);
 	coreaudio_buffer_size -= cnt;
 	if (coreaudio_buffer_size == 0) {
-		pthread_mutex_lock(&mutex);
+		pthread_mutex_lock(&mutex); // necessary?
 		pthread_cond_signal(&cond);
-		pthread_mutex_unlock(&mutex);
+		pthread_mutex_unlock(&mutex); // necessary?
 		partial = false;
 	} else {
 		coreaudio_buffer += cnt;
