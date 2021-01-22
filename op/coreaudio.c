@@ -507,9 +507,13 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 }
 
 static void coreaudio_flush_buffer() {
-	stopping = true; // signifies stopping
+	int ret = pthread_mutex_trylock(&mutex);
+	stopping = true; // signifies stopping; after trylock to avoid race:
+	/* callback checked stopping */
+	/* full main locked flush */
+	/* callback locked and wait forever */
 
-	if (pthread_mutex_trylock(&mutex)) { // callback locked
+	if (ret) { // callback locked
 		finished = false;
 		while (!finished) // wait until unblocked
 			pthread_cond_signal(&cond);
