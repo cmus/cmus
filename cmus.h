@@ -93,4 +93,6 @@ void cmus_track_request_init(void);
 int cmus_can_raise_vte(void);
 void cmus_raise_vte(void);
 
+bool cmus_queue_active(void);
+
 #endif

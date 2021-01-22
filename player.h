@@ -46,7 +46,8 @@ enum replaygain {
 	RG_TRACK,
 	RG_ALBUM,
 	RG_TRACK_PREFERRED,
-	RG_ALBUM_PREFERRED
+	RG_ALBUM_PREFERRED,
+	RG_SMART
 };
 
 struct player_info {

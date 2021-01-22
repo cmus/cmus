@@ -29,6 +29,8 @@
 #include "options.h"
 #include "mpris.h"
 #include "cmus.h"
+#include "lib.h"
+#include "play_queue.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -354,7 +356,18 @@ static void update_rg_scale(void)
 	if (!player_info_priv.ti || !replaygain)
 		return;
 
-	if (replaygain == RG_TRACK || replaygain == RG_TRACK_PREFERRED) {
+	if (replaygain == RG_SMART) {
+		if (play_library && aaa_mode == AAA_MODE_ALBUM 
+			&& !shuffle && !cmus_queue_active()) {
+			d_print("used ALBUM gain\n");
+			gain = player_info_priv.ti->rg_album_gain;
+			peak = player_info_priv.ti->rg_album_peak;
+		} else {
+			d_print("used TRACK gain\n");
+			gain = player_info_priv.ti->rg_track_gain;
+			peak = player_info_priv.ti->rg_track_peak;
+		}
+	} else if (replaygain == RG_TRACK || replaygain == RG_TRACK_PREFERRED) {
 		gain = player_info_priv.ti->rg_track_gain;
 		peak = player_info_priv.ti->rg_track_peak;
 	} else {
@@ -369,6 +382,15 @@ static void update_rg_scale(void)
 		} else if (replaygain == RG_ALBUM_PREFERRED) {
 			gain = player_info_priv.ti->rg_track_gain;
 			peak = player_info_priv.ti->rg_track_peak;
+		} else if (replaygain == RG_SMART) {
+			if (play_library && aaa_mode == AAA_MODE_ALBUM 
+				&& !shuffle && !cmus_queue_active()) {
+				gain = player_info_priv.ti->rg_track_gain;
+				peak = player_info_priv.ti->rg_track_peak;
+			} else {
+				gain = player_info_priv.ti->rg_album_gain;
+				peak = player_info_priv.ti->rg_album_peak;
+			}
 		}
 	}
 

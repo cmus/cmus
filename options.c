@@ -751,7 +751,7 @@ static void toggle_repeat(void *data)
 }
 
 static const char * const replaygain_names[] = {
-	"disabled", "track", "album", "track-preferred", "album-preferred", NULL
+	"disabled", "track", "album", "track-preferred", "album-preferred", "smart", NULL
 };
 
 static void get_replaygain(void *data, char *buf, size_t size)
