@@ -44,9 +44,8 @@ static AudioDeviceID coreaudio_device_id = kAudioDeviceUnknown;
 static AudioStreamBasicDescription coreaudio_format_description;
 static AudioUnit coreaudio_audio_unit = NULL;
 static UInt32 coreaudio_buffer_size = 0;
-static char *coreaudio_buffer = NULL;
 static int write_cnt = 0;
-static char *write_buf = NULL;
+static const char *write_buf = NULL;
 static UInt32 coreaudio_stereo_channels[2];
 static int coreaudio_mixer_pipe_in = 0;
 static int coreaudio_mixer_pipe_out = 0;
@@ -77,11 +76,11 @@ static OSStatus coreaudio_play_callback(void *user_data,
 	while (coreaudio_buffer_size > 0) {
 		if (stopping)
 			break;
-		if (write_cnt > 0) {
+		if (write_cnt != 0) {
 			memcpy(buflist->mBuffers[0].mData, write_buf, write_cnt);
 			coreaudio_buffer_size -= write_cnt;
-			while (write_cnt != 0)
-				pthread_cond_signal(&cond);
+			// while_cnt = 0;
+			do pthread_cond_signal(&cond) while (write_cnt != 0);
 		}
 	}
 	d_print("coreaudio_buffer_size: %d\n", coreaudio_buffer_size);
