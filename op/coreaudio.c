@@ -74,10 +74,10 @@ static OSStatus coreaudio_play_callback(void *user_data,
 		d_print("mDataByteSize: %d\n", buflist->mBuffers[0].mDataByteSize);
 		coreaudio_buffer_size = buflist->mBuffers[0].mDataByteSize;
 		pthread_cond_wait(&cond, &mutex);
-		if (stopping) { // unblocked by flush(); do not move outer
+		if (coreaudio_buffer_size > 0) { // unblocked by flush(); do not move outer
 			/* if (coreaudio_buffer_size == buflist->mBuffers[0].mDataByteSize) */
 			/* 	coreaudio_buffer = NULL; */
-			if (coreaudio_buffer != NULL && coreaudio_buffer_size > 0) // always larger?
+			if (coreaudio_buffer != NULL)
 				memset(coreaudio_buffer, 0, coreaudio_buffer_size);
 			coreaudio_buffer_size = 0; // this must be ensured before we let flush() go
 			// even if no op_drop() implemented?
