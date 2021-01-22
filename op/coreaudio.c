@@ -497,7 +497,8 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 
 static void coreaudio_flush_buffer() {
 	pthread_mutex_lock(&mutex); // always succeed; wait until cond_wait unlock or right away
-	stopping = true; // deals with later callback(s)
+	if (coreaudio_buffer != NULL) // drop-ready; be careful
+		stopping = true; // deals with later callback(s)
 	// TODO: nullify untouched buffer
 	if (coreaudio_buffer != NULL && coreaudio_buffer_size > 0) {
 		memset(coreaudio_buffer, 0, coreaudio_buffer_size);
@@ -524,8 +525,6 @@ static int coreaudio_drop(void)
 {
 	/* coreaudio_buffer = NULL; */
 	/* coreaudio_flush_buffer(); */
-	/* coreaudio_buffer_size = 0; // always 0? */
-	/* stopping = false; */
 	return OP_ERROR_SUCCESS;
 }
 
@@ -534,10 +533,13 @@ static int coreaudio_write(const char *buf, int cnt)
 	memcpy(coreaudio_buffer, buf, cnt);
 	d_print("written to coreaudio: %d\n", cnt);
 	coreaudio_buffer_size -= cnt;
-	if (coreaudio_buffer_size == 0)
+	if (coreaudio_buffer_size == 0) {
+		pthread_mutex_lock(&mutex);
 		pthread_cond_signal(&cond);
-	else
+		pthread_mutex_unlock(&mutex);
+	} else {
 		coreaudio_buffer += cnt;
+	}
 	return cnt;
 }
 
