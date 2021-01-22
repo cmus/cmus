@@ -30,7 +30,6 @@
 #include "mpris.h"
 #include "cmus.h"
 #include "lib.h"
-#include "play_queue.h"
 
 #include <stdio.h>
 #include <stdlib.h>
