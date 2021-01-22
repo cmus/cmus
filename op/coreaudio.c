@@ -51,7 +51,6 @@ static int coreaudio_mixer_pipe_out = 0;
 static pthread_mutex_t mutex;
 static pthread_cond_t cond;
 static bool stopping = false;
-static bool locked = false;
 
 static OSStatus coreaudio_device_volume_change_listener(AudioObjectID inObjectID,
 							UInt32 inNumberAddresses,
@@ -513,15 +512,15 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 }
 
 static void coreaudio_flush_buffer() {
+	stopping = true; // signifies stopping
 	if (pthread_mutex_trylock(&mutex)) { // callback locked
-		stopping = true; // signifies stopping
 		while (stopping) // wait for unblocked signal
 			pthread_cond_signal(&cond);
 		// callback unlocked
 		d_print("toggling\n");
 		stopping = true; // singal received; toggle back
 	} else {
-		locked = true; // main locked
+		pthread_mutex_unlock(&mutex);
 	}
 }
 
@@ -532,10 +531,6 @@ static int coreaudio_close(void)
 
 	AudioUnitUninitialize(coreaudio_audio_unit);
 	pthread_cond_destroy(&cond);
-	if (locked) {
-		locked = false;
-		pthread_mutex_unlock(&mutex);
-	}
 	pthread_mutex_destroy(&mutex);
 	stopping = false;
 
@@ -730,10 +725,6 @@ static int coreaudio_pause(void)
 
 static int coreaudio_unpause(void)
 {
-	if (locked) {
-		locked = false;
-		pthread_mutex_unlock(&mutex);
-	}
 	stopping = false;
 	d_print("unpausing\n");
 	OSStatus err = AudioOutputUnitStart(coreaudio_audio_unit);
