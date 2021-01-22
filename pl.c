@@ -647,6 +647,9 @@ struct track_info *pl_play_selected_row(void)
 
 	int was_in_track_window = pl_cursor_in_track_window;
 
+	struct playlist *prev_pl = pl_playing;
+	struct simple_track *prev_track = pl_playing_track;
+
 	struct track_info *rv = NULL;
 
 	if (!pl_cursor_in_track_window) {
@@ -659,9 +662,6 @@ struct track_info *pl_play_selected_row(void)
 
 	if (!rv)
 		rv = pl_play_selected_track();
-
-	struct playlist *prev_pl = pl_playing;
-	struct simple_track *prev_track = pl_playing_track;
 
 	if (shuffle && rv && (pl_playing == prev_pl) && prev_track) {
 		struct shuffle_track *prev_st = simple_track_to_shuffle_track(prev_track);
