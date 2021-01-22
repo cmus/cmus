@@ -75,12 +75,12 @@ static OSStatus coreaudio_play_callback(void *user_data,
 		pthread_cond_wait(&cond, &mutex);
 		if (stopping) { // unblocked by flush(); do not move outer
 			d_print("stopping\n");
-			stopping = false; // let flush() go
 			/* if (coreaudio_buffer_size == buflist->mBuffers[0].mDataByteSize) */
 			/* 	coreaudio_buffer = NULL; */
 			if (coreaudio_buffer != NULL && coreaudio_buffer_size > 0) // always larger?
 				memset(coreaudio_buffer, 0, coreaudio_buffer_size);
 			coreaudio_buffer_size = 0; // this must be ensured before we let flush() go
+			stopping = false; // let flush() go
 			while (!stopping); // wait until it's ready for the next callback
 			d_print("toggled\n");
 		}
