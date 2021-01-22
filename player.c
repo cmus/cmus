@@ -358,11 +358,9 @@ static void update_rg_scale(void)
 	if (replaygain == RG_SMART) {
 		if (play_library && aaa_mode == AAA_MODE_ALBUM 
 			&& !shuffle && !cmus_queue_active()) {
-			d_print("used ALBUM gain\n");
 			gain = player_info_priv.ti->rg_album_gain;
 			peak = player_info_priv.ti->rg_album_peak;
 		} else {
-			d_print("used TRACK gain\n");
 			gain = player_info_priv.ti->rg_track_gain;
 			peak = player_info_priv.ti->rg_track_peak;
 		}
