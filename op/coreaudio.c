@@ -508,6 +508,7 @@ static void coreaudio_flush_buffer() {
 			coreaudio_buffer = NULL;
 		}
 	}
+	stopping = true; // debug
 	coreaudio_buffer_size = 0; // always before signal (i.e. next non-stopping callback)
 	pthread_cond_signal(&cond); // deals with current callback (if any)
 	pthread_mutex_unlock(&mutex);
@@ -531,6 +532,7 @@ static int coreaudio_drop(void)
 	/* coreaudio_buffer = NULL; */
 	/* coreaudio_flush_buffer(); */
 	/* while (coreaudio_buffer == NULL); // block for next flush() */
+	/* set stopping false won't be problematic? */
 	return OP_ERROR_SUCCESS;
 }
 
