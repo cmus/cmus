@@ -51,6 +51,7 @@ static int coreaudio_mixer_pipe_out = 0;
 static pthread_mutex_t mutex;
 static pthread_cond_t cond;
 static bool stopping = false;
+static bool partial = false;
 
 static OSStatus coreaudio_device_volume_change_listener(AudioObjectID inObjectID,
 							UInt32 inNumberAddresses,
@@ -69,14 +70,14 @@ static OSStatus coreaudio_play_callback(void *user_data,
 					AudioBufferList *buflist)
 {
 	pthread_mutex_lock(&mutex);
-	coreaudio_buffer = buflist->mBuffers[0].mData;
 	d_print("mDataByteSize: %d\n", buflist->mBuffers[0].mDataByteSize);
-	coreaudio_buffer_size = buflist->mBuffers[0].mDataByteSize;
 	if (!stopping) {
+		coreaudio_buffer = buflist->mBuffers[0].mData;
+		coreaudio_buffer_size = buflist->mBuffers[0].mDataByteSize;
 		pthread_cond_wait(&cond, &mutex);
 	} else {
-		coreaudio_buffer_size = 0;
-		coreaudio_buffer = NULL;
+		coreaudio_buffer_size = 0; // post-flush stopping
+		coreaudio_buffer = NULL; // post-flush stopping
 	}
 	pthread_mutex_unlock(&mutex);
 	if (coreaudio_buffer == NULL)
@@ -497,11 +498,14 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 
 static void coreaudio_flush_buffer() {
 	pthread_mutex_lock(&mutex); // always succeed; wait until cond_wait unlock or right away
-	if (coreaudio_buffer != NULL) // drop-ready; be careful
+	if (coreaudio_buffer != NULL) { // drop-ready; be careful
 		stopping = true; // deals with later callback(s)
-	// TODO: nullify untouched buffer
-	if (coreaudio_buffer != NULL && coreaudio_buffer_size > 0) {
-		memset(coreaudio_buffer, 0, coreaudio_buffer_size);
+		if (partial) {
+			memset(coreaudio_buffer, 0, coreaudio_buffer_size);
+			partial = false;
+		} else if (coreaudio_buffer_size > 0) {
+			coreaudio_buffer = NULL;
+		}
 	}
 	coreaudio_buffer_size = 0; // always before signal
 	pthread_cond_signal(&cond); // deals with current callback (if any)
@@ -525,6 +529,7 @@ static int coreaudio_drop(void)
 {
 	/* coreaudio_buffer = NULL; */
 	/* coreaudio_flush_buffer(); */
+	/* while (coreaudio_buffer == NULL); // block for next flush() */
 	return OP_ERROR_SUCCESS;
 }
 
@@ -537,8 +542,10 @@ static int coreaudio_write(const char *buf, int cnt)
 		pthread_mutex_lock(&mutex);
 		pthread_cond_signal(&cond);
 		pthread_mutex_unlock(&mutex);
+		partial = false;
 	} else {
 		coreaudio_buffer += cnt;
+		partial = true;
 	}
 	return cnt;
 }
