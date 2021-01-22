@@ -51,6 +51,7 @@ static int coreaudio_mixer_pipe_out = 0;
 static pthread_mutex_t mutex;
 static pthread_cond_t cond;
 static bool stopping = false;
+static bool finished = true;
 
 static OSStatus coreaudio_device_volume_change_listener(AudioObjectID inObjectID,
 							UInt32 inNumberAddresses,
@@ -79,12 +80,12 @@ static OSStatus coreaudio_play_callback(void *user_data,
 			if (coreaudio_buffer != NULL && coreaudio_buffer_size > 0) // always larger?
 				memset(coreaudio_buffer, 0, coreaudio_buffer_size);
 			coreaudio_buffer_size = 0; // this must be ensured before we let flush() go
-			stopping = false; // let flush() go
-			while (!stopping); // wait until it's ready for the next callback
+			// even if no op_drop() implemented?
 		}
 		d_print("stopping: %d\n", stopping);
 		d_print("unblocked\n");
 		pthread_mutex_unlock(&mutex);
+		finished = true; // let write()/flush() go
 	} else {
 	        memset(buflist->mBuffers[0].mData, 0, buflist->mBuffers[0].mDataByteSize);
 		d_print("stopping: %d\n", stopping);
@@ -507,28 +508,22 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 	return OP_ERROR_SUCCESS;
 }
 
-static int coreaudio_flush_buffer() {
-	int ret;
+static void coreaudio_flush_buffer() {
 	stopping = true; // signifies stopping
 
 	if (ret = pthread_mutex_trylock(&mutex)) { // callback locked
-		while (stopping) // wait for unblocked signal
+		finished = false;
+		while (!finished); // wait until unblocked
 			pthread_cond_signal(&cond);
-		// callback unlocked
-		stopping = true; // singal received; toggle back
 	} else {
 		pthread_mutex_unlock(&mutex);
 	}
-	return ret;
 }
 
 static int coreaudio_close(void)
 {
-	int flushed;
-
 	AudioOutputUnitStop(coreaudio_audio_unit);
-	flushed = coreaudio_flush_buffer();
-	d_print("flushed: %d\n", flushed);
+	coreaudio_flush_buffer();
 
 	AudioUnitUninitialize(coreaudio_audio_unit);
 	pthread_cond_destroy(&cond);
@@ -552,10 +547,13 @@ static int coreaudio_write(const char *buf, int cnt)
 	memcpy(coreaudio_buffer, buf, cnt);
 	d_print("written to coreaudio: %d\n", cnt);
 	coreaudio_buffer_size -= cnt;
-	if (coreaudio_buffer_size == 0)
+	if (coreaudio_buffer_size == 0) {
+		finish = false;
 		pthread_cond_signal(&cond);
-	else
+	        while (!finished); // wait until unlocked for flush mutex check
+	} else {
 		coreaudio_buffer += cnt;
+	}
 	return cnt;
 }
 
@@ -709,11 +707,8 @@ static int coreaudio_mixer_get_fds(int *fds)
 
 static int coreaudio_pause(void)
 {
-	int flushed;
-
 	OSStatus err = AudioOutputUnitStop(coreaudio_audio_unit);
-	flushed = coreaudio_flush_buffer();
-	d_print("flushed: %d\n", flushed);
+	coreaudio_flush_buffer();
 	if (err != noErr) {
 		errno = ENODEV;
 		return -OP_ERROR_ERRNO;
