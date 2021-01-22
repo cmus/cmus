@@ -82,7 +82,7 @@ static OSStatus coreaudio_play_callback(void *user_data,
 			stopping = false; // let flush() go
 			while (!stopping); // wait until it's ready for the next callback
 		}
-		d_print("stopping: %d\n");
+		d_print("stopping: %d\n", stopping);
 		d_print("unblocked\n");
 		pthread_mutex_unlock(&mutex);
 	} else {
@@ -506,7 +506,7 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 	return OP_ERROR_SUCCESS;
 }
 
-static void coreaudio_flush_buffer() {
+static int coreaudio_flush_buffer() {
 	int ret;
 	stopping = true; // signifies stopping
 
@@ -518,13 +518,16 @@ static void coreaudio_flush_buffer() {
 	} else {
 		pthread_mutex_unlock(&mutex);
 	}
-	d_print("flushed: %d\n", ret);
+	return ret;
 }
 
 static int coreaudio_close(void)
 {
+	int flushed;
+
 	AudioOutputUnitStop(coreaudio_audio_unit);
-	coreaudio_flush_buffer();
+	flushed = coreaudio_flush_buffer();
+	d_print("flushed: %d\n", flushed);
 
 	AudioUnitUninitialize(coreaudio_audio_unit);
 	pthread_cond_destroy(&cond);
@@ -705,8 +708,11 @@ static int coreaudio_mixer_get_fds(int *fds)
 
 static int coreaudio_pause(void)
 {
+	int flushed;
+
 	OSStatus err = AudioOutputUnitStop(coreaudio_audio_unit);
-	coreaudio_flush_buffer();
+	flushed = coreaudio_flush_buffer();
+	d_print("flushed: %d\n", flushed);
 	if (err != noErr) {
 		errno = ENODEV;
 		return -OP_ERROR_ERRNO;
