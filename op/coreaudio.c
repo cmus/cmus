@@ -558,10 +558,6 @@ static int coreaudio_drop(void)
 
 static int coreaudio_write(const char *buf, int cnt)
 {
-	if (coreaudio_buffer_size == 0) {
-		d_print("potential unexpected race!\n");
-		return 0;
-	}
 	memcpy(coreaudio_buffer, buf, cnt);
 	d_print("written to coreaudio: %d\n", cnt);
 	coreaudio_buffer_size -= cnt;
