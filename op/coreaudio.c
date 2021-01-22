@@ -73,27 +73,23 @@ static OSStatus coreaudio_play_callback(void *user_data,
 		d_print("mDataByteSize: %d\n", buflist->mBuffers[0].mDataByteSize);
 		coreaudio_buffer_size = buflist->mBuffers[0].mDataByteSize;
 		pthread_cond_wait(&cond, &mutex);
+		if (stopping) { // unblocked by flush(); do not move outer
+			d_print("stopping\n");
+			stopping = false; // let flush() go
+			/* if (coreaudio_buffer_size == buflist->mBuffers[0].mDataByteSize) */
+			/* 	coreaudio_buffer = NULL; */
+			if (coreaudio_buffer != NULL && coreaudio_buffer_size > 0) // always larger?
+				memset(coreaudio_buffer, 0, coreaudio_buffer_size);
+			coreaudio_buffer_size = 0; // this must be ensured before we let flush() go
+			while (!stopping); // wait until it's ready for the next callback
+			d_print("toggled\n");
+		}
 		d_print("unblocked\n");
 		pthread_mutex_unlock(&mutex);
-	}/*  else { */
-	/* 	if (stopping) */
-	/* 		d_print("stopping\n"); */
-	/* 	else */
-	/* 		d_print("main locked\n"); */
-	/* 	return kAudioUnitErr_NoConnection; */
-	/* } */
-
-	/* if (coreaudio_buffer_size == buflist->mBuffers[0].mDataByteSize) */
-	/* 	coreaudio_buffer = NULL; */
-	if (coreaudio_buffer != NULL && coreaudio_buffer_size > 0)
-		memset(coreaudio_buffer, 0, coreaudio_buffer_size);
-	coreaudio_buffer_size = 0; // this must be ensured before we let flush() go
-
-	if (stopping) {
-		d_print("stopping\n");
-		stopping = false; // let flush() go
-		while (!stopping); // wait until it's ready for the next callback
-		d_print("toggled\n");
+	} else {
+	        memset(buflist->mBuffers[0].mData, 0, buflist->mBuffers[0].mDataByteSize);
+		return noErr;
+		//return kAudioUnitErr_NoConnection;
 	}
 
 	/* if (coreaudio_buffer == NULL) */
