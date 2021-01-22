@@ -544,15 +544,15 @@ static int coreaudio_close(void)
 
 static int coreaudio_drop(void)
 {
-	coreaudio_buffer = NULL;
-	coreaudio_flush_buffer();
-	if (locked) {
-		locked = false;
-		pthread_mutex_unlock(&mutex);
-	} else {
-		stopping = false;
-		d_print("unstopped\n");
-	}
+	/* coreaudio_buffer = NULL; */
+	/* coreaudio_flush_buffer(); */
+	/* if (locked) { */
+	/* 	locked = false; */
+	/* 	pthread_mutex_unlock(&mutex); */
+	/* } else { */
+	/* 	stopping = false; */
+	/* 	d_print("unstopped\n"); */
+	/* } */
 	return OP_ERROR_SUCCESS;
 }
 
