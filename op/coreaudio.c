@@ -52,6 +52,7 @@ static pthread_mutex_t mutex;
 static pthread_cond_t cond;
 static bool stopping = false;
 static bool partial = false;
+static bool hmm = false;
 
 static OSStatus coreaudio_device_volume_change_listener(AudioObjectID inObjectID,
 							UInt32 inNumberAddresses,
@@ -71,10 +72,11 @@ static OSStatus coreaudio_play_callback(void *user_data,
 {
 	pthread_mutex_lock(&mutex);
 	d_print("mDataByteSize: %d\n", buflist->mBuffers[0].mDataByteSize);
-	if (!stopping) {
+	if (hmm = !stopping) {
 		coreaudio_buffer = buflist->mBuffers[0].mData;
 		coreaudio_buffer_size = buflist->mBuffers[0].mDataByteSize;
 		pthread_cond_wait(&cond, &mutex);
+		hmm = false;
 	} else {
 		coreaudio_buffer = NULL; // post-flush stopping
 	}
@@ -510,7 +512,8 @@ static void coreaudio_flush_buffer() {
 	}
 	stopping = true; // debug
 	coreaudio_buffer_size = 0; // always before signal (i.e. next non-stopping callback)
-	pthread_cond_signal(&cond); // deals with current callback (if any)
+	while (hmm)
+		pthread_cond_signal(&cond); // deals with current callback (if any)
 	pthread_mutex_unlock(&mutex);
 }
 
