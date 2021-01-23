@@ -74,33 +74,35 @@ static OSStatus coreaudio_play_callback(void *user_data,
 	//stopping set
 	//signal until (!callback_locked): exit right away but we have stopping set
 	callback_locked = !pthread_mutex_lock(&mutex);
-	d_print("callback_locked: %d\n", callback_locked);
-	if (callback_locked) {
-		//stopping set
-		//signal until (!callback_locked): stops when callback unlocked
-		if (stopping) {
-			callback_locked = !!pthread_mutex_unlock(&mutex);
-		} else {
-			// stopping set
-			// signal until (!callback_locked): stops when callback unlocked
-			coreaudio_buffer = buflist->mBuffers[0].mData;
-			coreaudio_buffer_size = buflist->mBuffers[0].mDataByteSize;
-			pthread_cond_wait(&cond, &mutex);
-			// stopping set
-			// signal until (!callback_locked): stops when callback unlocked
-			if (dropping) {
-				dropping = false;
-			} else if (coreaudio_buffer_size == 0) {
-				ret = false;
-			} else if (coreaudio_buffer_size < buflist->mBuffers[0].mDataByteSize) {
-				memset(coreaudio_buffer, 0, coreaudio_buffer_size);
-				coreaudio_buffer_size = 0;
-				ret = false;
-			}
-			callback_locked = !!pthread_mutex_unlock(&mutex);
+	//stopping set
+	//signal until (!callback_locked): wait until unlocked if callback locked
+	d_print("pre-wait: %d\n", callback_locked);
+	if (callback_locked && !stopping) {
+		// stopping set
+		// signal until (!callback_locked): stops when callback unlocked
+		coreaudio_buffer = buflist->mBuffers[0].mData;
+		coreaudio_buffer_size = buflist->mBuffers[0].mDataByteSize;
+		pthread_cond_wait(&cond, &mutex);
+		// stopping set
+		// signal until (!callback_locked): stops when callback unlocked
+		if (dropping) {
+			dropping = false;
+		} else if (coreaudio_buffer_size == 0) {
+			ret = false;
+		} else if (coreaudio_buffer_size < buflist->mBuffers[0].mDataByteSize) {
+			memset(coreaudio_buffer, 0, coreaudio_buffer_size);
+			coreaudio_buffer_size = 0;
+			ret = false;
 		}
+		// do not unlock here; could be stopping
 	}
-	d_print("callback_locked: %d\n", callback_locked);
+	// stopping set
+	// signal until (!callback_locked): either lock failed or stops when callback unlocked
+
+	d_print("pre-unlock: %d\n", callback_locked);
+	if (callback_locked) // includes stopping
+		callback_locked = !!pthread_mutex_unlock(&mutex);
+	d_print("post-unlock: %d\n", callback_locked);
 
 	d_print("stopping: %d\n", stopping);
 
