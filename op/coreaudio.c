@@ -80,7 +80,7 @@ static OSStatus coreaudio_play_callback(void *user_data,
 			memcpy(buflist->mBuffers[0].mData, write_buf, write_cnt);
 			coreaudio_buffer_size -= write_cnt;
 			// while_cnt = 0;
-			do pthread_cond_signal(&cond) while (write_cnt != 0);
+			do pthread_cond_signal(&cond); while (write_cnt != 0);
 		}
 	}
 	d_print("coreaudio_buffer_size: %d\n", coreaudio_buffer_size);
