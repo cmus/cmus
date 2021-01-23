@@ -391,6 +391,10 @@ void lib_reshuffle(void)
 {
 	shuffle_list_reshuffle(&lib_shuffle_root);
 	shuffle_list_reshuffle(&lib_album_shuffle_root);
+	if (lib_cur_track) {
+		shuffle_insert(&lib_shuffle_root, NULL, &lib_cur_track->simple_track.shuffle_info);
+		shuffle_insert(&lib_album_shuffle_root, NULL, &lib_cur_track->album->shuffle_info);
+	}
 }
 
 void lib_sort_artists(void) {

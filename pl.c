@@ -691,8 +691,11 @@ void pl_select_playing_track(void)
 
 void pl_reshuffle(void)
 {
-	if (pl_playing)
+	if (pl_playing) {
 		shuffle_list_reshuffle(&pl_playing->shuffle_root);
+		if (pl_playing_track)
+			shuffle_insert(&pl_playing->shuffle_root, NULL, &pl_playing_track->shuffle_info);
+	}
 }
 
 void pl_get_sort_str(char *buf, size_t size)
