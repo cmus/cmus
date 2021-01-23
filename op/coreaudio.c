@@ -526,9 +526,9 @@ static void coreaudio_flush_buffer() {
 
 static int coreaudio_close(void)
 {
+	AudioOutputUnitStop(coreaudio_audio_unit);
 	stopping = true;
 	coreaudio_flush_buffer();
-	AudioOutputUnitStop(coreaudio_audio_unit);
 
 	AudioUnitUninitialize(coreaudio_audio_unit);
 	pthread_cond_destroy(&cond);
