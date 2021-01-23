@@ -2634,6 +2634,7 @@ struct command commands[] = {
 	{ "rand",                  cmd_rand,             0, 0,  NULL,                 0, 0          },
 	{ "quit",                  cmd_quit,             0, 1,  NULL,                 0, 0          },
 	{ "refresh",               cmd_refresh,          0, 0,  NULL,                 0, 0          },
+	{ "reshuffle",             cmd_reshuffle,        0, 0,  NULL,                 0, 0          },
 	{ "run",                   cmd_run,              1, -1, expand_program_paths, 0, CMD_UNSAFE },
 	{ "save",                  cmd_save,             0, 1,  expand_load_save,     0, CMD_UNSAFE },
 	{ "search-b-start",        cmd_search_b_start,   0, 0,  NULL,                 0, 0          },
@@ -2644,7 +2645,7 @@ struct command commands[] = {
 	{ "set",                   cmd_set,              1, 1,  expand_options,       0, 0          },
 	{ "shell",                 cmd_shell,            1, -1, expand_program_paths, 0, CMD_UNSAFE },
 	{ "showbind",              cmd_showbind,         1, 1,  expand_unbind_args,   0, 0          },
-	{ "shuffle",               cmd_reshuffle,        0, 0,  NULL,                 0, 0          },
+	{ "shuffle",               cmd_reshuffle,        0, 0,  NULL,                 0, CMD_HIDDEN },
 	{ "source",                cmd_source,           1, 1,  expand_files,         0, CMD_UNSAFE },
 	{ "toggle",                cmd_toggle,           1, 1,  expand_toptions,      0, 0          },
 	{ "tqueue",                cmd_tqueue,           0, 1,  NULL,                 0, 0          },
@@ -2696,7 +2697,7 @@ static void expand_commands(const char *str)
 	len = strlen(str);
 	pos = 0;
 	for (i = 0; commands[i].name; i++) {
-		if (strncmp(str, commands[i].name, len) == 0)
+		if (strncmp(str, commands[i].name, len) == 0 && !(commands[i].flags & CMD_HIDDEN))
 			tails[pos++] = xstrdup(commands[i].name + len);
 	}
 	if (pos > 0) {
