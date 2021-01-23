@@ -90,6 +90,8 @@ static OSStatus coreaudio_play_callback(void *user_data,
 			// signal until (!callback_locked): stops when callback unlocked
 			if (dropping) {
 				dropping = false;
+			} else if (coreaudio_buffer_size == 0) {
+				ret = false;
 			} else if (coreaudio_buffer_size < buflist->mBuffers[0].mDataByteSize) {
 				memset(coreaudio_buffer, 0, coreaudio_buffer_size);
 				coreaudio_buffer_size = 0;
