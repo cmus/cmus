@@ -277,6 +277,8 @@ static int int_val(const char *key, const struct format_option *fopts, char *buf
 	if (fo && !fo->empty) {
 		if (fo->type == FO_INT)
 			val = fo->fo_int;
+		else if (fo->type == FO_STR)
+			val = strlen(fo->fo_str);
 	}
 	return val;
 }
