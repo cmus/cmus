@@ -1101,7 +1101,7 @@ repeat (false)
 repeat_current (false)
 	Repeat current track forever.
 
-replaygain (disabled) [track, album, track-preferred, album-preferred]
+replaygain (disabled) [track, album, track-preferred, album-preferred, smart]
 	Enable Replay Gain.
 
 replaygain_limit (true)
