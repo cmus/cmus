@@ -355,16 +355,9 @@ static void update_rg_scale(void)
 	if (!player_info_priv.ti || !replaygain)
 		return;
 
-	if (replaygain == RG_SMART) {
-		if (play_library && aaa_mode == AAA_MODE_ALBUM 
-			&& !shuffle && !cmus_queue_active()) {
-			gain = player_info_priv.ti->rg_album_gain;
-			peak = player_info_priv.ti->rg_album_peak;
-		} else {
-			gain = player_info_priv.ti->rg_track_gain;
-			peak = player_info_priv.ti->rg_track_peak;
-		}
-	} else if (replaygain == RG_TRACK || replaygain == RG_TRACK_PREFERRED) {
+	bool avoid_album_gain = replaygain == RG_SMART && (shuffle || cmus_queue_active());
+	
+	if (replaygain == RG_TRACK || replaygain == RG_TRACK_PREFERRED || avoid_album_gain) {
 		gain = player_info_priv.ti->rg_track_gain;
 		peak = player_info_priv.ti->rg_track_peak;
 	} else {
@@ -373,21 +366,12 @@ static void update_rg_scale(void)
 	}
 
 	if (isnan(gain)) {
-		if (replaygain == RG_TRACK_PREFERRED) {
+		if (replaygain == RG_TRACK_PREFERRED || avoid_album_gain) {
 			gain = player_info_priv.ti->rg_album_gain;
 			peak = player_info_priv.ti->rg_album_peak;
 		} else if (replaygain == RG_ALBUM_PREFERRED) {
 			gain = player_info_priv.ti->rg_track_gain;
 			peak = player_info_priv.ti->rg_track_peak;
-		} else if (replaygain == RG_SMART) {
-			if (play_library && aaa_mode == AAA_MODE_ALBUM 
-				&& !shuffle && !cmus_queue_active()) {
-				gain = player_info_priv.ti->rg_track_gain;
-				peak = player_info_priv.ti->rg_track_peak;
-			} else {
-				gain = player_info_priv.ti->rg_album_gain;
-				peak = player_info_priv.ti->rg_album_peak;
-			}
 		}
 	}
 
