@@ -409,6 +409,14 @@ static uchar format_skip_cond_expr(const char *format, int *s)
 				if (u != '%')
 					continue;
 				u = u_get_char(format, s);
+				if (u == '%' || u == '?' || u == '=')
+					continue;
+				if (u == '-')
+					u = u_get_char(format, s);
+				while (isdigit(u))
+					u = u_get_char(format, s);
+				if (u == 0)
+					return 0;
 				if (u == '{')
 					++level;
 			}
