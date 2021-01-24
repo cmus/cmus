@@ -52,7 +52,7 @@ static pthread_mutex_t mutex;
 static pthread_cond_t cond;
 static bool stopping = false;
 static bool dropping = false;
-static bool callback_locked = false;
+static bool blocking = false;
 
 static OSStatus coreaudio_device_volume_change_listener(AudioObjectID inObjectID,
 							UInt32 inNumberAddresses,
@@ -70,21 +70,18 @@ static OSStatus coreaudio_play_callback(void *user_data,
 					UInt32 nframes,
 					AudioBufferList *buflist)
 {
+	int locked;
 	bool ret = true;
-	//stopping set
-	//signal until (!callback_locked): exit right away but we have stopping set
-	callback_locked = !pthread_mutex_lock(&mutex);
-	//stopping set
-	//signal until (!callback_locked): wait until unlocked if callback locked
-	d_print("pre-wait: %d\n", callback_locked);
-	if (callback_locked && !stopping) {
-		// stopping set
-		// signal until (!callback_locked): stops when callback unlocked
+
+	blocking = true;
+	if (!stopping)
+		locked = !pthread_mutex_lock(&mutex);
+	d_print("pre-wait: %d\n", locked);
+
+	if (locked) {
 		coreaudio_buffer = buflist->mBuffers[0].mData;
 		coreaudio_buffer_size = buflist->mBuffers[0].mDataByteSize;
 		pthread_cond_wait(&cond, &mutex);
-		// stopping set
-		// signal until (!callback_locked): stops when callback unlocked
 		if (dropping) {
 			dropping = false;
 		} else if (coreaudio_buffer_size == 0) {
@@ -94,16 +91,11 @@ static OSStatus coreaudio_play_callback(void *user_data,
 			coreaudio_buffer_size = 0;
 			ret = false;
 		}
-		// do not unlock here; could be stopping
+		locked = !!pthread_mutex_unlock(&mutex);
 	}
-	// stopping set
-	// signal until (!callback_locked): either lock failed or stops when callback unlocked
+	blocking = false;
 
-	d_print("pre-unlock: %d\n", callback_locked);
-	if (callback_locked) // includes stopping
-		callback_locked = !!pthread_mutex_unlock(&mutex);
-	d_print("post-unlock: %d\n", callback_locked);
-
+	d_print("post-unlock: %d\n", locked);
 	d_print("stopping: %d\n", stopping);
 
 	d_print("ret: %d\n", ret);
@@ -523,14 +515,19 @@ static int coreaudio_open(sample_format_t sf, const channel_position_t *channel_
 }
 
 static void coreaudio_flush_buffer() {
-	do pthread_cond_signal(&cond); while (callback_locked);
+	while (!blocking) // wait until new callback kicks in
+		;
+	stopping = !dropping;
+	do {
+		pthread_cond_signal(&cond);
+	} while (blocking); // signal until unblocked
 }
 
 static int coreaudio_close(void)
 {
-	AudioOutputUnitStop(coreaudio_audio_unit);
 	stopping = true;
 	coreaudio_flush_buffer();
+	AudioOutputUnitStop(coreaudio_audio_unit);
 
 	AudioUnitUninitialize(coreaudio_audio_unit);
 	pthread_cond_destroy(&cond);
@@ -542,10 +539,8 @@ static int coreaudio_close(void)
 
 static int coreaudio_drop(void)
 {
-	if (coreaudio_buffer_size > 0) {
-		dropping = true;
-		coreaudio_flush_buffer();
-	}
+	dropping = true;
+	coreaudio_flush_buffer();
 	return OP_ERROR_SUCCESS;
 }
 
@@ -555,7 +550,7 @@ static int coreaudio_write(const char *buf, int cnt)
 	d_print("written to coreaudio: %d\n", cnt);
 	coreaudio_buffer_size -= cnt;
 	if (coreaudio_buffer_size == 0) {
-		// memcpy done before cond_wait? consider coreaudio_flush_buffer()?
+		// memcpy done before cond_wait? do while (blocking)?
 		pthread_cond_signal(&cond);
 	} else {
 		coreaudio_buffer += cnt;
@@ -713,9 +708,9 @@ static int coreaudio_mixer_get_fds(int *fds)
 
 static int coreaudio_pause(void)
 {
-	OSStatus err = AudioOutputUnitStop(coreaudio_audio_unit);
 	stopping = true;
 	coreaudio_flush_buffer();
+	OSStatus err = AudioOutputUnitStop(coreaudio_audio_unit);
 	if (err != noErr) {
 		errno = ENODEV;
 		return -OP_ERROR_ERRNO;
