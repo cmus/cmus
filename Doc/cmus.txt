@@ -1010,6 +1010,12 @@ display_artist_sort_name (false)
 follow (false)
 	If enabled, always select the currently playing track on track change.
 
+format_clipped_text [`Plain String`]
+	String used to lead out any text that is cut off by field limits.
+
+	Note: `Format String` rules are not applied. A plain string such as "..."
+	is expected.
+
 format_current [`Format String`]
 	Format string for the line displaying currently playing track.
 

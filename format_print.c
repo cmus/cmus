@@ -40,6 +40,17 @@ static struct fp_len str_len = {0, 0};
 static int *len = &str_len.llen;
 static struct gbuf* str = &l_str;
 
+size_t mark_clipped_text(char *buffer, int buf_len)
+{
+	int clipped_mark_len = min_u(u_str_width(clipped_text_format), buf_len);
+	int skip = buf_len - clipped_mark_len;
+	size_t byte_pos = u_skip_chars(buffer, &skip, false);
+	byte_pos += u_copy_chars(buffer + byte_pos, clipped_text_format, &clipped_mark_len);
+	/* pad if we partially replaced a wide character */
+	memset(buffer + byte_pos, ' ', skip);
+	return byte_pos + skip;
+}
+
 static void stack_print(char *stack, int stack_len)
 {
 	int i = 0;
@@ -167,8 +178,10 @@ static void print_str(const char *src)
 
 		if (align_left) {
 			i = width;
-			str->len += u_copy_chars(str->buffer + str->len, src, &i);
-
+			size_t copy_bytes = u_copy_chars(str->buffer + str->len, src, &i);
+			if (src[copy_bytes] != '\0')
+				copy_bytes = mark_clipped_text(str->buffer + str->len, width);
+			str->len += copy_bytes;
 			memset(str->buffer + str->len, ' ', i);
 			str->len += i;
 		} else {
@@ -177,6 +190,9 @@ static void print_str(const char *src)
 
 			if (ws_len < 0) {
 				int skip = -ws_len;
+				int clipped_mark_len = min_u(u_str_width(clipped_text_format), width);
+				skip += clipped_mark_len;
+				str->len += u_copy_chars(str->buffer + str->len, clipped_text_format, &clipped_mark_len);
 				s = u_skip_chars(src, &skip, true);
 				/* pad if a wide character caused us to skip too much */
 				ws_len = -skip;
@@ -576,20 +592,25 @@ static void format_write(char *buf, int str_width)
 		memset(buf + pos, ' ', ws_len);
 		strcpy(buf + pos + ws_len, r_str.buffer);
 	} else {
-		int l_space = str_width - str_len.rlen;
-		size_t pos = 0;
-		int idx = 0;
+		/* keep first character since it's almost always padding */
+		int clipped_mark_len = min_u(u_str_width(clipped_text_format) + 1, str_width);
+		int r_space = str_width - clipped_mark_len;
+		int l_space = max_i(r_space - str_len.rlen, 0) + clipped_mark_len;
+		int pos, r_idx = 0;
 
-		if (l_space > 0)
-			pos = u_copy_chars(buf, l_str.buffer, &l_space);
-		if (l_space < 0) {
-			int w = -l_space;
+		if (str_len.llen < clipped_mark_len)
+			gbuf_grow(&l_str, clipped_mark_len * 4);
+		mark_clipped_text(l_str.buffer, l_space);
+		pos = u_copy_chars(buf, l_str.buffer, &l_space);
 
-			idx = u_skip_chars(r_str.buffer, &w, true);
-			if (w < 0)
-				buf[pos++] = ' ';
+		int r_excess = str_len.rlen - r_space;
+		if (r_excess > 0) {
+			r_idx = u_skip_chars(r_str.buffer, &r_excess, true);
+			/* pad if a wide character caused us to skip too much */
+			memset(buf + pos, ' ', -r_excess);
+			pos += -r_excess;
 		}
-		strcpy(buf + pos, r_str.buffer + idx);
+		strcpy(buf + pos, r_str.buffer + r_idx);
 	}
 }
 

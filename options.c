@@ -147,6 +147,7 @@ char *track_win_alt_format = NULL;
 char *list_win_format = NULL;
 char *list_win_format_va = NULL;
 char *list_win_alt_format = NULL;
+char *clipped_text_format = NULL;
 char *current_format = NULL;
 char *current_alt_format = NULL;
 char *statusline_format = NULL;
@@ -207,6 +208,7 @@ static int parse_bool(const char *buf, int *val)
 
 /* this is used as id in struct cmus_opt */
 enum format_id {
+	FMT_CLIPPED_TEXT,
 	FMT_CURRENT,
 	FMT_CURRENT_ALT,
 	FMT_STATUSLINE,
@@ -231,6 +233,7 @@ static const struct {
 	const char *name;
 	const char *value;
 } str_defaults[] = {
+	[FMT_CLIPPED_TEXT]	= { "format_clipped_text"  	, "..."							},
 	[FMT_CURRENT_ALT]	= { "altformat_current"		, " %F "						},
 	[FMT_CURRENT]		= { "format_current"		, " %a - %l -%3n. %t%= %y "				},
 	[FMT_STATUSLINE]	= { "format_statusline"		,
@@ -1316,6 +1319,8 @@ static void set_attr(void *data, const char *buf)
 static char **id_to_fmt(enum format_id id)
 {
 	switch (id) {
+	case FMT_CLIPPED_TEXT:
+		return &clipped_text_format;
 	case FMT_CURRENT_ALT:
 		return &current_alt_format;
 	case FMT_PLAYLIST_ALT:
