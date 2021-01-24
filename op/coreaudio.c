@@ -73,9 +73,10 @@ static OSStatus coreaudio_play_callback(void *user_data,
 	int locked;
 	bool ret = true;
 
-	blocking = true;
-	if (!stopping)
+	if (!stopping) {
+		blocking = true;
 		locked = !pthread_mutex_lock(&mutex);
+	}
 	d_print("pre-wait: %d\n", locked);
 
 	if (locked) {
