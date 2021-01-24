@@ -88,12 +88,12 @@ static OSStatus coreaudio_play_callback(void *user_data,
 			ret = false;
 		} else if (coreaudio_buffer_size < buflist->mBuffers[0].mDataByteSize) {
 			memset(coreaudio_buffer, 0, coreaudio_buffer_size);
-			coreaudio_buffer_size = 0;
 			ret = false;
 		}
+		coreaudio_buffer_size = 0;
 		locked = !!pthread_mutex_unlock(&mutex);
 	}
-	blocking = false;
+	blocking = false; // if we need to wait in write(), we can't use coreaudio_buffer_size
 
 	d_print("post-unlock: %d\n", locked);
 	d_print("stopping: %d\n", stopping);
