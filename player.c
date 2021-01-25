@@ -853,9 +853,10 @@ static void _consumer_handle_eof(void)
 static void *consumer_loop(void *arg)
 {
 	while (1) {
-		int rc, space;
+		int rc, space, space_delay;
 		int size;
 		char *rpos;
+		struct timeval actual;
 
 		consumer_lock();
 		if (!consumer_running)
@@ -866,8 +867,12 @@ static void *consumer_loop(void *arg)
 			consumer_unlock();
 			continue;
 		}
+		gettimeofday(&actual, NULL);
+		d_print("time: %ld\n", (long) actual.tv_usec);
 		space = op_buffer_space();
 		d_print("space: %d\n", space);
+		if (space > 0)
+			space_delay = op->buffer_space_delay();
 		if (space < 0) {
 			d_print("op_buffer_space returned %d %s\n", space,
 					space == -1 ? strerror(errno) : "");
@@ -886,7 +891,7 @@ static void *consumer_loop(void *arg)
 			if (space == 0) {
 				_consumer_position_update();
 				consumer_unlock();
-				ms_sleep(25);
+				ms_sleep(space_delay);
 				break;
 			}
 			size = buffer_get_rpos(&rpos);

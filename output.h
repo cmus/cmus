@@ -75,6 +75,7 @@ int op_unpause(void);
  * returns space in output buffer in bytes or -1 if busy
  */
 int op_buffer_space(void);
+int op_buffer_space_delay(void);
 
 /*
  * errors: OP_ERROR_{}

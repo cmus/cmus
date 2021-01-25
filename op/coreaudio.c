@@ -45,6 +45,7 @@ static AudioDeviceID coreaudio_device_id = kAudioDeviceUnknown;
 static AudioStreamBasicDescription coreaudio_format_description;
 static AudioUnit coreaudio_audio_unit = NULL;
 static UInt32 coreaudio_buffer_size = 0;
+static int coreaudio_buffer_size_delay = 0;
 static char *coreaudio_buffer = NULL;
 static UInt32 coreaudio_stereo_channels[2];
 static int coreaudio_mixer_pipe_in = 0;
@@ -87,6 +88,9 @@ static OSStatus coreaudio_play_callback(void *user_data,
 	if (locked) {
 		coreaudio_buffer = buflist->mBuffers[0].mData;
 		coreaudio_buffer_size = buflist->mBuffers[0].mDataByteSize;
+		coreaudio_buffer_size_delay = coreaudio_format_description.mSampleRate /
+		        nframes; // inverse proportion
+			// nframes - nframes / 20;
 		/* blocking = true; */
 		pthread_cond_wait(&cond, &mutex);
 		/* blocking = false; */
@@ -760,6 +764,11 @@ static int coreaudio_buffer_space(void)
 	return coreaudio_buffer_size;
 }
 
+static int coreaudio_buffer_space_delay(void)
+{
+	return coreaudio_buffer_size_delay;
+}
+
 static int coreaudio_set_sync_sample_rate(const char *val)
 {
 	coreaudio_opt_sync_rate = strcmp(val, "true") ? false : true;
@@ -813,6 +822,7 @@ const struct output_plugin_ops op_pcm_ops = {
 	.pause        = coreaudio_pause,
 	.unpause      = coreaudio_unpause,
 	.buffer_space = coreaudio_buffer_space,
+	.buffer_space_delay = coreaudio_buffer_space_delay,
 };
 
 
