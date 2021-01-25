@@ -516,8 +516,8 @@ static void coreaudio_flush_buffer(bool drop) {
 
 	/* while (!blocking) // wait until a callback kicks in */
 	/* 	; */
-	while (coreaudio_buffer_size == 0) // wait until a callback kicks in
-		ms_sleep(25); // mimick the consumer loop
+	/* while (coreaudio_buffer_size == 0) // wait until a callback kicks in */
+	/* 	ms_sleep(25); // mimick the consumer loop */
 
 	stopping = !drop; // after wait loop; synchronous
 
