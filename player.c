@@ -872,7 +872,7 @@ static void *consumer_loop(void *arg)
 		space = op_buffer_space();
 		d_print("space: %d\n", space);
 		if (space > 0)
-			space_delay = op->buffer_space_delay();
+			space_delay = op_buffer_space_delay();
 		if (space < 0) {
 			d_print("op_buffer_space returned %d %s\n", space,
 					space == -1 ? strerror(errno) : "");
