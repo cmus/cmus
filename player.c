@@ -867,6 +867,7 @@ static void *consumer_loop(void *arg)
 			continue;
 		}
 		space = op_buffer_space();
+		d_print("space: %d\n", space);
 		if (space < 0) {
 			d_print("op_buffer_space returned %d %s\n", space,
 					space == -1 ? strerror(errno) : "");

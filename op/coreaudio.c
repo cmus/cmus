@@ -18,6 +18,7 @@
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <pthread.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -73,6 +74,7 @@ static OSStatus coreaudio_play_callback(void *user_data,
 {
 	bool locked;
 	bool ret = true;
+	struct timeval stop;
 
 	d_print("stopping(pre): %d\n", stopping);
 
@@ -80,6 +82,8 @@ static OSStatus coreaudio_play_callback(void *user_data,
 
 	d_print("pre-wait: %d\n", locked);
 
+	gettimeofday(&stop, NULL);
+	d_print("time: %ld\n", (long) stop.tv_usec);
 	if (locked) {
 		coreaudio_buffer = buflist->mBuffers[0].mData;
 		coreaudio_buffer_size = buflist->mBuffers[0].mDataByteSize;
@@ -562,9 +566,13 @@ static int coreaudio_drop(void)
 
 static int coreaudio_write(const char *buf, int cnt)
 {
+	struct timeval start;
+
 	memcpy(coreaudio_buffer, buf, cnt);
 	d_print("written to coreaudio: %d\n", cnt);
 	coreaudio_buffer_size -= cnt;
+	gettimeofday(&start, NULL);
+	d_print("time: %ld\n", (long) start.tv_usec);
 	if (coreaudio_buffer_size == 0) {
 		pthread_mutex_lock(&mutex);
 		pthread_cond_signal(&cond);
