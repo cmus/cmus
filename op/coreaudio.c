@@ -88,9 +88,9 @@ static OSStatus coreaudio_play_callback(void *user_data,
 	if (locked) {
 		coreaudio_buffer = buflist->mBuffers[0].mData;
 		coreaudio_buffer_size = buflist->mBuffers[0].mDataByteSize;
-		coreaudio_buffer_size_delay = coreaudio_format_description.mSampleRate /
+		coreaudio_buffer_size_delay = coreaudio_format_description.mSampleRate / 2 /
 		        nframes; // inverse proportion
-			// nframes - nframes / 20;
+			// (nframes - nframes / 20); // inverse proportion
 		/* blocking = true; */
 		pthread_cond_wait(&cond, &mutex);
 		/* blocking = false; */
