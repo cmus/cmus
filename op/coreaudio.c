@@ -532,11 +532,11 @@ static void coreaudio_flush_buffer(bool drop) {
 	if (coreaudio_buffer_size !=0) {
 		dropping = drop;  // asynchronous
 		coreaudio_buffer_size = 0; // synchronous
+	/* do { */
+		pthread_cond_signal(&cond); // shouldn't hurt if locking somehow failed
+	/* } while (blocking);  // we need a callback to unset this; asynchronous */
 	}
 
-	/* do { */
-		pthread_cond_signal(&cond); // shouldn't hurt if locking actually failed
-	/* } while (blocking);  // we need a callback to unset this; asynchronous */
 	if (locked)
 		pthread_mutex_unlock(&mutex);
 }
