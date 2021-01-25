@@ -532,15 +532,13 @@ static void coreaudio_flush_buffer(bool drop) {
 	if (coreaudio_buffer_size !=0) {
 		dropping = drop;  // asynchronous
 		coreaudio_buffer_size = 0; // synchronous
-		locked = false; // callback do the unlocking
 	}
 
-	if (locked)
-		pthread_mutex_unlock(&mutex);
-	else
 	/* do { */
 		pthread_cond_signal(&cond); // shouldn't hurt if locking actually failed
 	/* } while (blocking);  // we need a callback to unset this; asynchronous */
+	if (locked)
+		pthread_mutex_unlock(&mutex);
 }
 
 static int coreaudio_close(void)
@@ -570,6 +568,7 @@ static int coreaudio_write(const char *buf, int cnt)
 	if (coreaudio_buffer_size == 0) {
 		pthread_mutex_lock(&mutex);
 		pthread_cond_signal(&cond);
+		pthread_mutex_unlock(&mutex);
 		partial = false;
 	} else {
 		coreaudio_buffer += cnt;
