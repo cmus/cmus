@@ -236,7 +236,7 @@ static const struct {
 } str_defaults[] = {
 	[FMT_CLIPPED_TEXT]	= { "format_clipped_text"	, "…"							},
 	[FMT_CURRENT_ALT]	= { "altformat_current"		, " %F "						},
-	[FMT_CURRENT]		= { "format_current"		, " %a - %l -%3n. %t%= %y "				},
+	[FMT_CURRENT]		= { "format_current"		, " %a - %l%! - %n. %t%= %y "				},
 	[FMT_STATUSLINE]	= { "format_statusline"		,
 		" %{status} %{?show_playback_position?%{position} %{?duration?/ %{duration} }?%{?duration?%{duration} }}"
 		"- %{total} %{?bpm>0?at %{bpm} BPM }"
