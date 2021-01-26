@@ -45,7 +45,6 @@ static AudioDeviceID coreaudio_device_id = kAudioDeviceUnknown;
 static AudioStreamBasicDescription coreaudio_format_description;
 static AudioUnit coreaudio_audio_unit = NULL;
 static UInt32 coreaudio_buffer_size = 0;
-static int coreaudio_buffer_size_delay = 25;
 static char *coreaudio_buffer = NULL;
 static UInt32 coreaudio_stereo_channels[2];
 static int coreaudio_mixer_pipe_in = 0;
@@ -87,11 +86,9 @@ static OSStatus coreaudio_play_callback(void *user_data,
 	d_print("time: %ld\n", (long) stop.tv_usec);
 	if (locked) {
 		coreaudio_buffer = buflist->mBuffers[0].mData;
-		coreaudio_buffer_size_delay = coreaudio_format_description.mSampleRate / 2 /
-		        nframes; // inverse proportion
-			// (nframes - nframes / 20); // inverse proportion
 		coreaudio_buffer_size = buflist->mBuffers[0].mDataByteSize;
 		/* blocking = true; */
+		pthread_cond_signal(&cond);
 		pthread_cond_wait(&cond, &mutex);
 		/* blocking = false; */
 		ret = dropping; // after unblocked
@@ -544,7 +541,6 @@ static void coreaudio_flush_buffer(bool drop) {
 		pthread_cond_signal(&cond); // shouldn't hurt if locking somehow failed
 	/* } while (blocking);  // we need a callback to unset this; asynchronous */
 	}
-	coreaudio_buffer_size_delay = 25; // needs to reset even when fully written
 
 	if (locked)
 		pthread_mutex_unlock(&mutex);
@@ -762,12 +758,17 @@ static int coreaudio_unpause(void)
 
 static int coreaudio_buffer_space(void)
 {
+	pthread_mutex_lock(&mutex);
+	if (coreaudio_buffer_size == 0)
+		// we can do timed wait here if timeout is ever useful
+		pthread_cond_wait(&cond, &mutex);
+	pthread_mutex_unlock(&mutex);
 	return coreaudio_buffer_size;
 }
 
 static int coreaudio_buffer_space_delay(void)
 {
-	return coreaudio_buffer_size_delay;
+	return 0;
 }
 
 static int coreaudio_set_sync_sample_rate(const char *val)
