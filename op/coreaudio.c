@@ -45,7 +45,7 @@ static AudioDeviceID coreaudio_device_id = kAudioDeviceUnknown;
 static AudioStreamBasicDescription coreaudio_format_description;
 static AudioUnit coreaudio_audio_unit = NULL;
 static UInt32 coreaudio_buffer_size = 0;
-static int coreaudio_buffer_size_delay = 0;
+static int coreaudio_buffer_size_delay = 25;
 static char *coreaudio_buffer = NULL;
 static UInt32 coreaudio_stereo_channels[2];
 static int coreaudio_mixer_pipe_in = 0;
@@ -544,6 +544,7 @@ static void coreaudio_flush_buffer(bool drop) {
 		pthread_cond_signal(&cond); // shouldn't hurt if locking somehow failed
 	/* } while (blocking);  // we need a callback to unset this; asynchronous */
 	}
+	coreaudio_buffer_size_delay = 25; // needs to reset even when fully written
 
 	if (locked)
 		pthread_mutex_unlock(&mutex);
