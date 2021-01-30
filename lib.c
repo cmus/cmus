@@ -24,6 +24,7 @@
 #include "rbtree.h"
 #include "debug.h"
 #include "utils.h"
+#include "u_collate.h"
 #include "ui_curses.h" /* cur_view */
 
 #include <pthread.h>
@@ -170,12 +171,55 @@ static int is_filtered(struct track_info *ti)
 	return 0;
 }
 
+static bool track_exists(struct track_info *ti)
+{
+	struct rb_node *node;
+	struct artist *artist;
+	struct album *album;
+	struct tree_track *track;
+
+	if (!ti->collkey_title)
+		return false;
+
+	char *artist_collkey_name = u_strcasecoll_key(tree_artist_name(ti));
+	rb_for_each_entry(artist, node, &lib_artist_root, tree_node) {
+		if (strcmp(artist->collkey_name, artist_collkey_name) == 0)
+			break;
+	}
+	free(artist_collkey_name);
+
+	if (!artist)
+		return false;
+
+	char *album_collkey_name = u_strcasecoll_key(tree_album_name(ti));
+	rb_for_each_entry(album, node, &artist->album_root, tree_node) {
+		if (strcmp(album->collkey_name, album_collkey_name) == 0)
+			break;
+	}
+	free(album_collkey_name);
+
+	if (!album)
+		return false;
+
+	rb_for_each_entry(track, node, &album->track_root, tree_node) {
+		struct track_info *iter_ti = tree_track_info(track);
+		if (iter_ti->tracknumber == ti->tracknumber
+				&& iter_ti->discnumber == ti->discnumber
+				&& iter_ti->collkey_title && strcmp(iter_ti->collkey_title, ti->collkey_title) == 0)
+			return true;
+	}
+	return false;
+}
+
 void lib_add_track(struct track_info *ti, void *opaque)
 {
 	if (add_filter && !expr_eval(add_filter, ti)) {
 		/* filter any files excluded by lib_add_filter */
 		return;
 	}
+
+	if (ignore_duplicates && track_exists(ti))
+		return;
 
 	if (!hash_insert(ti)) {
 		/* duplicate files not allowed */
