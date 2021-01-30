@@ -1085,6 +1085,11 @@ icecast_default_charset (ISO-8859-1)
 
 	Note: This is used only if the metadata is not valid UTF-8.
 
+ignore_duplicates (false)
+	Ignore duplicates when adding tracks to the library. A track is a duplicate
+	if it has a matching artist, album, disc number, track number, and track
+	name.
+
 lib_add_filter [`Filter`]
 	Apply filter when adding files to the library. See *FILTERS*.
 

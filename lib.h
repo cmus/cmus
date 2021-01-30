@@ -136,6 +136,8 @@ struct track_info *lib_get_cur_stored_track(void);
 
 struct tree_track *tree_get_selected(void);
 struct track_info *tree_activate_selected(void);
+const char *tree_artist_name(const struct track_info* ti);
+const char *tree_album_name(const struct track_info* ti);
 void tree_sort_artists(void (*add_album_cb)(struct album *), void (*remove_album_cb)(struct album *));
 void tree_add_track(struct tree_track *track, void (*add_album_cb)(struct album *));
 void tree_remove(struct tree_track *track, void (*remove_album_cb)(struct album *));

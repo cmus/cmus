@@ -76,6 +76,7 @@ int smart_artist_sort = 1;
 int scroll_offset = 2;
 int rewind_offset = 5;
 int skip_track_info = 0;
+int ignore_duplicates = 0;
 int auto_expand_albums_follow = 1;
 int auto_expand_albums_search = 1;
 int auto_expand_albums_selcur = 1;
@@ -1122,6 +1123,21 @@ static void toggle_skip_track_info(void *data)
 	skip_track_info ^= 1;
 }
 
+static void get_ignore_duplicates(void *data, char *buf, size_t size)
+{
+	strscpy(buf, bool_names[ignore_duplicates], size);
+}
+
+static void set_ignore_duplicates(void *data, const char *buf)
+{
+	parse_bool(buf, &ignore_duplicates);
+}
+
+static void toggle_ignore_duplicates(void *data)
+{
+	ignore_duplicates ^= 1;
+}
+
 void update_mouse(void)
 {
 	if (mouse) {
@@ -1490,6 +1506,7 @@ static const struct {
 	DN_FLAGS(status_display_program, OPT_PROGRAM_PATH)
 	DT(wrap_search)
 	DT(skip_track_info)
+	DT(ignore_duplicates)
 	DT(mouse)
 	DT(mpris)
 	DT(time_show_leading_zero)

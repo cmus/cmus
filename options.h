@@ -154,6 +154,7 @@ extern int smart_artist_sort;
 extern int scroll_offset;
 extern int rewind_offset;
 extern int skip_track_info;
+extern int ignore_duplicates;
 extern int mouse;
 extern int mpris;
 extern int time_show_leading_zero;
