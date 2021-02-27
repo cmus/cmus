@@ -42,10 +42,10 @@ static struct gbuf* str = &l_str;
 
 size_t mark_clipped_text(char *buffer, int buf_len)
 {
-	int clipped_mark_len = min_u(u_str_width(clipped_text_format), buf_len);
+	int clipped_mark_len = min_u(u_str_width(clipped_text_internal), buf_len);
 	int skip = buf_len - clipped_mark_len;
 	size_t byte_pos = u_skip_chars(buffer, &skip, false);
-	byte_pos += u_copy_chars(buffer + byte_pos, clipped_text_format, &clipped_mark_len);
+	byte_pos += u_copy_chars(buffer + byte_pos, clipped_text_internal, &clipped_mark_len);
 	/* pad if we partially replaced a wide character */
 	memset(buffer + byte_pos, ' ', skip);
 	return byte_pos + skip;
@@ -190,9 +190,9 @@ static void print_str(const char *src)
 
 			if (ws_len < 0) {
 				int skip = -ws_len;
-				int clipped_mark_len = min_u(u_str_width(clipped_text_format), width);
+				int clipped_mark_len = min_u(u_str_width(clipped_text_internal), width);
 				skip += clipped_mark_len;
-				str->len += u_copy_chars(str->buffer + str->len, clipped_text_format, &clipped_mark_len);
+				str->len += u_copy_chars(str->buffer + str->len, clipped_text_internal, &clipped_mark_len);
 				s = u_skip_chars(src, &skip, true);
 				/* pad if a wide character caused us to skip too much */
 				ws_len = -skip;
@@ -593,7 +593,7 @@ static void format_write(char *buf, int str_width)
 		strcpy(buf + pos + ws_len, r_str.buffer);
 	} else {
 		/* keep first character since it's almost always padding */
-		int clipped_mark_len = min_u(u_str_width(clipped_text_format) + 1, str_width);
+		int clipped_mark_len = min_u(u_str_width(clipped_text_internal) + 1, str_width);
 		int r_space = str_width - clipped_mark_len;
 		int l_space = max_i(r_space - str_len.rlen, 0) + clipped_mark_len;
 		int pos, r_idx = 0;

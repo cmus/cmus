@@ -148,6 +148,7 @@ char *list_win_format = NULL;
 char *list_win_format_va = NULL;
 char *list_win_alt_format = NULL;
 char *clipped_text_format = NULL;
+char *clipped_text_internal = NULL;
 char *current_format = NULL;
 char *current_alt_format = NULL;
 char *statusline_format = NULL;
@@ -233,7 +234,7 @@ static const struct {
 	const char *name;
 	const char *value;
 } str_defaults[] = {
-	[FMT_CLIPPED_TEXT]	= { "format_clipped_text"  	, "..."							},
+	[FMT_CLIPPED_TEXT]	= { "format_clipped_text"	, "…"							},
 	[FMT_CURRENT_ALT]	= { "altformat_current"		, " %F "						},
 	[FMT_CURRENT]		= { "format_current"		, " %a - %l -%3n. %t%= %y "				},
 	[FMT_STATUSLINE]	= { "format_statusline"		,
@@ -1376,6 +1377,14 @@ static void set_format(void *data, const char *buf)
 	update_full();
 }
 
+static void set_clipped_text_format(void *data, const char *buf)
+{
+	free(clipped_text_format);
+	clipped_text_format = clipped_text_internal = xstrdup(buf);
+
+	update_full();
+}
+
 /* }}} */
 
 #define DN(name) { #name, get_ ## name, set_ ## name, NULL, 0 },
@@ -1553,6 +1562,8 @@ void options_add(void)
 		option_add(str_defaults[i].name, id_to_fmt(i), get_format,
 				set_format, NULL, 0);
 
+	option_find("format_clipped_text")->set = set_clipped_text_format;
+
 	for (i = 0; i < NR_COLORS; i++)
 		option_add(color_names[i], &colors[i], get_color, set_color,
 				NULL, 0);
@@ -1606,6 +1617,11 @@ void options_load(void)
 	if (source_file(filename) == -1) {
 		if (errno != ENOENT)
 			error_msg("loading %s: %s", filename, strerror(errno));
+	}
+
+	/* replace the default format_clipped_text symbol in ascii terminal */
+	if (!using_utf8 && strcmp(clipped_text_format, str_defaults[FMT_CLIPPED_TEXT].value) == 0) {
+		clipped_text_internal = xstrdup("...");
 	}
 }
 
