@@ -1299,6 +1299,8 @@ Special Keys:
 	    %{part}		@br
 	    %{subtitle}		@br
 	    %{media}		@br
+	%!
+		prior text is of lower importance and may be shortened if needed (use at most once)
 	%=
 		start align right (use at most once)
 	%%
@@ -1330,7 +1332,7 @@ Examples:
 	@pre
 	:set format_trackwin= %02n. %t %{?y?(%y)}%= %d
 	:set format_current= %n. %-30t %40F (%y)%= %d
-	:set format_current= %a - %l - %02n. %t%= %{bitrate}Kbps %g %y
+	:set format_current= %a - %l%! - %02n. %t%= %{bitrate}Kbps %g %y
 	:set format_playlist= %f%= %6{rg_track_gain} dB  %8{rg_track_peak}
 	:set format_playlist= %-25%a %-15%l %3n. %t%= %y %d
 	@endpre

@@ -55,6 +55,7 @@ struct format_option {
 
 struct fp_len {
 	int llen;
+	int mlen;
 	int rlen;
 };
 

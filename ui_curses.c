@@ -725,7 +725,7 @@ static void print_track(struct window *win, int row, struct iter *iter)
 		dump_print_buffer(row + 1, track_win_x);
 
 		bkgdset(pairs[CURSED_SEPARATOR]);
-		for(pos = track_win_x + len.llen; pos < win_w - len.rlen; ++pos)
+		for(pos = track_win_x + len.llen + len.mlen; pos < win_w - len.rlen; ++pos)
 			(void) mvaddch(row + 1, pos, ACS_HLINE);
 
 		return;
