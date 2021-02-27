@@ -178,6 +178,9 @@ single_char:
 
 int u_char_width(uchar u)
 {
+	if (unlikely(!using_utf8))
+		goto narrow;
+
 	if (unlikely(u < 0x20))
 		goto control;
 
