@@ -510,7 +510,7 @@ size_t u_copy_chars(char *dst, const char *src, int *width)
 		}
 		u_set_char(dst, &di, u);
 	}
-	*width -= w;
+	*width = w;
 	return di;
 }
 
@@ -557,17 +557,23 @@ int u_str_print_size(const char *str)
 	return l;
 }
 
-int u_skip_chars(const char *str, int *width)
+int u_skip_chars(const char *str, int *width, bool overskip)
 {
 	int w = *width;
-	int idx = 0;
+	int last_idx = 0, idx = 0;
+	uchar u = 0;
 
 	while (w > 0) {
-		uchar u = u_get_char(str, &idx);
+		last_idx = idx;
+		u = u_get_char(str, &idx);
 		w -= u_char_width(u);
 	}
-	/* add 1..3 if skipped 'too much' (the last char was double width or invalid (<xx>)) */
-	*width -= w;
+	/* undo last get if skipped 'too much' (the last char was double width or invalid (<xx>)) */
+	if (w < 0 && !overskip) {
+		w += u_char_width(u);
+		idx = last_idx;
+	}
+	*width = w;
 	return idx;
 }
 

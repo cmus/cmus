@@ -20,6 +20,7 @@
 #define CMUS_UCHAR_H
 
 #include <stddef.h> /* size_t */
+#include <stdbool.h>
 
 typedef unsigned int uchar;
 
@@ -156,11 +157,11 @@ void u_set_char(char *str, size_t *idx, uchar uch);
 /*
  * @dst    destination buffer
  * @src    null-terminated UTF-8 string
- * @width  how much to copy
+ * @width  how much to copy (at most)
  *
- * Copies at most @count characters, less if null byte was hit.
+ * Copies at most @width columns, less if null byte was hit.
  * Null byte is _never_ copied.
- * Actual width of copied characters is stored to @width.
+ * Remaining width is stored to @width.
  *
  * Returns number of _bytes_ copied.
  */
@@ -192,15 +193,14 @@ void u_to_utf8(char *dst, const char *src);
 /*
  * @str    null-terminated UTF-8 string, must be long enough
  * @width  how much to skip
+ * @overskip skip a final wide character even when it overshoots @width
  *
- * Skips @count UTF-8 characters.
- * Total width of skipped characters is stored to @width.
- * Returned @width can be the given @width + 1 if the last skipped
- * character was double width.
+ * Skips @width columns in a UTF-8 string.
+ * Underskip (positive) or overskip (negative) is stored to @width.
  *
  * Returns number of _bytes_ skipped.
  */
-int u_skip_chars(const char *str, int *width);
+int u_skip_chars(const char *str, int *width, bool overskip);
 
 /*
  * @str  valid null-terminated UTF-8 string

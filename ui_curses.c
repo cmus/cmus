@@ -1295,11 +1295,11 @@ static void do_update_commandline(void)
 			skip--;
 
 			/* skip rest (if any) */
-			idx = u_skip_chars(str, &skip);
+			idx = u_skip_chars(str, &skip, true);
 
 			width = win_w;
 			idx = u_copy_chars(print_buffer, str + idx, &width);
-			while (width < COLS) {
+			while (width > 0) {
 				/* cursor is at end of the buffer
 				 * print 1, 2 or 3 spaces
 				 *
@@ -1312,7 +1312,7 @@ static void do_update_commandline(void)
 				 * to print 3 spaces.
 				 */
 				print_buffer[idx++] = ' ';
-				width++;
+				width--;
 			}
 			print_buffer[idx] = 0;
 			dump_buffer(print_buffer);
@@ -1434,12 +1434,8 @@ static int cmdline_cursor_column(void)
 
 	/* skip rest */
 	s = skip;
-	u_skip_chars(str, &s);
-	if (s > skip) {
-		/* the last skipped char was double-width or <xx> */
-		return win_w - 1 - (s - skip);
-	}
-	return win_w - 1;
+	u_skip_chars(str, &s, true);
+	return win_w - 1 + s;
 }
 
 static void post_update(void)

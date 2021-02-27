@@ -169,9 +169,8 @@ static void print_str(const char *src)
 			i = width;
 			str->len += u_copy_chars(str->buffer + str->len, src, &i);
 
-			ws_len = width - i;
-			memset(str->buffer + str->len, ' ', ws_len);
-			str->len += ws_len;
+			memset(str->buffer + str->len, ' ', i);
+			str->len += i;
 		} else {
 			int s = 0;
 
@@ -611,8 +610,8 @@ static void format_write(char *buf, int str_width)
 		if (l_space < 0) {
 			int w = -l_space;
 
-			idx = u_skip_chars(r_str.buffer, &w);
-			if (w != -l_space)
+			idx = u_skip_chars(r_str.buffer, &w, true);
+			if (w < 0)
 				buf[pos++] = ' ';
 		}
 		strcpy(buf + pos, r_str.buffer + idx);
