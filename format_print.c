@@ -173,46 +173,21 @@ static void print_str(const char *src)
 			str->len += i;
 		} else {
 			int s = 0;
-
 			ws_len = width - str_width;
 
+			if (ws_len < 0) {
+				int skip = -ws_len;
+				s = u_skip_chars(src, &skip, true);
+				/* pad if a wide character caused us to skip too much */
+				ws_len = -skip;
+
+			}
 			if (ws_len > 0) {
 				memset(str->buffer + str->len, ' ', ws_len);
 				str->len += ws_len;
-				i += ws_len;
+				width -= ws_len;
 			}
-
-			if (ws_len < 0) {
-				int w, c = -ws_len;
-				uchar u = 0;
-
-				while (c > 0) {
-					u = u_get_char(src, &s);
-					w = u_char_width(u);
-					c -= w;
-				}
-				if (c < 0) {
-					/* gaah, skipped too much */
-					if (u_char_width(u) == 2) {
-						/* double-byte */
-						str->buffer[str->len++] = ' ';
-					} else {
-						/* <xx> */
-						if (c == -3)
-							str->buffer[str->len++] = hex_tab[(u >> 4) & 0xf];
-						if (c <= -2)
-							str->buffer[str->len++] = hex_tab[u & 0xf];
-						str->buffer[str->len++] = '>';
-					}
-				}
-			}
-
-			if (width - i > 0) {
-				int w = width - i;
-
-				str->len += u_copy_chars(str->buffer + str->len, src + s, &w);
-			}
-
+			str->len += u_copy_chars(str->buffer + str->len, src + s, &width);
 		}
 	} else {
 		int s = 0;
