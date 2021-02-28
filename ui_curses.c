@@ -466,45 +466,17 @@ static void dump_print_buffer(int row, int col)
  */
 static int format_str(char *buf, const char *str, int width)
 {
-	int s = 0, ellipsis_pos = 0, cut_double_width = 0;
-	size_t d = 0;
+	int w = width;
+	size_t copy_bytes = u_copy_chars(buf, str, &w);
 
-	while (1) {
-		uchar u;
-		int w;
-
-		u = u_get_char(str, &s);
-		if (u == 0) {
-			memset(buf + d, ' ', width);
-			d += width;
-			break;
-		}
-
-		w = u_char_width(u);
-		if (width == 3)
-			ellipsis_pos = d;
-		if (width == 4 && w == 2) {
-			/* can't cut double-width char */
-			ellipsis_pos = d + 1;
-			cut_double_width = 1;
-		}
-
-		width -= w;
-		if (width < 0) {
-			/* does not fit */
-			d = ellipsis_pos;
-			if (cut_double_width) {
-				/* first half of the double-width char */
-				buf[d - 1] = ' ';
-			}
-			buf[d++] = '.';
-			buf[d++] = '.';
-			buf[d++] = '.';
-			break;
-		}
-		u_set_char(buf, &d, u);
+	if (w > 0) {
+		memset(buf + copy_bytes, ' ', w);
+		copy_bytes += w;
+	} else if (str[copy_bytes] != '\0') {
+		copy_bytes = mark_clipped_text(buf, width);
 	}
-	return d;
+	buf[copy_bytes] = '\0';
+	return copy_bytes;
 }
 
 static void sprint(int row, int col, const char *str, int width)
@@ -516,28 +488,6 @@ static void sprint(int row, int col, const char *str, int width)
 	print_buffer[pos++] = ' ';
 	print_buffer[pos] = 0;
 	dump_print_buffer(row, col);
-}
-
-static void sprint_ascii(int row, int col, const char *str, int len)
-{
-	int l;
-
-	l = strlen(str);
-	len -= 2;
-
-	print_buffer[0] = ' ';
-	if (l > len) {
-		memcpy(print_buffer + 1, str, len - 3);
-		print_buffer[len - 2] = '.';
-		print_buffer[len - 1] = '.';
-		print_buffer[len - 0] = '.';
-	} else {
-		memcpy(print_buffer + 1, str, l);
-		memset(print_buffer + 1 + l, ' ', len - l);
-	}
-	print_buffer[len + 1] = ' ';
-	print_buffer[len + 2] = 0;
-	(void) mvaddstr(row, col, print_buffer);
 }
 
 static inline void fopt_set_str(struct format_option *fopt, const char *str)
@@ -876,12 +826,7 @@ static void print_browser(struct window *win, int row, struct iter *iter)
 		cursor_y = 1 + row;
 	}
 
-	/* file name encoding == terminal encoding. no need to convert */
-	if (using_utf8) {
-		sprint(row + 1, 0, e->name, win_w);
-	} else {
-		sprint_ascii(row + 1, 0, e->name, win_w);
-	}
+	sprint(row + 1, 0, e->name, win_w);
 }
 
 static void print_filter(struct window *win, int row, struct iter *iter)
