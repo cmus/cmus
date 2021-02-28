@@ -668,7 +668,7 @@ static void print_tree(struct window *win, int row, struct iter *iter)
 	struct artist *artist;
 	struct album *album;
 	struct iter sel;
-	int current, selected, active, pos;
+	int current, selected, active;
 
 	artist = iter_to_artist(iter);
 	album = iter_to_album(iter);
@@ -693,14 +693,11 @@ static void print_tree(struct window *win, int row, struct iter *iter)
 	print_buffer[0] = ' ';
 	if (album) {
 		fill_track_fopts_album(album);
-		format_print(print_buffer + 1, tree_win_w - 2, tree_win_format, track_fopts);
+		format_print(print_buffer + 1, tree_win_w - 1, tree_win_format, track_fopts);
 	} else {
 		fill_track_fopts_artist(artist);
-		format_print(print_buffer + 1, tree_win_w - 2, tree_win_artist_format, track_fopts);
+		format_print(print_buffer + 1, tree_win_w - 1, tree_win_artist_format, track_fopts);
 	}
-	pos = strlen(print_buffer);
-	print_buffer[pos++] = ' ';
-	print_buffer[pos++] = 0;
 	dump_print_buffer(row + 1, tree_win_x);
 }
 
@@ -953,8 +950,9 @@ static void update_window(struct window *win, int x, int y, int w, const char *t
 
 static void update_tree_window(void)
 {
-	update_window(lib_tree_win, tree_win_x, 0, tree_win_w,
-			"Artist / Album", print_tree);
+	char title[512];
+	format_str(title, "Artist / Album", tree_win_w - 1);
+	update_window(lib_tree_win, tree_win_x, 0, tree_win_w, title, print_tree);
 }
 
 static void update_track_window(void)
@@ -991,8 +989,9 @@ static void print_pl_list(struct window *win, int row, struct iter *iter)
 
 static void update_pl_list(struct window *win)
 {
-	update_window(win, tree_win_x, 0, tree_win_w, "Playlist",
-			print_pl_list);
+	char title[512];
+	format_str(title, "Playlist", tree_win_w - 1);
+	update_window(win, tree_win_x, 0, tree_win_w, title, print_pl_list);
 }
 
 static void update_pl_tracks(struct window *win)
@@ -1057,6 +1056,7 @@ static void update_editable_window(struct editable *e, const char *title, const 
 			sorted_names[e->shared->sort_str[0] != 0],
 			e->shared->sort_str);
 
+	format_str(buf, buf, win_w - 2);
 	update_window(e->shared->win, 0, 0, win_w, buf, &print_editable);
 }
 
@@ -1085,17 +1085,22 @@ static void update_browser_window(void)
 		dirname = conv_buffer;
 	}
 	snprintf(title, sizeof(title), "Browser - %.501s", dirname);
+	format_str(title, title, win_w - 2);
 	update_window(browser_win, 0, 0, win_w, title, print_browser);
 }
 
 static void update_filters_window(void)
 {
-	update_window(filters_win, 0, 0, win_w, "Library Filters", print_filter);
+	char title[512];
+	format_str(title, "Library Filters", win_w - 2);
+	update_window(filters_win, 0, 0, win_w, title, print_filter);
 }
 
 static void update_help_window(void)
 {
-	update_window(help_win, 0, 0, win_w, "Settings", print_help);
+	char title[512];
+	format_str(title, "Settings", win_w - 2);
+	update_window(help_win, 0, 0, win_w, title, print_help);
 }
 
 static void draw_separator(void)
