@@ -1107,8 +1107,10 @@ repeat (false)
 repeat_current (false)
 	Repeat current track forever.
 
-replaygain (disabled) [track, album, track-preferred, album-preferred]
-	Enable Replay Gain.
+replaygain (disabled) [track, album, track-preferred, album-preferred, smart]
+	Enable Replay Gain. The smart setting behaves like track-preferred when
+	shuffle is on, or the queue is active, or when playing from a playlist.
+	Otherwise, it behaves like album-preferred.
 
 replaygain_limit (true)
 	Use replay gain limiting when clipping.

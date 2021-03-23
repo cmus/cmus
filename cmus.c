@@ -509,3 +509,7 @@ void cmus_raise_vte(void)
 		}
 	}
 }
+
+bool cmus_queue_active(void) {
+	return play_queue_active;
+}
