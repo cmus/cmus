@@ -147,6 +147,8 @@ char *track_win_alt_format = NULL;
 char *list_win_format = NULL;
 char *list_win_format_va = NULL;
 char *list_win_alt_format = NULL;
+char *clipped_text_format = NULL;
+char *clipped_text_internal = NULL;
 char *current_format = NULL;
 char *current_alt_format = NULL;
 char *statusline_format = NULL;
@@ -207,6 +209,7 @@ static int parse_bool(const char *buf, int *val)
 
 /* this is used as id in struct cmus_opt */
 enum format_id {
+	FMT_CLIPPED_TEXT,
 	FMT_CURRENT,
 	FMT_CURRENT_ALT,
 	FMT_STATUSLINE,
@@ -231,8 +234,9 @@ static const struct {
 	const char *name;
 	const char *value;
 } str_defaults[] = {
+	[FMT_CLIPPED_TEXT]	= { "format_clipped_text"	, "…"							},
 	[FMT_CURRENT_ALT]	= { "altformat_current"		, " %F "						},
-	[FMT_CURRENT]		= { "format_current"		, " %a - %l -%3n. %t%= %y "				},
+	[FMT_CURRENT]		= { "format_current"		, " %a - %l%! - %n. %t%= %y "				},
 	[FMT_STATUSLINE]	= { "format_statusline"		,
 		" %{status} %{?show_playback_position?%{position} %{?duration?/ %{duration} }?%{?duration?%{duration} }}"
 		"- %{total} %{?bpm>0?at %{bpm} BPM }"
@@ -1318,6 +1322,8 @@ static void set_attr(void *data, const char *buf)
 static char **id_to_fmt(enum format_id id)
 {
 	switch (id) {
+	case FMT_CLIPPED_TEXT:
+		return &clipped_text_format;
 	case FMT_CURRENT_ALT:
 		return &current_alt_format;
 	case FMT_PLAYLIST_ALT:
@@ -1369,6 +1375,14 @@ static void set_format(void *data, const char *buf)
 	}
 	free(*fmtp);
 	*fmtp = xstrdup(buf);
+
+	update_full();
+}
+
+static void set_clipped_text_format(void *data, const char *buf)
+{
+	free(clipped_text_format);
+	clipped_text_format = clipped_text_internal = xstrdup(buf);
 
 	update_full();
 }
@@ -1550,6 +1564,8 @@ void options_add(void)
 		option_add(str_defaults[i].name, id_to_fmt(i), get_format,
 				set_format, NULL, 0);
 
+	option_find("format_clipped_text")->set = set_clipped_text_format;
+
 	for (i = 0; i < NR_COLORS; i++)
 		option_add(color_names[i], &colors[i], get_color, set_color,
 				NULL, 0);
@@ -1603,6 +1619,11 @@ void options_load(void)
 	if (source_file(filename) == -1) {
 		if (errno != ENOENT)
 			error_msg("loading %s: %s", filename, strerror(errno));
+	}
+
+	/* replace the default format_clipped_text symbol in ascii terminal */
+	if (!using_utf8 && strcmp(clipped_text_format, str_defaults[FMT_CLIPPED_TEXT].value) == 0) {
+		clipped_text_internal = xstrdup("...");
 	}
 }
 

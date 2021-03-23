@@ -139,9 +139,8 @@ static int tree_win_w = 0;
 static int track_win_x = 0;
 static int track_win_w = 0;
 
-static int editable_win_x = 0;
-static int editable_win_w = 0;
-static int editable_active = 1;
+static int win_x = 0;
+static int win_w = 0;
 
 static int show_cursor;
 static int cursor_x;
@@ -467,45 +466,17 @@ static void dump_print_buffer(int row, int col)
  */
 static int format_str(char *buf, const char *str, int width)
 {
-	int s = 0, ellipsis_pos = 0, cut_double_width = 0;
-	size_t d = 0;
+	int w = width;
+	size_t copy_bytes = u_copy_chars(buf, str, &w);
 
-	while (1) {
-		uchar u;
-		int w;
-
-		u = u_get_char(str, &s);
-		if (u == 0) {
-			memset(buf + d, ' ', width);
-			d += width;
-			break;
-		}
-
-		w = u_char_width(u);
-		if (width == 3)
-			ellipsis_pos = d;
-		if (width == 4 && w == 2) {
-			/* can't cut double-width char */
-			ellipsis_pos = d + 1;
-			cut_double_width = 1;
-		}
-
-		width -= w;
-		if (width < 0) {
-			/* does not fit */
-			d = ellipsis_pos;
-			if (cut_double_width) {
-				/* first half of the double-width char */
-				buf[d - 1] = ' ';
-			}
-			buf[d++] = '.';
-			buf[d++] = '.';
-			buf[d++] = '.';
-			break;
-		}
-		u_set_char(buf, &d, u);
+	if (w > 0) {
+		memset(buf + copy_bytes, ' ', w);
+		copy_bytes += w;
+	} else if (str[copy_bytes] != '\0') {
+		copy_bytes = mark_clipped_text(buf, width);
 	}
-	return d;
+	buf[copy_bytes] = '\0';
+	return copy_bytes;
 }
 
 static void sprint(int row, int col, const char *str, int width)
@@ -517,28 +488,6 @@ static void sprint(int row, int col, const char *str, int width)
 	print_buffer[pos++] = ' ';
 	print_buffer[pos] = 0;
 	dump_print_buffer(row, col);
-}
-
-static void sprint_ascii(int row, int col, const char *str, int len)
-{
-	int l;
-
-	l = strlen(str);
-	len -= 2;
-
-	print_buffer[0] = ' ';
-	if (l > len) {
-		memcpy(print_buffer + 1, str, len - 3);
-		print_buffer[len - 2] = '.';
-		print_buffer[len - 1] = '.';
-		print_buffer[len - 0] = '.';
-	} else {
-		memcpy(print_buffer + 1, str, l);
-		memset(print_buffer + 1 + l, ' ', len - l);
-	}
-	print_buffer[len + 1] = ' ';
-	print_buffer[len + 2] = 0;
-	(void) mvaddstr(row, col, print_buffer);
 }
 
 static inline void fopt_set_str(struct format_option *fopt, const char *str)
@@ -719,7 +668,7 @@ static void print_tree(struct window *win, int row, struct iter *iter)
 	struct artist *artist;
 	struct album *album;
 	struct iter sel;
-	int current, selected, active, pos;
+	int current, selected, active;
 
 	artist = iter_to_artist(iter);
 	album = iter_to_album(iter);
@@ -744,14 +693,11 @@ static void print_tree(struct window *win, int row, struct iter *iter)
 	print_buffer[0] = ' ';
 	if (album) {
 		fill_track_fopts_album(album);
-		format_print(print_buffer + 1, tree_win_w - 2, tree_win_format, track_fopts);
+		format_print(print_buffer + 1, tree_win_w - 1, tree_win_format, track_fopts);
 	} else {
 		fill_track_fopts_artist(artist);
-		format_print(print_buffer + 1, tree_win_w - 2, tree_win_artist_format, track_fopts);
+		format_print(print_buffer + 1, tree_win_w - 1, tree_win_artist_format, track_fopts);
 	}
-	pos = strlen(print_buffer);
-	print_buffer[pos++] = ' ';
-	print_buffer[pos++] = 0;
 	dump_print_buffer(row + 1, tree_win_x);
 }
 
@@ -779,7 +725,7 @@ static void print_track(struct window *win, int row, struct iter *iter)
 		dump_print_buffer(row + 1, track_win_x);
 
 		bkgdset(pairs[CURSED_SEPARATOR]);
-		for(pos = track_win_x + len.llen; pos < COLS - len.rlen; ++pos)
+		for(pos = track_win_x + len.llen + len.mlen; pos < win_w - len.rlen; ++pos)
 			(void) mvaddch(row + 1, pos, ACS_HLINE);
 
 		return;
@@ -826,11 +772,10 @@ static void print_editable(struct window *win, int row, struct iter *iter)
 	selected = iters_equal(iter, &sel);
 
 	if (selected) {
-		cursor_x = editable_win_x;
+		cursor_x = win_x;
 		cursor_y = 1 + row;
 	}
 
-	active = editable_active;
 	if (!selected && track->marked) {
 		selected = 1;
 		active = 0;
@@ -847,8 +792,8 @@ static void print_editable(struct window *win, int row, struct iter *iter)
 	} else if (*list_win_alt_format) {
 		format = list_win_alt_format;
 	}
-	format_print(print_buffer, editable_win_w, format, track_fopts);
-	dump_print_buffer(row + 1, editable_win_x);
+	format_print(print_buffer, win_w, format, track_fopts);
+	dump_print_buffer(row + 1, win_x);
 }
 
 static void print_browser(struct window *win, int row, struct iter *iter)
@@ -878,12 +823,7 @@ static void print_browser(struct window *win, int row, struct iter *iter)
 		cursor_y = 1 + row;
 	}
 
-	/* file name encoding == terminal encoding. no need to convert */
-	if (using_utf8) {
-		sprint(row + 1, 0, e->name, COLS);
-	} else {
-		sprint_ascii(row + 1, 0, e->name, COLS);
-	}
+	sprint(row + 1, 0, e->name, win_w);
 }
 
 static void print_filter(struct window *win, int row, struct iter *iter)
@@ -925,7 +865,7 @@ static void print_filter(struct window *win, int row, struct iter *iter)
 	}
 
 	snprintf(buf, sizeof(buf), "%c%c%c%-15s  %.235s", ch1, ch2, ch3, e->name, e_filter);
-	pos = format_str(print_buffer, buf, COLS - 1);
+	pos = format_str(print_buffer, buf, win_w - 1);
 	print_buffer[pos++] = ' ';
 	print_buffer[pos] = 0;
 	dump_print_buffer(row + 1, 0);
@@ -970,7 +910,7 @@ static void print_help(struct window *win, int row, struct iter *iter)
 		opt->get(opt->data, buf + len, sizeof(buf) - len);
 		break;
 	}
-	pos = format_str(print_buffer, buf, COLS - 1);
+	pos = format_str(print_buffer, buf, win_w - 1);
 	print_buffer[pos++] = ' ';
 	print_buffer[pos] = 0;
 	dump_print_buffer(row + 1, 0);
@@ -981,16 +921,12 @@ static void update_window(struct window *win, int x, int y, int w, const char *t
 {
 	struct iter iter;
 	int nr_rows;
-	int c, i;
+	int i;
 
 	win->changed = 0;
 
 	bkgdset(pairs[CURSED_WIN_TITLE]);
-	c = snprintf(print_buffer, w + 1, " %s", title);
-	if (c > w)
-		c = w;
-	memset(print_buffer + c, ' ', w - c + 1);
-	print_buffer[w] = 0;
+	sprintf(print_buffer, " %-*s ", w - 2, title);
 	dump_print_buffer(y, x);
 	nr_rows = window_get_nr_rows(win);
 	i = 0;
@@ -1014,8 +950,9 @@ static void update_window(struct window *win, int x, int y, int w, const char *t
 
 static void update_tree_window(void)
 {
-	update_window(lib_tree_win, tree_win_x, 0, tree_win_w,
-			"Artist / Album", print_tree);
+	char title[512];
+	format_str(title, "Artist / Album", tree_win_w - 1);
+	update_window(lib_tree_win, tree_win_x, 0, tree_win_w, title, print_tree);
 }
 
 static void update_track_window(void)
@@ -1024,7 +961,7 @@ static void update_track_window(void)
 
 	/* it doesn't matter what format options we use because the format
 	 * string does not contain any format charaters */
-	format_print(title, track_win_w - 2, "Track%=Library", track_fopts);
+	format_print(title, track_win_w - 2, "Track%= Library", track_fopts);
 	update_window(lib_track_win, track_win_x, 0, track_win_w, title,
 			print_track);
 }
@@ -1043,7 +980,7 @@ static void print_pl_list(struct window *win, int row, struct iter *iter)
 	size_t prefix_w = strlen(prefix);
 	format_str(print_buffer, prefix, prefix_w);
 
-	if (tree_win_w >= prefix_w)
+	if (tree_win_w > prefix_w)
 		format_str(print_buffer + prefix_w, info.name,
 				tree_win_w - prefix_w);
 
@@ -1052,27 +989,27 @@ static void print_pl_list(struct window *win, int row, struct iter *iter)
 
 static void update_pl_list(struct window *win)
 {
-	update_window(win, tree_win_x, 0, tree_win_w, "Playlist",
-			print_pl_list);
+	char title[512];
+	format_str(title, "Playlist", tree_win_w - 1);
+	update_window(win, tree_win_x, 0, tree_win_w, title, print_pl_list);
 }
 
 static void update_pl_tracks(struct window *win)
 {
 	char title[512];
+	int win_w_tmp = win_w;
 
-	editable_win_x = track_win_x;
-	editable_win_w = track_win_w;
-	editable_active = pl_get_cursor_in_track_window();
+	win_x = track_win_x;
+	win_w = track_win_w;
 
 	get_global_fopts();
 	fopt_set_time(&track_fopts[TF_TOTAL], pl_visible_total_time(), 0);
 
-	format_print(title, track_win_w - 2, "Track%=%{total}", track_fopts);
+	format_print(title, track_win_w - 2, "Track%= %{total}", track_fopts);
 	update_window(win, track_win_x, 0, track_win_w, title, print_editable);
 
-	editable_active = 1;
-	editable_win_x = 0;
-	editable_win_w = COLS;
+	win_x = 0;
+	win_w = win_w_tmp;
 }
 
 static const char *pretty(const char *path)
@@ -1119,7 +1056,8 @@ static void update_editable_window(struct editable *e, const char *title, const 
 			sorted_names[e->shared->sort_str[0] != 0],
 			e->shared->sort_str);
 
-	update_window(e->shared->win, 0, 0, COLS, buf, &print_editable);
+	format_str(buf, buf, win_w - 2);
+	update_window(e->shared->win, 0, 0, win_w, buf, &print_editable);
 }
 
 static void update_sorted_window(void)
@@ -1147,17 +1085,22 @@ static void update_browser_window(void)
 		dirname = conv_buffer;
 	}
 	snprintf(title, sizeof(title), "Browser - %.501s", dirname);
-	update_window(browser_win, 0, 0, COLS, title, print_browser);
+	format_str(title, title, win_w - 2);
+	update_window(browser_win, 0, 0, win_w, title, print_browser);
 }
 
 static void update_filters_window(void)
 {
-	update_window(filters_win, 0, 0, COLS, "Library Filters", print_filter);
+	char title[512];
+	format_str(title, "Library Filters", win_w - 2);
+	update_window(filters_win, 0, 0, win_w, title, print_filter);
 }
 
 static void update_help_window(void)
 {
-	update_window(help_win, 0, 0, COLS, "Settings", print_help);
+	char title[512];
+	format_str(title, "Settings", win_w - 2);
+	update_window(help_win, 0, 0, win_w, title, print_help);
 }
 
 static void draw_separator(void)
@@ -1216,7 +1159,7 @@ static void do_update_view(int full)
 
 static void do_update_statusline(void)
 {
-	format_print(print_buffer, COLS, statusline_format, get_global_fopts());
+	format_print(print_buffer, win_w, statusline_format, get_global_fopts());
 	bkgdset(pairs[CURSED_STATUSLINE]);
 	dump_print_buffer(LINES - 2, 0);
 
@@ -1283,7 +1226,7 @@ static void do_update_commandline(void)
 	if (input_mode == SEARCH_MODE)
 		ch = search_direction == SEARCH_FORWARD ? '/' : '?';
 
-	if (w <= COLS - 2) {
+	if (w <= win_w - 2) {
 		addch(ch);
 		idx = u_copy_chars(print_buffer, str, &w);
 		print_buffer[idx] = 0;
@@ -1296,17 +1239,17 @@ static void do_update_commandline(void)
 		/* cursor pos (width, not chars. doesn't count the ':') */
 		cw = u_str_nwidth(str, cmdline.cpos);
 
-		skip = cw + 2 - COLS;
+		skip = cw + 2 - win_w;
 		if (skip > 0) {
 			/* skip the ':' */
 			skip--;
 
 			/* skip rest (if any) */
-			idx = u_skip_chars(str, &skip);
+			idx = u_skip_chars(str, &skip, true);
 
-			width = COLS;
+			width = win_w;
 			idx = u_copy_chars(print_buffer, str + idx, &width);
-			while (width < COLS) {
+			while (width > 0) {
 				/* cursor is at end of the buffer
 				 * print 1, 2 or 3 spaces
 				 *
@@ -1319,14 +1262,14 @@ static void do_update_commandline(void)
 				 * to print 3 spaces.
 				 */
 				print_buffer[idx++] = ' ';
-				width++;
+				width--;
 			}
 			print_buffer[idx] = 0;
 			dump_buffer(print_buffer);
 		} else {
-			/* print ':' + COLS - 1 chars */
+			/* print ':' + win_w - 1 chars */
 			addch(ch);
-			width = COLS - 1;
+			width = win_w - 1;
 			idx = u_copy_chars(print_buffer, str, &width);
 			print_buffer[idx] = 0;
 			dump_buffer(print_buffer);
@@ -1371,9 +1314,9 @@ static void do_update_titleline(void)
 		}
 
 		if (use_alt_format && *current_alt_format) {
-			format_print(print_buffer, COLS, current_alt_format, track_fopts);
+			format_print(print_buffer, win_w, current_alt_format, track_fopts);
 		} else {
-			format_print(print_buffer, COLS, current_format, track_fopts);
+			format_print(print_buffer, win_w, current_format, track_fopts);
 		}
 		dump_print_buffer(LINES - 3, 0);
 
@@ -1423,7 +1366,7 @@ static int cmdline_cursor_column(void)
 	/* width of the text in the buffer before cursor */
 	cw = u_str_nwidth(str, cmdline.cpos);
 
-	if (1 + cw < COLS) {
+	if (1 + cw < win_w) {
 		/* whole line is visible */
 		return 1 + cw;
 	}
@@ -1432,21 +1375,17 @@ static int cmdline_cursor_column(void)
 
 	/* check if the first visible char in cmdline would be halved
 	 * double-width character (or invalid byte <xx>) which is not possible.
-	 * we need to skip the whole character and move cursor to COLS - 2
+	 * we need to skip the whole character and move cursor to win_w - 2
 	 * column. */
-	skip = cw + 2 - COLS;
+	skip = cw + 2 - win_w;
 
 	/* skip the ':' */
 	skip--;
 
 	/* skip rest */
 	s = skip;
-	u_skip_chars(str, &s);
-	if (s > skip) {
-		/* the last skipped char was double-width or <xx> */
-		return COLS - 1 - (s - skip);
-	}
-	return COLS - 1;
+	u_skip_chars(str, &s, true);
+	return win_w - 1 + s;
 }
 
 static void post_update(void)
@@ -1550,8 +1489,8 @@ void update_filterline(void)
 		int w;
 		bkgdset(pairs[CURSED_STATUSLINE]);
 		snprintf(buf, sizeof(buf), "filtered: %s", lib_live_filter);
-		w = clamp(strlen(buf) + 2, COLS/4, COLS/2);
-		sprint(LINES-4, COLS-w, buf, w);
+		w = clamp(strlen(buf) + 2, win_w/4, win_w/2);
+		sprint(LINES-4, win_w-w, buf, w);
 	}
 }
 
@@ -1926,11 +1865,13 @@ static void resize_tree_view(int w, int h)
 	tree_win_w = w * ((float)tree_width_percent / 100.0f);
 	if (tree_width_max && tree_win_w > tree_width_max)
 		tree_win_w = tree_width_max;
+	/* at least one character of formatted text and one space either side */
+	if (tree_win_w < 3)
+		tree_win_w = 3;
 	track_win_w = w - tree_win_w - 1;
-	if (tree_win_w < 8)
-		tree_win_w = 8;
-	if (track_win_w < 8)
-		track_win_w = 8;
+	if (track_win_w < 3)
+		track_win_w = 3;
+
 	tree_win_x = 0;
 	track_win_x = tree_win_w + 1;
 
@@ -1956,13 +1897,13 @@ static void update(void)
 #if HAVE_RESIZETERM
 			resizeterm(lines, columns);
 #endif
-			editable_win_w = COLS;
 			w = COLS;
 			h = LINES - 3;
-			if (w < 16)
-				w = 16;
+			if (w < 3)
+				w = 3;
 			if (h < 2)
 				h = 2;
+			win_w = w;
 			resize_tree_view(w, h);
 			window_set_nr_rows(lib_editable.shared->win, h - 1);
 			pl_set_nr_rows(h - 1);
