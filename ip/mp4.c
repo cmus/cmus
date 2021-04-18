@@ -171,8 +171,12 @@ static int mp4_open(struct input_plugin_data *ip_data)
 	NeAACDecSetConfiguration(priv->decoder, neaac_cfg);
 
 	/* open mpeg-4 file */
-	priv->mp4.handle = MP4Read(ip_data->filename, NULL);
-	
+#ifdef MP4_DETAILS_ALL
+	priv->mp4.handle = MP4Read(ip_data->filename, 0);
+#else
+	priv->mp4.handle = (*)(void*, void*)(&MP4Read)(ip_data->filename, NULL);
+#endif
+
 	if (!priv->mp4.handle) {
 		d_print("MP4Read failed\n");
 		goto out;
