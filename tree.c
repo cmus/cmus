@@ -872,7 +872,7 @@ static void album_add_track(struct album *album, struct tree_track *track)
 	rb_insert_color(&track->tree_node, &album->track_root);
 }
 
-static const char *tree_artist_name(const struct track_info* ti)
+const char *tree_artist_name(const struct track_info* ti)
 {
 	const char *val = ti->albumartist;
 
@@ -884,7 +884,7 @@ static const char *tree_artist_name(const struct track_info* ti)
 	return val;
 }
 
-static const char *tree_album_name(const struct track_info* ti)
+const char *tree_album_name(const struct track_info* ti)
 {
 	const char *val = ti->album;
 
