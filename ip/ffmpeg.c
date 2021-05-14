@@ -335,16 +335,27 @@ static int ffmpeg_fill_buffer(AVFormatContext *ic, AVCodecContext *cc, struct ff
 			av_new_packet(&avpkt, input->curr_pkt_size);
 			memcpy(avpkt.data, input->curr_pkt_buf, input->curr_pkt_size);
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
-			if (avcodec_send_packet(cc, &avpkt) == 0) {
-				got_frame = !avcodec_receive_frame(cc, frame);
-				if (got_frame)
-					len = input->curr_pkt_size;
-				else
-					len = 0;
-			} else {
-				got_frame = 0;
+			int send_result = avcodec_send_packet(cc, &avpkt);
+			if (send_result != 0) {
+				if (send_result != AVERROR(EAGAIN)) {
+					d_print("avcodec_send_packet() returned %d\n", send_result);
+					char errstr[AV_ERROR_MAX_STRING_SIZE];
+					if (!av_strerror(send_result, errstr, AV_ERROR_MAX_STRING_SIZE ))
+					{
+						d_print("av_strerror(): %s\n", errstr);
+					} else {
+						d_print("av_strerror(): Description for error cannot be found\n");
+					}
+					av_packet_unref(&avpkt);
+					return -IP_ERROR_INTERNAL;
+				}
 				len = 0;
+			} else {
+				len = input->curr_pkt_size;
 			}
+
+			int recv_result = avcodec_receive_frame(cc, frame);
+			got_frame = (recv_result == 0) ? 1 : 0;
 #else
 			len = avcodec_decode_audio4(cc, frame, &got_frame, &avpkt);
 #endif
