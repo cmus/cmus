@@ -616,7 +616,7 @@ const struct format_option *get_global_fopts(void)
 	static const char *cont_strs[] = { " ", "C" };
 	static const char *follow_strs[] = { " ", "F" };
 	static const char *repeat_strs[] = { " ", "R" };
-	static const char *shuffle_strs[] = { " ", "S" };
+	static const char *shuffle_strs[] = { " ", "S", "&" };
 	int buffer_fill, vol, vol_left, vol_right;
 	int duration = -1;
 

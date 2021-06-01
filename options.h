@@ -116,6 +116,15 @@ enum {
 	NR_ATTRS
 };
 
+enum shuffle_mode {
+	SHUFFLE_OFF,
+	SHUFFLE_TRACKS,
+	SHUFFLE_ALBUMS,
+	/* backwards compatability */
+	SHUFFLE_FALSE,
+	SHUFFLE_TRUE
+};
+
 #define BRIGHT (1 << 3)
 
 extern char *cdda_device;

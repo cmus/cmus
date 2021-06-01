@@ -1,9 +1,11 @@
 # Playback
 
 bind common b player-next
+bind common B player-next-album
 bind common c player-pause
 bind common x player-play
 bind common z player-prev
+bind common Z player-prev-album
 bind common v player-stop
 
 bind common ] vol +0 +1%

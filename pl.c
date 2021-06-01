@@ -176,13 +176,12 @@ static void pl_free_track(struct editable *e, struct list_head *item)
 {
 	struct playlist *pl = pl_from_editable(e);
 	struct simple_track *track = to_simple_track(item);
-	struct shuffle_track *shuffle_track =
-		simple_track_to_shuffle_track(track);
+	struct shuffle_info *shuffle_info = &track->shuffle_info;
 
 	if (track == pl->cur_track)
 		pl->cur_track = NULL;
 
-	rb_erase(&shuffle_track->tree_node, &pl->shuffle_root);
+	rb_erase(&shuffle_info->tree_node, &pl->shuffle_root);
 	track_info_unref(track->info);
 	free(track);
 }
@@ -204,12 +203,12 @@ static void pl_free(struct playlist *pl)
 
 static void pl_add_track(struct playlist *pl, struct track_info *ti)
 {
-	struct shuffle_track *track = xnew(struct shuffle_track, 1);
+	struct simple_track *track = xnew(struct simple_track, 1);
 
 	track_info_ref(ti);
-	simple_track_init(&track->simple_track, ti);
-	shuffle_list_add(track, &pl->shuffle_root);
-	editable_add(&pl->editable, &track->simple_track);
+	simple_track_init(track, ti);
+	shuffle_list_add(&track->shuffle_info, &pl->shuffle_root, NULL);
+	editable_add(&pl->editable, track);
 }
 
 static void pl_add_cb(struct track_info *ti, void *opaque)
@@ -292,11 +291,6 @@ static void pl_list_sel_changed(void)
 	editable_take_ownership(&pl_visible->editable);
 }
 
-static int pl_dummy_filter(const struct simple_track *track)
-{
-	return 1;
-}
-
 static int pl_empty(struct playlist *pl)
 {
 	return editable_empty(&pl->editable);
@@ -315,8 +309,8 @@ static struct simple_track *pl_get_first_track(struct playlist *pl)
 	/* pl is not empty */
 
 	if (shuffle) {
-		struct shuffle_track *st = shuffle_list_get_next(&pl->shuffle_root, NULL, pl_dummy_filter);
-		return &st->simple_track;
+		struct shuffle_info *si = shuffle_list_get_next(&pl->shuffle_root, NULL, NULL);
+		return shuffle_info_to_simple_track(si);
 	} else {
 		return to_simple_track(pl->editable.head.next);
 	}
@@ -365,29 +359,29 @@ static struct track_info *pl_play_first_in_pl_playing(void)
 
 static struct simple_track *pl_get_next(struct playlist *pl, struct simple_track *cur)
 {
-	return simple_list_get_next(&pl->editable.head, cur, pl_dummy_filter);
+	return simple_list_get_next(&pl->editable.head, cur, NULL, true);
 }
 
 static struct simple_track *pl_get_next_shuffled(struct playlist *pl,
 		struct simple_track *cur)
 {
-	struct shuffle_track *st = simple_track_to_shuffle_track(cur);
-	st = shuffle_list_get_next(&pl->shuffle_root, st, pl_dummy_filter);
-	return &st->simple_track;
+	struct shuffle_info *si = &cur->shuffle_info;
+	si = shuffle_list_get_next(&pl->shuffle_root, si, NULL);
+	return shuffle_info_to_simple_track(si);
 }
 
 static struct simple_track *pl_get_prev(struct playlist *pl,
 		struct simple_track *cur)
 {
-	return simple_list_get_prev(&pl->editable.head, cur, pl_dummy_filter);
+	return simple_list_get_prev(&pl->editable.head, cur, NULL, true);
 }
 
 static struct simple_track *pl_get_prev_shuffled(struct playlist *pl,
 		struct simple_track *cur)
 {
-	struct shuffle_track *st = simple_track_to_shuffle_track(cur);
-	st = shuffle_list_get_prev(&pl->shuffle_root, st, pl_dummy_filter);
-	return &st->simple_track;
+	struct shuffle_info *si = &cur->shuffle_info;
+	si = shuffle_list_get_prev(&pl->shuffle_root, si, NULL);
+	return shuffle_info_to_simple_track(si);
 }
 
 static int pl_match_add_job(uint32_t type, void *job_data, void *opaque)
@@ -654,8 +648,8 @@ struct track_info *pl_play_selected_row(void)
 
 	if (!pl_cursor_in_track_window) {
 		if (shuffle && !pl_empty(pl_visible)) {
-			struct shuffle_track *st = shuffle_list_get_next(&pl_visible->shuffle_root, NULL, pl_dummy_filter);
-			struct simple_track *track = &st->simple_track;
+			struct shuffle_info *si = shuffle_list_get_next(&pl_visible->shuffle_root, NULL, NULL);
+			struct simple_track *track = shuffle_info_to_simple_track(si);
 			rv = pl_play_track(pl_visible, track, true);
 		}
 	}
@@ -664,10 +658,9 @@ struct track_info *pl_play_selected_row(void)
 		rv = pl_play_selected_track();
 
 	if (shuffle && rv && (pl_playing == prev_pl) && prev_track) {
-		struct shuffle_track *prev_st = simple_track_to_shuffle_track(prev_track);
-		struct shuffle_track *cur_st =
-			simple_track_to_shuffle_track(pl_playing_track);
-		shuffle_insert(&pl_playing->shuffle_root, prev_st, cur_st);
+		struct shuffle_info *prev_si = &prev_track->shuffle_info;
+		struct shuffle_info *cur_si = &pl_playing_track->shuffle_info;
+		shuffle_insert(&pl_playing->shuffle_root, prev_si, cur_si);
 	}
 
 	pl_cursor_in_track_window = was_in_track_window;
@@ -698,8 +691,11 @@ void pl_select_playing_track(void)
 
 void pl_reshuffle(void)
 {
-	if (pl_playing)
+	if (pl_playing) {
 		shuffle_list_reshuffle(&pl_playing->shuffle_root);
+		if (pl_playing_track)
+			shuffle_insert(&pl_playing->shuffle_root, NULL, &pl_playing_track->shuffle_info);
+	}
 }
 
 void pl_get_sort_str(char *buf, size_t size)
