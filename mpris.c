@@ -26,6 +26,9 @@
 #include "track_info.h"
 #include "utils.h"
 #include "uchar.h"
+#include "misc.h"
+#include "xstrjoin.h"
+#include "xmalloc.h"
 
 #define CK(v) \
 do { \
@@ -425,6 +428,51 @@ static int mpris_metadata(sd_bus *_bus, const char *_path,
 		if (is_http_url(ti->filename))
 			CK(mpris_msg_append_ss_dict(reply, "cmus:stream_title",
 						get_stream_title()));
+		
+		if (ti->filename) {
+			size_t len = strlen(ti->filename);
+			char uri[(3 * len) + 1];
+			uri_encode(ti->filename, len, uri);
+
+			char *xesam_url = xstrjoin("file://", uri);
+			CK(mpris_msg_append_ss_dict(reply, "xesam:url",
+						xesam_url));
+			free(xesam_url);
+		}
+
+		if (ti->albumart) {
+			size_t len = strlen(ti->albumart);
+			char uri[(3 * len) + 1];
+			uri_encode(ti->albumart, len, uri);
+
+			char *mpris_arturl = xstrjoin("file://", uri);
+			CK(mpris_msg_append_ss_dict(reply, "mpris:artUrl",
+						mpris_arturl));
+			free(mpris_arturl);
+		} else {
+			char *temp = xstrdup(ti->filename);
+			char *dir = strrchr(temp, '/');
+			if (dir)
+				*dir = '\0';
+			struct stat statbuf;
+
+			char *albumart = xstrjoin(temp, "/cover.jpg");
+
+			int rc = stat(albumart, &statbuf);
+			if (!rc && statbuf.st_mode & S_IWUSR) {
+				size_t len = strlen(albumart);
+				char uri[(3 * len) + 1];
+				uri_encode(albumart, len, uri);
+				
+				char *mpris_arturl = xstrjoin("file://", uri);
+				CK(mpris_msg_append_ss_dict(reply, "mpris:artUrl",
+							mpris_arturl));
+				free(mpris_arturl);
+			}
+			
+			free(temp);
+			free(albumart);
+		}
 	}
 
 	CK(sd_bus_message_close_container(reply));

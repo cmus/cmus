@@ -27,6 +27,7 @@ extern const char *cmus_socket_path;
 extern const char *cmus_data_dir;
 extern const char *cmus_lib_dir;
 extern const char *home_dir;
+extern const char *cmus_albumart_dir;
 
 char **get_words(const char *text);
 int strptrcmp(const void *a, const void *b);
@@ -50,5 +51,14 @@ int replaygain_decode(unsigned int field, int *gain);
 
 char *expand_filename(const char *name);
 void shuffle_array(void *array, size_t n, size_t size);
+
+// taken from https://github.com/dnmfarrell/URI-Encode-C
+#define _______ "\0\0\0\0"
+size_t uri_encode(const char *src, const size_t len, char *dst);
+
+// taken from https://nachtimwald.com/2017/11/18/base64-encode-and-decode-in-c/
+int b64_decode(const char *in, char **out, int *out_len);
+
+#define swap_endianness(num) ((num >> 24) & 0xff) | ((num << 8) & 0xff0000) | ((num >> 8) & 0xff00) | ((num << 24) & 0xff000000)
 
 #endif

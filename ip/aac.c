@@ -398,7 +398,7 @@ static int aac_read_comments(struct input_plugin_data *ip_data,
 		return -1;
 
 	id3_init(&id3);
-	rc = id3_read_tags(&id3, fd, ID3_V1 | ID3_V2);
+	rc = id3_read_tags(&id3, fd, ID3_V1 | ID3_V2, ip_data->filename);
 	if (rc == -1) {
 		d_print("error: %s\n", strerror(errno));
 		goto out;

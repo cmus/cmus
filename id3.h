@@ -54,6 +54,7 @@ enum id3_key {
 	ID3_MUSICBRAINZ_TRACKID,
 	ID3_MEDIA,
 	ID3_BPM,
+	ID3_APIC,
 
 	NUM_ID3_KEYS
 };
@@ -61,6 +62,9 @@ enum id3_key {
 struct id3tag {
 	char v1[128];
 	char *v2[NUM_ID3_KEYS];
+
+	const char *apic;
+	int apic_len;
 
 	unsigned int has_v1 : 1;
 	unsigned int has_v2 : 1;
@@ -73,7 +77,7 @@ int id3_tag_size(const char *buf, int buf_size);
 void id3_init(struct id3tag *id3);
 void id3_free(struct id3tag *id3);
 
-int id3_read_tags(struct id3tag *id3, int fd, unsigned int flags);
+int id3_read_tags(struct id3tag *id3, int fd, unsigned int flags, const char *filepath);
 char *id3_get_comment(struct id3tag *id3, enum id3_key key);
 
 char const *id3_get_genre(uint16_t id);

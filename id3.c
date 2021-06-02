@@ -24,6 +24,8 @@
 #include "debug.h"
 #include "utils.h"
 #include "file.h"
+#include "misc.h"
+#include "xstrjoin.h"
 
 #include <unistd.h>
 #include <stdint.h>
@@ -265,6 +267,7 @@ const char * const id3_key_names[NUM_ID3_KEYS] = {
 	"musicbrainz_trackid",
 	"media",
 	"bpm",
+	"albumart",
 };
 
 static int utf16_is_lsurrogate(uchar uch)
@@ -572,7 +575,7 @@ static struct {
 	{ "TPUB", ID3_PUBLISHER }, // TPUB can be both publisher or label
 	{ "TIT3", ID3_SUBTITLE },
 	{ "TMED", ID3_MEDIA },
-	{ "TBPM", ID3_BPM},
+	{ "TBPM", ID3_BPM },
 
 	/* obsolete frames (2.2.0) */
 	{ "TP1",  ID3_ARTIST },
@@ -979,6 +982,32 @@ static void decode_ufid(struct id3tag *id3, const char *buf, int len)
 	add_v2(id3, ID3_MUSICBRAINZ_TRACKID, ufid);
 }
 
+static void decode_apic(struct id3tag *id3, const char *buf, int len, int encoding)
+{
+	if (id3->apic)
+		return;
+
+	// skip MIME type
+	size_t slen = id3_skiplen(buf, len, encoding);
+	if (slen >= len)
+		return;
+	buf += slen;
+	len -= slen;
+
+	// skip Picture type
+	buf++;
+	len--;
+
+	// skip Description
+	slen = id3_skiplen(buf, len, encoding);
+	if (slen >= len)
+		return;
+	buf += slen;
+	len -= slen;
+
+	id3->apic = buf;
+	id3->apic_len = len;
+}
 
 static void v2_add_frame(struct id3tag *id3, struct v2_frame_header *fh, const char *buf)
 {
@@ -1009,6 +1038,8 @@ static void v2_add_frame(struct id3tag *id3, struct v2_frame_header *fh, const c
 		decode_comment(id3, buf, len, encoding);
 	} else if (!strncmp(fh->id, "COM", 3)) {
 		decode_comment(id3, buf, len, encoding);
+	} else if (!strncmp(fh->id, "APIC", 4)) {
+		decode_apic(id3, buf, len, encoding);
 	}
 }
 
@@ -1143,7 +1174,7 @@ int id3_tag_size(const char *buf, int buf_size)
 
 void id3_init(struct id3tag *id3)
 {
-	const struct id3tag t = { .has_v1 = 0, .has_v2 = 0 };
+	const struct id3tag t = { .apic_len = 0, .has_v1 = 0, .has_v2 = 0 };
 	*id3 = t;
 }
 
@@ -1155,7 +1186,37 @@ void id3_free(struct id3tag *id3)
 		free(id3->v2[i]);
 }
 
-int id3_read_tags(struct id3tag *id3, int fd, unsigned int flags)
+static void add_apic(struct id3tag *id3, const char *filepath)
+{
+	char *albumart_path;
+	char *album = id3_get_comment(id3, ID3_ALBUM);
+
+	if (album) {
+		albumart_path = xstrjoin(cmus_albumart_dir, "/", album);
+		free(album);
+	} else {
+		const char *filename = get_filename(filepath);
+		if (!filename)
+			return;
+		
+		char *temp = xstrdup(filename);
+		char *ext = strrchr(temp, '.');
+		if (ext)
+			*ext = '\0';
+		
+		albumart_path = xstrjoin(cmus_albumart_dir, "/", temp);
+		free(temp);
+	}
+
+	int apic_fd = open(albumart_path, O_CREAT | O_WRONLY | O_EXCL | O_TRUNC, S_IRUSR | S_IWUSR);
+	if (apic_fd >= 0) {
+		write_all(apic_fd, id3->apic, id3->apic_len);
+		close(apic_fd);
+	}
+	add_v2(id3, ID3_APIC, albumart_path);
+}
+
+int id3_read_tags(struct id3tag *id3, int fd, unsigned int flags, const char *filepath)
 {
 	off_t off;
 	int rc;
@@ -1217,6 +1278,10 @@ int id3_read_tags(struct id3tag *id3, int fd, unsigned int flags)
 			goto rc_error;
 		id3->has_v1 = is_v1(id3->v1);
 	}
+
+	if (id3->apic)
+		add_apic(id3, filepath);
+
 	return 0;
 error:
 	rc = -1;
