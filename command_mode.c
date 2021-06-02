@@ -1393,6 +1393,16 @@ static void cmd_p_prev(char *arg)
 	}
 }
 
+static void cmd_p_next_album(char *arg)
+{
+	cmus_next_album();
+}
+
+static void cmd_p_prev_album(char *arg)
+{
+	cmus_prev_album();
+}
+
 static void cmd_p_stop(char *arg)
 {
 	player_stop();
@@ -1580,23 +1590,35 @@ static void cmd_win_add_q(char *arg)
 static void cmd_win_activate(char *arg)
 {
 	struct track_info *info = NULL;
-	struct shuffle_track *previous = NULL, *next = NULL;
+	struct shuffle_info *previous = NULL, *next = NULL;
 	struct rb_root *shuffle_root = NULL;
 
 	if (cur_view == TREE_VIEW || cur_view == SORTED_VIEW) {
-		if (lib_cur_track)
-			previous = &lib_cur_track->shuffle_track;
-		shuffle_root = &lib_shuffle_root;
+		if (shuffle == SHUFFLE_TRACKS) {
+			if (lib_cur_track)
+				previous = &lib_cur_track->simple_track.shuffle_info;
+			shuffle_root = &lib_shuffle_root;
+		} else if (shuffle == SHUFFLE_ALBUMS) {
+			if (lib_cur_track)
+				previous = &lib_cur_track->album->shuffle_info;
+			shuffle_root = &lib_album_shuffle_root;
+		}
 	}
 
 	switch (cur_view) {
 	case TREE_VIEW:
 		info = tree_activate_selected();
-		next = &lib_cur_track->shuffle_track;
+		if (shuffle == SHUFFLE_TRACKS)
+			next = &lib_cur_track->simple_track.shuffle_info;
+		else if (shuffle == SHUFFLE_ALBUMS)
+			next = &lib_cur_track->album->shuffle_info;
 		break;
 	case SORTED_VIEW:
 		info = sorted_activate_selected();
-		next = &lib_cur_track->shuffle_track;
+		if (shuffle == SHUFFLE_TRACKS)
+			next = &lib_cur_track->simple_track.shuffle_info;
+		else if (shuffle == SHUFFLE_ALBUMS)
+			next = &lib_cur_track->album->shuffle_info;
 		break;
 	case PLAYLIST_VIEW:
 		info = pl_play_selected_row();
@@ -2592,10 +2614,12 @@ struct command commands[] = {
 	{ "mark",                  cmd_mark,             0, 1,  NULL,                 0, 0          },
 	{ "mute",                  cmd_mute,             0, 0,  NULL,                 0, 0          },
 	{ "player-next",           cmd_p_next,           0, 0,  NULL,                 0, 0          },
+	{ "player-next-album",     cmd_p_next_album,     0, 0,  NULL,                 0, 0          },
 	{ "player-pause",          cmd_p_pause,          0, 0,  NULL,                 0, 0          },
 	{ "player-pause-playback", cmd_p_pause_playback, 0, 0,  NULL,                 0, 0          },
 	{ "player-play",           cmd_p_play,           0, 1,  expand_playable,      0, 0          },
 	{ "player-prev",           cmd_p_prev,           0, 0,  NULL,                 0, 0          },
+	{ "player-prev-album",     cmd_p_prev_album,     0, 0,  NULL,                 0, 0          },
 	{ "player-stop",           cmd_p_stop,           0, 0,  NULL,                 0, 0          },
 	{ "prev-view",             cmd_prev_view,        0, 0,  NULL,                 0, 0          },
 	{ "left-view",             cmd_left_view,        0, 0,  NULL,                 0, 0          },
@@ -2610,6 +2634,7 @@ struct command commands[] = {
 	{ "rand",                  cmd_rand,             0, 0,  NULL,                 0, 0          },
 	{ "quit",                  cmd_quit,             0, 1,  NULL,                 0, 0          },
 	{ "refresh",               cmd_refresh,          0, 0,  NULL,                 0, 0          },
+	{ "reshuffle",             cmd_reshuffle,        0, 0,  NULL,                 0, 0          },
 	{ "run",                   cmd_run,              1, -1, expand_program_paths, 0, CMD_UNSAFE },
 	{ "save",                  cmd_save,             0, 1,  expand_load_save,     0, CMD_UNSAFE },
 	{ "search-b-start",        cmd_search_b_start,   0, 0,  NULL,                 0, 0          },
@@ -2620,7 +2645,7 @@ struct command commands[] = {
 	{ "set",                   cmd_set,              1, 1,  expand_options,       0, 0          },
 	{ "shell",                 cmd_shell,            1, -1, expand_program_paths, 0, CMD_UNSAFE },
 	{ "showbind",              cmd_showbind,         1, 1,  expand_unbind_args,   0, 0          },
-	{ "shuffle",               cmd_reshuffle,        0, 0,  NULL,                 0, 0          },
+	{ "shuffle",               cmd_reshuffle,        0, 0,  NULL,                 0, CMD_HIDDEN },
 	{ "source",                cmd_source,           1, 1,  expand_files,         0, CMD_UNSAFE },
 	{ "toggle",                cmd_toggle,           1, 1,  expand_toptions,      0, 0          },
 	{ "tqueue",                cmd_tqueue,           0, 1,  NULL,                 0, 0          },
@@ -2672,7 +2697,7 @@ static void expand_commands(const char *str)
 	len = strlen(str);
 	pos = 0;
 	for (i = 0; commands[i].name; i++) {
-		if (strncmp(str, commands[i].name, len) == 0)
+		if (strncmp(str, commands[i].name, len) == 0 && !(commands[i].flags & CMD_HIDDEN))
 			tails[pos++] = xstrdup(commands[i].name + len);
 	}
 	if (pos > 0) {

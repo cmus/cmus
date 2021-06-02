@@ -32,6 +32,8 @@ enum {
 	CMD_UNSAFE	= 1 << 0,
 	/* execute command after every typed/deleted character */
 	CMD_LIVE	= 1 << 1,
+	/* hide command from completion, useful for deprecated commands */
+	CMD_HIDDEN	= 1 << 2,
 };
 
 struct command {
