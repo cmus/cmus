@@ -84,6 +84,8 @@ int cmus_playlist_for_each(const char *buf, int size, int reverse,
 
 void cmus_next(void);
 void cmus_prev(void);
+void cmus_next_album(void);
+void cmus_prev_album(void);
 
 extern int cmus_next_track_request_fd;
 struct track_info *cmus_get_next_track(void);
@@ -92,5 +94,7 @@ void cmus_track_request_init(void);
 
 int cmus_can_raise_vte(void);
 void cmus_raise_vte(void);
+
+bool cmus_queue_active(void);
 
 #endif

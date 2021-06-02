@@ -116,6 +116,15 @@ enum {
 	NR_ATTRS
 };
 
+enum shuffle_mode {
+	SHUFFLE_OFF,
+	SHUFFLE_TRACKS,
+	SHUFFLE_ALBUMS,
+	/* backwards compatability */
+	SHUFFLE_FALSE,
+	SHUFFLE_TRUE
+};
+
 #define BRIGHT (1 << 3)
 
 extern char *cdda_device;
@@ -183,6 +192,10 @@ extern char *statusline_format;
 /* format string for window title */
 extern char *window_title_format;
 extern char *window_title_alt_format;
+
+/* format string used to terminate all clipped text */
+extern char *clipped_text_format;
+extern char *clipped_text_internal;
 
 extern char *id3_default_charset;
 extern char *icecast_default_charset;

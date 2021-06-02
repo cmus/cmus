@@ -29,6 +29,7 @@
 #include "utils.h"
 #include "path.h"
 #include "options.h"
+#include "command_mode.h"
 #include "xmalloc.h"
 #include "debug.h"
 #include "load_dir.h"
@@ -96,6 +97,34 @@ void cmus_prev(void)
 
 	if (play_library) {
 		info = lib_goto_prev();
+	} else {
+		info = pl_goto_prev();
+	}
+
+	if (info)
+		player_set_file(info);
+}
+
+void cmus_next_album(void)
+{
+	struct track_info *info;
+
+	if (play_library) {
+		info = lib_goto_next_album();
+	} else {
+		info = pl_goto_next();
+	}
+
+	if (info)
+		player_set_file(info);
+}
+
+void cmus_prev_album(void)
+{
+	struct track_info *info;
+
+	if (play_library) {
+		info = lib_goto_prev_album();
 	} else {
 		info = pl_goto_prev();
 	}
@@ -508,4 +537,8 @@ void cmus_raise_vte(void)
 			}
 		}
 	}
+}
+
+bool cmus_queue_active(void) {
+	return play_queue_active;
 }

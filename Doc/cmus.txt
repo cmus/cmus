@@ -201,6 +201,9 @@ x                       player-play
 z                       player-prev
 v                       player-stop
 
+B                       player-next-album
+Z                       player-prev-album
+
 ]                       vol +0 +1%
 [                       vol +1% +0
 +                       vol +10%
@@ -513,6 +516,10 @@ pl-rename <name>
 player-next (*b*)
 	Skips to the next track.
 
+player-next-album (*B*)
+	Skips to the next album. If *shuffle*=`tracks` or a playlist is active,
+	skips to the next track.
+
 player-pause (*c*)
 	Toggles pause.
 
@@ -525,6 +532,10 @@ player-play [filename] (*x*)
 
 player-prev (*z*)
 	Skips to the previous track.
+
+player-prev-album (*Z*)
+	Skips to the previous album. If *shuffle*=`tracks` or a playlist is active,
+	skips to the previous track.
 
 player-stop (*v*)
 	Stops playback.
@@ -567,6 +578,9 @@ rand
 
 refresh (*^L*)
 	Redraws the terminal window.
+
+reshuffle
+	Reshuffles the shuffle lists for both library and playlist views.
 
 run <command>
 	Runs a command for the marked tracks OR the selected one if none marked.
@@ -647,15 +661,12 @@ shell <command>
 showbind <context> <key>
 	Shows a key binding.
 
-shuffle
-	Reshuffles the shuffle lists for both library and playlist views.
-
 source <filename>
 	Reads and executes commands from <filename>.
 
 toggle <option>
-	Toggles the value of a toggle-able option (all booleans and tristate
-	*aaa_mode*).
+	Toggles the value of a toggle-able option (all booleans and the options
+	*shuffle*, *aaa_mode*, and *replaygain*).
 
 tqueue [NUM]
 	Queues NUM (default 1) random tracks from the library. See also
@@ -1010,6 +1021,12 @@ display_artist_sort_name (false)
 follow (false)
 	If enabled, always select the currently playing track on track change.
 
+format_clipped_text [`Plain String`]
+	String used to lead out any text that is cut off by field limits.
+
+	Note: `Format String` rules are not applied. A plain string such as "..."
+	is expected.
+
 format_current [`Format String`]
 	Format string for the line displaying currently playing track.
 
@@ -1101,8 +1118,10 @@ repeat (false)
 repeat_current (false)
 	Repeat current track forever.
 
-replaygain (disabled) [track, album, track-preferred, album-preferred]
-	Enable Replay Gain.
+replaygain (disabled) [track, album, track-preferred, album-preferred, smart]
+	Enable Replay Gain. The smart setting behaves like track-preferred when
+	shuffle is on, or the queue is active, or when playing from a playlist.
+	Otherwise, it behaves like album-preferred.
 
 replaygain_limit (true)
 	Use replay gain limiting when clipping.
@@ -1141,9 +1160,18 @@ show_playback_position (true)
 show_remaining_time (false)
 	Display remaining time instead of elapsed time.
 
-shuffle (false)
-	Play in shuffled order. Shuffle works in the library views (1-2) and
-	playlist view (3).
+shuffle (off) [off, tracks, albums]
+	@li *off*
+	Play all tracks in order. See also *lib_sort* and *pl_sort*.
+	@li *tracks*
+	Play all tracks in the library or playlist in a shuffled order.
+	@li *albums*
+	Play each library album to completion before shuffling to the first track
+	of another library album. In playlists this option falls back to *tracks*
+	behaviour.
+
+	Filters and *aaa_mode* can be used to limit the items available for play.
+	Note that *shuffle*=`albums` will have no effect with *aaa_mode*=`album`.
 
 skip_track_info (false)
 	Don't load metadata when adding tracks. Useful when using network file
@@ -1293,6 +1321,8 @@ Special Keys:
 	    %{part}		@br
 	    %{subtitle}		@br
 	    %{media}		@br
+	%!
+		prior text is of lower importance and may be shortened if needed (use at most once)
 	%=
 		start align right (use at most once)
 	%%
@@ -1324,7 +1354,7 @@ Examples:
 	@pre
 	:set format_trackwin= %02n. %t %{?y?(%y)}%= %d
 	:set format_current= %n. %-30t %40F (%y)%= %d
-	:set format_current= %a - %l - %02n. %t%= %{bitrate}Kbps %g %y
+	:set format_current= %a - %l%! - %02n. %t%= %{bitrate}Kbps %g %y
 	:set format_playlist= %f%= %6{rg_track_gain} dB  %8{rg_track_peak}
 	:set format_playlist= %-25%a %-15%l %3n. %t%= %y %d
 	@endpre

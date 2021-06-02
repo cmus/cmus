@@ -914,7 +914,8 @@ static void remove_artist(struct artist *artist)
 	rb_erase(&artist->tree_node, &lib_artist_root);
 }
 
-void tree_add_track(struct tree_track *track)
+void tree_add_track(struct tree_track *track,
+		void (*add_album_cb)(struct album *))
 {
 	const struct track_info *ti = tree_track_info(track);
 	const char *album_name, *artist_name, *artistsort_name = NULL;
@@ -1005,6 +1006,7 @@ void tree_add_track(struct tree_track *track)
 
 	} else if (artist) {
 		add_album(new_album);
+		add_album_cb(new_album);
 		album_add_track(new_album, track);
 
 		if (artist->expanded)
@@ -1012,6 +1014,7 @@ void tree_add_track(struct tree_track *track)
 	} else {
 		add_artist(new_artist);
 		add_album(new_album);
+		add_album_cb(new_album);
 		album_add_track(new_album, track);
 
 		window_changed(lib_tree_win);
@@ -1179,7 +1182,8 @@ static void remove_track(struct tree_track *track)
 	rb_erase(&track->tree_node, &track->album->track_root);
 }
 
-void tree_remove(struct tree_track *track)
+void tree_remove(struct tree_track *track,
+		void (*remove_album_cb)(struct album *))
 {
 	struct album *album = track->album;
 	struct artist *sel_artist;
@@ -1203,6 +1207,7 @@ void tree_remove(struct tree_track *track)
 		}
 
 		remove_album(album);
+		remove_album_cb(album);
 		album_free(album);
 
 		if (rb_root_empty(&artist->album_root)) {
@@ -1222,7 +1227,8 @@ void tree_remove_sel(void)
 	}
 }
 
-void tree_sort_artists(void)
+void tree_sort_artists(void (*add_album_cb)(struct album *),
+		void (*remove_album_cb)(struct album *))
 {
 	struct rb_node *a_node, *a_tmp;
 
@@ -1237,8 +1243,8 @@ void tree_sort_artists(void)
 			rb_for_each_safe(t_node, t_tmp, &album->track_root) {
 				struct tree_track *track = to_tree_track(t_node);
 
-				tree_remove(track);
-				tree_add_track(track);
+				tree_remove(track, remove_album_cb);
+				tree_add_track(track, add_album_cb);
 			}
 		}
 	}

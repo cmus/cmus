@@ -32,13 +32,26 @@
 static int width;
 static int align_left;
 static int pad;
+static bool width_is_exact;
 
 static struct gbuf cond_buffer = {0, 64, 0};
 static struct gbuf l_str = {0, 256, 0};
+static struct gbuf m_str = {0, 256, 0};
 static struct gbuf r_str = {0, 256, 0};
-static struct fp_len str_len = {0, 0};
+static struct fp_len str_len = {0, 0, 0};
 static int *len = &str_len.llen;
 static struct gbuf* str = &l_str;
+
+size_t mark_clipped_text(char *buffer, int buf_len)
+{
+	int clipped_mark_len = min_u(u_str_width(clipped_text_internal), buf_len);
+	int skip = buf_len - clipped_mark_len;
+	size_t byte_pos = u_skip_chars(buffer, &skip, false);
+	byte_pos += u_copy_chars(buffer + byte_pos, clipped_text_internal, &clipped_mark_len);
+	/* pad if we partially replaced a wide character */
+	memset(buffer + byte_pos, ' ', skip);
+	return byte_pos + skip;
+}
 
 static void stack_print(char *stack, int stack_len)
 {
@@ -158,76 +171,55 @@ static void print_time(int t)
 static void print_str(const char *src)
 {
 	int str_width = u_str_width(src);
-	gbuf_grow(str, (width ? width : str_width) * 4);
-	*len += (width ? width : str_width);
 
-	if (width) {
+	if (width && width_is_exact) {
 		int ws_len;
 		int i = 0;
 
+		gbuf_grow(str, width * 4);
+		*len += width;
+
 		if (align_left) {
 			i = width;
-			str->len += u_copy_chars(str->buffer + str->len, src, &i);
-
-			ws_len = width - i;
-			memset(str->buffer + str->len, ' ', ws_len);
-			str->len += ws_len;
+			size_t copy_bytes = u_copy_chars(str->buffer + str->len, src, &i);
+			if (src[copy_bytes] != '\0')
+				copy_bytes = mark_clipped_text(str->buffer + str->len, width);
+			str->len += copy_bytes;
+			memset(str->buffer + str->len, ' ', i);
+			str->len += i;
 		} else {
 			int s = 0;
-
 			ws_len = width - str_width;
 
+			if (ws_len < 0) {
+				int skip = -ws_len;
+				int clipped_mark_len = min_u(u_str_width(clipped_text_internal), width);
+				skip += clipped_mark_len;
+				str->len += u_copy_chars(str->buffer + str->len, clipped_text_internal, &clipped_mark_len);
+				s = u_skip_chars(src, &skip, true);
+				/* pad if a wide character caused us to skip too much */
+				ws_len = -skip;
+
+			}
 			if (ws_len > 0) {
 				memset(str->buffer + str->len, ' ', ws_len);
 				str->len += ws_len;
-				i += ws_len;
+				width -= ws_len;
 			}
-
-			if (ws_len < 0) {
-				int w, c = -ws_len;
-				uchar u = 0;
-
-				while (c > 0) {
-					u = u_get_char(src, &s);
-					w = u_char_width(u);
-					c -= w;
-				}
-				if (c < 0) {
-					/* gaah, skipped too much */
-					if (u_char_width(u) == 2) {
-						/* double-byte */
-						str->buffer[str->len++] = ' ';
-					} else {
-						/* <xx> */
-						if (c == -3)
-							str->buffer[str->len++] = hex_tab[(u >> 4) & 0xf];
-						if (c <= -2)
-							str->buffer[str->len++] = hex_tab[u & 0xf];
-						str->buffer[str->len++] = '>';
-					}
-				}
-			}
-
-			if (width - i > 0) {
-				int w = width - i;
-
-				str->len += u_copy_chars(str->buffer + str->len, src + s, &w);
-			}
-
+			str->len += u_copy_chars(str->buffer + str->len, src + s, &width);
 		}
 	} else {
-		int s = 0;
-		size_t d = 0;
-		uchar u;
+		int w = width ? width : str_width;
+		gbuf_grow(str, w * 4);
 
-		while (1) {
-			u = u_get_char(src, &s);
-			if (u == 0)
-				break;
-			u_set_char(str->buffer + str->len, &d, u);
+		int copy_bytes = u_copy_chars(str->buffer + str->len, src, &w);
+		if (src[copy_bytes] == '\0') {
+			*len += str_width;
+		} else {
+			*len += width;
+			copy_bytes = mark_clipped_text(str->buffer + str->len, width);
 		}
-
-		str->len += d;
+		str->len += copy_bytes;
 	}
 }
 
@@ -389,12 +381,14 @@ static uchar format_skip_cond_expr(const char *format, int *s)
 			continue;
 		}
 		u = u_get_char(format, s);
-		if (u == '%' || u == '?' || u == '=') {
+		if (u == '%' || u == '?' || u == '!' || u == '=') {
 			continue;
 		}
 		if (u == '-') {
 			u = u_get_char(format, s);
 		}
+		if (u == '.')
+			u = u_get_char(format, s);
 		while (isdigit(u)) {
 			u = u_get_char(format, s);
 		}
@@ -409,6 +403,16 @@ static uchar format_skip_cond_expr(const char *format, int *s)
 				if (u != '%')
 					continue;
 				u = u_get_char(format, s);
+				if (u == '%' || u == '?' || u == '!' || u == '=')
+					continue;
+				if (u == '-')
+					u = u_get_char(format, s);
+				if (u == '.')
+					u = u_get_char(format, s);
+				while (isdigit(u))
+					u = u_get_char(format, s);
+				if (u == 0)
+					return 0;
 				if (u == '{')
 					++level;
 			}
@@ -482,6 +486,12 @@ static void format_parse(int str_width, const char *format, const struct format_
 			++(*len);
 			continue;
 		}
+		if (u == '!') {
+			/* middle (priority) text starts */
+			str = &m_str;
+			len = &str_len.mlen;
+			continue;
+		}
 		if (u == '=') {
 			/* right aligned text starts */
 			str = &r_str;
@@ -491,6 +501,11 @@ static void format_parse(int str_width, const char *format, const struct format_
 		align_left = 0;
 		if (u == '-') {
 			align_left = 1;
+			u = u_get_char(format, &s);
+		}
+		width_is_exact = true;
+		if (u == '.') {
+			width_is_exact = false;
 			u = u_get_char(format, &s);
 		}
 		pad = ' ';
@@ -556,58 +571,73 @@ static void format_read(int str_width, const char *format, const struct format_o
 {
 	if (!l_str.buffer)
 		l_str.buffer = xmalloc(l_str.alloc);
+	if (!m_str.buffer)
+		m_str.buffer = xmalloc(m_str.alloc);
 	if (!r_str.buffer)
 		r_str.buffer = xmalloc(r_str.alloc);
 	str_len.llen = 0;
+	str_len.mlen = 0;
 	str_len.rlen = 0;
 	str = &l_str;
 	len = &str_len.llen;
 	l_str.len = 0;
+	m_str.len = 0;
 	r_str.len = 0;
 	*l_str.buffer = 0;
+	*m_str.buffer = 0;
 	*r_str.buffer = 0;
 	format_parse(str_width, format, fopts, strlen(format));
 
 	l_str.buffer[l_str.len] = 0;
+	m_str.buffer[m_str.len] = 0;
 	r_str.buffer[r_str.len] = 0;
 }
 
 static void format_write(char *buf, int str_width)
 {
 	if (str_width == 0)
-		str_width = str_len.llen + str_len.rlen + (str_len.rlen > 0);
+		str_width = str_len.llen + str_len.mlen + str_len.rlen + (str_len.rlen > 0);
 
 	/* NOTE: any invalid UTF-8 bytes have already been converted to <xx>
 	 *       (ASCII) where x is hex digit
 	 */
 
-	if (str_len.llen + str_len.rlen <= str_width) {
-		/* both fit */
-		int ws_len = str_width - str_len.llen - str_len.rlen;
+	if (str_len.llen + str_len.mlen + str_len.rlen <= str_width) {
+		/* all fit */
+		int ws_len = str_width - (str_len.llen + str_len.mlen + str_len.rlen);
 		int pos = 0;
 
-		/* I would use strcpy if it returned anything useful */
-		while (l_str.buffer[pos]) {
-			buf[pos] = l_str.buffer[pos];
-			pos++;
-		}
+		strcpy(buf, l_str.buffer);
+		pos += l_str.len;
+		strcpy(buf + pos, m_str.buffer);
+		pos += m_str.len;
 		memset(buf + pos, ' ', ws_len);
 		strcpy(buf + pos + ws_len, r_str.buffer);
 	} else {
-		int l_space = str_width - str_len.rlen;
-		size_t pos = 0;
-		int idx = 0;
+		/* keep first character since it's almost always padding */
+		int clipped_mark_len = min_u(u_str_width(clipped_text_internal) + 1, str_width);
+		int r_space = str_width - clipped_mark_len;
+		int m_space = max_i(r_space - str_len.rlen, 0);
+		int l_space = max_i(m_space - str_len.mlen, 0) + clipped_mark_len;
+		int pos, r_idx = 0;
 
-		if (l_space > 0)
-			pos = u_copy_chars(buf, l_str.buffer, &l_space);
-		if (l_space < 0) {
-			int w = -l_space;
+		if (str_len.llen < clipped_mark_len)
+			gbuf_grow(&l_str, clipped_mark_len * 4);
+		mark_clipped_text(l_str.buffer, l_space);
+		pos = u_copy_chars(buf, l_str.buffer, &l_space);
 
-			idx = u_skip_chars(r_str.buffer, &w);
-			if (w != -l_space)
-				buf[pos++] = ' ';
+		if (str_len.mlen > m_space)
+			mark_clipped_text(m_str.buffer, m_space);
+		pos += u_copy_chars(buf + pos, m_str.buffer, &m_space);
+
+		int r_excess = str_len.rlen - r_space;
+		if (r_excess > 0) {
+			r_idx = u_skip_chars(r_str.buffer, &r_excess, true);
+			/* pad if a wide character caused us to skip too much */
+			memset(buf + pos, ' ', -r_excess);
+			pos += -r_excess;
 		}
-		strcpy(buf + pos, r_str.buffer + idx);
+		strcpy(buf + pos, r_str.buffer + r_idx);
 	}
 }
 
@@ -636,7 +666,7 @@ struct fp_len format_print(char *buf, int str_width, const char *format, const s
 struct fp_len format_print_gbuf(struct gbuf *buf, int str_width, const char *format, const struct format_option *fopts)
 {
 	format_read(str_width, format, fopts);
-	int ws_len = str_width - str_len.llen - str_len.rlen;
+	int ws_len = str_width - (str_len.llen + str_len.mlen + str_len.rlen);
 	gbuf_grow(buf, l_str.len + (ws_len > 0 ? ws_len : 0) + r_str.len);
 
 #if DEBUG > 1
@@ -696,9 +726,11 @@ static int format_valid_sub(const char *format, const struct format_option *fopt
 			const char *long_begin = NULL;
 
 			u = u_get_char(format, &s);
-			if (u == '%' || u == '=' || u == '?')
+			if (u == '%' || u == '?' || u == '!' || u == '=')
 				continue;
 			if (u == '-')
+				u = u_get_char(format, &s);
+			if (u == '.')
 				u = u_get_char(format, &s);
 			if (u == '0') {
 				pad_zero = 1;
