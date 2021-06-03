@@ -763,7 +763,7 @@ static void print_editable(struct window *win, int row, struct iter *iter)
 {
 	struct simple_track *track;
 	struct iter sel;
-	int current, selected, active;
+	int current, selected, active = 0;
 	const char *format;
 
 	track = iter_to_simple_track(iter);
@@ -776,7 +776,7 @@ static void print_editable(struct window *win, int row, struct iter *iter)
 		cursor_y = 1 + row;
 	}
 
-	if (!selected && track->marked) {
+	if (!selected && !!track->marked) {
 		selected = 1;
 		active = 0;
 	}
