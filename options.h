@@ -203,6 +203,9 @@ extern char *clipped_text_internal;
 extern char *id3_default_charset;
 extern char *icecast_default_charset;
 
+/* comma-separated list of env vars to substitute in saved library/cache paths */
+extern char **pl_env_vars;
+
 /* build option list */
 void options_add(void);
 

@@ -30,6 +30,7 @@
 #include "mpris.h"
 #include "cmus.h"
 #include "lib.h"
+#include "pl_env.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -662,7 +663,12 @@ static void _producer_play(void)
 
 		rc = ip_open(ip);
 		if (rc) {
-			player_ip_error(rc, "opening file `%s'", ip_get_filename(ip));
+			int var_len;
+			const char *fn = ip_get_filename(ip), *var;
+			if ((var = pl_env_var(fn, &var_len)))
+				player_ip_error(rc, "opening file `%s': missing env var `%.*s`", pl_env_var_remainder(fn, var_len), var_len, var);
+			else
+				player_ip_error(rc, "opening file `%s'", fn);
 			ip_delete(ip);
 			_producer_status_update(PS_UNLOADED);
 		} else {

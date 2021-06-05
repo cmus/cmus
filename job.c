@@ -36,6 +36,7 @@
 #include "xstrjoin.h"
 #include "ui_curses.h"
 #include "cue_utils.h"
+#include "pl_env.h"
 
 #include <string.h>
 #include <unistd.h>
@@ -351,7 +352,9 @@ static int handle_line(void *data, const char *line)
 	if (is_http_url(line) || is_cue_url(line)) {
 		add_url(line);
 	} else {
-		char *absolute = path_absolute_cwd(line, data);
+		char *absolute = pl_env_var(line, NULL)
+			? pl_env_expand(line)
+			: path_absolute_cwd(line, data);
 		add_file(absolute, 0);
 		free(absolute);
 	}
