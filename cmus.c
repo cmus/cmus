@@ -38,6 +38,7 @@
 #include "gbuf.h"
 #include "discid.h"
 #include "locking.h"
+#include "pl_env.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -231,16 +232,20 @@ static int save_ext_playlist_cb(void *data, struct track_info *ti)
 
 static int save_playlist_cb(void *data, struct track_info *ti)
 {
+	char *proc_filename = pl_env_reduce(ti->filename);
 	int fd = *(int *)data;
 	const char nl = '\n';
 	int rc;
 
-	rc = write_all(fd, ti->filename, strlen(ti->filename));
+	rc = write_all(fd, proc_filename, strlen(proc_filename));
+	free(proc_filename);
 	if (rc == -1)
 		return -1;
+
 	rc = write_all(fd, &nl, 1);
 	if (rc == -1)
 		return -1;
+
 	return 0;
 }
 

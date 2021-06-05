@@ -26,6 +26,7 @@
 #include "xstrjoin.h"
 #include "gbuf.h"
 #include "options.h"
+#include "pl_env.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -124,10 +125,18 @@ static int valid_cache_entry(const struct cache_entry *e, unsigned int avail)
 static struct track_info *cache_entry_to_ti(struct cache_entry *e)
 {
 	const char *strings = e->strings;
-	struct track_info *ti = track_info_new(strings);
+	struct track_info *ti;
 	struct keyval *kv;
 	int str_size = e->size - sizeof(*e);
 	int pos, i, count;
+	char *proc_filename;
+
+	if (pl_env_var(strings, NULL) && (proc_filename = pl_env_expand(strings))) {
+		ti = track_info_new(proc_filename);
+		free(proc_filename);
+	} else {
+		ti = track_info_new(strings);
+	}
 
 	ti->duration = e->duration;
 	ti->bitrate = e->bitrate;
@@ -318,6 +327,7 @@ static void flush_buffer(int fd, struct gbuf *buf)
 
 static void write_ti(int fd, struct gbuf *buf, struct track_info *ti, unsigned int *offsetp)
 {
+	char *proc_filename = pl_env_reduce(ti->filename);
 	const struct keyval *kv = ti->comments;
 	unsigned int offset = *offsetp;
 	unsigned int pad;
@@ -334,7 +344,7 @@ static void write_ti(int fd, struct gbuf *buf, struct track_info *ti, unsigned i
 	e.mtime = ti->mtime;
 	e.play_count = ti->play_count;
 	e.bpm = ti->bpm;
-	len[count] = strlen(ti->filename) + 1;
+	len[count] = strlen(proc_filename) + 1;
 	e.size += len[count++];
 	len[count] = (ti->codec ? strlen(ti->codec) : 0) + 1;
 	e.size += len[count++];
@@ -359,7 +369,7 @@ static void write_ti(int fd, struct gbuf *buf, struct track_info *ti, unsigned i
 	if (pad)
 		gbuf_set(buf, 0, pad);
 	gbuf_add_bytes(buf, &e, sizeof(e));
-	gbuf_add_bytes(buf, ti->filename, len[count++]);
+	gbuf_add_bytes(buf, proc_filename, len[count++]);
 	gbuf_add_bytes(buf, ti->codec ? ti->codec : "", len[count++]);
 	gbuf_add_bytes(buf, ti->codec_profile ? ti->codec_profile : "", len[count++]);
 	for (i = 0; kv[i].key; i++) {
@@ -369,6 +379,8 @@ static void write_ti(int fd, struct gbuf *buf, struct track_info *ti, unsigned i
 
 	free(len);
 	*offsetp = offset + pad + e.size;
+
+	free(proc_filename);
 }
 
 int cache_close(void)
@@ -436,6 +448,18 @@ struct track_info *cache_get_ti(const char *filename, int force)
 	unsigned int hash = hash_str(filename);
 	struct track_info *ti;
 	int reload = 0;
+
+	if (pl_env_var(filename, NULL)) {
+		struct growing_keyvals c = {NULL, 0, 0};
+		keyvals_terminate(&c);
+
+		ti = track_info_new(filename);
+		ti->duration = 0;
+		track_info_set_comments(ti, c.keyvals);
+
+		track_info_ref(ti);
+		return ti;
+	}
 
 	ti = lookup_cache_entry(filename, hash);
 	if (ti) {

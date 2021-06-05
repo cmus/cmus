@@ -1115,6 +1115,12 @@ pause_on_output_change (false)
 
     Supported output plugins: pulse.
 
+pl_env_vars
+	Comma separated list of environment variables to substitute when saving
+	library/playlist files. The paths must be absolute to take effect.
+
+	Note: This option will not take full effect until cmus has been restarted.
+
 pl_sort () [`Sort Keys`]
 	Sort keys for the playlist view (3). Empty value disables sorting and
 	enables manually moving tracks.

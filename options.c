@@ -160,6 +160,7 @@ char *window_title_alt_format = NULL;
 char *id3_default_charset = NULL;
 char *icecast_default_charset = NULL;
 char *lib_add_filter = NULL;
+char **pl_env_vars;
 
 static void buf_int(char *buf, int val, size_t size)
 {
@@ -268,6 +269,7 @@ static const struct {
 	{ "pl_sort", "" },
 	{ "id3_default_charset", "ISO-8859-1" },
 	{ "icecast_default_charset", "ISO-8859-1" },
+	{ "pl_env_vars", "" },
 	{ NULL, NULL }
 };
 
@@ -505,6 +507,56 @@ static void set_tree_width_max(void *data, const char *buf)
 	if (parse_int(buf, 0, 9999, &cols))
 		tree_width_max = cols;
 	update_size();
+}
+
+/* get_pl_env_vars converts the pl_env_vars array into a comma-separated list */
+static void get_pl_env_vars(void *data, char *buf, size_t size)
+{
+	if (!pl_env_vars) {
+		strscpy(buf, "", size);
+		return;
+	}
+	char *p = buf;
+	size_t r = size - 1;
+	for (char **x = pl_env_vars; *x; x++) {
+		if (x != pl_env_vars) {
+			if (!--r)
+				return; /* overflow */
+			*p++ = ',';
+		}
+		size_t l = strlen(*x);
+		if (!(r -= l))
+			return; /* overflow */
+		strcpy(p, *x);
+		p += l;
+	}
+	*p = '\0';
+}
+
+/* set_pl_env_vars splits the pl_env_vars config into the pl_env_vars array */
+static void set_pl_env_vars(void *data, const char *buf)
+{
+	if (pl_env_vars) {
+		free(*pl_env_vars);
+		free(pl_env_vars);
+	}
+	if (!*buf) {
+		pl_env_vars = NULL;
+	}
+	size_t n = 1;
+	for (const char *x = buf; *x; x++) {
+		if (*x == ',') {
+			n++;
+		}
+	}
+	char **a = pl_env_vars = xnew(char*, n+1);
+	for (char *x = *a++ = xstrdup(buf); *x; x++) {
+		if (*x == ',') {
+			*a++ = x+1;
+			*x = '\0';
+		}
+	}
+	*a = NULL;
 }
 
 /* }}} */
@@ -1516,6 +1568,7 @@ static const struct {
 	DN(tree_width_percent)
 	DN(tree_width_max)
 	DT(pause_on_output_change)
+	DN(pl_env_vars)
 	{ NULL, NULL, NULL, NULL, 0 }
 };
 
