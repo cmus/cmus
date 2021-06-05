@@ -172,6 +172,12 @@
 #define PL_ENV_DELIMITER '\x1F'
 
 /**
+ * pl_env_init initializes the environment variable cache used by pl_env_get. It
+ * must be called before loading the library, playlists, or cache.
+ */
+void pl_env_init(void);
+
+/**
  * pl_env_reduce checks the base path against the configured environment
  * variables, replaces the first match with a substitution, and returns a
  * malloc'd copy of the result. If there isn't any valid match or the path
@@ -203,13 +209,6 @@ const char *pl_env_var(const char *path, int *out_length);
  * substitution. See pl_env_var.
  */
 const char *pl_env_var_remainder(const char *path, int length);
-
-/**
- * pl_env_var_str is like pl_env_var, but it returns a malloc'd null-terminated
- * string instead. If remainder is not NULL, it is set to point to the remainder
- * of the path.
- */
-char *pl_env_var_str(const char *path, const char **remainder);
 
 /**
  * pl_env_var_len returns the length of the substituted environment variable
