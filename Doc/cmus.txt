@@ -1117,7 +1117,8 @@ pause_on_output_change (false)
 
 pl_env_vars
 	Comma separated list of environment variables to substitute when saving
-	library/playlist files. The paths must be absolute to take effect.
+	library/playlist files. The paths must be absolute to take effect. See
+	`Library Environment Variables`.
 
 	Note: This option will not take full effect until cmus has been restarted.
 
@@ -1685,6 +1686,46 @@ USER
 
 USERNAME
 	Fallback for *USER*.
+
+@h2 Library Environment Variables
+
+cmus supports using environment variables to allow the library, cache, and
+playlists to be relocated or synced. The environment variables to use are
+specified using the `pl_env_vars` configuration option, which takes effect when
+exiting cmus.
+
+A good starting point is `:set pl_env_vars=HOME`. This will allow the `.cmus`
+directory to be shared between devices or users. Additional environment
+variables can be appended (delimited with commas) to `pl_env_vars` to redirect
+specific paths. The environment variables must contain absolute paths to be
+used. The last matching directory prefix will be used.
+
+If a file does not exist, it will be treated the same way as missing files
+usually are. If the file is in the cache, it will be preserved, and an error
+will be displayed upon playback. If the file is not in the cache, it will be
+removed from playlists and the library. There is one special exception: if a
+file is missing due to the environment variable being invalid/empty/unset, but
+it is still in the cache, it will be preserved in the cache as-is, in addition
+to being preserved in the library like usual.
+
+When using `:save`/`:load` and in the on-disk library/cache/playlists, the paths
+will be stored with the environment variable delimited using the character
+`\\x1F`, which is the invisible ASCII unit separator.
+
+This feature can also be used to quickly move a library to a different location
+while preserving all metadata, playlists, and the play counts. To do this, set
+an environment variable for each base path you want to change, set `pl_env_vars`
+to the list of environment variables, restart cmus, change the environment
+variables, restart cmus, unset `pl_env_vars`, then restart cmus again.
+
+If a library using `pl_env_vars` is opened with a version of cmus not supporting
+it, tracks referenced with environment variables will be forgotten. To restore
+the on-disk files to be compatible with older cmus versions, just unset
+`pl_env_vars`, and restart cmus. This will restore the paths for all defined
+environment variables to their actual path.
+
+It is safe to change `pl_env_vars` from outside cmus since this variable is
+applied when cmus exits.
 
 @h1 D-Bus Interface (MPRIS)
 
