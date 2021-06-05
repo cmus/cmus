@@ -51,6 +51,7 @@
 #include "mixer.h"
 #include "mpris.h"
 #include "locking.h"
+#include "pl_env.h"
 #ifdef HAVE_CONFIG
 #include "config/curses.h"
 #include "config/iconv.h"
@@ -2343,6 +2344,9 @@ static void init_all(void)
 
 	/* plugins have been loaded so we know what plugin options are available */
 	options_add();
+
+	/* cache the normalized env vars for pl_env */
+	pl_env_init();
 
 	lib_init();
 	searchable = tree_searchable;

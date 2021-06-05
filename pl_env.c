@@ -25,13 +25,16 @@
 #include <stdlib.h>
 #include <string.h>
 
+extern char **environ;
+static char **pl_env_cache = NULL;
+
 static bool pl_env_contains_delimiter(const char *str)
 {
 	return !!strchr(str, PL_ENV_DELIMITER);
 }
 
 /**
- * pl_getenv_normalized gets an env var and puts it into the required format for
+ * pl_env_norm gets an env var and puts it into the required format for
  * pl_env_reduce and pl_env_expand, which does exact string matching/replacement
  * against the file paths. It converts backslashes to slashes on Windows,
  * removes consecutive slashes, removes './' path segments, simplifies '../'
@@ -39,31 +42,8 @@ static bool pl_env_contains_delimiter(const char *str)
  * uppermost directory), and removes the trailing slash. In addition, it trims
  * the variable name before looking it up.
  */
-static char *pl_env_getenv_normalized(const char *var)
+static char *pl_env_norm(char *path)
 {
-	/* duplicate the var */
-	char *var_d = xstrdup(var);
-
-	/* trim the var */
-	char *var_s = var_d;
-	char *var_e = var_d + strlen(var_d);
-	while (var_s < var_e && isspace(*var_s)) var_s++;
-	while (var_e > var_s && isspace(*(var_e-1))) var_e--;
-	*var_e = '\0';
-
-	/* if it's empty, return NULL */
-	if (var_e-var_s == 0) return NULL;
-
-	/* get the var */
-	char *val = getenv(var_s);
-	free(var_d);
-
-	/* if it's nonexistent or empty, return NULL */
-	if (!val || !*val) return NULL;
-
-	/* duplicate the value */
-	char *new = xstrdup(val);
-
 #ifdef _WIN32
 	/* convert backslashes to slashes */
 	/* note: cmus uses forward slashes internally, but Windows accepts both */
@@ -74,58 +54,111 @@ static char *pl_env_getenv_normalized(const char *var)
 
 	/* canonicalize the path in-place */
 	size_t r = 1, w = 1;
-	while (new[r]) {
+	while (path[r]) {
 
 		/* handle the start of a segment */
-		if (w == 0 || new[w-1] == '/') {
+		if (w == 0 || path[w-1] == '/') {
 
 			/* handle empty segments */
-			if (new[r] == '/') {
+			if (path[r] == '/') {
 
 				/* skip the duplicate slashes */
-				while (new[r] == '/') r++;
+				while (path[r] == '/') r++;
 
 				continue;
 			}
 
 			/* handle '.' segments */
-			if (new[r] == '.' && (new[r+1] == '/' || !new[r+1])) {
+			if (path[r] == '.' && (path[r+1] == '/' || !path[r+1])) {
 
 				/* skip them */
-				if (new[r += 1]) r++;
+				if (path[r += 1]) r++;
 
 				continue;
 			}
 
 			/* handle '..' segments */
-			if (new[r] == '.' && new[r+1] == '.' && (new[r+2] == '/' || !new[r+2])) {
+			if (path[r] == '.' && path[r+1] == '.' && (path[r+2] == '/' || !path[r+2])) {
 
 				/* if there aren't any parent directories left to skip, return NULL */
 				if (!w) return NULL;
 
 				/* remove the previous segment up to the '/' */
-				for (w--; w && new[w-1] != '/'; ) w--;
+				for (w--; w && path[w-1] != '/'; ) w--;
 
 				/* skip the '..' */
-				if (new[r += 2]) r++;
+				if (path[r += 2]) r++;
 
 				continue;
 			}
 		}
 
 		/* write the next character */
-		new[w++] = new[r++];
+		path[w++] = path[r++];
 	}
 
 	/* remove the trailing slash if the path isn't / */
-	if (w >= 2 && new[w-1] == '/') {
+	if (w >= 2 && path[w-1] == '/') {
 		w--;
 	}
 
 	/* terminate the path */
-	new[w] = '\0';
+	path[w] = '\0';
 
-	return new;
+	return path;
+}
+
+/**
+ * pl_env_get is like getenv, but it allows using non-null-terminated variable
+ * names, trims the variable name, ensures the environment variable doesn't
+ * contain the marker used by pl_env, and normalizes the paths in environment
+ * variables with pl_env_norm.
+ */
+static const char *pl_env_get(const char *var, int var_len)
+{
+	if (!var)
+		return NULL;
+
+	size_t vl = var_len == -1
+		? strlen(var)
+		: var_len;
+
+	const char *vs = var;
+	const char *ve = var + vl;
+	while (vs < ve && isspace(*vs)) vs++;
+	while (ve > vs && isspace(*(ve-1))) ve--;
+	vl = ve-vs;
+
+	if (!vl)
+		return NULL;
+
+	for (const char *c = vs; c < ve; c++)
+		if (*c == PL_ENV_DELIMITER || *c == '=')
+			return NULL;
+
+	for (char **x = pl_env_cache; x && *x; x++)
+		if (strncmp(*x, vs, vl) == 0 && (*x)[vl] == '=')
+			return *x + vl + 1;
+
+	return NULL;
+}
+
+void pl_env_init(void)
+{
+	for (char **x = pl_env_cache; x && *x; x++)
+		free(*x);
+	free(pl_env_cache);
+
+	size_t n = 0;
+	for (char **x = environ; *x; x++)
+		n++;
+
+	char **new = pl_env_cache = xnew(char*, n+1);
+	for (char **x = environ; *x; x++)
+		if (!pl_env_contains_delimiter(*x))
+			if (!pl_env_norm(strchr((*new++ = xstrdup(*x)), '=') + 1))
+				free(*--new);
+	*new = NULL;
 }
 
 char *pl_env_reduce(const char *path)
@@ -134,26 +167,18 @@ char *pl_env_reduce(const char *path)
 		return xstrdup(path);
 
 	for (char **var = pl_env_vars; *var && **var; var++) {
-		char *val = pl_env_getenv_normalized(*var);
+		const char *val = pl_env_get(*var, -1);
 		if (!val)
 			continue;
-		if (!*val || pl_env_contains_delimiter(val)) {
-			free(val);
-			continue;
-		}
 
 		size_t val_len = strlen(val);
 
 #ifdef _WIN32
-		if (strncasecmp(path, val, val_len) != 0) {
-			free(val);
+		if (strncasecmp(path, val, val_len) != 0)
 			continue;
-		}
 #else
-		if (strncmp(path, val, val_len) != 0) {
-			free(val);
+		if (strncmp(path, val, val_len) != 0)
 			continue;
-		}
 #endif
 
 		const char *rem = path + val_len;
@@ -161,10 +186,8 @@ char *pl_env_reduce(const char *path)
 		/* always keep the slash at the beginning of the path, and only
 		   use the env var if it replaces an entire path component (i.e.
 		   it is a directory) */
-		if (*rem != '/') {
-			free(val);
+		if (*rem != '/')
 			continue;
-		}
 
 		size_t var_len = strlen(*var);
 		size_t rem_len = strlen(rem);
@@ -179,7 +202,6 @@ char *pl_env_reduce(const char *path)
 		ptr += rem_len;
 		*ptr = '\0';
 
-		free(val);
 		return new;
 	}
 
@@ -191,20 +213,16 @@ char *pl_env_expand(const char *path)
 	if (!path)
 		return NULL;
 
-	const char *rem;
-	char *var = pl_env_var_str(path, &rem);
-	if (!var)
+	int len;
+	const char *var;
+	if (!(var = pl_env_var(path, &len)))
 		return xstrdup(path);
 
-	char *val = pl_env_getenv_normalized(var);
-	free(var);
+	const char *val = pl_env_get(var, len);
 	if (!val)
 		return xstrdup(path);
-	if (!*val || pl_env_contains_delimiter(val)) {
-		free(val);
-		return xstrdup(path);
-	}
 
+	const char *rem = pl_env_var_remainder(path, len);
 	size_t val_len = strlen(val);
 	size_t rem_len = strlen(rem);
 
@@ -216,7 +234,6 @@ char *pl_env_expand(const char *path)
 	ptr += rem_len;
 	*ptr = '\0';
 
-	free(val);
 	return new;
 }
 
@@ -235,17 +252,6 @@ const char *pl_env_var(const char *path, int *out_length)
 const char *pl_env_var_remainder(const char *path, int length)
 {
 	return path+length+2;
-}
-
-char *pl_env_var_str(const char *path, const char **remainder)
-{
-	int len;
-	const char *var;
-	if (!(var = pl_env_var(path, &len)))
-		return NULL;
-	if (remainder)
-		*remainder = pl_env_var_remainder(path, len);
-	return xstrndup(var, len);
 }
 
 int pl_env_var_len(const char *path)
