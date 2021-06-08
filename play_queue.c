@@ -60,7 +60,7 @@ struct track_info *play_queue_remove(void)
 		struct simple_track *t = to_simple_track(pq_editable.head.next);
 		info = t->info;
 		track_info_ref(info);
-		editable_remove_track(&pq_editable, t);
+		editable_remove_track(&pq_editable, t, 0);
 	}
 
 	return info;

@@ -1112,6 +1112,10 @@ play_sorted (false)
 	Play tracks from the library in the sorted view (2) order instead of
 	tree view (1) order. Used only when play_library is true.
 
+remove_cache_with_track (false)
+	Remove cached track metadata and play count when removing a track from
+	the library.
+
 repeat (false)
 	Repeat after all tracks played.
 

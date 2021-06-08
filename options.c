@@ -76,6 +76,7 @@ int smart_artist_sort = 1;
 int scroll_offset = 2;
 int rewind_offset = 5;
 int skip_track_info = 0;
+int remove_cache_with_track = 0;
 int auto_expand_albums_follow = 1;
 int auto_expand_albums_search = 1;
 int auto_expand_albums_selcur = 1;
@@ -1105,6 +1106,21 @@ static void toggle_skip_track_info(void *data)
 	skip_track_info ^= 1;
 }
 
+static void get_remove_cache_with_track(void *data, char *buf, size_t size)
+{
+	strscpy(buf, bool_names[remove_cache_with_track], size);
+}
+
+static void set_remove_cache_with_track(void *data, const char *buf)
+{
+	parse_bool(buf, &remove_cache_with_track);
+}
+
+static void toggle_remove_cache_with_track(void *data)
+{
+	remove_cache_with_track ^= 1;
+}
+
 void update_mouse(void)
 {
 	if (mouse) {
@@ -1457,6 +1473,7 @@ static const struct {
 	DN_FLAGS(status_display_program, OPT_PROGRAM_PATH)
 	DT(wrap_search)
 	DT(skip_track_info)
+	DT(remove_cache_with_track)
 	DT(mouse)
 	DT(mpris)
 	DT(time_show_leading_zero)

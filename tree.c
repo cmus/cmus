@@ -1035,7 +1035,7 @@ static void remove_sel_artist(struct artist *artist)
 		rb_for_each_safe(t_node, t_tmp, &album->track_root) {
 			struct tree_track *track = to_tree_track(t_node);
 
-			editable_remove_track(&lib_editable, (struct simple_track *)track);
+			editable_remove_track(&lib_editable, (struct simple_track *)track, 1);
 		}
 		/* all tracks removed => album removed
 		 * if the last album was removed then the artist was removed too
@@ -1050,7 +1050,7 @@ static void remove_sel_album(struct album *album)
 	rb_for_each_safe(node, tmp, &album->track_root) {
 		struct tree_track *track = to_tree_track(node);
 
-		editable_remove_track(&lib_editable, (struct simple_track *)track);
+		editable_remove_track(&lib_editable, (struct simple_track *)track, 1);
 	}
 }
 
@@ -1075,7 +1075,7 @@ static void track_win_remove_sel(void)
 	if (window_get_sel(lib_track_win, &sel)) {
 		track = iter_to_tree_track(&sel);
 		BUG_ON(track == NULL);
-		editable_remove_track(&lib_editable, (struct simple_track *)track);
+		editable_remove_track(&lib_editable, (struct simple_track *)track, 1);
 	}
 }
 
