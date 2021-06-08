@@ -196,7 +196,7 @@ static struct playlist *pl_new(const char *name)
 
 static void pl_free(struct playlist *pl)
 {
-	editable_clear(&pl->editable);
+	editable_clear(&pl->editable, 0);
 	free(pl->name);
 	free(pl);
 }
@@ -494,7 +494,7 @@ static void pl_clear_visible_pl(void)
 		pl_win_next();
 	if (pl_visible == pl_playing)
 		pl_playing_track = NULL;
-	editable_clear(&pl_visible->editable);
+	editable_clear(&pl_visible->editable, 0);
 	pl_cancel_add_jobs(pl_visible);
 }
 

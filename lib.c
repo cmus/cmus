@@ -645,7 +645,7 @@ static void do_lib_filter(int clear_before)
 
 	remove_from_hash = 0;
 	if (clear_before) {
-		editable_clear(&lib_editable);
+		editable_clear(&lib_editable, 0);
 		hash_add_to_views();
 	} else
 		editable_remove_matching_tracks(&lib_editable, is_filtered_cb, NULL);
@@ -790,7 +790,7 @@ int lib_remove(struct track_info *ti)
 
 	list_for_each_entry(track, &lib_editable.head, node) {
 		if (track->info == ti) {
-			editable_remove_track(&lib_editable, track);
+			editable_remove_track(&lib_editable, track, 1);
 			return 1;
 		}
 	}

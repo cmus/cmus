@@ -69,7 +69,7 @@ void view_clear(int view)
 	case TREE_VIEW:
 	case SORTED_VIEW:
 		worker_remove_jobs_by_type(JOB_TYPE_LIB);
-		editable_clear(&lib_editable);
+		editable_clear(&lib_editable, 1);
 
 		/* FIXME: make this optional? */
 		lib_clear_store();
@@ -79,7 +79,7 @@ void view_clear(int view)
 		break;
 	case QUEUE_VIEW:
 		worker_remove_jobs_by_type(JOB_TYPE_QUEUE);
-		editable_clear(&pq_editable);
+		editable_clear(&pq_editable, 0);
 		break;
 	default:
 		info_msg(":clear only works in views 1-4");
@@ -154,7 +154,7 @@ void view_load(int view, char *arg)
 	case TREE_VIEW:
 	case SORTED_VIEW:
 		worker_remove_jobs_by_type(JOB_TYPE_LIB);
-		editable_clear(&lib_editable);
+		editable_clear(&lib_editable, true);
 		cmus_add(lib_add_track, name, FILE_TYPE_PL, JOB_TYPE_LIB, 0,
 				NULL);
 		free(lib_filename);
