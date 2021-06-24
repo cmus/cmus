@@ -39,6 +39,7 @@ enum aaa_mode aaa_mode = AAA_MODE_ALL;
 char *lib_live_filter = NULL;
 
 struct rb_root lib_shuffle_root;
+struct rb_root lib_album_shuffle_root;
 static struct expr *filter = NULL;
 static struct expr *add_filter = NULL;
 static int remove_from_hash = 1;
@@ -74,7 +75,17 @@ static void all_wins_changed(void)
 
 static void shuffle_add(struct tree_track *track)
 {
-	shuffle_list_add(&track->shuffle_track, &lib_shuffle_root);
+	shuffle_list_add(&track->simple_track.shuffle_info, &lib_shuffle_root, track->album);
+}
+
+static void album_shuffle_list_add(struct album *album)
+{
+	shuffle_list_add(&album->shuffle_info, &lib_album_shuffle_root, album);
+}
+
+static void album_shuffle_list_remove(struct album *album)
+{
+	rb_erase(&album->shuffle_info.tree_node, &lib_album_shuffle_root);
 }
 
 static void views_add_track(struct track_info *ti)
@@ -87,7 +98,7 @@ static void views_add_track(struct track_info *ti)
 	/* both the hash table and views have refs */
 	track_info_ref(ti);
 
-	tree_add_track(track);
+	tree_add_track(track, album_shuffle_list_add);
 	shuffle_add(track);
 	editable_add(&lib_editable, (struct simple_track *)track);
 }
@@ -200,10 +211,13 @@ static struct tree_track *artist_last_track(const struct artist *artist)
 	return album_last_track(to_album(rb_last(&artist->album_root)));
 }
 
-static int aaa_mode_filter(const struct simple_track *track)
+static struct tree_track *normal_get_last(void)
 {
-	const struct album *album = ((struct tree_track *)track)->album;
+	return artist_last_track(to_artist(rb_last(&lib_artist_root)));
+}
 
+static int aaa_mode_filter(const struct album *album)
+{
 	if (aaa_mode == AAA_MODE_ALBUM)
 		return CUR_ALBUM == album;
 
@@ -214,21 +228,29 @@ static int aaa_mode_filter(const struct simple_track *track)
 	return 1;
 }
 
+static int cur_album_filter(const struct album *album)
+{
+	return CUR_ALBUM == album;
+}
+
 /* set next/prev (tree) {{{ */
 
-static struct tree_track *normal_get_next(void)
+static struct tree_track *normal_get_next(enum aaa_mode aaa, bool allow_repeat, bool skip_album)
 {
-	if (lib_cur_track == NULL)
+	if (lib_cur_track == NULL) {
+		if (!allow_repeat)
+			return NULL;
 		return normal_get_first();
+	}
 
 	/* not last track of the album? */
-	if (rb_next(&lib_cur_track->tree_node)) {
+	if (!skip_album && rb_next(&lib_cur_track->tree_node)) {
 		/* next track of the current album */
 		return to_tree_track(rb_next(&lib_cur_track->tree_node));
 	}
 
-	if (aaa_mode == AAA_MODE_ALBUM) {
-		if (!repeat)
+	if (aaa == AAA_MODE_ALBUM) {
+		if (!allow_repeat || !repeat)
 			return NULL;
 		/* first track of the current album */
 		return album_first_track(CUR_ALBUM);
@@ -240,8 +262,8 @@ static struct tree_track *normal_get_next(void)
 		return album_first_track(to_album(rb_next(&CUR_ALBUM->tree_node)));
 	}
 
-	if (aaa_mode == AAA_MODE_ARTIST) {
-		if (!repeat)
+	if (aaa == AAA_MODE_ARTIST) {
+		if (!allow_repeat || !repeat)
 			return NULL;
 		/* first track of the first album of the current artist */
 		return artist_first_track(CUR_ARTIST);
@@ -253,26 +275,29 @@ static struct tree_track *normal_get_next(void)
 		return artist_first_track(to_artist(rb_next(&CUR_ARTIST->tree_node)));
 	}
 
-	if (!repeat)
+	if (!allow_repeat || !repeat)
 		return NULL;
 
 	/* first track */
 	return normal_get_first();
 }
 
-static struct tree_track *normal_get_prev(void)
+static struct tree_track *normal_get_prev(enum aaa_mode aaa, bool allow_repeat, bool skip_album)
 {
-	if (lib_cur_track == NULL)
-		return normal_get_first();
+	if (lib_cur_track == NULL) {
+		if (!allow_repeat)
+			return NULL;
+		return normal_get_last();
+	}
 
 	/* not first track of the album? */
-	if (rb_prev(&lib_cur_track->tree_node)) {
+	if (!skip_album && rb_prev(&lib_cur_track->tree_node)) {
 		/* prev track of the album */
 		return to_tree_track(rb_prev(&lib_cur_track->tree_node));
 	}
 
-	if (aaa_mode == AAA_MODE_ALBUM) {
-		if (!repeat)
+	if (aaa == AAA_MODE_ALBUM) {
+		if (!allow_repeat || !repeat)
 			return NULL;
 		/* last track of the album */
 		return album_last_track(CUR_ALBUM);
@@ -284,8 +309,8 @@ static struct tree_track *normal_get_prev(void)
 		return album_last_track(to_album(rb_prev(&CUR_ALBUM->tree_node)));
 	}
 
-	if (aaa_mode == AAA_MODE_ARTIST) {
-		if (!repeat)
+	if (aaa == AAA_MODE_ARTIST) {
+		if (!allow_repeat || !repeat)
 			return NULL;
 		/* last track of the last album of the artist */
 		return album_last_track(to_album(rb_last(&CUR_ARTIST->album_root)));
@@ -297,11 +322,67 @@ static struct tree_track *normal_get_prev(void)
 		return artist_last_track(to_artist(rb_prev(&CUR_ARTIST->tree_node)));
 	}
 
-	if (!repeat)
+	if (!allow_repeat || !repeat)
 		return NULL;
 
 	/* last track */
-	return artist_last_track(to_artist(rb_last(&lib_artist_root)));
+	return normal_get_last();
+}
+
+static struct tree_track *shuffle_album_get_next(void)
+{
+	struct shuffle_info *shuffle_info = NULL;
+	struct album *album;
+
+	if (lib_cur_track != NULL)
+		shuffle_info = &lib_cur_track->album->shuffle_info;
+	album = (struct album *)shuffle_list_get_next(&lib_album_shuffle_root,
+			shuffle_info, aaa_mode_filter);
+	if (album != NULL)
+		return album_first_track(album);
+	return NULL;
+}
+
+static struct tree_track *shuffle_album_get_prev(void)
+{
+	struct shuffle_info *shuffle_info = NULL;
+	struct album *album;
+
+	if (lib_cur_track != NULL)
+		shuffle_info = &lib_cur_track->album->shuffle_info;
+	album = (struct album *)shuffle_list_get_prev(&lib_album_shuffle_root,
+			shuffle_info, aaa_mode_filter);
+	if (album != NULL)
+		return album_last_track(album);
+	return NULL;
+}
+
+static struct tree_track *sorted_album_first_track(struct tree_track *track)
+{
+	struct tree_track *prev = track;
+
+	while (true) {
+		prev = (struct tree_track *)simple_list_get_prev(&lib_editable.head,
+			   (struct simple_track *)prev, NULL, false);
+		if (prev == NULL)
+			return track;
+		if (prev->album == track->album)
+			track = prev;
+	}
+}
+
+static struct tree_track *sorted_album_last_track(struct tree_track *track)
+{
+	struct tree_track *next = track;
+
+	while (true) {
+		next = (struct tree_track *)simple_list_get_next(&lib_editable.head,
+			   (struct simple_track *)next, NULL, false);
+		if (next == NULL)
+			return track;
+		if (next->album == track->album)
+			track = next;
+	}
 }
 
 /* set next/prev (tree) }}} */
@@ -309,6 +390,15 @@ static struct tree_track *normal_get_prev(void)
 void lib_reshuffle(void)
 {
 	shuffle_list_reshuffle(&lib_shuffle_root);
+	shuffle_list_reshuffle(&lib_album_shuffle_root);
+	if (lib_cur_track) {
+		shuffle_insert(&lib_shuffle_root, NULL, &lib_cur_track->simple_track.shuffle_info);
+		shuffle_insert(&lib_album_shuffle_root, NULL, &lib_cur_track->album->shuffle_info);
+	}
+}
+
+void lib_sort_artists(void) {
+	tree_sort_artists(album_shuffle_list_add, album_shuffle_list_remove);
 }
 
 static void free_lib_track(struct editable *e, struct list_head *item)
@@ -322,8 +412,8 @@ static void free_lib_track(struct editable *e, struct list_head *item)
 	if (remove_from_hash)
 		hash_remove(ti);
 
-	rb_erase(&track->shuffle_track.tree_node, &lib_shuffle_root);
-	tree_remove(track);
+	rb_erase(&track->simple_track.shuffle_info.tree_node, &lib_shuffle_root);
+	tree_remove(track, album_shuffle_list_remove);
 
 	track_info_unref(ti);
 	free(track);
@@ -362,14 +452,25 @@ struct track_info *lib_goto_next(void)
 		BUG_ON(lib_cur_track != NULL);
 		return NULL;
 	}
-	if (shuffle) {
+	if (shuffle == SHUFFLE_TRACKS) {
 		track = (struct tree_track *)shuffle_list_get_next(&lib_shuffle_root,
-				(struct shuffle_track *)lib_cur_track, aaa_mode_filter);
+				(struct shuffle_info *)lib_cur_track, aaa_mode_filter);
+	} else if (shuffle == SHUFFLE_ALBUMS) {
+		if (play_sorted)
+			track = (struct tree_track *)simple_list_get_next(&lib_editable.head,
+					(struct simple_track *)lib_cur_track, cur_album_filter, false);
+		else
+			track = normal_get_next(AAA_MODE_ALBUM, false, false);
+		if (track == NULL) {
+			track = shuffle_album_get_next();
+			if (play_sorted)
+				track = sorted_album_first_track(track);
+		}
 	} else if (play_sorted) {
 		track = (struct tree_track *)simple_list_get_next(&lib_editable.head,
-				(struct simple_track *)lib_cur_track, aaa_mode_filter);
+				(struct simple_track *)lib_cur_track, aaa_mode_filter, true);
 	} else {
-		track = normal_get_next();
+		track = normal_get_next(aaa_mode, true, false);
 	}
 	return lib_set_track(track);
 }
@@ -382,15 +483,81 @@ struct track_info *lib_goto_prev(void)
 		BUG_ON(lib_cur_track != NULL);
 		return NULL;
 	}
-	if (shuffle) {
+	if (shuffle == SHUFFLE_TRACKS) {
 		track = (struct tree_track *)shuffle_list_get_prev(&lib_shuffle_root,
-				(struct shuffle_track *)lib_cur_track, aaa_mode_filter);
+				(struct shuffle_info *)lib_cur_track, aaa_mode_filter);
+	} else if (shuffle == SHUFFLE_ALBUMS) {
+		if (play_sorted)
+			track = (struct tree_track *)simple_list_get_prev(&lib_editable.head,
+					(struct simple_track *)lib_cur_track, cur_album_filter, false);
+		else
+			track = normal_get_prev(AAA_MODE_ALBUM, false, false);
+		if (track == NULL) {
+			track = shuffle_album_get_prev();
+			if (play_sorted)
+				track = sorted_album_last_track(track);
+		}
 	} else if (play_sorted) {
 		track = (struct tree_track *)simple_list_get_prev(&lib_editable.head,
-				(struct simple_track *)lib_cur_track, aaa_mode_filter);
+				(struct simple_track *)lib_cur_track, aaa_mode_filter, true);
 	} else {
-		track = normal_get_prev();
+		track = normal_get_prev(aaa_mode, true, false);
 	}
+	return lib_set_track(track);
+}
+
+struct track_info *lib_goto_next_album(void)
+{
+	struct tree_track *track = NULL;
+
+	if (rb_root_empty(&lib_artist_root)) {
+		BUG_ON(lib_cur_track != NULL);
+		return NULL;
+	}
+	if (shuffle == SHUFFLE_TRACKS) {
+		return lib_goto_next();
+	} else if (shuffle == SHUFFLE_ALBUMS) {
+		track = shuffle_album_get_next();
+		if (play_sorted)
+			track = sorted_album_first_track(track);
+	} else if (play_sorted) {
+		track = sorted_album_last_track(track);
+		track = (struct tree_track *)simple_list_get_next(&lib_editable.head,
+				(struct simple_track *)track, aaa_mode_filter, true);
+	} else {
+		track = normal_get_next(aaa_mode, true, true);
+	}
+
+	return lib_set_track(track);
+}
+
+struct track_info *lib_goto_prev_album(void)
+{
+	struct tree_track *track = NULL;
+
+	if (rb_root_empty(&lib_artist_root)) {
+		BUG_ON(lib_cur_track != NULL);
+		return NULL;
+	}
+	if (shuffle == SHUFFLE_TRACKS) {
+		return lib_goto_prev();
+	} else if (shuffle == SHUFFLE_ALBUMS) {
+		track = shuffle_album_get_prev();
+		if (play_sorted)
+			track = sorted_album_first_track(track);
+		else if (track)
+			track = album_first_track(track->album);
+	} else if (play_sorted) {
+		track = sorted_album_first_track(track);
+		track = (struct tree_track *)simple_list_get_prev(&lib_editable.head,
+				(struct simple_track *)track, aaa_mode_filter, true);
+		track = sorted_album_first_track(track);
+	} else {
+		track = normal_get_prev(aaa_mode, true, true);
+		if (track)
+			track = album_first_track(track->album);
+	}
+
 	return lib_set_track(track);
 }
 

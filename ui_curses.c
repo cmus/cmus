@@ -107,24 +107,24 @@ int using_utf8 = 0;
 static char *lib_autosave_filename;
 static char *play_queue_autosave_filename;
 
+#define PRINT_BUFFER_SZ 4096
+/* one character can take up to 4 bytes in UTF-8 */
+#define PRINT_BUFFER_MAX_WIDTH (PRINT_BUFFER_SZ / 4 - 1)
+
+static char print_buffer[PRINT_BUFFER_SZ];
+/* destination buffer for utf8_encode_to_buf and utf8_decode */
+static char conv_buffer[PRINT_BUFFER_SZ];
+
 /* shown error message and time stamp
  * error is cleared if it is older than 3s and key was pressed
  */
-static char error_buf[512];
+static char error_buf[PRINT_BUFFER_SZ];
 static time_t error_time = 0;
 /* info messages are displayed in different color */
 static int msg_is_error;
 static int error_count = 0;
 
 static char *server_address = NULL;
-
-static char print_buffer[1024];
-
-/* destination buffer for utf8_encode_to_buf and utf8_decode */
-static char conv_buffer[512];
-
-/* one character can take up to 4 bytes in UTF-8 */
-#define print_buffer_max_width (sizeof(print_buffer) / 4 - 1)
 
 /* used for messages to the client */
 static int client_fd = -1;
@@ -616,7 +616,7 @@ const struct format_option *get_global_fopts(void)
 	static const char *cont_strs[] = { " ", "C" };
 	static const char *follow_strs[] = { " ", "F" };
 	static const char *repeat_strs[] = { " ", "R" };
-	static const char *shuffle_strs[] = { " ", "S" };
+	static const char *shuffle_strs[] = { " ", "S", "&" };
 	int buffer_fill, vol, vol_left, vol_right;
 	int duration = -1;
 
@@ -763,7 +763,7 @@ static void print_editable(struct window *win, int row, struct iter *iter)
 {
 	struct simple_track *track;
 	struct iter sel;
-	int current, selected, active;
+	int current, selected, active = 0;
 	const char *format;
 
 	track = iter_to_simple_track(iter);
@@ -776,7 +776,7 @@ static void print_editable(struct window *win, int row, struct iter *iter)
 		cursor_y = 1 + row;
 	}
 
-	if (!selected && track->marked) {
+	if (!selected && !!track->marked) {
 		selected = 1;
 		active = 0;
 	}
@@ -926,8 +926,9 @@ static void update_window(struct window *win, int x, int y, int w, const char *t
 	win->changed = 0;
 
 	bkgdset(pairs[CURSED_WIN_TITLE]);
-	sprintf(print_buffer, " %-*s ", w - 2, title);
+	snprintf(print_buffer, sizeof(print_buffer), " %s ", title);
 	dump_print_buffer(y, x);
+
 	nr_rows = window_get_nr_rows(win);
 	i = 0;
 	if (window_get_top(win, &iter)) {
@@ -950,14 +951,14 @@ static void update_window(struct window *win, int x, int y, int w, const char *t
 
 static void update_tree_window(void)
 {
-	char title[512];
+	char title[PRINT_BUFFER_SZ];
 	format_str(title, "Artist / Album", tree_win_w - 1);
 	update_window(lib_tree_win, tree_win_x, 0, tree_win_w, title, print_tree);
 }
 
 static void update_track_window(void)
 {
-	char title[512];
+	char title[PRINT_BUFFER_SZ];
 
 	/* it doesn't matter what format options we use because the format
 	 * string does not contain any format charaters */
@@ -989,14 +990,14 @@ static void print_pl_list(struct window *win, int row, struct iter *iter)
 
 static void update_pl_list(struct window *win)
 {
-	char title[512];
+	char title[PRINT_BUFFER_SZ];
 	format_str(title, "Playlist", tree_win_w - 1);
 	update_window(win, tree_win_x, 0, tree_win_w, title, print_pl_list);
 }
 
 static void update_pl_tracks(struct window *win)
 {
-	char title[512];
+	char title[PRINT_BUFFER_SZ];
 	int win_w_tmp = win_w;
 
 	win_x = track_win_x;
@@ -1015,7 +1016,7 @@ static void update_pl_tracks(struct window *win)
 static const char *pretty(const char *path)
 {
 	static int home_len = -1;
-	static char buf[256];
+	static char buf[PRINT_BUFFER_SZ];
 
 	if (home_len == -1)
 		home_len = strlen(home_dir);
@@ -1032,7 +1033,7 @@ static const char * const sorted_names[2] = { "", "sorted by " };
 
 static void update_editable_window(struct editable *e, const char *title, const char *filename)
 {
-	char buf[512];
+	char buf[PRINT_BUFFER_SZ];
 	int pos;
 
 	if (filename) {
@@ -1074,7 +1075,7 @@ static void update_play_queue_window(void)
 
 static void update_browser_window(void)
 {
-	char title[512];
+	char title[PRINT_BUFFER_SZ];
 	char *dirname;
 
 	if (using_utf8) {
@@ -1091,14 +1092,14 @@ static void update_browser_window(void)
 
 static void update_filters_window(void)
 {
-	char title[512];
+	char title[PRINT_BUFFER_SZ];
 	format_str(title, "Library Filters", win_w - 2);
 	update_window(filters_win, 0, 0, win_w, title, print_filter);
 }
 
 static void update_help_window(void)
 {
-	char title[512];
+	char title[PRINT_BUFFER_SZ];
 	format_str(title, "Settings", win_w - 2);
 	update_window(help_win, 0, 0, win_w, title, print_help);
 }
@@ -1322,10 +1323,10 @@ static void do_update_titleline(void)
 
 		/* set window title */
 		if (use_alt_format && *window_title_alt_format) {
-			format_print(print_buffer, print_buffer_max_width,
+			format_print(print_buffer, PRINT_BUFFER_MAX_WIDTH,
 					window_title_alt_format, track_fopts);
 		} else {
-			format_print(print_buffer,  print_buffer_max_width,
+			format_print(print_buffer,  PRINT_BUFFER_MAX_WIDTH,
 					window_title_format, track_fopts);
 		}
 
@@ -1485,7 +1486,7 @@ void update_filterline(void)
 	if (cur_view != TREE_VIEW && cur_view != SORTED_VIEW)
 		return;
 	if (lib_live_filter) {
-		char buf[512];
+		char buf[PRINT_BUFFER_SZ];
 		int w;
 		bkgdset(pairs[CURSED_STATUSLINE]);
 		snprintf(buf, sizeof(buf), "filtered: %s", lib_live_filter);
@@ -1541,7 +1542,7 @@ void error_msg(const char *format, ...)
 
 enum ui_query_answer yes_no_query(const char *format, ...)
 {
-	char buffer[512];
+	char buffer[PRINT_BUFFER_SZ];
 	va_list ap;
 	int ret = 0;
 
@@ -1898,6 +1899,8 @@ static void update(void)
 			resizeterm(lines, columns);
 #endif
 			w = COLS;
+			if (w > PRINT_BUFFER_MAX_WIDTH)
+				w = PRINT_BUFFER_MAX_WIDTH;
 			h = LINES - 3;
 			if (w < 3)
 				w = 3;

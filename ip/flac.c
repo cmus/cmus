@@ -42,6 +42,8 @@
 #define Dec FLAC__StreamDecoder
 #define E(s) FLAC__STREAM_DECODER_ ## s
 
+#define FLAC_MAX_CHANNELS 8
+
 struct flac_private {
 	/* file/stream position and length */
 	uint64_t pos;
@@ -278,12 +280,54 @@ static void free_priv(struct input_plugin_data *ip_data)
 /* http://flac.sourceforge.net/format.html#frame_header */
 static void channel_map_init_flac(int channels, channel_position_t *map)
 {
-	unsigned int mask = 0;
-	if (channels == 4)
-		mask = 0x33; // 0b110011, without center and lfe
-	else if (channels == 5)
-		mask = 0x37; // 0b110111, without lfe
-	channel_map_init_waveex(channels, mask, map);
+	if (channels == 1) {
+		map[0] = CHANNEL_POSITION_MONO;
+	} else if (channels == 2) {
+		map[0] = CHANNEL_POSITION_FRONT_LEFT;
+		map[1] = CHANNEL_POSITION_FRONT_RIGHT;
+	} else if (channels == 3) {
+		map[0] = CHANNEL_POSITION_FRONT_LEFT;
+		map[1] = CHANNEL_POSITION_FRONT_RIGHT;
+		map[2] = CHANNEL_POSITION_FRONT_CENTER;
+	} else if (channels == 4) {
+		map[0] = CHANNEL_POSITION_FRONT_LEFT;
+		map[1] = CHANNEL_POSITION_FRONT_RIGHT;
+		map[2] = CHANNEL_POSITION_REAR_LEFT;
+		map[3] = CHANNEL_POSITION_REAR_RIGHT;
+	} else if (channels == 5) {
+		map[0] = CHANNEL_POSITION_FRONT_LEFT;
+		map[1] = CHANNEL_POSITION_FRONT_RIGHT;
+		map[2] = CHANNEL_POSITION_FRONT_CENTER;
+		map[3] = CHANNEL_POSITION_REAR_LEFT;
+		map[4] = CHANNEL_POSITION_REAR_RIGHT;
+	} else if (channels == 6) {
+		map[0] = CHANNEL_POSITION_FRONT_LEFT;
+		map[1] = CHANNEL_POSITION_FRONT_RIGHT;
+		map[2] = CHANNEL_POSITION_FRONT_CENTER;
+		map[3] = CHANNEL_POSITION_LFE;
+		map[4] = CHANNEL_POSITION_REAR_LEFT;
+		map[5] = CHANNEL_POSITION_REAR_RIGHT;
+	} else if (channels == 7) {
+		map[0] = CHANNEL_POSITION_FRONT_LEFT;
+		map[1] = CHANNEL_POSITION_FRONT_RIGHT;
+		map[2] = CHANNEL_POSITION_FRONT_CENTER;
+		map[3] = CHANNEL_POSITION_LFE;
+		map[4] = CHANNEL_POSITION_REAR_LEFT;
+		map[5] = CHANNEL_POSITION_REAR_RIGHT;
+		map[6] = CHANNEL_POSITION_REAR_CENTER;
+	} else if (channels >= 8) {
+		if (channels > 8) {
+			d_print("Flac file with %d channels?!", channels);
+		}
+		map[0] = CHANNEL_POSITION_FRONT_LEFT;
+		map[1] = CHANNEL_POSITION_FRONT_RIGHT;
+		map[2] = CHANNEL_POSITION_FRONT_CENTER;
+		map[3] = CHANNEL_POSITION_LFE;
+		map[4] = CHANNEL_POSITION_REAR_LEFT;
+		map[5] = CHANNEL_POSITION_REAR_RIGHT;
+		map[6] = CHANNEL_POSITION_SIDE_LEFT;
+		map[7] = CHANNEL_POSITION_SIDE_RIGHT;
+	}
 }
 
 static int flac_open(struct input_plugin_data *ip_data)
@@ -345,16 +389,23 @@ static int flac_open(struct input_plugin_data *ip_data)
 		free_priv(ip_data);
 		return -IP_ERROR_FILE_FORMAT;
 	}
-	if (!sf_get_bits(ip_data->sf)) {
+	int bits = sf_get_bits(ip_data->sf);
+	if (!bits) {
 		free_priv(ip_data);
 		return -IP_ERROR_SAMPLE_FORMAT;
+	}
+
+	int channels = sf_get_channels(ip_data->sf);
+	if (channels > 8) {
+		free_priv(ip_data);
+		return -IP_ERROR_FILE_FORMAT;
 	}
 
 	channel_map_init_flac(sf_get_channels(ip_data->sf), ip_data->channel_map);
 	d_print("sr: %d, ch: %d, bits: %d\n",
 			sf_get_rate(ip_data->sf),
-			sf_get_channels(ip_data->sf),
-			sf_get_bits(ip_data->sf));
+			channels,
+			bits);
 	return 0;
 }
 
