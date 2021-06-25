@@ -177,6 +177,7 @@ static int mp4_open(struct input_plugin_data *ip_data)
 	priv->mp4.handle = MP4Read(ip_data->filename);
 #else
 	priv->mp4.handle = MP4Read(ip_data->filename, NULL);
+#endif
 
 	if (!priv->mp4.handle) {
 		d_print("MP4Read failed\n");
