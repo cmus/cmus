@@ -171,7 +171,12 @@ static int mp4_open(struct input_plugin_data *ip_data)
 	NeAACDecSetConfiguration(priv->decoder, neaac_cfg);
 
 	/* open mpeg-4 file */
-	priv->mp4.handle =  (MP4FileHandle (*)(void*, void*))(&MP4Read)(ip_data->filename, NULL);
+
+#ifdef __APPLE__
+	/* libmp4v2 on Mac-OS doesnt have a second argument for some reason */
+	priv->mp4.handle = MP4Read(ip_data->filename);
+#else
+	priv->mp4.handle = MP4Read(ip_data->filename, NULL);
 
 	if (!priv->mp4.handle) {
 		d_print("MP4Read failed\n");
