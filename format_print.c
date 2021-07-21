@@ -44,6 +44,9 @@ static struct gbuf* str = &l_str;
 
 size_t mark_clipped_text(char *buffer, int buf_len)
 {
+	if (buf_len < 0) {
+		return 0;
+	}
 	int clipped_mark_len = min_u(u_str_width(clipped_text_internal), buf_len);
 	int skip = buf_len - clipped_mark_len;
 	size_t byte_pos = u_skip_chars(buffer, &skip, false);
