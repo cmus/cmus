@@ -1,5 +1,5 @@
 # @October, 2021 by github.com/frogwine
-set color_win_fg=245
+set color_win_fg=252
 set color_win_bg=233
 set color_cmdline_bg=233
 set color_cmdline_fg=231
