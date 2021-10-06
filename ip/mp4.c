@@ -171,7 +171,7 @@ static int mp4_open(struct input_plugin_data *ip_data)
 	NeAACDecSetConfiguration(priv->decoder, neaac_cfg);
 
 	/* open mpeg-4 file */
-#ifdef __APPLE__
+#if MP4V2_PROJECT_version_major < 2 ||  (MP4V2_PROJECT_version_major == 2 && MP4V2_PROJECT_version_minor < 1)
 	/* MP4Read doesnt have a second argument on macos */
 	priv->mp4.handle = MP4Read(ip_data->filename);
 #else
