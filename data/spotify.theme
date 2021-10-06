@@ -1,5 +1,13 @@
 # @October, 2021 by github.com/frogwine
+<<<<<<< HEAD
 set color_win_fg=252
+=======
+<<<<<<< HEAD
+set color_win_fg=245
+=======
+set color_win_fg=231
+>>>>>>> 3fd1ad8732893e652d6d178fbcd5490b21777f0c
+>>>>>>> ad8f845868e3fbc35c20ef053ac07451cd7c3c1f
 set color_win_bg=233
 set color_cmdline_bg=233
 set color_cmdline_fg=231
@@ -17,8 +25,18 @@ set color_win_cur_sel_bg=239
 set color_win_cur_sel_fg=231
 set color_win_inactive_cur_sel_bg=235
 set color_win_inactive_cur_sel_fg=249
+<<<<<<< HEAD
 set color_win_sel_bg=240
 set color_win_sel_fg=47
+=======
+<<<<<<< HEAD
+set color_win_sel_bg=240
+set color_win_sel_fg=47
+=======
+set color_win_sel_bg=239
+set color_win_sel_fg=231
+>>>>>>> 3fd1ad8732893e652d6d178fbcd5490b21777f0c
+>>>>>>> ad8f845868e3fbc35c20ef053ac07451cd7c3c1f
 set color_win_inactive_sel_bg=235
 set color_win_inactive_sel_fg=249
 set color_win_dir=47
