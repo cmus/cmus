@@ -31,7 +31,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-#include <fcntl.h>
 
 static sample_format_t oss_sf;
 static int oss_fd = -1;
@@ -43,7 +42,7 @@ static int oss_close(void);
 
 static int oss_reset(void)
 {
-	if (fcntl(oss_fd, SNDCTL_DSP_RESET, 0) == -1) {
+	if (ioctl(oss_fd, SNDCTL_DSP_RESET, 0) == -1) {
 		return -1;
 	}
 	return 0;
