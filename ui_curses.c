@@ -1843,7 +1843,7 @@ static void sig_shutdown(int sig)
 	cmus_running = 0;
 }
 
-static volatile sig_atomic_t needs_to_resize = 1;
+static volatile sig_atomic_t needs_to_resize = 0;
 
 static void sig_winch(int sig)
 {
@@ -1885,6 +1885,37 @@ static void resize_tree_view(int w, int h)
 	window_set_nr_rows(lib_track_win, h);
 }
 
+static void update_window_size(void)
+{
+	int w, h;
+	int columns, lines;
+
+	if (get_window_size(&lines, &columns) == 0) {
+		needs_to_resize = 0;
+#if HAVE_RESIZETERM
+		resizeterm(lines, columns);
+#endif
+		w = COLS;
+		if (w > PRINT_BUFFER_MAX_WIDTH)
+			w = PRINT_BUFFER_MAX_WIDTH;
+		h = LINES - 3;
+		if (w < 3)
+			w = 3;
+		if (h < 2)
+			h = 2;
+		win_w = w;
+		resize_tree_view(w, h);
+		window_set_nr_rows(lib_editable.shared->win, h - 1);
+		pl_set_nr_rows(h - 1);
+		window_set_nr_rows(pq_editable.shared->win, h - 1);
+		window_set_nr_rows(filters_win, h - 1);
+		window_set_nr_rows(help_win, h - 1);
+		window_set_nr_rows(browser_win, h - 1);
+	}
+	clearok(curscr, TRUE);
+	refresh();
+}
+
 static void update(void)
 {
 	int needs_view_update = 0;
@@ -1894,36 +1925,10 @@ static void update(void)
 	int needs_spawn = 0;
 
 	if (needs_to_resize) {
-		int w, h;
-		int columns, lines;
-
-		if (get_window_size(&lines, &columns) == 0) {
-			needs_to_resize = 0;
-#if HAVE_RESIZETERM
-			resizeterm(lines, columns);
-#endif
-			w = COLS;
-			if (w > PRINT_BUFFER_MAX_WIDTH)
-				w = PRINT_BUFFER_MAX_WIDTH;
-			h = LINES - 3;
-			if (w < 3)
-				w = 3;
-			if (h < 2)
-				h = 2;
-			win_w = w;
-			resize_tree_view(w, h);
-			window_set_nr_rows(lib_editable.shared->win, h - 1);
-			pl_set_nr_rows(h - 1);
-			window_set_nr_rows(pq_editable.shared->win, h - 1);
-			window_set_nr_rows(filters_win, h - 1);
-			window_set_nr_rows(help_win, h - 1);
-			window_set_nr_rows(browser_win, h - 1);
-			needs_title_update = 1;
-			needs_status_update = 1;
-			needs_command_update = 1;
-		}
-		clearok(curscr, TRUE);
-		refresh();
+		update_window_size();
+		needs_title_update = 1;
+		needs_status_update = 1;
+		needs_command_update = 1;
 	}
 
 	if (player_info.status_changed)
@@ -2320,6 +2325,8 @@ static void init_curses(void)
 	if (!getenv("ESCDELAY")) {
 		set_escdelay(default_esc_delay);
 	}
+
+	update_window_size();
 }
 
 static void init_all(void)
