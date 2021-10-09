@@ -141,6 +141,7 @@ static int track_win_w = 0;
 
 static int win_x = 0;
 static int win_w = 0;
+static int win_active = 1;
 
 static int show_cursor;
 static int cursor_x;
@@ -763,7 +764,7 @@ static void print_editable(struct window *win, int row, struct iter *iter)
 {
 	struct simple_track *track;
 	struct iter sel;
-	int current, selected, active = 0;
+	int current, selected, active;
 	const char *format;
 
 	track = iter_to_simple_track(iter);
@@ -776,6 +777,7 @@ static void print_editable(struct window *win, int row, struct iter *iter)
 		cursor_y = 1 + row;
 	}
 
+	active = win_active;
 	if (!selected && !!track->marked) {
 		selected = 1;
 		active = 0;
@@ -1002,6 +1004,7 @@ static void update_pl_tracks(struct window *win)
 
 	win_x = track_win_x;
 	win_w = track_win_w;
+	win_active = pl_get_cursor_in_track_window();
 
 	get_global_fopts();
 	fopt_set_time(&track_fopts[TF_TOTAL], pl_visible_total_time(), 0);
@@ -1009,6 +1012,7 @@ static void update_pl_tracks(struct window *win)
 	format_print(title, track_win_w - 2, "Track%= %{total}", track_fopts);
 	update_window(win, track_win_x, 0, track_win_w, title, print_editable);
 
+	win_active = 1;
 	win_x = 0;
 	win_w = win_w_tmp;
 }
