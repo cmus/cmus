@@ -36,6 +36,10 @@ static pa_sample_spec		 pa_ss;
 static int			 mixer_notify_in;
 static int			 mixer_notify_out;
 
+static int			 mixer_notify_output_in;
+static int			 mixer_notify_output_out;
+static long 			 pa_last_output_idx;
+
 /* configuration */
 static int pa_restore_volume = 1;
 
@@ -161,6 +165,13 @@ static void _pa_sink_input_info_cb(pa_context *c,
 	if (i) {
 		memcpy(&pa_vol, &i->volume, sizeof(pa_vol));
 		notify_via_pipe(mixer_notify_in);
+
+		if (pa_last_output_idx != i->sink) {
+			if (pa_last_output_idx != -1) {
+				notify_via_pipe(mixer_notify_output_in);
+			}
+			pa_last_output_idx = i->sink;
+		}
 	}
 }
 
@@ -391,6 +402,7 @@ static int op_pulse_open(sample_format_t sf, const channel_position_t *channel_m
 		ret_pa_last_error();
 	}
 
+	pa_last_output_idx = -1;
 	pa_stream_set_state_callback(pa_s, _pa_stream_running_cb, NULL);
 
 	rc = pa_stream_connect_playback(pa_s,
@@ -500,6 +512,7 @@ static int op_pulse_mixer_init(void)
 	pa_cvolume_reset(&pa_vol, 2);
 
 	init_pipes(&mixer_notify_out, &mixer_notify_in);
+	init_pipes(&mixer_notify_output_out, &mixer_notify_output_in);
 
 	return OP_ERROR_SUCCESS;
 }
@@ -508,6 +521,9 @@ static int op_pulse_mixer_exit(void)
 {
 	close(mixer_notify_out);
 	close(mixer_notify_in);
+
+	close(mixer_notify_output_out);
+	close(mixer_notify_output_in);
 
 	return OP_ERROR_SUCCESS;
 }
@@ -529,6 +545,9 @@ static int op_pulse_mixer_get_fds(int what, int *fds)
 	switch (what) {
 	case MIXER_FDS_VOLUME:
 		fds[0] = mixer_notify_out;
+		return 1;
+	case MIXER_FDS_OUTPUT:
+		fds[0] = mixer_notify_output_out;
 		return 1;
 	default:
 		return 0;
