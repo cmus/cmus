@@ -27,7 +27,9 @@
 
 enum {
     /* volume changes */
-    MIXER_FDS_VOLUME
+    MIXER_FDS_VOLUME,
+    /* output changes */
+    MIXER_FDS_OUTPUT
 };
 
 struct mixer_plugin_ops {
