@@ -160,6 +160,7 @@ extern int start_view;
 extern int stop_after_queue;
 extern int tree_width_percent;
 extern int tree_width_max;
+extern int pause_on_output_change;
 
 extern const char * const aaa_mode_names[];
 extern const char * const view_names[NR_VIEWS + 1];

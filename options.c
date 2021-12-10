@@ -87,6 +87,7 @@ int start_view = TREE_VIEW;
 int stop_after_queue = 0;
 int tree_width_percent = 33;
 int tree_width_max = 0;
+int pause_on_output_change = 0;
 
 int colors[NR_COLORS] = {
 	-1,
@@ -1215,6 +1216,21 @@ static void toggle_stop_after_queue(void *data)
 	stop_after_queue ^= 1;
 }
 
+static void get_pause_on_output_change(void *data, char *buf, size_t size)
+{
+	strscpy(buf, bool_names[pause_on_output_change], size);
+}
+
+static void set_pause_on_output_change(void *data, const char *buf)
+{
+	parse_bool(buf, &pause_on_output_change);
+}
+
+static void toggle_pause_on_output_change(void *data)
+{
+	pause_on_output_change ^= 1;
+}
+
 /* }}} */
 
 /* special callbacks (id set) {{{ */
@@ -1465,6 +1481,7 @@ static const struct {
 	DT(stop_after_queue)
 	DN(tree_width_percent)
 	DN(tree_width_max)
+	DT(pause_on_output_change)
 	{ NULL, NULL, NULL, NULL, 0 }
 };
 

@@ -1101,6 +1101,11 @@ mpris (true)
 output_plugin [roar, pulse, alsa, arts, oss, sndio, sun, coreaudio]
 	Name of output plugin.
 
+pause_on_output_change (false)
+    Pauses playback when the audio output changes.
+
+    Supported output plugins: none.
+
 pl_sort () [`Sort Keys`]
 	Sort keys for the playlist view (3). Empty value disables sorting and
 	enables manually moving tracks.

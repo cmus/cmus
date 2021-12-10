@@ -2140,6 +2140,7 @@ static void main_loop(void)
 		int poll_mixer = 0;
 		int i;
 		int nr_fds_vol = 0, fds_vol[NR_MIXER_FDS];
+		int nr_fds_out = 0, fds_out[NR_MIXER_FDS];
 		struct list_head *item;
 		struct client *client;
 
@@ -2186,6 +2187,12 @@ static void main_loop(void)
 			}
 		}
 
+		nr_fds_out = mixer_get_fds(MIXER_FDS_OUTPUT, fds_out);
+		for (i = 0; i < nr_fds_out; i++) {
+			BUG_ON(fds_out[i] <= 0);
+			SELECT_ADD_FD(fds_out[i]);
+		}
+
 		rc = select(fd_high + 1, &set, NULL, NULL, tv.tv_usec ? &tv : NULL);
 		if (poll_mixer) {
 			int ol = volume_l;
@@ -2213,6 +2220,16 @@ static void main_loop(void)
 				mixer_read_volume();
 				mpris_volume_changed();
 				update_statusline();
+			}
+		}
+		for (i = 0; i < nr_fds_out; i++) {
+			if (FD_ISSET(fds_out[i], &set)) {
+				d_print("out changed\n");
+				if (pause_on_output_change) {
+					player_pause_playback();
+					update_statusline();
+				}
+				clear_pipe(fds_out[i], -1);
 			}
 		}
 		if (FD_ISSET(server_socket, &set))
