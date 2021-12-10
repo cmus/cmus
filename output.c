@@ -316,7 +316,7 @@ int mixer_read_volume(void)
 	return op->mixer_ops->get_volume(&volume_l, &volume_r);
 }
 
-int mixer_get_fds(int *fds)
+int mixer_get_fds(int what, int *fds)
 {
 	if (op == NULL)
 		return -OP_ERROR_NOT_INITIALIZED;
@@ -324,7 +324,7 @@ int mixer_get_fds(int *fds)
 		return -OP_ERROR_NOT_OPEN;
 	if (!op->mixer_ops->get_fds)
 		return -OP_ERROR_NOT_SUPPORTED;
-	return op->mixer_ops->get_fds(fds);
+	return op->mixer_ops->get_fds(what, fds);
 }
 
 extern int soft_vol;

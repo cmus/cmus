@@ -137,15 +137,20 @@ static int alsa_mixer_close(void)
 	return 0;
 }
 
-static int alsa_mixer_get_fds(int *fds)
+static int alsa_mixer_get_fds(int what, int *fds)
 {
 	struct pollfd pfd[NR_MIXER_FDS];
 	int count, i;
 
-	count = snd_mixer_poll_descriptors(alsa_mixer_handle, pfd, NR_MIXER_FDS);
-	for (i = 0; i < count; i++)
-		fds[i] = pfd[i].fd;
-	return count;
+	switch (what) {
+	case MIXER_FDS_VOLUME:
+		count = snd_mixer_poll_descriptors(alsa_mixer_handle, pfd, NR_MIXER_FDS);
+		for (i = 0; i < count; i++)
+			fds[i] = pfd[i].fd;
+		return count;
+	default:
+		return 0;
+	}
 }
 
 static int alsa_mixer_set_volume(int l, int r)

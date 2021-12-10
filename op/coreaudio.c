@@ -864,10 +864,15 @@ static int coreaudio_mixer_dummy(void)
 	return OP_ERROR_SUCCESS;
 }
 
-static int coreaudio_mixer_get_fds(int *fds)
+static int coreaudio_mixer_get_fds(int what, int *fds)
 {
-	fds[0] = coreaudio_mixer_pipe_out;
-	return 1;
+	switch (what) {
+	case MIXER_FDS_VOLUME:
+		fds[0] = coreaudio_mixer_pipe_out;
+		return 1;
+	default:
+		return 0;
+	}
 }
 
 static int coreaudio_pause(void)
