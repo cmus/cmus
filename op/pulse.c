@@ -524,10 +524,15 @@ static int op_pulse_mixer_close(void)
 	return OP_ERROR_SUCCESS;
 }
 
-static int op_pulse_mixer_get_fds(int *fds)
+static int op_pulse_mixer_get_fds(int what, int *fds)
 {
-	fds[0] = mixer_notify_out;
-	return 1;
+	switch (what) {
+	case MIXER_FDS_VOLUME:
+		fds[0] = mixer_notify_out;
+		return 1;
+	default:
+		return 0;
+	}
 }
 
 static int op_pulse_mixer_set_volume(int l, int r)
