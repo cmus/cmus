@@ -606,7 +606,7 @@ const struct mixer_plugin_ops op_mixer_ops = {
 	.exit		= op_pulse_mixer_exit,
 	.open		= op_pulse_mixer_open,
 	.close		= op_pulse_mixer_close,
-	.get_fds	= op_pulse_mixer_get_fds,
+	.get_fds.abi_2	= op_pulse_mixer_get_fds,
 	.set_volume	= op_pulse_mixer_set_volume,
 	.get_volume	= op_pulse_mixer_get_volume,
 };

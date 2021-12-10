@@ -35,7 +35,10 @@ struct mixer_plugin_ops {
 	int (*exit)(void);
 	int (*open)(int *volume_max);
 	int (*close)(void);
-	int (*get_fds)(int what, int *fds);
+	union {
+	    int (*abi_1)(int *fds); // MIXER_FDS_VOLUME
+	    int (*abi_2)(int what, int *fds);
+	} get_fds;
 	int (*set_volume)(int l, int r);
 	int (*get_volume)(int *l, int *r);
 };
