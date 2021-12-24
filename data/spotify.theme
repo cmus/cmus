@@ -1,0 +1,24 @@
+# @October, 2021 by github.com/frogwine
+set color_win_fg=252
+set color_win_bg=233
+set color_cmdline_bg=233
+set color_cmdline_fg=231
+set color_error=196
+set color_info=81
+set color_separator=47
+set color_statusline_bg=232
+set color_statusline_fg=34
+set color_titleline_bg=232
+set color_titleline_fg=83
+set color_win_title_bg=232
+set color_win_title_fg=83
+set color_win_cur=47
+set color_win_cur_sel_bg=239
+set color_win_cur_sel_fg=47
+set color_win_inactive_cur_sel_bg=233
+set color_win_inactive_cur_sel_fg=47
+set color_win_sel_bg=240
+set color_win_sel_fg=47
+set color_win_inactive_sel_bg=235
+set color_win_inactive_sel_fg=47
+set color_win_dir=47
