@@ -1,5 +1,3 @@
-*Warning: cmus is not actively maintained. For details, please see [#856](https://github.com/cmus/cmus/issues/856)*
-
 cmus — C\* Music Player
 =======================
 
