@@ -237,7 +237,7 @@ changing the keybindings.
 Press *7* for a quick overview of the current keybindings and settings.
 
 To change a setting or keybind, just select it (up/down keys) and press enter.
-This will put the command for the current setting in the command row (bottom
+This will put the command for the current setting in the command line (bottom
 left of your screen), which you can edit to put in a new value/key.
 
 Please see the reference manual (see Further Reading below) for a detailed
