@@ -487,7 +487,7 @@ size_t u_copy_chars(char *dst, const char *src, int *width)
 	int cw;
 	uchar u;
 
-	while (w > 0) {
+	while (w >= 0) {
 		u = u_get_char(src, &si);
 		if (u == 0)
 			break;
@@ -496,16 +496,15 @@ size_t u_copy_chars(char *dst, const char *src, int *width)
 		w -= cw;
 
 		if (unlikely(w < 0)) {
-			if (cw == 2)
-				dst[di++] = ' ';
-			if (cw == 4) {
+			if (cw == 4 && w >= -3) {
 				dst[di++] = '<';
 				if (w >= -2)
 					dst[di++] = hex_tab[(u >> 4) & 0xf];
 				if (w >= -1)
 					dst[di++] = hex_tab[u & 0xf];
-			}
-			w = 0;
+				w = 0;
+			} else
+				w += cw;
 			break;
 		}
 		u_set_char(dst, &di, u);
@@ -572,6 +571,14 @@ int u_skip_chars(const char *str, int *width, bool overskip)
 	if (w < 0 && !overskip) {
 		w += u_char_width(u);
 		idx = last_idx;
+	} else while (1) {
+		/* consume any zero-width characters (e.g. combining marks) */
+		last_idx = idx;
+		u = u_get_char(str, &idx);
+		if (u_char_width(u) != 0) {
+			idx = last_idx;
+			break;
+		}
 	}
 	*width = w;
 	return idx;
