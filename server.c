@@ -169,7 +169,7 @@ static int cmd_format_print(struct client *client, char *arg)
 	const struct format_option *fopts = get_global_fopts();
 	for (i = 0; i < ac; ++i) {
 		if (format_valid(args[i], fopts))
-			format_print_gbuf(&buf, 0, args[i], fopts);
+			format_print(&buf, 0, args[i], fopts);
 		gbuf_add_ch(&buf, '\n');
 		free(args[i]);
 	}

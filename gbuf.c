@@ -19,6 +19,8 @@
  */
 
 #include "gbuf.h"
+#include "options.h"
+#include "utils.h"
 #include "xmalloc.h"
 
 #include <stdio.h>
@@ -35,7 +37,7 @@ static inline void gbuf_init(struct gbuf *buf)
 
 void gbuf_grow(struct gbuf *buf, size_t more)
 {
-	size_t align = 16 - 1;
+	size_t align = 64 - 1;
 	size_t alloc = (buf->len + more + 1 + align) & ~align;
 
 	if (alloc > buf->alloc) {
@@ -48,6 +50,12 @@ void gbuf_grow(struct gbuf *buf, size_t more)
 	}
 }
 
+void gbuf_used(struct gbuf *buf, size_t used)
+{
+	buf->len += used;
+	buf->buffer[buf->len] = 0;
+}
+
 void gbuf_free(struct gbuf *buf)
 {
 	if (buf->alloc)
@@ -58,16 +66,23 @@ void gbuf_free(struct gbuf *buf)
 void gbuf_add_ch(struct gbuf *buf, char ch)
 {
 	gbuf_grow(buf, 1);
-	buf->buffer[buf->len++] = ch;
-	buf->buffer[buf->len] = 0;
+	buf->buffer[buf->len] = ch;
+	gbuf_used(buf, 1);
+}
+
+void gbuf_add_uchar(struct gbuf *buf, uchar u)
+{
+	size_t uchar_len = 0;
+	gbuf_grow(buf, 4);
+	u_set_char(buf->buffer + buf->len, &uchar_len, u);
+	gbuf_used(buf, uchar_len);
 }
 
 void gbuf_add_bytes(struct gbuf *buf, const void *data, size_t len)
 {
 	gbuf_grow(buf, len);
 	memcpy(buf->buffer + buf->len, data, len);
-	buf->len += len;
-	buf->buffer[buf->len] = 0;
+	gbuf_used(buf, len);
 }
 
 void gbuf_add_str(struct gbuf *buf, const char *str)
@@ -77,36 +92,61 @@ void gbuf_add_str(struct gbuf *buf, const char *str)
 	if (!len)
 		return;
 	gbuf_grow(buf, len);
-	memcpy(buf->buffer + buf->len, str, len + 1);
-	buf->len += len;
+	memcpy(buf->buffer + buf->len, str, len);
+	gbuf_used(buf, len);
+}
+
+static int gbuf_mark_clipped_text(struct gbuf *buf)
+{
+	int buf_width = u_str_width(buf->buffer);
+	int clipped_mark_len = min_u(u_str_width(clipped_text_internal), buf_width);
+	int skip = buf_width - clipped_mark_len;
+	buf->len = u_skip_chars(buf->buffer, &skip, false);
+	gbuf_grow(buf, strlen(clipped_text_internal));
+	gbuf_used(buf, u_copy_chars(buf->buffer + buf->len, clipped_text_internal, &clipped_mark_len));
+	return skip;
+}
+
+void gbuf_add_ustr(struct gbuf *buf, const char *src, int *width)
+{
+	gbuf_grow(buf, strlen(src));
+	size_t copy_bytes = u_copy_chars(buf->buffer + buf->len, src, width);
+	gbuf_used(buf, copy_bytes);
+	if (src[copy_bytes] != '\0') {
+		gbuf_set(buf, ' ', *width);
+		*width = gbuf_mark_clipped_text(buf);
+	}
 }
 
 void gbuf_addf(struct gbuf *buf, const char *fmt, ...)
 {
 	va_list ap;
+	va_start(ap, fmt);
+	gbuf_vaddf(buf, fmt, ap);
+	va_end(ap);
+}
+
+void gbuf_vaddf(struct gbuf *buf, const char *fmt, va_list ap)
+{
+	va_list ap2;
 	int slen;
 
-	va_start(ap, fmt);
+	va_copy(ap2, ap);
 	slen = vsnprintf(buf->buffer + buf->len, buf->alloc - buf->len, fmt, ap);
-	va_end(ap);
 
 	if (slen > gbuf_avail(buf)) {
-		gbuf_grow(buf, slen + 1);
-
-		va_start(ap, fmt);
-		slen = vsnprintf(buf->buffer + buf->len, buf->alloc - buf->len, fmt, ap);
-		va_end(ap);
+		gbuf_grow(buf, slen);
+		slen = vsnprintf(buf->buffer + buf->len, buf->alloc - buf->len, fmt, ap2);
 	}
-
-	buf->len += slen;
+	va_end(ap2);
+	gbuf_used(buf, slen);
 }
 
 void gbuf_set(struct gbuf *buf, int c, size_t count)
 {
 	gbuf_grow(buf, count);
 	memset(buf->buffer + buf->len, c, count);
-	buf->len += count;
-	buf->buffer[buf->len] = 0;
+	gbuf_used(buf, count);
 }
 
 char *gbuf_steal(struct gbuf *buf)
