@@ -24,10 +24,10 @@ and can be controlled externally using *cmus-remote*(1).
 	host[:port].
 
 	*WARNING*: Using host[:port] is insecure even with a password! It may be
-	on a LAN if you want multiple users to able to control cmus. Never
+	on a LAN if you want multiple users to be able to control cmus. Never
 	expose cmus to the internet.
 
-	NOTE: Don't use this option to run multiple instances as same user.
+	NOTE: Don't use this option to run multiple instances as the same user.
 	Doing so would corrupt the track metadata cache.
 
 --passwd PASSWD
@@ -82,11 +82,11 @@ Settings view (7)
 
 @h1 COMMAND LINE
 
-Everything in cmus is implemented as commands which can be typed at command line
+Everything in cmus is implemented as commands which can be typed at the command line
 or bound to a key. To enter command mode type *:*. To execute a command, press
 *ENTER*, and to cancel, press *ESC* or *CTRL-C*. Use up/down arrows to browse
 the command history. Use *TAB* to complete commands and parameters. You don't
-need to type full command name if it is unambiguous (no other commands starting
+need to type the full command name if it is unambiguous (no other commands starting
 with the same characters).
 
 Examples:
@@ -184,7 +184,7 @@ NOTE: *aaa_mode* and *play_sorted* will be only displayed if *play_library* is
 Pressing *m*, *o*, *M*, *C*, *r* and *s* should make it easier to understand
 what these fields mean.
 
-See CONFIGURATION OPTIONS section for more information about these options.
+See the CONFIGURATION OPTIONS section for more information about these options.
 
 
 @h1 KEYBINDINGS
@@ -1100,6 +1100,11 @@ mpris (true)
 
 output_plugin [roar, pulse, alsa, arts, oss, sndio, sun, coreaudio]
 	Name of output plugin.
+
+pause_on_output_change (false)
+    Pauses playback when the audio output changes.
+
+    Supported output plugins: pulse.
 
 pl_sort () [`Sort Keys`]
 	Sort keys for the playlist view (3). Empty value disables sorting and

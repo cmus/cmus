@@ -864,10 +864,15 @@ static int coreaudio_mixer_dummy(void)
 	return OP_ERROR_SUCCESS;
 }
 
-static int coreaudio_mixer_get_fds(int *fds)
+static int coreaudio_mixer_get_fds(int what, int *fds)
 {
-	fds[0] = coreaudio_mixer_pipe_out;
-	return 1;
+	switch (what) {
+	case MIXER_FDS_VOLUME:
+		fds[0] = coreaudio_mixer_pipe_out;
+		return 1;
+	default:
+		return 0;
+	}
 }
 
 static int coreaudio_pause(void)
@@ -952,13 +957,13 @@ const struct output_plugin_ops op_pcm_ops = {
 
 
 const struct mixer_plugin_ops op_mixer_ops = {
-	.init       = coreaudio_mixer_dummy,
-	.exit       = coreaudio_mixer_dummy,
-	.open       = coreaudio_mixer_open,
-	.close      = coreaudio_mixer_close,
-	.get_fds    = coreaudio_mixer_get_fds,
-	.set_volume = coreaudio_mixer_set_volume,
-	.get_volume = coreaudio_mixer_get_volume,
+	.init          = coreaudio_mixer_dummy,
+	.exit          = coreaudio_mixer_dummy,
+	.open          = coreaudio_mixer_open,
+	.close         = coreaudio_mixer_close,
+	.get_fds.abi_2 = coreaudio_mixer_get_fds,
+	.set_volume    = coreaudio_mixer_set_volume,
+	.get_volume    = coreaudio_mixer_get_volume,
 };
 
 const struct output_plugin_opt op_pcm_options[] = {

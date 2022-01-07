@@ -43,6 +43,7 @@ struct output_plugin {
 	char *name;
 	void *handle;
 
+	const unsigned *abi_version_ptr;
 	const struct output_plugin_ops *pcm_ops;
 	const struct mixer_plugin_ops *mixer_ops;
 	const struct output_plugin_opt *pcm_options;
@@ -95,7 +96,6 @@ void op_load_plugins(void)
 		struct output_plugin *plug;
 		void *so, *symptr;
 		char *ext;
-		const unsigned *abi_version_ptr;
 		bool err = false;
 
 		if (d->d_name[0] == '.')
@@ -119,12 +119,13 @@ void op_load_plugins(void)
 		plug->pcm_ops = dlsym(so, "op_pcm_ops");
 		plug->pcm_options = dlsym(so, "op_pcm_options");
 		symptr = dlsym(so, "op_priority");
-		abi_version_ptr = dlsym(so, "op_abi_version");
+		plug->abi_version_ptr = dlsym(so, "op_abi_version");
 		if (!plug->pcm_ops || !plug->pcm_options || !symptr) {
 			error_msg("%s: missing symbol", filename);
 			err = true;
 		}
-		if (!abi_version_ptr || *abi_version_ptr != OP_ABI_VERSION) {
+		STATIC_ASSERT(OP_ABI_VERSION == 2);
+		if (!plug->abi_version_ptr || (*plug->abi_version_ptr != 1 && *plug->abi_version_ptr != 2)) {
 			error_msg("%s: incompatible plugin version", filename);
 			err = true;
 		}
@@ -316,15 +317,24 @@ int mixer_read_volume(void)
 	return op->mixer_ops->get_volume(&volume_l, &volume_r);
 }
 
-int mixer_get_fds(int *fds)
+int mixer_get_fds(int what, int *fds)
 {
 	if (op == NULL)
 		return -OP_ERROR_NOT_INITIALIZED;
 	if (!op->mixer_open)
 		return -OP_ERROR_NOT_OPEN;
-	if (!op->mixer_ops->get_fds)
-		return -OP_ERROR_NOT_SUPPORTED;
-	return op->mixer_ops->get_fds(fds);
+	switch (*op->abi_version_ptr) {
+	case 1:
+		if (!op->mixer_ops->get_fds.abi_1)
+			return -OP_ERROR_NOT_SUPPORTED;
+		if (what != MIXER_FDS_VOLUME)
+			return 0;
+		return op->mixer_ops->get_fds.abi_1(fds);
+	default:
+		if (!op->mixer_ops->get_fds.abi_2)
+			return -OP_ERROR_NOT_SUPPORTED;
+		return op->mixer_ops->get_fds.abi_2(what, fds);
+	}
 }
 
 extern int soft_vol;

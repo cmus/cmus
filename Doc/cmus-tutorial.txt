@@ -84,7 +84,7 @@ duration of all the music in the cmus library.
 Note: cmus does not move, duplicate or change your files. It just remembers
 where they are and caches the metadata (duration, artist, etc.)
 
-Just to be on the safe side, lets save. Type *:save* and press Enter.
+Just to be on the safe side, let's save. Type *:save* and press Enter.
 
 Note: Cmus automatically saves your settings and library and everything when
 you quit, so you probably won't use the save command much.
@@ -120,7 +120,7 @@ Press *<*/*>* seek by one minute
 Press *z* to play the previous track and *b* to play the next track
 
 cmus has some great options to control what plays next (if anything) when the
-track ends. The state of these settings are shown in the bottom right corner.
+track ends. The state of these settings is shown in the bottom right corner.
 The first of these shows what collection of tracks (currently "all from
 library") we are playing. Press *m* to cycle through the different options for
 this setting. To the right of that (past the "|") cmus shows the state of four
@@ -173,11 +173,11 @@ start playing it.
 
 The playlists work like another set of libraries (like view *2*) except that
 (like the queue) you manually set the order of the tracks. This can be quite
-useful if you want to create a mixes of specific tracks or if you want to
+useful if you want to create a mix of specific tracks or if you want to
 listen to an audio book without having the chapters play when you're playing
 "all from library".
 
-The playlists are on view *3*. But before we go there, lets add some tracks.
+The playlists are on view *3*. But before we go there, let's add some tracks.
 Press *2* to go to the simple library view, go to a track you want and press
 *y* to add it to a playlist. The only visual feedback you'll get that anything
 happened is that the highlight will move down one row. Add a few more so you
@@ -237,7 +237,7 @@ changing the keybindings.
 Press *7* for a quick overview of the current keybindings and settings.
 
 To change a setting or keybind, just select it (up/down keys) and press enter.
-This will put the command for the current setting in the command now (bottom
+This will put the command for the current setting in the command line (bottom
 left of your screen), which you can edit to put in a new value/key.
 
 Please see the reference manual (see Further Reading below) for a detailed

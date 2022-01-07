@@ -85,7 +85,7 @@ void mixer_open(void);
 void mixer_close(void);
 int mixer_set_volume(int left, int right);
 int mixer_read_volume(void);
-int mixer_get_fds(int *fds);
+int mixer_get_fds(int what, int *fds);
 
 void op_add_options(void);
 char *op_get_error_msg(int rc, const char *arg);

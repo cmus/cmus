@@ -25,12 +25,22 @@
 
 #define NR_MIXER_FDS 4
 
+enum {
+    /* volume changes */
+    MIXER_FDS_VOLUME,
+    /* output changes */
+    MIXER_FDS_OUTPUT
+};
+
 struct mixer_plugin_ops {
 	int (*init)(void);
 	int (*exit)(void);
 	int (*open)(int *volume_max);
 	int (*close)(void);
-	int (*get_fds)(int *fds);
+	union {
+	    int (*abi_1)(int *fds); // MIXER_FDS_VOLUME
+	    int (*abi_2)(int what, int *fds);
+	} get_fds;
 	int (*set_volume)(int l, int r);
 	int (*get_volume)(int *l, int *r);
 };

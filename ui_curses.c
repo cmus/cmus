@@ -141,6 +141,7 @@ static int track_win_w = 0;
 
 static int win_x = 0;
 static int win_w = 0;
+static int win_active = 1;
 
 static int show_cursor;
 static int cursor_x;
@@ -763,7 +764,7 @@ static void print_editable(struct window *win, int row, struct iter *iter)
 {
 	struct simple_track *track;
 	struct iter sel;
-	int current, selected, active = 0;
+	int current, selected, active;
 	const char *format;
 
 	track = iter_to_simple_track(iter);
@@ -776,6 +777,7 @@ static void print_editable(struct window *win, int row, struct iter *iter)
 		cursor_y = 1 + row;
 	}
 
+	active = win_active;
 	if (!selected && !!track->marked) {
 		selected = 1;
 		active = 0;
@@ -1002,6 +1004,7 @@ static void update_pl_tracks(struct window *win)
 
 	win_x = track_win_x;
 	win_w = track_win_w;
+	win_active = pl_get_cursor_in_track_window();
 
 	get_global_fopts();
 	fopt_set_time(&track_fopts[TF_TOTAL], pl_visible_total_time(), 0);
@@ -1009,6 +1012,7 @@ static void update_pl_tracks(struct window *win)
 	format_print(title, track_win_w - 2, "Track%= %{total}", track_fopts);
 	update_window(win, track_win_x, 0, track_win_w, title, print_editable);
 
+	win_active = 1;
 	win_x = 0;
 	win_w = win_w_tmp;
 }
@@ -1839,7 +1843,7 @@ static void sig_shutdown(int sig)
 	cmus_running = 0;
 }
 
-static volatile sig_atomic_t needs_to_resize = 1;
+static volatile sig_atomic_t needs_to_resize = 0;
 
 static void sig_winch(int sig)
 {
@@ -1881,6 +1885,37 @@ static void resize_tree_view(int w, int h)
 	window_set_nr_rows(lib_track_win, h);
 }
 
+static void update_window_size(void)
+{
+	int w, h;
+	int columns, lines;
+
+	if (get_window_size(&lines, &columns) == 0) {
+		needs_to_resize = 0;
+#if HAVE_RESIZETERM
+		resizeterm(lines, columns);
+#endif
+		w = COLS;
+		if (w > PRINT_BUFFER_MAX_WIDTH)
+			w = PRINT_BUFFER_MAX_WIDTH;
+		h = LINES - 3;
+		if (w < 3)
+			w = 3;
+		if (h < 2)
+			h = 2;
+		win_w = w;
+		resize_tree_view(w, h);
+		window_set_nr_rows(lib_editable.shared->win, h - 1);
+		pl_set_nr_rows(h - 1);
+		window_set_nr_rows(pq_editable.shared->win, h - 1);
+		window_set_nr_rows(filters_win, h - 1);
+		window_set_nr_rows(help_win, h - 1);
+		window_set_nr_rows(browser_win, h - 1);
+	}
+	clearok(curscr, TRUE);
+	refresh();
+}
+
 static void update(void)
 {
 	int needs_view_update = 0;
@@ -1890,36 +1925,10 @@ static void update(void)
 	int needs_spawn = 0;
 
 	if (needs_to_resize) {
-		int w, h;
-		int columns, lines;
-
-		if (get_window_size(&lines, &columns) == 0) {
-			needs_to_resize = 0;
-#if HAVE_RESIZETERM
-			resizeterm(lines, columns);
-#endif
-			w = COLS;
-			if (w > PRINT_BUFFER_MAX_WIDTH)
-				w = PRINT_BUFFER_MAX_WIDTH;
-			h = LINES - 3;
-			if (w < 3)
-				w = 3;
-			if (h < 2)
-				h = 2;
-			win_w = w;
-			resize_tree_view(w, h);
-			window_set_nr_rows(lib_editable.shared->win, h - 1);
-			pl_set_nr_rows(h - 1);
-			window_set_nr_rows(pq_editable.shared->win, h - 1);
-			window_set_nr_rows(filters_win, h - 1);
-			window_set_nr_rows(help_win, h - 1);
-			window_set_nr_rows(browser_win, h - 1);
-			needs_title_update = 1;
-			needs_status_update = 1;
-			needs_command_update = 1;
-		}
-		clearok(curscr, TRUE);
-		refresh();
+		update_window_size();
+		needs_title_update = 1;
+		needs_status_update = 1;
+		needs_command_update = 1;
 	}
 
 	if (player_info.status_changed)
@@ -2129,8 +2138,9 @@ static void main_loop(void)
 		fd_set set;
 		struct timeval tv;
 		int poll_mixer = 0;
-		int i, nr_fds = 0;
-		int fds[NR_MIXER_FDS];
+		int i;
+		int nr_fds_vol = 0, fds_vol[NR_MIXER_FDS];
+		int nr_fds_out = 0, fds_out[NR_MIXER_FDS];
 		struct list_head *item;
 		struct client *client;
 
@@ -2165,16 +2175,22 @@ static void main_loop(void)
 			SELECT_ADD_FD(client->fd);
 		}
 		if (!soft_vol) {
-			nr_fds = mixer_get_fds(fds);
-			if (nr_fds <= 0) {
+			nr_fds_vol = mixer_get_fds(MIXER_FDS_VOLUME, fds_vol);
+			if (nr_fds_vol <= 0) {
 				poll_mixer = 1;
 				if (!tv.tv_usec)
 					tv.tv_usec = 500e3;
 			}
-			for (i = 0; i < nr_fds; i++) {
-				BUG_ON(fds[i] <= 0);
-				SELECT_ADD_FD(fds[i]);
+			for (i = 0; i < nr_fds_vol; i++) {
+				BUG_ON(fds_vol[i] <= 0);
+				SELECT_ADD_FD(fds_vol[i]);
 			}
+		}
+
+		nr_fds_out = mixer_get_fds(MIXER_FDS_OUTPUT, fds_out);
+		for (i = 0; i < nr_fds_out; i++) {
+			BUG_ON(fds_out[i] <= 0);
+			SELECT_ADD_FD(fds_out[i]);
 		}
 
 		rc = select(fd_high + 1, &set, NULL, NULL, tv.tv_usec ? &tv : NULL);
@@ -2198,12 +2214,22 @@ static void main_loop(void)
 			continue;
 		}
 
-		for (i = 0; i < nr_fds; i++) {
-			if (FD_ISSET(fds[i], &set)) {
+		for (i = 0; i < nr_fds_vol; i++) {
+			if (FD_ISSET(fds_vol[i], &set)) {
 				d_print("vol changed\n");
 				mixer_read_volume();
 				mpris_volume_changed();
 				update_statusline();
+			}
+		}
+		for (i = 0; i < nr_fds_out; i++) {
+			if (FD_ISSET(fds_out[i], &set)) {
+				d_print("out changed\n");
+				if (pause_on_output_change) {
+					player_pause_playback();
+					update_statusline();
+				}
+				clear_pipe(fds_out[i], -1);
 			}
 		}
 		if (FD_ISSET(server_socket, &set))
@@ -2316,6 +2342,8 @@ static void init_curses(void)
 	if (!getenv("ESCDELAY")) {
 		set_escdelay(default_esc_delay);
 	}
+
+	update_window_size();
 }
 
 static void init_all(void)
