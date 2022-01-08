@@ -420,32 +420,19 @@ check_mp4()
 	USE_MPEG4IP=1
 	IS_TS_MP4V2=0
 
-	if check_header mp4v2/mp4v2.h "-lmp4v2"
+	if check_header mp4v2/mp4v2.h
 	then
+		echo "GJKBEFSBJUIKEFRWbjnuiaefgwuibo"
 		USE_MPEG4IP=0
 	else
-		# make sure that mp4v2 isn't hiding under an mp4.h header
-		if check_header mp4.h "-lmp4v2"
-		then
-			USE_MPEG4IP=1
-		else
-			# techsmith cripples the mp4v2 api so badly that we can't even check for
-			# headers, as the C++ causes any call to gcc to just fail. If the header
-			# check fails but mp4v2 is still linkable, assume that we the system has
-			# the techsmith fork and mark it as such.
-			msg_checking "for techsmith mp4v2 fork"
-
-			if try_link -lmp4v2
-			then
-				msg_result yes
-				USE_MPEG4IP=0
-				IS_TS_MP4V2=1
-			else
-				msg_result no
-				return $?
-			fi
-		fi
+		# techsmith cripples the mp4v2 api so badly that we can't even check for
+		# headers, as the C++ causes any call to gcc to just fail. If the header
+		# check fails but mp4v2 is still linkable, assume that we the system has
+		# the techsmith fork and mark it as such.
+    check_header mp4.h || return $?
 	fi
+
+	echo "GJKBEFSBJUIKEFRWbjnuiaefgwuibo"
 
 	check_header neaacdec.h &&
 	check_library MP4 "" "-lmp4v2 -lfaad -lm"
