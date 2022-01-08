@@ -415,21 +415,7 @@ check_mp4()
 	then
 		USE_MPEG4IP=0
 	else
-		# techsmith cripples the mp4v2 api so badly that we can't even check for
-		# headers, as the C++ causes any call to gcc to just fail. If the header
-		# check fails but mp4v2 is still linkable, assume that we the system has
-		# the techsmith fork and mark it as such.
-		msg_checking "for techsmith mp4v2 fork"
-
-		if try_link -lmp4v2
-		then
-			msg_result yes
-			USE_MPEG4IP=0
-			IS_TS_MP4V2=1
-		else
-			msg_result no
-			return $?
-		fi
+		return $?
 	fi
 
 	check_header neaacdec.h &&
