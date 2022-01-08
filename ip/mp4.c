@@ -171,15 +171,15 @@ static int mp4_open(struct input_plugin_data *ip_data)
 	NeAACDecSetConfiguration(priv->decoder, neaac_cfg);
 
 	/* open mpeg-4 file */
-#if MP4V2_PROJECT_version_major < 2 ||  (MP4V2_PROJECT_version_major == 2 && MP4V2_PROJECT_version_minor < 1)
-	priv->mp4.handle = MP4Read(ip_data->filename);
-#else
+#if IS_TS_MP4V2
 	/* some distributions [notably arch linux] use techsmith's mp4v2 fork instead of the largely abandoned
 	   upstream project. This fork however is primarily designed for internal techsmith use, and in 4.1.4/4.1.5
 	   they added an extra argument to MP4Read that when dynamically called my cmus would result in a segfault.
 	   to fix this, we check if we are using the techsmith fork by seeing if the version is higher than the last
 	   upstream version, and then specify the argument in that case. */
 	priv->mp4.handle = MP4Read(ip_data->filename, NULL);
+#else
+	priv->mp4.handle = MP4Read(ip_data->filename);
 #endif
 
 	if (!priv->mp4.handle) {

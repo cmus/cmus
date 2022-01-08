@@ -613,7 +613,7 @@ check_header()
 	__header="$1"
 	shift
 	msg_checking "for header <$__header>"
-	if try_compile "#include <$__header>" "$@"
+	if try_compile_link "#include <$__header>" "$@"
 	then
 		msg_result yes
 		return 0
