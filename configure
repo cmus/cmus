@@ -431,6 +431,8 @@ check_mp4()
 		fi
 	fi
 
+	echo "GJUIKLP;SWEANFUIJ BJAESGFBUIYO"
+
 	check_header neaacdec.h &&
 	check_library MP4 "" "-lmp4v2 -lfaad -lm"
 
