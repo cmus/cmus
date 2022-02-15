@@ -17,7 +17,9 @@
  */
 
 #include <string.h>
+#include <stdbool.h>
 
+#include <pulse/introspect.h>
 #include <pulse/pulseaudio.h>
 
 #include "../op.h"
@@ -32,6 +34,8 @@ static pa_stream		*pa_s;
 static pa_channel_map		 pa_cmap;
 static pa_cvolume		 pa_vol;
 static pa_sample_spec		 pa_ss;
+
+static bool 		 is_pipewire = false;
 
 static int			 mixer_notify_in;
 static int			 mixer_notify_out;
@@ -175,6 +179,20 @@ static void _pa_sink_input_info_cb(pa_context *c,
 	}
 }
 
+static void _pa_server_info_cb(pa_context *c,
+					const pa_server_info *i,
+					void *data)
+{
+	is_pipewire = false;
+	if (i) {
+		if (strstr(i->server_name, "PipeWire") != NULL) {
+			// server is PipeWire
+			d_print("Pulseaudio server is pipewire. Disabling _pa_stream_drain()\n");
+			is_pipewire = true;
+		}
+	}
+}
+
 static void _pa_stream_success_cb(pa_stream *s, int success, void *data)
 {
 	pa_threaded_mainloop_signal(pa_ml, 0);
@@ -246,6 +264,10 @@ static int _pa_stream_cork(int pause_)
 
 static int _pa_stream_drain(void)
 {
+	if (is_pipewire) {
+		return OP_ERROR_SUCCESS;
+	}
+
 	pa_threaded_mainloop_lock(pa_ml);
 
 	return _pa_wait_unlock(pa_stream_drain(pa_s, _pa_stream_success_cb, NULL));
@@ -422,6 +444,8 @@ static int op_pulse_open(sample_format_t sf, const channel_position_t *channel_m
 	pa_context_get_sink_input_info(pa_ctx, pa_stream_get_index(pa_s),
 			_pa_sink_input_info_cb, NULL);
 
+	pa_context_get_server_info(pa_ctx, _pa_server_info_cb, NULL);
+
 	pa_threaded_mainloop_unlock(pa_ml);
 
 	return OP_ERROR_SUCCESS;
@@ -440,8 +464,10 @@ static int op_pulse_close(void)
 	 * If this _pa_stream_drain() will be moved below following
 	 * pa_threaded_mainloop_lock(), PulseAudio 0.9.19 will hang.
 	 */
-	if (pa_s)
+
+	if (pa_s && !is_pipewire){
 		_pa_stream_drain();
+	}
 
 	pa_threaded_mainloop_lock(pa_ml);
 
