@@ -1376,6 +1376,7 @@ static void get_attr(void *data, char *buf, size_t size)
 	const char *reverse = "";
 	const char *blink = "";
 	const char *bold = "";
+	const char *italic = "";
 
 	if (attr & A_STANDOUT)
 		standout = "standout|";
@@ -1387,9 +1388,11 @@ static void get_attr(void *data, char *buf, size_t size)
 		blink = "blink|";
 	if (attr & A_BOLD)
 		bold = "bold|";
+	if (attr & A_ITALIC)
+		italic = "italic|";
 
-	size_t len = snprintf(buf, size, "%s%s%s%s%s", standout, underline, reverse,
-			blink, bold);
+	size_t len = snprintf(buf, size, "%s%s%s%s%s%s",
+			standout, underline, reverse, blink, bold, italic);
 
 	if (0 < len && len < size)
 		buf[len - 1] = 0;
@@ -1419,6 +1422,8 @@ static void set_attr(void *data, const char *buf)
 				attr |= A_BLINK;
 			else if (strcmp(current, "bold") == 0)
 				attr |= A_BOLD;
+			else if (strcmp(current, "italic") == 0)
+				attr |= A_ITALIC;
 
 			free(current);
 

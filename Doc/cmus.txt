@@ -1293,6 +1293,8 @@ the other attributes will be used.
 
 `underline` underlines the text.
 
+`italic` makes the text italic.
+
 `blink` makes the text blink.
 
 @h2 Format Strings
