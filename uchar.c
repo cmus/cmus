@@ -195,7 +195,7 @@ int u_char_width(uchar u)
 	if (w >= 0)
 		return w;
 	else
-		return 2;
+		return 1;
 
 control:
 	/* special case */
