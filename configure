@@ -73,6 +73,32 @@ check_coreaudio()
 	return 1
 }
 
+wcwidth_code="
+#include <wchar.h>
+
+/* wchar_t must be 4 bytes to support full unicode */
+extern char check[1/!(4 - sizeof(wchar_t))];
+
+int main(int argc, char *argv[])
+{
+	(void) wcwidth('a');
+	return 0;
+}
+"
+
+check_wcwidth()
+{
+	msg_checking "for uchar compatible wcwidth"
+	if try_compile "$wcwidth_code"
+	then
+		msg_result yes
+		HAVE_WCWIDTH=1
+	else
+		msg_result no
+		HAVE_WCWIDTH=0
+	fi
+	return 0
+}
 
 check_compat()
 {
@@ -567,6 +593,7 @@ check check_pthread
 check check_rtsched
 check check_ncurses
 check check_iconv
+check check_wcwidth
 check_header byteswap.h && HAVE_BYTESWAP_H=y
 check_string_function "strdup" && HAVE_STRDUP=y
 check_string_function "strndup" && HAVE_STRNDUP=y
@@ -631,6 +658,7 @@ config_header config/curses.h HAVE_RESIZETERM HAVE_USE_DEFAULT_COLORS
 config_header config/ffmpeg.h HAVE_FFMPEG_AVCODEC_H USE_FALLBACK_IP
 config_header config/utils.h HAVE_BYTESWAP_H
 config_header config/iconv.h HAVE_ICONV
+config_header config/wcwidth.h HAVE_WCWIDTH
 config_header config/samplerate.h HAVE_SAMPLERATE
 config_header config/xmalloc.h HAVE_STRDUP HAVE_STRNDUP
 
