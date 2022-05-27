@@ -65,6 +65,7 @@ struct track_info *track_info_new(const char *filename)
 void track_info_set_comments(struct track_info *ti, struct keyval *comments) {
 	long int r128_track_gain;
 	long int r128_album_gain;
+	long int output_gain;
 
 	ti->comments = comments;
 	ti->artist = keyvals_get_val(comments, "artist");
@@ -108,6 +109,10 @@ void track_info_set_comments(struct track_info *ti, struct keyval *comments) {
 
 	if (comments_get_signed_int(comments, "r128_album_gain", &r128_album_gain) != -1) {
 		ti->rg_album_gain = (r128_album_gain / 256.0) + 5;
+	}
+
+	if (comments_get_signed_int(comments, "output_gain", &output_gain) != -1) {
+		ti->output_gain = (output_gain / 256.0);
 	}
 
 	ti->collkey_artist = u_strcasecoll_key0(ti->artist);
