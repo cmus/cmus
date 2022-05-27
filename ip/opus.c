@@ -265,6 +265,9 @@ static int opus_read_comments(struct input_plugin_data *ip_data,
 			continue;
 		}
 
+		if (strncmp(str, "output_gain", 11) == 0)
+			continue;
+
 		key = xstrndup(str, eq - str);
 		comments_add_const(&c, key, eq + 1);
 		free(key);
