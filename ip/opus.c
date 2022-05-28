@@ -239,8 +239,7 @@ static int opus_read_comments(struct input_plugin_data *ip_data,
 
 	head = op_head(priv->of, -1);
 	if(head != NULL) {
-		char *val = xmalloc(12); // 11 max int digits + NULL
-		memset(val, 0, 12);
+		char *val = xmalloc0(12); // 11 max int digits + NULL
 
 		snprintf(val, 12, "%d", head->output_gain);
 		keyvals_add(&c, "output_gain", val);
