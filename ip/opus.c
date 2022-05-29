@@ -243,7 +243,6 @@ static int opus_read_comments(struct input_plugin_data *ip_data,
 
 		snprintf(val, 12, "%d", head->output_gain);
 		keyvals_add(&c, "output_gain", val);
-		free(val);
 	}
 
 	ot = op_tags(priv->of, -1);
