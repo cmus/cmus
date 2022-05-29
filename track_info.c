@@ -58,6 +58,7 @@ struct track_info *track_info_new(const char *filename)
 	ti->bpm = -1;
 	ti->codec = NULL;
 	ti->codec_profile = NULL;
+	ti->output_gain = 0;
 
 	return ti;
 }
