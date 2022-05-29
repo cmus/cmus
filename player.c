@@ -349,7 +349,7 @@ static void scale_samples(char *buffer, unsigned int *countp)
 
 static void update_rg_scale(void)
 {
-	double gain, peak, db, scale, check_scale, limit;
+	double gain, peak, db, scale, limit;
 
 	replaygain_scale = 1.0;
 	if (!player_info_priv.ti || !replaygain)
@@ -380,8 +380,8 @@ static void update_rg_scale(void)
 		return;
 	}
 	if (isnan(peak)) {
-		d_print("peak not available, defaulting to 1\n");
-		peak = 1;
+		d_print("peak not available, deriving from output gain\n");
+		peak = pow(10.0, player_info_priv.ti->output_gain / 20.0);
 	}
 	if (peak < 0.05) {
 		d_print("peak (%g) is too small\n", peak);
@@ -391,16 +391,15 @@ static void update_rg_scale(void)
 	db = replaygain_preamp + gain;
 
 	scale = pow(10.0, db / 20.0);
-	check_scale = pow(10.0, (db + player_info_priv.ti->output_gain) / 20.0);
 	replaygain_scale = scale;
 	limit = 1.0 / peak;
 	if (replaygain_limit && !isnan(peak)) {
-		if (check_scale > limit)
+		if (replaygain_scale > limit)
 			replaygain_scale = limit;
 	}
 
-	d_print("gain = %f, peak = %f, db = %f, scale = %f, check_scale = %f, limit = %f, replaygain_scale = %f\n",
-			gain, peak, db, scale, check_scale, limit, replaygain_scale);
+	d_print("gain = %f, peak = %f, db = %f, scale = %f, limit = %f, replaygain_scale = %f\n",
+			gain, peak, db, scale, limit, replaygain_scale);
 }
 
 static inline unsigned int buffer_second_size(void)
