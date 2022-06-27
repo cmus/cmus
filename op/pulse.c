@@ -35,7 +35,7 @@ static pa_channel_map		 pa_cmap;
 static pa_cvolume		 pa_vol;
 static pa_sample_spec		 pa_ss;
 
-static bool 		 is_pipewire = false;
+static bool			 is_pipewire = false;
 
 static int			 mixer_notify_in;
 static int			 mixer_notify_out;
@@ -180,8 +180,8 @@ static void _pa_sink_input_info_cb(pa_context *c,
 }
 
 static void _pa_server_info_cb(pa_context *c,
-					const pa_server_info *i,
-					void *data)
+			       const pa_server_info *i,
+			       void *data)
 {
 	is_pipewire = false;
 	if (i) {
@@ -264,10 +264,6 @@ static int _pa_stream_cork(int pause_)
 
 static int _pa_stream_drain(void)
 {
-	if (is_pipewire) {
-		return OP_ERROR_SUCCESS;
-	}
-
 	pa_threaded_mainloop_lock(pa_ml);
 
 	return _pa_wait_unlock(pa_stream_drain(pa_s, _pa_stream_success_cb, NULL));
