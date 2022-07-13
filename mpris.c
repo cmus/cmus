@@ -509,7 +509,7 @@ out:
 		bus = NULL;
 		mpris_fd = -1;
 
-		const char *msg = "an error occured while initializing "
+		const char *msg = "an error occurred while initializing "
 			          "MPRIS: %s. MPRIS will be disabled.";
 
 		error_msg(msg, strerror(-res));
