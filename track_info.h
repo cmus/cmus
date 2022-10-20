@@ -46,6 +46,7 @@ struct track_info {
 	double rg_track_peak;
 	double rg_album_gain;
 	double rg_album_peak;
+	double output_gain;
 	const char *artist;
 	const char *album;
 	const char *title;

@@ -82,4 +82,17 @@ static inline void ptr_array_unique(struct ptr_array *array,
 	array->count = j;
 }
 
+static inline void ptr_array_clear(struct ptr_array *array)
+{
+	void **ptrs = array->ptrs;
+
+	for (int i = 0; i != array->count; i++) {
+		free(ptrs[i]);
+	}
+	free(ptrs);
+	array->ptrs = NULL;
+	array->alloc = 0;
+	array->count = 0;
+}
+
 #endif
