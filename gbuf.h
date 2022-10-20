@@ -22,8 +22,10 @@
 #define CMUS_GBUF_H
 
 #include "compiler.h"
+#include "uchar.h"
 
 #include <stddef.h> /* size_t */
+#include <stdarg.h>
 
 struct gbuf {
 	char *buffer;
@@ -49,11 +51,15 @@ static inline size_t gbuf_avail(struct gbuf *buf)
 }
 
 void gbuf_grow(struct gbuf *buf, size_t more);
+void gbuf_used(struct gbuf *buf, size_t used);
 void gbuf_free(struct gbuf *buf);
 void gbuf_add_ch(struct gbuf *buf, char ch);
+void gbuf_add_uchar(struct gbuf *buf, uchar u);
 void gbuf_add_bytes(struct gbuf *buf, const void *data, size_t len);
 void gbuf_add_str(struct gbuf *buf, const char *str);
+void gbuf_add_ustr(struct gbuf *buf, const char *src, int *width);
 void gbuf_addf(struct gbuf *buf, const char *fmt, ...) CMUS_FORMAT(2, 3);
+void gbuf_vaddf(struct gbuf *buf, const char *fmt, va_list ap);
 void gbuf_set(struct gbuf *buf, int c, size_t count);
 char *gbuf_steal(struct gbuf *buf);
 

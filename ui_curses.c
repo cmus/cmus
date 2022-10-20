@@ -107,18 +107,15 @@ int using_utf8 = 0;
 static char *lib_autosave_filename;
 static char *play_queue_autosave_filename;
 
-#define PRINT_BUFFER_SZ 4096
-/* one character can take up to 4 bytes in UTF-8 */
-#define PRINT_BUFFER_MAX_WIDTH (PRINT_BUFFER_SZ / 4 - 1)
+static GBUF(print_buffer);
 
-static char print_buffer[PRINT_BUFFER_SZ];
 /* destination buffer for utf8_encode_to_buf and utf8_decode */
-static char conv_buffer[PRINT_BUFFER_SZ];
+static char conv_buffer[4096];
 
 /* shown error message and time stamp
  * error is cleared if it is older than 3s and key was pressed
  */
-static char error_buf[PRINT_BUFFER_SZ];
+static GBUF(error_buf);
 static time_t error_time = 0;
 /* info messages are displayed in different color */
 static int msg_is_error;
@@ -450,14 +447,20 @@ fallback:
 
 /* screen updates {{{ */
 
-static void dump_print_buffer(int row, int col)
+static void dump_print_buffer_no_clear(int row, int col)
 {
 	if (using_utf8) {
-		(void) mvaddstr(row, col, print_buffer);
+		(void) mvaddstr(row, col, print_buffer.buffer);
 	} else {
-		utf8_decode(print_buffer);
+		utf8_decode(print_buffer.buffer);
 		(void) mvaddstr(row, col, conv_buffer);
 	}
+}
+
+static void dump_print_buffer(int row, int col)
+{
+	dump_print_buffer_no_clear(row, col);
+	gbuf_clear(&print_buffer);
 }
 
 /* print @str into @buf
@@ -465,29 +468,17 @@ static void dump_print_buffer(int row, int col)
  * if @str is shorter than @width pad with spaces
  * if @str is wider than @width truncate and add "..."
  */
-static int format_str(char *buf, const char *str, int width)
+static void format_str(struct gbuf *buf, const char *str, int width)
 {
-	int w = width;
-	size_t copy_bytes = u_copy_chars(buf, str, &w);
-
-	if (w > 0) {
-		memset(buf + copy_bytes, ' ', w);
-		copy_bytes += w;
-	} else if (str[copy_bytes] != '\0') {
-		copy_bytes = mark_clipped_text(buf, width);
-	}
-	buf[copy_bytes] = '\0';
-	return copy_bytes;
+	gbuf_add_ustr(buf, str, &width);
+	gbuf_set(buf, ' ', width);
 }
 
 static void sprint(int row, int col, const char *str, int width)
 {
-	int pos = 0;
-
-	print_buffer[pos++] = ' ';
-	pos += format_str(print_buffer + pos, str, width - 2);
-	print_buffer[pos++] = ' ';
-	print_buffer[pos] = 0;
+	gbuf_add_ch(&print_buffer, ' ');
+	format_str(&print_buffer, str, width - 2);
+	gbuf_add_ch(&print_buffer, ' ');
 	dump_print_buffer(row, col);
 }
 
@@ -691,13 +682,13 @@ static void print_tree(struct window *win, int row, struct iter *iter)
 		cursor_y = 1 + row;
 	}
 
-	print_buffer[0] = ' ';
+	gbuf_add_ch(&print_buffer, ' ');
 	if (album) {
 		fill_track_fopts_album(album);
-		format_print(print_buffer + 1, tree_win_w - 1, tree_win_format, track_fopts);
+		format_print(&print_buffer, tree_win_w - 1, tree_win_format, track_fopts);
 	} else {
 		fill_track_fopts_artist(artist);
-		format_print(print_buffer + 1, tree_win_w - 1, tree_win_artist_format, track_fopts);
+		format_print(&print_buffer, tree_win_w - 1, tree_win_artist_format, track_fopts);
 	}
 	dump_print_buffer(row + 1, tree_win_x);
 }
@@ -722,7 +713,7 @@ static void print_track(struct window *win, int row, struct iter *iter)
 
 		fill_track_fopts_album(album);
 
-		len = format_print(print_buffer, track_win_w, track_win_album_format, track_fopts);
+		len = format_print(&print_buffer, track_win_w, track_win_album_format, track_fopts);
 		dump_print_buffer(row + 1, track_win_x);
 
 		bkgdset(pairs[CURSED_SEPARATOR]);
@@ -753,7 +744,7 @@ static void print_track(struct window *win, int row, struct iter *iter)
 	} else if (*track_win_alt_format) {
 		format = track_win_alt_format;
 	}
-	format_print(print_buffer, track_win_w, format, track_fopts);
+	format_print(&print_buffer, track_win_w, format, track_fopts);
 	dump_print_buffer(row + 1, track_win_x);
 }
 
@@ -794,7 +785,7 @@ static void print_editable(struct window *win, int row, struct iter *iter)
 	} else if (*list_win_alt_format) {
 		format = list_win_alt_format;
 	}
-	format_print(print_buffer, win_w, format, track_fopts);
+	format_print(&print_buffer, win_w, format, track_fopts);
 	dump_print_buffer(row + 1, win_x);
 }
 
@@ -840,7 +831,7 @@ static void print_filter(struct window *win, int row, struct iter *iter)
 	/* is the filter currently active? */
 	int current = !!e->act_stat;
 	const char stat_chars[3] = " *!";
-	int ch1, ch2, ch3, pos;
+	int ch1, ch2, ch3;
 	const char *e_filter;
 
 	window_get_sel(win, &sel);
@@ -867,9 +858,8 @@ static void print_filter(struct window *win, int row, struct iter *iter)
 	}
 
 	snprintf(buf, sizeof(buf), "%c%c%c%-15s  %.235s", ch1, ch2, ch3, e->name, e_filter);
-	pos = format_str(print_buffer, buf, win_w - 1);
-	print_buffer[pos++] = ' ';
-	print_buffer[pos] = 0;
+	format_str(&print_buffer, buf, win_w - 1);
+	gbuf_add_ch(&print_buffer, ' ');
 	dump_print_buffer(row + 1, 0);
 }
 
@@ -877,7 +867,6 @@ static void print_help(struct window *win, int row, struct iter *iter)
 {
 	struct iter sel;
 	int selected;
-	int pos;
 	int active = 1;
 	char buf[OPTION_MAX_SIZE];
 	const struct help_entry *e = iter_to_help_entry(iter);
@@ -912,9 +901,8 @@ static void print_help(struct window *win, int row, struct iter *iter)
 		opt->get(opt->data, buf + len, sizeof(buf) - len);
 		break;
 	}
-	pos = format_str(print_buffer, buf, win_w - 1);
-	print_buffer[pos++] = ' ';
-	print_buffer[pos] = 0;
+	format_str(&print_buffer, buf, win_w - 1);
+	gbuf_add_ch(&print_buffer, ' ');
 	dump_print_buffer(row + 1, 0);
 }
 
@@ -928,8 +916,7 @@ static void update_window(struct window *win, int x, int y, int w, const char *t
 	win->changed = 0;
 
 	bkgdset(pairs[CURSED_WIN_TITLE]);
-	snprintf(print_buffer, sizeof(print_buffer), " %s ", title);
-	dump_print_buffer(y, x);
+	sprint(y, x, title, w);
 
 	nr_rows = window_get_nr_rows(win);
 	i = 0;
@@ -943,29 +930,28 @@ static void update_window(struct window *win, int x, int y, int w, const char *t
 	}
 
 	bkgdset(pairs[0]);
-	memset(print_buffer, ' ', w);
-	print_buffer[w] = 0;
+	gbuf_set(&print_buffer, ' ', w);
 	while (i < nr_rows) {
-		dump_print_buffer(y + i + 1, x);
+		dump_print_buffer_no_clear(y + i + 1, x);
 		i++;
 	}
+	gbuf_clear(&print_buffer);
 }
 
 static void update_tree_window(void)
 {
-	char title[PRINT_BUFFER_SZ];
-	format_str(title, "Artist / Album", tree_win_w - 1);
-	update_window(lib_tree_win, tree_win_x, 0, tree_win_w, title, print_tree);
+	update_window(lib_tree_win, tree_win_x, 0, tree_win_w + 1, "Artist / Album", print_tree);
 }
 
 static void update_track_window(void)
 {
-	char title[PRINT_BUFFER_SZ];
+	static GBUF(title);
+	gbuf_clear(&title);
 
 	/* it doesn't matter what format options we use because the format
 	 * string does not contain any format charaters */
-	format_print(title, track_win_w - 2, "Track%= Library", track_fopts);
-	update_window(lib_track_win, track_win_x, 0, track_win_w, title,
+	format_print(&title, track_win_w - 2, "Track%= Library", track_fopts);
+	update_window(lib_track_win, track_win_x, 0, track_win_w, title.buffer,
 			print_track);
 }
 
@@ -981,10 +967,10 @@ static void print_pl_list(struct window *win, int row, struct iter *iter)
 	if (info.marked)
 		prefix = " * ";
 	size_t prefix_w = strlen(prefix);
-	format_str(print_buffer, prefix, prefix_w);
+	format_str(&print_buffer, prefix, prefix_w);
 
 	if (tree_win_w > prefix_w)
-		format_str(print_buffer + prefix_w, info.name,
+		format_str(&print_buffer, info.name,
 				tree_win_w - prefix_w);
 
 	dump_print_buffer(row + 1, 0);
@@ -992,14 +978,13 @@ static void print_pl_list(struct window *win, int row, struct iter *iter)
 
 static void update_pl_list(struct window *win)
 {
-	char title[PRINT_BUFFER_SZ];
-	format_str(title, "Playlist", tree_win_w - 1);
-	update_window(win, tree_win_x, 0, tree_win_w, title, print_pl_list);
+	update_window(win, tree_win_x, 0, tree_win_w + 1, "Playlist", print_pl_list);
 }
 
 static void update_pl_tracks(struct window *win)
 {
-	char title[PRINT_BUFFER_SZ];
+	static GBUF(title);
+	gbuf_clear(&title);
 	int win_w_tmp = win_w;
 
 	win_x = track_win_x;
@@ -1009,18 +994,18 @@ static void update_pl_tracks(struct window *win)
 	get_global_fopts();
 	fopt_set_time(&track_fopts[TF_TOTAL], pl_visible_total_time(), 0);
 
-	format_print(title, track_win_w - 2, "Track%= %{total}", track_fopts);
-	update_window(win, track_win_x, 0, track_win_w, title, print_editable);
+	format_print(&title, track_win_w - 2, "Track%= %{total}", track_fopts);
+	update_window(win, track_win_x, 0, track_win_w, title.buffer, print_editable);
 
 	win_active = 1;
 	win_x = 0;
 	win_w = win_w_tmp;
 }
 
-static const char *pretty(const char *path)
+static const char *pretty_path(const char *path)
 {
 	static int home_len = -1;
-	static char buf[PRINT_BUFFER_SZ];
+	static GBUF(buf);
 
 	if (home_len == -1)
 		home_len = strlen(home_dir);
@@ -1028,17 +1013,18 @@ static const char *pretty(const char *path)
 	if (strncmp(path, home_dir, home_len) || path[home_len] != '/')
 		return path;
 
-	buf[0] = '~';
-	strcpy(buf + 1, path + home_len);
-	return buf;
+	gbuf_clear(&buf);
+	gbuf_add_ch(&buf, '~');
+	gbuf_add_str(&buf, path + home_len);
+	return buf.buffer;
 }
 
 static const char * const sorted_names[2] = { "", "sorted by " };
 
 static void update_editable_window(struct editable *e, const char *title, const char *filename)
 {
-	char buf[PRINT_BUFFER_SZ];
-	int pos;
+	static GBUF(buf);
+	gbuf_clear(&buf);
 
 	if (filename) {
 		if (using_utf8) {
@@ -1047,22 +1033,19 @@ static void update_editable_window(struct editable *e, const char *title, const 
 			utf8_encode_to_buf(filename);
 			filename = conv_buffer;
 		}
-		snprintf(buf, sizeof(buf), "%s %.256s - %d tracks", title, pretty(filename), e->nr_tracks);
+		gbuf_addf(&buf, "%s %.256s - %d tracks", title, pretty_path(filename), e->nr_tracks);
 	} else {
-		snprintf(buf, sizeof(buf), "%s - %d tracks", title, e->nr_tracks);
+		gbuf_addf(&buf, "%s - %d tracks", title, e->nr_tracks);
 	}
 
 	if (e->nr_marked) {
-		pos = strlen(buf);
-		snprintf(buf + pos, sizeof(buf) - pos, " (%d marked)", e->nr_marked);
+		gbuf_addf(&buf, " (%d marked)", e->nr_marked);
 	}
-	pos = strlen(buf);
-	snprintf(buf + pos, sizeof(buf) - pos, " %s%s",
+	gbuf_addf(&buf, " %s%s",
 			sorted_names[e->shared->sort_str[0] != 0],
 			e->shared->sort_str);
 
-	format_str(buf, buf, win_w - 2);
-	update_window(e->shared->win, 0, 0, win_w, buf, &print_editable);
+	update_window(e->shared->win, 0, 0, win_w, buf.buffer, &print_editable);
 }
 
 static void update_sorted_window(void)
@@ -1079,7 +1062,8 @@ static void update_play_queue_window(void)
 
 static void update_browser_window(void)
 {
-	char title[PRINT_BUFFER_SZ];
+	static GBUF(title);
+	gbuf_clear(&title);
 	char *dirname;
 
 	if (using_utf8) {
@@ -1089,23 +1073,19 @@ static void update_browser_window(void)
 		utf8_encode_to_buf(browser_dir);
 		dirname = conv_buffer;
 	}
-	snprintf(title, sizeof(title), "Browser - %.501s", dirname);
-	format_str(title, title, win_w - 2);
-	update_window(browser_win, 0, 0, win_w, title, print_browser);
+	gbuf_add_str(&title, "Browser - ");
+	gbuf_add_str(&title, dirname);
+	update_window(browser_win, 0, 0, win_w, title.buffer, print_browser);
 }
 
 static void update_filters_window(void)
 {
-	char title[PRINT_BUFFER_SZ];
-	format_str(title, "Library Filters", win_w - 2);
-	update_window(filters_win, 0, 0, win_w, title, print_filter);
+	update_window(filters_win, 0, 0, win_w, "Library Filters", print_filter);
 }
 
 static void update_help_window(void)
 {
-	char title[PRINT_BUFFER_SZ];
-	format_str(title, "Settings", win_w - 2);
-	update_window(help_win, 0, 0, win_w, title, print_help);
+	update_window(help_win, 0, 0, win_w, "Settings", print_help);
 }
 
 static void draw_separator(void)
@@ -1164,7 +1144,7 @@ static void do_update_view(int full)
 
 static void do_update_statusline(void)
 {
-	format_print(print_buffer, win_w, statusline_format, get_global_fopts());
+	format_print(&print_buffer, win_w, statusline_format, get_global_fopts());
 	bkgdset(pairs[CURSED_STATUSLINE]);
 	dump_print_buffer(LINES - 2, 0);
 
@@ -1190,13 +1170,13 @@ static void do_update_commandline(void)
 	char ch;
 
 	move(LINES - 1, 0);
-	if (error_buf[0]) {
+	if (error_buf.len != 0) {
 		if (msg_is_error) {
 			bkgdset(pairs[CURSED_ERROR]);
 		} else {
 			bkgdset(pairs[CURSED_INFO]);
 		}
-		addstr(error_buf);
+		addstr(error_buf.buffer);
 		clrtoeol();
 		return;
 	}
@@ -1233,9 +1213,9 @@ static void do_update_commandline(void)
 
 	if (w <= win_w - 2) {
 		addch(ch);
-		idx = u_copy_chars(print_buffer, str, &w);
-		print_buffer[idx] = 0;
-		dump_buffer(print_buffer);
+		gbuf_add_ustr(&print_buffer, str, &w);
+		dump_buffer(print_buffer.buffer);
+		gbuf_clear(&print_buffer);
 		clrtoeol();
 	} else {
 		/* keep cursor as far right as possible */
@@ -1253,31 +1233,17 @@ static void do_update_commandline(void)
 			idx = u_skip_chars(str, &skip, true);
 
 			width = win_w;
-			idx = u_copy_chars(print_buffer, str + idx, &width);
-			while (width > 0) {
-				/* cursor is at end of the buffer
-				 * print 1, 2 or 3 spaces
-				 *
-				 * To clarify:
-				 *
-				 * If the last _skipped_ character was double-width we may need
-				 * to print 2 spaces.
-				 *
-				 * If the last _skipped_ character was invalid UTF-8 we may need
-				 * to print 3 spaces.
-				 */
-				print_buffer[idx++] = ' ';
-				width--;
-			}
-			print_buffer[idx] = 0;
-			dump_buffer(print_buffer);
+			gbuf_add_ustr(&print_buffer, str + idx, &width);
+			gbuf_set(&print_buffer, ' ', width);
+			dump_buffer(print_buffer.buffer);
+			gbuf_clear(&print_buffer);
 		} else {
 			/* print ':' + win_w - 1 chars */
 			addch(ch);
 			width = win_w - 1;
-			idx = u_copy_chars(print_buffer, str, &width);
-			print_buffer[idx] = 0;
-			dump_buffer(print_buffer);
+			gbuf_add_ustr(&print_buffer, str, &width);
+			dump_buffer(print_buffer.buffer);
+			gbuf_clear(&print_buffer);
 		}
 	}
 }
@@ -1297,7 +1263,7 @@ static void do_update_titleline(void)
 {
 	bkgdset(pairs[CURSED_TITLELINE]);
 	if (player_info.ti) {
-		int i, use_alt_format = 0;
+		int use_alt_format = 0;
 		char *wtitle;
 
 		fill_track_fopts_track_info(player_info.ti);
@@ -1319,35 +1285,30 @@ static void do_update_titleline(void)
 		}
 
 		if (use_alt_format && *current_alt_format) {
-			format_print(print_buffer, win_w, current_alt_format, track_fopts);
+			format_print(&print_buffer, win_w, current_alt_format, track_fopts);
 		} else {
-			format_print(print_buffer, win_w, current_format, track_fopts);
+			format_print(&print_buffer, win_w, current_format, track_fopts);
 		}
 		dump_print_buffer(LINES - 3, 0);
 
 		/* set window title */
 		if (use_alt_format && *window_title_alt_format) {
-			format_print(print_buffer, PRINT_BUFFER_MAX_WIDTH,
+			format_print(&print_buffer, 0,
 					window_title_alt_format, track_fopts);
 		} else {
-			format_print(print_buffer,  PRINT_BUFFER_MAX_WIDTH,
+			format_print(&print_buffer, 0,
 					window_title_format, track_fopts);
 		}
 
-		/* remove whitespace */
-		i = strlen(print_buffer) - 1;
-		while (i > 0 && print_buffer[i] == ' ')
-			i--;
-		print_buffer[i + 1] = 0;
-
 		if (using_utf8) {
-			wtitle = print_buffer;
+			wtitle = print_buffer.buffer;
 		} else {
-			utf8_decode(print_buffer);
+			utf8_decode(print_buffer.buffer);
 			wtitle = conv_buffer;
 		}
 
 		set_title(wtitle);
+		gbuf_clear(&print_buffer);
 	} else {
 		move(LINES - 3, 0);
 		clrtoeol();
@@ -1490,12 +1451,13 @@ void update_filterline(void)
 	if (cur_view != TREE_VIEW && cur_view != SORTED_VIEW)
 		return;
 	if (lib_live_filter) {
-		char buf[PRINT_BUFFER_SZ];
+		static GBUF(buf);
+		gbuf_clear(&buf);
 		int w;
 		bkgdset(pairs[CURSED_STATUSLINE]);
-		snprintf(buf, sizeof(buf), "filtered: %s", lib_live_filter);
-		w = clamp(strlen(buf) + 2, win_w/4, win_w/2);
-		sprint(LINES-4, win_w-w, buf, w);
+		gbuf_addf(&buf, "filtered: %s", lib_live_filter);
+		w = clamp(u_str_width(buf.buffer) + 2, win_w/4, win_w/2);
+		sprint(LINES-4, win_w-w, buf.buffer, w);
 	}
 }
 
@@ -1503,12 +1465,13 @@ void info_msg(const char *format, ...)
 {
 	va_list ap;
 
+	gbuf_clear(&error_buf);
 	va_start(ap, format);
-	vsnprintf(error_buf, sizeof(error_buf), format, ap);
+	gbuf_vaddf(&error_buf, format, ap);
 	va_end(ap);
 
 	if (client_fd != -1) {
-		write_all(client_fd, error_buf, strlen(error_buf));
+		write_all(client_fd, error_buf.buffer, error_buf.len);
 		write_all(client_fd, "\n", 1);
 	}
 
@@ -1521,14 +1484,15 @@ void error_msg(const char *format, ...)
 {
 	va_list ap;
 
-	strcpy(error_buf, "Error: ");
+	gbuf_clear(&error_buf);
+	gbuf_add_str(&error_buf, "Error: ");
 	va_start(ap, format);
-	vsnprintf(error_buf + 7, sizeof(error_buf) - 7, format, ap);
+	gbuf_vaddf(&error_buf, format, ap);
 	va_end(ap);
 
-	d_print("%s\n", error_buf);
+	d_print("%s\n", error_buf.buffer);
 	if (client_fd != -1) {
-		write_all(client_fd, error_buf, strlen(error_buf));
+		write_all(client_fd, error_buf.buffer, error_buf.len);
 		write_all(client_fd, "\n", 1);
 	}
 
@@ -1539,19 +1503,20 @@ void error_msg(const char *format, ...)
 		error_time = time(NULL);
 		update_commandline();
 	} else {
-		warn("%s\n", error_buf);
-		error_buf[0] = 0;
+		warn("%s\n", error_buf.buffer);
+		gbuf_clear(&error_buf);
 	}
 }
 
 enum ui_query_answer yes_no_query(const char *format, ...)
 {
-	char buffer[PRINT_BUFFER_SZ];
+	static GBUF(buffer);
+	gbuf_clear(&buffer);
 	va_list ap;
 	int ret = 0;
 
 	va_start(ap, format);
-	vsnprintf(buffer, sizeof(buffer), format, ap);
+	gbuf_vaddf(&buffer, format, ap);
 	va_end(ap);
 
 	move(LINES - 1, 0);
@@ -1562,7 +1527,7 @@ enum ui_query_answer yes_no_query(const char *format, ...)
 	 * encoded in same charset as LC_CTYPE).
 	 */
 
-	addstr(buffer);
+	addstr(buffer.buffer);
 	clrtoeol();
 	refresh();
 
@@ -1683,7 +1648,7 @@ void set_view(int view)
 
 void enter_command_mode(void)
 {
-	error_buf[0] = 0;
+	gbuf_clear(&error_buf);
 	error_time = 0;
 	input_mode = COMMAND_MODE;
 	update_commandline();
@@ -1691,7 +1656,7 @@ void enter_command_mode(void)
 
 void enter_search_mode(void)
 {
-	error_buf[0] = 0;
+	gbuf_clear(&error_buf);
 	error_time = 0;
 	input_mode = SEARCH_MODE;
 	search_direction = SEARCH_FORWARD;
@@ -1700,7 +1665,7 @@ void enter_search_mode(void)
 
 void enter_search_backward_mode(void)
 {
-	error_buf[0] = 0;
+	gbuf_clear(&error_buf);
 	error_time = 0;
 	input_mode = SEARCH_MODE;
 	search_direction = SEARCH_BACKWARD;
@@ -1739,9 +1704,9 @@ static void clear_error(void)
 	if (t - error_time < 2)
 		return;
 
-	if (error_buf[0]) {
+	if (error_buf.len != 0) {
 		error_time = 0;
-		error_buf[0] = 0;
+		gbuf_clear(&error_buf);
 		update_commandline();
 	}
 }
@@ -1896,8 +1861,6 @@ static void update_window_size(void)
 		resizeterm(lines, columns);
 #endif
 		w = COLS;
-		if (w > PRINT_BUFFER_MAX_WIDTH)
-			w = PRINT_BUFFER_MAX_WIDTH;
 		h = LINES - 3;
 		if (w < 3)
 			w = 3;

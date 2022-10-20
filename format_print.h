@@ -59,9 +59,7 @@ struct fp_len {
 	int rlen;
 };
 
-size_t mark_clipped_text(char *buffer, int buf_len);
-struct fp_len format_print(char *buf, int str_width, const char *format, const struct format_option *fopts);
-struct fp_len format_print_gbuf(struct gbuf *buf, int str_width, const char *format, const struct format_option *fopts);
+struct fp_len format_print(struct gbuf *buf, int str_width, const char *format, const struct format_option *fopts);
 int format_valid(const char *format, const struct format_option *fopts);
 
 #endif
