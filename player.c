@@ -380,8 +380,8 @@ static void update_rg_scale(void)
 		return;
 	}
 	if (isnan(peak)) {
-		d_print("peak not available, defaulting to 1\n");
-		peak = 1;
+		d_print("peak not available, deriving from output gain\n");
+		peak = pow(10.0, player_info_priv.ti->output_gain / 20.0);
 	}
 	if (peak < 0.05) {
 		d_print("peak (%g) is too small\n", peak);

@@ -88,6 +88,13 @@ Please use the GitHub [issues](https://github.com/cmus/cmus/issues)
 page for any problems, suggestions, or bug reports.
 
 
+IRC Channel
+------------
+
+Feel free to join IRC channel #cmus on Libera.chat and share you experience, problems and issues. 
+Note: This is an unofficial channel and all people hanging around there are for the love of cmus.
+
+
 Reporting Bugs
 --------------
 
