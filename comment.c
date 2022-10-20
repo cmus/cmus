@@ -232,6 +232,14 @@ static struct {
 	{ "sourcemedia", "media" },
 	{ "MusicBrainz Track Id", "musicbrainz_trackid" },
 	{ "version", "subtitle" },
+	/* ffmpeg id3 */
+	{ "artist-sort", "artistsort" },
+	{ "TSO2", "albumartistsort" },
+	{ "album-sort", "albumsort" },
+	/* ffmpeg mp4 */
+	{ "sort_artist", "artistsort" },
+	{ "sort_album_artist", "albumartistsort" },
+	{ "sort_album", "albumsort" },
 	{ NULL, NULL }
 };
 

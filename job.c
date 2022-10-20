@@ -283,6 +283,11 @@ static void add_dir(const char *dirname, const char *root)
 		struct dir_entry *ent;
 		int size;
 
+		if (strcmp(name, ".nomusic") == 0 || strcmp(name, ".nomedia") == 0) {
+			ptr_array_clear(&array);
+			break;
+		}
+
 		if (name[0] == '.')
 			continue;
 

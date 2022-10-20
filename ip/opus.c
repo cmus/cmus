@@ -232,14 +232,24 @@ static int opus_read_comments(struct input_plugin_data *ip_data,
 	GROWING_KEYVALS(c);
 	struct opus_private *priv;
 	const OpusTags *ot;
+	const OpusHead *head;
 	int i;
 
 	priv = ip_data->private;
 
+	head = op_head(priv->of, -1);
+	if(head != NULL) {
+		char *val = xmalloc0(12); // 11 max int digits + NULL
+
+		snprintf(val, 12, "%d", head->output_gain);
+		keyvals_add(&c, "output_gain", val);
+	}
+
 	ot = op_tags(priv->of, -1);
 	if (ot == NULL) {
 		d_print("ot == NULL\n");
-		*comments = keyvals_new(0);
+		keyvals_terminate(&c);
+		*comments = c.keyvals;
 		return 0;
 	}
 

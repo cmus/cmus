@@ -30,6 +30,7 @@
 #include <ctype.h>
 
 #include "unidecomp.h"
+#include "wcwidth_uchar.h"
 
 const char hex_tab[16] = "0123456789abcdef";
 
@@ -178,93 +179,24 @@ single_char:
 
 int u_char_width(uchar u)
 {
-	if (unlikely(!using_utf8))
-		goto narrow;
+	int w;
 
 	if (unlikely(u < 0x20))
 		goto control;
 
-	/* Combining Diacritical Marks */
-	if (u >= 0x300U && u <= 0x36fU)
-		goto zero;
-
-	if (u < 0x1100U)
-		goto narrow;
-
-	/* Hangul Jamo init. consonants */
-	if (u <= 0x115fU)
-		goto wide;
-
-	/* Zero-width characters */
-	if (u == 0x200bU || u == 0x200cU || u == 0x200dU)
-		goto zero;
-
-	/* angle brackets */
-	if (u == 0x2329U || u == 0x232aU)
-		goto wide;
-
-	if (u < 0x2e80U)
-		goto narrow;
-	/* CJK ... Yi */
-	if (u < 0x302aU)
-		goto wide;
-	if (u <= 0x302fU)
-		goto narrow;
-	if (u == 0x303fU)
-		goto narrow;
-	if (u == 0x3099U)
-		goto narrow;
-	if (u == 0x309aU)
-		goto narrow;
-	/* CJK ... Yi */
-	if (u <= 0xa4cfU)
-		goto wide;
-
-	/* Hangul Syllables */
-	if (u >= 0xac00U && u <= 0xd7a3U)
-		goto wide;
-
-	/* CJK Compatibility Ideographs */
-	if (u >= 0xf900U && u <= 0xfaffU)
-		goto wide;
-
-	/* CJK Compatibility Forms */
-	if (u >= 0xfe30U && u <= 0xfe6fU)
-		goto wide;
-
-	/* Fullwidth Forms */
-	if (u >= 0xff00U && u <= 0xff60U)
-		goto wide;
-
-	/* Halfwidth Forms */
-	if (u >= 0xff61U && u <= 0xffdfU)
-		goto narrow;
-
-	/* Fullwidth Forms */
-	if (u >= 0xffe0U && u <= 0xffe6U)
-		goto wide;
-
-	/* Halfwidth Forms */
-	if (u >= 0xffe8U && u <= 0xffeeU)
-		goto narrow;
-
-	/* CJK extra stuff */
-	if (u >= 0x20000U && u <= 0x2fffdU)
-		goto wide;
-
-	/* ? */
-	if (u >= 0x30000U && u <= 0x3fffdU)
-		goto wide;
+	if (unlikely(!using_utf8))
+		return 1;
 
 	/* invalid bytes in unicode stream are rendered "<xx>" */
 	if (u & U_INVALID_MASK)
 		goto invalid;
-zero:
-	return 0;
-narrow:
-	return 1;
-wide:
-	return 2;
+
+	w = wcwidth_uchar(u);
+	if (w >= 0)
+		return w;
+	else
+		return 1;
+
 control:
 	/* special case */
 	if (u == 0)
@@ -487,7 +419,7 @@ size_t u_copy_chars(char *dst, const char *src, int *width)
 	int cw;
 	uchar u;
 
-	while (w > 0) {
+	while (w >= 0) {
 		u = u_get_char(src, &si);
 		if (u == 0)
 			break;
@@ -496,16 +428,15 @@ size_t u_copy_chars(char *dst, const char *src, int *width)
 		w -= cw;
 
 		if (unlikely(w < 0)) {
-			if (cw == 2)
-				dst[di++] = ' ';
-			if (cw == 4) {
+			if (cw == 4 && w >= -3) {
 				dst[di++] = '<';
 				if (w >= -2)
 					dst[di++] = hex_tab[(u >> 4) & 0xf];
 				if (w >= -1)
 					dst[di++] = hex_tab[u & 0xf];
-			}
-			w = 0;
+				w = 0;
+			} else
+				w += cw;
 			break;
 		}
 		u_set_char(dst, &di, u);
@@ -572,6 +503,14 @@ int u_skip_chars(const char *str, int *width, bool overskip)
 	if (w < 0 && !overskip) {
 		w += u_char_width(u);
 		idx = last_idx;
+	} else while (1) {
+		/* consume any zero-width characters (e.g. combining marks) */
+		last_idx = idx;
+		u = u_get_char(str, &idx);
+		if (u_char_width(u) != 0) {
+			idx = last_idx;
+			break;
+		}
 	}
 	*width = w;
 	return idx;
