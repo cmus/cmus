@@ -315,7 +315,9 @@ check_vorbis()
 
 check_libsystemd()
 {
-	pkg_config LIBSYSTEMD "libsystemd" || pkg_config LIBSYSTEMD "libelogind >= 239.3"
+	pkg_config LIBSYSTEMD "libsystemd" || pkg_config LIBSYSTEMD "libelogind >= 239.3" || {
+		pkg_config LIBSYSTEMD "basu" && CFLAGS="${CFLAGS} -DCONFIG_MPRIS_BASU"
+	}
 	return $?
 }
 
