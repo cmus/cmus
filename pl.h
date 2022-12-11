@@ -36,6 +36,7 @@ extern struct window *pl_list_win;
 extern struct editable_shared pl_editable_shared;
 
 void pl_init(void);
+void pl_init_options(void);
 void pl_exit(void);
 void pl_save(void);
 void pl_import(const char *path);
@@ -58,6 +59,8 @@ int pl_for_each_sel(track_info_cb cb, void *data, int reverse, int advance);
 void pl_reload_visible(void);
 struct window *pl_cursor_win(void);
 void pl_set_nr_rows(int h);
+bool pl_show_panel(void);
+char *pl_visible_get_name(void);
 unsigned int pl_visible_total_time(void);
 unsigned int pl_playing_total_time(void);
 struct simple_track *pl_get_playing_track(void);
