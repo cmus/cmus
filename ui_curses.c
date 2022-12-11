@@ -976,9 +976,23 @@ static void print_pl_list(struct window *win, int row, struct iter *iter)
 	dump_print_buffer(row + 1, 0);
 }
 
+static void draw_separator(void)
+{
+	int row;
+
+	bkgdset(pairs[CURSED_WIN_TITLE]);
+	(void) mvaddch(0, tree_win_w, ' ');
+	bkgdset(pairs[CURSED_SEPARATOR]);
+	for (row = 1; row < LINES - 3; row++)
+		(void) mvaddch(row, tree_win_w, ACS_VLINE);
+}
+
 static void update_pl_list(struct window *win)
 {
-	update_window(win, tree_win_x, 0, tree_win_w + 1, "Playlist", print_pl_list);
+	if (pl_show_panel()) {
+		update_window(win, tree_win_x, 0, tree_win_w + 1, "Playlist", print_pl_list);
+		draw_separator();
+	}
 }
 
 static void update_pl_tracks(struct window *win)
@@ -987,15 +1001,25 @@ static void update_pl_tracks(struct window *win)
 	gbuf_clear(&title);
 	int win_w_tmp = win_w;
 
-	win_x = track_win_x;
-	win_w = track_win_w;
+	if (pl_show_panel()) {
+		win_x = track_win_x;
+		win_w = track_win_w;
+	} else {
+		win_x = 0;
+		win_w = tree_win_w + 1 + track_win_w;
+	}
 	win_active = pl_get_cursor_in_track_window();
 
 	get_global_fopts();
 	fopt_set_time(&track_fopts[TF_TOTAL], pl_visible_total_time(), 0);
 
-	format_print(&title, track_win_w - 2, "Track%= %{total}", track_fopts);
-	update_window(win, track_win_x, 0, track_win_w, title.buffer, print_editable);
+	if (pl_show_panel()) {
+		format_print(&title, win_w - 2, "Track%= %{total}", track_fopts);
+	} else {
+		fopt_set_str(&track_fopts[TF_TITLE], pl_visible_get_name());
+		format_print(&title, win_w - 2, "Playlist - %{title}%= %{total}", track_fopts);
+	}
+	update_window(win, win_x, 0, win_w, title.buffer, print_editable);
 
 	win_active = 1;
 	win_x = 0;
@@ -1088,22 +1112,10 @@ static void update_help_window(void)
 	update_window(help_win, 0, 0, win_w, "Settings", print_help);
 }
 
-static void draw_separator(void)
-{
-	int row;
-
-	bkgdset(pairs[CURSED_WIN_TITLE]);
-	(void) mvaddch(0, tree_win_w, ' ');
-	bkgdset(pairs[CURSED_SEPARATOR]);
-	for (row = 1; row < LINES - 3; row++)
-		(void) mvaddch(row, tree_win_w, ACS_VLINE);
-}
-
 static void update_pl_view(int full)
 {
 	current_track = pl_get_playing_track();
 	pl_draw(update_pl_list, update_pl_tracks, full);
-	draw_separator();
 }
 
 static void do_update_view(int full)
@@ -2345,6 +2357,7 @@ static void init_all(void)
 
 	/* almost everything must be initialized now */
 	options_load();
+	pl_init_options();
 	if (mpris)
 		mpris_init();
 

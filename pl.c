@@ -574,6 +574,12 @@ void pl_init(void)
 	pl_searchable = searchable_new(NULL, &iter, &pl_searchable_ops);
 }
 
+void pl_init_options(void)
+{
+	if (auto_hide_playlists_panel)
+		pl_cursor_in_track_window = 1;
+}
+
 void pl_exit(void)
 {
 	pl_save_all();
@@ -862,6 +868,16 @@ void pl_set_nr_rows(int h)
 {
 	window_set_nr_rows(pl_list_win, h);
 	window_set_nr_rows(pl_editable_shared.win, h);
+}
+
+bool pl_show_panel(void)
+{
+	return !auto_hide_playlists_panel || !pl_cursor_in_track_window;
+}
+
+char *pl_visible_get_name(void)
+{
+	return pl_visible->name;
 }
 
 unsigned int pl_visible_total_time(void)
