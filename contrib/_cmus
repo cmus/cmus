@@ -34,7 +34,7 @@ case $service in
       '(--shuffle -S)'{--shuffle,-S}'[Toggle shuffle.]:' \
       '(--volume -v)'{--volume,-V+}'[Change volume. See vol command in cmus(1).]:volume:_cmus_volume' \
       '(--seek -k)'{--seek,-k+}'[Seek. See seek command in cmus(1).]:seek [+-]<num>[m/h]' \
-      '(--query -Q)'{--query,-q}'[Get player status (same as -C status).]:' \
+      '(--query -Q)'{--query,-Q}'[Get player status (same as -C status).]:' \
       '(--library -l)'{--library,-l+}'[Modify library instead of playlist.]:playlists/files/directories/URLs:_files' \
       '(--playlist -P)'{--playlist,-P}'[Modify playlist (default).]::Playlist:_files' \
       '(--queue -q)'{--queue,-q}'[Modify play queue instead of playlist.]:' \
