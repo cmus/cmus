@@ -67,15 +67,17 @@ struct mp4_private {
 
 static MP4TrackId mp4_get_track(MP4FileHandle *handle)
 {
-	MP4TrackId num_tracks;
+	int i, num_tracks;
 	const char *track_type;
 	uint8_t obj_type;
-	MP4TrackId i;
+	MP4TrackId id;
 
 	num_tracks = MP4GetNumberOfTracks(handle, NULL, 0);
 
-	for (i = 1; i <= num_tracks; i++) {
-		track_type = MP4GetTrackType(handle, i);
+	for (i = 0; i < num_tracks; i++) {
+		id = MP4FindTrackId(handle, i, NULL, 0);
+
+		track_type = MP4GetTrackType(handle, id);
 		if (!track_type)
 			continue;
 
@@ -83,18 +85,18 @@ static MP4TrackId mp4_get_track(MP4FileHandle *handle)
 			continue;
 
 		/* MP4GetTrackAudioType */
-		obj_type = MP4GetTrackEsdsObjectTypeId(handle, i);
+		obj_type = MP4GetTrackEsdsObjectTypeId(handle, id);
 		if (obj_type == MP4_INVALID_AUDIO_TYPE)
 			continue;
 
 		if (obj_type == MP4_MPEG4_AUDIO_TYPE) {
-			obj_type = MP4GetTrackAudioMpeg4Type(handle, i);
+			obj_type = MP4GetTrackAudioMpeg4Type(handle, id);
 
 			if (MP4_IS_MPEG4_AAC_AUDIO_TYPE(obj_type))
-				return i;
+				return id;
 		} else {
 			if (MP4_IS_AAC_AUDIO_TYPE(obj_type))
-				return i;
+				return id;
 		}
 	}
 
