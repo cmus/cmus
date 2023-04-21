@@ -1261,6 +1261,9 @@ static void set_title(const char *title)
 
 static void do_update_titleline(void)
 {
+	if (!ui_initialized)
+		return;
+
 	bkgdset(pairs[CURSED_TITLELINE]);
 	if (player_info.ti) {
 		int use_alt_format = 0;
@@ -1881,11 +1884,18 @@ static void update_window_size(void)
 
 static void update(void)
 {
+	static bool first_update = true;
 	int needs_view_update = 0;
 	int needs_title_update = 0;
 	int needs_status_update = 0;
 	int needs_command_update = 0;
 	int needs_spawn = 0;
+
+	if (first_update) {
+		needs_title_update = 1;
+		needs_command_update = 1;
+		first_update = false;
+	}
 
 	if (needs_to_resize) {
 		update_window_size();
