@@ -188,8 +188,8 @@ int track_info_matches_full(const struct track_info *ti, const char *text,
 		const char *word = words[i];
 
 		matched = 0;
-		if (flags_set(ti, flags) && match_word(ti, word, flags)) {
-			matched = 1;
+		if (flags_set(ti, flags)) {
+			matched = match_word(ti, word, flags);
 		} else {
 			/* compare with url or filename without path */
 			const char *filename = ti->filename;
@@ -201,7 +201,7 @@ int track_info_matches_full(const struct track_info *ti, const char *text,
 				matched = 1;
 		}
 
-		if (flags_set(ti, exclude_flags) && match_word(ti, word, exclude_flags))
+		if (match_word(ti, word, exclude_flags))
 			matched = 0;
 
 		if (match_all_words ? !matched : matched)
