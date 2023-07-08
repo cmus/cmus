@@ -851,6 +851,10 @@ auto_expand_albums_follow, auto_expand_albums_search, auto_expand_albums_selcur 
 	option. Any "auto_expand_albums_\* = false" implies "show_all_tracks =
 	true".
 
+auto_hide_playlists_panel (false)
+	Hide the left panel in playlist view. The panel will show as needed when
+	activated with win-next (*tab*).
+
 auto_reshuffle (true)
 	Reshuffle a playlist when the end of a shuffled list is reached.
 

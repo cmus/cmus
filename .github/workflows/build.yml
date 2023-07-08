@@ -6,10 +6,10 @@ jobs:
     name: Build
     strategy:
       matrix:
-        os: [ubuntu-20.04, macos-10.15]
+        os: [ubuntu-latest, macos-latest]
         cc: [gcc, clang]
         exclude:
-          - os: macos-10.15
+          - os: macos-latest
             cc: gcc
     runs-on: ${{matrix.os}}
     steps:

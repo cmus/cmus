@@ -15,7 +15,11 @@
  * along with this program; if not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifdef CONFIG_MPRIS_BASU
+#include <basu/sd-bus.h>
+#else
 #include <systemd/sd-bus.h>
+#endif
 
 #include "mpris.h"
 #include "ui_curses.h"
