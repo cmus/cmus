@@ -495,7 +495,7 @@ check_function()
 	__func="$1"
 	shift
 	msg_checking "for function $__func"
-	if try_compile_link "char $__func(); int main(int argc, char *argv[]) { return $__func; }" "$@"
+	if try_compile_link "char $__func(); int main(int argc, char *argv[]) { return ((int*)(&$__func))[argc]; }" "$@"
 	then
 		msg_result yes
 		return 0
