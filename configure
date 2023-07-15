@@ -156,13 +156,17 @@ check_rtsched()
 	return 0
 }
 
-ncurses_code="
+ncurses_include="
 #if defined(__sun__) || defined(__CYGWIN__)
 #include <termios.h>
 #include <ncurses.h>
 #else
 #include <curses.h>
 #endif
+"
+
+ncurses_code="
+$ncurses_include
 
 int main(void)
 {
@@ -208,6 +212,16 @@ check_ncurses()
 
 	check_function "use_default_colors" $NCURSES_CFLAGS $NCURSES_LIBS
 	HAVE_USE_DEFAULT_COLORS=`test $? -ne 0 ; echo $?`
+
+	msg_checking "for A_ITALIC"
+	if try_compile_link "$ncurses_include int main(int argc, char *argv[]) { unsigned long x = A_ITALIC; return !!x; }" $NCURSES_CFLAGS $NCURSES_LIBS
+	then
+		msg_result yes
+		HAVE_ITALIC="1"
+	else
+		msg_result no
+		HAVE_ITALIC="0"
+	fi
 
 	return 0
 }
@@ -656,7 +670,7 @@ config_header config/tremor.h CONFIG_TREMOR
 config_header config/modplug.h MODPLUG_API_8
 config_header config/mpc.h MPC_SV8
 config_header config/mp4.h USE_MPEG4IP
-config_header config/curses.h HAVE_RESIZETERM HAVE_USE_DEFAULT_COLORS
+config_header config/curses.h HAVE_RESIZETERM HAVE_USE_DEFAULT_COLORS HAVE_ITALIC
 config_header config/ffmpeg.h HAVE_FFMPEG_AVCODEC_H USE_FALLBACK_IP
 config_header config/utils.h HAVE_BYTESWAP_H
 config_header config/iconv.h HAVE_ICONV
