@@ -244,13 +244,6 @@ static int _pa_stream_cork(int pause_)
 	return _pa_wait_unlock(pa_stream_cork(pa_s, pause_, _pa_stream_success_cb, NULL));
 }
 
-static int _pa_stream_drain(void)
-{
-	pa_threaded_mainloop_lock(pa_ml);
-
-	return _pa_wait_unlock(pa_stream_drain(pa_s, _pa_stream_success_cb, NULL));
-}
-
 static void _pa_ctx_subscription_cb(pa_context *ctx, pa_subscription_event_type_t t,
 		uint32_t idx, void *userdata)
 {
@@ -436,13 +429,6 @@ out_fail:
 
 static int op_pulse_close(void)
 {
-	/*
-	 * If this _pa_stream_drain() will be moved below following
-	 * pa_threaded_mainloop_lock(), PulseAudio 0.9.19 will hang.
-	 */
-	if (pa_s)
-		_pa_stream_drain();
-
 	pa_threaded_mainloop_lock(pa_ml);
 
 	if (pa_s) {
