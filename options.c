@@ -41,6 +41,9 @@
 #include "debug.h"
 #include "discid.h"
 #include "mpris.h"
+#ifdef HAVE_CONFIG
+#include "config/curses.h"
+#endif
 
 #include <stdio.h>
 #include <errno.h>
@@ -1388,8 +1391,10 @@ static void get_attr(void *data, char *buf, size_t size)
 		blink = "blink|";
 	if (attr & A_BOLD)
 		bold = "bold|";
+	#if HAVE_ITALIC
 	if (attr & A_ITALIC)
 		italic = "italic|";
+	#endif
 
 	size_t len = snprintf(buf, size, "%s%s%s%s%s%s",
 			standout, underline, reverse, blink, bold, italic);
@@ -1422,8 +1427,10 @@ static void set_attr(void *data, const char *buf)
 				attr |= A_BLINK;
 			else if (strcmp(current, "bold") == 0)
 				attr |= A_BOLD;
+			#if HAVE_ITALIC
 			else if (strcmp(current, "italic") == 0)
 				attr |= A_ITALIC;
+			#endif
 
 			free(current);
 

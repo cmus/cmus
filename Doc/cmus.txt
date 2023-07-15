@@ -1293,7 +1293,7 @@ the other attributes will be used.
 
 `underline` underlines the text.
 
-`italic` makes the text italic.
+`italic` makes the text italic (not supported on all ncurses versions).
 
 `blink` makes the text blink.
 
