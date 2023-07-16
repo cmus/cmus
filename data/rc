@@ -26,8 +26,11 @@ bind common left seek -5
 bind common right seek +5
 
 bind common mlb_click_bar player-pause
+bind common mlb_click_bar_right player-pause
 bind common mouse_scroll_up_bar seek +5
 bind common mouse_scroll_down_bar seek -5
+bind common mouse_scroll_up_bar_right vol +1%
+bind common mouse_scroll_down_bar_right vol -1%
 
 # Setting toggles
 
