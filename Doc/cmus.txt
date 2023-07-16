@@ -195,35 +195,38 @@ commands in the COMMANDS section.
 
 @h2 Common: Playback
 @pre
-b                       player-next
-c                       player-pause
-x                       player-play
-z                       player-prev
-v                       player-stop
+b                           player-next
+c                           player-pause
+x                           player-play
+z                           player-prev
+v                           player-stop
 
-B                       player-next-album
-Z                       player-prev-album
+B                           player-next-album
+Z                           player-prev-album
 
-]                       vol +0 +1%
-[                       vol +1% +0
-+                       vol +10%
-=                       vol +10%
-}                       vol -0 -1%
-{                       vol -1% -0
--                       vol -10%
+]                           vol +0 +1%
+[                           vol +1% +0
++                           vol +10%
+=                           vol +10%
+}                           vol -0 -1%
+{                           vol -1% -0
+-                           vol -10%
 
-,                       seek -1m
-.                       seek +1m
+,                           seek -1m
+.                           seek +1m
 
-h                       seek -5
-l                       seek +5
+h                           seek -5
+l                           seek +5
 
-left                    seek -5
-right                   seek +5
+left                        seek -5
+right                       seek +5
 
-mlb_click_bar           player-pause
-mouse_scroll_up_bar     seek +5
-mouse_scroll_down_bar   seek -5
+mlb_click_bar               player-pause
+mlb_click_bar_right         player-pause
+mouse_scroll_up_bar         seek +5
+mouse_scroll_down_bar       seek -5
+mouse_scroll_up_bar_right   vol +1%
+mouse_scroll_down_bar_right vol -1%
 @endpre
 
 @h2 Common: Setting Toggles
