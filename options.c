@@ -76,6 +76,7 @@ int shuffle = 0;
 int follow = 0;
 int display_artist_sort_name;
 int smart_artist_sort = 1;
+int sort_albums_by_name = 0;
 int scroll_offset = 2;
 int rewind_offset = 5;
 int skip_track_info = 0;
@@ -753,6 +754,23 @@ static void set_smart_artist_sort(void *data, const char *buf)
 static void toggle_smart_artist_sort(void *data)
 {
 	smart_artist_sort ^= 1;
+	lib_sort_artists();
+}
+
+static void get_sort_albums_by_name(void *data, char *buf, size_t size)
+{
+	strscpy(buf, bool_names[sort_albums_by_name], size);
+}
+
+static void set_sort_albums_by_name(void *data, const char *buf)
+{
+	parse_bool(buf, &sort_albums_by_name);
+	lib_sort_artists();
+}
+
+static void toggle_sort_albums_by_name(void *data)
+{
+	sort_albums_by_name ^= 1;
 	lib_sort_artists();
 }
 
@@ -1554,6 +1572,7 @@ static const struct {
 	DT(continue)
 	DT(continue_album)
 	DT(smart_artist_sort)
+	DT(sort_albums_by_name)
 	DN(id3_default_charset)
 	DN(icecast_default_charset)
 	DN(lib_sort)
