@@ -1089,6 +1089,9 @@ smart_artist_sort (true)
 	names, preventing artists starting with "The" from clumping together.
 	Real `artistsort` tags override this option, if present.
 
+sort_albums_by_name (false)
+	In tree view (1), albums will be sorted by name rather than date.
+
 id3_default_charset (ISO-8859-1)
 	Default character set to use for ID3v1 and broken ID3v2 tags.
 

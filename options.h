@@ -151,6 +151,7 @@ extern int shuffle;
 extern int follow;
 extern int display_artist_sort_name;
 extern int smart_artist_sort;
+extern int sort_albums_by_name;
 extern int scroll_offset;
 extern int rewind_offset;
 extern int skip_track_info;
