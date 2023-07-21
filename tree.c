@@ -555,6 +555,7 @@ static struct album *album_new(struct artist *artist, const char *name,
 	album->min_date = date;
 	rb_root_init(&album->track_root);
 	album->artist = artist;
+	album->num_tracks = 0;
 
 	return album;
 }
@@ -867,6 +868,9 @@ static void album_add_track(struct album *album, struct tree_track *track)
 
 	rb_link_node(&track->tree_node, parent, new);
 	rb_insert_color(&track->tree_node, &album->track_root);
+
+	album->num_tracks++;
+	tree_track_info(track)->lib_album = album;
 }
 
 const char *tree_artist_name(const struct track_info* ti)
@@ -1177,6 +1181,9 @@ static void remove_track(struct tree_track *track)
 		window_row_vanishes(lib_track_win, (struct iter *)&iter);
 	}
 	rb_erase(&track->tree_node, &track->album->track_root);
+
+	track->album->num_tracks--;
+	tree_track_info(track)->lib_album = NULL;
 }
 
 void tree_remove(struct tree_track *track,

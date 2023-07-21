@@ -26,6 +26,7 @@
 #include "debug.h"
 #include "path.h"
 #include "ui_curses.h"
+#include "lib.h"
 
 #include <string.h>
 #include <stdatomic.h>
@@ -59,6 +60,7 @@ struct track_info *track_info_new(const char *filename)
 	ti->codec = NULL;
 	ti->codec_profile = NULL;
 	ti->output_gain = 0;
+	ti->lib_album = NULL;
 
 	return ti;
 }

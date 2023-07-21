@@ -30,6 +30,7 @@ struct track_info {
 
 	// next track_info in the hash table (cache.c)
 	struct track_info *next;
+	struct album *lib_album;
 
 	time_t mtime;
 	int duration;

@@ -1328,6 +1328,7 @@ Special Keys:
 	%l  %{album}		@br
 	%D  %{discnumber}	@br
 	%n  %{tracknumber}	@br
+	%N  %{albumtracks}	@br
 	%X  %{play_count}	@br
 	%t  %{title}		@br
 	%g  %{genre}		@br

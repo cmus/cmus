@@ -258,6 +258,7 @@ enum {
 	TF_ALBUM,
 	TF_DISC,
 	TF_TRACK,
+	TF_ALBUMTRACKS,
 	TF_TITLE,
 	TF_PLAY_COUNT,
 	TF_YEAR,
@@ -316,6 +317,7 @@ static struct format_option track_fopts[NR_TFS + 1] = {
 	DEF_FO_STR('l', "album", 0),
 	DEF_FO_INT('D', "discnumber", 1),
 	DEF_FO_INT('n', "tracknumber", 1),
+	DEF_FO_INT('N', "albumtracks", 1),
 	DEF_FO_STR('t', "title", 0),
 	DEF_FO_INT('X', "play_count", 0),
 	DEF_FO_INT('y', "date", 1),
@@ -534,6 +536,8 @@ static void fill_track_fopts_track_info(struct track_info *info)
 	fopt_set_int(&track_fopts[TF_PLAY_COUNT], info->play_count, 0);
 	fopt_set_int(&track_fopts[TF_DISC], info->discnumber, info->discnumber == -1);
 	fopt_set_int(&track_fopts[TF_TRACK], info->tracknumber, info->tracknumber == -1);
+	fopt_set_int(&track_fopts[TF_ALBUMTRACKS], (info->lib_album ?
+				info->lib_album->num_tracks : 0), info->lib_album == NULL);
 	fopt_set_str(&track_fopts[TF_TITLE], info->title);
 	fopt_set_int(&track_fopts[TF_YEAR], info->date / 10000, info->date <= 0);
 	fopt_set_str(&track_fopts[TF_GENRE], info->genre);
@@ -589,6 +593,7 @@ static void fill_track_fopts_album(struct album *album)
 {
 	fopt_set_int(&track_fopts[TF_YEAR], album->min_date / 10000, album->min_date <= 0);
 	fopt_set_int(&track_fopts[TF_MAX_YEAR], album->date / 10000, album->date <= 0);
+	fopt_set_int(&track_fopts[TF_ALBUMTRACKS], album->num_tracks, album->num_tracks == 0);
 	fopt_set_str(&track_fopts[TF_ALBUMARTIST], album->artist->name);
 	fopt_set_str(&track_fopts[TF_ARTIST], album->artist->name);
 	fopt_set_str(&track_fopts[TF_ALBUM], album->name);

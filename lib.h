@@ -63,6 +63,7 @@ struct album {
 	int date;
 	/* min date of the tracks added to this album */
 	int min_date;
+	int num_tracks;
 };
 
 struct artist {
