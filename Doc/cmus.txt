@@ -543,11 +543,18 @@ player-stop (*v*)
 prev-view
 	Goes to the previously used view.
 
-left-view
+left-view [-n]
 	Goes to the to view to the left of current one (e.g. view 4 -> view 3)
 
-right-view
+	@li -n
+	no cycle back to end when reaching the first view
+
+right-view [-n]
 	Goes to view to the right of current one (e.g. view 3 -> view 4).
+
+	@li -n
+	no cycle back to start when reaching the last view
+
 
 push [text]
 	Enters command mode with the command line pre-set to text. Example:

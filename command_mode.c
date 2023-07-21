@@ -1270,8 +1270,12 @@ static void cmd_prev_view(char *arg)
 
 static void cmd_left_view(char *arg)
 {
+	int flag = parse_flags((const char **)&arg, "n");
+
 	if (cur_view == TREE_VIEW) {
-		set_view(HELP_VIEW);
+		if (flag != 'n') {
+			set_view(HELP_VIEW);
+		}
 	} else {
 		set_view(cur_view - 1);
 	}
@@ -1279,8 +1283,12 @@ static void cmd_left_view(char *arg)
 
 static void cmd_right_view(char *arg)
 {
+	int flag = parse_flags((const char **)&arg, "n");
+
 	if (cur_view == HELP_VIEW) {
-		set_view(TREE_VIEW);
+		if (flag != 'n') {
+			set_view(TREE_VIEW);
+		}
 	} else {
 		set_view(cur_view + 1);
 	}
@@ -2622,8 +2630,8 @@ struct command commands[] = {
 	{ "player-prev-album",     cmd_p_prev_album,     0, 0,  NULL,                 0, 0          },
 	{ "player-stop",           cmd_p_stop,           0, 0,  NULL,                 0, 0          },
 	{ "prev-view",             cmd_prev_view,        0, 0,  NULL,                 0, 0          },
-	{ "left-view",             cmd_left_view,        0, 0,  NULL,                 0, 0          },
-	{ "right-view",            cmd_right_view,       0, 0,  NULL,                 0, 0          },
+	{ "left-view",             cmd_left_view,        0, 1,  NULL,                 0, 0          },
+	{ "right-view",            cmd_right_view,       0, 1,  NULL,                 0, 0          },
 	{ "pl-create",             cmd_pl_create,        1, -1, NULL,                 0, 0          },
 	{ "pl-export",             cmd_pl_export,        1, -1, NULL,                 0, 0          },
 	{ "pl-import",             cmd_pl_import,        0, -1, NULL,                 0, 0          },

@@ -60,8 +60,8 @@ bind common 5 view browser
 bind common 6 view filters
 bind common 7 view settings
 
-bind common mouse_scroll_up_title left-view
-bind common mouse_scroll_down_title right-view
+bind common mouse_scroll_up_title left-view -n
+bind common mouse_scroll_down_title right-view -n
 
 bind common tab win-next
 
