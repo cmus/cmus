@@ -93,6 +93,7 @@ int stop_after_queue = 0;
 int tree_width_percent = 33;
 int tree_width_max = 0;
 int pause_on_output_change = 0;
+int block_key_paste = 1;
 
 int colors[NR_COLORS] = {
 	-1,
@@ -1318,6 +1319,21 @@ static void toggle_pause_on_output_change(void *data)
 	pause_on_output_change ^= 1;
 }
 
+static void get_block_key_paste(void *data, char *buf, size_t size)
+{
+	strscpy(buf, bool_names[block_key_paste], size);
+}
+
+static void set_block_key_paste(void *data, const char *buf)
+{
+	parse_bool(buf, &block_key_paste);
+}
+
+static void toggle_block_key_paste(void *data)
+{
+	block_key_paste ^= 1;
+}
+
 /* }}} */
 
 /* special callbacks (id set) {{{ */
@@ -1581,6 +1597,7 @@ static const struct {
 	DN(tree_width_max)
 	DT(pause_on_output_change)
 	DN(pl_env_vars)
+	DT(block_key_paste)
 	{ NULL, NULL, NULL, NULL, 0 }
 };
 
