@@ -898,6 +898,10 @@ altformat_trackwin [`Format String`]
 
 	Note: if empty, *format_trackwin* is used instead.
 
+block_key_paste (true)
+	Prevent accidental input by only accepting pasted text in the command line.
+	Only works on terminals which support bracketed paste.
+
 buffer_seconds (10) [1-300]
 	Size of the player buffer in seconds.
 

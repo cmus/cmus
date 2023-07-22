@@ -149,6 +149,8 @@ static const int default_esc_delay = 25;
 
 static char *title_buf = NULL;
 
+static int in_bracketed_paste = 0;
+
 enum {
 	CURSED_WIN,
 	CURSED_WIN_CUR,
@@ -1988,7 +1990,9 @@ static void handle_ch(uchar ch)
 {
 	clear_error();
 	if (input_mode == NORMAL_MODE) {
-		normal_mode_ch(ch);
+		if (!block_key_paste || !in_bracketed_paste) {
+			normal_mode_ch(ch);
+		}
 	} else if (input_mode == COMMAND_MODE) {
 		command_mode_ch(ch);
 		update_commandline();
@@ -2026,6 +2030,15 @@ static void handle_csi(void) {
 	if (overflow) {
 		return;
 	}
+
+	if (buf_n == 4) {
+		// bracketed paste
+		// https://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-Bracketed-Paste-Mode
+		if (buf[0] == '2' && buf[1] == '0' && (buf[2] == '0' || buf[2] == '1') && buf[3] == '~') {
+			in_bracketed_paste = buf[2] == '0';
+			return;
+		}
+	}
 }
 
 static void handle_escape(int c)
@@ -2046,7 +2059,9 @@ static void handle_key(int key)
 {
 	clear_error();
 	if (input_mode == NORMAL_MODE) {
-		normal_mode_key(key);
+		if (!block_key_paste || !in_bracketed_paste) {
+			normal_mode_key(key);
+		}
 	} else if (input_mode == COMMAND_MODE) {
 		command_mode_key(key);
 		update_commandline();
@@ -2420,6 +2435,10 @@ static void init_all(void)
 
 	init_curses();
 
+	// enable bracketed paste (will be ignored if not supported)
+	printf("\033[?2004h");
+	fflush(stdout);
+
 	if (resume_cmus) {
 		resume_load();
 		cmus_add(play_queue_append, play_queue_autosave_filename,
@@ -2437,6 +2456,10 @@ static void init_all(void)
 static void exit_all(void)
 {
 	endwin();
+
+	// disable bracketed paste
+	printf("\033[?2004l");
+	fflush(stdout);
 
 	if (resume_cmus)
 		resume_exit();
