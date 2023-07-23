@@ -565,7 +565,7 @@ struct track_info *lib_goto_next_album(void)
 		if (play_sorted)
 			track = sorted_album_first_track(track);
 	} else if (play_sorted) {
-		track = sorted_album_last_track(track);
+		track = sorted_album_last_track(lib_cur_track);
 		track = (struct tree_track *)simple_list_get_next(&lib_editable.head,
 				(struct simple_track *)track, aaa_mode_filter, true);
 	} else {
@@ -592,7 +592,7 @@ struct track_info *lib_goto_prev_album(void)
 		else if (track)
 			track = album_first_track(track->album);
 	} else if (play_sorted) {
-		track = sorted_album_first_track(track);
+		track = sorted_album_first_track(lib_cur_track);
 		track = (struct tree_track *)simple_list_get_prev(&lib_editable.head,
 				(struct simple_track *)track, aaa_mode_filter, true);
 		track = sorted_album_first_track(track);
