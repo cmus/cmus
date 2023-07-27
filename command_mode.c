@@ -1200,14 +1200,23 @@ err:
 static void cmd_mute(char *arg)
 {
 	int l = 0, r = 0;
+	int *vl, *vr;
 
-	if (volume_l == 0 && volume_r == 0) {
+	if (soft_vol) {
+		vl = &soft_vol_l;
+		vr = &soft_vol_r;
+	} else {
+		vl = &volume_l;
+		vr = &volume_r;
+	}
+
+	if (*vl == 0 && *vr == 0) {
 		// unmute
 		l = mute_vol_l;
 		r = mute_vol_r;
 	} else {
-		mute_vol_l = volume_l;
-		mute_vol_r = volume_r;
+		mute_vol_l = *vl;
+		mute_vol_r = *vr;
 	}
 
 	int rc = player_set_vol(l, 0, r, 0);
