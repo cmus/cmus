@@ -94,7 +94,7 @@ void track_info_set_comments(struct track_info *ti, struct keyval *comments) {
 		ti->artist = ti->albumartist;
 	}
 
-	if (track_info_has_tag(ti) && ti->title == NULL) {
+	if (ti->title == NULL) {
 		/* best guess */
 		ti->title = path_basename(ti->filename);
 	}
