@@ -76,6 +76,7 @@ int shuffle = 0;
 int follow = 0;
 int display_artist_sort_name;
 int smart_artist_sort = 1;
+int sort_albums_by_name = 0;
 int scroll_offset = 2;
 int rewind_offset = 5;
 int skip_track_info = 0;
@@ -93,6 +94,7 @@ int stop_after_queue = 0;
 int tree_width_percent = 33;
 int tree_width_max = 0;
 int pause_on_output_change = 0;
+int block_key_paste = 1;
 
 int colors[NR_COLORS] = {
 	-1,
@@ -755,6 +757,23 @@ static void toggle_smart_artist_sort(void *data)
 	lib_sort_artists();
 }
 
+static void get_sort_albums_by_name(void *data, char *buf, size_t size)
+{
+	strscpy(buf, bool_names[sort_albums_by_name], size);
+}
+
+static void set_sort_albums_by_name(void *data, const char *buf)
+{
+	parse_bool(buf, &sort_albums_by_name);
+	lib_sort_artists();
+}
+
+static void toggle_sort_albums_by_name(void *data)
+{
+	sort_albums_by_name ^= 1;
+	lib_sort_artists();
+}
+
 static void get_display_artist_sort_name(void *data, char *buf, size_t size)
 {
 	strscpy(buf, bool_names[display_artist_sort_name], size);
@@ -1318,6 +1337,21 @@ static void toggle_pause_on_output_change(void *data)
 	pause_on_output_change ^= 1;
 }
 
+static void get_block_key_paste(void *data, char *buf, size_t size)
+{
+	strscpy(buf, bool_names[block_key_paste], size);
+}
+
+static void set_block_key_paste(void *data, const char *buf)
+{
+	parse_bool(buf, &block_key_paste);
+}
+
+static void toggle_block_key_paste(void *data)
+{
+	block_key_paste ^= 1;
+}
+
 /* }}} */
 
 /* special callbacks (id set) {{{ */
@@ -1538,6 +1572,7 @@ static const struct {
 	DT(continue)
 	DT(continue_album)
 	DT(smart_artist_sort)
+	DT(sort_albums_by_name)
 	DN(id3_default_charset)
 	DN(icecast_default_charset)
 	DN(lib_sort)
@@ -1581,6 +1616,7 @@ static const struct {
 	DN(tree_width_max)
 	DT(pause_on_output_change)
 	DN(pl_env_vars)
+	DT(block_key_paste)
 	{ NULL, NULL, NULL, NULL, 0 }
 };
 

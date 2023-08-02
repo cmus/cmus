@@ -898,6 +898,10 @@ altformat_trackwin [`Format String`]
 
 	Note: if empty, *format_trackwin* is used instead.
 
+block_key_paste (true)
+	Prevent accidental input by only accepting pasted text in the command line.
+	Only works on terminals which support bracketed paste.
+
 buffer_seconds (10) [1-300]
 	Size of the player buffer in seconds.
 
@@ -1084,6 +1088,9 @@ smart_artist_sort (true)
 	If enabled, makes the tree view sorting ignore "The" in front of artist
 	names, preventing artists starting with "The" from clumping together.
 	Real `artistsort` tags override this option, if present.
+
+sort_albums_by_name (false)
+	In tree view (1), albums will be sorted by name rather than date.
 
 id3_default_charset (ISO-8859-1)
 	Default character set to use for ID3v1 and broken ID3v2 tags.

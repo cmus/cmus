@@ -149,6 +149,8 @@ static const int default_esc_delay = 25;
 
 static char *title_buf = NULL;
 
+static int in_bracketed_paste = 0;
+
 enum {
 	CURSED_WIN,
 	CURSED_WIN_CUR,
@@ -1988,13 +1990,54 @@ static void handle_ch(uchar ch)
 {
 	clear_error();
 	if (input_mode == NORMAL_MODE) {
-		normal_mode_ch(ch);
+		if (!block_key_paste || !in_bracketed_paste) {
+			normal_mode_ch(ch);
+		}
 	} else if (input_mode == COMMAND_MODE) {
 		command_mode_ch(ch);
 		update_commandline();
 	} else if (input_mode == SEARCH_MODE) {
 		search_mode_ch(ch);
 		update_commandline();
+	}
+}
+
+static void handle_csi(void) {
+	// after ESC[ until 0x40-0x7E (@A–Z[\]^_`a–z{|}~)
+	// https://en.wikipedia.org/wiki/ANSI_escape_code#CSI_(Control_Sequence_Introducer)_sequences
+	// https://www.ecma-international.org/wp-content/uploads/ECMA-48_5th_edition_june_1991.pdf
+
+	int c;
+	int buf[16]; // buffer a reasonable length
+	size_t buf_n = 0;
+	int overflow = 0;
+
+	while (1) {
+		c = getch();
+		if (c == ERR || c == 0) {
+			return;
+		}
+		if (buf_n < sizeof(buf)/sizeof(*buf)) {
+			buf[buf_n++] = c;
+		} else {
+			overflow = 1;
+		}
+		if (c >= 0x40 && c <= 0x7E) {
+			break;
+		}
+	}
+
+	if (overflow) {
+		return;
+	}
+
+	if (buf_n == 4) {
+		// bracketed paste
+		// https://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-Bracketed-Paste-Mode
+		if (buf[0] == '2' && buf[1] == '0' && (buf[2] == '0' || buf[2] == '1') && buf[3] == '~') {
+			in_bracketed_paste = buf[2] == '0';
+			return;
+		}
 	}
 }
 
@@ -2016,7 +2059,9 @@ static void handle_key(int key)
 {
 	clear_error();
 	if (input_mode == NORMAL_MODE) {
-		normal_mode_key(key);
+		if (!block_key_paste || !in_bracketed_paste) {
+			normal_mode_key(key);
+		}
 	} else if (input_mode == COMMAND_MODE) {
 		command_mode_key(key);
 		update_commandline();
@@ -2076,8 +2121,11 @@ static void u_getch(void)
 		cbreak();
 		int e_key = getch();
 		halfdelay(5);
-		if (e_key != ERR && e_key != 0) {
-			handle_escape(e_key);
+		if (e_key != ERR) {
+			if (e_key == '[')
+				handle_csi();
+			else if (e_key != 0)
+				handle_escape(e_key);
 			return;
 		}
 	}
@@ -2387,6 +2435,10 @@ static void init_all(void)
 
 	init_curses();
 
+	// enable bracketed paste (will be ignored if not supported)
+	printf("\033[?2004h");
+	fflush(stdout);
+
 	if (resume_cmus) {
 		resume_load();
 		cmus_add(play_queue_append, play_queue_autosave_filename,
@@ -2404,6 +2456,10 @@ static void init_all(void)
 static void exit_all(void)
 {
 	endwin();
+
+	// disable bracketed paste
+	printf("\033[?2004l");
+	fflush(stdout);
 
 	if (resume_cmus)
 		resume_exit();

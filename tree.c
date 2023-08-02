@@ -828,14 +828,11 @@ static void add_album(struct album *album)
 	struct rb_node **new = &(album->artist->album_root.rb_node), *parent = NULL;
 	struct album *found;
 
-	/*
-	 * Sort regular albums by date, but sort compilations
-	 * alphabetically.
-	 */
-	found = do_find_album(album,
-			      album->artist->is_compilation ? special_album_cmp
-							    : special_album_cmp_date,
-			      &new, &parent);
+	if (sort_albums_by_name || album->artist->is_compilation)
+		found = do_find_album(album, special_album_cmp, &new, &parent);
+	else
+		found = do_find_album(album, special_album_cmp_date, &new, &parent);
+
 	if (!found) {
 		rb_link_node(&album->tree_node, parent, new);
 		rb_insert_color(&album->tree_node, &album->artist->album_root);
@@ -1240,6 +1237,8 @@ void tree_sort_artists(void (*add_album_cb)(struct album *),
 			struct rb_node *t_node, *t_tmp;
 			struct album *album = to_album(l_node);
 
+			remove_album(album);
+			add_album(album);
 			rb_for_each_safe(t_node, t_tmp, &album->track_root) {
 				struct tree_track *track = to_tree_track(t_node);
 

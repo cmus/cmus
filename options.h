@@ -151,6 +151,7 @@ extern int shuffle;
 extern int follow;
 extern int display_artist_sort_name;
 extern int smart_artist_sort;
+extern int sort_albums_by_name;
 extern int scroll_offset;
 extern int rewind_offset;
 extern int skip_track_info;
@@ -163,6 +164,7 @@ extern int stop_after_queue;
 extern int tree_width_percent;
 extern int tree_width_max;
 extern int pause_on_output_change;
+extern int block_key_paste;
 
 extern const char * const aaa_mode_names[];
 extern const char * const view_names[NR_VIEWS + 1];
