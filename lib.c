@@ -631,7 +631,7 @@ static void hash_add_to_views(void)
 		while (e) {
 			struct track_info *ti = e->ti;
 
-			if (!is_filtered(ti))
+			if (!is_filtered(ti) && !(ignore_duplicates && track_exists(ti)))
 				views_add_track(ti);
 			e = e->next;
 		}
