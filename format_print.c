@@ -98,21 +98,12 @@ static void print_num(int num)
 
 #define DBL_MAX_LEN (20)
 
-static int format_double(char *buf, int buflen, double num)
-{
-	int l = snprintf(buf, buflen, "%f", num);
-	/* skip trailing zeros */
-	while (l > 0 && buf[l-1] == '0')
-		l--;
-	return l;
-}
-
 static void print_double(double num)
 {
 	char stack[DBL_MAX_LEN], b[DBL_MAX_LEN];
 	int i, p = 0;
 
-	i = format_double(b, DBL_MAX_LEN, num) - 1;
+	i = snprintf(b, DBL_MAX_LEN, "%g", num) - 1;
 	while (i >= 0) {
 		stack[p++] = b[i];
 		i--;
