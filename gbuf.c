@@ -109,10 +109,11 @@ static int gbuf_mark_clipped_text(struct gbuf *buf)
 
 void gbuf_add_ustr(struct gbuf *buf, const char *src, int *width)
 {
-	gbuf_grow(buf, strlen(src));
+	int src_bytes = u_str_print_size(src) - 1;
+	gbuf_grow(buf, src_bytes);
 	size_t copy_bytes = u_copy_chars(buf->buffer + buf->len, src, width);
 	gbuf_used(buf, copy_bytes);
-	if (src[copy_bytes] != '\0') {
+	if (copy_bytes != src_bytes) {
 		gbuf_set(buf, ' ', *width);
 		*width = gbuf_mark_clipped_text(buf);
 	}
