@@ -30,6 +30,7 @@
 #include "track_info.h"
 #include "utils.h"
 #include "uchar.h"
+#include "path.h"
 
 #define CK(v) \
 do { \
@@ -392,6 +393,11 @@ static int mpris_metadata(sd_bus *_bus, const char *_path,
 			u_to_utf8(corrected, ti->title);
 			CK(mpris_msg_append_ss_dict(reply,
 					"xesam:title", corrected));
+		} else {
+			char corrected[u_str_print_size(path_basename(ti->filename))];
+			u_to_utf8(corrected, path_basename(ti->filename));
+			CK(mpris_msg_append_ss_dict(reply,
+				"xesam:title", corrected));
 		}
 		if (ti->album) {
 			char corrected[u_str_print_size(ti->album)];
