@@ -60,7 +60,7 @@ struct ffmpeg_output {
 struct ffmpeg_private {
 	AVCodecContext *codec_context;
 	AVFormatContext *input_context;
-	AVCodec *codec;
+	AVCodec const *codec;
 	SwrContext *swr;
 
 	struct ffmpeg_input *input;
@@ -141,8 +141,7 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 	int err = 0;
 	int i;
 	int stream_index = -1;
-	int64_t channel_layout = 0;
-	AVCodec *codec;
+	AVCodec const *codec;
 	AVCodecContext *cc = NULL;
 	AVFormatContext *ic = NULL;
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
@@ -239,15 +238,26 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 
 	/* Prepare for resampling. */
 	swr = swr_alloc();
+#if LIBAVCODEC_VERSION_MAJOR >= 58
+	if (cc->ch_layout.order == AV_CHANNEL_ORDER_UNSPEC)
+		av_channel_layout_default(&cc->ch_layout, cc->ch_layout.nb_channels);
+	av_opt_set_chlayout(swr, "in_chlayout",   &cc->ch_layout, 0);
+	av_opt_set_chlayout(swr, "out_chlayout",  &cc->ch_layout, 0);
+#else
 	av_opt_set_int(swr, "in_channel_layout",  av_get_default_channel_layout(cc->channels), 0);
 	av_opt_set_int(swr, "out_channel_layout", av_get_default_channel_layout(cc->channels), 0);
+#endif
 	av_opt_set_int(swr, "in_sample_rate",     cc->sample_rate, 0);
 	av_opt_set_int(swr, "out_sample_rate",    cc->sample_rate, 0);
 	av_opt_set_sample_fmt(swr, "in_sample_fmt",  cc->sample_fmt, 0);
 	priv->swr = swr;
 
 	ip_data->private = priv;
+#if LIBAVCODEC_VERSION_MAJOR >= 58
+	ip_data->sf = sf_rate(cc->sample_rate) | sf_channels(cc->ch_layout.nb_channels);
+#else
 	ip_data->sf = sf_rate(cc->sample_rate) | sf_channels(cc->channels);
+#endif
 	switch (cc->sample_fmt) {
 	case AV_SAMPLE_FMT_U8:
 		ip_data->sf |= sf_bits(8) | sf_signed(0);
@@ -265,8 +275,11 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 	}
 	swr_init(swr);
 	ip_data->sf |= sf_host_endian();
-	channel_layout = cc->channel_layout;
-	channel_map_init_waveex(cc->channels, channel_layout, ip_data->channel_map);
+#if LIBAVCODEC_VERSION_MAJOR >= 58
+	channel_map_init_waveex(cc->ch_layout.nb_channels, cc->ch_layout.u.mask, ip_data->channel_map);
+#else
+	channel_map_init_waveex(cc->channels, cc->channel_layout, ip_data->channel_map);
+#endif
 	return 0;
 }
 
@@ -378,7 +391,11 @@ static int ffmpeg_fill_buffer(AVFormatContext *ic, AVCodecContext *cc, struct ff
 			if (res < 0)
 				res = 0;
 			output->buffer_pos = output->buffer;
+#if LIBAVCODEC_VERSION_MAJOR >= 58
+			output->buffer_used_len = res * cc->ch_layout.nb_channels * sizeof(int16_t);
+#else
 			output->buffer_used_len = res * cc->channels * sizeof(int16_t);
+#endif
 #if LIBAVCODEC_VERSION_MAJOR >= 56
 			av_frame_free(&frame);
 #else
