@@ -74,6 +74,7 @@ void track_info_set_comments(struct track_info *ti, struct keyval *comments) {
 	ti->title = keyvals_get_val(comments, "title");
 	ti->tracknumber = comments_get_int(comments, "tracknumber");
 	ti->discnumber = comments_get_int(comments, "discnumber");
+	ti->totaldiscs = comments_get_int(comments, "totaldiscs");
 	ti->date = comments_get_date(comments, "date");
 	ti->originaldate = comments_get_date(comments, "originaldate");
 	ti->genre = keyvals_get_val(comments, "genre");
@@ -246,6 +247,7 @@ int track_info_cmp(const struct track_info *a, const struct track_info *b, const
 		switch (key) {
 		case SORT_TRACKNUMBER:
 		case SORT_DISCNUMBER:
+		case SORT_TOTALDISCS:
 		case SORT_DATE:
 		case SORT_ORIGINALDATE:
 		case SORT_PLAY_COUNT:
@@ -291,6 +293,7 @@ static const struct {
 	{ "play_count",		SORT_PLAY_COUNT		},
 	{ "tracknumber",	SORT_TRACKNUMBER	},
 	{ "discnumber",		SORT_DISCNUMBER		},
+	{ "totaldiscs",		SORT_TOTALDISCS		},
 	{ "date",		SORT_DATE		},
 	{ "originaldate",	SORT_ORIGINALDATE	},
 	{ "genre",		SORT_GENRE		},
@@ -313,6 +316,7 @@ static const struct {
 	{ "-play_count", 	REV_SORT_PLAY_COUNT	},
 	{ "-tracknumber",	REV_SORT_TRACKNUMBER	},
 	{ "-discnumber",	REV_SORT_DISCNUMBER	},
+	{ "-totaldiscs",	REV_SORT_TOTALDISCS	},
 	{ "-date",		REV_SORT_DATE		},
 	{ "-originaldate",	REV_SORT_ORIGINALDATE	},
 	{ "-genre",		REV_SORT_GENRE		},
