@@ -465,6 +465,22 @@ static void pl_delete_selected_pl(void)
 	pl_delete(pl_visible);
 }
 
+void pl_delete_all(void)
+{
+	struct playlist *pl;
+	struct playlist *temp;
+	struct playlist *last = NULL;
+	list_for_each_entry_safe(pl, temp, &pl_head, node) {
+		if (list_len(&pl_head) == 1) {
+			last = pl;
+			break;
+		}
+		pl_delete(pl);
+	}
+	pl_create_default();
+	pl_delete(last);
+}
+
 static void pl_mark_selected_pl(void)
 {
 	pl_marked = pl_visible;
