@@ -419,17 +419,10 @@ static void pl_save_all(void)
 		pl_save_one(pl);
 }
 
-static void pl_delete_selected_pl(void)
+static void pl_delete(struct playlist *pl)
 {
-	if (list_len(&pl_head) == 1) {
-		error_msg("cannot delete the last playlist");
+	if (list_len(&pl_head) == 1)
 		return;
-	}
-
-	if (yes_no_query("Delete selected playlist? [y/N]") != UI_QUERY_ANSWER_YES)
-		return;
-
-	struct playlist *pl = pl_visible;
 
 	struct iter iter;
 	pl_to_iter(pl, &iter);
@@ -457,6 +450,19 @@ static void pl_delete_selected_pl(void)
 	pdd->cb = pl_free;
 	pdd->pl = pl;
 	job_schedule_pl_delete(pdd);
+}
+
+static void pl_delete_selected_pl(void)
+{
+	if (list_len(&pl_head) == 1) {
+		error_msg("cannot delete the last playlist");
+		return;
+	}
+
+	if (yes_no_query("Delete selected playlist? [y/N]") != UI_QUERY_ANSWER_YES)
+		return;
+
+	pl_delete(pl_visible);
 }
 
 static void pl_mark_selected_pl(void)
