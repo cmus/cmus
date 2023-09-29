@@ -838,6 +838,17 @@ void pl_rand(void)
 		editable_rand(&pl_visible->editable);
 }
 
+void pl_delete_by_name(char *name)
+{
+	struct playlist *pl;
+	list_for_each_entry(pl, &pl_head, node) {
+		if (strcmp(pl->name, name) == 0)
+			break;
+	}
+	pl_delete(pl);
+}
+
+
 void pl_win_mv_after(void)
 {
 	if (pl_cursor_in_track_window)
