@@ -422,7 +422,7 @@ static void pl_save_all(void)
 static void pl_delete(struct playlist *pl)
 {
 	if (list_len(&pl_head) == 1)
-		return;
+		pl_create_default();
 
 	struct iter iter;
 	pl_to_iter(pl, &iter);
@@ -454,11 +454,6 @@ static void pl_delete(struct playlist *pl)
 
 static void pl_delete_selected_pl(void)
 {
-	if (list_len(&pl_head) == 1) {
-		error_msg("cannot delete the last playlist");
-		return;
-	}
-
 	if (yes_no_query("Delete selected playlist? [y/N]") != UI_QUERY_ANSWER_YES)
 		return;
 
@@ -477,7 +472,6 @@ void pl_delete_all(void)
 		}
 		pl_delete(pl);
 	}
-	pl_create_default();
 	pl_delete(last);
 }
 
