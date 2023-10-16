@@ -516,11 +516,11 @@ pl-import [filename]
 pl-rename <name>
 	Renames the selected playlist.
 
-pl-delete <name>
+pl-delete [-a] <name>
 	Deletes the playlist with the given name.
 
-pl-delete-all
-	Deletes all playlists.
+	-a
+		Deletes all playlists
 
 player-next (*b*)
 	Skips to the next track.
