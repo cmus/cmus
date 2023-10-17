@@ -476,15 +476,12 @@ void pl_delete_all(void)
 {
 	struct playlist *pl;
 	struct playlist *temp;
-	struct playlist *last = NULL;
 	list_for_each_entry_safe(pl, temp, &pl_head, node) {
-		if (list_len(&pl_head) == 1) {
-			last = pl;
+		if (list_len(&pl_head) == 1)
 			break;
-		}
 		pl_delete(pl);
 	}
-	pl_delete(last);
+	pl_delete(pl);
 }
 
 static void pl_mark_selected_pl(void)
