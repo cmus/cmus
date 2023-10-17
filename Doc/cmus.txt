@@ -505,6 +505,12 @@ mute
 pl-create <name>
 	Creates a new playlist.
 
+pl-delete [-a] <name>
+	Deletes the playlist with the given name.
+
+	-a
+		Deletes all playlists
+
 pl-export <filename>
 	Exports the currently selected playlist. The file will be overwritten if
 	it exists.
@@ -515,12 +521,6 @@ pl-import [filename]
 
 pl-rename <name>
 	Renames the selected playlist.
-
-pl-delete [-a] <name>
-	Deletes the playlist with the given name.
-
-	-a
-		Deletes all playlists
 
 player-next (*b*)
 	Skips to the next track.
