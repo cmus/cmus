@@ -32,14 +32,13 @@ struct cue_meta {
 };
 
 struct cue_track {
+	char *file;
 	double offset;
 	double length;
 	struct cue_meta meta;
 };
 
 struct cue_sheet {
-	char *file;
-
 	struct cue_track *tracks;
 	size_t num_tracks;
 	size_t track_base;
