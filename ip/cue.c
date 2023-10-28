@@ -110,7 +110,7 @@ static int cue_open(struct input_plugin_data *ip_data)
 		goto cue_read_failed;
 	}
 
-	child_filename = _make_absolute_path(priv->cue_filename, cd->file);
+	child_filename = _make_absolute_path(priv->cue_filename, t->file);
 	priv->child = ip_new(child_filename);
 	free(child_filename);
 

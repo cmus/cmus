@@ -33,6 +33,7 @@
 struct cue_track_proto {
 	struct list_head node;
 
+	char *file;
 	uint32_t nr;
 	int32_t pregap;
 	int32_t postgap;
@@ -42,12 +43,18 @@ struct cue_track_proto {
 	struct cue_meta meta;
 };
 
+struct cue_track_file {
+	struct list_head node;
+
+	char *file;
+};
+
 struct cue_parser {
 	const char *src;
 	size_t len;
 	bool err;
 
-	char *file;
+	struct list_head files;
 	struct list_head tracks;
 	size_t num_tracks;
 
@@ -196,11 +203,33 @@ CUE_PARSE_STR(discnumber);
 
 static void cue_parse_file(struct cue_parser *p)
 {
-	cue_parse_str(p, &p->file);
+	struct cue_track_file *f = xnew(struct cue_track_file, 1);
+
+	f->file = NULL;
+	cue_parse_str(p, &f->file);
+
+	list_add_tail(&f->node, &p->files);
+}
+
+static char* cue_dup_current_file(struct cue_parser *p)
+{
+	if (list_empty(&p->files))
+		return NULL;
+
+	struct list_head *tail = list_prev(&p->files);
+	char* file = list_entry(tail, struct cue_track_file, node)->file;
+	return cue_strdup(file, strlen(file));
 }
 
 static void cue_parse_track(struct cue_parser *p)
 {
+	char *curr_file = cue_dup_current_file(p);
+
+	if (!curr_file) {
+		cue_set_err(p);
+		return;
+	}
+
 	const char *nr;
 	size_t len = cue_extract_token(p, &nr);
 
@@ -215,6 +244,7 @@ static void cue_parse_track(struct cue_parser *p)
 		.postgap = -1,
 		.index0 = -1,
 		.index1 = -1,
+		.file = curr_file,
 	};
 
 	list_add_tail(&t->node, &p->tracks);
@@ -346,7 +376,7 @@ static void cue_parse_line(struct cue_parser *p)
 
 static void cue_post_process(struct cue_parser *p)
 {
-	if (!p->file || p->num_tracks == 0) {
+	if (list_empty(&p->files) || p->num_tracks == 0) {
 		cue_set_err(p);
 		return;
 	}
@@ -364,6 +394,7 @@ static void cue_post_process(struct cue_parser *p)
 	}
 
 	last = -1;
+	char *last_file = NULL;
 
 	list_for_each_entry(t, &p->tracks, node) {
 		if (t->index0 == -1 && t->index1 == -1) {
@@ -377,12 +408,13 @@ static void cue_post_process(struct cue_parser *p)
 			else
 				t->index1 = t->index0 + pregap;
 		}
-		if (last != -1 && t->index0 < last) {
+		if (last != -1 && (t->file == last_file && t->index0 < last)) {
 			cue_set_err(p);
 			return;
 		}
 		int32_t postgap = t->postgap != -1 ? t->postgap : 0;
 		last = t->index1 + postgap;
+		last_file = t->file;
 	}
 }
 
@@ -396,9 +428,6 @@ static struct cue_sheet *cue_parser_to_sheet(struct cue_parser *p)
 {
 	struct cue_sheet *s = xnew(struct cue_sheet, 1);
 
-	s->file = p->file;
-	p->file = NULL;
-
 	s->tracks = xnew(struct cue_track, p->num_tracks);
 	s->num_tracks = p->num_tracks;
 	s->track_base = cue_last_proto(p)->nr + 1 - p->num_tracks;
@@ -408,6 +437,9 @@ static struct cue_sheet *cue_parser_to_sheet(struct cue_parser *p)
 	size_t idx = 0;
 	struct cue_track_proto *t, *prev;
 	list_for_each_entry(t, &p->tracks, node) {
+		s->tracks[idx].file = t->file;
+		t->file = NULL;
+
 		s->tracks[idx].offset = t->index1 / 75.0;
 		s->tracks[idx].length = -1;
 
@@ -440,12 +472,19 @@ static void cue_meta_free(struct cue_meta *m)
 static void cue_parser_free(struct cue_parser *p)
 {
 	struct cue_track_proto *t, *next;
+	struct cue_track_file *tf, *nexttf;
+
+	list_for_each_entry_safe(tf, nexttf, &p->files, node) {
+		free(tf->file);
+		free(tf);
+	}
+
 	list_for_each_entry_safe(t, next, &p->tracks, node) {
 		cue_meta_free(&t->meta);
+		free(t->file);
 		free(t);
 	}
 
-	free(p->file);
 	cue_meta_free(&p->meta);
 }
 
@@ -458,6 +497,7 @@ struct cue_sheet *cue_parse(const char *src, size_t len)
 		.len = len,
 	};
 	list_init(&p.tracks);
+	list_init(&p.files);
 
 	while (p.len > 0 && !p.err)
 		cue_parse_line(&p);
@@ -498,10 +538,10 @@ struct cue_sheet *cue_from_file(const char *file)
 
 void cue_free(struct cue_sheet *s)
 {
-	free(s->file);
-
-	for (size_t i = 0; i < s->num_tracks; i++)
+	for (size_t i = 0; i < s->num_tracks; i++) {
 		cue_meta_free(&s->tracks[i].meta);
+		free(s->tracks[i].file);
+	}
 	free(s->tracks);
 
 	cue_meta_free(&s->meta);
