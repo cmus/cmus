@@ -464,9 +464,7 @@ check_mp4()
 
 check_aac()
 {
-	check_header neaacdec.h &&
-	check_library AAC "" "-lfaad -lm"
-	return $?
+  pkg_config AAC faad2 || return $?
 }
 
 check_ffmpeg()
