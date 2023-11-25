@@ -450,6 +450,8 @@ check_roar()
 
 check_mp4()
 {
+	pkg_config MP4 "mp4v2 faad2" && return
+	# if pkg_config didn't find them, check header/lib search paths
 	USE_MPEG4IP=1
 	if check_header mp4v2/mp4v2.h
 	then
@@ -464,7 +466,11 @@ check_mp4()
 
 check_aac()
 {
-  pkg_config AAC faad2 || return $?
+	pkg_config AAC faad2 && return
+	# if pkg_config didn't find it, check header/lib search paths
+	check_header neaacdec.h &&
+	check_library AAC "" "-lfaad -lm"
+	return $?
 }
 
 check_ffmpeg()
