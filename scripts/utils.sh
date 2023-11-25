@@ -26,7 +26,7 @@ __cleanup()
 		echo "DEBUG_CONFIGURE=y, not removing temporary files"
 		ls .tmp-[0-9]*-*
 	else
-		rm -f .tmp-[0-9]*-*
+		rm -rf .tmp-[0-9]*-*
 	fi
 }
 
