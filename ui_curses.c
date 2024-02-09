@@ -641,8 +641,12 @@ const struct format_option *get_global_fopts(void)
 	int buffer_fill, vol, vol_left, vol_right;
 	int duration = -1;
 
-	fopt_set_time(&track_fopts[TF_TOTAL], play_library ? lib_editable.total_time :
-			pl_playing_total_time(), 0);
+	unsigned int total_time = pl_playing_total_time();
+	if (cmus_queue_active())
+		total_time = play_queue_total_time();
+	else if (play_library)
+		total_time = lib_editable.total_time;
+	fopt_set_time(&track_fopts[TF_TOTAL], total_time, 0);
 
 	fopt_set_str(&track_fopts[TF_FOLLOW], follow_strs[follow]);
 	fopt_set_str(&track_fopts[TF_REPEAT], repeat_strs[repeat]);
