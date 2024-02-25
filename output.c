@@ -124,8 +124,7 @@ void op_load_plugins(void)
 			error_msg("%s: missing symbol", filename);
 			err = true;
 		}
-		STATIC_ASSERT(OP_ABI_VERSION == 2);
-		if (!plug->abi_version_ptr || (*plug->abi_version_ptr != 1 && *plug->abi_version_ptr != 2)) {
+		if (!plug->abi_version_ptr || *plug->abi_version_ptr != OP_ABI_VERSION) {
 			error_msg("%s: incompatible plugin version", filename);
 			err = true;
 		}

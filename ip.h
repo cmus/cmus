@@ -28,7 +28,7 @@
 #include <unistd.h>
 #endif
 
-#define IP_ABI_VERSION 1
+#define IP_ABI_VERSION 2
 
 enum {
 	/* no error */
