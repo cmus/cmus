@@ -26,7 +26,7 @@
 #include <fcntl.h>
 #endif
 
-#define OP_ABI_VERSION 2
+#define OP_ABI_VERSION 3
 
 enum {
 	/* no error */
