@@ -1097,6 +1097,9 @@ static void update_editable_window(struct editable *e, const char *title, const 
 		gbuf_addf(&buf, "%s - %d tracks", title, e->nr_tracks);
 	}
 
+	fopt_set_time(&track_fopts[TF_TOTAL], e->total_time, 0);
+	format_print(&buf, 0, " (%{total})", track_fopts);
+
 	if (e->nr_marked) {
 		gbuf_addf(&buf, " (%d marked)", e->nr_marked);
 	}
@@ -1110,7 +1113,7 @@ static void update_editable_window(struct editable *e, const char *title, const 
 static void update_sorted_window(void)
 {
 	current_track = (struct simple_track *)lib_cur_track;
-	update_editable_window(&lib_editable, "Library", lib_filename);
+	update_editable_window(&lib_editable, "Library", NULL);
 }
 
 static void update_play_queue_window(void)
