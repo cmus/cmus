@@ -201,7 +201,7 @@ const char *get_filename(const char *path)
 
 static void move_old_playlist(void)
 {
-	char *default_playlist = xstrjoin(cmus_playlist_dir, "/default");
+	char *default_playlist = xstrjoin(cmus_playlist_dir, "/Default");
 	char *old_playlist = xstrjoin(cmus_config_dir, "/playlist.pl");
 	int rc = rename(old_playlist, default_playlist);
 	if (rc && errno != ENOENT)

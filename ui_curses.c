@@ -308,6 +308,7 @@ enum {
 	TF_SHUFFLE,
 	TF_PLAYLISTMODE,
 	TF_BPM,
+	TF_PANEL,
 
 	NR_TFS
 };
@@ -367,6 +368,7 @@ static struct format_option track_fopts[NR_TFS + 1] = {
 	DEF_FO_STR('\0', "shuffle", 0),
 	DEF_FO_STR('\0', "playlist_mode", 0),
 	DEF_FO_INT('\0', "bpm", 0),
+	DEF_FO_INT('\0', "panel", 0),
 	DEF_FO_END
 };
 
@@ -583,7 +585,20 @@ static int get_album_length(struct album *album)
 	int duration = 0;
 
 	rb_for_each_entry(track, tmp, &album->track_root, tree_node) {
-		duration += tree_track_info(track)->duration;
+		duration += max_i(0, tree_track_info(track)->duration);
+	}
+
+	return duration;
+}
+
+static int get_artist_length(struct artist *artist)
+{
+	struct album *album;
+	struct rb_node *tmp;
+	int duration = 0;
+
+	rb_for_each_entry(album, tmp, &artist->album_root, tree_node) {
+		duration += get_album_length(album);
 	}
 
 	return duration;
@@ -596,7 +611,9 @@ static void fill_track_fopts_album(struct album *album)
 	fopt_set_str(&track_fopts[TF_ALBUMARTIST], album->artist->name);
 	fopt_set_str(&track_fopts[TF_ARTIST], album->artist->name);
 	fopt_set_str(&track_fopts[TF_ALBUM], album->name);
-	fopt_set_time(&track_fopts[TF_ALBUMDURATION], get_album_length(album), 0);
+	int duration = get_album_length(album);
+	fopt_set_time(&track_fopts[TF_DURATION], duration, 0);
+	fopt_set_time(&track_fopts[TF_ALBUMDURATION], duration, 0);
 }
 
 static void fill_track_fopts_artist(struct artist *artist)
@@ -604,6 +621,7 @@ static void fill_track_fopts_artist(struct artist *artist)
 	const char *name = display_artist_sort_name ? artist_sort_name(artist) : artist->name;
 	fopt_set_str(&track_fopts[TF_ARTIST], name);
 	fopt_set_str(&track_fopts[TF_ALBUMARTIST], name);
+	fopt_set_time(&track_fopts[TF_DURATION], get_artist_length(artist), 0);
 }
 
 const struct format_option *get_global_fopts(void)
@@ -947,7 +965,7 @@ static void update_window(struct window *win, int x, int y, int w, const char *t
 
 static void update_tree_window(void)
 {
-	update_window(lib_tree_win, tree_win_x, 0, tree_win_w + 1, "Artist / Album", print_tree);
+	update_window(lib_tree_win, tree_win_x, 0, tree_win_w + 1, "Library", print_tree);
 }
 
 static void update_track_window(void)
@@ -955,9 +973,22 @@ static void update_track_window(void)
 	static GBUF(title);
 	gbuf_clear(&title);
 
-	/* it doesn't matter what format options we use because the format
-	 * string does not contain any format charaters */
-	format_print(&title, track_win_w - 2, "Track%= Library", track_fopts);
+	struct iter iter;
+	struct album *album;
+	struct artist *artist;
+
+	const char *format_str = "Empty (use :add)";
+
+	if (window_get_sel(lib_tree_win, &iter)) {
+		if ((album = iter_to_album(&iter))) {
+			fill_track_fopts_album(album);
+			format_str = heading_album_format;
+		} else if ((artist = iter_to_artist(&iter))) {
+			fill_track_fopts_artist(artist);
+			format_str = heading_artist_format;
+		}
+	}
+	format_print(&title, track_win_w - 2, format_str, track_fopts);
 	update_window(lib_track_win, track_win_x, 0, track_win_w, title.buffer,
 			print_track);
 }
@@ -1018,14 +1049,11 @@ static void update_pl_tracks(struct window *win)
 	win_active = pl_get_cursor_in_track_window();
 
 	get_global_fopts();
-	fopt_set_time(&track_fopts[TF_TOTAL], pl_visible_total_time(), 0);
+	fopt_set_int(&track_fopts[TF_PANEL], 1, !pl_show_panel());
+	fopt_set_str(&track_fopts[TF_TITLE], pl_visible_get_name());
+	fopt_set_time(&track_fopts[TF_DURATION], pl_visible_total_time(), 0);
 
-	if (pl_show_panel()) {
-		format_print(&title, win_w - 2, "Track%= %{total}", track_fopts);
-	} else {
-		fopt_set_str(&track_fopts[TF_TITLE], pl_visible_get_name());
-		format_print(&title, win_w - 2, "Playlist - %{title}%= %{total}", track_fopts);
-	}
+	format_print(&title, win_w - 2, heading_playlist_format, track_fopts);
 	update_window(win, win_x, 0, win_w, title.buffer, print_editable);
 
 	win_active = 1;

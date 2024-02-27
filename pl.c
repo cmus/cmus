@@ -299,7 +299,7 @@ static void pl_load_all(void)
 
 static void pl_create_default(void)
 {
-	struct playlist *pl = pl_new("default");
+	struct playlist *pl = pl_new("Default");
 	list_add_tail(&pl->node, &pl_head);
 }
 
