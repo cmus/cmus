@@ -1057,6 +1057,17 @@ format_clipped_text [`Plain String`]
 format_current [`Format String`]
 	Format string for the line displaying currently playing track.
 
+format_heading_album [`Format String`]
+	Format string for the track window heading line when an album is selected
+	in the tree.
+
+format_heading_artist [`Format String`]
+	Format string for the track window heading line when an artist is selected
+	in the tree.
+
+format_heading_playlist [`Format String`]
+	Format string for the heading line in the playlist view (3).
+
 format_playlist [`Format String`]
 	Format string for the list views (2-4).
 
