@@ -39,6 +39,8 @@ set color_win_title_fg=green
 # Status line color.
 set color_statusline_bg=default
 set color_statusline_fg=gray
+set color_statusline_progress_bg=234
+set color_statusline_progress_fg=gray
 
 # Color of the line displaying currently playing track.
 set color_titleline_bg=default

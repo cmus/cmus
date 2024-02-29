@@ -27,6 +27,8 @@ set color_win_title_fg=174
 # Status line color.
 set color_statusline_bg=237
 set color_statusline_fg=142
+set color_statusline_progress_bg=240
+set color_statusline_progress_fg=142
 
 # Color of currently playing track.
 set color_win_cur=172

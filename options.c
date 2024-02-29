@@ -95,6 +95,7 @@ int tree_width_percent = 33;
 int tree_width_max = 0;
 int pause_on_output_change = 0;
 int block_key_paste = 1;
+int progress_bar = 1;
 
 int colors[NR_COLORS] = {
 	-1,
@@ -108,25 +109,27 @@ int colors[NR_COLORS] = {
 	COLOR_BLUE,
 
 	COLOR_WHITE | BRIGHT,
+	COLOR_BLUE,
+	COLOR_WHITE | BRIGHT,
 	-1,
+
 	COLOR_YELLOW | BRIGHT,
 	COLOR_BLUE,
-
 	COLOR_YELLOW | BRIGHT,
 	COLOR_BLUE | BRIGHT,
+
 	-1,
 	COLOR_WHITE,
-
 	COLOR_YELLOW | BRIGHT,
 	COLOR_WHITE,
+
 	COLOR_BLACK,
 	COLOR_BLUE,
-
 	COLOR_WHITE | BRIGHT,
 	COLOR_BLUE,
+
 	COLOR_WHITE | BRIGHT,
 	-1,
-
 	-1,
 };
 
@@ -1368,6 +1371,27 @@ static void toggle_block_key_paste(void *data)
 	block_key_paste ^= 1;
 }
 
+const char * const progress_bar_names[] = {
+	"disabled", "line", "shuttle", "color", "color_shuttle", NULL
+};
+
+static void get_progress_bar(void *data, char *buf, size_t size)
+{
+	strscpy(buf, progress_bar_names[progress_bar], size);
+}
+
+static void set_progress_bar(void *data, const char *buf)
+{
+	parse_enum(buf, 0, 4, progress_bar_names, &progress_bar);
+}
+
+static void toggle_progress_bar(void *data)
+{
+	progress_bar++;
+	progress_bar %= NR_PROGRESS_BAR_MODES;
+	update_statusline();
+}
+
 /* }}} */
 
 /* special callbacks (id set) {{{ */
@@ -1639,6 +1663,7 @@ static const struct {
 	DT(pause_on_output_change)
 	DN(pl_env_vars)
 	DT(block_key_paste)
+	DT(progress_bar)
 	{ NULL, NULL, NULL, NULL, 0 }
 };
 
@@ -1650,6 +1675,8 @@ static const char * const color_names[NR_COLORS] = {
 	"color_separator",
 	"color_statusline_bg",
 	"color_statusline_fg",
+	"color_statusline_progress_bg",
+	"color_statusline_progress_fg",
 	"color_titleline_bg",
 	"color_titleline_fg",
 	"color_win_bg",
@@ -1673,6 +1700,7 @@ static const char * const color_names[NR_COLORS] = {
 static const char * const attr_names[NR_ATTRS] = {
 	"color_cmdline_attr",
 	"color_statusline_attr",
+	"color_statusline_progress_attr",
 	"color_titleline_attr",
 	"color_win_attr",
 	"color_win_cur_sel_attr",
