@@ -168,11 +168,12 @@ enum {
 	CURSED_COMMANDLINE,
 	CURSED_STATUSLINE,
 
+	CURSED_STATUSLINE_PROGRESS,
 	CURSED_TITLELINE,
 	CURSED_DIR,
 	CURSED_ERROR,
-	CURSED_INFO,
 
+	CURSED_INFO,
 	CURSED_TRACKWIN_ALBUM,
 
 	NR_CURSED
@@ -194,11 +195,12 @@ static unsigned char cursed_to_bg_idx[NR_CURSED] = {
 	COLOR_CMDLINE_BG,
 	COLOR_STATUSLINE_BG,
 
+	COLOR_STATUSLINE_PROGRESS_BG,
 	COLOR_TITLELINE_BG,
 	COLOR_WIN_BG,
 	COLOR_CMDLINE_BG,
-	COLOR_CMDLINE_BG,
 
+	COLOR_CMDLINE_BG,
 	COLOR_TRACKWIN_ALBUM_BG,
 };
 
@@ -218,11 +220,12 @@ static unsigned char cursed_to_fg_idx[NR_CURSED] = {
 	COLOR_CMDLINE_FG,
 	COLOR_STATUSLINE_FG,
 
+	COLOR_STATUSLINE_PROGRESS_FG,
 	COLOR_TITLELINE_FG,
 	COLOR_WIN_DIR,
 	COLOR_ERROR,
-	COLOR_INFO,
 
+	COLOR_INFO,
 	COLOR_TRACKWIN_ALBUM_FG,
 };
 
@@ -242,11 +245,12 @@ static unsigned char cursed_to_attr_idx[NR_CURSED] = {
 	COLOR_CMDLINE_ATTR,
 	COLOR_STATUSLINE_ATTR,
 
+	COLOR_STATUSLINE_PROGRESS_ATTR,
 	COLOR_TITLELINE_ATTR,
 	COLOR_WIN_ATTR,
 	COLOR_CMDLINE_ATTR,
-	COLOR_CMDLINE_ATTR,
 
+	COLOR_CMDLINE_ATTR,
 	COLOR_TRACKWIN_ALBUM_ATTR,
 };
 
@@ -455,19 +459,19 @@ fallback:
 
 /* screen updates {{{ */
 
-static void dump_print_buffer_no_clear(int row, int col)
+static void dump_print_buffer_no_clear(int row, int col, size_t offset)
 {
 	if (using_utf8) {
-		(void) mvaddstr(row, col, print_buffer.buffer);
+		(void) mvaddstr(row, col, print_buffer.buffer + offset);
 	} else {
-		utf8_decode(print_buffer.buffer);
+		utf8_decode(print_buffer.buffer + offset);
 		(void) mvaddstr(row, col, conv_buffer);
 	}
 }
 
 static void dump_print_buffer(int row, int col)
 {
-	dump_print_buffer_no_clear(row, col);
+	dump_print_buffer_no_clear(row, col, 0);
 	gbuf_clear(&print_buffer);
 }
 
@@ -957,7 +961,7 @@ static void update_window(struct window *win, int x, int y, int w, const char *t
 	bkgdset(pairs[0]);
 	gbuf_set(&print_buffer, ' ', w);
 	while (i < nr_rows) {
-		dump_print_buffer_no_clear(y + i + 1, x);
+		dump_print_buffer_no_clear(y + i + 1, x, 0);
 		i++;
 	}
 	gbuf_clear(&print_buffer);
@@ -1203,9 +1207,57 @@ static void do_update_view(int full)
 
 static void do_update_statusline(void)
 {
-	format_print(&print_buffer, win_w, statusline_format, get_global_fopts());
+	struct fp_len len;
+	len = format_print(&print_buffer, win_w, statusline_format, get_global_fopts());
 	bkgdset(pairs[CURSED_STATUSLINE]);
-	dump_print_buffer(LINES - 2, 0);
+	dump_print_buffer_no_clear(LINES - 2, 0, 0);
+
+	if (progress_bar && player_info.ti) {
+		int duration = player_info.ti->duration;
+		if (duration && duration >= player_info.pos) {
+			if (progress_bar == PROGRESS_BAR_LINE || progress_bar == PROGRESS_BAR_SHUTTLE) {
+				/* Draw a bar or short position marker within the blank space */
+				int shuttle_len = (progress_bar == PROGRESS_BAR_SHUTTLE) ? 2 : 0;
+				int bar_start = len.llen + len.mlen;
+				int bar_space = win_w - len.rlen - bar_start - shuttle_len;
+				if (bar_space >= 5) {
+					int bar_len = bar_space * player_info.pos / duration;
+				        if (progress_bar == PROGRESS_BAR_SHUTTLE) {
+						bar_start += bar_len;
+						bar_len = shuttle_len;
+					}
+					for (int x = bar_start; bar_len; --bar_len)
+						(void) mvaddstr(LINES - 2, x++, using_utf8 ? "━" : "-");
+				}
+			} else if (progress_bar == PROGRESS_BAR_COLOR) {
+				/* Draw over the played portion of bar in alt color */
+				int w = win_w * player_info.pos / duration;
+
+				int skip = w;
+				int buf_index = u_skip_chars(print_buffer.buffer, &skip, false);
+				print_buffer.buffer[buf_index] = '\0';
+
+				bkgdset(pairs[CURSED_STATUSLINE_PROGRESS]);
+				dump_print_buffer_no_clear(LINES - 2, 0, 0);
+
+			} else { // PROGRESS_BAR_COLOR_SHUTTLE
+				/* Redraw a few cols in alt color to mark the current position */
+				int shuttle_len = min_u(6, win_w);
+				int x = (win_w - shuttle_len) * player_info.pos / duration;
+
+				int skip = x;
+				int buf_index = u_skip_chars(print_buffer.buffer, &skip, false);
+
+				int end_offset = u_skip_chars(print_buffer.buffer + buf_index, &shuttle_len, true);
+				print_buffer.buffer[buf_index+end_offset] = '\0';
+
+				bkgdset(pairs[CURSED_STATUSLINE_PROGRESS]);
+				dump_print_buffer_no_clear(LINES - 2, x, buf_index);
+			}
+		}
+	}
+
+	gbuf_clear(&print_buffer);
 
 	if (player_info.error_msg)
 		error_msg("%s", player_info.error_msg);

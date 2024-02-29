@@ -25,7 +25,8 @@ set color_titleline_attr=default
 
 set color_statusline_bg=237
 set color_statusline_fg=145
-set color_statusline_attr=default
+set color_statusline_progress_bg=233
+set color_statusline_progress_fg=145
 
 # Text
 set color_win_cur=183

@@ -941,6 +941,15 @@ color_statusline_fg (black) [`Color`]
 color_statusline_attr (default) [`Attributes`]
 	Status line attributes.
 
+color_statusline_progress_bg (blue) [`Color`]
+	Status line background color of progress bar, when enabled.
+
+color_statusline_progress_fg (white) [`Color`]
+	Status line foreground color of progress bar, when enabled.
+
+color_statusline_progress_attr (default) [`Attributes`]
+	Status line attributes of progress bar, when enabled.
+
 color_titleline_bg (blue) [`Color`]
 	Background color of the line displaying currently playing track.
 
@@ -1169,6 +1178,9 @@ play_library (true)
 play_sorted (false)
 	Play tracks from the library in the sorted view (2) order instead of
 	tree view (1) order. Used only when play_library is true.
+
+progress_bar (line) [disabled, line, shuttle, color, color_shuttle]
+	Draw a bar in the status line showing current progression through a track.
 
 repeat (false)
 	Repeat after all tracks played.
