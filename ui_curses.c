@@ -144,6 +144,7 @@ static int win_active = 1;
 static int show_cursor;
 static int cursor_x;
 static int cursor_y;
+static int cmdline_cursor_x;
 
 static const int default_esc_delay = 25;
 
@@ -1186,8 +1187,7 @@ static void dump_buffer(const char *buffer)
 static void do_update_commandline(void)
 {
 	char *str;
-	int w;
-	size_t idx;
+	size_t idx = 0;
 	char ch;
 
 	move(LINES - 1, 0);
@@ -1227,46 +1227,38 @@ static void do_update_commandline(void)
 	}
 
 	/* COMMAND_MODE or SEARCH_MODE */
-	w = u_str_width(str);
 	ch = ':';
 	if (input_mode == SEARCH_MODE)
 		ch = search_direction == SEARCH_FORWARD ? '/' : '?';
 
-	if (w <= win_w - 2) {
+	int width = win_w - 2; // ':' at start and ' ' at end
+
+	/* width of the text in the buffer before and after cursor */
+	int cw = u_str_nwidth(str, cmdline.cpos);
+	int extra_w = u_str_width(str + cmdline.bpos);
+
+	/* shift by third of bar width to provide visual context when editing */
+	int context_w = min_u(extra_w, win_w / 3);
+
+	int skip = cw + context_w - width;
+	if (skip <= 0) {
 		addch(ch);
-		gbuf_add_ustr(&print_buffer, str, &w);
-		dump_buffer(print_buffer.buffer);
-		gbuf_clear(&print_buffer);
-		clrtoeol();
+		cmdline_cursor_x = 1 + cw;
 	} else {
-		/* keep cursor as far right as possible */
-		int skip, width, cw;
-
-		/* cursor pos (width, not chars. doesn't count the ':') */
-		cw = u_str_nwidth(str, cmdline.cpos);
-
-		skip = cw + 2 - win_w;
-		if (skip > 0) {
-			/* skip the ':' */
-			skip--;
-
-			/* skip rest (if any) */
-			idx = u_skip_chars(str, &skip, true);
-
-			width = win_w;
-			gbuf_add_ustr(&print_buffer, str + idx, &width);
-			gbuf_set(&print_buffer, ' ', width);
-			dump_buffer(print_buffer.buffer);
-			gbuf_clear(&print_buffer);
-		} else {
-			/* print ':' + win_w - 1 chars */
-			addch(ch);
-			width = win_w - 1;
-			gbuf_add_ustr(&print_buffer, str, &width);
-			dump_buffer(print_buffer.buffer);
-			gbuf_clear(&print_buffer);
-		}
+		/* ':' will not be printed */
+		skip--;
+		width++;
+		idx = u_skip_chars(str, &skip, true);
+		gbuf_set(&print_buffer, ' ', -skip);
+		width += skip;
+		cmdline_cursor_x = win_w - 1 - context_w;
 	}
+	/* allow printing in ' ' space we kept at end, cursor isn't always there */
+	width++;
+	gbuf_add_ustr(&print_buffer, str + idx, &width);
+	dump_buffer(print_buffer.buffer);
+	gbuf_clear(&print_buffer);
+	clrtoeol();
 }
 
 static void set_title(const char *title)
@@ -1341,48 +1333,11 @@ static void do_update_titleline(void)
 	}
 }
 
-static int cmdline_cursor_column(void)
-{
-	char *str;
-	int cw, skip, s;
-
-	str = cmdline.line;
-	if (!using_utf8) {
-		/* see do_update_commandline */
-		utf8_encode_to_buf(cmdline.line);
-		str = conv_buffer;
-	}
-
-	/* width of the text in the buffer before cursor */
-	cw = u_str_nwidth(str, cmdline.cpos);
-
-	if (1 + cw < win_w) {
-		/* whole line is visible */
-		return 1 + cw;
-	}
-
-	/* beginning of cmdline is not visible */
-
-	/* check if the first visible char in cmdline would be halved
-	 * double-width character (or invalid byte <xx>) which is not possible.
-	 * we need to skip the whole character and move cursor to win_w - 2
-	 * column. */
-	skip = cw + 2 - win_w;
-
-	/* skip the ':' */
-	skip--;
-
-	/* skip rest */
-	s = skip;
-	u_skip_chars(str, &s, true);
-	return win_w - 1 + s;
-}
-
 static void post_update(void)
 {
 	/* refresh makes cursor visible at least for urxvt */
 	if (input_mode == COMMAND_MODE || input_mode == SEARCH_MODE) {
-		move(LINES - 1, cmdline_cursor_column());
+		move(LINES - 1, cmdline_cursor_x);
 		refresh();
 		curs_set(1);
 	} else {
@@ -1886,8 +1841,8 @@ static void update_window_size(void)
 #endif
 		w = COLS;
 		h = LINES - 3;
-		if (w < 3)
-			w = 3;
+		if (w < 4)
+			w = 4;
 		if (h < 2)
 			h = 2;
 		win_w = w;
