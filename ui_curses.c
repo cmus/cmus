@@ -2015,7 +2015,9 @@ static void update(void)
 	}
 
 	/* total time changed? */
-	if (play_library) {
+	if (cmus_queue_active()) {
+		needs_status_update += queue_needs_redraw();
+	} else if (play_library) {
 		needs_status_update += lib_editable.shared->win->changed;
 		lib_editable.shared->win->changed = 0;
 	} else {
