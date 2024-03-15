@@ -79,3 +79,18 @@ int play_queue_for_each(int (*cb)(void *data, struct track_info *ti),
 	}
 	return rc;
 }
+
+unsigned int play_queue_total_time(void)
+{
+	return pq_editable.total_time;
+}
+
+int queue_needs_redraw(void)
+{
+	return pq_editable.shared->win->changed;
+}
+
+void queue_post_update(void)
+{
+	pq_editable.shared->win->changed = 0;
+}
