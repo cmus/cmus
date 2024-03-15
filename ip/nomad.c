@@ -124,16 +124,17 @@ static int parse_lame(struct nomad *nomad, struct mad_bitptr ptr, int bitlen)
 	for (i = 0; i < 9; i++) nomad->lame.encoder[i] = (char)mad_bit_read(&ptr, 8);
 	nomad->lame.encoder[9] = '\0';
 
-	/* This is technically incorrect, since the encoder might not be lame.
+	/* This is technically incorrect, since the encoder might not be these.
 	 * But there's no other way to determine if this is a lame tag, and we
 	 * wouldn't want to go reading a tag that's not there. */
-	if (strncmp(nomad->lame.encoder, "LAME", 4) != 0) return 0;
+	if (strncmp(nomad->lame.encoder, "LAME", 4) != 0 &&
+			strncmp(nomad->lame.encoder, "Lavc", 4) != 0) return 0;
 
 	if (sscanf(nomad->lame.encoder + 4, "%u.%u", &version_major, &version_minor) != 2)
 		return 0;
 
 #if defined(DEBUG_LAME)
-	d_print("detected LAME version %s\n", nomad->lame.encoder + 4);
+	d_print("detected LAME or Lavc version %s\n", nomad->lame.encoder);
 #endif
 
 	i = mad_bit_read(&ptr, 4);
