@@ -2040,6 +2040,9 @@ static void update(void)
 			do_update_commandline();
 		post_update();
 	}
+
+	/* Reset changed flags */
+	queue_post_update();
 }
 
 static void handle_ch(uchar ch)

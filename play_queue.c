@@ -93,3 +93,8 @@ int queue_needs_redraw(void)
 {
 	return pq_editable.shared->win->changed;
 }
+
+void queue_post_update(void)
+{
+	pq_editable.shared->win->changed = 0;
+}
