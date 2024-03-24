@@ -562,8 +562,8 @@ static void fill_track_fopts_track_info(struct track_info *info)
 	fopt_set_str(&track_fopts[TF_PUBLISHER], keyvals_get_val(info->comments, "publisher"));
 	fopt_set_str(&track_fopts[TF_WORK], keyvals_get_val(info->comments, "work"));
 	fopt_set_str(&track_fopts[TF_OPUS], keyvals_get_val(info->comments, "opus"));
-	fopt_set_str(&track_fopts[TF_PARTNUMBER], keyvals_get_val(info->comments, "partnumber"));
-	fopt_set_str(&track_fopts[TF_PART], keyvals_get_val(info->comments, "part"));
+	fopt_set_str(&track_fopts[TF_PARTNUMBER], keyvals_get_val(info->comments, "discnumber"));
+	fopt_set_str(&track_fopts[TF_PART], keyvals_get_val(info->comments, "discnumber"));
 	fopt_set_str(&track_fopts[TF_SUBTITLE], keyvals_get_val(info->comments, "subtitle"));
 	fopt_set_str(&track_fopts[TF_MEDIA], info->media);
 	fopt_set_int(&track_fopts[TF_VA], 0, !track_is_compilation(info->comments));
