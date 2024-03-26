@@ -20,6 +20,8 @@ set color_titleline_fg=235
 # bottom status line: bg0_s/dark-aqua
 set color_statusline_bg=236
 set color_statusline_fg=72
+set color_statusline_progress_bg=234
+set color_statusline_progress_fg=72
 
 # command-line colors: bg/orange/light-red/light-yellow
 set color_cmdline_bg=235
