@@ -380,6 +380,7 @@ static void add_pl(const char *filename)
 		cmus_playlist_for_each(buf, size, reverse, handle_line, cwd);
 		free(cwd);
 		munmap(buf, size);
+		add_ti(NULL); // marks end of load
 	}
 }
 
@@ -421,7 +422,8 @@ static void job_handle_add_result(struct job_result *res)
 {
 	for (size_t i = 0; i < res->add_num; i++) {
 		res->add_cb(res->add_ti[i], res->add_opaque);
-		track_info_unref(res->add_ti[i]);
+		if (res->add_ti[i] != NULL)
+			track_info_unref(res->add_ti[i]);
 	}
 
 	free(res->add_ti);
