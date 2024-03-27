@@ -40,15 +40,19 @@ void play_queue_init(void)
 
 void play_queue_append(struct track_info *ti, void *opaque)
 {
-	struct simple_track *t = simple_track_new(ti);
+	if (!ti)
+		return;
 
+	struct simple_track *t = simple_track_new(ti);
 	editable_add(&pq_editable, t);
 }
 
 void play_queue_prepend(struct track_info *ti, void *opaque)
 {
-	struct simple_track *t = simple_track_new(ti);
+	if (!ti)
+		return;
 
+	struct simple_track *t = simple_track_new(ti);
 	editable_add_before(&pq_editable, t);
 }
 

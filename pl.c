@@ -44,6 +44,9 @@ struct playlist {
 	struct simple_track *cur_track;
 };
 
+char *pl_resume_name;
+unsigned long pl_resume_row;
+
 static struct playlist *pl_visible; /* never NULL */
 static struct playlist *pl_marked; /* never NULL */
 struct window *pl_list_win;
@@ -211,9 +214,29 @@ static void pl_add_track(struct playlist *pl, struct track_info *ti)
 	editable_add(&pl->editable, track);
 }
 
+static void pl_loaded(struct playlist *pl)
+{
+	if (!pl_resume_name || strcmp(pl->name, pl_resume_name) != 0
+			|| pl_resume_row >= pl->editable.nr_tracks)
+		return;
+
+	struct list_head *li = pl->editable.head.next;
+	for (int i = 0; i < pl_resume_row; i++)
+		li = li->next;
+	pl_playing_track = to_simple_track(li);
+	pl_playing = pl;
+	pl_select_playing_track();
+
+	free(pl_resume_name);
+	pl_resume_name = NULL;
+}
+
 static void pl_add_cb(struct track_info *ti, void *opaque)
 {
-	pl_add_track(opaque, ti);
+	if (ti)
+		pl_add_track(opaque, ti);
+	else
+		pl_loaded(opaque);
 }
 
 int pl_add_file_to_marked_pl(const char *file)
@@ -985,4 +1008,25 @@ void pl_set_marked_pl_by_name(const char *name)
 			return;
 		}
 	}
+}
+
+const char *pl_playing_pl_name(void)
+{
+	return pl_playing ? pl_playing->name : NULL;
+}
+
+int pl_playing_pl_row(void)
+{
+	struct list_head *li;
+	int n = 0;
+
+	if (!pl_playing_track)
+		return n;
+
+	list_for_each(li, &pl_playing->editable.head) {
+		if (li == &pl_playing_track->node)
+			break;
+		n++;
+	}
+	return n;
 }
