@@ -1126,6 +1126,9 @@ static void update_pl_view(int full)
 
 static void do_update_view(int full)
 {
+	if (!ui_initialized)
+		return;
+
 	cursor_x = -1;
 	cursor_y = -1;
 
