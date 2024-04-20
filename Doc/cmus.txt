@@ -711,6 +711,9 @@ version
 view <name or 1-7>
 	Changes the active view.
 
+	Do not use this in `$XDG_CONFIG_HOME/cmus/rc` to change the starting
+	view. Set the *start_view* option instead.
+
 vol [+-]NUM[%] [[+-]NUM[%]]
 	Changes the volume.
 
