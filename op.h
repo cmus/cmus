@@ -61,6 +61,7 @@ struct output_plugin_ops {
 	/* these can be NULL */
 	int (*pause)(void);
 	int (*unpause)(void);
+	int (*buffer_space_delay)(void);
 
 };
 

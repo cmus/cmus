@@ -298,6 +298,13 @@ int op_buffer_space(void)
 	return op->pcm_ops->buffer_space();
 }
 
+int op_buffer_space_delay(void)
+{
+	if (op->pcm_ops->buffer_space_delay == NULL)
+		return 25;
+	return op->pcm_ops->buffer_space_delay();
+}
+
 int mixer_set_volume(int left, int right)
 {
 	if (op == NULL)
