@@ -35,6 +35,9 @@ struct pl_list_info {
 extern struct window *pl_list_win;
 extern struct editable_shared pl_editable_shared;
 
+extern char *pl_resume_name;
+extern unsigned long pl_resume_row;
+
 void pl_init(void);
 void pl_init_options(void);
 void pl_exit(void);
@@ -69,6 +72,8 @@ int pl_get_cursor_in_track_window(void);
 int pl_visible_is_marked(void);
 const char *pl_marked_pl_name(void);
 void pl_set_marked_pl_by_name(const char *name);
+const char *pl_playing_pl_name(void);
+int pl_playing_pl_row(void);
 
 void pl_mark_for_redraw(void);
 int pl_needs_redraw(void);
