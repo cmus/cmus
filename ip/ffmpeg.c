@@ -238,7 +238,7 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 
 	/* Prepare for resampling. */
 	swr = swr_alloc();
-#if LIBAVCODEC_VERSION_MAJOR >= 58
+#if LIBAVCODEC_VERSION_MAJOR >= 60
 	if (cc->ch_layout.order == AV_CHANNEL_ORDER_UNSPEC)
 		av_channel_layout_default(&cc->ch_layout, cc->ch_layout.nb_channels);
 	av_opt_set_chlayout(swr, "in_chlayout",   &cc->ch_layout, 0);
@@ -253,7 +253,7 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 	priv->swr = swr;
 
 	ip_data->private = priv;
-#if LIBAVCODEC_VERSION_MAJOR >= 58
+#if LIBAVCODEC_VERSION_MAJOR >= 60
 	ip_data->sf = sf_rate(cc->sample_rate) | sf_channels(cc->ch_layout.nb_channels);
 #else
 	ip_data->sf = sf_rate(cc->sample_rate) | sf_channels(cc->channels);
@@ -275,7 +275,7 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 	}
 	swr_init(swr);
 	ip_data->sf |= sf_host_endian();
-#if LIBAVCODEC_VERSION_MAJOR >= 58
+#if LIBAVCODEC_VERSION_MAJOR >= 60
 	channel_map_init_waveex(cc->ch_layout.nb_channels, cc->ch_layout.u.mask, ip_data->channel_map);
 #else
 	channel_map_init_waveex(cc->channels, cc->channel_layout, ip_data->channel_map);
@@ -391,7 +391,7 @@ static int ffmpeg_fill_buffer(AVFormatContext *ic, AVCodecContext *cc, struct ff
 			if (res < 0)
 				res = 0;
 			output->buffer_pos = output->buffer;
-#if LIBAVCODEC_VERSION_MAJOR >= 58
+#if LIBAVCODEC_VERSION_MAJOR >= 60
 			output->buffer_used_len = res * cc->ch_layout.nb_channels * sizeof(int16_t);
 #else
 			output->buffer_used_len = res * cc->channels * sizeof(int16_t);
