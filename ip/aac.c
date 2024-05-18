@@ -205,6 +205,7 @@ static void aac_get_channel_map(struct input_plugin_data *ip_data)
 		return;
 
 	buf = NeAACDecDecode(priv->decoder, &frame_info, buffer_data(ip_data), buffer_length(ip_data));
+	NeAACDecPostSeekReset(priv->decoder, 0);
 	if (!buf || frame_info.error != 0 || frame_info.bytesconsumed <= 0
 			|| frame_info.channels > CHANNELS_MAX)
 		return;
@@ -457,6 +458,8 @@ static int aac_duration(struct input_plugin_data *ip_data)
 
 	if (frames == 0)
 		return -IP_ERROR_FUNCTION_NOT_SUPPORTED;
+
+	NeAACDecPostSeekReset(priv->decoder, 0);
 
 	samples /= frames;
 	samples /= priv->channels;
