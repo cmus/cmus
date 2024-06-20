@@ -191,6 +191,11 @@ extern char *list_win_alt_format;
 extern char *current_format;
 extern char *current_alt_format;
 
+/* format string for trackwin heading bar */
+extern char *heading_album_format;
+extern char *heading_artist_format;
+extern char *heading_playlist_format;
+
 /* format string for status line */
 extern char *statusline_format;
 

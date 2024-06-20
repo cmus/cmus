@@ -175,7 +175,7 @@ The right hand side of the status line (second row from the bottom, black text
 on a grey background) consists of the following fields:
 
 @pre
-aaa_mode & play_sorted & play_library | continue follow repeat shuffle
+aaa_mode & play_sorted & play_library | volume | continue follow repeat shuffle
 @endpre
 
 NOTE: *aaa_mode* and *play_sorted* will be only displayed if *play_library* is
@@ -1053,6 +1053,17 @@ format_clipped_text [`Plain String`]
 
 format_current [`Format String`]
 	Format string for the line displaying currently playing track.
+
+format_heading_album [`Format String`]
+	Format string for the track window heading line when an album is selected
+	in the tree.
+
+format_heading_artist [`Format String`]
+	Format string for the track window heading line when an artist is selected
+	in the tree.
+
+format_heading_playlist [`Format String`]
+	Format string for the heading line in the playlist view (3).
 
 format_playlist [`Format String`]
 	Format string for the list views (2-4).
