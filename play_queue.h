@@ -30,5 +30,8 @@ void play_queue_prepend(struct track_info *ti, void *opaque);
 struct track_info *play_queue_remove(void);
 int play_queue_for_each(int (*cb)(void *data, struct track_info *ti),
 		void *data, void *opaque);
+unsigned int play_queue_total_time(void);
+int queue_needs_redraw(void);
+void queue_post_update(void);
 
 #endif
