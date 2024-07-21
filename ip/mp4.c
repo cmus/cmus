@@ -25,6 +25,7 @@
 #include "../config/mp4.h"
 #endif
 #include "../comment.h"
+#include "../utils.h"
 #include "aac.h"
 
 #if USE_MPEG4IP
@@ -41,12 +42,19 @@
 #include <unistd.h>
 #include <strings.h>
 
+/* no perfect fallback, for example faac uses only 1024 samples to prime */
+#define ENCODER_DELAY_DEFAULT 2112
+
 struct mp4_private {
 	char *overflow_buf;
 	int overflow_buf_len;
 
 	unsigned char channels;
 	unsigned long sample_rate;
+	unsigned long frame_size;
+	unsigned long encoder_delay;
+	unsigned long drop_samples;
+	unsigned long decoded_samples;
 
 	NeAACDecHandle decoder;		/* typedef void * */
 
@@ -54,8 +62,10 @@ struct mp4_private {
 		MP4FileHandle handle;	/* typedef void * */
 
 		MP4TrackId track;
-		MP4SampleId sample;
+		MP4SampleId sample;     /* "media sample" (AAC access unit) id */
 		MP4SampleId num_samples;
+		MP4Duration duration;   /* audio samples, including encoder delay */
+		uint32_t scale;         /* sample_rate but from mp4 header */
 	} mp4;
 
 	struct {
@@ -64,6 +74,30 @@ struct mp4_private {
 	} current;
 };
 
+static bool try_iTunSMPB(struct mp4_private *priv)
+{
+	/* SMPB == seamless playback, older tag for gapless playback */
+	MP4ItmfItemList *itmf_list = MP4ItmfGetItemsByMeaning(priv->mp4.handle, "com.apple.iTunes", "iTunSMPB");
+	if (!itmf_list)
+		return false;
+
+	MP4ItmfItem* item = itmf_list->elements;
+	if (item == NULL || item->dataList.size == 0) {
+		MP4ItmfItemListFree(itmf_list);
+		return false;
+	}
+
+	char *pos = item->dataList.elements[0].value;
+	(void)strtol(pos, &pos, 16); // pad
+	unsigned long delay = strtol(pos, &pos, 16);
+	(void)strtol(pos, &pos, 16); // remainder
+	unsigned long samples = strtol(pos, &pos, 16);
+	priv->encoder_delay = delay;
+	priv->mp4.duration = delay + samples;
+
+	MP4ItmfItemListFree(itmf_list);
+	return true;
+}
 
 static MP4TrackId mp4_get_track(MP4FileHandle *handle)
 {
@@ -123,6 +157,9 @@ static void mp4_get_channel_map(struct input_plugin_data *ip_data)
 	NeAACDecDecode(priv->decoder, &frame_info, aac_data, aac_data_len);
 	free(aac_data);
 
+	/* avoid squash of first frame by starting at 1 */
+	NeAACDecPostSeekReset(priv->decoder, 1);
+
 	if (frame_info.error != 0 || frame_info.bytesconsumed <= 0
 			|| frame_info.channels > CHANNELS_MAX)
 		return;
@@ -149,6 +186,8 @@ static int mp4_open(struct input_plugin_data *ip_data)
 	int rc = -IP_ERROR_FILE_FORMAT;
 
 	const struct mp4_private priv_init = {
+		.frame_size = 1024,
+		.decoded_samples = 0,
 		.decoder = NULL
 	};
 
@@ -193,17 +232,55 @@ static int mp4_open(struct input_plugin_data *ip_data)
 	}
 
 	priv->mp4.num_samples = MP4GetTrackNumberOfSamples(priv->mp4.handle, priv->mp4.track);
-
 	priv->mp4.sample = 1;
+	priv->mp4.duration = MP4GetTrackDuration(priv->mp4.handle, priv->mp4.track);
+	priv->mp4.scale = MP4GetTrackTimeScale(priv->mp4.handle, priv->mp4.track);
+	if (priv->mp4.scale == 0) {
+		rc = -IP_ERROR_INTERNAL;
+		goto out;
+	}
+
+	if (MP4GetTrackNumberOfEdits(priv->mp4.handle, priv->mp4.track) == 1) {
+		priv->encoder_delay = MP4GetTrackEditMediaStart(priv->mp4.handle, priv->mp4.track, 1); // usually 2048
+
+		/* The Edit List reliably gives the original duration excluding encoder delay (but
+		 * typically only in ms precision). We can convert this to samples and check whether
+		 * the sample accurate TrackDuration includes encoder delay. By my understanding it
+		 * should not, but in the files with an Edit List I looked at it did.
+		 *
+		 * Could just skip the rest of this block and still be mostly compatible...
+		 */
+		uint32_t movie_scale = MP4GetTimeScale(priv->mp4.handle); // usually 1000
+		MP4Duration movie_duration = MP4GetTrackEditDuration(priv->mp4.handle, priv->mp4.track, 1); // usually in ms
+		MP4Duration orig_samples_low_prec = movie_duration * priv->mp4.scale / movie_scale;
+		MP4Duration total_samples_low_prec = priv->encoder_delay + orig_samples_low_prec;
+
+		if (abs_delta(priv->mp4.duration, orig_samples_low_prec) < 100)
+			priv->mp4.duration += priv->encoder_delay;
+		else if (abs_delta(priv->mp4.duration, total_samples_low_prec) > 100)
+			priv->mp4.duration = total_samples_low_prec;
+	} else if (try_iTunSMPB(priv)) {
+		// nothing
+	} else {
+		priv->encoder_delay = ENCODER_DELAY_DEFAULT;
+		priv->mp4.duration += ENCODER_DELAY_DEFAULT;
+	}
+	priv->drop_samples = priv->encoder_delay;
 
 	buf = NULL;
 	buf_size = 0;
+	mp4AudioSpecificConfig mp4ASC = {0};
 	if (!MP4GetTrackESConfiguration(priv->mp4.handle, priv->mp4.track, &buf, &buf_size)) {
 		/* failed to get mpeg-4 audio config... this is ok.
 		 * NeAACDecInit2() will simply use default values instead.
 		 */
 		buf = NULL;
 		buf_size = 0;
+	} else if (NeAACDecAudioSpecificConfig(buf, buf_size, &mp4ASC) >= 0) {
+		if (mp4ASC.frameLengthFlag == 1)
+			priv->frame_size = 960;
+		if (mp4ASC.sbr_present_flag == 1 || mp4ASC.forceUpSampling)
+			priv->frame_size *= 2;
 	}
 
 	/* init decoder according to mpeg-4 audio config */
@@ -285,11 +362,6 @@ static int decode_one_frame(struct input_plugin_data *ip_data, void *buffer, int
 	}
 
 	sample_buf = NeAACDecDecode(priv->decoder, &frame_info, aac_data, aac_data_len);
-	if (frame_info.error == 0 && frame_info.samples > 0) {
-		priv->current.samples += frame_info.samples;
-		priv->current.bytes += frame_info.bytesconsumed;
-	}
-
 	free(aac_data);
 
 	if (!sample_buf || frame_info.bytesconsumed <= 0) {
@@ -301,6 +373,27 @@ static int decode_one_frame(struct input_plugin_data *ip_data, void *buffer, int
 	if (frame_info.error != 0) {
 		d_print("frame error: %s\n", NeAACDecGetErrorMessage(frame_info.error));
 		return -2;
+	}
+
+	priv->current.samples += frame_info.samples;
+	priv->current.bytes += frame_info.bytesconsumed;
+
+	/* gapless handling */
+
+	int frame_samples = frame_info.samples / frame_info.channels;
+	priv->decoded_samples += frame_samples;
+
+	if (priv->drop_samples) {
+		int skip = min_u(priv->drop_samples, frame_samples);
+		priv->drop_samples -= skip;
+		frame_samples -= skip;
+		frame_info.samples = frame_samples * frame_info.channels;
+		memmove(sample_buf, sample_buf + (skip * frame_info.channels * 2), frame_info.samples * 2);
+	}
+	if (priv->decoded_samples > priv->mp4.duration) {
+		int extra_samples = (priv->decoded_samples - priv->mp4.duration) * frame_info.channels;
+		if (frame_info.samples >= extra_samples)
+			frame_info.samples -= extra_samples;
 	}
 
 	if (frame_info.samples <= 0)
@@ -359,20 +452,23 @@ static int mp4_seek(struct input_plugin_data *ip_data, double offset)
 {
 	struct mp4_private *priv;
 	MP4SampleId sample;
-	uint32_t scale;
 
 	priv = ip_data->private;
 
-	scale = MP4GetTrackTimeScale(priv->mp4.handle, priv->mp4.track);
-	if (scale == 0)
-		return -IP_ERROR_INTERNAL;
-
 	sample = MP4GetSampleIdFromTime(priv->mp4.handle, priv->mp4.track,
-		(MP4Timestamp)(offset * (double)scale), 0);
+		(MP4Timestamp)(offset * (double)priv->mp4.scale), 1);
 	if (sample == MP4_INVALID_SAMPLE_ID)
 		return -IP_ERROR_INTERNAL;
 
 	priv->mp4.sample = sample;
+	priv->decoded_samples = (sample - 1) * priv->frame_size;
+
+	if (priv->decoded_samples < priv->encoder_delay)
+		priv->drop_samples = priv->encoder_delay - priv->decoded_samples;
+	else
+		priv->drop_samples = 0;
+
+	NeAACDecPostSeekReset(priv->decoder, sample);
 
 	d_print("seeking to sample %d\n", sample);
 
@@ -522,18 +618,10 @@ static int mp4_read_comments(struct input_plugin_data *ip_data,
 static int mp4_duration(struct input_plugin_data *ip_data)
 {
 	struct mp4_private *priv;
-	uint32_t scale;
-	uint64_t duration;
 
 	priv = ip_data->private;
 
-	scale = MP4GetTrackTimeScale(priv->mp4.handle, priv->mp4.track);
-	if (scale == 0)
-		return 0;
-
-	duration = MP4GetTrackDuration(priv->mp4.handle, priv->mp4.track);
-
-	return duration / scale;
+	return priv->mp4.duration / priv->mp4.scale;
 }
 
 static long mp4_bitrate(struct input_plugin_data *ip_data)
