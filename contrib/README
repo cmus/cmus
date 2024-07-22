@@ -8,3 +8,6 @@ cmus-updategaim.py
 cmus-updatepidgin.py
 	Based on Joshua's cmus-updategaim.py script.
 	David Thiel <lx@redundancy.redundancy.org>
+
+cmus-autoupdate.py
+	Mike S. Stevenson <mikess@disroot.org>
