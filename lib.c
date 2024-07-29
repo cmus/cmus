@@ -213,6 +213,9 @@ static bool track_exists(struct track_info *ti)
 
 void lib_add_track(struct track_info *ti, void *opaque)
 {
+	if (!ti)
+		return;
+
 	if (add_filter && !expr_eval(add_filter, ti)) {
 		/* filter any files excluded by lib_add_filter */
 		return;
