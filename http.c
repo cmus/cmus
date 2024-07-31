@@ -21,6 +21,7 @@
 #include "debug.h"
 #include "xmalloc.h"
 #include "gbuf.h"
+#include "utils.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -54,7 +55,7 @@ int http_parse_uri(const char *uri, struct http_uri *u)
 	u->path = NULL;
 	u->port = 80;
 
-	if (strncmp(uri, "http://", 7))
+	if (!is_http_url(uri))
 		return -1;
 	str = uri + 7;
 	host_start = str;

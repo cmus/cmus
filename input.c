@@ -415,9 +415,13 @@ static void ip_init(struct input_plugin *ip, char *filename)
 		.duration           = -1,
 		.bitrate            = -1,
 		.data = {
-			.fd         = -1,
+			.fd_or_ssl = {
+				.fd 		= -1,
+				.ssl		= NULL,
+			},
 			.filename   = filename,
-			.remote     = is_http_url(filename),
+			.remote     = is_http_or_https_url(filename),
+			.https 		= is_https_url(filename),
 			.channel_map = CHANNEL_MAP_INIT
 		}
 	};

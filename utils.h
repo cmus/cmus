@@ -193,6 +193,16 @@ static inline int is_http_url(const char *name)
 	return strncmp(name, "http://", 7) == 0;
 }
 
+static inline int is_https_url(const char *name)
+{
+	return strncmp(name, "https://", 8) == 0;
+}
+
+static inline int is_http_or_https_url(const char *name)
+{
+	return is_http_url(name) || is_https_url(name);
+}
+
 static inline int is_cdda_url(const char *name)
 {
 	return strncmp(name, "cdda://", 7) == 0;
