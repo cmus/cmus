@@ -574,7 +574,7 @@ static void fill_track_fopts_track_info(struct track_info *info)
 	fopt_set_str(&track_fopts[TF_SUBTITLE], keyvals_get_val(info->comments, "subtitle"));
 	fopt_set_str(&track_fopts[TF_MEDIA], info->media);
 	fopt_set_int(&track_fopts[TF_VA], 0, !track_is_compilation(info->comments));
-	if (is_http_url(info->filename)) {
+	if (is_http_or_https_url(info->filename)) {
 		fopt_set_str(&track_fopts[TF_FILE], filename);
 	} else {
 		fopt_set_str(&track_fopts[TF_FILE], path_basename(filename));
@@ -1375,7 +1375,7 @@ static void do_update_titleline(void)
 
 		use_alt_format = !track_info_has_tag(player_info.ti);
 
-		if (is_http_url(player_info.ti->filename)) {
+		if (is_http_or_https_url(player_info.ti->filename)) {
 			const char *title = get_stream_title();
 
 			if (title != NULL) {
@@ -1786,7 +1786,7 @@ static int fill_status_program_track_info_args(char **argv, int i, struct track_
 	/* returns first free argument index */
 
 	const char *stream_title = NULL;
-	if (player_info.status == PLAYER_STATUS_PLAYING && is_http_url(ti->filename))
+	if (player_info.status == PLAYER_STATUS_PLAYING && is_http_or_https_url(ti->filename))
 		stream_title = get_stream_title();
 
 	static const char *keys[] = {
@@ -1795,7 +1795,7 @@ static int fill_status_program_track_info_args(char **argv, int i, struct track_
 	};
 	int j;
 
-	if (is_http_url(ti->filename)) {
+	if (is_http_or_https_url(ti->filename)) {
 		argv[i++] = xstrdup("url");
 	} else {
 		argv[i++] = xstrdup("file");

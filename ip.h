@@ -22,6 +22,7 @@
 #include "keyval.h"
 #include "sf.h"
 #include "channelmap.h"
+#include "https.h"
 
 #ifndef __GNUC__
 #include <fcntl.h>
@@ -66,9 +67,11 @@ enum {
 struct input_plugin_data {
 	/* filled by ip-layer */
 	char *filename;
+	sockfd_or_ssl fd_or_ssl; // replacing former "int fd;"
 	int fd;
-
+	
 	unsigned int remote : 1;
+	unsigned int https : 1;
 	unsigned int metadata_changed : 1;
 
 	/* shoutcast */
