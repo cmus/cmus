@@ -102,7 +102,7 @@ static int cmd_status(struct client *client)
 
 	/* add track metadata to cmus-status */
 	status = player_info.status;
-	if (status == PLAYER_STATUS_PLAYING && ti && is_http_url(player_info.ti->filename)) {
+	if (status == PLAYER_STATUS_PLAYING && ti && is_http_or_https_url(player_info.ti->filename)) {
 	const char *title = get_stream_title();
 		if (title != NULL) {
 			free(title_buf);
