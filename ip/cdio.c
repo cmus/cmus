@@ -294,7 +294,7 @@ static int parse_cddb_url(const char *url, struct http_uri *http_uri, int *use_h
 	char *full_url;
 	int rc;
 
-	if (is_http_or_https_url(url)) {
+	if (is_http_url(url)) {
 		*use_http = 1;
 		full_url = xstrdup(url);
 	} else {
