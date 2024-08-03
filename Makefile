@@ -22,7 +22,7 @@ FFMPEG_CFLAGS += $(shell pkg-config --cflags libswresample)
 FFMPEG_LIBS += $(shell pkg-config --libs libswresample)
 
 CMUS_LIBS = $(PTHREAD_LIBS) $(NCURSES_LIBS) $(ICONV_LIBS) $(DL_LIBS) $(DISCID_LIBS) \
-			-lm $(COMPAT_LIBS) $(LIBSYSTEMD_LIBS)
+			-lm $(COMPAT_LIBS) $(LIBSYSTEMD_LIBS) $(OPENSSL_LIBS)
 
 command_mode.o input.o main.o ui_curses.o op/pulse.lo: .version
 command_mode.o input.o main.o ui_curses.o op/pulse.lo: CFLAGS += -DVERSION=\"$(VERSION)\"
@@ -38,7 +38,7 @@ mpris.o: CFLAGS += $(LIBSYSTEMD_CFLAGS)
 cmus-y := \
 	ape.o browser.o buffer.o cache.o channelmap.o cmdline.o cmus.o command_mode.o \
 	comment.o convert.lo cue.o cue_utils.o debug.o discid.o editable.o expr.o \
-	filters.o format_print.o gbuf.o glob.o help.o history.o http.o id3.o input.o \
+	filters.o format_print.o gbuf.o glob.o help.o history.o http.o https.o id3.o input.o \
 	job.o keys.o keyval.o lib.o load_dir.o locking.o mergesort.o misc.o options.o \
 	output.o pcm.o player.o play_queue.o pl.o pl_env.o rbtree.o read_wrapper.o \
 	search_mode.o search.o server.o spawn.o tabexp_file.o tabexp.o track_info.o \
@@ -46,7 +46,7 @@ cmus-y := \
 
 cmus-$(CONFIG_MPRIS) += mpris.o
 
-$(cmus-y): CFLAGS += $(PTHREAD_CFLAGS) $(NCURSES_CFLAGS) $(ICONV_CFLAGS) $(DL_CFLAGS)
+$(cmus-y): CFLAGS += $(PTHREAD_CFLAGS) $(NCURSES_CFLAGS) $(ICONV_CFLAGS) $(DL_CFLAGS) $(OPENSSL_CFLAGS)
 
 cmus: $(cmus-y) file.o path.o prog.o xmalloc.o
 	$(call cmd,ld,$(CMUS_LIBS))

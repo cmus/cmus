@@ -226,6 +226,13 @@ check_ncurses()
 	return 0
 }
 
+check_openssl()
+{
+	pkg_config OPENSSL "openssl >= 3.3" "" "-lopenssl -lcrypto"
+	OPENSSL_CFLAGS="$OPENSSL_CFLAGS -DOPENSSL_NO_DEPRECATED" # hide deprecated openssl functions
+	return $?
+}
+
 check_discid()
 {
 	HAVE_DISCID=n
@@ -610,6 +617,7 @@ check check_rtsched
 check check_ncurses
 check check_iconv
 check check_wcwidth
+check check_openssl
 check_header byteswap.h && HAVE_BYTESWAP_H=y
 check_string_function "strdup" && HAVE_STRDUP=y
 check_string_function "strndup" && HAVE_STRNDUP=y
