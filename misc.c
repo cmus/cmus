@@ -40,6 +40,7 @@ const char *cmus_playlist_dir = NULL;
 const char *cmus_socket_path = NULL;
 const char *cmus_data_dir = NULL;
 const char *cmus_lib_dir = NULL;
+const char *cmus_cache_dir = NULL;
 const char *home_dir = NULL;
 
 char **get_words(const char *text)
@@ -261,6 +262,16 @@ int misc_init(void)
 			cmus_socket_path = xstrjoin(xdg_runtime_dir, "/cmus-socket");
 		}
 	}
+
+	char *xdg_cache_dir = get_non_empty_env("XDG_CACHE_HOME");
+	if (xdg_cache_dir == NULL)
+		xdg_cache_dir = xstrjoin(home_dir, "/.cache");
+
+	cmus_cache_dir = get_non_empty_env("CMUS_CACHE_DIR");
+	if (!cmus_cache_dir)
+		cmus_cache_dir = xstrjoin(xdg_cache_dir, "/cmus");
+	make_dir(cmus_cache_dir);
+	free(xdg_cache_dir);
 
 	cmus_lib_dir = getenv("CMUS_LIB_DIR");
 	if (!cmus_lib_dir)

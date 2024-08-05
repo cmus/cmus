@@ -26,6 +26,7 @@ extern const char *cmus_playlist_dir;
 extern const char *cmus_socket_path;
 extern const char *cmus_data_dir;
 extern const char *cmus_lib_dir;
+extern const char *cmus_cache_dir;
 extern const char *home_dir;
 
 char **get_words(const char *text);

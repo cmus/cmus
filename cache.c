@@ -284,7 +284,7 @@ int cache_init(void)
 	/* assumed version */
 	cache_header[3] = CACHE_VERSION;
 
-	cache_filename = xstrjoin(cmus_config_dir, "/cache");
+	cache_filename = xstrjoin(cmus_cache_dir, "/cache");
 	return read_cache();
 }
 
@@ -391,7 +391,7 @@ int cache_close(void)
 	int i, fd, rc;
 	char *tmp;
 
-	tmp = xstrjoin(cmus_config_dir, "/cache.tmp");
+	tmp = xstrjoin(cmus_cache_dir, "/cache.tmp");
 	fd = open(tmp, O_WRONLY | O_CREAT | O_TRUNC, 0666);
 	if (fd < 0) {
 		free(tmp);
