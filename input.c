@@ -210,11 +210,18 @@ static int do_http_get(struct http_get *hg, const char *uri, int redirections)
 	hg->reason = NULL;
 	hg->proxy = NULL;
 	hg->code = -1;
+	hg->is_https = is_https_url(uri);
+	hg->ssl_context = NULL;
+	hg->conn->ssl = NULL;
 	hg->fd = -1;
-	if (http_parse_uri(uri, &hg->uri))
+	hg->conn->fd_ref = &hg->fd;
+	hg->conn->write = hg->is_https ? &https_write : &socket_write;
+	hg->conn->read = hg-> is_https ? &https_read : &socket_read;
+
+	if (parse_uri(uri, &hg->uri))
 		return -IP_ERROR_INVALID_URI;
 
-	if (http_open(hg, http_connection_timeout))
+	if (open_connection(hg, http_connection_timeout))
 		return -IP_ERROR_ERRNO;
 
 	keyvals_add(&h, "Host", xstrdup(hg->uri.host));
@@ -260,8 +267,7 @@ static int do_http_get(struct http_get *hg, const char *uri, int redirections)
 
 		redirloc = xstrdup(val);
 		http_get_free(hg);
-		close(hg->fd);
-
+		close_connection(hg->conn, hg->ssl_context);
 		rc = do_http_get(hg, redirloc, redirections);
 
 		free(redirloc);
@@ -271,7 +277,16 @@ static int do_http_get(struct http_get *hg, const char *uri, int redirections)
 	}
 }
 
-static int setup_remote(struct input_plugin *ip, const struct keyval *headers, int sock)
+static void copy_connection_parameters(struct input_plugin_data *dst, const struct connection *src)
+{
+	dst->fd = *src->fd_ref;	
+	dst->conn.fd_ref = &dst->fd;
+
+	dst->conn.ssl = src->ssl;
+	dst->conn.read = dst->https ? &https_read : &socket_read;
+}
+
+static int setup_remote(struct input_plugin *ip, const struct keyval *headers, connection *conn)
 {
 	const char *val;
 
@@ -281,7 +296,7 @@ static int setup_remote(struct input_plugin *ip, const struct keyval *headers, i
 		ip->ops = get_ops_by_mime_type(val);
 		if (ip->ops == NULL) {
 			d_print("unsupported content type: %s\n", val);
-			close(sock);
+			close_connection(conn, ip->data.ssl_context);
 			return -IP_ERROR_FILE_FORMAT;
 		}
 	} else {
@@ -291,14 +306,14 @@ static int setup_remote(struct input_plugin *ip, const struct keyval *headers, i
 		ip->ops = get_ops_by_mime_type(type);
 		if (ip->ops == NULL) {
 			d_print("unsupported content type: %s\n", type);
-			close(sock);
+			close_connection(conn, ip->data.ssl_context);
 			return -IP_ERROR_FILE_FORMAT;
 		}
 	}
 
-	ip->data.fd = sock;
 	ip->data.metadata = xnew(char, 16 * 255 + 1);
 
+	copy_connection_parameters(&ip->data, conn);
 	val = keyvals_get_val(headers, "icy-metaint");
 	if (val) {
 		long int lint;
@@ -330,10 +345,19 @@ struct read_playlist_data {
 	int count;
 };
 
+static void link_connection_to_hg(struct http_get *hg, struct connection *conn)
+{
+	hg->conn = conn;
+	conn->fd_ref = &hg->fd;
+
+}
+
 static int handle_line(void *data, const char *uri)
 {
 	struct read_playlist_data *rpd = data;
+	struct connection conn;
 	struct http_get hg;
+	link_connection_to_hg(&hg, &conn);
 
 	rpd->count++;
 	rpd->rc = do_http_get(&hg, uri, 0);
@@ -341,26 +365,34 @@ static int handle_line(void *data, const char *uri)
 		rpd->ip->http_code = hg.code;
 		rpd->ip->http_reason = hg.reason;
 		if (hg.fd >= 0)
-			close(hg.fd);
+			close_connection(hg.conn, hg.ssl_context);
 
 		hg.reason = NULL;
 		http_get_free(&hg);
 		return 0;
 	}
 
-	rpd->rc = setup_remote(rpd->ip, hg.headers, hg.fd);
+	rpd->ip->data.ssl_context = hg.ssl_context;
+	rpd->rc = setup_remote(rpd->ip, hg.headers, hg.conn);
 	http_get_free(&hg);
 	return 1;
 }
 
-static int read_playlist(struct input_plugin *ip, int sock)
+static void set_fd(struct input_plugin_data *data, int fd)
+{
+	data->fd = fd;
+	data->conn.fd_ref = &data->fd;
+}
+
+static int read_playlist(struct input_plugin *ip)
 {
 	struct read_playlist_data rpd = { ip, 0, 0 };
 	char *body;
 	size_t size;
-
-	body = http_read_body(sock, &size, http_read_timeout);
-	close(sock);
+	connection *conn = &ip->data.conn;
+	set_fd(&ip->data, ip->data.fd);
+	body = http_read_body(conn, &size, http_read_timeout);
+	close_connection(conn, ip->data.ssl_context);
 	if (!body)
 		return -IP_ERROR_ERRNO;
 
@@ -376,7 +408,11 @@ static int read_playlist(struct input_plugin *ip, int sock)
 static int open_remote(struct input_plugin *ip)
 {
 	struct input_plugin_data *d = &ip->data;
+	struct connection conn;
 	struct http_get hg;
+	hg.conn = &conn;
+	hg.ssl_context = d->ssl_context;
+
 	const char *val;
 	int rc;
 
@@ -397,12 +433,11 @@ static int open_remote(struct input_plugin *ip)
 			if (!strcasecmp(val, pl_mime_types[i])) {
 				d_print("Content-Type: %s\n", val);
 				http_get_free(&hg);
-				return read_playlist(ip, hg.fd);
+				return read_playlist(ip);
 			}
 		}
 	}
-
-	rc = setup_remote(ip, hg.headers, hg.fd);
+	rc = setup_remote(ip, hg.headers, hg.conn);
 	http_get_free(&hg);
 	return rc;
 }
@@ -415,9 +450,13 @@ static void ip_init(struct input_plugin *ip, char *filename)
 		.duration           = -1,
 		.bitrate            = -1,
 		.data = {
-			.fd_or_ssl = {
-				.fd 		= -1,
+			.fd 		= -1,
+			.ssl_context = NULL,
+			.conn = {
+				.fd_ref 	= NULL,
 				.ssl		= NULL,
+				.read		= NULL,
+				.write		= NULL,
 			},
 			.filename   = filename,
 			.remote     = is_http_or_https_url(filename),
@@ -426,6 +465,7 @@ static void ip_init(struct input_plugin *ip, char *filename)
 		}
 	};
 	*ip = t;
+	set_fd(&ip->data, -1);
 }
 
 static void ip_reset(struct input_plugin *ip, int close_fd)
@@ -435,10 +475,10 @@ static void ip_reset(struct input_plugin *ip, int close_fd)
 	ip_init(ip, ip->data.filename);
 	if (fd != -1) {
 		if (close_fd)
-			close(fd);
+			close_connection(&ip->data.conn, ip->data.ssl_context);
 		else {
 			lseek(fd, 0, SEEK_SET);
-			ip->data.fd = fd;
+			set_fd(&ip->data, fd);
 		}
 	}
 }
@@ -644,9 +684,11 @@ void ip_setup(struct input_plugin *ip)
 int ip_close(struct input_plugin *ip)
 {
 	int rc;
-
+	connection *conn = &ip->data.conn;
 	rc = ip->ops->close(&ip->data);
 	BUG_ON(ip->data.private);
+	if (ip->data.conn.ssl != NULL)
+		ssl_close(conn, ip->data.ssl_context);
 	if (ip->data.fd != -1)
 		close(ip->data.fd);
 	free(ip->data.metadata);
@@ -988,6 +1030,9 @@ char *ip_get_error_msg(struct input_plugin *ip, int rc, const char *arg)
 		break;
 	case IP_ERROR_HTTP_REDIRECT_LIMIT:
 		snprintf(buffer, sizeof(buffer), "%s: too many HTTP redirections", arg);
+		break;
+	case IP_ERROR_OPENSSL:
+		snprintf(buffer, sizeof(buffer), "%s: OpenSSL connection failed", arg);
 		break;
 	case IP_ERROR_NOT_OPTION:
 		snprintf(buffer, sizeof(buffer),

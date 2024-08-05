@@ -20,10 +20,12 @@
 #define CMUS_READ_WRAPPER_H
 
 #include "ip.h"
+#include "ssl.h" /* struct connection */
 
 #include <stddef.h> /* size_t */
 #include <sys/types.h> /* ssize_t */
 
 ssize_t read_wrapper(struct input_plugin_data *ip_data, void *buffer, size_t count);
+ssize_t read_all_from_conn(struct connection *conn, void *buf, size_t count);
 
 #endif
