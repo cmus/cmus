@@ -20,15 +20,17 @@
 #include "ip.h"
 #include "file.h"
 
-#include <unistd.h>
+#include <errno.h>
 
 ssize_t read_wrapper(struct input_plugin_data *ip_data, void *buffer, size_t count)
 {
 	int rc;
+	connection_read read = ip_data->conn.read;
+	struct connection *conn = &ip_data->conn;
 
 	if (ip_data->metaint == 0) {
 		/* no metadata in the stream */
-		return read(ip_data->fd, buffer, count);
+		return read(&ip_data->conn, buffer, count);
 	}
 
 	if (ip_data->counter == ip_data->metaint) {
@@ -36,7 +38,7 @@ ssize_t read_wrapper(struct input_plugin_data *ip_data, void *buffer, size_t cou
 		unsigned char byte;
 		int len;
 
-		rc = read(ip_data->fd, &byte, 1);
+		rc = read(conn, &byte, 1);
 		if (rc == -1)
 			return -1;
 		if (rc == 0)
@@ -44,7 +46,7 @@ ssize_t read_wrapper(struct input_plugin_data *ip_data, void *buffer, size_t cou
 		if (byte != 0) {
 			len = ((int)byte) * 16;
 			ip_data->metadata[0] = 0;
-			rc = read_all(ip_data->fd, ip_data->metadata, len);
+			rc = read_all_from_conn(conn, ip_data->metadata, len);
 			if (rc == -1)
 				return -1;
 			if (rc < len) {
@@ -58,8 +60,32 @@ ssize_t read_wrapper(struct input_plugin_data *ip_data, void *buffer, size_t cou
 	}
 	if (count + ip_data->counter > ip_data->metaint)
 		count = ip_data->metaint - ip_data->counter;
-	rc = read(ip_data->fd, buffer, count);
+	rc = read(conn, buffer, count);
 	if (rc > 0)
 		ip_data->counter += rc;
 	return rc;
+}
+
+ /* duplicated from file.c to avoid adding openssl to cmus-remote dependencies */
+ssize_t read_all_from_conn(struct connection *conn, void *buf, size_t count)
+{
+	char *buffer = buf;
+	ssize_t pos = 0;
+
+	do {
+		ssize_t rc;
+
+		rc = conn->read(conn, buffer + pos, count - pos);
+		if (rc == -1) {
+			if (errno == EINTR || errno == EAGAIN)
+				continue;
+			return -1;
+		}
+		if (rc == 0) {
+			/* eof */
+			break;
+		}
+		pos += rc;
+	} while (count - pos > 0);
+	return pos;
 }
