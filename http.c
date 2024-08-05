@@ -22,6 +22,8 @@
 #include "xmalloc.h"
 #include "gbuf.h"
 #include "utils.h"
+#include "ssl.h"	
+#include "read_wrapper.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -37,13 +39,13 @@
 #include <errno.h>
 
 /*
- * @uri is http://[user[:pass]@]host[:port][/path][?query]
+ * @uri is http[s]://[user[:pass]@]host[:port][/path][?query]
  *
  * uri(7): If the URL supplies a user  name  but no  password, and the remote
  * server requests a password, the program interpreting the URL should request
  * one from the user.
  */
-int http_parse_uri(const char *uri, struct http_uri *u)
+int parse_uri(const char *uri, struct http_uri *u)
 {
 	const char *str, *colon, *at, *slash, *host_start;
 
@@ -53,12 +55,12 @@ int http_parse_uri(const char *uri, struct http_uri *u)
 	u->pass = NULL;
 	u->host = NULL;
 	u->path = NULL;
-	u->port = 80;
-
-	if (!is_http_url(uri))
-		return -1;
-	str = uri + 7;
+	u->port = is_https_url(uri) ? 443 : 80;
+	str 	= is_https_url(uri) ? uri + 8 : uri + 7;
 	host_start = str;
+
+	if (!is_http_or_https_url(uri))
+		return -1;
 
 	/* [/path] */
 	slash = strchr(str, '/');
@@ -151,7 +153,7 @@ int http_open(struct http_get *hg, int timeout_ms)
 	char *proxy = getenv("http_proxy");
 	if (proxy) {
 		hg->proxy = xnew(struct http_uri, 1);
-		if (http_parse_uri(proxy, hg->proxy)) {
+		if (parse_uri(proxy, hg->proxy)) {
 			d_print("Failed to parse HTTP proxy URI '%s'\n", proxy);
 			return -1;
 		}
@@ -222,10 +224,11 @@ close_exit:
 	return -1;
 }
 
-static int http_write(int fd, const char *buf, int count, int timeout_ms)
+static int http_write(struct connection *conn, const char *buf, int count, int timeout_ms)
 {
 	struct timeval tv;
 	int pos = 0;
+	int fd = *conn->fd_ref;
 
 	tv.tv_sec = timeout_ms / 1000;
 	tv.tv_usec = (timeout_ms % 1000) * 1000;
@@ -245,7 +248,7 @@ static int http_write(int fd, const char *buf, int count, int timeout_ms)
 			continue;
 		}
 		if (rc == 1) {
-			rc = write(fd, buf + pos, count - pos);
+			rc = conn->write(conn, buf+pos, count - pos);
 			if (rc == -1) {
 				if (errno == EINTR || errno == EAGAIN)
 					continue;
@@ -290,9 +293,10 @@ static int read_timeout(int fd, int timeout_ms)
 }
 
 /* reads response, ignores fscking carriage returns */
-static int http_read_response(int fd, struct gbuf *buf, int timeout_ms)
+static int http_read_response(struct connection *conn, struct gbuf *buf, int timeout_ms)
 {
 	char prev = 0;
+	int fd = *conn->fd_ref;
 
 	if (read_timeout(fd, timeout_ms))
 		return -1;
@@ -300,7 +304,7 @@ static int http_read_response(int fd, struct gbuf *buf, int timeout_ms)
 		int rc;
 		char ch;
 
-		rc = read(fd, &ch, 1);
+		rc = conn->read(conn, &ch, 1);
 		if (rc == -1) {
 			return -1;
 		}
@@ -399,12 +403,12 @@ int http_get(struct http_get *hg, struct keyval *headers, int timeout_ms)
 	}
 	gbuf_add_str(&buf, "\r\n");
 
-	rc = http_write(hg->fd, buf.buffer, buf.len, timeout_ms);
+	rc = http_write(hg->conn, buf.buffer, buf.len, timeout_ms);
 	if (rc)
 		goto out;
 
 	gbuf_clear(&buf);
-	rc = http_read_response(hg->fd, &buf, timeout_ms);
+	rc = http_read_response(hg->conn, &buf, timeout_ms);
 	if (rc)
 		goto out;
 
@@ -416,18 +420,17 @@ out:
 	return rc;
 }
 
-char *http_read_body(int fd, size_t *size, int timeout_ms)
+char *http_read_body(struct connection *conn, size_t *size, int timeout_ms)
 {
 	GBUF(buf);
-
-	if (read_timeout(fd, timeout_ms))
+	if (read_timeout(*conn->fd_ref, timeout_ms))
 		return NULL;
 	while (1) {
 		int count = 1023;
 		int rc;
 
 		gbuf_grow(&buf, count);
-		rc = read_all(fd, buf.buffer + buf.len, count);
+		rc = read_all_from_conn(conn, buf.buffer + buf.len, count);
 		if (rc == -1) {
 			gbuf_free(&buf);
 			return NULL;
