@@ -193,7 +193,7 @@ check_ncurses()
 	msg_checking "for working ncurses setup"
 	for flag in "" "-I/usr/include/ncurses" "-I/usr/include/ncursesw"
 	do
-		if try_compile_link "$ncurses_code" $flag $NCURSES_LIBS
+		if try_compile_link "$ncurses_code" $NCURSES_CFLAGS $flag $NCURSES_LIBS
 		then
 			NCURSES_CFLAGS="$NCURSES_CFLAGS $flag"
 			msg_result yes
