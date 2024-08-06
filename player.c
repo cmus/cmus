@@ -835,7 +835,7 @@ static void _consumer_handle_eof(void)
 		ip = ip_new(ti->filename);
 		_producer_status_update(PS_STOPPED);
 		/* PS_STOPPED, CS_PLAYING */
-		if (player_cont && (player_cont_album == 1 || strcmp(player_info_priv.ti->album,ti->album) == 0)) {
+		if (player_cont && (player_cont_album == 1 || (player_info_priv.ti->album && ti->album && strcmp(player_info_priv.ti->album,ti->album) == 0))) {
 			_producer_play();
 			if (producer_status == PS_UNLOADED) {
 				_consumer_stop();
