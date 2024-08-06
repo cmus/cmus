@@ -221,8 +221,9 @@ static int do_http_get(struct http_get *hg, const char *uri, int redirections)
 	if (parse_uri(uri, &hg->uri))
 		return -IP_ERROR_INVALID_URI;
 
-	if (open_connection(hg, http_connection_timeout))
-		return -IP_ERROR_ERRNO;
+	rc = open_connection(hg, http_connection_timeout);
+	if (rc) 
+		return rc;
 
 	keyvals_add(&h, "Host", xstrdup(hg->uri.host));
 	if (hg->proxy && hg->proxy->user && hg->proxy->pass)
@@ -688,7 +689,7 @@ int ip_close(struct input_plugin *ip)
 	rc = ip->ops->close(&ip->data);
 	BUG_ON(ip->data.private);
 	if (ip->data.conn.ssl != NULL)
-		ssl_close(conn, ip->data.ssl_context);
+		ssl_close(conn->ssl, ip->data.ssl_context);
 	if (ip->data.fd != -1)
 		close(ip->data.fd);
 	free(ip->data.metadata);
