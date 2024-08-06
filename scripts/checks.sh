@@ -59,13 +59,13 @@ check_program()
 
 cc_supports()
 {
-	$CC $CFLAGS "$@" -S -o /dev/null -x c /dev/null 2> /dev/null
+	$CC $CPPFLAGS $CFLAGS "$@" -S -o /dev/null -x c /dev/null 2> /dev/null
 	return $?
 }
 
 cxx_supports()
 {
-	$CXX $CXXFLAGS "$@" -S -o /dev/null -x c /dev/null 2> /dev/null
+	$CXX $CPPFLAGS $CXXFLAGS "$@" -S -o /dev/null -x c /dev/null 2> /dev/null
 	return $?
 }
 
@@ -424,16 +424,16 @@ try_compile()
 		__obj=`tmp_file prog.o`
 		echo "$1" > $__src || exit 1
 		shift
-		__cmd="$CC -c $CFLAGS $@ $__src -o $__obj"
-		$CC -c $CFLAGS "$@" $__src -o $__obj 2>/dev/null
+		__cmd="$CC -c $CPPFLAGS $CFLAGS $@ $__src -o $__obj"
+		$CC -c $CPPFLAGS $CFLAGS "$@" $__src -o $__obj 2>/dev/null
 		;;
 	cxx)
 		__src=`tmp_file prog.cc`
 		__obj=`tmp_file prog.o`
 		echo "$1" > $__src || exit 1
 		shift
-		__cmd="$CXX -c $CXXFLAGS $@ $__src -o $__obj"
-		$CXX -c $CXXFLAGS "$@" $__src -o $__obj 2>/dev/null
+		__cmd="$CXX -c $CPPFLAGS $CXXFLAGS $@ $__src -o $__obj"
+		$CXX -c $CPPFLAGS $CXXFLAGS "$@" $__src -o $__obj 2>/dev/null
 		;;
 	esac
 	return $?
@@ -450,16 +450,16 @@ try_compile_link()
 		__exe=`tmp_file prog`
 		echo "$1" > $__src || exit 1
 		shift
-		__cmd="$CC $__src -o $__exe $CFLAGS $LDFLAGS $@"
-		$CC $__src -o $__exe $CFLAGS $LDFLAGS "$@" 2>/dev/null
+		__cmd="$CC $__src -o $__exe $CPPFLAGS $CFLAGS $LDFLAGS $@"
+		$CC $__src -o $__exe $CPPFLAGS $CFLAGS $LDFLAGS "$@" 2>/dev/null
 		;;
 	cxx)
 		__src=`tmp_file prog.cc`
 		__exe=`tmp_file prog`
 		echo "$1" > $__src || exit 1
 		shift
-		__cmd="$CXX $__src -o $__exe $CXXFLAGS $CXXLDFLAGS $@"
-		$CXX $__src -o $__exe $CXXFLAGS $CXXLDFLAGS "$@" 2>/dev/null
+		__cmd="$CXX $__src -o $__exe $CPPFLAGS $CXXFLAGS $CXXLDFLAGS $@"
+		$CXX $__src -o $__exe $CPPFLAGS $CXXFLAGS $CXXLDFLAGS "$@" 2>/dev/null
 		;;
 	esac
 	return $?
