@@ -30,7 +30,7 @@ ssize_t read_wrapper(struct input_plugin_data *ip_data, void *buffer, size_t cou
 
 	if (ip_data->metaint == 0) {
 		/* no metadata in the stream */
-		return read(&ip_data->conn, buffer, count);
+		return read(conn, buffer, count);
 	}
 
 	if (ip_data->counter == ip_data->metaint) {

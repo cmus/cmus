@@ -22,7 +22,7 @@
 #include "keyval.h"
 #include "sf.h"
 #include "channelmap.h"
-#include "ssl.h"
+#include "ssl.h" /* struct connection, SSL_CTX */
 
 #ifndef __GNUC__
 #include <fcntl.h>
