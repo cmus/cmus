@@ -54,8 +54,11 @@ static off_t lseek_func(void *datasource, off_t offset, int whence)
 static int close_func(void *datasource)
 {
 	struct input_plugin_data *ip_data = datasource;
+	int rc;
 
-	return close(ip_data->fd);
+	rc = ip_data->fd != -1 ? close(ip_data->fd) : 0;
+	ip_data->fd = -1;
+	return rc;
 }
 
 static struct nomad_callbacks callbacks = {
