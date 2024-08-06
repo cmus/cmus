@@ -26,21 +26,18 @@
 struct connection;
 typedef int (*connection_read)(struct connection*, char*, int);
 typedef int (*connection_write)(struct connection*, const char*, int);
-typedef struct connection {
+struct connection {
 	int *fd_ref;
 	SSL *ssl;
 	connection_read read;
 	connection_write write;
-} connection;
+};
 
-struct http_get;
-int open_connection(struct http_get *hg, int timeout_ms);
-
-int ssl_connect(struct http_get *hg);
-int ssl_init(struct http_get *hg);
 SSL_CTX *create_context(void);
 
-int close_connection(struct connection *conn, SSL_CTX *ssl_context);
+struct http_get;
+int ssl_init(struct http_get *hg);
+int ssl_connect(struct http_get *hg);
 int ssl_close(SSL* ssl, SSL_CTX *ssl_context);
 int handle_ssl_error(SSL* ssl, int ret);
 

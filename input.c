@@ -269,6 +269,7 @@ static int do_http_get(struct http_get *hg, const char *uri, int redirections)
 		redirloc = xstrdup(val);
 		http_get_free(hg);
 		close_connection(hg->conn, hg->ssl_context);
+
 		rc = do_http_get(hg, redirloc, redirections);
 
 		free(redirloc);
@@ -287,7 +288,7 @@ static void copy_connection_parameters(struct input_plugin_data *dst, const stru
 	dst->conn.read = dst->https ? &https_read : &socket_read;
 }
 
-static int setup_remote(struct input_plugin *ip, const struct keyval *headers, connection *conn)
+static int setup_remote(struct input_plugin *ip, const struct keyval *headers, struct connection *conn)
 {
 	const char *val;
 
@@ -312,9 +313,9 @@ static int setup_remote(struct input_plugin *ip, const struct keyval *headers, c
 		}
 	}
 
+	copy_connection_parameters(&ip->data, conn);
 	ip->data.metadata = xnew(char, 16 * 255 + 1);
 
-	copy_connection_parameters(&ip->data, conn);
 	val = keyvals_get_val(headers, "icy-metaint");
 	if (val) {
 		long int lint;
@@ -346,19 +347,18 @@ struct read_playlist_data {
 	int count;
 };
 
-static void link_connection_to_hg(struct http_get *hg, struct connection *conn)
+static void set_connection(struct http_get *hg, struct connection *conn)
 {
 	hg->conn = conn;
 	conn->fd_ref = &hg->fd;
-
 }
 
 static int handle_line(void *data, const char *uri)
 {
 	struct read_playlist_data *rpd = data;
-	struct connection conn;
 	struct http_get hg;
-	link_connection_to_hg(&hg, &conn);
+	struct connection conn;
+	set_connection(&hg, &conn);
 
 	rpd->count++;
 	rpd->rc = do_http_get(&hg, uri, 0);
@@ -390,7 +390,7 @@ static int read_playlist(struct input_plugin *ip)
 	struct read_playlist_data rpd = { ip, 0, 0 };
 	char *body;
 	size_t size;
-	connection *conn = &ip->data.conn;
+	struct connection *conn = &ip->data.conn;
 	set_fd(&ip->data, ip->data.fd);
 	body = http_read_body(conn, &size, http_read_timeout);
 	close_connection(conn, ip->data.ssl_context);
@@ -409,14 +409,13 @@ static int read_playlist(struct input_plugin *ip)
 static int open_remote(struct input_plugin *ip)
 {
 	struct input_plugin_data *d = &ip->data;
-	struct connection conn;
 	struct http_get hg;
-	hg.conn = &conn;
-	hg.ssl_context = d->ssl_context;
-
+	struct connection conn;
 	const char *val;
 	int rc;
 
+	hg.conn = &conn;
+	hg.ssl_context = d->ssl_context;
 	rc = do_http_get(&hg, d->filename, 0);
 	if (rc) {
 		ip->http_code = hg.code;
@@ -438,6 +437,7 @@ static int open_remote(struct input_plugin *ip)
 			}
 		}
 	}
+
 	rc = setup_remote(ip, hg.headers, hg.conn);
 	http_get_free(&hg);
 	return rc;
@@ -451,7 +451,7 @@ static void ip_init(struct input_plugin *ip, char *filename)
 		.duration           = -1,
 		.bitrate            = -1,
 		.data = {
-			.fd 		= -1,
+			.fd 		 = -1,
 			.ssl_context = NULL,
 			.conn = {
 				.fd_ref 	= NULL,
@@ -685,10 +685,10 @@ void ip_setup(struct input_plugin *ip)
 int ip_close(struct input_plugin *ip)
 {
 	int rc;
-	connection *conn = &ip->data.conn;
 	rc = ip->ops->close(&ip->data);
 	BUG_ON(ip->data.private);
-	if (ip->data.conn.ssl != NULL)
+	struct connection *conn = &ip->data.conn;
+	if (conn->ssl != NULL)
 		ssl_close(conn->ssl, ip->data.ssl_context);
 	if (ip->data.fd != -1)
 		close(ip->data.fd);
