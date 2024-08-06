@@ -24,14 +24,22 @@ SSL_CTX *create_context(void)
     return ctx;
 }
 
-int ssl_close(struct connection *conn, SSL_CTX *ssl_context)
+static void wait_eof(SSL* ssl)
 {
-	SSL *ssl = conn->ssl;
-	
+	char b;
+	int rc=1;
+	while(rc>0){
+		rc = SSL_read(ssl, &b, 1);
+	}
+}
+
+int ssl_close(SSL* ssl, SSL_CTX *ssl_context)
+{
 	int ret = SSL_shutdown(ssl);
-	if (ret < 0) {
+	if (ret < 0)
 		return ret;
-	} else if (ret == 0) {
+	if (ret == 0) {
+		wait_eof(ssl);
 		if (SSL_shutdown(ssl) != 1) {
 			d_print("SSL_shutdown failed\n");
 			return -IP_ERROR_OPENSSL;
@@ -52,7 +60,7 @@ int close_connection(struct connection *conn, SSL_CTX *ssl_context)
 	int rc = 0;
 
 	if (conn->ssl != NULL)
-		rc = ssl_close(conn, ssl_context);
+		rc = ssl_close(conn->ssl, ssl_context);
 	if (rc)
 		d_print("Error while closing ssl connection\n");
 	
@@ -66,11 +74,28 @@ int open_connection(struct http_get *hg, int timeout_ms)
 {
 	if (http_open(hg, timeout_ms))
 		return -IP_ERROR_ERRNO;
-	if(!hg->is_https)
+
+	if(hg->is_https == 0)
 		return IP_ERROR_SUCCESS;
+
+	if(hg->proxy != NULL) {
+		/* 
+		 * TODO : Supporting proxy with HTTPS is not too difficult. 
+		 * We need to perform a CONNECT request before ssl_connect()
+		 * We would need to use hg->uri.uri (instead of hg->uri.path for proxy with HTTP)
+		 *
+		 * In order to do that, we need to refactor the code that does GET requests
+		 * to also support CONNECT request. This is getting out of scope for HTTPS support.
+		 * We can return an error message for now.
+		 */
+		d_print("HTTPS stream with proxy not yet supported.\n");
+		return -IP_ERROR_FUNCTION_NOT_SUPPORTED;
+
+	}
 
 	if (ssl_connect(hg))
 		return -IP_ERROR_OPENSSL;
+
 	return IP_ERROR_SUCCESS;
 }
 
@@ -83,7 +108,7 @@ int ssl_init(struct http_get *hg)
 
 	struct connection *conn = hg->conn;
 	SSL *ssl = SSL_new(ctx);
-	if (ssl == NULL) { 
+	if (ssl == NULL) {
 		d_print("Failed to create SSL struct\n");
 		return -IP_ERROR_OPENSSL;
 	}
@@ -105,14 +130,13 @@ int ssl_connect(struct http_get *hg)
 
 		struct connection *conn = hg->conn;
 		int rc = SSL_connect(conn->ssl); /* 1 if successful, <=0 else */
-        if (rc <= 0) {	
-			d_print("SSL_connect() failed (%d)\n", rc);
+        if (rc <= 0) {
+			int err = SSL_get_error(conn->ssl, rc);
+			d_print("SSL_connect() failed (%d), SSL_get_error() returns %d\n", rc, err);
             return -IP_ERROR_OPENSSL;
-        }
-
+        }	
 		return rc - 1; /* 0 on success */
 }
-
 
 /*
  * Checking EOF with SSL_read() is undocumented.
@@ -128,7 +152,7 @@ int handle_ssl_error(SSL* ssl, int ret)
 		return 0; /* EOF */ 
 	}
 	d_print("SSL encountered an error: %d\n", err);
-	return -2;
+	return -1;
 }
 
 int https_write(struct connection *conn, const char *in_buf, int count)

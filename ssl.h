@@ -41,7 +41,7 @@ int ssl_init(struct http_get *hg);
 SSL_CTX *create_context(void);
 
 int close_connection(struct connection *conn, SSL_CTX *ssl_context);
-int ssl_close(struct connection *conn, SSL_CTX *ssl_context);
+int ssl_close(SSL* ssl, SSL_CTX *ssl_context);
 int handle_ssl_error(SSL* ssl, int ret);
 
 int https_write(struct connection *conn, const char *buf, int count);
