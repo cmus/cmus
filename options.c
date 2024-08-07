@@ -393,10 +393,10 @@ static void get_output_plugin(void *data, char *buf, size_t size)
 static void set_output_plugin(void *data, const char *buf)
 {
 	if (ui_initialized) {
-		if (!soft_vol)
+		if (!soft_vol || pause_on_output_change)
 			mixer_close();
 		player_set_op(buf);
-		if (!soft_vol)
+		if (!soft_vol || pause_on_output_change)
 			mixer_open();
 	} else {
 		/* must set it later manually */
@@ -1145,10 +1145,10 @@ static void get_softvol(void *data, char *buf, size_t size)
 
 static void do_set_softvol(int soft)
 {
-	if (!soft_vol)
+	if (!soft_vol || pause_on_output_change)
 		mixer_close();
 	player_set_soft_vol(soft);
-	if (!soft_vol)
+	if (!soft_vol || pause_on_output_change)
 		mixer_open();
 	update_statusline();
 }

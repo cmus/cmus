@@ -2421,7 +2421,7 @@ static void init_all(void)
 
 	/* finally we can set the output plugin */
 	player_set_op(output_plugin);
-	if (!soft_vol)
+	if (!soft_vol || pause_on_output_change)
 		mixer_open();
 
 	lib_autosave_filename = xstrjoin(cmus_config_dir, "/lib.pl");

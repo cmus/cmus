@@ -380,7 +380,7 @@ static void set_mixer_option(void *data, const char *val)
 		/* option of the current op was set
 		 * try to reopen the mixer */
 		mixer_close();
-		if (!soft_vol)
+		if (!soft_vol || pause_on_output_change)
 			mixer_open();
 	}
 }
