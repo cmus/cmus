@@ -33,12 +33,12 @@ struct connection {
 	connection_write write;
 };
 
-SSL_CTX *create_context(void);
+int init_ssl_context(void);
 
 struct http_get;
 int ssl_init(struct http_get *hg);
 int ssl_connect(struct http_get *hg);
-int ssl_close(SSL* ssl, SSL_CTX *ssl_context);
+int ssl_close(SSL* ssl);
 int handle_ssl_error(SSL* ssl, int ret);
 
 int https_write(struct connection *conn, const char *buf, int count);

@@ -22,7 +22,7 @@
 #include "keyval.h"
 #include "sf.h"
 #include "channelmap.h"
-#include "ssl.h" /* struct connection, SSL_CTX */
+#include "ssl.h" /* struct connection */
 
 #ifndef __GNUC__
 #include <fcntl.h>
@@ -69,7 +69,6 @@ enum {
 struct input_plugin_data {
 	/* filled by ip-layer */
 	char *filename;
-	SSL_CTX *ssl_context;
 	struct connection conn;
 	int fd;
 	unsigned int remote : 1;

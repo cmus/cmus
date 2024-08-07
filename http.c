@@ -22,7 +22,7 @@
 #include "xmalloc.h"
 #include "gbuf.h"
 #include "utils.h"
-#include "ssl.h"	
+#include "ssl.h"
 #include "read_wrapper.h"
 
 #include <stdio.h>
@@ -252,12 +252,12 @@ int open_connection(struct http_get *hg, int timeout_ms)
 	return IP_ERROR_SUCCESS;
 }
 
-int close_connection(struct connection *conn, SSL_CTX *ssl_context)
+int close_connection(struct connection *conn)
 {
 	int rc = 0;
 
 	if (conn->ssl != NULL)
-		rc = ssl_close(conn->ssl, ssl_context);
+		rc = ssl_close(conn->ssl);
 	if (rc)
 		d_print("Error while closing ssl connection\n");
 
