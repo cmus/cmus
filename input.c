@@ -211,7 +211,6 @@ static int do_http_get(struct http_get *hg, const char *uri, int redirections)
 	hg->proxy = NULL;
 	hg->code = -1;
 	hg->is_https = is_https_url(uri);
-	hg->ssl_context = NULL;
 	hg->conn->ssl = NULL;
 	hg->fd = -1;
 	hg->conn->fd_ref = &hg->fd;
@@ -268,7 +267,7 @@ static int do_http_get(struct http_get *hg, const char *uri, int redirections)
 
 		redirloc = xstrdup(val);
 		http_get_free(hg);
-		close_connection(hg->conn, hg->ssl_context);
+		close_connection(hg->conn);
 
 		rc = do_http_get(hg, redirloc, redirections);
 
@@ -298,7 +297,7 @@ static int setup_remote(struct input_plugin *ip, const struct keyval *headers, s
 		ip->ops = get_ops_by_mime_type(val);
 		if (ip->ops == NULL) {
 			d_print("unsupported content type: %s\n", val);
-			close_connection(conn, ip->data.ssl_context);
+			close_connection(conn);
 			return -IP_ERROR_FILE_FORMAT;
 		}
 	} else {
@@ -308,7 +307,7 @@ static int setup_remote(struct input_plugin *ip, const struct keyval *headers, s
 		ip->ops = get_ops_by_mime_type(type);
 		if (ip->ops == NULL) {
 			d_print("unsupported content type: %s\n", type);
-			close_connection(conn, ip->data.ssl_context);
+			close_connection(conn);
 			return -IP_ERROR_FILE_FORMAT;
 		}
 	}
@@ -366,14 +365,13 @@ static int handle_line(void *data, const char *uri)
 		rpd->ip->http_code = hg.code;
 		rpd->ip->http_reason = hg.reason;
 		if (hg.fd >= 0)
-			close_connection(hg.conn, hg.ssl_context);
+			close_connection(hg.conn);
 
 		hg.reason = NULL;
 		http_get_free(&hg);
 		return 0;
 	}
 
-	rpd->ip->data.ssl_context = hg.ssl_context;
 	rpd->rc = setup_remote(rpd->ip, hg.headers, hg.conn);
 	http_get_free(&hg);
 	return 1;
@@ -393,7 +391,7 @@ static int read_playlist(struct input_plugin *ip)
 	struct connection *conn = &ip->data.conn;
 	set_fd(&ip->data, ip->data.fd);
 	body = http_read_body(conn, &size, http_read_timeout);
-	close_connection(conn, ip->data.ssl_context);
+	close_connection(conn);
 	if (!body)
 		return -IP_ERROR_ERRNO;
 
@@ -415,7 +413,6 @@ static int open_remote(struct input_plugin *ip)
 	int rc;
 
 	hg.conn = &conn;
-	hg.ssl_context = d->ssl_context;
 	rc = do_http_get(&hg, d->filename, 0);
 	if (rc) {
 		ip->http_code = hg.code;
@@ -452,7 +449,6 @@ static void ip_init(struct input_plugin *ip, char *filename)
 		.bitrate            = -1,
 		.data = {
 			.fd 		 = -1,
-			.ssl_context = NULL,
 			.conn = {
 				.fd_ref 	= NULL,
 				.ssl		= NULL,
@@ -476,7 +472,7 @@ static void ip_reset(struct input_plugin *ip, int close_fd)
 	ip_init(ip, ip->data.filename);
 	if (fd != -1) {
 		if (close_fd)
-			close_connection(&ip->data.conn, ip->data.ssl_context);
+			close_connection(&ip->data.conn);
 		else {
 			lseek(fd, 0, SEEK_SET);
 			set_fd(&ip->data, fd);
@@ -689,7 +685,7 @@ int ip_close(struct input_plugin *ip)
 	BUG_ON(ip->data.private);
 	struct connection *conn = &ip->data.conn;
 	if (conn->ssl != NULL)
-		ssl_close(conn->ssl, ip->data.ssl_context);
+		ssl_close(conn->ssl);
 	if (ip->data.fd != -1)
 		close(ip->data.fd);
 	free(ip->data.metadata);
