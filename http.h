@@ -41,20 +41,25 @@ struct http_uri {
 };
 
 struct http_get {
+	int is_https;
 	struct http_uri uri;
 	struct http_uri *proxy;
+	struct connection *conn;
 	int fd;
 	struct keyval *headers;
 	char *reason;
 	int code;
 };
 
-int http_parse_uri(const char *uri, struct http_uri *u);
+int parse_uri(const char *uri, struct http_uri *u);
 
 /* frees contents of @u, not @u itself */
 void http_free_uri(struct http_uri *u);
 
 int http_open(struct http_get *hg, int timeout_ms);
+
+int open_connection(struct http_get *hg, int timeout_ms);
+int close_connection(struct connection *conn);
 
 /*
  * returns:  0 success
@@ -64,7 +69,7 @@ int http_open(struct http_get *hg, int timeout_ms);
 int http_get(struct http_get *hg, struct keyval *headers, int timeout_ms);
 void http_get_free(struct http_get *hg);
 
-char *http_read_body(int fd, size_t *size, int timeout_ms);
+char *http_read_body(struct connection *conn, size_t *size, int timeout_ms);
 char *base64_encode(const char *str);
 
 #endif

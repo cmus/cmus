@@ -22,6 +22,7 @@
 #include "keyval.h"
 #include "sf.h"
 #include "channelmap.h"
+#include "ssl.h" /* struct connection */
 
 #ifndef __GNUC__
 #include <fcntl.h>
@@ -55,6 +56,8 @@ enum {
 	IP_ERROR_HTTP_RESPONSE,
 	/* usually 404 */
 	IP_ERROR_HTTP_STATUS,
+	/* OpenSSL error */
+	IP_ERROR_OPENSSL,
 	/* too many redirections */
 	IP_ERROR_HTTP_REDIRECT_LIMIT,
 	/* plugin does not have this option */
@@ -66,9 +69,10 @@ enum {
 struct input_plugin_data {
 	/* filled by ip-layer */
 	char *filename;
+	struct connection conn;
 	int fd;
-
 	unsigned int remote : 1;
+	unsigned int https : 1;
 	unsigned int metadata_changed : 1;
 
 	/* shoutcast */

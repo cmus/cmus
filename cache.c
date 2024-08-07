@@ -463,7 +463,7 @@ struct track_info *cache_get_ti(const char *filename, int force)
 
 	ti = lookup_cache_entry(filename, hash);
 	if (ti) {
-		if ((!skip_track_info && ti->duration == 0 && !is_http_url(filename)) || force){
+		if ((!skip_track_info && ti->duration == 0 && !is_http_or_https_url(filename)) || force){
 			do_cache_remove_ti(ti, hash);
 			ti = NULL;
 			reload = 1;
