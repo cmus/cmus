@@ -5,6 +5,8 @@
 
 #include <unistd.h> /* read, write */
 #include <openssl/ssl.h>
+#include <openssl/err.h>
+#include <fcntl.h>
 
 static SSL_CTX *ssl_context = NULL;
 
@@ -33,41 +35,37 @@ int init_ssl_context(void)
 	return IP_ERROR_SUCCESS;
 }
 
-static void wait_eof(SSL* ssl)
-{
-	char b;
-	int rc=1;
-	while(rc>0){
-		rc = SSL_read(ssl, &b, 1);
-	}
-}
-
+/*
+ * RFC5246 : "It is not required for the initiator of the close
+ * to wait for the responding close_notify alert before closing
+ * the read side of the connection."
+ *
+ * We will only call SSL_shutdown once before closing the socket.
+ */
 int ssl_close(SSL* ssl)
 {
 	int ret = SSL_shutdown(ssl);
-	if (ret < 0)
-		return ret;
-	if (ret == 0) {
-		wait_eof(ssl);
-		if (SSL_shutdown(ssl) != 1) {
-			d_print("SSL_shutdown failed\n");
-			return -IP_ERROR_OPENSSL;
-		}
+	if (ret < 0) {
+		handle_ssl_error(ssl, ret);
 	}
 
 	if (ssl != NULL)
 		SSL_free(ssl);
 
-	if (ssl_context != NULL)
+	if (ssl_context != NULL){
 		SSL_CTX_free(ssl_context);
+		ssl_context = NULL;
+	}
 
-	return SSL_ERROR_NONE;
+	if (ret >= 0)
+		return SSL_ERROR_NONE;
+	return ret;
 }
 
 int ssl_init(struct http_get *hg)
 {
 	int rc;
-
+	d_print("init : ssl_context = %d\n", ssl_context);
 	if(ssl_context == NULL){
 		rc = init_ssl_context();
 		if(rc)
@@ -115,12 +113,15 @@ int handle_ssl_error(SSL* ssl, int ret)
 {
 	int err = SSL_get_error(ssl, ret);
 	if(err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE){
+		errno = EAGAIN;
 		return -1; /* try again */
 	} else if (err == SSL_ERROR_SYSCALL && BIO_eof(SSL_get_rbio(ssl))){
 		return 0; /* EOF */
+	} else if(err == SSL_ERROR_SYSCALL){
+		d_print("errno: %d\n", errno);
 	}
 	d_print("SSL encountered an error: %d\n", err);
-	return -1;
+	return -IP_ERROR_OPENSSL;
 }
 
 int https_write(struct connection *conn, const char *in_buf, int count)
@@ -138,7 +139,10 @@ int https_read(struct connection *conn, char *out_buf, int count)
 	SSL *ssl = conn->ssl;
 	int ret = SSL_read(ssl, out_buf, count); /* >0 on success, <=0 else */
 	if(ret <= 0){
-		return handle_ssl_error(ssl, ret);
+		ret = handle_ssl_error(ssl, ret);
+		if (ret == -IP_ERROR_OPENSSL)
+			return -1; /* because https_read() should emulate socket_read() */
+		return ret;
 	}
 	return ret;
 }
