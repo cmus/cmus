@@ -221,7 +221,7 @@ static int do_http_get(struct http_get *hg, const char *uri, int redirections)
 		return -IP_ERROR_INVALID_URI;
 
 	rc = open_connection(hg, http_connection_timeout);
-	if (rc) 
+	if (rc)
 		return rc;
 
 	keyvals_add(&h, "Host", xstrdup(hg->uri.host));
@@ -280,7 +280,7 @@ static int do_http_get(struct http_get *hg, const char *uri, int redirections)
 
 static void copy_connection_parameters(struct input_plugin_data *dst, const struct connection *src)
 {
-	dst->fd = *src->fd_ref;	
+	dst->fd = *src->fd_ref;
 	dst->conn.fd_ref = &dst->fd;
 
 	dst->conn.ssl = src->ssl;
@@ -452,8 +452,8 @@ static void ip_init(struct input_plugin *ip, char *filename)
 			.conn = {
 				.fd_ref 	= NULL,
 				.ssl		= NULL,
-				.read		= NULL,
-				.write		= NULL,
+				.read		= &socket_read,
+				.write		= &socket_write,
 			},
 			.filename   = filename,
 			.remote     = is_http_or_https_url(filename),
@@ -681,11 +681,11 @@ void ip_setup(struct input_plugin *ip)
 int ip_close(struct input_plugin *ip)
 {
 	int rc;
-	rc = ip->ops->close(&ip->data);
-	BUG_ON(ip->data.private);
 	struct connection *conn = &ip->data.conn;
 	if (conn->ssl != NULL)
 		ssl_close(conn->ssl);
+	rc = ip->ops->close(&ip->data);
+	BUG_ON(ip->data.private);
 	if (ip->data.fd != -1)
 		close(ip->data.fd);
 	free(ip->data.metadata);
