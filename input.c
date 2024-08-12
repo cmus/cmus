@@ -278,18 +278,10 @@ static int do_http_get(struct http_get *hg, const char *uri, int redirections)
 	}
 }
 
-static void copy_connection_parameters(struct input_plugin_data *dst, const struct connection *src)
-{
-	dst->fd = *src->fd_ref;
-	dst->conn.fd_ref = &dst->fd;
-
-	dst->conn.ssl = src->ssl;
-	dst->conn.read = dst->https ? &https_read : &socket_read;
-}
-
-static int setup_remote(struct input_plugin *ip, const struct keyval *headers, struct connection *conn)
+static int setup_remote(struct input_plugin *ip, const struct keyval *headers)
 {
 	const char *val;
+	struct connection *conn = &ip->data.conn;
 
 	val = keyvals_get_val(headers, "Content-Type");
 	if (val) {
@@ -312,7 +304,7 @@ static int setup_remote(struct input_plugin *ip, const struct keyval *headers, s
 		}
 	}
 
-	copy_connection_parameters(&ip->data, conn);
+	ip->data.fd = *conn->fd_ref;
 	ip->data.metadata = xnew(char, 16 * 255 + 1);
 
 	val = keyvals_get_val(headers, "icy-metaint");
@@ -346,6 +338,12 @@ struct read_playlist_data {
 	int count;
 };
 
+
+static struct connection* get_connection(struct input_plugin *ip)
+{
+	return &ip->data.conn;
+}
+
 static void set_connection(struct http_get *hg, struct connection *conn)
 {
 	hg->conn = conn;
@@ -356,8 +354,7 @@ static int handle_line(void *data, const char *uri)
 {
 	struct read_playlist_data *rpd = data;
 	struct http_get hg;
-	struct connection conn;
-	set_connection(&hg, &conn);
+	set_connection(&hg, get_connection(rpd->ip));
 
 	rpd->count++;
 	rpd->rc = do_http_get(&hg, uri, 0);
@@ -372,7 +369,7 @@ static int handle_line(void *data, const char *uri)
 		return 0;
 	}
 
-	rpd->rc = setup_remote(rpd->ip, hg.headers, hg.conn);
+	rpd->rc = setup_remote(rpd->ip, hg.headers);
 	http_get_free(&hg);
 	return 1;
 }
@@ -390,6 +387,7 @@ static int read_playlist(struct input_plugin *ip)
 	size_t size;
 	struct connection *conn = &ip->data.conn;
 	set_fd(&ip->data, ip->data.fd);
+
 	body = http_read_body(conn, &size, http_read_timeout);
 	close_connection(conn);
 	if (!body)
@@ -408,11 +406,10 @@ static int open_remote(struct input_plugin *ip)
 {
 	struct input_plugin_data *d = &ip->data;
 	struct http_get hg;
-	struct connection conn;
 	const char *val;
 	int rc;
 
-	hg.conn = &conn;
+	hg.conn = get_connection(ip);
 	rc = do_http_get(&hg, d->filename, 0);
 	if (rc) {
 		ip->http_code = hg.code;
@@ -435,7 +432,7 @@ static int open_remote(struct input_plugin *ip)
 		}
 	}
 
-	rc = setup_remote(ip, hg.headers, hg.conn);
+	rc = setup_remote(ip, hg.headers);
 	http_get_free(&hg);
 	return rc;
 }
@@ -462,7 +459,7 @@ static void ip_init(struct input_plugin *ip, char *filename)
 		}
 	};
 	*ip = t;
-	set_fd(&ip->data, -1);
+	set_fd(&ip->data, ip->data.fd);
 }
 
 static void ip_reset(struct input_plugin *ip, int close_fd)
