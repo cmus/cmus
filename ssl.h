@@ -33,11 +33,12 @@ struct connection {
 	connection_write write;
 };
 
-int init_ssl_context(void);
+int get_sockfd(struct connection *conn);
 
 struct http_get;
-int ssl_init(struct http_get *hg);
-int ssl_connect(struct http_get *hg);
+int init_ssl_context(void);
+int init_ssl(struct http_get *hg);
+int ssl_open(struct http_get *hg);
 int ssl_close(SSL* ssl);
 int handle_ssl_error(SSL* ssl, int ret);
 

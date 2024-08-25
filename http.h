@@ -56,10 +56,10 @@ int parse_uri(const char *uri, struct http_uri *u);
 /* frees contents of @u, not @u itself */
 void http_free_uri(struct http_uri *u);
 
-int http_open(struct http_get *hg, int timeout_ms);
+int socket_open(struct http_get *hg, int timeout_ms);
 
-int open_connection(struct http_get *hg, int timeout_ms);
-int close_connection(struct connection *conn);
+int connection_open(struct http_get *hg, int timeout_ms);
+int connection_close(struct connection *conn);
 
 /*
  * returns:  0 success

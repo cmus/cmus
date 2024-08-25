@@ -10,65 +10,45 @@
 
 static SSL_CTX *ssl_context = NULL;
 
-
 int init_ssl_context(void)
 {
-    ssl_context = SSL_CTX_new(TLS_client_method());
+	ssl_context = SSL_CTX_new(TLS_client_method());
 
-    if (ssl_context == NULL) {
-        d_print("SSL_CTX_new() failed\n");
+	if (ssl_context == NULL) {
+		d_print("SSL_CTX_new() failed\n");
 		return -IP_ERROR_OPENSSL;
 	}
 
-    if (SSL_CTX_set_min_proto_version(ssl_context, TLS1_2_VERSION) != 1){ /* Older TLS versions than TLS 1.2 are deprecated. */
+	/* Older TLS versions than TLS 1.2 are deprecated. */
+	if (SSL_CTX_set_min_proto_version(ssl_context, TLS1_2_VERSION) != 1) {
 		d_print("unable to set min_version to TLS1.2");
 		return -IP_ERROR_OPENSSL;
 	}
 
-    SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, NULL);	/* Prevent an attacker from impersonating server */
+	/* Enable certificate verification */
+	SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, NULL);
 
-	if (SSL_CTX_set_default_verify_paths(ssl_context) != 1){ /* Use system's defaults location for CA cerificates */
-        d_print("Unable to use default location for CA certificates\n");
+	if (SSL_CTX_set_default_verify_paths(ssl_context) != 1)	{
+		d_print("Unable to use default location for CA certificates\n");
 		return -IP_ERROR_OPENSSL;
 	}
 
 	return IP_ERROR_SUCCESS;
 }
 
-/*
- * RFC5246 : "It is not required for the initiator of the close
- * to wait for the responding close_notify alert before closing
- * the read side of the connection."
- *
- * We will only call SSL_shutdown once before closing the socket.
- */
-int ssl_close(SSL* ssl)
+int get_sockfd(struct connection *conn)
 {
-	int ret = SSL_shutdown(ssl);
-	if (ret < 0) {
-		handle_ssl_error(ssl, ret);
-	}
-
-	if (ssl != NULL)
-		SSL_free(ssl);
-
-	if (ssl_context != NULL){
-		SSL_CTX_free(ssl_context);
-		ssl_context = NULL;
-	}
-
-	if (ret >= 0)
-		return SSL_ERROR_NONE;
-	return ret;
+	int fd = *conn->fd_ref;
+	d_print("fd: %d\n", fd);
+	return fd;
 }
 
-int ssl_init(struct http_get *hg)
+int init_ssl(struct http_get *hg)
 {
 	int rc;
-	d_print("init : ssl_context = %d\n", ssl_context);
-	if(ssl_context == NULL){
+	if (ssl_context == NULL) {
 		rc = init_ssl_context();
-		if(rc)
+		if (rc)
 			return rc;
 	}
 
@@ -81,27 +61,26 @@ int ssl_init(struct http_get *hg)
 	SSL_set_mode(ssl, SSL_MODE_ENABLE_PARTIAL_WRITE); /* Imitate the behavior of write */
 	conn->ssl = ssl;
 
-	if (SSL_set_fd(conn->ssl, *conn->fd_ref) != 1) {
+	if (SSL_set_fd(conn->ssl, get_sockfd(conn)) != 1) {
 		d_print("Failed to set the file descriptor\n");
 		return -IP_ERROR_OPENSSL;
 	}
-
 	return IP_ERROR_SUCCESS;
 }
 
-int ssl_connect(struct http_get *hg)
+int ssl_open(struct http_get *hg)
 {
-		if(ssl_init(hg))
-			return -IP_ERROR_OPENSSL;
+	if (init_ssl(hg))
+		return -IP_ERROR_OPENSSL;
 
-		struct connection *conn = hg->conn;
-		int rc = SSL_connect(conn->ssl); /* 1 if successful, <=0 else */
-        if (rc <= 0) {
-			int err = SSL_get_error(conn->ssl, rc);
-			d_print("SSL_connect() failed (%d), SSL_get_error() returns %d\n", rc, err);
-            return -IP_ERROR_OPENSSL;
-        }
-		return rc - 1; /* 0 on success */
+	struct connection *conn = hg->conn;
+	int rc = SSL_connect(conn->ssl); /* 1 if successful, <=0 else */
+	if (rc <= 0) {
+		int err = SSL_get_error(conn->ssl, rc);
+		d_print("SSL_connect() failed (%d), SSL_get_error() returns %d\n", rc, err);
+		return -IP_ERROR_OPENSSL;
+	}
+	return rc - 1; /* 0 on success */
 }
 
 /*
@@ -109,26 +88,61 @@ int ssl_connect(struct http_get *hg)
  * Need to access underlying BIO (automatically set by SSL_set_fd())
  * See https://github.com/openssl/openssl/issues/1903#issuecomment-264599892
  */
-int handle_ssl_error(SSL* ssl, int ret)
+
+int handle_ssl_error(SSL *ssl, int ret)
 {
 	int err = SSL_get_error(ssl, ret);
-	if(err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE){
+
+	if (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE) {
 		errno = EAGAIN;
-		return -1; /* try again */
-	} else if (err == SSL_ERROR_SYSCALL && BIO_eof(SSL_get_rbio(ssl))){
-		return 0; /* EOF */
-	} else if(err == SSL_ERROR_SYSCALL){
+		return -IP_ERROR_ERRNO; /* try again */
+	} else if (err == SSL_ERROR_ZERO_RETURN) {
+		ssl_close(ssl);
+		return -IP_ERROR_SUCCESS; /* Received a close_notify */ // TODO
+	} else if (err == SSL_ERROR_SYSCALL && BIO_eof(SSL_get_rbio(ssl))) {
+		return -IP_ERROR_SUCCESS; /* EOF */
+	} else if (err == SSL_ERROR_SYSCALL) {
 		d_print("errno: %d\n", errno);
 	}
 	d_print("SSL encountered an error: %d\n", err);
 	return -IP_ERROR_OPENSSL;
 }
 
+/*
+ * RFC5246 : "It is not required for the initiator of the close
+ * to wait for the responding close_notify alert before closing
+ * the read side of the connection."
+ *
+ * We will only call SSL_shutdown once before closing the socket.
+ */
+int ssl_close(SSL *ssl)
+{
+	int ret = SSL_shutdown(ssl);
+	d_print("shutdown: ret=%d\n", ret);
+	if (ret < 0) {
+		handle_ssl_error(ssl, ret);
+	}
+
+	if (ssl != NULL) {
+		SSL_free(ssl);
+		ssl = NULL;
+	}
+
+	if (ssl_context != NULL) {
+		SSL_CTX_free(ssl_context);
+		ssl_context = NULL;
+	}
+
+	if (ret >= 0)
+		return SSL_ERROR_NONE;
+	return ret;
+}
+
 int https_write(struct connection *conn, const char *in_buf, int count)
 {
-	SSL* ssl = conn->ssl;
+	SSL *ssl = conn->ssl;
 	int ret = SSL_write(ssl, in_buf, count); /* >0 on success, <=0 else */
-	if(ret <= 0){
+	if (ret <= 0) {
 		return handle_ssl_error(ssl, ret);
 	}
 	return ret;
@@ -137,11 +151,13 @@ int https_write(struct connection *conn, const char *in_buf, int count)
 int https_read(struct connection *conn, char *out_buf, int count)
 {
 	SSL *ssl = conn->ssl;
-	int ret = SSL_read(ssl, out_buf, count); /* >0 on success, <=0 else */
-	if(ret <= 0){
+	if (conn->ssl == NULL)
+		return -1;
+	int ret = SSL_read(ssl, out_buf, count); /* returns >0 on success, <=0 else */
+	if (ret <= 0) {
 		ret = handle_ssl_error(ssl, ret);
 		if (ret == -IP_ERROR_OPENSSL)
-			return -1; /* because https_read() should emulate socket_read() */
+			return -1; /* https_read() should emulate socket_read() which returns -1 on errors */
 		return ret;
 	}
 	return ret;
@@ -149,10 +165,12 @@ int https_read(struct connection *conn, char *out_buf, int count)
 
 int socket_read(struct connection *conn, char *out_buf, int count)
 {
-	return read(*conn->fd_ref, out_buf, count);
+	int fd = get_sockfd(conn);
+	return read(fd, out_buf, count);
 }
 
 int socket_write(struct connection *conn, const char *in_buf, int count)
 {
-	return write(*conn->fd_ref, in_buf, count);
+	int fd = get_sockfd(conn);
+	return write(fd, in_buf, count);
 }
