@@ -56,11 +56,12 @@ int parse_uri(const char *uri, struct http_uri *u)
 	u->host = NULL;
 	u->path = NULL;
 	u->port = is_https_url(uri) ? 443 : 80;
-	str 	= is_https_url(uri) ? uri + 8 : uri + 7;
-	host_start = str;
 
 	if (!is_http_or_https_url(uri))
 		return -1;
+
+	str	= is_https_url(uri) ? uri + 8 : uri + 7;
+	host_start = str;
 
 	/* [/path] */
 	slash = strchr(str, '/');
@@ -135,7 +136,7 @@ void http_free_uri(struct http_uri *u)
 	u->path = NULL;
 }
 
-int http_open(struct http_get *hg, int timeout_ms)
+int socket_open(struct http_get *hg, int timeout_ms)
 {
 	const struct addrinfo hints = {
 		.ai_socktype = SOCK_STREAM
@@ -174,6 +175,7 @@ int http_open(struct http_get *hg, int timeout_ms)
 	hg->fd = socket(addr.sa.sa_family, SOCK_STREAM, 0);
 	if (hg->fd == -1)
 		return -1;
+	*hg->conn->fd_ref = hg->fd;
 
 	flags = fcntl(hg->fd, F_GETFL);
 	if (fcntl(hg->fd, F_SETFL, O_NONBLOCK) == -1)
@@ -224,9 +226,9 @@ close_exit:
 	return -1;
 }
 
-int open_connection(struct http_get *hg, int timeout_ms)
+int connection_open(struct http_get *hg, int timeout_ms)
 {
-	if (http_open(hg, timeout_ms))
+	if (socket_open(hg, timeout_ms))
 		return -IP_ERROR_ERRNO;
 
 	if(hg->is_https == 0)
@@ -246,13 +248,13 @@ int open_connection(struct http_get *hg, int timeout_ms)
 		return -IP_ERROR_FUNCTION_NOT_SUPPORTED;
 	}
 
-	if (ssl_connect(hg))
+	if (ssl_open(hg))
 		return -IP_ERROR_OPENSSL;
 
 	return IP_ERROR_SUCCESS;
 }
 
-int close_connection(struct connection *conn)
+int connection_close(struct connection *conn)
 {
 	int rc = 0;
 
@@ -261,7 +263,7 @@ int close_connection(struct connection *conn)
 	if (rc)
 		d_print("Error while closing ssl connection\n");
 
-	int fd = *conn->fd_ref;
+	int fd = get_sockfd(conn);
 	close(fd);
 
 	return rc;
@@ -271,9 +273,9 @@ static int http_write(struct connection *conn, const char *buf, int count, int t
 {
 	struct timeval tv;
 	int pos = 0;
-	int fd = *conn->fd_ref;
+	int fd = get_sockfd(conn);
 
-	tv.tv_sec = timeout_ms / 1000;
+			tv.tv_sec = timeout_ms / 1000;
 	tv.tv_usec = (timeout_ms % 1000) * 1000;
 	while (1) {
 		fd_set wfds;
@@ -339,7 +341,7 @@ static int read_timeout(int fd, int timeout_ms)
 static int http_read_response(struct connection *conn, struct gbuf *buf, int timeout_ms)
 {
 	char prev = 0;
-	int fd = *conn->fd_ref;
+	int fd = get_sockfd(conn);
 
 	if (read_timeout(fd, timeout_ms))
 		return -1;
@@ -466,7 +468,7 @@ out:
 char *http_read_body(struct connection *conn, size_t *size, int timeout_ms)
 {
 	GBUF(buf);
-	if (read_timeout(*conn->fd_ref, timeout_ms))
+	if (read_timeout(get_sockfd(conn), timeout_ms))
 		return NULL;
 	while (1) {
 		int count = 1023;

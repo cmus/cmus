@@ -212,15 +212,14 @@ static int do_http_get(struct http_get *hg, const char *uri, int redirections)
 	hg->code = -1;
 	hg->is_https = is_https_url(uri);
 	hg->conn->ssl = NULL;
-	hg->fd = -1;
-	hg->conn->fd_ref = &hg->fd;
+	hg->fd = *hg->conn->fd_ref;
 	hg->conn->write = hg->is_https ? &https_write : &socket_write;
-	hg->conn->read = hg-> is_https ? &https_read : &socket_read;
+	hg->conn->read = hg->is_https ? &https_read : &socket_read;
 
 	if (parse_uri(uri, &hg->uri))
 		return -IP_ERROR_INVALID_URI;
 
-	rc = open_connection(hg, http_connection_timeout);
+	rc = connection_open(hg, http_connection_timeout);
 	if (rc)
 		return rc;
 
@@ -267,7 +266,7 @@ static int do_http_get(struct http_get *hg, const char *uri, int redirections)
 
 		redirloc = xstrdup(val);
 		http_get_free(hg);
-		close_connection(hg->conn);
+		connection_close(hg->conn);
 
 		rc = do_http_get(hg, redirloc, redirections);
 
@@ -289,7 +288,7 @@ static int setup_remote(struct input_plugin *ip, const struct keyval *headers)
 		ip->ops = get_ops_by_mime_type(val);
 		if (ip->ops == NULL) {
 			d_print("unsupported content type: %s\n", val);
-			close_connection(conn);
+			connection_close(conn);
 			return -IP_ERROR_FILE_FORMAT;
 		}
 	} else {
@@ -299,12 +298,11 @@ static int setup_remote(struct input_plugin *ip, const struct keyval *headers)
 		ip->ops = get_ops_by_mime_type(type);
 		if (ip->ops == NULL) {
 			d_print("unsupported content type: %s\n", type);
-			close_connection(conn);
+			connection_close(conn);
 			return -IP_ERROR_FILE_FORMAT;
 		}
 	}
-
-	ip->data.fd = *conn->fd_ref;
+	ip->data.fd = get_sockfd(conn);
 	ip->data.metadata = xnew(char, 16 * 255 + 1);
 
 	val = keyvals_get_val(headers, "icy-metaint");
@@ -354,7 +352,7 @@ static int handle_line(void *data, const char *uri)
 {
 	struct read_playlist_data *rpd = data;
 	struct http_get hg;
-	set_connection(&hg, get_connection(rpd->ip));
+	// set_connection(&hg, get_connection(rpd->ip));
 
 	rpd->count++;
 	rpd->rc = do_http_get(&hg, uri, 0);
@@ -362,7 +360,7 @@ static int handle_line(void *data, const char *uri)
 		rpd->ip->http_code = hg.code;
 		rpd->ip->http_reason = hg.reason;
 		if (hg.fd >= 0)
-			close_connection(hg.conn);
+			connection_close(hg.conn);
 
 		hg.reason = NULL;
 		http_get_free(&hg);
@@ -389,7 +387,7 @@ static int read_playlist(struct input_plugin *ip)
 	set_fd(&ip->data, ip->data.fd);
 
 	body = http_read_body(conn, &size, http_read_timeout);
-	close_connection(conn);
+	connection_close(conn);
 	if (!body)
 		return -IP_ERROR_ERRNO;
 
@@ -432,6 +430,7 @@ static int open_remote(struct input_plugin *ip)
 		}
 	}
 
+	ip->data.fd = get_sockfd(&d->conn);
 	rc = setup_remote(ip, hg.headers);
 	http_get_free(&hg);
 	return rc;
@@ -469,7 +468,7 @@ static void ip_reset(struct input_plugin *ip, int close_fd)
 	ip_init(ip, ip->data.filename);
 	if (fd != -1) {
 		if (close_fd)
-			close_connection(&ip->data.conn);
+			connection_close(&ip->data.conn);
 		else {
 			lseek(fd, 0, SEEK_SET);
 			set_fd(&ip->data, fd);
