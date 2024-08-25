@@ -197,7 +197,7 @@ static void keyvals_add_basic_auth(struct growing_keyvals *c,
 	}
 }
 
-static int do_http_get(struct http_get *hg, const char *uri, int redirections)
+static int do_http_get(struct connection *conn, struct http_get *hg, const char *uri, int redirections)
 {
 	GROWING_KEYVALS(h);
 	int i, rc;
@@ -211,15 +211,13 @@ static int do_http_get(struct http_get *hg, const char *uri, int redirections)
 	hg->proxy = NULL;
 	hg->code = -1;
 	hg->is_https = is_https_url(uri);
-	hg->conn->ssl = NULL;
-	hg->fd = *hg->conn->fd_ref;
-	hg->conn->write = hg->is_https ? &https_write : &socket_write;
-	hg->conn->read = hg->is_https ? &https_read : &socket_read;
+	conn->write = hg->is_https ? &https_write : &socket_write;
+	conn->read = hg->is_https ? &https_read : &socket_read;
 
 	if (parse_uri(uri, &hg->uri))
 		return -IP_ERROR_INVALID_URI;
 
-	rc = connection_open(hg, http_connection_timeout);
+	rc = connection_open(conn, hg, http_connection_timeout);
 	if (rc)
 		return rc;
 
@@ -232,7 +230,7 @@ static int do_http_get(struct http_get *hg, const char *uri, int redirections)
 		keyvals_add_basic_auth(&h, hg->uri.user, hg->uri.pass, "Authorization");
 	keyvals_terminate(&h);
 
-	rc = http_get(hg, h.keyvals, http_read_timeout);
+	rc = http_get(conn, hg, h.keyvals, http_read_timeout);
 	keyvals_free(h.keyvals);
 	switch (rc) {
 	case -1:
@@ -266,9 +264,9 @@ static int do_http_get(struct http_get *hg, const char *uri, int redirections)
 
 		redirloc = xstrdup(val);
 		http_get_free(hg);
-		connection_close(hg->conn);
+		connection_close(conn);
 
-		rc = do_http_get(hg, redirloc, redirections);
+		rc = do_http_get(conn, hg, redirloc, redirections);
 
 		free(redirloc);
 		return rc;
@@ -342,25 +340,20 @@ static struct connection* get_connection(struct input_plugin *ip)
 	return &ip->data.conn;
 }
 
-static void set_connection(struct http_get *hg, struct connection *conn)
-{
-	hg->conn = conn;
-	conn->fd_ref = &hg->fd;
-}
 
 static int handle_line(void *data, const char *uri)
 {
 	struct read_playlist_data *rpd = data;
 	struct http_get hg;
-	// set_connection(&hg, get_connection(rpd->ip));
 
 	rpd->count++;
-	rpd->rc = do_http_get(&hg, uri, 0);
+	struct connection *conn = get_connection(rpd->ip);
+	rpd->rc = do_http_get(conn, &hg, uri, 0);
 	if (rpd->rc) {
 		rpd->ip->http_code = hg.code;
 		rpd->ip->http_reason = hg.reason;
 		if (hg.fd >= 0)
-			connection_close(hg.conn);
+			connection_close(&rpd->ip->data.conn);
 
 		hg.reason = NULL;
 		http_get_free(&hg);
@@ -407,8 +400,8 @@ static int open_remote(struct input_plugin *ip)
 	const char *val;
 	int rc;
 
-	hg.conn = get_connection(ip);
-	rc = do_http_get(&hg, d->filename, 0);
+	struct connection *conn = get_connection(ip);
+	rc = do_http_get(conn, &hg, d->filename, 0);
 	if (rc) {
 		ip->http_code = hg.code;
 		ip->http_reason = hg.reason;
