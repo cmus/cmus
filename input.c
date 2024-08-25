@@ -292,6 +292,7 @@ static int setup_remote(struct input_plugin *ip, const struct keyval *headers)
 		ip->ops = get_ops_by_mime_type(val);
 		if (ip->ops == NULL) {
 			d_print("unsupported content type: %s\n", val);
+			error_msg("unsupported content type: %s\n", val);
 			connection_close(conn);
 			return -IP_ERROR_FILE_FORMAT;
 		}
