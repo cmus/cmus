@@ -40,6 +40,7 @@ struct http_uri {
 	int port;
 };
 
+struct connection;
 struct http_get {
 	int is_https;
 	struct http_uri uri;
@@ -56,8 +57,6 @@ int parse_uri(const char *uri, struct http_uri *u);
 void http_free_uri(struct http_uri *u);
 
 int socket_open(struct http_get *hg, int timeout_ms);
-
-struct connection;
 int connection_open(struct connection *conn, struct http_get *hg, int timeout_ms);
 int connection_close(struct connection *conn);
 
