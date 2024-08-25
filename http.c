@@ -175,7 +175,6 @@ int socket_open(struct http_get *hg, int timeout_ms)
 	hg->fd = socket(addr.sa.sa_family, SOCK_STREAM, 0);
 	if (hg->fd == -1)
 		return -1;
-	*hg->conn->fd_ref = hg->fd;
 
 	flags = fcntl(hg->fd, F_GETFL);
 	if (fcntl(hg->fd, F_SETFL, O_NONBLOCK) == -1)
@@ -226,10 +225,11 @@ close_exit:
 	return -1;
 }
 
-int connection_open(struct http_get *hg, int timeout_ms)
+int connection_open(struct connection *conn, struct http_get *hg, int timeout_ms)
 {
 	if (socket_open(hg, timeout_ms))
 		return -IP_ERROR_ERRNO;
+	*conn->fd_ref = hg->fd;
 
 	if(hg->is_https == 0)
 		return IP_ERROR_SUCCESS;
@@ -248,7 +248,7 @@ int connection_open(struct http_get *hg, int timeout_ms)
 		return -IP_ERROR_FUNCTION_NOT_SUPPORTED;
 	}
 
-	if (ssl_open(hg))
+	if (ssl_open(conn))
 		return -IP_ERROR_OPENSSL;
 
 	return IP_ERROR_SUCCESS;
@@ -432,7 +432,7 @@ static int http_parse_response(char *str, struct http_get *hg)
 	return 0;
 }
 
-int http_get(struct http_get *hg, struct keyval *headers, int timeout_ms)
+int http_get(struct connection *conn, struct http_get *hg, struct keyval *headers, int timeout_ms)
 {
 	GBUF(buf);
 	int i, rc, save;
@@ -448,12 +448,12 @@ int http_get(struct http_get *hg, struct keyval *headers, int timeout_ms)
 	}
 	gbuf_add_str(&buf, "\r\n");
 
-	rc = http_write(hg->conn, buf.buffer, buf.len, timeout_ms);
+	rc = http_write(conn, buf.buffer, buf.len, timeout_ms);
 	if (rc)
 		goto out;
 
 	gbuf_clear(&buf);
-	rc = http_read_response(hg->conn, &buf, timeout_ms);
+	rc = http_read_response(conn, &buf, timeout_ms);
 	if (rc)
 		goto out;
 

@@ -44,7 +44,6 @@ struct http_get {
 	int is_https;
 	struct http_uri uri;
 	struct http_uri *proxy;
-	struct connection *conn;
 	int fd;
 	struct keyval *headers;
 	char *reason;
@@ -58,7 +57,8 @@ void http_free_uri(struct http_uri *u);
 
 int socket_open(struct http_get *hg, int timeout_ms);
 
-int connection_open(struct http_get *hg, int timeout_ms);
+struct connection;
+int connection_open(struct connection *conn, struct http_get *hg, int timeout_ms);
 int connection_close(struct connection *conn);
 
 /*
@@ -66,7 +66,7 @@ int connection_close(struct connection *conn);
  *          -1 check errno
  *          -2 parse error
  */
-int http_get(struct http_get *hg, struct keyval *headers, int timeout_ms);
+int http_get(struct connection *conn, struct http_get *hg, struct keyval *headers, int timeout_ms);
 void http_get_free(struct http_get *hg);
 
 char *http_read_body(struct connection *conn, size_t *size, int timeout_ms);

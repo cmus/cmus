@@ -43,7 +43,7 @@ int get_sockfd(struct connection *conn)
 	return fd;
 }
 
-int init_ssl(struct http_get *hg)
+int init_ssl(struct connection *conn)
 {
 	int rc;
 	if (ssl_context == NULL) {
@@ -52,7 +52,6 @@ int init_ssl(struct http_get *hg)
 			return rc;
 	}
 
-	struct connection *conn = hg->conn;
 	SSL *ssl = SSL_new(ssl_context);
 	if (ssl == NULL) {
 		d_print("Failed to create SSL struct\n");
@@ -68,12 +67,11 @@ int init_ssl(struct http_get *hg)
 	return IP_ERROR_SUCCESS;
 }
 
-int ssl_open(struct http_get *hg)
+int ssl_open(struct connection *conn)
 {
-	if (init_ssl(hg))
+	if (init_ssl(conn))
 		return -IP_ERROR_OPENSSL;
 
-	struct connection *conn = hg->conn;
 	int rc = SSL_connect(conn->ssl); /* 1 if successful, <=0 else */
 	if (rc <= 0) {
 		int err = SSL_get_error(conn->ssl, rc);
