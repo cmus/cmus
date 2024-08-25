@@ -59,7 +59,6 @@ int parse_uri(const char *uri, struct http_uri *u)
 
 	if (!is_http_or_https_url(uri))
 		return -1;
-
 	str	= is_https_url(uri) ? uri + 8 : uri + 7;
 	host_start = str;
 
@@ -275,7 +274,7 @@ static int http_write(struct connection *conn, const char *buf, int count, int t
 	int pos = 0;
 	int fd = get_sockfd(conn);
 
-			tv.tv_sec = timeout_ms / 1000;
+	tv.tv_sec = timeout_ms / 1000;
 	tv.tv_usec = (timeout_ms % 1000) * 1000;
 	while (1) {
 		fd_set wfds;
