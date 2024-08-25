@@ -210,6 +210,7 @@ static int do_http_get(struct connection *conn, struct http_get *hg, const char 
 	hg->reason = NULL;
 	hg->proxy = NULL;
 	hg->code = -1;
+	hg->fd = -1;
 	hg->is_https = is_https_url(uri);
 	conn->write = hg->is_https ? &https_write : &socket_write;
 	conn->read = hg->is_https ? &https_read : &socket_read;
@@ -275,10 +276,15 @@ static int do_http_get(struct connection *conn, struct http_get *hg, const char 
 	}
 }
 
+static struct connection* get_connection(struct input_plugin *ip)
+{
+	return &ip->data.conn;
+}
+
 static int setup_remote(struct input_plugin *ip, const struct keyval *headers)
 {
 	const char *val;
-	struct connection *conn = &ip->data.conn;
+	struct connection *conn = get_connection(ip);
 
 	val = keyvals_get_val(headers, "Content-Type");
 	if (val) {
@@ -300,6 +306,7 @@ static int setup_remote(struct input_plugin *ip, const struct keyval *headers)
 			return -IP_ERROR_FILE_FORMAT;
 		}
 	}
+
 	ip->data.fd = get_sockfd(conn);
 	ip->data.metadata = xnew(char, 16 * 255 + 1);
 
@@ -334,13 +341,6 @@ struct read_playlist_data {
 	int count;
 };
 
-
-static struct connection* get_connection(struct input_plugin *ip)
-{
-	return &ip->data.conn;
-}
-
-
 static int handle_line(void *data, const char *uri)
 {
 	struct read_playlist_data *rpd = data;
@@ -353,7 +353,7 @@ static int handle_line(void *data, const char *uri)
 		rpd->ip->http_code = hg.code;
 		rpd->ip->http_reason = hg.reason;
 		if (hg.fd >= 0)
-			connection_close(&rpd->ip->data.conn);
+			connection_close(conn);
 
 		hg.reason = NULL;
 		http_get_free(&hg);
@@ -461,7 +461,7 @@ static void ip_reset(struct input_plugin *ip, int close_fd)
 	ip_init(ip, ip->data.filename);
 	if (fd != -1) {
 		if (close_fd)
-			connection_close(&ip->data.conn);
+			connection_close(get_connection(ip));
 		else {
 			lseek(fd, 0, SEEK_SET);
 			set_fd(&ip->data, fd);
