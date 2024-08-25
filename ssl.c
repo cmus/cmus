@@ -39,7 +39,6 @@ int init_ssl_context(void)
 int get_sockfd(struct connection *conn)
 {
 	int fd = *conn->fd_ref;
-	d_print("fd: %d\n", fd);
 	return fd;
 }
 
