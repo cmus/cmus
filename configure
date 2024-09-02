@@ -498,6 +498,38 @@ check_ffmpeg()
 	return 1
 }
 
+aaudio_code="
+#include <aaudio/AAudio.h>
+int main() {
+	// ensure basic aaudio support
+	if (__builtin_available(android 26, *)) {
+		AAudioStreamBuilder *bld;
+		AAudio_createStreamBuilder(&bld);
+
+		// ensure we have at least api 32 headers
+		if (__builtin_available(android 32, *)) {
+			AAudioStreamBuilder_setChannelMask(bld, AAUDIO_CHANNEL_9POINT1POINT6);
+		}
+	}
+	return 0;
+}
+"
+
+check_aaudio()
+{
+	check_header aaudio/AAudio.h || return $?
+	check_library AAUDIO "-D__ANDROID_UNAVAILABLE_SYMBOLS_ARE_WEAK__ -Werror=unguarded-availability" "-Wl,--no-as-needed -laaudio" || return $?
+
+	msg_checking "for working aaudio api 32 linkage"
+	if try_compile_link "$aaudio_code" $AAUDIO_CFLAGS $AAUDIO_LIBS
+	then
+		msg_result yes
+		return 0
+	fi
+	msg_result no
+	return 1
+}
+
 check_string_function()
 {
 	msg_checking "for function $1"
@@ -542,6 +574,7 @@ Options:
 
 Optional Features: y/n
   CONFIG_AAC            AAC (.aac, audio/aac, audio/aacp)               [auto]
+  CONFIG_AAUDIO         Android 8.0+ native audio output                [auto]
   CONFIG_ALSA           ALSA                                            [auto]
   CONFIG_AO             Libao cross-platform audio library              [auto]
   CONFIG_ARTS           ARTS                                            [auto]
@@ -645,6 +678,7 @@ check check_sndio      CONFIG_SNDIO
 check check_sun        CONFIG_SUN
 check check_waveout    CONFIG_WAVEOUT
 check check_roar       CONFIG_ROAR
+check check_aaudio     CONFIG_AAUDIO
 
 # discid is only needed if at least one cdda plugin is active
 test -z "$CONFIG_DISCID" && CONFIG_DISCID=a
@@ -686,6 +720,6 @@ makefile_vars \
 	CONFIG_MAD CONFIG_MIKMOD CONFIG_MODPLUG CONFIG_MP4 CONFIG_MPC \
 	CONFIG_MPRIS CONFIG_OPUS CONFIG_OSS CONFIG_PULSE CONFIG_ROAR \
 	CONFIG_SAMPLERATE CONFIG_SNDIO CONFIG_SUN CONFIG_VORBIS CONFIG_VTX \
-	CONFIG_WAV CONFIG_WAVEOUT CONFIG_WAVPACK CONFIG_BASS
+	CONFIG_WAV CONFIG_WAVEOUT CONFIG_WAVPACK CONFIG_BASS CONFIG_AAUDIO
 
 generate_config_mk
