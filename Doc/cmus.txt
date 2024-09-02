@@ -1133,13 +1133,13 @@ mpris (true)
 
 	Note: This flag has no effect if cmus was compiled without MPRIS support.
 
-output_plugin [roar, pulse, alsa, arts, oss, sndio, sun, coreaudio]
+output_plugin [roar, pulse, alsa, arts, oss, sndio, sun, coreaudio, aaudio]
 	Name of output plugin.
 
 pause_on_output_change (false)
     Pauses playback when the audio output changes.
 
-    Supported output plugins: pulse.
+    Supported output plugins: pulse, aaudio.
 
 pl_env_vars
 	Comma separated list of environment variables to substitute when saving
@@ -1486,6 +1486,35 @@ dsp.jack.resampling_quality
 	The re-sampling quality. 0 is low quality but fast, 1 is medium quality,
 	2 (default) is high quality but more CPU intensive. This option is only
 	available if cmus was compiled with libsamplerate support.
+
+dsp.aaudio.performance_mode (power_saving) [power_saving, none]
+	Set the requested performance mode. If "power_saving", battery life is
+	prioritized over low latency. If "none", battery life is balanced with
+	low latency.
+
+	This option requires restarting cmus.
+
+dsp.aaudio.allowed_capture (all) [all, system, none]
+	Specify whether the audio may or may not be captured by other apps or
+	the system.
+
+	This option is only supported on Android 10+ (API 29) and requires
+	restarting cmus.
+
+dsp.aaudio.sharing_mode (shared) [shared, exclusive]
+	Request a mode for sharing the device. This is done on a best-effort
+	basis, and the requested sharing mode may not be available.
+
+	This option requires restarting cmus.
+
+dsp.aaudio.disable_spatialization (false)
+	If true, disables Android's built-in audio spatializer even if it is
+	enabled for the current audio output. Note that spatialization only
+	applies to audio with at least 4 channels. See
+	https://developer.android.com/media/grow/spatial-audio for more details.
+
+	This option is only supported on Android 12L+ (API 32) and requires
+	restarting cmus.
 
 input.cdio.cddb_url
 	CDDB URL (default: freedb.freedb.org:8880). Uses HTTP if prefixed with
