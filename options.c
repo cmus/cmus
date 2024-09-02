@@ -191,6 +191,7 @@ int parse_enum(const char *buf, int minval, int maxval, const char * const names
 {
 	long int tmp;
 	int i;
+	GBUF(names_buf);
 
 	if (str_to_int(buf, &tmp) == 0) {
 		if (tmp < minval || tmp > maxval)
@@ -206,7 +207,13 @@ int parse_enum(const char *buf, int minval, int maxval, const char * const names
 		}
 	}
 err:
-	error_msg("name or integer in range %d..%d expected", minval, maxval);
+	for (i = 0; names[i]; i++) {
+		if (i)
+			gbuf_add_str(&names_buf, ", ");
+		gbuf_add_str(&names_buf, names[i]);
+	}
+	error_msg("expected [%d..%d] or [%s]", minval, maxval, names_buf.buffer);
+	gbuf_free(&names_buf);
 	return 0;
 }
 
