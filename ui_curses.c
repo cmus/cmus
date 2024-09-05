@@ -965,7 +965,13 @@ static void update_window(struct window *win, int x, int y, int w, const char *t
 
 static void update_tree_window(void)
 {
-	update_window(lib_tree_win, tree_win_x, 0, tree_win_w + 1, "Library", print_tree);
+	static GBUF(buf);
+	gbuf_clear(&buf);
+
+	gbuf_add_str(&buf, "Library");
+	if (worker_has_job())
+		gbuf_addf(&buf, " - %d tracks", lib_editable.nr_tracks);
+	update_window(lib_tree_win, tree_win_x, 0, tree_win_w + 1, buf.buffer, print_tree);
 }
 
 static void update_track_window(void)
