@@ -228,8 +228,8 @@ check_ncurses()
 
 check_openssl()
 {
-	pkg_config OPENSSL "openssl >= 3.3" "" "-lopenssl -lcrypto"
-	OPENSSL_CFLAGS="$OPENSSL_CFLAGS -DOPENSSL_NO_DEPRECATED" # hide deprecated openssl functions
+	pkg_config OPENSSL "openssl >= 3" "" "-lssl -lcrypto"
+	OPENSSL_CFLAGS="$OPENSSL_CFLAGS -DOPENSSL_NO_DEPRECATED"
 	return $?
 }
 
