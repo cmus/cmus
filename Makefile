@@ -16,7 +16,7 @@ all: main plugins man
 -include config.mk
 include scripts/lib.mk
 
-CFLAGS += -D_FILE_OFFSET_BITS=64
+CFLAGS += -D_FILE_OFFSET_BITS=64 $(OPENSSL_CFLAGS)
 
 FFMPEG_CFLAGS += $(shell pkg-config --cflags libswresample)
 FFMPEG_LIBS += $(shell pkg-config --libs libswresample)
