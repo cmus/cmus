@@ -306,8 +306,8 @@ static int ffmpeg_close(struct input_plugin_data *ip_data)
  * This returns the number of bytes added to the buffer.
  * It returns < 0 on error.  0 on EOF.
  */
-static int ffmpeg_fill_buffer(AVFormatContext *ic, AVCodecContext *cc, struct ffmpeg_input *input,
-			      struct ffmpeg_output *output, SwrContext *swr)
+static int ffmpeg_fill_buffer(struct input_plugin_data *ip_data, AVFormatContext *ic, AVCodecContext *cc,
+			      struct ffmpeg_input *input, struct ffmpeg_output *output, SwrContext *swr)
 {
 #if LIBAVCODEC_VERSION_MAJOR >= 56
 	AVFrame *frame = av_frame_alloc();
@@ -394,9 +394,9 @@ static int ffmpeg_fill_buffer(AVFormatContext *ic, AVCodecContext *cc, struct ff
 				res = 0;
 			output->buffer_pos = output->buffer;
 #if LIBAVCODEC_VERSION_MAJOR >= 60
-			output->buffer_used_len = res * cc->ch_layout.nb_channels * sizeof(int16_t);
+			output->buffer_used_len = res * cc->ch_layout.nb_channels * sf_get_sample_size(ip_data->sf);
 #else
-			output->buffer_used_len = res * cc->channels * sizeof(int16_t);
+			output->buffer_used_len = res * cc->channels * sf_get_sample_size(ip_data->sf);
 #endif
 #if LIBAVCODEC_VERSION_MAJOR >= 56
 			av_frame_free(&frame);
@@ -418,7 +418,7 @@ static int ffmpeg_read(struct input_plugin_data *ip_data, char *buffer, int coun
 	int out_size;
 
 	if (output->buffer_used_len == 0) {
-		rc = ffmpeg_fill_buffer(priv->input_context, priv->codec_context,
+		rc = ffmpeg_fill_buffer(ip_data, priv->input_context, priv->codec_context,
 				priv->input, priv->output, priv->swr);
 		if (rc <= 0) {
 			return rc;
