@@ -562,7 +562,8 @@ Options:
   datadir         Read-only data         [\$prefix/share]
   libdir          Libraries              [\$prefix/lib]
   mandir          Man pages              [\$datadir/man]
-  exampledir      Examples               [\$datadir/doc/cmus/examples]
+  docdir          Other documentation    [\$datadir/doc/cmus]
+  exampledir      Examples               [\$docdir/examples]
   DEBUG           Debugging level (0-2)  [$DEBUG]
 
 Optional Features: y/n
@@ -620,7 +621,8 @@ var_default bindir "${prefix}/bin"
 var_default datadir "${prefix}/share"
 var_default libdir "${prefix}/lib"
 var_default mandir "${datadir}/man"
-var_default exampledir "${datadir}/doc/cmus/examples"
+var_default docdir "${datadir}/doc/cmus"
+var_default exampledir "${docdir}/examples"
 
 check check_cc
 check check_host_cc
@@ -706,7 +708,7 @@ config_header config/xmalloc.h HAVE_STRDUP HAVE_STRNDUP
 
 CFLAGS="${CFLAGS} -DHAVE_CONFIG"
 
-makefile_vars bindir datadir libdir mandir exampledir
+makefile_vars bindir datadir libdir mandir docdir exampledir
 makefile_vars \
 	CONFIG_AAC CONFIG_ALSA CONFIG_AO CONFIG_ARTS CONFIG_CDIO \
 	CONFIG_COREAUDIO CONFIG_CUE CONFIG_FFMPEG CONFIG_FLAC CONFIG_JACK \
