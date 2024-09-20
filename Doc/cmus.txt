@@ -1157,9 +1157,9 @@ output_plugin [roar, pulse, alsa, arts, oss, sndio, sun, coreaudio, aaudio]
 	Name of output plugin.
 
 pause_on_output_change (false)
-    Pauses playback when the audio output changes.
+	Pauses playback when the audio output changes.
 
-    Supported output plugins: pulse, aaudio.
+	Supported output plugins: pulse, aaudio.
 
 pl_env_vars
 	Comma separated list of environment variables to substitute when saving
