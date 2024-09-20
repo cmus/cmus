@@ -122,7 +122,7 @@ ip/flac.so: $(flac-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(FLAC_LIBS))
 
 ip/mad.so: $(mad-objs) $(libcmus-y)
-	$(call cmd,ld_dl,$(MAD_LIBS) $(ICONV_LIBS))
+	$(call cmd,ld_dl,-lm $(MAD_LIBS) $(ICONV_LIBS))
 
 ip/mikmod.so: $(mikmod-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(MIKMOD_LIBS))
@@ -137,7 +137,7 @@ ip/mpc.so: $(mpc-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(MPC_LIBS))
 
 ip/vorbis.so: $(vorbis-objs) $(libcmus-y)
-	$(call cmd,ld_dl,$(VORBIS_LIBS))
+	$(call cmd,ld_dl,-lm $(VORBIS_LIBS))
 
 ip/opus.so: $(opus-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(OPUS_LIBS))
@@ -158,7 +158,7 @@ ip/ffmpeg.so: $(ffmpeg-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(FFMPEG_LIBS))
 
 ip/cue.so: $(cue-objs) $(libcmus-y)
-	$(call cmd,ld_dl,$(CUE_LIBS))
+	$(call cmd,ld_dl,-lm $(CUE_LIBS))
 
 ip/vtx.so: $(vtx-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(VTX_LIBS))
