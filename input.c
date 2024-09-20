@@ -1037,7 +1037,7 @@ void ip_dump_plugins(void)
 	printf("Input Plugins: %s\n", plugin_dir);
 	ip_rdlock();
 	list_for_each_entry(ip, &ip_head, node) {
-		printf("  %s:\n    Priority: %d\n    File Types:", ip->name, ip->priority);
+		printf("  %s:\n    Default Priority: %d\n    File Types:", ip->name, ip->priority);
 		for (i = 0; ip->extensions[i]; i++)
 			printf(" %s", ip->extensions[i]);
 		printf("\n    MIME Types:");
