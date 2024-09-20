@@ -30,10 +30,6 @@ and can be controlled externally using *cmus-remote*(1).
 	NOTE: Don't use this option to run multiple instances as the same user.
 	Doing so would corrupt the track metadata cache.
 
---passwd PASSWD
-	Set the password for TCP/IP connections. Required if listening on
-	host[:port]. Used in conjunction with --listen.
-
 --plugins
 	List available plugins and exit.
 
@@ -1155,6 +1151,11 @@ mpris (true)
 
 output_plugin [roar, pulse, alsa, arts, oss, sndio, sun, coreaudio, aaudio]
 	Name of output plugin.
+
+passwd [`password`]
+	Set the password for TCP/IP connections. Required if listening on
+	host[:port]. No effect if listening on a UNIX socket. Used in
+	conjunction with --listen.
 
 pause_on_output_change (false)
 	Pauses playback when the audio output changes.
