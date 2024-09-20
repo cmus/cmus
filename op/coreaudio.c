@@ -33,6 +33,9 @@
 #include "../utils.h"
 #include "../xmalloc.h"
 
+#if !defined(MAC_OS_VERSION_12_0) || MAC_OS_X_VERSION_MAX_ALLOWED < MAC_OS_VERSION_12_0
+#define kAudioObjectPropertyElementMain kAudioObjectPropertyElementMaster
+#endif
 
 /////////////////////////////////////////////////////////////////////////////
 // Ring buffer utility from the PortAudio project.
@@ -278,7 +281,7 @@ static AudioDeviceID coreaudio_get_default_device()
 	AudioObjectPropertyAddress aopa = {
 		kAudioHardwarePropertyDefaultOutputDevice,
 		kAudioObjectPropertyScopeOutput,
-		kAudioObjectPropertyElementMaster
+		kAudioObjectPropertyElementMain
 	};
 
 	AudioDeviceID dev_id = kAudioDeviceUnknown;
@@ -297,7 +300,7 @@ static AudioDeviceID coreaudio_find_device(const char *dev_name)
 	AudioObjectPropertyAddress aopa = {
 		kAudioHardwarePropertyDevices,
 		kAudioObjectPropertyScopeOutput,
-		kAudioObjectPropertyElementMaster
+		kAudioObjectPropertyElementMain
 	};
 
 	UInt32 property_size = 0;
@@ -367,7 +370,7 @@ static void coreaudio_set_channel_position(AudioDeviceID dev_id,
 	AudioObjectPropertyAddress aopa = {
 		kAudioDevicePropertyPreferredChannelLayout,
 		kAudioObjectPropertyScopeOutput,
-		kAudioObjectPropertyElementMaster
+		kAudioObjectPropertyElementMain
 	};
 	AudioChannelLayout *layout = NULL;
 	size_t layout_size = (size_t) &layout->mChannelDescriptions[channels];
@@ -428,7 +431,7 @@ static void coreaudio_sync_device_sample_rate(AudioDeviceID dev_id, AudioStreamB
 	AudioObjectPropertyAddress aopa = {
 		kAudioDevicePropertyAvailableNominalSampleRates,
 		kAudioObjectPropertyScopeOutput,
-		kAudioObjectPropertyElementMaster
+		kAudioObjectPropertyElementMain
 	};
 
 	UInt32 property_size;
@@ -487,7 +490,7 @@ static void coreaudio_hog_device(AudioDeviceID dev_id, bool hog)
 	AudioObjectPropertyAddress aopa = {
 		kAudioDevicePropertyHogMode,
 		kAudioObjectPropertyScopeOutput,
-		kAudioObjectPropertyElementMaster
+		kAudioObjectPropertyElementMain
 	};
 	UInt32 size = sizeof(hog_pid);
 	OSStatus err = AudioObjectGetPropertyData(dev_id,
@@ -726,7 +729,7 @@ static OSStatus coreaudio_get_device_stereo_channels(AudioDeviceID dev_id, UInt3
 	AudioObjectPropertyAddress aopa = {
 		kAudioDevicePropertyPreferredChannelsForStereo,
 		kAudioObjectPropertyScopeOutput,
-		kAudioObjectPropertyElementMaster
+		kAudioObjectPropertyElementMain
 	};
 	UInt32 size = sizeof(UInt32[2]);
 	OSStatus err = AudioObjectGetPropertyData(dev_id,
