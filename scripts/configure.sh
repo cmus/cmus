@@ -17,6 +17,13 @@ parse_command_line()
 		--help)
 			show_usage
 			;;
+		--prefix=*|--bindir=*|--datadir=*|--libdir=*|--mandir=*|--docdir=*)
+			# aliases for compatibility with common autoconf options
+			# https://www.gnu.org/software/autoconf/manual/autoconf-2.67/html_node/Installation-Directory-Variables.html
+			_var=`echo "$1" | sed "s/--//" | sed "s/=.*//"`
+			_val=`echo "$1" | sed "s/--${_var}=//"`
+			set_var "$_var" "$_val"
+			;;
 		-f)
 			shift
 			test $# -eq 0 && die "-f requires an argument"
