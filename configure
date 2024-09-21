@@ -471,21 +471,13 @@ check_aac()
 
 check_ffmpeg()
 {
-	HAVE_FFMPEG_AVCODEC_H=y
 	pkg_config FFMPEG "libavformat libavcodec" || return $?
-	if check_header "libavcodec/avcodec.h" $FFMPEG_CFLAGS
-	then
-		HAVE_FFMPEG_AVCODEC_H=n
-	else
-		check_header "ffmpeg/avcodec.h" $FFMPEG_CFLAGS || return $?
-	fi
+	# check the existence of specific headers since they've been renamed before
+	check_header "libavformat/avformat.h" $FFMPEG_CFLAGS || return $?
+	check_header "libavcodec/avcodec.h" $FFMPEG_CFLAGS || return $?
 	# ffmpeg api changes so frequently that it is best to compile the module
 	libs="$LDDLFLAGS $FFMPEG_LIBS"
 	cflags="$SOFLAGS $FFMPEG_CFLAGS"
-	if test "$HAVE_FFMPEG_AVCODEC_H" = y
-	then
-		cflags="$cflags -DHAVE_FFMPEG_AVCODEC_H"
-	fi
 	topdir=`dirname "$0"`
 	ffmpeg_code=`cat "$topdir"/ip/ffmpeg.c | sed 's/\\\n//g'`
 	msg_checking "for successful build of ffmpeg.c"
