@@ -47,7 +47,7 @@ static inline void filter_entry_to_iter(struct filter_entry *e, struct iter *ite
 static GENERIC_ITER_PREV(filters_get_prev, struct filter_entry, node)
 static GENERIC_ITER_NEXT(filters_get_next, struct filter_entry, node)
 
-static int filters_search_get_current(void *data, struct iter *iter)
+static int filters_search_get_current(void *data, struct iter *iter, enum search_direction dir)
 {
 	return window_get_sel(filters_win, iter);
 }

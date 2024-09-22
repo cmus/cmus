@@ -131,7 +131,7 @@ int search(struct searchable *s, const char *text, enum search_direction dir, in
 		}
 	} else {
 		/* selected item */
-		ret = s->ops.get_current(s->data, &iter);
+		ret = s->ops.get_current(s->data, &iter, dir);
 	}
 	if (ret)
 		ret = do_search(s, &iter, text, dir, 0);
@@ -143,7 +143,7 @@ int search_next(struct searchable *s, const char *text, enum search_direction di
 	struct iter iter;
 	int ret;
 
-	if (!s->ops.get_current(s->data, &iter)) {
+	if (!s->ops.get_current(s->data, &iter, dir)) {
 		return 0;
 	}
 	ret = do_search(s, &iter, text, dir, 1);

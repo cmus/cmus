@@ -50,7 +50,7 @@ static inline void help_entry_to_iter(struct help_entry *e, struct iter *iter)
 static GENERIC_ITER_PREV(help_get_prev, struct help_entry, node)
 static GENERIC_ITER_NEXT(help_get_next, struct help_entry, node)
 
-static int help_search_get_current(void *data, struct iter *iter)
+static int help_search_get_current(void *data, struct iter *iter, enum search_direction dir)
 {
 	return window_get_sel(help_win, iter);
 }

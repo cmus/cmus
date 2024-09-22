@@ -121,7 +121,7 @@ static int pl_search_get_next(struct iter *iter)
 	return pl_search_get_generic(iter, list_next, simple_track_get_next);
 }
 
-static int pl_search_get_current(void *data, struct iter *iter)
+static int pl_search_get_current(void *data, struct iter *iter, enum search_direction dir)
 {
 	window_get_sel(pl_editable_shared.win, iter);
 	iter->data2 = &pl_visible->node;
