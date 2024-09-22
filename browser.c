@@ -231,7 +231,7 @@ static int browser_load(const char *name)
 static GENERIC_ITER_PREV(browser_get_prev, struct browser_entry, node)
 static GENERIC_ITER_NEXT(browser_get_next, struct browser_entry, node)
 
-static int browser_search_get_current(void *data, struct iter *iter)
+static int browser_search_get_current(void *data, struct iter *iter, enum search_direction dir)
 {
 	return window_get_sel(browser_win, iter);
 }

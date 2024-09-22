@@ -24,6 +24,7 @@
 #include "iter.h"
 #include "track_info.h"
 #include "cmus.h"
+#include "search.h"
 
 struct shuffle_info {
 	struct rb_node tree_node;
@@ -80,7 +81,7 @@ int simple_track_get_prev(struct iter *);
 int simple_track_get_next(struct iter *);
 
 /* data is window */
-int simple_track_search_get_current(void *data, struct iter *iter);
+int simple_track_search_get_current(void *data, struct iter *iter, enum search_direction dir);
 int simple_track_search_matches(void *data, struct iter *iter, const char *text);
 int _simple_track_search_matches(struct iter *iter, const char *text);
 

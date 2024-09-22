@@ -405,7 +405,7 @@ static int tree_track_get_next(struct iter *iter)
 }
 
 /* search (tree) {{{ */
-static int tree_search_get_current(void *data, struct iter *iter)
+static int tree_search_get_current(void *data, struct iter *iter, enum search_direction dir)
 {
 	struct artist *artist;
 	struct album *album;

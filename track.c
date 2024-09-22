@@ -48,7 +48,7 @@ struct simple_track *simple_track_new(struct track_info *ti)
 GENERIC_ITER_PREV(simple_track_get_prev, struct simple_track, node)
 GENERIC_ITER_NEXT(simple_track_get_next, struct simple_track, node)
 
-int simple_track_search_get_current(void *data, struct iter *iter)
+int simple_track_search_get_current(void *data, struct iter *iter, enum search_direction dir)
 {
 	return window_get_sel(data, iter);
 }
