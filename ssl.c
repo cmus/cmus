@@ -36,12 +36,6 @@ int init_ssl_context(void)
 	return IP_ERROR_SUCCESS;
 }
 
-int get_sockfd(struct connection *conn)
-{
-	int fd = *conn->fd_ref;
-	return fd;
-}
-
 int init_ssl(struct connection *conn)
 {
 	int rc;
@@ -78,6 +72,27 @@ int ssl_open(struct connection *conn)
 		return -IP_ERROR_OPENSSL;
 	}
 	return rc - 1; /* 0 on success */
+}
+
+int https_connection_open(struct http_get *hg, struct connection *conn){
+	if(hg->proxy != NULL) {
+		/*
+		 * TODO : Supporting proxy with HTTPS is not too difficult.
+		 * We need to perform a CONNECT request before ssl_connect()
+		 * We would need to use hg->uri.uri (instead of hg->uri.path for proxy with HTTP)
+		 *
+		 * In order to do that, we need to refactor the code that does GET requests
+		 * to also support CONNECT request. This is getting out of scope for HTTPS support.
+		 * We can return an error message for now.
+		 */
+		d_print("HTTPS stream with proxy not yet supported.\n");
+		return -IP_ERROR_FUNCTION_NOT_SUPPORTED;
+	}
+
+	if (ssl_open(conn))
+		return -IP_ERROR_OPENSSL;
+
+	return IP_ERROR_SUCCESS;
 }
 
 /*
@@ -158,16 +173,4 @@ int https_read(struct connection *conn, char *out_buf, int count)
 		return ret;
 	}
 	return ret;
-}
-
-int socket_read(struct connection *conn, char *out_buf, int count)
-{
-	int fd = get_sockfd(conn);
-	return read(fd, out_buf, count);
-}
-
-int socket_write(struct connection *conn, const char *in_buf, int count)
-{
-	int fd = get_sockfd(conn);
-	return write(fd, in_buf, count);
 }
