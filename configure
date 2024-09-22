@@ -228,9 +228,13 @@ check_ncurses()
 
 check_openssl()
 {
-	pkg_config OPENSSL "openssl >= 3" "" "-lssl -lcrypto"
-	OPENSSL_CFLAGS="$OPENSSL_CFLAGS -DOPENSSL_NO_DEPRECATED"
-	return $?
+	if test "$CONFIG_OPENSSL" = y
+	then
+		pkg_config OPENSSL "openssl >= 3" "" "-lssl -lcrypto" || return $?
+		OPENSSL_CFLAGS="$OPENSSL_CFLAGS -DOPENSSL_NO_DEPRECATED"
+		return 0
+	fi
+	return 1
 }
 
 check_discid()
@@ -531,6 +535,7 @@ HAVE_CDDB=n
 CONFIG_TREMOR=n
 CONFIG_MIKMOD=n
 CONFIG_BASS=n
+CONFIG_OPENSSL=y
 USE_FALLBACK_IP=n
 HAVE_BYTESWAP_H=n
 HAVE_STRDUP=n
@@ -574,6 +579,7 @@ Optional Features: y/n
   CONFIG_ROAR           native RoarAudio output                         [auto]
   CONFIG_SAMPLERATE     Use libsamplerate to resample to JACK's rate    [auto]
   CONFIG_SNDIO          Sndio                                           [auto]
+  CONFIG_OPENSSL		OpenSSL (https stream support)					[y]
   CONFIG_SUN            Sun Audio                                       [auto]
   CONFIG_TREMOR         Use Tremor as Ogg/Vorbis input plugin           [n]
   CONFIG_VORBIS         Ogg/Vorbis (.ogg, application/ogg, audio/x-ogg) [auto]
@@ -617,7 +623,6 @@ check check_rtsched
 check check_ncurses
 check check_iconv
 check check_wcwidth
-check check_openssl
 check_header byteswap.h && HAVE_BYTESWAP_H=y
 check_string_function "strdup" && HAVE_STRDUP=y
 check_string_function "strndup" && HAVE_STRNDUP=y
@@ -651,6 +656,7 @@ check check_coreaudio  CONFIG_COREAUDIO
 check check_arts       CONFIG_ARTS
 check check_oss        CONFIG_OSS
 check check_sndio      CONFIG_SNDIO
+check check_openssl	   CONFIG_OPENSSL
 check check_sun        CONFIG_SUN
 check check_waveout    CONFIG_WAVEOUT
 check check_roar       CONFIG_ROAR
@@ -671,6 +677,7 @@ LIBDIR="$libdir"
 
 config_header config/cdio.h HAVE_CDDB
 config_header config/mpris.h CONFIG_MPRIS
+config_header config/openssl.h CONFIG_OPENSSL
 config_header config/datadir.h DATADIR
 config_header config/libdir.h LIBDIR
 config_header config/debug.h DEBUG
@@ -694,7 +701,7 @@ makefile_vars \
 	CONFIG_COREAUDIO CONFIG_CUE CONFIG_FFMPEG CONFIG_FLAC CONFIG_JACK \
 	CONFIG_MAD CONFIG_MIKMOD CONFIG_MODPLUG CONFIG_MP4 CONFIG_MPC \
 	CONFIG_MPRIS CONFIG_OPUS CONFIG_OSS CONFIG_PULSE CONFIG_ROAR \
-	CONFIG_SAMPLERATE CONFIG_SNDIO CONFIG_SUN CONFIG_VORBIS CONFIG_VTX \
-	CONFIG_WAV CONFIG_WAVEOUT CONFIG_WAVPACK CONFIG_BASS
+	CONFIG_SAMPLERATE CONFIG_SNDIO CONFIG_OPENSSL CONFIG_SUN CONFIG_VORBIS \
+	CONFIG_VTX CONFIG_WAV CONFIG_WAVEOUT CONFIG_WAVPACK CONFIG_BASS
 
 generate_config_mk

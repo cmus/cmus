@@ -33,9 +33,8 @@ struct connection {
 	connection_write write;
 };
 
-int get_sockfd(struct connection *conn);
-
 struct http_get;
+int https_connection_open(struct http_get *hg, struct connection *conn);
 int init_ssl_context(void);
 int init_ssl(struct connection *conn);
 int ssl_open(struct connection *conn);
@@ -44,7 +43,5 @@ int handle_ssl_error(SSL* ssl, int ret);
 
 int https_write(struct connection *conn, const char *buf, int count);
 int https_read(struct connection *conn, char *buf, int count);
-int socket_write(struct connection *conn, const char *in_buf, int count);
-int socket_read(struct connection *conn, char *out_buf, int count);
 
 #endif

@@ -14,7 +14,7 @@ jobs:
     runs-on: ${{matrix.os}}
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Dependencies (Homebrew)
         if: startswith(matrix.os, 'macos-')
         run: |
@@ -48,7 +48,7 @@ jobs:
           make install DESTDIR=${PWD}/tmp
           XZ_OPT=-9 tar -cJf cmus.tar.xz -C "${PWD}/tmp" .
       - name: Upload
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: cmus (${{matrix.os}}, ${{matrix.cc}})
           path: cmus.tar.xz

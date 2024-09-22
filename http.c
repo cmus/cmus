@@ -22,8 +22,12 @@
 #include "xmalloc.h"
 #include "gbuf.h"
 #include "utils.h"
-#include "ssl.h"
 #include "read_wrapper.h"
+
+#include "config/openssl.h"
+#ifdef CONFIG_OPENSSL
+#include "ssl.h"
+#endif
 
 #include <stdio.h>
 #include <unistd.h>
@@ -230,37 +234,30 @@ int connection_open(struct connection *conn, struct http_get *hg, int timeout_ms
 		return -IP_ERROR_ERRNO;
 	*conn->fd_ref = hg->fd;
 
-	if(hg->is_https == 0)
-		return IP_ERROR_SUCCESS;
-
-	if(hg->proxy != NULL) {
-		/*
-		 * TODO : Supporting proxy with HTTPS is not too difficult.
-		 * We need to perform a CONNECT request before ssl_connect()
-		 * We would need to use hg->uri.uri (instead of hg->uri.path for proxy with HTTP)
-		 *
-		 * In order to do that, we need to refactor the code that does GET requests
-		 * to also support CONNECT request. This is getting out of scope for HTTPS support.
-		 * We can return an error message for now.
-		 */
-		d_print("HTTPS stream with proxy not yet supported.\n");
-		return -IP_ERROR_FUNCTION_NOT_SUPPORTED;
-	}
-
-	if (ssl_open(conn))
-		return -IP_ERROR_OPENSSL;
+	#ifdef CONFIG_OPENSSL
+	if(hg->is_https == 1)
+		return https_connection_open(hg, conn);
+	#endif
 
 	return IP_ERROR_SUCCESS;
+}
+
+int get_sockfd(struct connection *conn)
+{
+	int fd = *conn->fd_ref;
+	return fd;
 }
 
 int connection_close(struct connection *conn)
 {
 	int rc = 0;
 
+	#ifdef CONFIG_OPENSSL
 	if (conn->ssl != NULL)
 		rc = ssl_close(conn->ssl);
 	if (rc)
 		d_print("Error while closing ssl connection\n");
+	#endif
 
 	int fd = get_sockfd(conn);
 	close(fd);
@@ -561,4 +558,16 @@ char *base64_encode(const char *str)
 	}
 	buf[d] = 0;
 	return buf;
+}
+
+int socket_read(struct connection *conn, char *out_buf, int count)
+{
+	int fd = get_sockfd(conn);
+	return read(fd, out_buf, count);
+}
+
+int socket_write(struct connection *conn, const char *in_buf, int count)
+{
+	int fd = get_sockfd(conn);
+	return write(fd, in_buf, count);
 }

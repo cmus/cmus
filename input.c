@@ -34,6 +34,7 @@
 #include "ui_curses.h"
 #include "locking.h"
 #include "xstrjoin.h"
+#include "config/openssl.h"
 
 #include <unistd.h>
 #include <stdbool.h>
@@ -212,11 +213,23 @@ static int do_http_get(struct connection *conn, struct http_get *hg, const char 
 	hg->code = -1;
 	hg->fd = -1;
 	hg->is_https = is_https_url(uri);
-	conn->write = hg->is_https ? &https_write : &socket_write;
-	conn->read = hg->is_https ? &https_read : &socket_read;
+	conn->write = &socket_write;
+	conn->read = &socket_read;
 
 	if (parse_uri(uri, &hg->uri))
 		return -IP_ERROR_INVALID_URI;
+
+	#ifdef CONFIG_OPENSSL
+	conn->write = hg->is_https ? &https_write : &socket_write;
+	conn->read = hg->is_https ? &https_read : &socket_read;
+	#else
+	if (hg->is_https){
+		d_print("OpenSSL support disabled, cannot open HTTPS streams\n");
+		return -IP_ERROR_INVALID_URI;
+	}
+	#endif
+
+
 
 	rc = connection_open(conn, hg, http_connection_timeout);
 	if (rc)
@@ -671,9 +684,13 @@ void ip_setup(struct input_plugin *ip)
 int ip_close(struct input_plugin *ip)
 {
 	int rc;
+
+	#ifdef CONFIG_OPENSSL
 	struct connection *conn = &ip->data.conn;
 	if (conn->ssl != NULL)
 		ssl_close(conn->ssl);
+	#endif
+
 	rc = ip->ops->close(&ip->data);
 	BUG_ON(ip->data.private);
 	if (ip->data.fd != -1)

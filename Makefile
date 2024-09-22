@@ -41,10 +41,11 @@ cmus-y := \
 	filters.o format_print.o gbuf.o glob.o help.o history.o http.o id3.o input.o \
 	job.o keys.o keyval.o lib.o load_dir.o locking.o mergesort.o misc.o options.o \
 	output.o pcm.o player.o play_queue.o pl.o pl_env.o rbtree.o read_wrapper.o \
-	search_mode.o search.o server.o ssl.o spawn.o tabexp_file.o tabexp.o track_info.o \
+	search_mode.o search.o server.o spawn.o tabexp_file.o tabexp.o track_info.o \
 	track.o tree.o uchar.o u_collate.o ui_curses.o window.o worker.o xstrjoin.o
 
-cmus-$(CONFIG_MPRIS) += mpris.o
+cmus-$(CONFIG_MPRIS)   += mpris.o
+cmus-$(CONFIG_OPENSSL) += ssl.o
 
 $(cmus-y): CFLAGS += $(PTHREAD_CFLAGS) $(NCURSES_CFLAGS) $(ICONV_CFLAGS) $(DL_CFLAGS) $(OPENSSL_CFLAGS)
 
