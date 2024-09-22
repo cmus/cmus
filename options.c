@@ -144,6 +144,7 @@ int attrs[NR_ATTRS] = {
 	A_NORMAL,
 	A_NORMAL,
 	A_NORMAL,
+	A_NORMAL,
 	A_BOLD,
 	A_NORMAL,
 };
