@@ -416,16 +416,38 @@ static int tree_search_get_current(void *data, struct iter *iter, enum search_di
 		return 0;
 	if (window_get_sel(lib_track_win, &tmpiter)) {
 		track = iter_to_tree_track(&tmpiter);
+		if (search_restricted) {
+			/**
+			 * tree_search_get_next/tree_search_get_prev only return
+			 * the first/last (for forward/backwards) track node for
+			 * restricted search, so we need to make this match so
+			 * do_u_search's check for if we've gone back to the
+			 * starting iter eventually succeeds
+			 */
+			if (dir == SEARCH_FORWARD) {
+				track = to_tree_track(rb_first(&track->album->track_root));
+			} else {
+				track = to_tree_track(rb_last(&track->album->track_root));
+			}
+		}
 		tree_search_track_to_iter(track, iter);
 		return 1;
 	}
 
-	/* artist not expanded. track_win is empty
-	 * set tmp to the first track of the selected artist */
+	/* artist not expanded. track_win is empty set tmp to the first/last
+	 * track of the selected artist for forwards/backwards respectively */
 	window_get_sel(lib_tree_win, &tmpiter);
 	artist = iter_to_artist(&tmpiter);
 	album = to_album(rb_first(&artist->album_root));
-	track = to_tree_track(rb_first(&album->track_root));
+	if (search_restricted) {
+		if (dir == SEARCH_FORWARD) {
+			track = to_tree_track(rb_first(&album->track_root));
+		} else {
+			track = to_tree_track(rb_last(&album->track_root));
+		}
+	} else {
+		track = to_tree_track(rb_first(&album->track_root));
+	}
 	tree_search_track_to_iter(track, iter);
 	return 1;
 }
