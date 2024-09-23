@@ -383,7 +383,7 @@ static void cmd_clear(char *arg)
 
 static void cmd_load(char *arg)
 {
-	int flag = parse_flags((const char **)&arg, "lp");
+	int flag = parse_flags((const char **)&arg, "l");
 
 	if (flag == -1)
 		return;
