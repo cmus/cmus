@@ -477,16 +477,13 @@ live-filter <simple-filter-expression|short-filter-expression>
 	Like filter, but uses simple filters and shows a preview as you type. It
 	persists even after leaving command mode.
 
-load [-l] [-p] <playlist>
+load [-l] <playlist>
 	Loads a playlist to a view.
 
 	@li -l
 	load to library views
 
-	@li -p
-	load to playlist view
-
-	If a view is not specified, the current view is used.
+	If a view is not specified, the current view is used, which must be 1-2.
 
 lqueue [NUM]
 	Queues NUM (default 1) random albums from the library. Also see
