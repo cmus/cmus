@@ -55,17 +55,19 @@ int parse_uri(const char *uri, struct http_uri *u)
 {
 	const char *str, *colon, *at, *slash, *host_start;
 
+	if (!is_http_or_https_url(uri))
+		return -1;
+
 	/* initialize all fields */
 	u->uri  = xstrdup(uri);
 	u->user = NULL;
 	u->pass = NULL;
 	u->host = NULL;
 	u->path = NULL;
-	u->port = is_https_url(uri) ? 443 : 80;
+	u->is_https = is_https_url(uri);
+	u->port =  u->is_https ? 443 : 80;
 
-	if (!is_http_or_https_url(uri))
-		return -1;
-	str	= is_https_url(uri) ? uri + 8 : uri + 7;
+	str	= u->is_https ? uri + 8 : uri + 7;
 	host_start = str;
 
 	/* [/path] */

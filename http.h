@@ -22,6 +22,7 @@
 #include "keyval.h"
 
 #include <stddef.h> /* size_t */
+#include <stdbool.h>
 
 /*
  * 1xx indicates an informational message only
@@ -32,17 +33,17 @@
  */
 
 struct http_uri {
+	bool is_https;
 	char *uri;
 	char *user;
 	char *pass;
 	char *host;
-	char *path;
+	char *path_and_query;
 	int port;
 };
 
 struct connection;
 struct http_get {
-	int is_https;
 	struct http_uri uri;
 	struct http_uri *proxy;
 	int fd;
