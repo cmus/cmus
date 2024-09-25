@@ -63,19 +63,19 @@ int parse_uri(const char *uri, struct http_uri *u)
 	u->user = NULL;
 	u->pass = NULL;
 	u->host = NULL;
-	u->path = NULL;
+	u->path_and_query = NULL;
 	u->is_https = is_https_url(uri);
 	u->port =  u->is_https ? 443 : 80;
 
 	str	= u->is_https ? uri + 8 : uri + 7;
 	host_start = str;
 
-	/* [/path] */
+	/* [/path][?query] */
 	slash = strchr(str, '/');
 	if (slash) {
-		u->path = xstrdup(slash);
+		u->path_and_query = xstrdup(slash);
 	} else {
-		u->path = xstrdup("/");
+		u->path_and_query = xstrdup("/");
 	}
 
 	/* [user[:pass]@] */
@@ -134,13 +134,13 @@ void http_free_uri(struct http_uri *u)
 	free(u->user);
 	free(u->pass);
 	free(u->host);
-	free(u->path);
+	free(u->path_and_query);
 
 	u->uri  = NULL;
 	u->user = NULL;
 	u->pass = NULL;
 	u->host = NULL;
-	u->path = NULL;
+	u->path_and_query = NULL;
 }
 
 int socket_open(struct http_get *hg, int timeout_ms)
@@ -436,7 +436,7 @@ int http_get(struct connection *conn, struct http_get *hg, struct keyval *header
 	int i, rc, save;
 
 	gbuf_add_str(&buf, "GET ");
-	gbuf_add_str(&buf, hg->proxy ? hg->uri.uri : hg->uri.path);
+	gbuf_add_str(&buf, hg->proxy ? hg->uri.uri : hg->uri.path_and_query);
 	gbuf_add_str(&buf, " HTTP/1.0\r\n");
 	for (i = 0; headers[i].key; i++) {
 		gbuf_add_str(&buf, headers[i].key);
