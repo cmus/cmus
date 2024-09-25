@@ -212,7 +212,6 @@ static int do_http_get(struct connection *conn, struct http_get *hg, const char 
 	hg->proxy = NULL;
 	hg->code = -1;
 	hg->fd = -1;
-	hg->is_https = is_https_url(uri);
 	conn->write = &socket_write;
 	conn->read = &socket_read;
 
@@ -220,8 +219,8 @@ static int do_http_get(struct connection *conn, struct http_get *hg, const char 
 		return -IP_ERROR_INVALID_URI;
 
 	#ifdef CONFIG_OPENSSL
-	conn->write = hg->is_https ? &https_write : &socket_write;
-	conn->read = hg->is_https ? &https_read : &socket_read;
+	conn->write = hg->uri.is_https ? &https_write : &socket_write;
+	conn->read = hg->uri.is_https ? &https_read : &socket_read;
 	#else
 	if (hg->uri.is_https){
 		d_print("OpenSSL support disabled at build time, cannot open HTTPS streams\n");
