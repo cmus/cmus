@@ -11,17 +11,11 @@ Copyright © 2008-2017 Various Authors
 
 ## Configuration
 
-List available optional features
-
-    $ ./configure --help
-
-Auto-detect everything
-
     $ ./configure
 
-To disable some feature, arts for example, and install to `$HOME` run
-
-    $ ./configure prefix=$HOME CONFIG_ARTS=n
+By default, features are auto-detected. To list all configuration options, run
+`./configure --help`. Some common autoconf-style options like `--prefix` are
+also available.
 
 After running configure you can see from the generated `config.mk` file
 what features have been configured in (see the `CONFIG_*` options).
@@ -31,14 +25,6 @@ of the dependencies.  For example if you want to use 'mad' input plugin
 (mp3) you need to install `libmad0-dev` (Debian) or `libmad-devel` (RPM)
 package. After installing dependencies you need to run `./configure`
 again, of course.
-
-If you want to use the Tremor library as alternative for decoding
-Ogg/Vorbis files you have to pass `CONFIG_TREMOR=y` to the configure
-script:
-
-    $ ./configure CONFIG_VORBIS=y CONFIG_TREMOR=y
-
-The Tremor library is supposed to be used on hardware that has no FPU.
 
 
 ## Building
