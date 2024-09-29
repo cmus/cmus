@@ -158,7 +158,7 @@ ip/ffmpeg.so: $(ffmpeg-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(FFMPEG_LIBS))
 
 ip/cue.so: $(cue-objs) $(libcmus-y)
-	$(call cmd,ld_dl,-lm $(CUE_LIBS))
+	$(call cmd,ld_dl,-lm)
 
 ip/vtx.so: $(vtx-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(VTX_LIBS))
