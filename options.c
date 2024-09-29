@@ -96,6 +96,7 @@ int tree_width_max = 0;
 int pause_on_output_change = 0;
 int block_key_paste = 1;
 int progress_bar = 1;
+int search_resets_position = 1;
 
 int colors[NR_COLORS] = {
 	-1,
@@ -1393,6 +1394,21 @@ static void toggle_progress_bar(void *data)
 	update_statusline();
 }
 
+static void get_search_resets_position(void *data, char *buf, size_t size)
+{
+	strscpy(buf, bool_names[search_resets_position], size);
+}
+
+static void set_search_resets_position(void *data, const char *buf)
+{
+	parse_bool(buf, &search_resets_position);
+}
+
+static void toggle_search_resets_position(void *data)
+{
+	search_resets_position ^= 1;
+}
+
 /* }}} */
 
 /* special callbacks (id set) {{{ */
@@ -1665,6 +1681,7 @@ static const struct {
 	DN(pl_env_vars)
 	DT(block_key_paste)
 	DT(progress_bar)
+	DT(search_resets_position)
 	{ NULL, NULL, NULL, NULL, 0 }
 };
 
