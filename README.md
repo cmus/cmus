@@ -77,17 +77,6 @@ And
     $ man cmus
 
 
-Mailing List
-------------
-
-To subscribe to cmus-devel@lists.sourceforge.net or view the archive visit
-http://lists.sourceforge.net/lists/listinfo/cmus-devel.
-
-The mailing list now serves as an archive for old releases and issues.
-Please use the GitHub [issues](https://github.com/cmus/cmus/issues)
-page for any problems, suggestions, or bug reports.
-
-
 IRC Channel
 ------------
 
