@@ -25,6 +25,7 @@
 #include "xstrjoin.h"
 #include "misc.h"
 #include "lib.h"
+#include "options.h"
 #include "command_mode.h"
 #include "keys.h"
 
@@ -199,7 +200,7 @@ void search_mode_ch(uchar ch)
 			return;
 		} else {
 			/* start from beginning if this is first char */
-			int beginning = search_line_empty();
+			int beginning = search_resets_position && search_line_empty();
 
 			/* save old value
 			 *
