@@ -27,6 +27,8 @@
 #include "config/openssl.h"
 #ifdef CONFIG_OPENSSL
 #include "ssl.h"
+#else
+#include "nossl.h"
 #endif
 
 #include <stdio.h>
@@ -234,10 +236,8 @@ int connection_open(struct connection *conn, struct http_get *hg, int timeout_ms
 		return -IP_ERROR_ERRNO;
 	*conn->fd_ref = hg->fd;
 
-	#ifdef CONFIG_OPENSSL
-	if(hg->is_https == 1)
+	if(hg->uri.is_https == 1)
 		return https_connection_open(hg, conn);
-	#endif
 
 	return IP_ERROR_SUCCESS;
 }
