@@ -21,6 +21,15 @@
 #include "debug.h"
 #include "xmalloc.h"
 #include "gbuf.h"
+#include "utils.h"
+#include "read_wrapper.h"
+
+#include "config/openssl.h"
+#ifdef CONFIG_OPENSSL
+#include "ssl.h"
+#else
+#include "nossl.h"
+#endif
 
 #include <stdio.h>
 #include <unistd.h>
@@ -36,35 +45,37 @@
 #include <errno.h>
 
 /*
- * @uri is http://[user[:pass]@]host[:port][/path][?query]
+ * @uri is http[s]://[user[:pass]@]host[:port][/path][?query]
  *
  * uri(7): If the URL supplies a user  name  but no  password, and the remote
  * server requests a password, the program interpreting the URL should request
  * one from the user.
  */
-int http_parse_uri(const char *uri, struct http_uri *u)
+int parse_uri(const char *uri, struct http_uri *u)
 {
 	const char *str, *colon, *at, *slash, *host_start;
+
+	if (!is_http_or_https_url(uri))
+		return -1;
 
 	/* initialize all fields */
 	u->uri  = xstrdup(uri);
 	u->user = NULL;
 	u->pass = NULL;
 	u->host = NULL;
-	u->path = NULL;
-	u->port = 80;
+	u->path_and_query = NULL;
+	u->is_https = is_https_url(uri);
+	u->port =  u->is_https ? 443 : 80;
 
-	if (strncmp(uri, "http://", 7))
-		return -1;
-	str = uri + 7;
+	str	= u->is_https ? uri + 8 : uri + 7;
 	host_start = str;
 
-	/* [/path] */
+	/* [/path][?query] */
 	slash = strchr(str, '/');
 	if (slash) {
-		u->path = xstrdup(slash);
+		u->path_and_query = xstrdup(slash);
 	} else {
-		u->path = xstrdup("/");
+		u->path_and_query = xstrdup("/");
 	}
 
 	/* [user[:pass]@] */
@@ -123,16 +134,16 @@ void http_free_uri(struct http_uri *u)
 	free(u->user);
 	free(u->pass);
 	free(u->host);
-	free(u->path);
+	free(u->path_and_query);
 
 	u->uri  = NULL;
 	u->user = NULL;
 	u->pass = NULL;
 	u->host = NULL;
-	u->path = NULL;
+	u->path_and_query = NULL;
 }
 
-int http_open(struct http_get *hg, int timeout_ms)
+int socket_open(struct http_get *hg, int timeout_ms)
 {
 	const struct addrinfo hints = {
 		.ai_socktype = SOCK_STREAM
@@ -150,8 +161,8 @@ int http_open(struct http_get *hg, int timeout_ms)
 	char *proxy = getenv("http_proxy");
 	if (proxy) {
 		hg->proxy = xnew(struct http_uri, 1);
-		if (http_parse_uri(proxy, hg->proxy)) {
-			d_print("Failed to parse HTTP proxy URI '%s'\n", proxy);
+		if (parse_uri(proxy, hg->proxy)) {
+			d_print("Failed to parse HTTP(S) proxy URI '%s'\n", proxy);
 			return -1;
 		}
 	} else {
@@ -221,10 +232,46 @@ close_exit:
 	return -1;
 }
 
-static int http_write(int fd, const char *buf, int count, int timeout_ms)
+int connection_open(struct connection *conn, struct http_get *hg, int timeout_ms)
+{
+	if (socket_open(hg, timeout_ms))
+		return -IP_ERROR_ERRNO;
+	*conn->fd_ref = hg->fd;
+
+	if(hg->uri.is_https == 1)
+		return https_connection_open(hg, conn);
+
+	return IP_ERROR_SUCCESS;
+}
+
+int get_sockfd(struct connection *conn)
+{
+	int fd = *conn->fd_ref;
+	return fd;
+}
+
+int connection_close(struct connection *conn)
+{
+	int rc = 0;
+
+	#ifdef CONFIG_OPENSSL
+	if (conn->ssl != NULL)
+		rc = ssl_close(conn->ssl);
+	if (rc)
+		d_print("Error while closing ssl connection\n");
+	#endif
+
+	int fd = get_sockfd(conn);
+	close(fd);
+
+	return rc;
+}
+
+static int http_write(struct connection *conn, const char *buf, int count, int timeout_ms)
 {
 	struct timeval tv;
 	int pos = 0;
+	int fd = get_sockfd(conn);
 
 	tv.tv_sec = timeout_ms / 1000;
 	tv.tv_usec = (timeout_ms % 1000) * 1000;
@@ -244,7 +291,7 @@ static int http_write(int fd, const char *buf, int count, int timeout_ms)
 			continue;
 		}
 		if (rc == 1) {
-			rc = write(fd, buf + pos, count - pos);
+			rc = conn->write(conn, buf + pos, count - pos);
 			if (rc == -1) {
 				if (errno == EINTR || errno == EAGAIN)
 					continue;
@@ -289,9 +336,10 @@ static int read_timeout(int fd, int timeout_ms)
 }
 
 /* reads response, ignores fscking carriage returns */
-static int http_read_response(int fd, struct gbuf *buf, int timeout_ms)
+static int http_read_response(struct connection *conn, struct gbuf *buf, int timeout_ms)
 {
 	char prev = 0;
+	int fd = get_sockfd(conn);
 
 	if (read_timeout(fd, timeout_ms))
 		return -1;
@@ -299,7 +347,7 @@ static int http_read_response(int fd, struct gbuf *buf, int timeout_ms)
 		int rc;
 		char ch;
 
-		rc = read(fd, &ch, 1);
+		rc = conn->read(conn, &ch, 1);
 		if (rc == -1) {
 			return -1;
 		}
@@ -382,13 +430,13 @@ static int http_parse_response(char *str, struct http_get *hg)
 	return 0;
 }
 
-int http_get(struct http_get *hg, struct keyval *headers, int timeout_ms)
+int http_get(struct connection *conn, struct http_get *hg, struct keyval *headers, int timeout_ms)
 {
 	GBUF(buf);
 	int i, rc, save;
 
 	gbuf_add_str(&buf, "GET ");
-	gbuf_add_str(&buf, hg->proxy ? hg->uri.uri : hg->uri.path);
+	gbuf_add_str(&buf, hg->proxy ? hg->uri.uri : hg->uri.path_and_query);
 	gbuf_add_str(&buf, " HTTP/1.0\r\n");
 	for (i = 0; headers[i].key; i++) {
 		gbuf_add_str(&buf, headers[i].key);
@@ -398,12 +446,12 @@ int http_get(struct http_get *hg, struct keyval *headers, int timeout_ms)
 	}
 	gbuf_add_str(&buf, "\r\n");
 
-	rc = http_write(hg->fd, buf.buffer, buf.len, timeout_ms);
+	rc = http_write(conn, buf.buffer, buf.len, timeout_ms);
 	if (rc)
 		goto out;
 
 	gbuf_clear(&buf);
-	rc = http_read_response(hg->fd, &buf, timeout_ms);
+	rc = http_read_response(conn, &buf, timeout_ms);
 	if (rc)
 		goto out;
 
@@ -415,18 +463,17 @@ out:
 	return rc;
 }
 
-char *http_read_body(int fd, size_t *size, int timeout_ms)
+char *http_read_body(struct connection *conn, size_t *size, int timeout_ms)
 {
 	GBUF(buf);
-
-	if (read_timeout(fd, timeout_ms))
+	if (read_timeout(get_sockfd(conn), timeout_ms))
 		return NULL;
 	while (1) {
 		int count = 1023;
 		int rc;
 
 		gbuf_grow(&buf, count);
-		rc = read_all(fd, buf.buffer + buf.len, count);
+		rc = read_all_from_conn(conn, buf.buffer + buf.len, count);
 		if (rc == -1) {
 			gbuf_free(&buf);
 			return NULL;
@@ -513,4 +560,16 @@ char *base64_encode(const char *str)
 	}
 	buf[d] = 0;
 	return buf;
+}
+
+int socket_read(struct connection *conn, char *out_buf, int count)
+{
+	int fd = get_sockfd(conn);
+	return read(fd, out_buf, count);
+}
+
+int socket_write(struct connection *conn, const char *in_buf, int count)
+{
+	int fd = get_sockfd(conn);
+	return write(fd, in_buf, count);
 }

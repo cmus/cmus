@@ -34,6 +34,7 @@
 #include "ui_curses.h"
 #include "locking.h"
 #include "xstrjoin.h"
+#include "config/openssl.h"
 
 #include <unistd.h>
 #include <stdbool.h>
@@ -197,7 +198,7 @@ static void keyvals_add_basic_auth(struct growing_keyvals *c,
 	}
 }
 
-static int do_http_get(struct http_get *hg, const char *uri, int redirections)
+static int do_http_get(struct connection *conn, struct http_get *hg, const char *uri, int redirections)
 {
 	GROWING_KEYVALS(h);
 	int i, rc;
@@ -211,11 +212,27 @@ static int do_http_get(struct http_get *hg, const char *uri, int redirections)
 	hg->proxy = NULL;
 	hg->code = -1;
 	hg->fd = -1;
-	if (http_parse_uri(uri, &hg->uri))
+	conn->write = &socket_write;
+	conn->read = &socket_read;
+
+	if (parse_uri(uri, &hg->uri))
 		return -IP_ERROR_INVALID_URI;
 
-	if (http_open(hg, http_connection_timeout))
-		return -IP_ERROR_ERRNO;
+	#ifdef CONFIG_OPENSSL
+	conn->write = hg->uri.is_https ? &https_write : &socket_write;
+	conn->read = hg->uri.is_https ? &https_read : &socket_read;
+	#else
+	if (hg->uri.is_https){
+		d_print("OpenSSL support disabled at build time, cannot open HTTPS streams\n");
+		return -IP_ERROR_OPENSSL_MISSING;
+	}
+	#endif
+
+
+
+	rc = connection_open(conn, hg, http_connection_timeout);
+	if (rc)
+		return rc;
 
 	keyvals_add(&h, "Host", xstrdup(hg->uri.host));
 	if (hg->proxy && hg->proxy->user && hg->proxy->pass)
@@ -226,7 +243,7 @@ static int do_http_get(struct http_get *hg, const char *uri, int redirections)
 		keyvals_add_basic_auth(&h, hg->uri.user, hg->uri.pass, "Authorization");
 	keyvals_terminate(&h);
 
-	rc = http_get(hg, h.keyvals, http_read_timeout);
+	rc = http_get(conn, hg, h.keyvals, http_read_timeout);
 	keyvals_free(h.keyvals);
 	switch (rc) {
 	case -1:
@@ -260,9 +277,9 @@ static int do_http_get(struct http_get *hg, const char *uri, int redirections)
 
 		redirloc = xstrdup(val);
 		http_get_free(hg);
-		close(hg->fd);
+		connection_close(conn);
 
-		rc = do_http_get(hg, redirloc, redirections);
+		rc = do_http_get(conn, hg, redirloc, redirections);
 
 		free(redirloc);
 		return rc;
@@ -271,9 +288,15 @@ static int do_http_get(struct http_get *hg, const char *uri, int redirections)
 	}
 }
 
-static int setup_remote(struct input_plugin *ip, const struct keyval *headers, int sock)
+static struct connection* get_connection(struct input_plugin *ip)
+{
+	return &ip->data.conn;
+}
+
+static int setup_remote(struct input_plugin *ip, const struct keyval *headers)
 {
 	const char *val;
+	struct connection *conn = get_connection(ip);
 
 	val = keyvals_get_val(headers, "Content-Type");
 	if (val) {
@@ -281,7 +304,8 @@ static int setup_remote(struct input_plugin *ip, const struct keyval *headers, i
 		ip->ops = get_ops_by_mime_type(val);
 		if (ip->ops == NULL) {
 			d_print("unsupported content type: %s\n", val);
-			close(sock);
+			error_msg("unsupported content type: %s\n", val);
+			connection_close(conn);
 			return -IP_ERROR_FILE_FORMAT;
 		}
 	} else {
@@ -291,12 +315,12 @@ static int setup_remote(struct input_plugin *ip, const struct keyval *headers, i
 		ip->ops = get_ops_by_mime_type(type);
 		if (ip->ops == NULL) {
 			d_print("unsupported content type: %s\n", type);
-			close(sock);
+			connection_close(conn);
 			return -IP_ERROR_FILE_FORMAT;
 		}
 	}
 
-	ip->data.fd = sock;
+	ip->data.fd = get_sockfd(conn);
 	ip->data.metadata = xnew(char, 16 * 255 + 1);
 
 	val = keyvals_get_val(headers, "icy-metaint");
@@ -336,31 +360,40 @@ static int handle_line(void *data, const char *uri)
 	struct http_get hg;
 
 	rpd->count++;
-	rpd->rc = do_http_get(&hg, uri, 0);
+	struct connection *conn = get_connection(rpd->ip);
+	rpd->rc = do_http_get(conn, &hg, uri, 0);
 	if (rpd->rc) {
 		rpd->ip->http_code = hg.code;
 		rpd->ip->http_reason = hg.reason;
 		if (hg.fd >= 0)
-			close(hg.fd);
+			connection_close(conn);
 
 		hg.reason = NULL;
 		http_get_free(&hg);
 		return 0;
 	}
 
-	rpd->rc = setup_remote(rpd->ip, hg.headers, hg.fd);
+	rpd->rc = setup_remote(rpd->ip, hg.headers);
 	http_get_free(&hg);
 	return 1;
 }
 
-static int read_playlist(struct input_plugin *ip, int sock)
+static void set_fd(struct input_plugin_data *data, int fd)
+{
+	data->fd = fd;
+	data->conn.fd_ref = &data->fd;
+}
+
+static int read_playlist(struct input_plugin *ip)
 {
 	struct read_playlist_data rpd = { ip, 0, 0 };
 	char *body;
 	size_t size;
+	struct connection *conn = &ip->data.conn;
+	set_fd(&ip->data, ip->data.fd);
 
-	body = http_read_body(sock, &size, http_read_timeout);
-	close(sock);
+	body = http_read_body(conn, &size, http_read_timeout);
+	connection_close(conn);
 	if (!body)
 		return -IP_ERROR_ERRNO;
 
@@ -380,7 +413,8 @@ static int open_remote(struct input_plugin *ip)
 	const char *val;
 	int rc;
 
-	rc = do_http_get(&hg, d->filename, 0);
+	struct connection *conn = get_connection(ip);
+	rc = do_http_get(conn, &hg, d->filename, 0);
 	if (rc) {
 		ip->http_code = hg.code;
 		ip->http_reason = hg.reason;
@@ -397,12 +431,13 @@ static int open_remote(struct input_plugin *ip)
 			if (!strcasecmp(val, pl_mime_types[i])) {
 				d_print("Content-Type: %s\n", val);
 				http_get_free(&hg);
-				return read_playlist(ip, hg.fd);
+				return read_playlist(ip);
 			}
 		}
 	}
 
-	rc = setup_remote(ip, hg.headers, hg.fd);
+	ip->data.fd = get_sockfd(&d->conn);
+	rc = setup_remote(ip, hg.headers);
 	http_get_free(&hg);
 	return rc;
 }
@@ -415,13 +450,21 @@ static void ip_init(struct input_plugin *ip, char *filename)
 		.duration           = -1,
 		.bitrate            = -1,
 		.data = {
-			.fd         = -1,
+			.fd 		 = -1,
+			.conn = {
+				.fd_ref 	= NULL,
+				.ssl		= NULL,
+				.read		= &socket_read,
+				.write		= &socket_write,
+			},
 			.filename   = filename,
-			.remote     = is_http_url(filename),
+			.remote     = is_http_or_https_url(filename),
+			.https 		= is_https_url(filename),
 			.channel_map = CHANNEL_MAP_INIT
 		}
 	};
 	*ip = t;
+	set_fd(&ip->data, ip->data.fd);
 }
 
 static void ip_reset(struct input_plugin *ip, int close_fd)
@@ -431,10 +474,10 @@ static void ip_reset(struct input_plugin *ip, int close_fd)
 	ip_init(ip, ip->data.filename);
 	if (fd != -1) {
 		if (close_fd)
-			close(fd);
+			connection_close(get_connection(ip));
 		else {
 			lseek(fd, 0, SEEK_SET);
-			ip->data.fd = fd;
+			set_fd(&ip->data, fd);
 		}
 	}
 }
@@ -640,6 +683,12 @@ void ip_setup(struct input_plugin *ip)
 int ip_close(struct input_plugin *ip)
 {
 	int rc;
+
+	#ifdef CONFIG_OPENSSL
+	struct connection *conn = &ip->data.conn;
+	if (conn->ssl != NULL)
+		ssl_close(conn->ssl);
+	#endif
 
 	rc = ip->ops->close(&ip->data);
 	BUG_ON(ip->data.private);
@@ -984,6 +1033,12 @@ char *ip_get_error_msg(struct input_plugin *ip, int rc, const char *arg)
 		break;
 	case IP_ERROR_HTTP_REDIRECT_LIMIT:
 		snprintf(buffer, sizeof(buffer), "%s: too many HTTP redirections", arg);
+		break;
+	case IP_ERROR_OPENSSL:
+		snprintf(buffer, sizeof(buffer), "%s: OpenSSL connection failed", arg);
+		break;
+	case IP_ERROR_OPENSSL_MISSING:
+		snprintf(buffer, sizeof(buffer), "%s: OpenSSL disabled at build time, cannot read HTTPS streams", arg);
 		break;
 	case IP_ERROR_NOT_OPTION:
 		snprintf(buffer, sizeof(buffer),
