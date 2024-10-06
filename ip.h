@@ -58,6 +58,8 @@ enum {
 	IP_ERROR_HTTP_STATUS,
 	/* OpenSSL error */
 	IP_ERROR_OPENSSL,
+	/* No OpenSSL support */
+	IP_ERROR_OPENSSL_MISSING,
 	/* too many redirections */
 	IP_ERROR_HTTP_REDIRECT_LIMIT,
 	/* plugin does not have this option */

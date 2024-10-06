@@ -223,9 +223,9 @@ static int do_http_get(struct connection *conn, struct http_get *hg, const char 
 	conn->write = hg->is_https ? &https_write : &socket_write;
 	conn->read = hg->is_https ? &https_read : &socket_read;
 	#else
-	if (hg->is_https){
-		d_print("OpenSSL support disabled, cannot open HTTPS streams\n");
-		return -IP_ERROR_INVALID_URI;
+	if (hg->uri.is_https){
+		d_print("OpenSSL support disabled at build time, cannot open HTTPS streams\n");
+		return -IP_ERROR_OPENSSL_MISSING;
 	}
 	#endif
 
@@ -1037,6 +1037,9 @@ char *ip_get_error_msg(struct input_plugin *ip, int rc, const char *arg)
 		break;
 	case IP_ERROR_OPENSSL:
 		snprintf(buffer, sizeof(buffer), "%s: OpenSSL connection failed", arg);
+		break;
+	case IP_ERROR_OPENSSL_MISSING:
+		snprintf(buffer, sizeof(buffer), "%s: OpenSSL disabled at build time, cannot read HTTPS streams", arg);
 		break;
 	case IP_ERROR_NOT_OPTION:
 		snprintf(buffer, sizeof(buffer),

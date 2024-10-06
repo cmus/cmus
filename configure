@@ -579,7 +579,7 @@ Optional Features: y/n
   CONFIG_ROAR           native RoarAudio output                         [auto]
   CONFIG_SAMPLERATE     Use libsamplerate to resample to JACK's rate    [auto]
   CONFIG_SNDIO          Sndio                                           [auto]
-  CONFIG_OPENSSL		OpenSSL (https stream support)					[y]
+  CONFIG_OPENSSL        OpenSSL (https stream support)                  [y]
   CONFIG_SUN            Sun Audio                                       [auto]
   CONFIG_TREMOR         Use Tremor as Ogg/Vorbis input plugin           [n]
   CONFIG_VORBIS         Ogg/Vorbis (.ogg, application/ogg, audio/x-ogg) [auto]
@@ -656,7 +656,7 @@ check check_coreaudio  CONFIG_COREAUDIO
 check check_arts       CONFIG_ARTS
 check check_oss        CONFIG_OSS
 check check_sndio      CONFIG_SNDIO
-check check_openssl	   CONFIG_OPENSSL
+check check_openssl    CONFIG_OPENSSL
 check check_sun        CONFIG_SUN
 check check_waveout    CONFIG_WAVEOUT
 check check_roar       CONFIG_ROAR
