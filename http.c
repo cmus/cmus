@@ -162,7 +162,7 @@ int socket_open(struct http_get *hg, int timeout_ms)
 	if (proxy) {
 		hg->proxy = xnew(struct http_uri, 1);
 		if (parse_uri(proxy, hg->proxy)) {
-			d_print("Failed to parse HTTP proxy URI '%s'\n", proxy);
+			d_print("Failed to parse HTTP(S) proxy URI '%s'\n", proxy);
 			return -1;
 		}
 	} else {
