@@ -193,7 +193,7 @@ check_ncurses()
 	msg_checking "for working ncurses setup"
 	for flag in "" "-I/usr/include/ncurses" "-I/usr/include/ncursesw"
 	do
-		if try_compile_link "$ncurses_code" $flag $NCURSES_LIBS
+		if try_compile_link "$ncurses_code" $NCURSES_CFLAGS $flag $NCURSES_LIBS
 		then
 			NCURSES_CFLAGS="$NCURSES_CFLAGS $flag"
 			msg_result yes
@@ -228,13 +228,9 @@ check_ncurses()
 
 check_openssl()
 {
-	if test "$CONFIG_OPENSSL" = y
-	then
-		pkg_config OPENSSL "openssl >= 3" "" "-lssl -lcrypto" || return $?
-		OPENSSL_CFLAGS="$OPENSSL_CFLAGS -DOPENSSL_NO_DEPRECATED"
-		return 0
-	fi
-	return 1
+	pkg_config OPENSSL "openssl >= 3" "" "-lssl -lcrypto" || return $?
+	OPENSSL_CFLAGS="$OPENSSL_CFLAGS -DOPENSSL_NO_DEPRECATED"
+	return 0
 }
 
 check_discid()
@@ -509,14 +505,45 @@ check_ffmpeg()
 	return 1
 }
 
+aaudio_code="
+#include <aaudio/AAudio.h>
+int main() {
+	// ensure basic aaudio support
+	if (__builtin_available(android 26, *)) {
+		AAudioStreamBuilder *bld;
+		AAudio_createStreamBuilder(&bld);
+
+		// ensure we have at least api 32 headers
+		if (__builtin_available(android 32, *)) {
+			AAudioStreamBuilder_setChannelMask(bld, AAUDIO_CHANNEL_9POINT1POINT6);
+		}
+	}
+	return 0;
+}
+"
+
+check_aaudio()
+{
+	check_header aaudio/AAudio.h || return $?
+	check_library AAUDIO "-D__ANDROID_UNAVAILABLE_SYMBOLS_ARE_WEAK__ -Werror=unguarded-availability" "-Wl,--no-as-needed -laaudio" || return $?
+
+	msg_checking "for working aaudio api 32 linkage"
+	if try_compile_link "$aaudio_code" $AAUDIO_CFLAGS $AAUDIO_LIBS
+	then
+		msg_result yes
+		return 0
+	fi
+	msg_result no
+	return 1
+}
+
 check_string_function()
 {
 	msg_checking "for function $1"
 	string_function_code="
 #include <string.h>
-int main() {
-	return $1;
-}
+int (*ptr)() = (int (*)()) &$1;
+int main() { return 0; }
 "
 	if try_compile_link "$string_function_code"
 	then
@@ -555,6 +582,7 @@ Options:
 
 Optional Features: y/n
   CONFIG_AAC            AAC (.aac, audio/aac, audio/aacp)               [auto]
+  CONFIG_AAUDIO         Android 8.0+ native audio output                [auto]
   CONFIG_ALSA           ALSA                                            [auto]
   CONFIG_AO             Libao cross-platform audio library              [auto]
   CONFIG_ARTS           ARTS                                            [auto]
@@ -623,6 +651,7 @@ check check_rtsched
 check check_ncurses
 check check_iconv
 check check_wcwidth
+check check_openssl
 check_header byteswap.h && HAVE_BYTESWAP_H=y
 check_string_function "strdup" && HAVE_STRDUP=y
 check_string_function "strndup" && HAVE_STRNDUP=y
@@ -660,6 +689,7 @@ check check_openssl    CONFIG_OPENSSL
 check check_sun        CONFIG_SUN
 check check_waveout    CONFIG_WAVEOUT
 check check_roar       CONFIG_ROAR
+check check_aaudio     CONFIG_AAUDIO
 
 # discid is only needed if at least one cdda plugin is active
 test -z "$CONFIG_DISCID" && CONFIG_DISCID=a
@@ -702,6 +732,6 @@ makefile_vars \
 	CONFIG_MAD CONFIG_MIKMOD CONFIG_MODPLUG CONFIG_MP4 CONFIG_MPC \
 	CONFIG_MPRIS CONFIG_OPUS CONFIG_OSS CONFIG_PULSE CONFIG_ROAR \
 	CONFIG_SAMPLERATE CONFIG_SNDIO CONFIG_OPENSSL CONFIG_SUN CONFIG_VORBIS \
-	CONFIG_VTX CONFIG_WAV CONFIG_WAVEOUT CONFIG_WAVPACK CONFIG_BASS
+	CONFIG_VTX CONFIG_WAV CONFIG_WAVEOUT CONFIG_WAVPACK CONFIG_BASS CONFIG_AAUDIO
 
 generate_config_mk

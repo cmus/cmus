@@ -187,6 +187,12 @@ void worker_remove_jobs_by_cb(worker_match_cb cb, void *opaque)
 	worker_unlock();
 }
 
+int worker_has_job(void)
+{
+	/* lock not needed for this simple check */
+	return cur_job || !list_empty(&worker_job_head);
+}
+
 int worker_has_job_by_type(uint32_t pat)
 {
 	return worker_has_job_by_cb(worker_matches_type, &pat);
@@ -204,7 +210,7 @@ int worker_has_job_by_cb(worker_match_cb cb, void *opaque)
 			break;
 		}
 	}
-	if (cur_job && cb(job->type, job->data, opaque))
+	if (cur_job && cb(cur_job->type, cur_job->data, opaque))
 		has_job = 1;
 	worker_unlock();
 	return has_job;

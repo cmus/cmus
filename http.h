@@ -43,7 +43,9 @@ struct http_uri {
 };
 
 struct connection;
+struct connection;
 struct http_get {
+	int is_https;
 	struct http_uri uri;
 	struct http_uri *proxy;
 	int fd;

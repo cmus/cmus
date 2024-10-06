@@ -79,6 +79,11 @@ static inline long max_i(long a, long b)
 	return a > b ? a : b;
 }
 
+static inline unsigned long abs_delta(unsigned long a, unsigned long b)
+{
+	return a > b ? a - b : b - a;
+}
+
 static inline int clamp(int val, int minval, int maxval)
 {
 	if (val < minval)

@@ -175,7 +175,7 @@ The right hand side of the status line (second row from the bottom, black text
 on a grey background) consists of the following fields:
 
 @pre
-aaa_mode & play_sorted & play_library | continue follow repeat shuffle
+aaa_mode & play_sorted & play_library | volume | continue follow repeat shuffle
 @endpre
 
 NOTE: *aaa_mode* and *play_sorted* will be only displayed if *play_library* is
@@ -711,6 +711,9 @@ version
 view <name or 1-7>
 	Changes the active view.
 
+	Do not use this in `$XDG_CONFIG_HOME/cmus/rc` to change the starting
+	view. Set the *start_view* option instead.
+
 vol [+-]NUM[%] [[+-]NUM[%]]
 	Changes the volume.
 
@@ -938,6 +941,15 @@ color_statusline_fg (black) [`Color`]
 color_statusline_attr (default) [`Attributes`]
 	Status line attributes.
 
+color_statusline_progress_bg (blue) [`Color`]
+	Status line background color of progress bar, when enabled.
+
+color_statusline_progress_fg (white) [`Color`]
+	Status line foreground color of progress bar, when enabled.
+
+color_statusline_progress_attr (default) [`Attributes`]
+	Status line attributes of progress bar, when enabled.
+
 color_titleline_bg (blue) [`Color`]
 	Background color of the line displaying currently playing track.
 
@@ -1054,6 +1066,17 @@ format_clipped_text [`Plain String`]
 format_current [`Format String`]
 	Format string for the line displaying currently playing track.
 
+format_heading_album [`Format String`]
+	Format string for the track window heading line when an album is selected
+	in the tree.
+
+format_heading_artist [`Format String`]
+	Format string for the track window heading line when an artist is selected
+	in the tree.
+
+format_heading_playlist [`Format String`]
+	Format string for the heading line in the playlist view (3).
+
 format_playlist [`Format String`]
 	Format string for the list views (2-4).
 
@@ -1130,13 +1153,13 @@ mpris (true)
 
 	Note: This flag has no effect if cmus was compiled without MPRIS support.
 
-output_plugin [roar, pulse, alsa, arts, oss, sndio, sun, coreaudio]
+output_plugin [roar, pulse, alsa, arts, oss, sndio, sun, coreaudio, aaudio]
 	Name of output plugin.
 
 pause_on_output_change (false)
     Pauses playback when the audio output changes.
 
-    Supported output plugins: pulse.
+    Supported output plugins: pulse, aaudio.
 
 pl_env_vars
 	Comma separated list of environment variables to substitute when saving
@@ -1155,6 +1178,9 @@ play_library (true)
 play_sorted (false)
 	Play tracks from the library in the sorted view (2) order instead of
 	tree view (1) order. Used only when play_library is true.
+
+progress_bar (line) [disabled, line, shuttle, color, color_shuttle]
+	Draw a bar in the status line showing current progression through a track.
 
 repeat (false)
 	Repeat after all tracks played.
@@ -1483,6 +1509,35 @@ dsp.jack.resampling_quality
 	The re-sampling quality. 0 is low quality but fast, 1 is medium quality,
 	2 (default) is high quality but more CPU intensive. This option is only
 	available if cmus was compiled with libsamplerate support.
+
+dsp.aaudio.performance_mode (power_saving) [power_saving, none]
+	Set the requested performance mode. If "power_saving", battery life is
+	prioritized over low latency. If "none", battery life is balanced with
+	low latency.
+
+	This option requires restarting cmus.
+
+dsp.aaudio.allowed_capture (all) [all, system, none]
+	Specify whether the audio may or may not be captured by other apps or
+	the system.
+
+	This option is only supported on Android 10+ (API 29) and requires
+	restarting cmus.
+
+dsp.aaudio.sharing_mode (shared) [shared, exclusive]
+	Request a mode for sharing the device. This is done on a best-effort
+	basis, and the requested sharing mode may not be available.
+
+	This option requires restarting cmus.
+
+dsp.aaudio.disable_spatialization (false)
+	If true, disables Android's built-in audio spatializer even if it is
+	enabled for the current audio output. Note that spatialization only
+	applies to audio with at least 4 channels. See
+	https://developer.android.com/media/grow/spatial-audio for more details.
+
+	This option is only supported on Android 12L+ (API 32) and requires
+	restarting cmus.
 
 input.cdio.cddb_url
 	CDDB URL (default: freedb.freedb.org:8880). Uses HTTP if prefixed with

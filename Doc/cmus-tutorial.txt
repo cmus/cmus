@@ -34,7 +34,7 @@ will open to the album/artist view, which looks something like this:
 
 @pre
 +---------------------------------------------------------------------+
-| Artist / Album             Track                            Library |
+| Library                    Empty (use :add)                         |
 |                          |                                          |
 |                          |                                          |
 |                          |                                          |
@@ -43,7 +43,7 @@ will open to the album/artist view, which looks something like this:
 |                          |                                          |
 |                          |                                          |
 |                                                                     |
-| . 00:00 - 00:00 vol: 100                     all from library | C   |
+| . 00:00                                       library | 100% | C    |
 |                                                                     |
 +---------------------------------------------------------------------+
 @endpre
@@ -67,7 +67,7 @@ should see something like this:
 | bin/                                                                |
 | config/                                                             |
 |                                                                     |
-| . 00:00 - 00:00 vol: 100                     all from library | C   |
+| . 00:00                                       library | 100% | C    |
 |                                                                     |
 +---------------------------------------------------------------------+
 @endpre
@@ -97,7 +97,7 @@ this:
 
 @pre
 +---------------------------------------------------------------------+
-| Library ~/.config/cmus/lib.pl - 31 tracks sorted by artist album di |
+| Library - 31 tracks (1:35:11) sorted by albumartist date album dis… |
 | Flying Lizards         . Money (That's What I Want)           02:31 |
 | Jason Woofenden        . VoR Theme                       2009 01:20 |
 | Keali'i Reichel      06. Wanting Memories                1994 04:28 |
@@ -106,7 +106,7 @@ this:
 | NonMemory            01. pista1                    2009-04-21 04:13 |
 | Ray Charles          06. Halleluja I Love Her So              02:33 |
 |                                                                     |
-| . 00:00 - 2:16:25 vol: 100                   all from library | C   |
+| . 00:00                           artist from library | 100% | C    |
 |                                                                     |
 +---------------------------------------------------------------------+
 @endpre
@@ -114,16 +114,16 @@ this:
 Use the up and down arrow keys to select a track you'd like to hear, and press
 Enter to play it. Here are some keys to control playback:
 
-Press *c* to pause/unpause
-Press right/left to seek by 10 seconds
-Press *<*/*>* seek by one minute
-Press *z* to play the previous track and *b* to play the next track
+Press *c* to pause/unpause.
+Press right/left to seek by 10 seconds.
+Press *,*/*.* seek backwards/forwards one minute.
+Press *z* to play the previous track and *b* to play the next track.
 
 cmus has some great options to control what plays next (if anything) when the
 track ends. The state of these settings is shown in the bottom right corner.
-The first of these shows what collection of tracks (currently "all from
-library") we are playing. Press *m* to cycle through the different options for
-this setting. To the right of that (past the "|") cmus shows the state of four
+The first of these shows what collection of tracks we are playing (shown here
+as "artist from library"). Press *m* to cycle through the different options for
+this setting. To the right of that (past the volume) cmus shows the state of four
 toggles. Only toggles which are "on" are shown, so now we only see the *C*.
 Here are the toggles:
 
@@ -132,21 +132,21 @@ Here are the toggles:
     If this is off, cmus will always stop at the end of the track. You can
 toggle this setting by pressing *shift-C*.
 
+[F]ollow
+
+    If this is on, cmus will select the currently playing track on track change.
+Press *f* to toggle this option.
+
 [R]epeat
 
     If this is on (and continue is on), when cmus reaches the end of the group
 of tracks you're playing (selected with the *m* key) it will start again from
 the beginning. Press *r* to toggle this setting.
 
-[S]huffle
+[S]huffle or [&]lbum shuffle
 
-    If this is on, cmus will choose a random order to play all the tracks
-once. Press *s* to toggle this option.
-
-[F]ollow
-
-    If this is on, cmus will select the currently playing track on track change.
-Press *f* to toggle this option.
+    If this is 'S', cmus will choose a random order to play all tracks once,
+while '&' will do the same for whole albums. Press *s* to toggle this option.
 
 
 @h1 Step 4: Managing The Queue
@@ -175,7 +175,7 @@ The playlists work like another set of libraries (like view *2*) except that
 (like the queue) you manually set the order of the tracks. This can be quite
 useful if you want to create a mix of specific tracks or if you want to
 listen to an audio book without having the chapters play when you're playing
-"all from library".
+from the library.
 
 The playlists are on view *3*. But before we go there, let's add some tracks.
 Press *2* to go to the simple library view, go to a track you want and press
@@ -187,8 +187,8 @@ Now press *3* to go to the playlist. You should see something like this:
 
 @pre
 +---------------------------------------------------------------------+
-| Playlist                   Track                              11:32 |
-| * default                | Flying Lizards     . Money (Th...  02:31 |
+| Playlist                   Default                            11:32 |
+| * Default                | Flying Lizards     . Money (Th...  02:31 |
 |                          | Jason Woofenden    . VoR T... 2009 01:20 |
 |                          | Keali'i Reichel  06. Wanti... 1994 04:28 |
 |                          | Molly Lewis        . Tom Cruis...  03:13 |
@@ -196,7 +196,7 @@ Now press *3* to go to the playlist. You should see something like this:
 |                          |                                          |
 |                          |                                          |
 |                                                                     |
-| . 00:00 - 00:00 vol: 100                     all from library | C   |
+| . 00:00                                       library | 100% | C    |
 |                                                                     |
 +---------------------------------------------------------------------+
 @endpre

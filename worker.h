@@ -40,6 +40,7 @@ void worker_add_job(uint32_t type, void (*job_cb)(void *job_data),
 void worker_remove_jobs_by_type(uint32_t pat);
 void worker_remove_jobs_by_cb(worker_match_cb cb, void *opaque);
 
+int worker_has_job(void);
 int worker_has_job_by_type(uint32_t pat);
 int worker_has_job_by_cb(worker_match_cb cb, void *opaque);
 

@@ -181,6 +181,7 @@ ao-objs			:= op/ao.lo
 coreaudio-objs		:= op/coreaudio.lo
 waveout-objs		:= op/waveout.lo
 roar-objs               := op/roar.lo
+aaudio-objs		:= op/aaudio.lo
 
 op-$(CONFIG_PULSE)	+= op/pulse.so
 op-$(CONFIG_ALSA)	+= op/alsa.so
@@ -193,6 +194,7 @@ op-$(CONFIG_COREAUDIO)	+= op/coreaudio.so
 op-$(CONFIG_AO)		+= op/ao.so
 op-$(CONFIG_WAVEOUT)	+= op/waveout.so
 op-$(CONFIG_ROAR)       += op/roar.so
+op-$(CONFIG_AAUDIO)	+= op/aaudio.so
 
 $(pulse-objs): CFLAGS		+= $(PULSE_CFLAGS)
 $(alsa-objs): CFLAGS		+= $(ALSA_CFLAGS)
@@ -205,6 +207,7 @@ $(ao-objs):   CFLAGS		+= $(AO_CFLAGS)
 $(coreaudio-objs): CFLAGS	+= $(COREAUDIO_CFLAGS)
 $(waveout-objs): CFLAGS 	+= $(WAVEOUT_CFLAGS)
 $(roar-objs): CFLAGS		+= $(ROAR_CFLAGS)
+$(aaudio-objs): CFLAGS		+= $(AAUDIO_CFLAGS)
 
 op/pulse.so: $(pulse-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(PULSE_LIBS))
@@ -238,6 +241,9 @@ op/waveout.so: $(waveout-objs) $(libcmus-y)
 
 op/roar.so: $(roar-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(ROAR_LIBS))
+
+op/aaudio.so: $(aaudio-objs) $(libcmus-y)
+	$(call cmd,ld_dl,$(AAUDIO_LIBS))
 # }}}
 
 # man {{{
