@@ -336,8 +336,8 @@ static void setup_cddb_conn(cddb_conn_t *cddb_conn)
 	cddb_set_server_name(cddb_conn, http_uri.host);
 	cddb_set_email_address(cddb_conn, "me@home");
 	cddb_set_server_port(cddb_conn, http_uri.port);
-	if (strcmp(http_uri.path, "/") != 0)
-		cddb_set_http_path_query(cddb_conn, http_uri.path);
+	if (strcmp(http_uri.path_and_query, "/") != 0)
+		cddb_set_http_path_query(cddb_conn, http_uri.path_and_query);
 #ifdef DEBUG_CDDB
 	cddb_cache_disable(cddb_conn);
 #endif
