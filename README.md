@@ -1,5 +1,4 @@
-cmus — C\* Music Player
-=======================
+# cmus — C\* Music Player
 
 https://cmus.github.io/
 
@@ -10,41 +9,31 @@ Copyright © 2004-2008 Timo Hirvonen <tihirvon@gmail.com>
 Copyright © 2008-2017 Various Authors
 
 
-Configuration
--------------
-
-List available optional features
-
-    $ ./configure --help
-
-Auto-detect everything
+## Configuration
 
     $ ./configure
 
-To disable some feature, arts for example, and install to `$HOME` run
-
-    $ ./configure prefix=$HOME CONFIG_ARTS=n
+By default, features are auto-detected. To list all configuration options, run
+`./configure --help`. Some common autoconf-style options like `--prefix` are
+also available.
 
 After running configure you can see from the generated `config.mk` file
 what features have been configured in (see the `CONFIG_*` options).
 
-*Note*: For some distributions you need to install development versions
-of the dependencies.  For example if you want to use 'mad' input plugin
-(mp3) you need to install `libmad0-dev` (Debian) or `libmad-devel` (RPM)
-package. After installing dependencies you need to run `./configure`
-again, of course.
+The packages containing dependencies on common distributions are listed below. All dependencies other than pkg-config and ncurses, iconv, and elogind/systemd are for optional input/output plugins. It is assumed that libc headers, a C compiler, git, and GNU Make are available.
 
-If you want to use the Tremor library as alternative for decoding
-Ogg/Vorbis files you have to pass `CONFIG_TREMOR=y` to the configure
-script:
-
-    $ ./configure CONFIG_VORBIS=y CONFIG_TREMOR=y
-
-The Tremor library is supposed to be used on hardware that has no FPU.
+| Distro            | Dependencies |
+| :--               | :--          |
+| **Debian/Ubuntu** | apt install pkg-config libncursesw5-dev libfaad-dev libao-dev libasound2-dev libcddb2-dev libcdio-cdda-dev libdiscid-dev libavformat-dev libavcodec-dev libswresample-dev libflac-dev libjack-dev libmad0-dev libmodplug-dev libmpcdec-dev libsystemd-dev libopusfile-dev libpulse-dev libsamplerate0-dev libsndio-dev libssl-dev libvorbis-dev libwavpack-dev |
+| **Fedora/RHEL**   | dnf install 'pkgconfig(ncursesw)' 'pkgconfig(alsa)' 'pkgconfig(ao)' 'pkgconfig(libcddb)' 'pkgconfig(libcdio_cdda)' 'pkgconfig(libdiscid)' 'pkgconfig(libavformat)' 'pkgconfig(libavcodec)' 'pkgconfig(libswresample)' 'pkgconfig(flac)' 'pkgconfig(jack)' 'pkgconfig(mad)' 'pkgconfig(libmodplug)' libmpcdec-devel 'pkgconfig(libsystemd)' 'pkgconfig(opusfile)' 'pkgconfig(libpulse)' 'pkgconfig(openssl)' 'pkgconfig(samplerate)' 'pkgconfig(vorbisfile)' 'pkgconfig(wavpack)' |
+| **+ RPMFusion**   | dnf install faad2-devel libmp4v2-devel |
+| **Arch Linux**    | pacman -S pkg-config ncurses libiconv faad2 alsa-lib libao libcddb libcdio-paranoia libdiscid ffmpeg flac jack libmad libmodplug libmp4v2 libmpcdec systemd opusfile libpulse libsamplerate libvorbis openssl wavpack |
+| **Alpine**        | apk add pkgconf ncurses-dev gnu-libiconv-dev alsa-lib-dev libao-dev libcddb-dev ffmpeg-dev flac-dev jack-dev libmad-dev libmodplug-dev elogind-dev openssl-dev opus-dev opusfile-dev pulseaudio-dev libsamplerate-dev libvorbis-dev wavpack-dev |
+| **Termux**        | apt install libandroid-support ncurses libiconv ffmpeg libmad libmodplug opusfile pulseaudio libflac libvorbis libwavpack openssl |
+| **Homebrew**      | brew install pkg-config ncurses faad2 libao libcddb libcdio libdiscid ffmpeg flac jack mad libmodplug mp4v2 musepack openssl@3 opusfile libsamplerate libvorbis wavpack |
 
 
-Building
---------
+## Building
 
     $ make
 
@@ -53,8 +42,7 @@ Or on some BSD systems you need to explicitly use GNU make:
     $ gmake
 
 
-Installation
-------------
+## Installation
 
     $ make install
 
@@ -67,8 +55,7 @@ This is useful when creating binary packages.
 Remember to replace `make` with `gmake` if needed.
 
 
-Manuals
--------
+## Manuals
 
     $ man cmus-tutorial
 
@@ -77,49 +64,38 @@ And
     $ man cmus
 
 
-Mailing List
-------------
+## IRC Channel
 
-To subscribe to cmus-devel@lists.sourceforge.net or view the archive visit
-http://lists.sourceforge.net/lists/listinfo/cmus-devel.
-
-The mailing list now serves as an archive for old releases and issues.
-Please use the GitHub [issues](https://github.com/cmus/cmus/issues)
-page for any problems, suggestions, or bug reports.
+Feel free to join IRC channel #cmus on Libera.chat and share you experience,
+problems and issues. Note: This is an unofficial channel and all people hanging
+around there are for the love of cmus.
 
 
-IRC Channel
-------------
+## Reporting Bugs
 
-Feel free to join IRC channel #cmus on Libera.chat and share you experience, problems and issues. 
-Note: This is an unofficial channel and all people hanging around there are for the love of cmus.
+Bugs should be reported using the GitHub [issue
+tracker](https://github.com/cmus/cmus/issues). When creating a new issue, a
+template will be shown containing instructions on how to collect the necessary
+information.
 
-
-Reporting Bugs
---------------
-
-Bugs should be reported using the GitHub [issue tracker](https://github.com/cmus/cmus/issues).
-When creating a new issue, a template will be shown containing instructions on how to collect
-the necessary information.
-
-Additional debug information can be found in `~/cmus-debug.txt` if you configured cmus with
-maximum debug level (`./configure DEBUG=2`). In case of a crash the last lines may be helpful.
+Additional debug information can be found in `~/cmus-debug.txt` if you
+configured cmus with maximum debug level (`./configure DEBUG=2`). In case of a
+crash the last lines may be helpful.
 
 
-Git Repository
---------------
+## Git Repository
 
 https://github.com/cmus/cmus
 
     $ git clone https://github.com/cmus/cmus.git
 
 
-Hacking
--------
+## Hacking
 
-cmus uses the [Linux kernel coding style](https://www.kernel.org/doc/html/latest/process/coding-style.html).
-Use hard tabs.  Tabs are _always_ 8 characters wide.  Keep the style consistent with rest of the
-code.
+cmus uses the [Linux kernel coding
+style](https://www.kernel.org/doc/html/latest/process/coding-style.html). Use
+hard tabs. Tabs are _always_ 8 characters wide. Keep the style consistent with
+rest of the code.
 
 Bug fixes and implementations of new features should be suggested as a
 [pull request](https://github.com/cmus/cmus/pulls) directly on GitHub.

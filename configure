@@ -562,7 +562,6 @@ HAVE_CDDB=n
 CONFIG_TREMOR=n
 CONFIG_MIKMOD=n
 CONFIG_BASS=n
-CONFIG_OPENSSL=y
 USE_FALLBACK_IP=n
 HAVE_BYTESWAP_H=n
 HAVE_STRDUP=n
@@ -607,7 +606,7 @@ Optional Features: y/n
   CONFIG_ROAR           native RoarAudio output                         [auto]
   CONFIG_SAMPLERATE     Use libsamplerate to resample to JACK's rate    [auto]
   CONFIG_SNDIO          Sndio                                           [auto]
-  CONFIG_OPENSSL        OpenSSL (https stream support)                  [y]
+  CONFIG_OPENSSL        OpenSSL (https stream support)                  [auto]
   CONFIG_SUN            Sun Audio                                       [auto]
   CONFIG_TREMOR         Use Tremor as Ogg/Vorbis input plugin           [n]
   CONFIG_VORBIS         Ogg/Vorbis (.ogg, application/ogg, audio/x-ogg) [auto]
