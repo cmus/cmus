@@ -299,6 +299,8 @@ static const struct {
 	{ NULL, NULL }
 };
 
+static int seen_pr1317_fmts = 0;
+
 /* callbacks for normal options {{{ */
 
 static void get_device(void *data, char *buf, size_t size)
@@ -1594,6 +1596,9 @@ static void set_format(void *data, const char *buf)
 {
 	char **fmtp = data;
 
+	if (fmtp == id_to_fmt(FMT_HEADING_ALBUM) || fmtp == id_to_fmt(FMT_HEADING_ARTIST) || fmtp == id_to_fmt(FMT_HEADING_PLAYLIST))
+		seen_pr1317_fmts = 1;
+
 	if (!track_format_valid(buf)) {
 		error_msg("invalid format string");
 		return;
@@ -1835,6 +1840,9 @@ void options_load(void)
 	for (i = 0; str_defaults[i].name; i++)
 		option_set(str_defaults[i].name, str_defaults[i].value);
 
+	/* reset the flag before loading the autosave */
+	seen_pr1317_fmts = 0;
+
 	/* load autosave config */
 	snprintf(filename, sizeof(filename), "%s/autosave", cmus_config_dir);
 	if (source_file(filename) == -1) {
@@ -1848,6 +1856,15 @@ void options_load(void)
 			die_errno("loading %s", def);
 
 		free(def);
+	}
+
+	/* replace old format with new one if upgrading past PR #1317 */
+	if (!seen_pr1317_fmts) {
+		option_set(str_defaults[FMT_STATUSLINE].name, str_defaults[FMT_STATUSLINE].value);
+		option_set(str_defaults[FMT_PLAYLIST_ALT].name, str_defaults[FMT_PLAYLIST_ALT].value);
+		option_set(str_defaults[FMT_TRACKWIN_ALBUM].name, str_defaults[FMT_TRACKWIN_ALBUM].value);
+		option_set(str_defaults[FMT_TRACKWIN].name, str_defaults[FMT_TRACKWIN].value);
+		option_set(str_defaults[FMT_TRACKWIN_VA].name, str_defaults[FMT_TRACKWIN_VA].value);
 	}
 
 	/* load optional static config */
