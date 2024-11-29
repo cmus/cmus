@@ -1541,6 +1541,12 @@ dsp.aaudio.disable_spatialization (false)
 	This option is only supported on Android 12L+ (API 32) and requires
 	restarting cmus.
 
+dsp.aaudio.min_buffer_capacity_ms (0)
+	If non-zero, sets the requested minimum buffer capacity for the AAudio
+	stream. The lower bound depends on the playback device. Lower values may
+	result in buffer underruns. Higher values result in lower CPU usage, but
+	may make the UI laggy. If left unset, a sensible default is used.
+
 input.cdio.cddb_url
 	CDDB URL (default: freedb.freedb.org:8880). Uses HTTP if prefixed with
 	"http://" (e.g.: http://freedb.musicbrainz.org:80/~cddb/cddb.cgi). Set
