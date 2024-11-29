@@ -556,6 +556,9 @@ static int op_aaudio_open(sample_format_t sf, const channel_position_t *channel_
 	if (API_AT_LEAST(31)) AAudioStreamBuilder_setAttributionTag(bld, "cmus");
 	if (API_AT_LEAST(32)) AAudioStreamBuilder_setSpatializationBehavior(bld, op_aaudio_opt_disable_spatialization ? AAUDIO_SPATIALIZATION_BEHAVIOR_NEVER : AAUDIO_SPATIALIZATION_BEHAVIOR_AUTO);
 
+	// ensure the buffer holds at least 80ms of audio
+	AAudioStreamBuilder_setBufferCapacityInFrames(bld, sf_get_rate(sf) / (1000 / 80));
+
 	// configure the sample format and channel map
 	rc = configure_aaudio_sf(bld, sf, channel_map, &op.remap);
 	if (rc) {
