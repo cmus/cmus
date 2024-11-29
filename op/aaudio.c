@@ -362,6 +362,7 @@ static aaudio_performance_mode_t op_aaudio_opt_performance_mode = AAUDIO_PERFORM
 static aaudio_allowed_capture_policy_t op_aaudio_opt_allowed_capture = AAUDIO_ALLOW_CAPTURE_BY_ALL;
 static aaudio_sharing_mode_t op_aaudio_opt_sharing_mode = AAUDIO_SHARING_MODE_SHARED;
 static bool op_aaudio_opt_disable_spatialization = false;
+static int op_aaudio_opt_min_buffer_capacity_ms = 0;
 
 // if we ever decide to support AAUDIO_PERFORMANCE_MODE_LOW_LATENCY streams,
 // note that disconnection is broken for shared low-latency streams on RQ1A
@@ -476,6 +477,25 @@ static int op_aaudio_get_disable_spatialization(char **val)
 	return OP_ERROR_SUCCESS;
 }
 
+static int op_aaudio_set_min_buffer_capacity_ms(const char *val)
+{
+	long tmp;
+	if (str_to_int(val, &tmp) == -1 || tmp < 0 || tmp > 1000) {
+		errno = EINVAL;
+		return -OP_ERROR_ERRNO;
+	}
+	op_aaudio_opt_min_buffer_capacity_ms = (int) tmp;
+	return OP_ERROR_SUCCESS;
+}
+
+static int op_aaudio_get_min_buffer_capacity_ms(char **val)
+{
+	char tmp[5];
+	snprintf(tmp, sizeof(tmp), "%d", op_aaudio_opt_min_buffer_capacity_ms);
+	*val = xstrdup(tmp);
+	return OP_ERROR_SUCCESS;
+}
+
 static bool aaudio_supported() {
 	if (API_AT_LEAST(27)) {} else {
 		// don't use AAudio on API 26 due to bug causing crash on some
@@ -556,8 +576,8 @@ static int op_aaudio_open(sample_format_t sf, const channel_position_t *channel_
 	if (API_AT_LEAST(31)) AAudioStreamBuilder_setAttributionTag(bld, "cmus");
 	if (API_AT_LEAST(32)) AAudioStreamBuilder_setSpatializationBehavior(bld, op_aaudio_opt_disable_spatialization ? AAUDIO_SPATIALIZATION_BEHAVIOR_NEVER : AAUDIO_SPATIALIZATION_BEHAVIOR_AUTO);
 
-	// ensure the buffer holds at least 80ms of audio
-	AAudioStreamBuilder_setBufferCapacityInFrames(bld, sf_get_rate(sf) / (1000 / 80));
+	// ensure the buffer holds at least the requested amount of audio (default 80ms)
+	AAudioStreamBuilder_setBufferCapacityInFrames(bld, sf_get_rate(sf) / (1000 / (op_aaudio_opt_min_buffer_capacity_ms ? op_aaudio_opt_min_buffer_capacity_ms : 80)));
 
 	// configure the sample format and channel map
 	rc = configure_aaudio_sf(bld, sf, channel_map, &op.remap);
@@ -891,6 +911,7 @@ const struct output_plugin_opt op_pcm_options[] = {
 	OPT(op_aaudio, allowed_capture),
 	OPT(op_aaudio, sharing_mode),
 	OPT(op_aaudio, disable_spatialization),
+	OPT(op_aaudio, min_buffer_capacity_ms),
 	{ NULL },
 };
 
