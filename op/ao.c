@@ -286,23 +286,22 @@ static int op_ao_get_device_interface(char **val)
 	return 0;
 }
 
-const struct output_plugin_ops op_pcm_ops = {
-	.init = op_ao_init,
-	.exit = op_ao_exit,
-	.open = op_ao_open,
-	.close = op_ao_close,
-	.write = op_ao_write,
-	.buffer_space = op_ao_buffer_space,
-};
-
-const struct output_plugin_opt op_pcm_options[] = {
-	OPT(op_ao, buffer_size),
-	OPT(op_ao, driver),
-	OPT(op_ao, wav_counter),
-	OPT(op_ao, wav_dir),
-	OPT(op_ao, device_interface),
-	{ NULL },
-};
-
-const int op_priority = 3;
-const unsigned op_abi_version = OP_ABI_VERSION;
+CMUS_OP_DEFINE(
+	.priority = 3,
+	.pcm_ops = &(struct output_plugin_ops){
+		.init = op_ao_init,
+		.exit = op_ao_exit,
+		.open = op_ao_open,
+		.close = op_ao_close,
+		.write = op_ao_write,
+		.buffer_space = op_ao_buffer_space,
+	},
+	.pcm_options = (struct output_plugin_opt[]){
+		OPT(op_ao, buffer_size),
+		OPT(op_ao, driver),
+		OPT(op_ao, wav_counter),
+		OPT(op_ao, wav_dir),
+		OPT(op_ao, device_interface),
+		{ NULL },
+	},
+);

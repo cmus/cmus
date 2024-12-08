@@ -218,33 +218,30 @@ static int sndio_mixer_close(void)
 	return OP_ERROR_SUCCESS;
 }
 
-const struct output_plugin_ops op_pcm_ops = {
-	.init = sndio_init,
-	.exit = sndio_exit,
-	.open = sndio_open,
-	.close = sndio_close,
-	.write = sndio_write,
-	.pause = sndio_pause,
-	.unpause = sndio_unpause,
-	.buffer_space = sndio_buffer_space,
-};
-
-const struct mixer_plugin_ops op_mixer_ops = {
-	.init = sndio_mixer_init,
-	.exit = sndio_mixer_exit,
-	.open = sndio_mixer_open,
-	.close = sndio_mixer_close,
-	.set_volume = sndio_mixer_set_volume,
-	.get_volume = sndio_mixer_get_volume,
-};
-
-const struct output_plugin_opt op_pcm_options[] = {
-	{ NULL },
-};
-
-const struct mixer_plugin_opt op_mixer_options[] = {
-	{ NULL },
-};
-
-const int op_priority = 2;
-const unsigned op_abi_version = OP_ABI_VERSION;
+CMUS_OP_DEFINE(
+	.priority = 2,
+	.pcm_ops = &(struct output_plugin_ops){
+		.init = sndio_init,
+		.exit = sndio_exit,
+		.open = sndio_open,
+		.close = sndio_close,
+		.write = sndio_write,
+		.pause = sndio_pause,
+		.unpause = sndio_unpause,
+		.buffer_space = sndio_buffer_space,
+	},
+	.pcm_options = (struct output_plugin_opt[]){
+		{ NULL },
+	},
+	.mixer_ops = &(struct mixer_plugin_ops){
+		.init = sndio_mixer_init,
+		.exit = sndio_mixer_exit,
+		.open = sndio_mixer_open,
+		.close = sndio_mixer_close,
+		.set_volume = sndio_mixer_set_volume,
+		.get_volume = sndio_mixer_get_volume,
+	},
+	.mixer_options = (struct mixer_plugin_opt[]){
+		{ NULL },
+	},
+);

@@ -454,36 +454,33 @@ static int oss_mixer_get_device(char **val)
 	return 0;
 }
 
-const struct output_plugin_ops op_pcm_ops = {
-	.init = oss_init,
-	.exit = oss_exit,
-	.open = oss_open,
-	.close = oss_close,
-	.write = oss_write,
-	.pause = oss_pause,
-	.unpause = oss_unpause,
-	.buffer_space = oss_buffer_space,
-};
-
-const struct output_plugin_opt op_pcm_options[] = {
-	OPT(op_oss, device),
-	{ NULL },
-};
-
-const struct mixer_plugin_ops op_mixer_ops = {
-	.init = oss_mixer_init,
-	.exit = oss_mixer_exit,
-	.open = oss_mixer_open,
-	.close = oss_mixer_close,
-	.set_volume = oss_mixer_set_volume,
-	.get_volume = oss_mixer_get_volume,
-};
-
-const struct mixer_plugin_opt op_mixer_options[] = {
-	OPT(oss_mixer, channel),
-	OPT(oss_mixer, device),
-	{ NULL },
-};
-
-const int op_priority = 1;
-const unsigned op_abi_version = OP_ABI_VERSION;
+CMUS_OP_DEFINE(
+	.priority = 1,
+	.pcm_ops = &(struct output_plugin_ops){
+		.init = oss_init,
+		.exit = oss_exit,
+		.open = oss_open,
+		.close = oss_close,
+		.write = oss_write,
+		.pause = oss_pause,
+		.unpause = oss_unpause,
+		.buffer_space = oss_buffer_space,
+	},
+	.pcm_options = (struct output_plugin_opt[]){
+		OPT(op_oss, device),
+		{ NULL },
+	},
+	.mixer_ops = &(struct mixer_plugin_ops){
+		.init = oss_mixer_init,
+		.exit = oss_mixer_exit,
+		.open = oss_mixer_open,
+		.close = oss_mixer_close,
+		.set_volume = oss_mixer_set_volume,
+		.get_volume = oss_mixer_get_volume,
+	},
+	.mixer_options = (struct mixer_plugin_opt[]){
+		OPT(oss_mixer, channel),
+		OPT(oss_mixer, device),
+		{ NULL },
+	},
+);

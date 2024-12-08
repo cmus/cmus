@@ -546,38 +546,35 @@ static int alsa_mixer_get_device(char **val)
 	return 0;
 }
 
-const struct output_plugin_ops op_pcm_ops = {
-	.init = op_alsa_init,
-	.exit = op_alsa_exit,
-	.open = op_alsa_open,
-	.close = op_alsa_close,
-	.drop = op_alsa_drop,
-	.write = op_alsa_write,
-	.buffer_space = op_alsa_buffer_space,
-	.pause = op_alsa_pause,
-	.unpause = op_alsa_unpause,
-};
-
-const struct output_plugin_opt op_pcm_options[] = {
-	OPT(op_alsa, device),
-	{ NULL },
-};
-
-const struct mixer_plugin_ops op_mixer_ops = {
-	.init = alsa_mixer_init,
-	.exit = alsa_mixer_exit,
-	.open = alsa_mixer_open,
-	.close = alsa_mixer_close,
-	.get_fds.abi_2 = alsa_mixer_get_fds,
-	.set_volume = alsa_mixer_set_volume,
-	.get_volume = alsa_mixer_get_volume,
-};
-
-const struct mixer_plugin_opt op_mixer_options[] = {
-	OPT(alsa_mixer, channel),
-	OPT(alsa_mixer, device),
-	{ NULL },
-};
-
-const int op_priority = 0;
-const unsigned op_abi_version = OP_ABI_VERSION;
+CMUS_OP_DEFINE(
+	.priority = 0,
+	.pcm_ops = &(struct output_plugin_ops){
+		.init = op_alsa_init,
+		.exit = op_alsa_exit,
+		.open = op_alsa_open,
+		.close = op_alsa_close,
+		.drop = op_alsa_drop,
+		.write = op_alsa_write,
+		.buffer_space = op_alsa_buffer_space,
+		.pause = op_alsa_pause,
+		.unpause = op_alsa_unpause,
+	},
+	.pcm_options = (struct output_plugin_opt[]){
+		OPT(op_alsa, device),
+		{ NULL },
+	},
+	.mixer_ops = &(struct mixer_plugin_ops){
+		.init = alsa_mixer_init,
+		.exit = alsa_mixer_exit,
+		.open = alsa_mixer_open,
+		.close = alsa_mixer_close,
+		.get_fds = alsa_mixer_get_fds,
+		.set_volume = alsa_mixer_set_volume,
+		.get_volume = alsa_mixer_get_volume,
+	},
+	.mixer_options = (struct mixer_plugin_opt[]) {
+		OPT(alsa_mixer, channel),
+		OPT(alsa_mixer, device),
+		{ NULL },
+	},
+);

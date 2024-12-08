@@ -467,36 +467,33 @@ static int sun_mixer_get_device(char **val)
 	return 0;
 }
 
-const struct output_plugin_ops op_pcm_ops = {
-	.init = sun_init,
-	.exit = sun_exit,
-	.open = sun_open,
-	.close = sun_close,
-	.write = sun_write,
-	.pause = sun_pause,
-	.unpause = sun_unpause,
-	.buffer_space = sun_buffer_space,
-};
-
-const struct output_plugin_opt op_pcm_options[] = {
-	OPT(op_sun, device),
-	{ NULL },
-};
-
-const struct mixer_plugin_ops op_mixer_ops = {
-	.init = sun_mixer_init,
-	.exit = sun_mixer_exit,
-	.open = sun_mixer_open,
-	.close = sun_mixer_close,
-	.set_volume = sun_mixer_set_volume,
-	.get_volume = sun_mixer_get_volume,
-};
-
-const struct mixer_plugin_opt op_mixer_options[] = {
-	OPT(sun_mixer, channel),
-	OPT(sun_mixer, device),
-	{ NULL },
-};
-
-const int op_priority = 0;
-const unsigned op_abi_version = OP_ABI_VERSION;
+CMUS_OP_DEFINE(
+	.priority = 0,
+	.pcm_ops = &(struct output_plugin_ops){
+		.init = sun_init,
+		.exit = sun_exit,
+		.open = sun_open,
+		.close = sun_close,
+		.write = sun_write,
+		.pause = sun_pause,
+		.unpause = sun_unpause,
+		.buffer_space = sun_buffer_space,
+	},
+	.pcm_options = (struct output_plugin_opt[]){
+		OPT(op_sun, device),
+		{ NULL },
+	},
+	.mixer_ops = &(struct mixer_plugin_ops){
+		.init = sun_mixer_init,
+		.exit = sun_mixer_exit,
+		.open = sun_mixer_open,
+		.close = sun_mixer_close,
+		.set_volume = sun_mixer_set_volume,
+		.get_volume = sun_mixer_get_volume,
+	},
+	.mixer_options = (struct mixer_plugin_opt[]){
+		OPT(sun_mixer, channel),
+		OPT(sun_mixer, device),
+		{ NULL },
+	},
+);

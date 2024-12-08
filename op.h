@@ -26,7 +26,7 @@
 #include <fcntl.h>
 #endif
 
-#define OP_ABI_VERSION 3
+#define OP_ABI_VERSION 4
 
 enum {
 	/* no error */
@@ -83,30 +83,31 @@ enum {
 };
 
 struct mixer_plugin_ops {
-        int (*init)(void);
-        int (*exit)(void);
-        int (*open)(int *volume_max);
-        int (*close)(void);
-        union {
-            int (*abi_1)(int *fds); // MIXER_FDS_VOLUME
-            int (*abi_2)(int what, int *fds);
-        } get_fds;
-        int (*set_volume)(int l, int r);
-        int (*get_volume)(int *l, int *r);
+	int (*init)(void);
+	int (*exit)(void);
+	int (*open)(int *volume_max);
+	int (*close)(void);
+	int (*get_fds)(int what, int *fds);
+	int (*set_volume)(int l, int r);
+	int (*get_volume)(int *l, int *r);
 };
 
 struct mixer_plugin_opt {
-        const char *name;
-        int (*set)(const char *val);
-        int (*get)(char **val);
+	const char *name;
+	int (*set)(const char *val);
+	int (*get)(char **val);
 };
 
-/* symbols exported by plugin */
-extern const struct output_plugin_ops op_pcm_ops;
-extern const struct output_plugin_opt op_pcm_options[];
-extern const struct mixer_plugin_ops op_mixer_ops;
-extern const struct mixer_plugin_opt op_mixer_options[];
-extern const int op_priority;
-extern const unsigned op_abi_version;
+struct output_plugin_api {
+	const int priority;
+	const struct output_plugin_ops *pcm_ops;
+	const struct output_plugin_opt *pcm_options; /* null-terminated array */
+	const struct mixer_plugin_ops *mixer_ops; /* optional */
+	const struct mixer_plugin_opt *mixer_options; /* null-terminated array, required if has mixer_ops */
+};
+
+#define CMUS_OP_DEFINE(...) \
+	const unsigned op_abi_version = OP_ABI_VERSION; \
+	const struct output_plugin_api op_api = (struct output_plugin_api){__VA_ARGS__}
 
 #endif

@@ -882,7 +882,7 @@ static int op_aaudio_mixer_get_volume(int *l, int *r)
 }
 
 REQUIRES_API(AAUDIO_MINIMUM_API)
-const struct output_plugin_ops op_pcm_ops = {
+static const struct output_plugin_ops op_pcm_ops = {
 	.init = op_aaudio_init,
 	.exit = op_aaudio_exit,
 	.open = op_aaudio_open,
@@ -895,28 +895,29 @@ const struct output_plugin_ops op_pcm_ops = {
 };
 
 REQUIRES_API(AAUDIO_MINIMUM_API)
-const struct mixer_plugin_ops op_mixer_ops = {
+static const struct mixer_plugin_ops op_mixer_ops = {
 	.init = op_aaudio_mixer_init,
 	.exit = op_aaudio_mixer_exit,
 	.open = op_aaudio_mixer_open,
 	.close = op_aaudio_mixer_close,
-	.get_fds.abi_2 = op_aaudio_mixer_get_fds,
+	.get_fds = op_aaudio_mixer_get_fds,
 	.set_volume = op_aaudio_mixer_set_volume,
 	.get_volume = op_aaudio_mixer_get_volume,
 };
 
-const struct output_plugin_opt op_pcm_options[] = {
-	OPT(op_aaudio, performance_mode),
-	OPT(op_aaudio, allowed_capture),
-	OPT(op_aaudio, sharing_mode),
-	OPT(op_aaudio, disable_spatialization),
-	OPT(op_aaudio, min_buffer_capacity_ms),
-	{ NULL },
-};
-
-const struct mixer_plugin_opt op_mixer_options[] = {
-	{ NULL },
-};
-
-const int op_priority = -3; // higher priority than pulse (-2)
-const unsigned op_abi_version = OP_ABI_VERSION;
+CMUS_OP_DEFINE(
+	.priority = -3, // higher priority than pulse (-2)
+	.pcm_ops = &op_pcm_ops,
+	.pcm_options = (struct output_plugin_opt[]){
+		OPT(op_aaudio, performance_mode),
+		OPT(op_aaudio, allowed_capture),
+		OPT(op_aaudio, sharing_mode),
+		OPT(op_aaudio, disable_spatialization),
+		OPT(op_aaudio, min_buffer_capacity_ms),
+		{ NULL },
+	},
+	.mixer_ops = &op_mixer_ops,
+	.mixer_options = (struct mixer_plugin_opt[]){
+		{ NULL },
+	},
+);
