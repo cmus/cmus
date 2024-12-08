@@ -633,7 +633,7 @@ check check_cflags
 check check_cc_depgen
 check check_endianness
 check check_compat
-check check_dl
+check check_dl HAVE_DL
 check check_pthread
 check check_rtsched
 check check_ncurses
@@ -688,6 +688,11 @@ check check_discid  CONFIG_DISCID
 test "$WORDS_BIGENDIAN" = y && CFLAGS="${CFLAGS} -DWORDS_BIGENDIAN"
 test "$HAVE_DISCID" = y && CFLAGS="${CFLAGS} -DHAVE_DISCID"
 
+if ! test "$STATICPLUGIN" = y && ! test "$HAVE_DL" = y
+then
+	die "At least one of STATICPLUGIN and HAVE_DL must be set"
+fi
+
 DATADIR="$datadir"
 LIBDIR="$libdir"
 
@@ -707,7 +712,7 @@ config_header config/iconv.h HAVE_ICONV
 config_header config/wcwidth.h HAVE_WCWIDTH
 config_header config/samplerate.h HAVE_SAMPLERATE
 config_header config/xmalloc.h HAVE_STRDUP HAVE_STRNDUP
-config_header config/plugin.h STATICPLUGIN
+config_header config/plugin.h STATICPLUGIN HAVE_DL
 
 CFLAGS="${CFLAGS} -DHAVE_CONFIG"
 

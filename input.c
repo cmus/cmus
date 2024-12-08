@@ -48,7 +48,11 @@
 #include <fcntl.h>
 #include <dirent.h>
 #ifndef STATICPLUGIN
+#ifdef  HAVE_DL
 #include <dlfcn.h>
+#else
+#error "must have dlfcn.h if STATICPLUGIN is disabled"
+#endif
 #endif
 #include <strings.h>
 
