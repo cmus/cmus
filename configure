@@ -471,11 +471,12 @@ check_aac()
 
 check_ffmpeg()
 {
-	pkg_config FFMPEG "libavformat libavcodec libswresample" || return $?
+	pkg_config FFMPEG "libavformat libavcodec libswresample libavutil" || return $?
 	# check the existence of specific headers since they've been renamed before
 	check_header "libavformat/avformat.h" $FFMPEG_CFLAGS || return $?
 	check_header "libavcodec/avcodec.h" $FFMPEG_CFLAGS || return $?
 	check_header "libswresample/swresample.h" $FFMPEG_CFLAGS || return $?
+	check_header "libavutil/avutil.h" $FFMPEG_CFLAGS || return $?
 	# ffmpeg api changes so frequently that it is best to compile the module
 	libs="$LDDLFLAGS $FFMPEG_LIBS"
 	cflags="$SOFLAGS $FFMPEG_CFLAGS"
