@@ -508,7 +508,7 @@ void ip_load_plugins(void)
 		struct ip *ip;
 		void *so;
 		char *ext;
-		const int *priority_ptr;
+		const struct input_plugin_api *api_ptr;
 		const unsigned *abi_version_ptr;
 		bool err = false;
 
@@ -531,17 +531,17 @@ void ip_load_plugins(void)
 		ip = xnew(struct ip, 1);
 
 		abi_version_ptr = dlsym(so, "ip_abi_version");
-		priority_ptr = dlsym(so, "ip_priority");
-		ip->extensions = dlsym(so, "ip_extensions");
-		ip->mime_types = dlsym(so, "ip_mime_types");
-		ip->ops = dlsym(so, "ip_ops");
-		ip->options = dlsym(so, "ip_options");
-		if (!priority_ptr || !ip->extensions || !ip->mime_types || !ip->ops || !ip->options) {
+		api_ptr = dlsym(so, "ip_api");
+		if (!abi_version_ptr || *abi_version_ptr != IP_ABI_VERSION) {
+			error_msg("%s: incompatible plugin version", filename);
+			err = true;
+		}
+		if (!api_ptr) {
 			error_msg("%s: missing symbol", filename);
 			err = true;
 		}
-		if (!abi_version_ptr || *abi_version_ptr != IP_ABI_VERSION) {
-			error_msg("%s: incompatible plugin version", filename);
+		if (!api_ptr->ops || !api_ptr->extensions || !api_ptr->mime_types || !api_ptr->options) {
+			error_msg("%s: missing field", filename);
 			err = true;
 		}
 		if (err) {
@@ -549,10 +549,14 @@ void ip_load_plugins(void)
 			dlclose(so);
 			continue;
 		}
-		ip->priority = *priority_ptr;
 
 		ip->name = xstrndup(d->d_name, ext - d->d_name);
 		ip->handle = so;
+		ip->priority = api_ptr->priority;
+		ip->extensions = api_ptr->extensions;
+		ip->mime_types = api_ptr->mime_types;
+		ip->ops = api_ptr->ops;
+		ip->options = api_ptr->options;
 
 		list_add_tail(&ip->node, &ip_head);
 	}

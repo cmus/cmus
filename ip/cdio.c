@@ -526,26 +526,25 @@ static int libcdio_get_cddb_url(char **val)
 }
 #endif
 
-const struct input_plugin_ops ip_ops = {
-	.open = libcdio_open,
-	.close = libcdio_close,
-	.read = libcdio_read,
-	.seek = libcdio_seek,
-	.read_comments = libcdio_read_comments,
-	.duration = libcdio_duration,
-	.bitrate = libcdio_bitrate,
-	.codec = libcdio_codec,
-	.codec_profile = libcdio_codec_profile,
-};
-
-const struct input_plugin_opt ip_options[] = {
+CMUS_IP_DEFINE(
+	.priority = 50,
+	.extensions = (const char*[]){ NULL },
+	.mime_types = (const char*[]){ "x-content/audio-cdda", NULL },
+	.options = (struct input_plugin_opt[]){
 #ifdef HAVE_CDDB
-	{ "cddb_url", libcdio_set_cddb_url, libcdio_get_cddb_url },
+		{ "cddb_url", libcdio_set_cddb_url, libcdio_get_cddb_url },
 #endif
-	{ NULL },
-};
-
-const int ip_priority = 50;
-const char * const ip_extensions[] = { NULL };
-const char * const ip_mime_types[] = { "x-content/audio-cdda", NULL };
-const unsigned ip_abi_version = IP_ABI_VERSION;
+		{ NULL },
+	},
+	.ops = &(struct input_plugin_ops){
+		.open = libcdio_open,
+		.close = libcdio_close,
+		.read = libcdio_read,
+		.seek = libcdio_seek,
+		.read_comments = libcdio_read_comments,
+		.duration = libcdio_duration,
+		.bitrate = libcdio_bitrate,
+		.codec = libcdio_codec,
+		.codec_profile = libcdio_codec_profile,
+	},
+);

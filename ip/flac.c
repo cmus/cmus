@@ -503,21 +503,21 @@ static char *flac_codec_profile(struct input_plugin_data *ip_data)
 	return NULL;
 }
 
-const struct input_plugin_ops ip_ops = {
-	.open = flac_open,
-	.close = flac_close,
-	.read = flac_read,
-	.seek = flac_seek,
-	.read_comments = flac_read_comments,
-	.duration = flac_duration,
-	.bitrate = flac_bitrate,
-	.bitrate_current = flac_bitrate,
-	.codec = flac_codec,
-	.codec_profile = flac_codec_profile
-};
-
-const int ip_priority = 50;
-const char * const ip_extensions[] = { "flac", "fla", NULL };
-const char * const ip_mime_types[] = { NULL };
-const struct input_plugin_opt ip_options[] = { { NULL } };
-const unsigned ip_abi_version = IP_ABI_VERSION;
+CMUS_IP_DEFINE(
+	.priority = 50,
+	.extensions = (const char*[]){ "flac", "fla", NULL },
+	.mime_types = (const char*[]){ NULL },
+	.options = (struct input_plugin_opt[]){ { NULL } },
+	.ops = &(struct input_plugin_ops){
+		.open = flac_open,
+		.close = flac_close,
+		.read = flac_read,
+		.seek = flac_seek,
+		.read_comments = flac_read_comments,
+		.duration = flac_duration,
+		.bitrate = flac_bitrate,
+		.bitrate_current = flac_bitrate,
+		.codec = flac_codec,
+		.codec_profile = flac_codec_profile,
+	},
+);
