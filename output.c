@@ -22,6 +22,7 @@
 #include "utils.h"
 #include "xmalloc.h"
 #include "list.h"
+#include "path.h"
 #include "debug.h"
 #include "ui_curses.h"
 #include "options.h"
@@ -35,12 +36,13 @@
 #include <stdbool.h>
 #include <sys/types.h>
 #include <dirent.h>
+#ifndef STATICPLUGIN
 #include <dlfcn.h>
+#endif
 
 struct output_plugin {
 	struct list_head node;
 	char *name;
-	void *handle;
 
 	const struct output_plugin_ops *pcm_ops;
 	const struct mixer_plugin_ops *mixer_ops;
@@ -78,8 +80,51 @@ static void add_plugin(struct output_plugin *plugin)
 	list_add_tail(&plugin->node, item);
 }
 
+int cmus_op_register(const char *filename, unsigned abi_version, const struct output_plugin_api *api)
+{
+	const char *basename, *end;
+	basename = path_basename(filename);
+	for (end = basename; *end && *end != '.'; end++)
+		;
+
+	if (abi_version != OP_ABI_VERSION) {
+		error_msg("%s: incompatible plugin version", basename);
+		return 1;
+	}
+	if (!api) {
+		error_msg("%s: missing symbol", basename);
+		return 1;
+	}
+	if (!api->pcm_ops || !api->pcm_options) {
+		error_msg("%s: missing field", basename);
+		return 1;
+	}
+
+	struct output_plugin *plug = xnew(struct output_plugin, 1);
+	plug->priority = api->priority;
+	plug->pcm_ops = api->pcm_ops;
+	plug->pcm_options = api->pcm_options;
+	plug->mixer_ops = api->mixer_ops;
+	plug->mixer_options = api->mixer_options;
+
+	if (!plug->mixer_ops || !plug->mixer_options) {
+		plug->mixer_ops = NULL;
+		plug->mixer_options = NULL;
+	}
+
+	plug->name = xstrndup(basename, end - basename);
+	plug->pcm_initialized = 0;
+	plug->mixer_initialized = 0;
+	plug->mixer_open = 0;
+
+	add_plugin(plug);
+
+	return 0;
+}
+
 void op_load_plugins(void)
 {
+#ifndef STATICPLUGIN
 	DIR *dir;
 	struct dirent *d;
 
@@ -91,12 +136,10 @@ void op_load_plugins(void)
 	}
 	while ((d = (struct dirent *) readdir(dir)) != NULL) {
 		char filename[512];
-		struct output_plugin *plug;
 		void *so;
 		char *ext;
 		const struct output_plugin_api *api_ptr;
 		const unsigned *abi_version_ptr;
-		bool err = false;
 
 		if (d->d_name[0] == '.')
 			continue;
@@ -114,48 +157,20 @@ void op_load_plugins(void)
 			continue;
 		}
 
-		plug = xnew(struct output_plugin, 1);
-
 		abi_version_ptr = dlsym(so, "op_abi_version");
 		api_ptr = dlsym(so, "op_api");
-		if (!abi_version_ptr || *abi_version_ptr != OP_ABI_VERSION) {
+		if (!abi_version_ptr) {
 			error_msg("%s: incompatible plugin version", filename);
-			err = true;
-		}
-		if (!api_ptr) {
-			error_msg("%s: missing symbol", filename);
-			err = true;
-		}
-		if (!api_ptr->pcm_ops || !api_ptr->pcm_options) {
-			error_msg("%s: missing field", filename);
-			err = true;
-		}
-		if (err) {
-			free(plug);
 			dlclose(so);
 			continue;
 		}
-
-		plug->priority = api_ptr->priority;
-		plug->pcm_ops = api_ptr->pcm_ops;
-		plug->pcm_options = api_ptr->pcm_options;
-		plug->mixer_ops = api_ptr->mixer_ops;
-		plug->mixer_options = api_ptr->mixer_options;
-
-		if (!plug->mixer_ops || !plug->mixer_options) {
-			plug->mixer_ops = NULL;
-			plug->mixer_options = NULL;
+		if (cmus_op_register(filename, *abi_version_ptr, api_ptr)) {
+			dlclose(so);
+			continue;
 		}
-
-		plug->name = xstrndup(d->d_name, ext - d->d_name);
-		plug->handle = so;
-		plug->pcm_initialized = 0;
-		plug->mixer_initialized = 0;
-		plug->mixer_open = 0;
-
-		add_plugin(plug);
 	}
 	closedir(dir);
+#endif
 }
 
 static void init_plugin(struct output_plugin *o)
@@ -477,7 +492,7 @@ void op_dump_plugins(void)
 {
 	struct output_plugin *o;
 
-	printf("\nOutput Plugins: %s\n", plugin_dir);
+	printf("\nOutput Plugins: %s\n", plugin_dir ? plugin_dir : "");
 	list_for_each_entry(o, &op_head, node) {
 		printf("  %s\n", o->name);
 	}

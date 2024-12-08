@@ -47,7 +47,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <dirent.h>
+#ifndef STATICPLUGIN
 #include <dlfcn.h>
+#endif
 #include <strings.h>
 
 struct input_plugin {
@@ -84,7 +86,6 @@ struct input_plugin {
 struct ip {
 	struct list_head node;
 	char *name;
-	void *handle;
 
 	int priority;
 	const char * const *extensions;
@@ -490,8 +491,45 @@ static int sort_ip(const struct list_head *a_, const struct list_head *b_)
 	return b->priority - a->priority;
 }
 
+int cmus_ip_register(const char *filename, unsigned abi_version, const struct input_plugin_api *api)
+{
+	const char *basename, *end;
+	basename = path_basename(filename);
+	for (end = basename; *end && *end != '.'; end++)
+		;
+
+	if (abi_version != IP_ABI_VERSION) {
+		error_msg("%s: incompatible plugin version", basename);
+		return 1;
+	}
+	if (!api) {
+		error_msg("%s: missing symbol", basename);
+		return 1;
+	}
+	if (!api->ops || !api->extensions || !api->mime_types || !api->options) {
+		error_msg("%s: missing field", basename);
+		return 1;
+	}
+
+	struct ip *ip = xnew(struct ip, 1);
+	ip->name = xstrndup(basename, end - basename);
+	ip->priority = api->priority;
+	ip->extensions = api->extensions;
+	ip->mime_types = api->mime_types;
+	ip->ops = api->ops;
+	ip->options = api->options;
+
+	ip_wrlock();
+	list_add_tail(&ip->node, &ip_head);
+	list_mergesort(&ip_head, sort_ip);
+	ip_unlock();
+
+	return 0;
+}
+
 void ip_load_plugins(void)
 {
+#ifndef STATICPLUGIN
 	DIR *dir;
 	struct dirent *d;
 
@@ -502,15 +540,12 @@ void ip_load_plugins(void)
 		return;
 	}
 
-	ip_wrlock();
 	while ((d = (struct dirent *) readdir(dir)) != NULL) {
 		char filename[512];
-		struct ip *ip;
 		void *so;
 		char *ext;
 		const struct input_plugin_api *api_ptr;
 		const unsigned *abi_version_ptr;
-		bool err = false;
 
 		if (d->d_name[0] == '.')
 			continue;
@@ -528,41 +563,20 @@ void ip_load_plugins(void)
 			continue;
 		}
 
-		ip = xnew(struct ip, 1);
-
 		abi_version_ptr = dlsym(so, "ip_abi_version");
 		api_ptr = dlsym(so, "ip_api");
-		if (!abi_version_ptr || *abi_version_ptr != IP_ABI_VERSION) {
+		if (!abi_version_ptr) {
 			error_msg("%s: incompatible plugin version", filename);
-			err = true;
-		}
-		if (!api_ptr) {
-			error_msg("%s: missing symbol", filename);
-			err = true;
-		}
-		if (!api_ptr->ops || !api_ptr->extensions || !api_ptr->mime_types || !api_ptr->options) {
-			error_msg("%s: missing field", filename);
-			err = true;
-		}
-		if (err) {
-			free(ip);
 			dlclose(so);
 			continue;
 		}
-
-		ip->name = xstrndup(d->d_name, ext - d->d_name);
-		ip->handle = so;
-		ip->priority = api_ptr->priority;
-		ip->extensions = api_ptr->extensions;
-		ip->mime_types = api_ptr->mime_types;
-		ip->ops = api_ptr->ops;
-		ip->options = api_ptr->options;
-
-		list_add_tail(&ip->node, &ip_head);
+		if (cmus_ip_register(filename, *abi_version_ptr, api_ptr)) {
+			dlclose(so);
+			continue;
+		}
 	}
-	list_mergesort(&ip_head, sort_ip);
 	closedir(dir);
-	ip_unlock();
+#endif
 }
 
 struct input_plugin *ip_new(const char *filename)
@@ -1038,7 +1052,7 @@ void ip_dump_plugins(void)
 	struct ip *ip;
 	int i;
 
-	printf("Input Plugins: %s\n", plugin_dir);
+	printf("Input Plugins: %s\n", plugin_dir ? plugin_dir : "");
 	ip_rdlock();
 	list_for_each_entry(ip, &ip_head, node) {
 		printf("  %s:\n    Default Priority: %d\n    File Types:", ip->name, ip->priority);

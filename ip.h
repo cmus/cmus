@@ -22,6 +22,9 @@
 #include "keyval.h"
 #include "sf.h"
 #include "channelmap.h"
+#ifdef HAVE_CONFIG
+#include "config/plugin.h"
+#endif
 
 #ifndef __GNUC__
 #include <fcntl.h>
@@ -113,8 +116,17 @@ struct input_plugin_api {
 	const struct input_plugin_ops *ops;
 };
 
+#ifndef STATICPLUGIN
 #define CMUS_IP_DEFINE(...) \
 	const unsigned ip_abi_version = IP_ABI_VERSION; \
-	const struct input_plugin_api ip_api = (struct input_plugin_api){__VA_ARGS__}
+	const struct input_plugin_api ip_api = (struct input_plugin_api){__VA_ARGS__};
+#else
+#define CMUS_IP_DEFINE(...) \
+	static const unsigned ip_abi_version = IP_ABI_VERSION; \
+	static const struct input_plugin_api ip_api = (struct input_plugin_api){__VA_ARGS__}; \
+	__attribute__((constructor)) static void ip_register(void) { cmus_ip_register(__FILE__, ip_abi_version, &ip_api); }
+#endif
+
+extern int cmus_ip_register(const char *filename, unsigned abi_version, const struct input_plugin_api *api);
 
 #endif

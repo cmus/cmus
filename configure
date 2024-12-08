@@ -553,6 +553,7 @@ HAVE_BYTESWAP_H=n
 HAVE_STRDUP=n
 HAVE_STRNDUP=n
 HAVE_SAMPLERATE=n
+STATICPLUGIN=n
 # unset CONFIG_* variables: if check succeeds 'y', otherwise 'n'
 
 USAGE="
@@ -602,6 +603,7 @@ Optional Features: y/n
   CONFIG_WAV            WAV                                             [y]
   USE_FALLBACK_IP       Use a specific IP for every unrecognized        [n]
                         input format. Currently set to FFMPEG.
+  STATICPLUGIN          Build plugins into the binary                   [n]
 
 Also many standard variables like CC, LD, CFLAGS, LDFLAGS are recognized.
 Cross compiling is supported via CROSS=target-prefix-
@@ -705,6 +707,7 @@ config_header config/iconv.h HAVE_ICONV
 config_header config/wcwidth.h HAVE_WCWIDTH
 config_header config/samplerate.h HAVE_SAMPLERATE
 config_header config/xmalloc.h HAVE_STRDUP HAVE_STRNDUP
+config_header config/plugin.h STATICPLUGIN
 
 CFLAGS="${CFLAGS} -DHAVE_CONFIG"
 
@@ -715,6 +718,7 @@ makefile_vars \
 	CONFIG_MAD CONFIG_MIKMOD CONFIG_MODPLUG CONFIG_MP4 CONFIG_MPC \
 	CONFIG_MPRIS CONFIG_OPUS CONFIG_OSS CONFIG_PULSE CONFIG_ROAR \
 	CONFIG_SAMPLERATE CONFIG_SNDIO CONFIG_SUN CONFIG_VORBIS CONFIG_VTX \
-	CONFIG_WAV CONFIG_WAVEOUT CONFIG_WAVPACK CONFIG_BASS CONFIG_AAUDIO
+	CONFIG_WAV CONFIG_WAVEOUT CONFIG_WAVPACK CONFIG_BASS CONFIG_AAUDIO \
+	STATICPLUGIN
 
 generate_config_mk

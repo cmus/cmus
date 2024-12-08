@@ -21,6 +21,9 @@
 
 #include "sf.h"
 #include "channelmap.h"
+#ifdef HAVE_CONFIG
+#include "config/plugin.h"
+#endif
 
 #ifndef __GNUC__
 #include <fcntl.h>
@@ -106,8 +109,17 @@ struct output_plugin_api {
 	const struct mixer_plugin_opt *mixer_options; /* null-terminated array, required if has mixer_ops */
 };
 
+#ifndef STATICPLUGIN
 #define CMUS_OP_DEFINE(...) \
 	const unsigned op_abi_version = OP_ABI_VERSION; \
-	const struct output_plugin_api op_api = (struct output_plugin_api){__VA_ARGS__}
+	const struct output_plugin_api op_api = (struct output_plugin_api){__VA_ARGS__};
+#else
+#define CMUS_OP_DEFINE(...) \
+	static const unsigned op_abi_version = OP_ABI_VERSION; \
+	static const struct output_plugin_api op_api = (struct output_plugin_api){__VA_ARGS__}; \
+	__attribute__((constructor)) static void op_register(void) { cmus_op_register(__FILE__, op_abi_version, &op_api); }
+#endif
+
+extern int cmus_op_register(const char *filename, unsigned abi_version, const struct output_plugin_api *api);
 
 #endif
