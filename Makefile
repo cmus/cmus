@@ -334,19 +334,5 @@ install-data: man
 
 install: all install-main install-plugins install-data
 
-tags:
-	exuberant-ctags *.[ch]
-
-# generating tarball using GIT {{{
-TARNAME	= cmus-$(VERSION)
-
-dist:
-	@tarname=$(TARNAME);						\
-	test "$(_ver2)" || { echo "No such revision $(REV)"; exit 1; };	\
-	echo "   DIST   $$tarname.tar.bz2";				\
-	git archive --format=tar --prefix=$$tarname/ $(REV)^{tree} | bzip2 -c -9 > $$tarname.tar.bz2
-
-# }}}
-
-.PHONY: all main plugins man dist tags
+.PHONY: all main plugins man
 .PHONY: install install-main install-plugins install-man
