@@ -73,9 +73,39 @@ struct output_plugin_opt {
 	int (*get)(char **val);
 };
 
+#define NR_MIXER_FDS 4
+
+enum {
+    /* volume changes */
+    MIXER_FDS_VOLUME,
+    /* output changes */
+    MIXER_FDS_OUTPUT
+};
+
+struct mixer_plugin_ops {
+        int (*init)(void);
+        int (*exit)(void);
+        int (*open)(int *volume_max);
+        int (*close)(void);
+        union {
+            int (*abi_1)(int *fds); // MIXER_FDS_VOLUME
+            int (*abi_2)(int what, int *fds);
+        } get_fds;
+        int (*set_volume)(int l, int r);
+        int (*get_volume)(int *l, int *r);
+};
+
+struct mixer_plugin_opt {
+        const char *name;
+        int (*set)(const char *val);
+        int (*get)(char **val);
+};
+
 /* symbols exported by plugin */
 extern const struct output_plugin_ops op_pcm_ops;
 extern const struct output_plugin_opt op_pcm_options[];
+extern const struct mixer_plugin_ops op_mixer_ops;
+extern const struct mixer_plugin_opt op_mixer_options[];
 extern const int op_priority;
 extern const unsigned op_abi_version;
 

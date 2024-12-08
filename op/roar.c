@@ -20,7 +20,6 @@
 #include <roaraudio.h>
 
 #include "../op.h"
-#include "../mixer.h"
 #include "../xmalloc.h"
 #include "../utils.h"
 #include "../misc.h"

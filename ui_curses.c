@@ -48,7 +48,7 @@
 #include "input.h"
 #include "file.h"
 #include "path.h"
-#include "mixer.h"
+#include "op.h"
 #include "mpris.h"
 #include "locking.h"
 #include "pl_env.h"

@@ -18,7 +18,6 @@
 
 #include "output.h"
 #include "op.h"
-#include "mixer.h"
 #include "sf.h"
 #include "utils.h"
 #include "xmalloc.h"

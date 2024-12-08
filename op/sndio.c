@@ -28,7 +28,6 @@
 #include <sndio.h>
 
 #include "../op.h"
-#include "../mixer.h"
 #include "../sf.h"
 #include "../xmalloc.h"
 

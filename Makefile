@@ -167,11 +167,11 @@ ip/vtx.so: $(vtx-objs) $(libcmus-y)
 
 # output plugins {{{
 pulse-objs		:= op/pulse.lo
-alsa-objs		:= op/alsa.lo op/mixer_alsa.lo
+alsa-objs		:= op/alsa.lo
 jack-objs		:= op/jack.lo
 arts-objs		:= op/arts.lo
-oss-objs		:= op/oss.lo op/mixer_oss.lo
-sun-objs		:= op/sun.lo op/mixer_sun.lo
+oss-objs		:= op/oss.lo
+sun-objs		:= op/sun.lo
 sndio-objs		:= op/sndio.lo
 ao-objs			:= op/ao.lo
 coreaudio-objs		:= op/coreaudio.lo
