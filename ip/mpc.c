@@ -444,21 +444,21 @@ static char *mpc_codec_profile(struct input_plugin_data *ip_data)
 	return s;
 }
 
-const struct input_plugin_ops ip_ops = {
-	.open = mpc_open,
-	.close = mpc_close,
-	.read = mpc_read,
-	.seek = mpc_seek,
-	.read_comments = mpc_read_comments,
-	.duration = mpc_duration,
-	.bitrate = mpc_bitrate,
-	.bitrate_current = mpc_current_bitrate,
-	.codec = mpc_codec,
-	.codec_profile = mpc_codec_profile
-};
-
-const int ip_priority = 50;
-const char *const ip_extensions[] = { "mpc", "mpp", "mp+", NULL };
-const char *const ip_mime_types[] = { "audio/x-musepack", NULL };
-const struct input_plugin_opt ip_options[] = { { NULL } };
-const unsigned ip_abi_version = IP_ABI_VERSION;
+CMUS_IP_DEFINE(
+	.priority = 50,
+	.extensions = (const char*[]){ "mpc", "mpp", "mp+", NULL },
+	.mime_types = (const char*[]){ "audio/x-musepack", NULL },
+	.options = (struct input_plugin_opt[]){ { NULL } },
+	.ops = &(struct input_plugin_ops){
+		.open = mpc_open,
+		.close = mpc_close,
+		.read = mpc_read,
+		.seek = mpc_seek,
+		.read_comments = mpc_read_comments,
+		.duration = mpc_duration,
+		.bitrate = mpc_bitrate,
+		.bitrate_current = mpc_current_bitrate,
+		.codec = mpc_codec,
+		.codec_profile = mpc_codec_profile,
+	},
+);

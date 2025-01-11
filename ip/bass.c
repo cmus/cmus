@@ -186,25 +186,21 @@ static char *bass_codec_profile(struct input_plugin_data *ip_data)
 	return NULL;
 }
 
-const struct input_plugin_ops ip_ops = {
-	.open = bass_open,
-	.close = bass_close,
-	.read = bass_read,
-	.seek = bass_seek,
-	.read_comments = bass_read_comments,
-	.duration = bass_duration,
-	.bitrate = bass_bitrate,
-	.bitrate_current = bass_bitrate,
-	.codec = bass_codec,
-	.codec_profile = bass_codec_profile
-};
-
-const int ip_priority = 60;
-const char * const ip_extensions[] = {
-	"xm", "it", "s3m", "mod", "mtm", "umx", NULL
-};
-
-const char * const ip_mime_types[] = { NULL };
-const struct input_plugin_opt ip_options[] = { { NULL } };
-const unsigned ip_abi_version = IP_ABI_VERSION;
-
+CMUS_IP_DEFINE(
+	.priority = 60,
+	.extensions = (const char*[]){ "xm", "it", "s3m", "mod", "mtm", "umx", NULL },
+	.mime_types = (const char*[]){ NULL },
+	.options = (struct input_plugin_opt[]){ { NULL } },
+	.ops = &(struct input_plugin_ops){
+		.open = bass_open,
+		.close = bass_close,
+		.read = bass_read,
+		.seek = bass_seek,
+		.read_comments = bass_read_comments,
+		.duration = bass_duration,
+		.bitrate = bass_bitrate,
+		.bitrate_current = bass_bitrate,
+		.codec = bass_codec,
+		.codec_profile = bass_codec_profile,
+	},
+);
