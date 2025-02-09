@@ -467,6 +467,7 @@ static void cue_meta_free(struct cue_meta *m)
 	free(m->date);
 	free(m->comment);
 	free(m->compilation);
+	free(m->discnumber);
 }
 
 static void cue_parser_free(struct cue_parser *p)
