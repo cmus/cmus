@@ -35,6 +35,7 @@ struct cue_track {
 	char *file;
 	double offset;
 	double length;
+
 	struct cue_meta meta;
 };
 
