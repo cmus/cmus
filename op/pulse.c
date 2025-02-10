@@ -51,6 +51,82 @@ static int pa_restore_volume = 1;
 
 #define ret_pa_last_error() ret_pa_error(pa_context_errno(pa_ctx))
 
+static int _pa_wait_unlock(pa_operation *o)
+{
+	pa_operation_state_t state;
+
+	if (!o) {
+		pa_threaded_mainloop_unlock(pa_ml);
+		RET_PA_LAST_ERROR();
+	}
+
+	while ((state = pa_operation_get_state(o)) == PA_OPERATION_RUNNING)
+		pa_threaded_mainloop_wait(pa_ml);
+
+	pa_operation_unref(o);
+	pa_threaded_mainloop_unlock(pa_ml);
+
+	if (state == PA_OPERATION_DONE)
+		return OP_ERROR_SUCCESS;
+	else
+		RET_PA_LAST_ERROR();
+}
+
+static int _pa_nowait_unlock(pa_operation *o)
+{
+	if (!o) {
+		pa_threaded_mainloop_unlock(pa_ml);
+		RET_PA_LAST_ERROR();
+	}
+
+	pa_operation_unref(o);
+	pa_threaded_mainloop_unlock(pa_ml);
+
+	return OP_ERROR_SUCCESS;
+}
+
+static pa_sample_format_t _pa_sample_format(sample_format_t sf)
+{
+	const int signed_	= sf_get_signed(sf);
+	const int big_endian	= sf_get_bigendian(sf);
+	const int sample_size	= sf_get_sample_size(sf) * 8;
+
+	if (!signed_ && sample_size == 8)
+		return PA_SAMPLE_U8;
+
+	if (signed_) {
+		switch (sample_size) {
+		case 16:
+			return big_endian ? PA_SAMPLE_S16BE : PA_SAMPLE_S16LE;
+		case 24:
+			return big_endian ? PA_SAMPLE_S24BE : PA_SAMPLE_S24LE;
+		case 32:
+			return big_endian ? PA_SAMPLE_S32BE : PA_SAMPLE_S32LE;
+		}
+	}
+
+	return PA_SAMPLE_INVALID;
+}
+
+#define RET_IF(x) case CHANNEL_POSITION_ ## x: return PA_CHANNEL_POSITION_ ## x
+
+static pa_channel_position_t pulse_channel_position(channel_position_t p)
+{
+	switch (p) {
+	RET_IF(MONO);
+	RET_IF(FRONT_LEFT); RET_IF(FRONT_RIGHT); RET_IF(FRONT_CENTER);
+	RET_IF(REAR_CENTER); RET_IF(REAR_LEFT); RET_IF(REAR_RIGHT);
+	RET_IF(LFE);
+	RET_IF(FRONT_LEFT_OF_CENTER); RET_IF(FRONT_RIGHT_OF_CENTER);
+	RET_IF(SIDE_LEFT); RET_IF(SIDE_RIGHT);
+	RET_IF(TOP_CENTER);
+	RET_IF(TOP_FRONT_LEFT); RET_IF(TOP_FRONT_RIGHT); RET_IF(TOP_FRONT_CENTER);
+	RET_IF(TOP_REAR_LEFT); RET_IF(TOP_REAR_RIGHT); RET_IF(TOP_REAR_CENTER);
+	default:
+		return PA_CHANNEL_POSITION_INVALID;
+	}
+}
+
 static pa_proplist *_create_app_proplist(void)
 {
 	pa_proplist	*pl;
@@ -175,75 +251,6 @@ static void _pa_sink_input_info_cb(pa_context *c,
 	}
 }
 
-static void _pa_stream_success_cb(pa_stream *s, int success, void *data)
-{
-	pa_threaded_mainloop_signal(pa_ml, 0);
-}
-
-static pa_sample_format_t _pa_sample_format(sample_format_t sf)
-{
-	const int signed_	= sf_get_signed(sf);
-	const int big_endian	= sf_get_bigendian(sf);
-	const int sample_size	= sf_get_sample_size(sf) * 8;
-
-	if (!signed_ && sample_size == 8)
-		return PA_SAMPLE_U8;
-
-	if (signed_) {
-		switch (sample_size) {
-		case 16:
-			return big_endian ? PA_SAMPLE_S16BE : PA_SAMPLE_S16LE;
-		case 24:
-			return big_endian ? PA_SAMPLE_S24BE : PA_SAMPLE_S24LE;
-		case 32:
-			return big_endian ? PA_SAMPLE_S32BE : PA_SAMPLE_S32LE;
-		}
-	}
-
-	return PA_SAMPLE_INVALID;
-}
-
-static int _pa_wait_unlock(pa_operation *o)
-{
-	pa_operation_state_t state;
-
-	if (!o) {
-		pa_threaded_mainloop_unlock(pa_ml);
-		ret_pa_last_error();
-	}
-
-	while ((state = pa_operation_get_state(o)) == PA_OPERATION_RUNNING)
-		pa_threaded_mainloop_wait(pa_ml);
-
-	pa_operation_unref(o);
-	pa_threaded_mainloop_unlock(pa_ml);
-
-	if (state == PA_OPERATION_DONE)
-		return OP_ERROR_SUCCESS;
-	else
-		ret_pa_last_error();
-}
-
-static int _pa_nowait_unlock(pa_operation *o)
-{
-	if (!o) {
-		pa_threaded_mainloop_unlock(pa_ml);
-		ret_pa_last_error();
-	}
-
-	pa_operation_unref(o);
-	pa_threaded_mainloop_unlock(pa_ml);
-
-	return OP_ERROR_SUCCESS;
-}
-
-static int _pa_stream_cork(int pause_)
-{
-	pa_threaded_mainloop_lock(pa_ml);
-
-	return _pa_wait_unlock(pa_stream_cork(pa_s, pause_, _pa_stream_success_cb, NULL));
-}
-
 static void _pa_ctx_subscription_cb(pa_context *ctx, pa_subscription_event_type_t t,
 		uint32_t idx, void *userdata)
 {
@@ -311,6 +318,11 @@ out_fail:
 	ret_pa_last_error();
 }
 
+static void _pa_stream_success_cb(pa_stream *s, int success, void *data)
+{
+	pa_threaded_mainloop_signal(pa_ml, 0);
+}
+
 static int op_pulse_init(void)
 {
 	int rc;
@@ -336,25 +348,6 @@ static int op_pulse_exit(void)
 	}
 
 	return OP_ERROR_SUCCESS;
-}
-
-#define RET_IF(x) case CHANNEL_POSITION_ ## x: return PA_CHANNEL_POSITION_ ## x
-
-static pa_channel_position_t pulse_channel_position(channel_position_t p)
-{
-	switch (p) {
-	RET_IF(MONO);
-	RET_IF(FRONT_LEFT); RET_IF(FRONT_RIGHT); RET_IF(FRONT_CENTER);
-	RET_IF(REAR_CENTER); RET_IF(REAR_LEFT); RET_IF(REAR_RIGHT);
-	RET_IF(LFE);
-	RET_IF(FRONT_LEFT_OF_CENTER); RET_IF(FRONT_RIGHT_OF_CENTER);
-	RET_IF(SIDE_LEFT); RET_IF(SIDE_RIGHT);
-	RET_IF(TOP_CENTER);
-	RET_IF(TOP_FRONT_LEFT); RET_IF(TOP_FRONT_RIGHT); RET_IF(TOP_FRONT_CENTER);
-	RET_IF(TOP_REAR_LEFT); RET_IF(TOP_REAR_RIGHT); RET_IF(TOP_REAR_CENTER);
-	default:
-		return PA_CHANNEL_POSITION_INVALID;
-	}
 }
 
 static int op_pulse_open(sample_format_t sf, const channel_position_t *channel_map)
@@ -478,6 +471,13 @@ static int op_pulse_buffer_space(void)
 	pa_threaded_mainloop_unlock(pa_ml);
 
 	return s;
+}
+
+static int _pa_stream_cork(int pause_)
+{
+	pa_threaded_mainloop_lock(pa_ml);
+
+	return _pa_wait_unlock(pa_stream_cork(pa_s, pause_, _pa_stream_success_cb, NULL));
 }
 
 static int op_pulse_pause(void)
