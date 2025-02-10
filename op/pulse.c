@@ -26,19 +26,19 @@
 #include "../utils.h"
 #include "../xmalloc.h"
 
-static pa_threaded_mainloop	*pa_ml;
-static pa_context		*pa_ctx;
-static pa_stream		*pa_s;
-static pa_channel_map		 pa_cmap;
-static pa_cvolume		 pa_vol;
-static pa_sample_spec		 pa_ss;
+static pa_threaded_mainloop *mainloop;
+static pa_context *context;
+static pa_stream *stream;
+static pa_channel_map channel_map;
+static pa_cvolume volume;
+static pa_sample_spec sample_spec;
 
-static int			 mixer_notify_in;
-static int			 mixer_notify_out;
+static int mixer_notify_in;
+static int mixer_notify_out;
 
-static int			 mixer_notify_output_in;
-static int			 mixer_notify_output_out;
-static long 			 pa_last_output_idx;
+static int mixer_notify_output_in;
+static int mixer_notify_output_out;
+static long last_output_idx;
 
 /* configuration */
 static int pa_restore_volume = 1;
@@ -49,22 +49,22 @@ static int pa_restore_volume = 1;
 		return -OP_ERROR_INTERNAL;				\
 	} while (0)
 
-#define RET_PA_LAST_ERROR() RET_PA_ERROR(pa_context_errno(pa_ctx))
+#define RET_PA_LAST_ERROR() RET_PA_ERROR(pa_context_errno(context))
 
-static int _pa_wait_unlock(pa_operation *o)
+static int pulse_wait_and_unlock(pa_operation *op)
 {
 	pa_operation_state_t state;
 
-	if (!o) {
-		pa_threaded_mainloop_unlock(pa_ml);
+	if (!op) {
+		pa_threaded_mainloop_unlock(mainloop);
 		RET_PA_LAST_ERROR();
 	}
 
-	while ((state = pa_operation_get_state(o)) == PA_OPERATION_RUNNING)
-		pa_threaded_mainloop_wait(pa_ml);
+	while ((state = pa_operation_get_state(op)) == PA_OPERATION_RUNNING)
+		pa_threaded_mainloop_wait(mainloop);
 
-	pa_operation_unref(o);
-	pa_threaded_mainloop_unlock(pa_ml);
+	pa_operation_unref(op);
+	pa_threaded_mainloop_unlock(mainloop);
 
 	if (state == PA_OPERATION_DONE)
 		return OP_ERROR_SUCCESS;
@@ -72,29 +72,29 @@ static int _pa_wait_unlock(pa_operation *o)
 		RET_PA_LAST_ERROR();
 }
 
-static int _pa_nowait_unlock(pa_operation *o)
+static int pulse_nowait_and_unlock(pa_operation *op)
 {
-	if (!o) {
-		pa_threaded_mainloop_unlock(pa_ml);
+	if (!op) {
+		pa_threaded_mainloop_unlock(mainloop);
 		RET_PA_LAST_ERROR();
 	}
 
-	pa_operation_unref(o);
-	pa_threaded_mainloop_unlock(pa_ml);
+	pa_operation_unref(op);
+	pa_threaded_mainloop_unlock(mainloop);
 
 	return OP_ERROR_SUCCESS;
 }
 
-static pa_sample_format_t _pa_sample_format(sample_format_t sf)
+static pa_sample_format_t convert_sample_format(sample_format_t sf)
 {
-	const int signed_	= sf_get_signed(sf);
-	const int big_endian	= sf_get_bigendian(sf);
-	const int sample_size	= sf_get_sample_size(sf) * 8;
+	const int _signed = sf_get_signed(sf);
+	const int big_endian = sf_get_bigendian(sf);
+	const int sample_size = sf_get_sample_size(sf) * 8;
 
-	if (!signed_ && sample_size == 8)
+	if (!_signed && sample_size == 8)
 		return PA_SAMPLE_U8;
 
-	if (signed_) {
+	if (_signed) {
 		switch (sample_size) {
 		case 16:
 			return big_endian ? PA_SAMPLE_S16BE : PA_SAMPLE_S16LE;
@@ -110,7 +110,7 @@ static pa_sample_format_t _pa_sample_format(sample_format_t sf)
 
 #define RET_IF(x) case CHANNEL_POSITION_ ## x: return PA_CHANNEL_POSITION_ ## x
 
-static pa_channel_position_t pulse_channel_position(channel_position_t p)
+static pa_channel_position_t convert_channel_position(channel_position_t p)
 {
 	switch (p) {
 	RET_IF(MONO);
@@ -127,15 +127,12 @@ static pa_channel_position_t pulse_channel_position(channel_position_t p)
 	}
 }
 
-static pa_proplist *_create_app_proplist(void)
+static pa_proplist *pulse_create_app_proplist(void)
 {
-	pa_proplist	*pl;
-	int		 rc;
-
-	pl = pa_proplist_new();
+	pa_proplist *pl = pa_proplist_new();
 	BUG_ON(!pl);
 
-	rc = pa_proplist_sets(pl, PA_PROP_APPLICATION_ID, "cmus");
+	int rc = pa_proplist_sets(pl, PA_PROP_APPLICATION_ID, "cmus");
 	BUG_ON(rc);
 
 	rc = pa_proplist_sets(pl, PA_PROP_APPLICATION_NAME, "C* Music Player");
@@ -147,15 +144,12 @@ static pa_proplist *_create_app_proplist(void)
 	return pl;
 }
 
-static pa_proplist *_create_stream_proplist(void)
+static pa_proplist *pulse_create_stream_proplist(void)
 {
-	pa_proplist	*pl;
-	int		 rc;
-
-	pl = pa_proplist_new();
+	pa_proplist *pl = pa_proplist_new();
 	BUG_ON(!pl);
 
-	rc = pa_proplist_sets(pl, PA_PROP_MEDIA_ROLE, "music");
+	int rc = pa_proplist_sets(pl, PA_PROP_MEDIA_ROLE, "music");
 	BUG_ON(rc);
 
 	rc = pa_proplist_sets(pl, PA_PROP_MEDIA_ICON_NAME, "audio-x-generic");
@@ -164,7 +158,7 @@ static pa_proplist *_create_stream_proplist(void)
 	return pl;
 }
 
-static const char *_pa_context_state_str(pa_context_state_t s)
+static const char *pa_context_state_str(pa_context_state_t s)
 {
 	switch (s) {
 	case PA_CONTEXT_AUTHORIZING:
@@ -186,23 +180,23 @@ static const char *_pa_context_state_str(pa_context_state_t s)
 	return "unknown";
 }
 
-static void _pa_context_running_cb(pa_context *c, void *data)
+static void pulse_context_state_cb(pa_context *c, void *data)
 {
 	const pa_context_state_t cs = pa_context_get_state(c);
 
-	d_print("pulse: context state has changed to %s\n", _pa_context_state_str(cs));
+	d_print("context state has changed to %s\n", pa_context_state_str(cs));
 
 	switch (cs) {
 	case PA_CONTEXT_READY:
 	case PA_CONTEXT_FAILED:
 	case PA_CONTEXT_TERMINATED:
-		pa_threaded_mainloop_signal(pa_ml, 0);
+		pa_threaded_mainloop_signal(mainloop, 0);
 	default:
 		return;
 	}
 }
 
-static const char *_pa_stream_state_str(pa_stream_state_t s)
+static const char *pa_stream_state_str(pa_stream_state_t s)
 {
 	switch (s) {
 	case PA_STREAM_CREATING:
@@ -220,123 +214,116 @@ static const char *_pa_stream_state_str(pa_stream_state_t s)
 	return "unknown";
 }
 
-static void _pa_stream_running_cb(pa_stream *s, void *data)
+static void pulse_stream_state_cb(pa_stream *s, void *data)
 {
 	const pa_stream_state_t ss = pa_stream_get_state(s);
 
-	d_print("pulse: stream state has changed to %s\n", _pa_stream_state_str(ss));
+	d_print("stream state has changed to %s\n", pa_stream_state_str(ss));
 
 	switch (ss) {
 	case PA_STREAM_READY:
 	case PA_STREAM_FAILED:
 	case PA_STREAM_TERMINATED:
-		pa_threaded_mainloop_signal(pa_ml, 0);
+		pa_threaded_mainloop_signal(mainloop, 0);
 	default:
 		return;
 	}
 }
 
-static void _pa_sink_input_info_cb(pa_context *c,
-				   const pa_sink_input_info *i,
-				   int eol,
-				   void *data)
+static void pulse_sink_input_info_cb(pa_context *c,
+		const pa_sink_input_info *i, int eol, void *data)
 {
-	if (i) {
-		memcpy(&pa_vol, &i->volume, sizeof(pa_vol));
-		notify_via_pipe(mixer_notify_in);
+	if (!i)
+		return;
 
-		if (pa_last_output_idx != i->sink) {
-			if (pa_last_output_idx != -1) {
-				notify_via_pipe(mixer_notify_output_in);
-			}
-			pa_last_output_idx = i->sink;
-		}
+	memcpy(&volume, &i->volume, sizeof(volume));
+	notify_via_pipe(mixer_notify_in);
+
+	if (last_output_idx != i->sink) {
+		if (last_output_idx != -1)
+			notify_via_pipe(mixer_notify_output_in);
+		last_output_idx = i->sink;
 	}
 }
 
-static void _pa_ctx_subscription_cb(pa_context *ctx, pa_subscription_event_type_t type,
-		uint32_t idx, void *userdata)
+static void pulse_context_subscription_cb(pa_context *ctx,
+		pa_subscription_event_type_t type, uint32_t idx, void *data)
 {
 	type &= PA_SUBSCRIPTION_EVENT_TYPE_MASK;
 	if (type != PA_SUBSCRIPTION_EVENT_CHANGE)
 		return;
 
-	if (pa_s && idx == pa_stream_get_index(pa_s))
-		pa_context_get_sink_input_info(ctx, idx, _pa_sink_input_info_cb, NULL);
+	if (stream && idx == pa_stream_get_index(stream)) {
+		pa_context_get_sink_input_info(ctx, idx,
+				pulse_sink_input_info_cb, NULL);
+	}
 }
 
-static int _pa_create_context(void)
+static int pulse_create_context(void)
 {
-	pa_mainloop_api	*api;
-	pa_proplist	*pl;
-	int		 rc;
-
-	api = pa_threaded_mainloop_get_api(pa_ml);
+	pa_mainloop_api *api = pa_threaded_mainloop_get_api(mainloop);
 	BUG_ON(!api);
 
-	pl = _create_app_proplist();
+	pa_proplist *pl = pulse_create_app_proplist();
 
-	pa_threaded_mainloop_lock(pa_ml);
+	pa_threaded_mainloop_lock(mainloop);
 
-	pa_ctx = pa_context_new_with_proplist(api, "C* Music Player", pl);
+	context = pa_context_new_with_proplist(api, "C* Music Player", pl);
 	pa_proplist_free(pl);
-	BUG_ON(!pa_ctx);
+	BUG_ON(!context);
 
-	pa_context_set_state_callback(pa_ctx, _pa_context_running_cb, NULL);
+	pa_context_set_state_callback(context, pulse_context_state_cb, NULL);
 
-	rc = pa_context_connect(pa_ctx, NULL, PA_CONTEXT_NOFLAGS, NULL);
+	int rc = pa_context_connect(context, NULL, PA_CONTEXT_NOFLAGS, NULL);
 	if (rc)
-		goto out_fail;
+		goto err_free_ctx;
 
 	for (;;) {
-		pa_context_state_t state;
-		state = pa_context_get_state(pa_ctx);
-		if (state == PA_CONTEXT_READY)
+		pa_context_state_t s = pa_context_get_state(context);
+		if (s == PA_CONTEXT_READY)
 			break;
-		if (!PA_CONTEXT_IS_GOOD(state))
-			goto out_fail_connected;
+		if (s == PA_CONTEXT_TERMINATED || s == PA_CONTEXT_FAILED)
+			goto err_disconnect_ctx;
 
-		pa_threaded_mainloop_wait(pa_ml);
+		pa_threaded_mainloop_wait(mainloop);
 	}
 
-	pa_context_set_subscribe_callback(pa_ctx, _pa_ctx_subscription_cb, NULL);
-	pa_operation *op = pa_context_subscribe(pa_ctx,
+	pa_context_set_subscribe_callback(context,
+			pulse_context_subscription_cb, NULL);
+	pa_operation *op = pa_context_subscribe(context,
 			PA_SUBSCRIPTION_MASK_SINK_INPUT, NULL, NULL);
 	if (!op)
-		goto out_fail_connected;
+		goto err_disconnect_ctx;
 	pa_operation_unref(op);
 
-	pa_threaded_mainloop_unlock(pa_ml);
+	pa_threaded_mainloop_unlock(mainloop);
 
 	return OP_ERROR_SUCCESS;
 
-out_fail_connected:
-	pa_context_disconnect(pa_ctx);
+err_disconnect_ctx:
+	pa_context_disconnect(context);
 
-out_fail:
-	pa_context_unref(pa_ctx);
-	pa_ctx = NULL;
+err_free_ctx:
+	pa_context_unref(context);
+	context = NULL;
 
-	pa_threaded_mainloop_unlock(pa_ml);
-
+	pa_threaded_mainloop_unlock(mainloop);
 	RET_PA_LAST_ERROR();
 }
 
-static void _pa_stream_success_cb(pa_stream *s, int success, void *data)
+static void pulse_stream_success_cb(pa_stream *s, int success, void *data)
 {
-	pa_threaded_mainloop_signal(pa_ml, 0);
+	pa_threaded_mainloop_signal(mainloop, 0);
 }
 
 static int op_pulse_init(void)
 {
-	int rc;
+	mainloop = pa_threaded_mainloop_new();
+	BUG_ON(!mainloop);
 
-	pa_ml = pa_threaded_mainloop_new();
-	BUG_ON(!pa_ml);
-
-	rc = pa_threaded_mainloop_start(pa_ml);
+	int rc = pa_threaded_mainloop_start(mainloop);
 	if (rc) {
-		pa_threaded_mainloop_free(pa_ml);
+		pa_threaded_mainloop_free(mainloop);
 		RET_PA_ERROR(rc);
 	}
 
@@ -345,122 +332,120 @@ static int op_pulse_init(void)
 
 static int op_pulse_exit(void)
 {
-	if (pa_ml) {
-		pa_threaded_mainloop_stop(pa_ml);
-		pa_threaded_mainloop_free(pa_ml);
-		pa_ml = NULL;
+	if (mainloop) {
+		pa_threaded_mainloop_stop(mainloop);
+		pa_threaded_mainloop_free(mainloop);
+		mainloop = NULL;
 	}
 
 	return OP_ERROR_SUCCESS;
 }
 
-static int op_pulse_open(sample_format_t sf, const channel_position_t *channel_map)
+static int op_pulse_open(sample_format_t sf, const channel_position_t *cmap)
 {
-	pa_proplist	*pl;
-	int		 rc, i;
+	pa_proplist *pl;
+	int rc, i;
 
 	const pa_sample_spec ss = {
-		.format		= _pa_sample_format(sf),
-		.rate		= sf_get_rate(sf),
-		.channels	= sf_get_channels(sf)
+		.format = convert_sample_format(sf),
+		.rate = sf_get_rate(sf),
+		.channels = sf_get_channels(sf)
 	};
 
 	if (!pa_sample_spec_valid(&ss))
 		return -OP_ERROR_SAMPLE_FORMAT;
 
-	pa_ss = ss;
-	if (channel_map && channel_map_valid(channel_map)) {
-		pa_channel_map_init(&pa_cmap);
-		pa_cmap.channels = ss.channels;
-		for (i = 0; i < pa_cmap.channels; i++)
-			pa_cmap.map[i] = pulse_channel_position(channel_map[i]);
-	} else
-		pa_channel_map_init_auto(&pa_cmap, ss.channels, PA_CHANNEL_MAP_ALSA);
+	sample_spec = ss;
+	if (cmap && channel_map_valid(cmap)) {
+		pa_channel_map_init(&channel_map);
+		channel_map.channels = ss.channels;
+		for (i = 0; i < channel_map.channels; i++)
+			channel_map.map[i] = convert_channel_position(cmap[i]);
+	} else {
+		pa_channel_map_init_auto(&channel_map, ss.channels,
+				PA_CHANNEL_MAP_ALSA);
+	}
 
-	rc = _pa_create_context();
+	last_output_idx = -1;
+	rc = pulse_create_context();
 	if (rc)
 		return rc;
 
-	pl = _create_stream_proplist();
+	pl = pulse_create_stream_proplist();
 
-	pa_threaded_mainloop_lock(pa_ml);
+	pa_threaded_mainloop_lock(mainloop);
 
-	pa_s = pa_stream_new_with_proplist(pa_ctx, "playback", &ss, &pa_cmap, pl);
+	stream = pa_stream_new_with_proplist(context, "playback",
+			&ss, &channel_map, pl);
 	pa_proplist_free(pl);
-	if (!pa_s)
-		goto out_fail;
+	if (!stream)
+		goto err;
 
-	pa_last_output_idx = -1;
-	pa_stream_set_state_callback(pa_s, _pa_stream_running_cb, NULL);
+	pa_stream_set_state_callback(stream, pulse_stream_state_cb, NULL);
 
-	rc = pa_stream_connect_playback(pa_s,
-					NULL,
-					NULL,
-					PA_STREAM_NOFLAGS,
-					pa_restore_volume ? NULL : &pa_vol,
-					NULL);
+	rc = pa_stream_connect_playback(stream, NULL, NULL, PA_STREAM_NOFLAGS,
+			pa_restore_volume ? NULL : &volume, NULL);
 	if (rc)
-		goto out_fail_stream;
+		goto err_free_stream;
 
 	for (;;) {
-		pa_stream_state_t state = pa_stream_get_state(pa_s);
-		if (state == PA_STREAM_READY)
+		pa_stream_state_t s = pa_stream_get_state(stream);
+		if (s == PA_STREAM_READY)
 			break;
-		if (!PA_STREAM_IS_GOOD(state))
-			goto out_fail_stream;
+		if (s == PA_STREAM_FAILED || s == PA_STREAM_TERMINATED)
+			goto err_free_stream;
 
-		pa_threaded_mainloop_wait(pa_ml);
+		pa_threaded_mainloop_wait(mainloop);
 	}
 
-	pa_context_get_sink_input_info(pa_ctx, pa_stream_get_index(pa_s),
-			_pa_sink_input_info_cb, NULL);
+	pa_context_get_sink_input_info(context, pa_stream_get_index(stream),
+			pulse_sink_input_info_cb, NULL);
 
-	pa_threaded_mainloop_unlock(pa_ml);
+	pa_threaded_mainloop_unlock(mainloop);
 
 	return OP_ERROR_SUCCESS;
 
-out_fail_stream:
-	pa_stream_unref(pa_s);
-
-out_fail:
-	pa_threaded_mainloop_unlock(pa_ml);
-
+err_free_stream:
+	pa_stream_unref(stream);
+err:
+	pa_threaded_mainloop_unlock(mainloop);
 	RET_PA_LAST_ERROR();
 }
 
 static int op_pulse_close(void)
 {
-	pa_threaded_mainloop_lock(pa_ml);
+	pa_threaded_mainloop_lock(mainloop);
 
-	if (pa_s) {
-		pa_stream_disconnect(pa_s);
-		pa_stream_unref(pa_s);
-		pa_s = NULL;
+	if (stream) {
+		pa_stream_disconnect(stream);
+		pa_stream_unref(stream);
+		stream = NULL;
 	}
 
-	if (pa_ctx) {
-		pa_context_disconnect(pa_ctx);
-		pa_context_unref(pa_ctx);
-		pa_ctx = NULL;
+	if (context) {
+		pa_context_disconnect(context);
+		pa_context_unref(context);
+		context = NULL;
 	}
 
-	pa_threaded_mainloop_unlock(pa_ml);
+	pa_threaded_mainloop_unlock(mainloop);
 
 	return OP_ERROR_SUCCESS;
 }
 
 static int op_pulse_drop(void)
 {
-	pa_threaded_mainloop_lock(pa_ml);
+	pa_threaded_mainloop_lock(mainloop);
 
-	return _pa_wait_unlock(pa_stream_flush(pa_s, _pa_stream_success_cb, NULL));
+	pa_operation *op = pa_stream_flush(stream, pulse_stream_success_cb, NULL);
+	return pulse_wait_and_unlock(op);
 }
 
 static int op_pulse_write(const char *buf, int count)
 {
-	pa_threaded_mainloop_lock(pa_ml);
-	int rc = pa_stream_write(pa_s, buf, count, NULL, 0, PA_SEEK_RELATIVE);
-	pa_threaded_mainloop_unlock(pa_ml);
+	pa_threaded_mainloop_lock(mainloop);
+	int rc = pa_stream_write(stream, buf, count, NULL, 0, PA_SEEK_RELATIVE);
+	pa_threaded_mainloop_unlock(mainloop);
 
 	if (rc)
 		RET_PA_ERROR(rc);
@@ -470,9 +455,9 @@ static int op_pulse_write(const char *buf, int count)
 
 static int op_pulse_buffer_space(void)
 {
-	pa_threaded_mainloop_lock(pa_ml);
-	size_t s = pa_stream_writable_size(pa_s);
-	pa_threaded_mainloop_unlock(pa_ml);
+	pa_threaded_mainloop_lock(mainloop);
+	size_t s = pa_stream_writable_size(stream);
+	pa_threaded_mainloop_unlock(mainloop);
 
 	if (s == (size_t)-1)
 		RET_PA_LAST_ERROR();
@@ -480,29 +465,31 @@ static int op_pulse_buffer_space(void)
 		return s;
 }
 
-static int _pa_stream_cork(int pause_)
+static int pulse_stream_cork(int pause)
 {
-	pa_threaded_mainloop_lock(pa_ml);
+	pa_threaded_mainloop_lock(mainloop);
 
-	return _pa_wait_unlock(pa_stream_cork(pa_s, pause_, _pa_stream_success_cb, NULL));
+	pa_operation *op = pa_stream_cork(stream, pause,
+			pulse_stream_success_cb, NULL);
+	return pulse_wait_and_unlock(op);
 }
 
 static int op_pulse_pause(void)
 {
-	return _pa_stream_cork(1);
+	return pulse_stream_cork(1);
 }
 
 static int op_pulse_unpause(void)
 {
-	return _pa_stream_cork(0);
+	return pulse_stream_cork(0);
 }
 
 static int op_pulse_mixer_init(void)
 {
-	if (!pa_channel_map_init_stereo(&pa_cmap))
+	if (!pa_channel_map_init_stereo(&channel_map))
 		RET_PA_LAST_ERROR();
 
-	pa_cvolume_reset(&pa_vol, 2);
+	pa_cvolume_reset(&volume, 2);
 
 	init_pipes(&mixer_notify_out, &mixer_notify_in);
 	init_pipes(&mixer_notify_output_out, &mixer_notify_output_in);
@@ -549,30 +536,24 @@ static int op_pulse_mixer_get_fds(int what, int *fds)
 
 static int op_pulse_mixer_set_volume(int l, int r)
 {
-	if (!pa_s && pa_restore_volume)
+	if (!stream && pa_restore_volume)
 		return -OP_ERROR_NOT_OPEN;
 
-	pa_cvolume_set(&pa_vol, pa_ss.channels, (pa_volume_t) ((l + r) / 2));
-	pa_cvolume_set_position(&pa_vol,
-				&pa_cmap,
-				PA_CHANNEL_POSITION_FRONT_LEFT,
-				(pa_volume_t)l);
+	pa_cvolume_set(&volume, sample_spec.channels, (pa_volume_t)((l + r) / 2));
+	pa_cvolume_set_position(&volume, &channel_map,
+			PA_CHANNEL_POSITION_FRONT_LEFT, (pa_volume_t)l);
+	pa_cvolume_set_position(&volume, &channel_map,
+			PA_CHANNEL_POSITION_FRONT_RIGHT, (pa_volume_t)r);
 
-	pa_cvolume_set_position(&pa_vol,
-				&pa_cmap,
-				PA_CHANNEL_POSITION_FRONT_RIGHT,
-				(pa_volume_t)r);
-
-	if (!pa_s) {
+	if (!stream) {
 		return OP_ERROR_SUCCESS;
 	} else {
-		pa_threaded_mainloop_lock(pa_ml);
+		pa_threaded_mainloop_lock(mainloop);
 
-		return _pa_nowait_unlock(pa_context_set_sink_input_volume(pa_ctx,
-								          pa_stream_get_index(pa_s),
-								          &pa_vol,
-								          NULL,
-								          NULL));
+		pa_operation *op = pa_context_set_sink_input_volume(
+				context, pa_stream_get_index(stream),
+				&volume, NULL, NULL);
+		return pulse_nowait_and_unlock(op);
 	}
 }
 
@@ -580,11 +561,13 @@ static int op_pulse_mixer_get_volume(int *l, int *r)
 {
 	clear_pipe(mixer_notify_out, -1);
 
-	if (!pa_s && pa_restore_volume)
+	if (!stream && pa_restore_volume)
 		return -OP_ERROR_NOT_OPEN;
 
-	*l = pa_cvolume_get_position(&pa_vol, &pa_cmap, PA_CHANNEL_POSITION_FRONT_LEFT);
-	*r = pa_cvolume_get_position(&pa_vol, &pa_cmap, PA_CHANNEL_POSITION_FRONT_RIGHT);
+	*l = pa_cvolume_get_position(&volume, &channel_map,
+			PA_CHANNEL_POSITION_FRONT_LEFT);
+	*r = pa_cvolume_get_position(&volume, &channel_map,
+			PA_CHANNEL_POSITION_FRONT_RIGHT);
 
 	return OP_ERROR_SUCCESS;
 }
