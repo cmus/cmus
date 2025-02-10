@@ -43,13 +43,13 @@ static long 			 pa_last_output_idx;
 /* configuration */
 static int pa_restore_volume = 1;
 
-#define ret_pa_error(err)						\
+#define RET_PA_ERROR(err)						\
 	do {								\
 		d_print("PulseAudio error: %s\n", pa_strerror(err));	\
 		return -OP_ERROR_INTERNAL;				\
 	} while (0)
 
-#define ret_pa_last_error() ret_pa_error(pa_context_errno(pa_ctx))
+#define RET_PA_LAST_ERROR() RET_PA_ERROR(pa_context_errno(pa_ctx))
 
 static int _pa_wait_unlock(pa_operation *o)
 {
@@ -254,10 +254,10 @@ static void _pa_sink_input_info_cb(pa_context *c,
 	}
 }
 
-static void _pa_ctx_subscription_cb(pa_context *ctx, pa_subscription_event_type_t t,
+static void _pa_ctx_subscription_cb(pa_context *ctx, pa_subscription_event_type_t type,
 		uint32_t idx, void *userdata)
 {
-	pa_subscription_event_type_t type = t & PA_SUBSCRIPTION_EVENT_TYPE_MASK;
+	type &= PA_SUBSCRIPTION_EVENT_TYPE_MASK;
 	if (type != PA_SUBSCRIPTION_EVENT_CHANGE)
 		return;
 
@@ -271,16 +271,16 @@ static int _pa_create_context(void)
 	pa_proplist	*pl;
 	int		 rc;
 
-	pl = _create_app_proplist();
-
 	api = pa_threaded_mainloop_get_api(pa_ml);
 	BUG_ON(!api);
+
+	pl = _create_app_proplist();
 
 	pa_threaded_mainloop_lock(pa_ml);
 
 	pa_ctx = pa_context_new_with_proplist(api, "C* Music Player", pl);
-	BUG_ON(!pa_ctx);
 	pa_proplist_free(pl);
+	BUG_ON(!pa_ctx);
 
 	pa_context_set_state_callback(pa_ctx, _pa_context_running_cb, NULL);
 
@@ -295,12 +295,13 @@ static int _pa_create_context(void)
 			break;
 		if (!PA_CONTEXT_IS_GOOD(state))
 			goto out_fail_connected;
+
 		pa_threaded_mainloop_wait(pa_ml);
 	}
 
 	pa_context_set_subscribe_callback(pa_ctx, _pa_ctx_subscription_cb, NULL);
-	pa_operation *op = pa_context_subscribe(pa_ctx, PA_SUBSCRIPTION_MASK_SINK_INPUT,
-			NULL, NULL);
+	pa_operation *op = pa_context_subscribe(pa_ctx,
+			PA_SUBSCRIPTION_MASK_SINK_INPUT, NULL, NULL);
 	if (!op)
 		goto out_fail_connected;
 	pa_operation_unref(op);
@@ -318,7 +319,7 @@ out_fail:
 
 	pa_threaded_mainloop_unlock(pa_ml);
 
-	ret_pa_last_error();
+	RET_PA_LAST_ERROR();
 }
 
 static void _pa_stream_success_cb(pa_stream *s, int success, void *data)
@@ -336,7 +337,7 @@ static int op_pulse_init(void)
 	rc = pa_threaded_mainloop_start(pa_ml);
 	if (rc) {
 		pa_threaded_mainloop_free(pa_ml);
-		ret_pa_error(rc);
+		RET_PA_ERROR(rc);
 	}
 
 	return OP_ERROR_SUCCESS;
@@ -386,10 +387,8 @@ static int op_pulse_open(sample_format_t sf, const channel_position_t *channel_m
 
 	pa_s = pa_stream_new_with_proplist(pa_ctx, "playback", &ss, &pa_cmap, pl);
 	pa_proplist_free(pl);
-	if (!pa_s) {
-		pa_threaded_mainloop_unlock(pa_ml);
-		ret_pa_last_error();
-	}
+	if (!pa_s)
+		goto out_fail;
 
 	pa_last_output_idx = -1;
 	pa_stream_set_state_callback(pa_s, _pa_stream_running_cb, NULL);
@@ -401,12 +400,17 @@ static int op_pulse_open(sample_format_t sf, const channel_position_t *channel_m
 					pa_restore_volume ? NULL : &pa_vol,
 					NULL);
 	if (rc)
-		goto out_fail;
+		goto out_fail_stream;
 
-	pa_threaded_mainloop_wait(pa_ml);
+	for (;;) {
+		pa_stream_state_t state = pa_stream_get_state(pa_s);
+		if (state == PA_STREAM_READY)
+			break;
+		if (!PA_STREAM_IS_GOOD(state))
+			goto out_fail_stream;
 
-	if (pa_stream_get_state(pa_s) != PA_STREAM_READY)
-		goto out_fail;
+		pa_threaded_mainloop_wait(pa_ml);
+	}
 
 	pa_context_get_sink_input_info(pa_ctx, pa_stream_get_index(pa_s),
 			_pa_sink_input_info_cb, NULL);
@@ -415,12 +419,13 @@ static int op_pulse_open(sample_format_t sf, const channel_position_t *channel_m
 
 	return OP_ERROR_SUCCESS;
 
-out_fail:
+out_fail_stream:
 	pa_stream_unref(pa_s);
 
+out_fail:
 	pa_threaded_mainloop_unlock(pa_ml);
 
-	ret_pa_last_error();
+	RET_PA_LAST_ERROR();
 }
 
 static int op_pulse_close(void)
@@ -453,27 +458,26 @@ static int op_pulse_drop(void)
 
 static int op_pulse_write(const char *buf, int count)
 {
-	int rc;
-
 	pa_threaded_mainloop_lock(pa_ml);
-	rc = pa_stream_write(pa_s, buf, count, NULL, 0, PA_SEEK_RELATIVE);
+	int rc = pa_stream_write(pa_s, buf, count, NULL, 0, PA_SEEK_RELATIVE);
 	pa_threaded_mainloop_unlock(pa_ml);
 
 	if (rc)
-		ret_pa_error(rc);
+		RET_PA_ERROR(rc);
 	else
 		return count;
 }
 
 static int op_pulse_buffer_space(void)
 {
-	int s;
-
 	pa_threaded_mainloop_lock(pa_ml);
-	s = (int)pa_stream_writable_size(pa_s);
+	size_t s = pa_stream_writable_size(pa_s);
 	pa_threaded_mainloop_unlock(pa_ml);
 
-	return s;
+	if (s == (size_t)-1)
+		RET_PA_LAST_ERROR();
+	else
+		return s;
 }
 
 static int _pa_stream_cork(int pause_)
@@ -496,7 +500,7 @@ static int op_pulse_unpause(void)
 static int op_pulse_mixer_init(void)
 {
 	if (!pa_channel_map_init_stereo(&pa_cmap))
-		ret_pa_last_error();
+		RET_PA_LAST_ERROR();
 
 	pa_cvolume_reset(&pa_vol, 2);
 
