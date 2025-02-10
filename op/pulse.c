@@ -135,6 +135,9 @@ static pa_proplist *_create_app_proplist(void)
 	pl = pa_proplist_new();
 	BUG_ON(!pl);
 
+	rc = pa_proplist_sets(pl, PA_PROP_APPLICATION_ID, "cmus");
+	BUG_ON(rc);
+
 	rc = pa_proplist_sets(pl, PA_PROP_APPLICATION_NAME, "C* Music Player");
 	BUG_ON(rc);
 
