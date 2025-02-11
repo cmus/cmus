@@ -75,7 +75,7 @@ static char *_make_absolute_path(const char *abs_filename, const char *rel_filen
 		return xstrdup(rel_filename);
 
 	s = xstrndup(abs_filename, slash - abs_filename);
-	snprintf(buf, sizeof buf, "%s/%s", s, rel_filename);
+	snprintf(buf, sizeof(buf), "%s/%s", s, rel_filename);
 
 	free(s);
 	return xstrdup(buf);
@@ -238,7 +238,7 @@ static int cue_read_comments(struct input_plugin_data *ip_data, struct keyval **
 		goto get_track_failed;
 	}
 
-	snprintf(buf, sizeof buf, "%d", priv->track_n);
+	snprintf(buf, sizeof(buf), "%d", priv->track_n);
 	comments_add_const(&c, "tracknumber", buf);
 
 	if (t->meta.title)
