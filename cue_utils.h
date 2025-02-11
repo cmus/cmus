@@ -22,7 +22,7 @@
 #include <stdio.h>
 
 char *associated_cue(const char *filename);
-int cue_get_ntracks(const char *filename);
+int cue_get_track_nums(const char *filename, int **out_nums);
 char *construct_cue_url(const char *cue_filename, int track_n);
 
 
