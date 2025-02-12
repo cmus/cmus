@@ -188,6 +188,8 @@ CUE_PARSE_STR(date)
 CUE_PARSE_STR(comment)
 CUE_PARSE_STR(compilation);
 CUE_PARSE_STR(discnumber);
+CUE_PARSE_STR(rg_gain);
+CUE_PARSE_STR(rg_peak);
 
 static void cue_parse_file(struct cue_parser *p)
 {
@@ -307,6 +309,10 @@ static void cue_parse_rem(struct cue_parser *p)
 		{ "COMMENT",     cue_parse_comment     },
 		{ "COMPILATION", cue_parse_compilation },
 		{ "DISCNUMBER",  cue_parse_discnumber  },
+		{ "REPLAYGAIN_ALBUM_GAIN", cue_parse_rg_gain  },
+		{ "REPLAYGAIN_TRACK_GAIN", cue_parse_rg_gain  },
+		{ "REPLAYGAIN_ALBUM_PEAK", cue_parse_rg_peak  },
+		{ "REPLAYGAIN_TRACK_PEAK", cue_parse_rg_peak  },
 		{ 0 },
 	};
 
@@ -449,6 +455,8 @@ static void cue_meta_free(struct cue_meta *m)
 	free(m->comment);
 	free(m->compilation);
 	free(m->discnumber);
+	free(m->rg_gain);
+	free(m->rg_peak);
 }
 
 static void cue_free_files(struct list_head *files)

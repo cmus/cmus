@@ -31,6 +31,8 @@ struct cue_meta {
 	char *comment;
 	char *compilation;
 	char *discnumber;
+	char *rg_gain;
+	char *rg_peak;
 };
 
 struct cue_track {
