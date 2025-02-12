@@ -85,6 +85,24 @@ static int pulse_nowait_and_unlock(pa_operation *op)
 	return OP_ERROR_SUCCESS;
 }
 
+static int pulse_wait(pa_operation *op)
+{
+	pa_operation_state_t state;
+
+	if (!op)
+		RET_PA_LAST_ERROR();
+
+	while ((state = pa_operation_get_state(op)) == PA_OPERATION_RUNNING)
+		pa_threaded_mainloop_wait(mainloop);
+
+	pa_operation_unref(op);
+
+	if (state == PA_OPERATION_DONE)
+		return OP_ERROR_SUCCESS;
+	else
+		RET_PA_LAST_ERROR();
+}
+
 static pa_sample_format_t convert_sample_format(sample_format_t sf)
 {
 	const int _signed = sf_get_signed(sf);
@@ -412,11 +430,25 @@ err:
 	RET_PA_LAST_ERROR();
 }
 
+static void pulse_drain_if_playing(void)
+{
+	if (!pa_stream_is_corked(stream)
+			&& !pa_stream_is_suspended(stream)
+			&& pa_stream_get_state(stream) == PA_STREAM_READY)
+	{
+		pa_operation *op = pa_stream_drain(stream,
+				pulse_stream_success_cb, NULL);
+		pulse_wait(op);
+	}
+}
+
 static int op_pulse_close(void)
 {
 	pa_threaded_mainloop_lock(mainloop);
 
 	if (stream) {
+		pulse_drain_if_playing();
+
 		pa_stream_disconnect(stream);
 		pa_stream_unref(stream);
 		stream = NULL;
