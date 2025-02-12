@@ -368,10 +368,6 @@ static void cue_post_process(struct cue_parser *p)
 
 	struct cue_track_proto *t;
 	struct cue_track_proto *prev = NULL;
-	int32_t last = -1;
-	const char *last_file = NULL;
-
-	/* TODO: fix timing calculations */
 	list_for_each_entry(t, &p->tracks, node) {
 		if (prev && prev->nr >= t->nr)
 			goto err;
@@ -379,20 +375,20 @@ static void cue_post_process(struct cue_parser *p)
 		if (t->index0 == -1 && t->index1 == -1)
 			goto err;
 
-		if (t->index0 == -1 || t->index1 == -1) {
-			int32_t pregap = t->pregap != -1 ? t->pregap : 0;
-			if (t->index1 != -1)
-				t->index0 = t->index1 - pregap;
-			else
-				t->index1 = t->index0 + pregap;
-		}
+		/*
+		 * NOTE: if we don't have index1, then the pregap spans the
+		 * whole track, so we would have an empty track.
+		 * This is pretty useless, so we do the simple thing
+		 */
+		if (t->index1 == -1)
+			t->index1 = t->index0;
 
-		if (last != -1 && (t->file == last_file && t->index0 < last))
+		if (t->index0 == -1)
+			t->index0 = t->index1;
+
+		if (prev && prev->file == t->file && prev->index1 > t->index0)
 			goto err;
 
-		int32_t postgap = t->postgap != -1 ? t->postgap : 0;
-		last = t->index1 + postgap;
-		last_file = t->file;
 		prev = t;
 	}
 
@@ -411,6 +407,7 @@ static struct cue_sheet *cue_parser_to_sheet(struct cue_parser *p)
 {
 	struct cue_sheet *s = xnew(struct cue_sheet, 1);
 
+	/* Move file list */
 	list_add(&s->files, &p->files);
 	list_del_init(&p->files);
 
@@ -430,8 +427,7 @@ static struct cue_sheet *cue_parser_to_sheet(struct cue_parser *p)
 		t->number = tp->nr;
 
 		if (i > 0 && t->file == s->tracks[i - 1].file) {
-			int32_t postgap = prev_tp->postgap != -1 ? prev_tp->postgap : 0;
-			s->tracks[i - 1].length = (tp->index0 - prev_tp->index1 - postgap) / 75.0;
+			s->tracks[i - 1].length = (tp->index0 - prev_tp->index1) / 75.0;
 		}
 
 		cue_meta_move(&t->meta, &tp->meta);
