@@ -256,12 +256,19 @@ static int cue_read_comments(struct input_plugin_data *ip_data, struct keyval **
 		comments_add_const(&c, "compilation", cd->meta.compilation);
 	if (cd->meta.discnumber)
 		comments_add_const(&c, "discnumber", cd->meta.discnumber);
+	if (t->meta.genre)
+		comments_add_const(&c, "genre", t->meta.genre);
+	else if (cd->meta.genre)
+		comments_add_const(&c, "genre", cd->meta.genre);
 
-	/*
-	 * TODO:
-	 * - replaygain REMs
-	 * - genre?
-	 */
+	if (cd->meta.rg_gain)
+		comments_add_const(&c, "replaygain_album_gain", cd->meta.rg_gain);
+	if (cd->meta.rg_peak)
+		comments_add_const(&c, "replaygain_album_peak", cd->meta.rg_peak);
+	if (t->meta.rg_gain)
+		comments_add_const(&c, "replaygain_track_gain", t->meta.rg_gain);
+	if (t->meta.rg_peak)
+		comments_add_const(&c, "replaygain_track_peak", t->meta.rg_peak);
 
 	keyvals_terminate(&c);
 	*comments = c.keyvals;
