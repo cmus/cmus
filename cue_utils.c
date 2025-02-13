@@ -33,7 +33,7 @@ char *associated_cue(const char *filename)
 
 	ext = get_extension(filename);
 	if (ext != NULL && strcmp(ext, "cue") == 0)
-		return NULL;
+		return xstrdup(filename);
 
 	dot = strrchr(filename, '.');
 	if (dot == NULL)
