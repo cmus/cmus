@@ -24,29 +24,10 @@
 
 #include <stdio.h>
 
-char *associated_cue(const char *filename)
+int is_cue(const char *filename)
 {
-	FILE *fp;
-	const char *ext;
-	char buf[4096] = {0};
-	const char *dot;
-
-	ext = get_extension(filename);
-	if (ext != NULL && strcmp(ext, "cue") == 0)
-		return xstrdup(filename);
-
-	dot = strrchr(filename, '.');
-	if (dot == NULL)
-		return NULL;
-
-	snprintf(buf, sizeof(buf), "%.*s.cue", (int) (dot - filename), filename);
-	fp = fopen(buf, "r");
-	if (!fp)
-		snprintf(buf, sizeof(buf), "%s.cue", filename);
-	else
-		fclose(fp);
-
-	return xstrdup(buf);
+	const char *ext = get_extension(filename);
+	return ext != NULL && strcmp(ext, "cue") == 0;
 }
 
 
