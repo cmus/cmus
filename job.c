@@ -186,25 +186,21 @@ static void add_file(const char *filename, int force)
 
 static int add_file_cue(const char *filename)
 {
-	char *cue_filename = associated_cue(filename);
-	if (cue_filename == NULL)
+	if (!is_cue(filename))
 		return 0;
 
 	int *track_nums;
-	int n = cue_get_track_nums(cue_filename, &track_nums);
-	if (n == -1) {
-		free(cue_filename);
+	int n = cue_get_track_nums(filename, &track_nums);
+	if (n == -1)
 		return 0;
-	}
 
 	for (int i = 0; i < n; i++) {
-		char *url = construct_cue_url(cue_filename, track_nums[i]);
+		char *url = construct_cue_url(filename, track_nums[i]);
 		add_file(url, 0);
 		free(url);
 	}
 
 	free(track_nums);
-	free(cue_filename);
 	return 1;
 }
 
