@@ -49,6 +49,28 @@ int cue_get_track_nums(const char *filename, int **out_nums)
 }
 
 
+int cue_get_files(const char *filename, char ***out_files)
+{
+	struct cue_sheet *cd = cue_from_file(filename);
+	if (!cd)
+		return -1;
+
+	int n = list_len(&cd->files);
+	*out_files = xnew(char *, n);
+
+	int i = 0;
+	struct cue_track_file *tf;
+	list_for_each_entry(tf, &cd->files, node) {
+		(*out_files)[i] = tf->file;
+		tf->file = NULL;
+		i++;
+	}
+
+	cue_free(cd);
+	return n;
+}
+
+
 char *construct_cue_url(const char *cue_filename, int track_n)
 {
 	char buf[4096] = {0};
