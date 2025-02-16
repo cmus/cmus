@@ -72,14 +72,20 @@ static inline void ptr_array_sort(struct ptr_array *array,
 static inline void ptr_array_unique(struct ptr_array *array,
 		int (*cmp)(const void *a, const void *b))
 {
-	void **ptrs = array->ptrs;
+	if (array->count < 2)
+		return;
+
 	int i, j = 0;
+	void **ptrs = array->ptrs;
 
 	for (i = 1; i < array->count; i++) {
 		if (cmp(&ptrs[i-1], &ptrs[i]) != 0)
-			ptrs[j++] = ptrs[i];
+			j++;
+		else
+			free(ptrs[j]);
+		ptrs[j] = ptrs[i];
 	}
-	array->count = j;
+	array->count = j + 1;
 }
 
 static inline void ptr_array_clear(struct ptr_array *array)
