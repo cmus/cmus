@@ -37,6 +37,7 @@
 #include "ui_curses.h"
 #include "cue_utils.h"
 #include "pl_env.h"
+#include "misc.h"
 
 #include <string.h>
 #include <unistd.h>
@@ -228,114 +229,152 @@ static void add_cdda(const char *url)
 	free(disc_id);
 }
 
-static int dir_entry_cmp(const void *ap, const void *bp)
-{
-	struct dir_entry *a = *(struct dir_entry **)ap;
-	struct dir_entry *b = *(struct dir_entry **)bp;
+struct dir_list_entry {
+	struct list_head node;
 
-	return strcmp(a->name, b->name);
+	char *path;
+};
+
+static void dir_list_truncate(struct list_head *head, struct list_head *new_tail)
+{
+	if (head->prev == new_tail)
+		return;
+
+	struct list_head to_remove;
+	to_remove.next = new_tail->next;
+	new_tail->next->prev = &to_remove;
+	to_remove.prev = head->prev;
+	head->prev->next = &to_remove;
+
+	head->prev = new_tail;
+	new_tail->next = head;
+
+	struct dir_list_entry *d, *next;
+	list_for_each_entry_safe(d, next, &to_remove, node) {
+		free(d->path);
+		free(d);
+	}
 }
 
-static int dir_entry_cmp_reverse(const void *ap, const void *bp)
-{
-	struct dir_entry *a = *(struct dir_entry **)ap;
-	struct dir_entry *b = *(struct dir_entry **)bp;
-
-	return strcmp(b->name, a->name);
-}
-
-static int points_within_and_visible(const char *target, const char *root)
-{
-	int tlen = strlen(target);
-	int rlen = strlen(root);
-
-	if (rlen > tlen)
-		return 0;
-	if (strncmp(target, root, rlen))
-		return 0;
-	if (target[rlen] != '/' && target[rlen] != '\0')
-		return 0;
-	/* assume the path is normalized */
-	if (strstr(target + rlen, "/."))
-		return 0;
-
-	return 1;
-}
-
-static void add_dir(const char *dirname, const char *root)
+static void dir_list(const char *dirname, const char *root,
+		struct ptr_array *files, struct list_head *dirs)
 {
 	struct directory dir;
-	struct dir_entry **ents;
 	const char *name;
-	PTR_ARRAY(array);
-	int i;
+	struct list_head *dirs_backup = list_prev(dirs);
+	int files_backup = files->count;
 
 	if (dir_open(&dir, dirname)) {
 		d_print("error: opening %s: %s\n", dirname, strerror(errno));
 		return;
 	}
 	while ((name = dir_read(&dir))) {
-		struct dir_entry *ent;
-		int size;
-
 		if (strcmp(name, ".nomusic") == 0 || strcmp(name, ".nomedia") == 0) {
-			ptr_array_clear(&array);
+			ptr_array_truncate(files, files_backup);
+			dir_list_truncate(dirs, dirs_backup);
 			break;
 		}
 
 		if (name[0] == '.')
 			continue;
 
-		if (dir.is_link) {
-			char buf[1024];
-			char *target;
-			int rc = readlink(dir.path, buf, sizeof(buf));
-
-			if (rc < 0 || rc == sizeof(buf))
-				continue;
-			buf[rc] = 0;
-			target = path_absolute_cwd(buf, dirname);
-			if (points_within_and_visible(target, root)) {
-				d_print("%s -> %s points within %s. ignoring\n",
-						dir.path, target, root);
-				free(target);
-				continue;
+		if (S_ISDIR(dir.st.st_mode)) {
+			if (!dir.is_link) {
+				struct dir_list_entry *ent;
+				ent = xnew(struct dir_list_entry, 1);
+				ent->path = path_absolute_cwd(name, dirname);
+				list_add_tail(&ent->node, dirs);
 			}
-			free(target);
+			continue;
 		}
 
-		size = strlen(name) + 1;
-		ent = xmalloc(sizeof(struct dir_entry) + size);
-		ent->mode = dir.st.st_mode;
-		memcpy(ent->name, name, size);
-		ptr_array_add(&array, ent);
+		ptr_array_add(files, path_absolute_cwd(name, dirname));
 	}
 	dir_close(&dir);
+}
 
-	if (jd->add == play_queue_prepend) {
-		ptr_array_sort(&array, dir_entry_cmp_reverse);
-	} else {
-		ptr_array_sort(&array, dir_entry_cmp);
+static void dir_list_recursive(const char *dirname, const char *root,
+		struct ptr_array *files)
+{
+	struct list_head dirs;
+	list_init(&dirs);
+
+	struct dir_list_entry *ent;
+	ent = xnew(struct dir_list_entry, 1);
+	ent->path = xstrdup(dirname);
+	list_add_tail(&ent->node, &dirs);
+
+	while (!list_empty(&dirs)) {
+		struct list_head *tail = list_prev(&dirs);
+		ent = list_entry(tail, struct dir_list_entry, node);
+
+		dir_list(ent->path, root, files, &dirs);
+
+		list_del(tail);
+		free(ent->path);
+		free(ent);
 	}
-	ents = array.ptrs;
-	for (i = 0; i < array.count; i++) {
-		if (!worker_cancelling()) {
-			/* abuse dir.path because
-			 *  - it already contains dirname + '/'
-			 *  - it is guaranteed to be large enough
-			 */
-			int len = strlen(ents[i]->name);
+}
 
-			memcpy(dir.path + dir.len, ents[i]->name, len + 1);
-			if (S_ISDIR(ents[i]->mode)) {
-				add_dir(dir.path, root);
-			} else {
-				add_file(dir.path, 0);
-			}
+static void handle_cue_files(struct ptr_array *files)
+{
+	int i, j, k;
+	char **ents = files->ptrs;
+	bool *to_remove = xnew0(bool, files->count);
+
+	for (i = 0; i < files->count; i++) {
+		if (!ents[i] || !is_cue(ents[i]))
+			continue;
+
+		char **files_in_cue;
+		int n = cue_get_files(ents[i], &files_in_cue);
+		char *cue_dir = path_dirname(ents[i]);
+
+		for (j = 0; j < n; j++) {
+			char *path = path_absolute_cwd(files_in_cue[j], cue_dir);
+			k = ptr_array_bsearch(&path, files, strptrcmp);
+			if (k >= 0)
+				to_remove[k] = true;
+			free(path);
+			free(files_in_cue[j]);
 		}
-		free(ents[i]);
+		free(cue_dir);
+		free(files_in_cue);
 	}
-	free(ents);
+
+	for (i = 0; i < files->count; i++) {
+		if (to_remove[i]) {
+			free(ents[i]);
+			ents[i] = NULL;
+		}
+	}
+	free(to_remove);
+}
+
+static void add_dir(const char *dirname, const char *root)
+{
+	PTR_ARRAY(files);
+
+	dir_list_recursive(dirname, root, &files);
+
+	ptr_array_sort(&files, strptrcmp);
+	ptr_array_unique(&files, strptrcmp);
+
+	handle_cue_files(&files);
+
+	int i;
+	char **ents = files.ptrs;
+	if (jd->add == play_queue_prepend) {
+		for (i = files.count - 1; i >= 0 && !worker_cancelling(); i--)
+			if (ents[i])
+				add_file(ents[i], 0);
+	} else {
+		for (i = 0; i < files.count && !worker_cancelling(); i++)
+			if (ents[i])
+				add_file(ents[i], 0);
+	}
+
+	ptr_array_clear(&files);
 }
 
 static int handle_line(void *data, const char *line)
