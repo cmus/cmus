@@ -204,7 +204,8 @@ void window_down(struct window *win, int rows)
 void window_changed(struct window *win)
 {
 	struct iter iter;
-	int delta, rows;
+	int delta, rows, blank_lines;
+	int upper_bound = min_i(scroll_offset, win->nr_rows/2);
 
 	if (iter_is_null(&win->head)) {
 		BUG_ON(!iter_is_null(&win->top));
@@ -232,18 +233,29 @@ void window_changed(struct window *win)
 			/* sel < top, scroll up until top == sel */
 			while (!iters_equal(&win->top, &win->sel))
 				win->get_prev(&win->top);
-			goto minimize;
+			delta = 0;
+			break;
 		}
 		delta++;
 	}
 
-	/* scroll down until sel is visible */
-	while (delta > win->nr_rows - 1) {
+	/* scroll down if needed to make sel visible at bottom, and a bit
+	 * further for the scroll_offset */
+	while (delta >= win->nr_rows - upper_bound) {
 		win->get_next(&win->top);
 		delta--;
 	}
-minimize:
-	/* minimize number of empty lines shown */
+
+	/* scroll up if sel is less than scroll_offset from top */
+	while (delta < upper_bound) {
+		iter = win->top;
+		if (!win->get_prev(&iter))
+			break;
+		win->top = iter;
+		delta++;
+	}
+
+	/* scroll up to fill in wasted blank space */
 	iter = win->top;
 	rows = 1;
 	while (rows < win->nr_rows) {
@@ -251,12 +263,13 @@ minimize:
 			break;
 		rows++;
 	}
-	while (rows < win->nr_rows) {
+	blank_lines = win->nr_rows - rows;
+	while (blank_lines) {
 		iter = win->top;
 		if (!win->get_prev(&iter))
 			break;
 		win->top = iter;
-		rows++;
+		blank_lines--;
 	}
 	win->changed = 1;
 }
