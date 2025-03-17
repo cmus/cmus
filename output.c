@@ -18,11 +18,11 @@
 
 #include "output.h"
 #include "op.h"
-#include "mixer.h"
 #include "sf.h"
 #include "utils.h"
 #include "xmalloc.h"
 #include "list.h"
+#include "path.h"
 #include "debug.h"
 #include "ui_curses.h"
 #include "options.h"
@@ -36,14 +36,18 @@
 #include <stdbool.h>
 #include <sys/types.h>
 #include <dirent.h>
+#ifndef STATICPLUGIN
+#ifdef HAVE_DL
 #include <dlfcn.h>
+#else
+#error "must have dlfcn.h if STATICPLUGIN is disabled"
+#endif
+#endif
 
 struct output_plugin {
 	struct list_head node;
 	char *name;
-	void *handle;
 
-	const unsigned *abi_version_ptr;
 	const struct output_plugin_ops *pcm_ops;
 	const struct mixer_plugin_ops *mixer_ops;
 	const struct output_plugin_opt *pcm_options;
@@ -80,8 +84,51 @@ static void add_plugin(struct output_plugin *plugin)
 	list_add_tail(&plugin->node, item);
 }
 
+int cmus_op_register(const char *filename, unsigned abi_version, const struct output_plugin_api *api)
+{
+	const char *basename, *end;
+	basename = path_basename(filename);
+	for (end = basename; *end && *end != '.'; end++)
+		;
+
+	if (abi_version != OP_ABI_VERSION) {
+		error_msg("%s: incompatible plugin version", basename);
+		return 1;
+	}
+	if (!api) {
+		error_msg("%s: missing symbol", basename);
+		return 1;
+	}
+	if (!api->pcm_ops || !api->pcm_options) {
+		error_msg("%s: missing field", basename);
+		return 1;
+	}
+
+	struct output_plugin *plug = xnew(struct output_plugin, 1);
+	plug->priority = api->priority;
+	plug->pcm_ops = api->pcm_ops;
+	plug->pcm_options = api->pcm_options;
+	plug->mixer_ops = api->mixer_ops;
+	plug->mixer_options = api->mixer_options;
+
+	if (!plug->mixer_ops || !plug->mixer_options) {
+		plug->mixer_ops = NULL;
+		plug->mixer_options = NULL;
+	}
+
+	plug->name = xstrndup(basename, end - basename);
+	plug->pcm_initialized = 0;
+	plug->mixer_initialized = 0;
+	plug->mixer_open = 0;
+
+	add_plugin(plug);
+
+	return 0;
+}
+
 void op_load_plugins(void)
 {
+#ifndef STATICPLUGIN
 	DIR *dir;
 	struct dirent *d;
 
@@ -93,10 +140,10 @@ void op_load_plugins(void)
 	}
 	while ((d = (struct dirent *) readdir(dir)) != NULL) {
 		char filename[512];
-		struct output_plugin *plug;
-		void *so, *symptr;
+		void *so;
 		char *ext;
-		bool err = false;
+		const struct output_plugin_api *api_ptr;
+		const unsigned *abi_version_ptr;
 
 		if (d->d_name[0] == '.')
 			continue;
@@ -114,43 +161,20 @@ void op_load_plugins(void)
 			continue;
 		}
 
-		plug = xnew(struct output_plugin, 1);
-
-		plug->pcm_ops = dlsym(so, "op_pcm_ops");
-		plug->pcm_options = dlsym(so, "op_pcm_options");
-		symptr = dlsym(so, "op_priority");
-		plug->abi_version_ptr = dlsym(so, "op_abi_version");
-		if (!plug->pcm_ops || !plug->pcm_options || !symptr) {
-			error_msg("%s: missing symbol", filename);
-			err = true;
-		}
-		if (!plug->abi_version_ptr || *plug->abi_version_ptr != OP_ABI_VERSION) {
+		abi_version_ptr = dlsym(so, "op_abi_version");
+		api_ptr = dlsym(so, "op_api");
+		if (!abi_version_ptr) {
 			error_msg("%s: incompatible plugin version", filename);
-			err = true;
-		}
-		if (err) {
-			free(plug);
 			dlclose(so);
 			continue;
 		}
-		plug->priority = *(int *)symptr;
-
-		plug->mixer_ops = dlsym(so, "op_mixer_ops");
-		plug->mixer_options = dlsym(so, "op_mixer_options");
-		if (plug->mixer_ops == NULL || plug->mixer_options == NULL) {
-			plug->mixer_ops = NULL;
-			plug->mixer_options = NULL;
+		if (cmus_op_register(filename, *abi_version_ptr, api_ptr)) {
+			dlclose(so);
+			continue;
 		}
-
-		plug->name = xstrndup(d->d_name, ext - d->d_name);
-		plug->handle = so;
-		plug->pcm_initialized = 0;
-		plug->mixer_initialized = 0;
-		plug->mixer_open = 0;
-
-		add_plugin(plug);
 	}
 	closedir(dir);
+#endif
 }
 
 static void init_plugin(struct output_plugin *o)
@@ -322,18 +346,9 @@ int mixer_get_fds(int what, int *fds)
 		return -OP_ERROR_NOT_INITIALIZED;
 	if (!op->mixer_open)
 		return -OP_ERROR_NOT_OPEN;
-	switch (*op->abi_version_ptr) {
-	case 1:
-		if (!op->mixer_ops->get_fds.abi_1)
-			return -OP_ERROR_NOT_SUPPORTED;
-		if (what != MIXER_FDS_VOLUME)
-			return 0;
-		return op->mixer_ops->get_fds.abi_1(fds);
-	default:
-		if (!op->mixer_ops->get_fds.abi_2)
-			return -OP_ERROR_NOT_SUPPORTED;
-		return op->mixer_ops->get_fds.abi_2(what, fds);
-	}
+	if (!op->mixer_ops->get_fds)
+		return -OP_ERROR_NOT_SUPPORTED;
+	return op->mixer_ops->get_fds(what, fds);
 }
 
 extern int soft_vol;
@@ -481,7 +496,7 @@ void op_dump_plugins(void)
 {
 	struct output_plugin *o;
 
-	printf("\nOutput Plugins: %s\n", plugin_dir);
+	printf("\nOutput Plugins: %s\n", plugin_dir ? plugin_dir : "");
 	list_for_each_entry(o, &op_head, node) {
 		printf("  %s\n", o->name);
 	}

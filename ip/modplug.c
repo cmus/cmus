@@ -220,25 +220,25 @@ static char *mod_codec_profile(struct input_plugin_data *ip_data)
 	return NULL;
 }
 
-const struct input_plugin_ops ip_ops = {
-	.open = mod_open,
-	.close = mod_close,
-	.read = mod_read,
-	.seek = mod_seek,
-	.read_comments = mod_read_comments,
-	.duration = mod_duration,
-	.bitrate = mod_bitrate,
-	.bitrate_current = mod_bitrate,
-	.codec = mod_codec,
-	.codec_profile = mod_codec_profile
-};
-
-const int ip_priority = 50;
-const char * const ip_extensions[] = {
-	"mod", "s3m", "xm", "it", "669", "amf", "ams", "dbm", "dmf", "dsm",
-	"far", "mdl", "med", "mtm", "okt", "ptm", "stm", "ult", "umx", "mt2",
-	"psm", NULL
-};
-const char * const ip_mime_types[] = { NULL };
-const struct input_plugin_opt ip_options[] = { { NULL } };
-const unsigned ip_abi_version = IP_ABI_VERSION;
+CMUS_IP_DEFINE(
+	.priority = 50,
+	.extensions = (const char*[]){
+		"mod", "s3m", "xm", "it", "669", "amf", "ams", "dbm", "dmf", "dsm",
+		"far", "mdl", "med", "mtm", "okt", "ptm", "stm", "ult", "umx", "mt2",
+		"psm", NULL,
+	},
+	.mime_types = (const char*[]){ NULL },
+	.options = (struct input_plugin_opt[]){ { NULL } },
+	.ops = &(struct input_plugin_ops){
+		.open = mod_open,
+		.close = mod_close,
+		.read = mod_read,
+		.seek = mod_seek,
+		.read_comments = mod_read_comments,
+		.duration = mod_duration,
+		.bitrate = mod_bitrate,
+		.bitrate_current = mod_bitrate,
+		.codec = mod_codec,
+		.codec_profile = mod_codec_profile,
+	},
+);

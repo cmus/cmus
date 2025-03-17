@@ -21,12 +21,15 @@
 
 #include "sf.h"
 #include "channelmap.h"
+#ifdef HAVE_CONFIG
+#include "config/plugin.h"
+#endif
 
 #ifndef __GNUC__
 #include <fcntl.h>
 #endif
 
-#define OP_ABI_VERSION 3
+#define OP_ABI_VERSION 4
 
 enum {
 	/* no error */
@@ -73,10 +76,50 @@ struct output_plugin_opt {
 	int (*get)(char **val);
 };
 
-/* symbols exported by plugin */
-extern const struct output_plugin_ops op_pcm_ops;
-extern const struct output_plugin_opt op_pcm_options[];
-extern const int op_priority;
-extern const unsigned op_abi_version;
+#define NR_MIXER_FDS 4
+
+enum {
+    /* volume changes */
+    MIXER_FDS_VOLUME,
+    /* output changes */
+    MIXER_FDS_OUTPUT
+};
+
+struct mixer_plugin_ops {
+	int (*init)(void);
+	int (*exit)(void);
+	int (*open)(int *volume_max);
+	int (*close)(void);
+	int (*get_fds)(int what, int *fds);
+	int (*set_volume)(int l, int r);
+	int (*get_volume)(int *l, int *r);
+};
+
+struct mixer_plugin_opt {
+	const char *name;
+	int (*set)(const char *val);
+	int (*get)(char **val);
+};
+
+struct output_plugin_api {
+	const int priority;
+	const struct output_plugin_ops *pcm_ops;
+	const struct output_plugin_opt *pcm_options; /* null-terminated array */
+	const struct mixer_plugin_ops *mixer_ops; /* optional */
+	const struct mixer_plugin_opt *mixer_options; /* null-terminated array, required if has mixer_ops */
+};
+
+#ifndef STATICPLUGIN
+#define CMUS_OP_DEFINE(...) \
+	const unsigned op_abi_version = OP_ABI_VERSION; \
+	const struct output_plugin_api op_api = (struct output_plugin_api){__VA_ARGS__};
+#else
+#define CMUS_OP_DEFINE(...) \
+	static const unsigned op_abi_version = OP_ABI_VERSION; \
+	static const struct output_plugin_api op_api = (struct output_plugin_api){__VA_ARGS__}; \
+	__attribute__((constructor)) static void op_register(void) { cmus_op_register(__FILE__, op_abi_version, &op_api); }
+#endif
+
+extern int cmus_op_register(const char *filename, unsigned abi_version, const struct output_plugin_api *api);
 
 #endif

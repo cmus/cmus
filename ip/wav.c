@@ -397,21 +397,21 @@ static char *wav_codec_profile(struct input_plugin_data *ip_data)
 	return NULL;
 }
 
-const struct input_plugin_ops ip_ops = {
-	.open = wav_open,
-	.close = wav_close,
-	.read = wav_read,
-	.seek = wav_seek,
-	.read_comments = wav_read_comments,
-	.duration = wav_duration,
-	.bitrate = wav_bitrate,
-	.bitrate_current = wav_bitrate,
-	.codec = wav_codec,
-	.codec_profile = wav_codec_profile
-};
-
-const int ip_priority = 50;
-const char * const ip_extensions[] = { "wav", NULL };
-const char * const ip_mime_types[] = { NULL };
-const struct input_plugin_opt ip_options[] = { { NULL } };
-const unsigned ip_abi_version = IP_ABI_VERSION;
+CMUS_IP_DEFINE(
+	.priority = 50,
+	.extensions = (const char*[]){ "wav", NULL },
+	.mime_types = (const char*[]){ NULL },
+	.options = (struct input_plugin_opt[]){ { NULL } },
+	.ops = &(struct input_plugin_ops){
+		.open = wav_open,
+		.close = wav_close,
+		.read = wav_read,
+		.seek = wav_seek,
+		.read_comments = wav_read_comments,
+		.duration = wav_duration,
+		.bitrate = wav_bitrate,
+		.bitrate_current = wav_bitrate,
+		.codec = wav_codec,
+		.codec_profile = wav_codec_profile,
+	},
+);
