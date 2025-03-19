@@ -1313,7 +1313,7 @@ void player_seek(double offset, int relative, int start_playing)
  */
 void player_set_op(const char *name)
 {
-	int rc;
+	int rc = 0;
 
 	player_lock();
 
@@ -1327,11 +1327,20 @@ void player_set_op(const char *name)
 	if (name) {
 		d_print("setting op to '%s'\n", name);
 		rc = op_select(name);
-	} else {
-		/* first initialized plugin */
+	}
+
+	/*
+	 * if plugin is null we either never selected one and will now try any,
+	 * or we tried and failed and will now try to fallback to any
+	 */
+	if (op_get_current() == NULL) {
+		if (rc)
+			player_op_error(rc, "selecting output plugin '%s'", name);
+
 		d_print("selecting first initialized op\n");
 		rc = op_select_any();
 	}
+
 	if (rc) {
 		_consumer_status_update(CS_STOPPED);
 
