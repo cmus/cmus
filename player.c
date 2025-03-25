@@ -31,6 +31,7 @@
 #include "cmus.h"
 #include "lib.h"
 #include "pl_env.h"
+#include "ui_curses.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -1313,7 +1314,7 @@ void player_seek(double offset, int relative, int start_playing)
  */
 void player_set_op(const char *name)
 {
-	int rc;
+	int rc = 0;
 
 	player_lock();
 
@@ -1327,11 +1328,21 @@ void player_set_op(const char *name)
 	if (name) {
 		d_print("setting op to '%s'\n", name);
 		rc = op_select(name);
-	} else {
-		/* first initialized plugin */
+	}
+
+	/* when at startup and plugin is null, op_select_any() */
+	if (!ui_initialized && op_get_current() == NULL) {
+		if (rc)
+			/*
+			 * error if we are falling back because
+			 * the specified init plugin failed
+			 */
+			player_op_error(rc, "selecting output plugin '%s'", name);
+
 		d_print("selecting first initialized op\n");
 		rc = op_select_any();
 	}
+
 	if (rc) {
 		_consumer_status_update(CS_STOPPED);
 
