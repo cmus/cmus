@@ -67,7 +67,7 @@ check_coreaudio()
 {
 	case `uname -s` in
 	Darwin)
-		check_library COREAUDIO "" "-framework CoreAudio -framework AudioUnit"
+		check_library COREAUDIO "" "-framework CoreAudio -framework CoreFoundation -framework AudioUnit"
 		return $?
 	esac
 	return 1
