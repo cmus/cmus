@@ -47,11 +47,10 @@ static char *cf_create_collation_key(const char *str)
 			CFStringNormalize(mStr, kCFStringNormalizationFormD);
 			
 			/* Convert back to C string */
-			size_t max_size = CFStringGetMaximumSizeForEncoding(CFStringGetLength(mStr), kCFStringEncodingUTF8) + 2;
+			size_t max_size = CFStringGetMaximumSizeForEncoding(CFStringGetLength(mStr), kCFStringEncodingUTF8) + 1;
 			result = xmalloc(max_size);
-			result[0] = 'A'; /* Mark as preprocessed */
 			
-			if (CFStringGetCString(mStr, result + 1, max_size - 1, kCFStringEncodingUTF8)) {
+			if (CFStringGetCString(mStr, result, max_size, kCFStringEncodingUTF8)) {
 				/* Success */
 			} else {
 				/* Fallback in case of conversion failure */
