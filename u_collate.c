@@ -43,20 +43,17 @@ static char *cf_create_collation_key(const char *str)
 		/* Get a representation that can be used for sorting */
 		CFMutableStringRef mStr = CFStringCreateMutableCopy(NULL, 0, cfStr);
 		if (mStr) {
-			/* Perform canonical decomposition and strip combining marks for comparison */
 			CFStringNormalize(mStr, kCFStringNormalizationFormD);
 			
 			/* Convert back to C string */
 			size_t max_size = CFStringGetMaximumSizeForEncoding(CFStringGetLength(mStr), kCFStringEncodingUTF8) + 1;
 			result = xmalloc(max_size);
 			
-			if (CFStringGetCString(mStr, result, max_size, kCFStringEncodingUTF8)) {
-				/* Success */
-			} else {
+			if (!CFStringGetCString(mStr, result, max_size, kCFStringEncodingUTF8)) {
 				/* Fallback in case of conversion failure */
 				free(result);
 				result = NULL;
-			}
+			} 
 			
 			CFRelease(mStr);
 		}
