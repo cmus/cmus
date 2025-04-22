@@ -63,11 +63,21 @@ check_sndio()
 	return $?
 }
 
+check_corefoundation()
+{
+	case `uname -s` in
+	Darwin)
+		check_library COREFOUNDATION "" "-framework CoreFoundation"
+		return $?
+	esac
+	return 1
+}
+
 check_coreaudio()
 {
 	case `uname -s` in
 	Darwin)
-		check_library COREAUDIO "" "-framework CoreAudio -framework CoreFoundation -framework AudioUnit"
+		check_library COREAUDIO "" "-framework CoreAudio -framework AudioUnit"
 		return $?
 	esac
 	return 1
@@ -642,39 +652,40 @@ check_header byteswap.h && HAVE_BYTESWAP_H=y
 check_string_function "strdup" && HAVE_STRDUP=y
 check_string_function "strndup" && HAVE_STRNDUP=y
 
-check check_cddb       CONFIG_CDDB
-check check_cdio       CONFIG_CDIO
-check check_flac       CONFIG_FLAC
-check check_mad        CONFIG_MAD
-check check_mikmod     CONFIG_MIKMOD
-check check_modplug    CONFIG_MODPLUG
-check check_bass       CONFIG_BASS
-check check_mpc        CONFIG_MPC
-check check_vorbis     CONFIG_VORBIS
-check check_opus       CONFIG_OPUS
-check check_libsystemd CONFIG_MPRIS
-check check_wavpack    CONFIG_WAVPACK
-check check_mp4        CONFIG_MP4
-check check_aac        CONFIG_AAC
-check check_ffmpeg     CONFIG_FFMPEG
-check check_vtx        CONFIG_VTX
+check check_cddb            CONFIG_CDDB
+check check_cdio            CONFIG_CDIO
+check check_flac            CONFIG_FLAC
+check check_mad             CONFIG_MAD
+check check_mikmod          CONFIG_MIKMOD
+check check_modplug         CONFIG_MODPLUG
+check check_bass            CONFIG_BASS
+check check_mpc             CONFIG_MPC
+check check_vorbis          CONFIG_VORBIS
+check check_opus            CONFIG_OPUS
+check check_libsystemd      CONFIG_MPRIS
+check check_wavpack         CONFIG_WAVPACK
+check check_mp4             CONFIG_MP4
+check check_aac             CONFIG_AAC
+check check_ffmpeg          CONFIG_FFMPEG
+check check_vtx             CONFIG_VTX
 # nothing to check, just validate the variable values
-check true             CONFIG_TREMOR
-check true             CONFIG_WAV
-check true             CONFIG_CUE
-check check_pulse      CONFIG_PULSE
-check check_alsa       CONFIG_ALSA
-check check_jack       CONFIG_JACK
-check check_samplerate CONFIG_SAMPLERATE
-check check_ao         CONFIG_AO
-check check_coreaudio  CONFIG_COREAUDIO
-check check_arts       CONFIG_ARTS
-check check_oss        CONFIG_OSS
-check check_sndio      CONFIG_SNDIO
-check check_sun        CONFIG_SUN
-check check_waveout    CONFIG_WAVEOUT
-check check_roar       CONFIG_ROAR
-check check_aaudio     CONFIG_AAUDIO
+check true                  CONFIG_TREMOR
+check true                  CONFIG_WAV
+check true                  CONFIG_CUE
+check check_pulse           CONFIG_PULSE
+check check_alsa            CONFIG_ALSA
+check check_jack            CONFIG_JACK
+check check_samplerate      CONFIG_SAMPLERATE
+check check_ao              CONFIG_AO
+check check_coreaudio       CONFIG_COREAUDIO
+check check_corefoundation  CONFIG_COREFOUNDATION
+check check_arts            CONFIG_ARTS
+check check_oss             CONFIG_OSS
+check check_sndio           CONFIG_SNDIO
+check check_sun             CONFIG_SUN
+check check_waveout         CONFIG_WAVEOUT
+check check_roar            CONFIG_ROAR
+check check_aaudio          CONFIG_AAUDIO
 
 # discid is only needed if at least one cdda plugin is active
 test -z "$CONFIG_DISCID" && CONFIG_DISCID=a
