@@ -546,6 +546,16 @@ static void pl_clear_visible_pl(void)
 	pl_cancel_add_jobs(pl_visible);
 }
 
+static void pl_clear_marked_pl(void)
+{
+	if (pl_cursor_in_track_window)
+		pl_win_next();
+	if (pl_marked == pl_playing)
+		pl_playing_track = NULL;
+	editable_clear(&pl_marked->editable);
+	pl_cancel_add_jobs(pl_marked);
+}
+
 static int pl_name_exists(const char *name)
 {
 	struct playlist *pl;
@@ -795,10 +805,10 @@ void pl_rename_selected_pl(const char *name)
 
 void pl_clear(void)
 {
-	if (!pl_cursor_in_track_window)
-		return;
-
-	pl_clear_visible_pl();
+	if (pl_cursor_in_track_window)
+		pl_clear_visible_pl();
+	else
+		pl_clear_marked_pl();
 }
 
 void pl_mark_for_redraw(void)
