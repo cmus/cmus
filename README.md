@@ -1,102 +1,253 @@
-# cmus — C\* Music Player
+# cmus-uos
 
-https://cmus.github.io/
+> A small, fast and powerful console music player for Unix-like operating systems, optimized for UOS (统信操作系统)
 
-[![Build Status](https://github.com/cmus/cmus/actions/workflows/build.yml/badge.svg)](https://github.com/cmus/cmus/actions/workflows/build.yml)
+[![Build Status](https://github.com/BennyPerumalla/cmus-uos/workflows/build/badge.svg)](https://github.com/BennyPerumalla/cmus-uos/actions)
+[![License: GPL v2](https://img.shields.io/badge/License-GPL%20v2-blue.svg)](https://www.gnu.org/licenses/old-licenses/gpl-2.0.en.html)
+[![GitHub release](https://img.shields.io/github/release/BennyPerumalla/cmus-uos.svg)](https://github.com/BennyPerumalla/cmus-uos/releases)
+[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20UOS%20%7C%20Unix-lightgrey.svg)](https://github.com/BennyPerumalla/cmus-uos)
 
-Copyright © 2004-2008 Timo Hirvonen <tihirvon@gmail.com>
+## 🎵 Overview
 
-Copyright © 2008-2017 Various Authors
+cmus-uos is a specialized fork of the popular cmus (C* Music Player) designed specifically for optimal performance on UOS (UnionTech OS) and other Unix-like systems. This lightweight, terminal-based music player offers a rich feature set while maintaining minimal resource usage.
 
+### ✨ Key Features
 
-## Configuration
+- **🎛️ Full-featured terminal interface** - Navigate your music collection with vim-like keybindings
+- **🎵 Multiple audio formats** - Support for MP3, FLAC, OGG, AAC, and many more
+- **🔀 Flexible playback modes** - Shuffle, repeat, and custom playlists
+- **🎚️ Advanced audio controls** - Gapless playback, ReplayGain, and crossfading
+- **🖥️ UOS optimized** - Special optimizations for UnionTech OS environment
+- **⚡ Lightweight & fast** - Minimal memory footprint and CPU usage
+- **🔌 Plugin architecture** - Extensible input and output plugin system
 
-    $ ./configure
+## 📸 Screenshots
 
-By default, features are auto-detected. To list all configuration options, run
-`./configure --help`. Some common autoconf-style options like `--prefix` are
-also available.
+```
+┌─ Album ──────────────────────────────────────────────────────────────────┐
+│ Pink Floyd - The Dark Side of the Moon                              1973 │
+│  01 Speak to Me                                                     1:13 │
+│> 02 Breathe (In the Air)                                            2:43 │
+│  03 On the Run                                                      3:36 │
+│  04 Time                                                            6:53 │
+│  05 The Great Gig in the Sky                                        4:36 │
+└──────────────────────────────────────────────────────────────────────────┘
+```
 
-After running configure you can see from the generated `config.mk` file
-what features have been configured in (see the `CONFIG_*` options).
+## 🚀 Quick Start
 
-The packages containing dependencies on common distributions are listed below. All dependencies other than pkg-config and ncurses, iconv, and elogind/systemd are for optional input/output plugins. It is assumed that libc headers, a C compiler, git, and GNU Make are available.
+### Prerequisites
 
-| Distro            | Dependencies |
-| :--               | :--          |
-| **Debian/Ubuntu** | apt install pkg-config libncursesw5-dev libfaad-dev libao-dev libasound2-dev libcddb2-dev libcdio-cdda-dev libdiscid-dev libavformat-dev libavcodec-dev libswresample-dev libflac-dev libjack-dev libmad0-dev libmodplug-dev libmpcdec-dev libsystemd-dev libopusfile-dev libpulse-dev libsamplerate0-dev libsndio-dev libvorbis-dev libwavpack-dev |
-| **Fedora/RHEL**   | dnf install 'pkgconfig(ncursesw)' 'pkgconfig(alsa)' 'pkgconfig(ao)' 'pkgconfig(libcddb)' 'pkgconfig(libcdio_cdda)' 'pkgconfig(libdiscid)' 'pkgconfig(libavformat)' 'pkgconfig(libavcodec)' 'pkgconfig(libswresample)' 'pkgconfig(flac)' 'pkgconfig(jack)' 'pkgconfig(mad)' 'pkgconfig(libmodplug)' libmpcdec-devel 'pkgconfig(libsystemd)' 'pkgconfig(opusfile)' 'pkgconfig(libpulse)' 'pkgconfig(samplerate)' 'pkgconfig(vorbisfile)' 'pkgconfig(wavpack)' |
-| **+ RPMFusion**   | dnf install faad2-devel libmp4v2-devel |
-| **Arch Linux**    | pacman -S pkg-config ncurses libiconv faad2 alsa-lib libao libcddb libcdio-paranoia libdiscid ffmpeg flac jack libmad libmodplug libmp4v2 libmpcdec systemd opusfile libpulse libsamplerate libvorbis wavpack |
-| **Alpine**        | apk add pkgconf ncurses-dev gnu-libiconv-dev alsa-lib-dev libao-dev libcddb-dev ffmpeg-dev flac-dev jack-dev libmad-dev libmodplug-dev elogind-dev opus-dev opusfile-dev pulseaudio-dev libsamplerate-dev libvorbis-dev wavpack-dev |
-| **Termux**        | apt install libandroid-support ncurses libiconv ffmpeg libmad libmodplug opusfile pulseaudio libflac libvorbis libwavpack |
-| **Homebrew**      | brew install pkg-config ncurses faad2 libao libcddb libcdio libdiscid ffmpeg flac jack mad libmodplug mp4v2 musepack opusfile libsamplerate libvorbis wavpack |
+Ensure you have the following dependencies installed:
 
+```bash
+# UOS/Debian/Ubuntu
+sudo apt install build-essential pkg-config libncursesw5-dev
 
-## Building
+# For full audio format support
+sudo apt install libfaad-dev libao-dev libasound2-dev libflac-dev \
+                 libvorbis-dev libwavpack-dev libmpcdec-dev libmad0-dev
+```
 
-    $ make
+### Installation
 
-Or on some BSD systems you need to explicitly use GNU make:
+#### Method 1: From Source (Recommended)
 
-    $ gmake
+```bash
+# Clone the repository
+git clone https://github.com/BennyPerumalla/cmus-uos.git
+cd cmus-uos
 
+# Configure and build
+./configure
+make
 
-## Installation
+# Install system-wide
+sudo make install
 
-    $ make install
+# Or install to custom location
+make install DESTDIR=/path/to/installation
+```
 
-Or to install to a temporary directory:
+#### Method 2: Quick Build Script
 
-    $ make install DESTDIR=~/tmp/cmus
+```bash
+# Make the build script executable and run
+chmod +x scripts/build.sh
+./scripts/build.sh
+```
 
-This is useful when creating binary packages.
+### First Run
 
-Remember to replace `make` with `gmake` if needed.
+```bash
+# Start cmus-uos
+cmus
 
+# Add music to library (in cmus)
+:add ~/Music
 
-## Manuals
+# Basic controls
+# Space: Play/Pause
+# n: Next track
+# p: Previous track
+# q: Quit
+```
 
-    $ man cmus-tutorial
+## 📖 Usage Guide
 
-And
+### Navigation
 
-    $ man cmus
+| Key | Action |
+|-----|--------|
+| `Tab` | Switch between views |
+| `1-7` | Jump to specific view |
+| `j/k` | Move up/down |
+| `Enter` | Play selected |
+| `Space` | Play/Pause |
 
+### Views
 
-## IRC Channel
+1. **Library** - Browse by artist/album
+2. **Sorted** - All tracks sorted
+3. **Playlist** - Custom playlists
+4. **Play Queue** - Current play queue
+5. **Browser** - File system browser
+6. **Filters** - Search and filter
+7. **Settings** - Configuration
 
-Feel free to join IRC channel #cmus on Libera.chat and share you experience,
-problems and issues. Note: This is an unofficial channel and all people hanging
-around there are for the love of cmus.
+### Advanced Features
 
+#### Creating Playlists
+```bash
+# In cmus command mode (:)
+:save ~/my-playlist.m3u
+:load ~/my-playlist.m3u
+```
 
-## Reporting Bugs
+#### Remote Control
+```bash
+# Control cmus from another terminal
+cmus-remote -p          # Play/pause
+cmus-remote -n          # Next track
+cmus-remote -r          # Previous track
+cmus-remote -C "vol +10%" # Volume up
+```
 
-Bugs should be reported using the GitHub [issue
-tracker](https://github.com/cmus/cmus/issues). When creating a new issue, a
-template will be shown containing instructions on how to collect the necessary
-information.
+## ⚙️ Configuration
 
-Additional debug information can be found in `~/cmus-debug.txt` if you
-configured cmus with maximum debug level (`./configure DEBUG=2`). In case of a
-crash the last lines may be helpful.
+cmus-uos configuration is stored in `~/.config/cmus/`. Key configuration files:
 
+- `rc` - Main configuration
+- `autosave` - Auto-saved settings
+- `lib.pl` - Library playlist
+- `playlists/` - Custom playlists
 
-## Git Repository
+### Essential Settings
 
-https://github.com/cmus/cmus
+```bash
+# Audio output (in cmus)
+:set output_plugin=alsa
+:set dsp.alsa.device=default
 
-    $ git clone https://github.com/cmus/cmus.git
+# ReplayGain
+:set replaygain=track
+:set replaygain_preamp=0.0
 
+# Gapless playback
+:set buffer_seconds=10
+```
 
-## Hacking
+## 🔧 UOS-Specific Optimizations
 
-cmus uses the [Linux kernel coding
-style](https://www.kernel.org/doc/html/latest/process/coding-style.html). Use
-hard tabs. Tabs are _always_ 8 characters wide. Keep the style consistent with
-rest of the code.
+This fork includes several optimizations for UOS:
 
-Bug fixes and implementations of new features should be suggested as a
-[pull request](https://github.com/cmus/cmus/pulls) directly on GitHub.
+- **Native UOS audio driver integration**
+- **Optimized for UOS desktop environment**
+- **Better Chinese font rendering in terminal**
+- **Enhanced hardware acceleration support**
+- **UOS system notification integration**
 
+## 🐛 Troubleshooting
+
+### Common Issues
+
+**Audio not playing:**
+```bash
+# Check available output plugins
+:set output_plugin=?
+
+# Try different output
+:set output_plugin=pulse
+# or
+:set output_plugin=alsa
+```
+
+**Library not updating:**
+```bash
+# Force library refresh
+:update-cache
+```
+
+**Permission issues:**
+```bash
+# Add user to audio group
+sudo usermod -a -G audio $USER
+```
+
+For more detailed troubleshooting, see [docs/troubleshooting.md](docs/troubleshooting.md).
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+### Development Setup
+
+```bash
+# Clone with development branch
+git clone -b develop https://github.com/BennyPerumalla/cmus-uos.git
+cd cmus-uos
+
+# Set up development environment
+./scripts/setup-dev.sh
+
+# Build in debug mode
+./configure DEBUG=2
+make
+```
+
+### Code Style
+- Follow Linux kernel coding style
+- Use hard tabs (8 characters wide)
+- Maximum line length: 80 characters
+- Write descriptive commit messages
+
+## 📄 License
+
+This project is licensed under the GNU General Public License v2.0 - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- Original [cmus](https://github.com/cmus/cmus) developers
+- UnionTech for UOS platform support
+- All contributors and users who make this project possible
+
+## 📞 Support
+
+- **Documentation**: [docs/](docs/)
+- **Issues**: [GitHub Issues](https://github.com/BennyPerumalla/cmus-uos/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/BennyPerumalla/cmus-uos/discussions)
+
+## 🔗 Related Projects
+
+- [cmus](https://github.com/cmus/cmus) - Original cmus project
+- [UOS](https://www.uniontech.com/) - UnionTech Operating System
+
+---
+
+<div align="center">
+
+**[⬆ Back to Top](#cmus-uos)**
+
+Made with ❤️ for the UOS community
+
+</div>
