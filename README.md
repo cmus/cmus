@@ -1,4 +1,4 @@
-# cmus - C* Music Player
+# cmus - C\* Music Player
 
 > A small, fast and powerful console music player for Unix-like operating systems
 
@@ -137,9 +137,6 @@ gmake && sudo gmake install
 # Enable debug mode
 ./configure DEBUG=2
 
-# Specify installation prefix
-./configure --prefix=/usr/local
-
 # Check configured features
 cat config.mk
 ```
@@ -192,49 +189,8 @@ cmus
 | `e` | Edit tags | Modify track metadata |
 | `u` | Update cache | Refresh library database |
 
-### 🎪 Interface Views
-
-#### 1. 📚 Library View (Tree)
-Browse your music collection organized by artist and album.
-```
-Press '1' to access
-```
-
-#### 2. 📝 Sorted Library View
-All tracks displayed in a sortable list format.
-```
-Press '2' to access
-```
-
-#### 3. 🎵 Playlist View
-Manage and play custom playlists.
-```
-Press '3' to access
-```
-
-#### 4. 🎭 Play Queue
-Current play queue and upcoming tracks.
-```
-Press '4' to access
-```
-
-#### 5. 📁 Browser View
-File system browser for adding music.
-```
-Press '5' to access
-```
-
-#### 6. 🔍 Filter View
-Search and filter your music collection.
-```
-Press '6' to access
-```
-
-#### 7. ⚙️ Settings View
-Configuration and preferences.
-```
-Press '7' to access
-```
+### 🎪 Interface Views: 
+- 📚 Library (Tree, 1) | 📝 Sorted List (2) | 🎵 Playlists (3) | 🎭 Play Queue (4) | 📁 Browser (5) | 🔍 Filter (6) | ⚙️ Settings (7)
 
 ### 🎛️ Command Mode
 
@@ -335,7 +291,6 @@ cmus-remote -C status  # Detailed status
 
 # Configure audio device
 :set dsp.alsa.device=hw:0,0    # ALSA device
-:set dsp.pulse.server=localhost # PulseAudio server
 ```
 
 #### Playback Enhancement
@@ -352,10 +307,6 @@ cmus-remote -C status  # Detailed status
 
 #### Display and Interface
 ```bash
-# Format strings
-:set format_current= %a - %l - %t %= %y 
-:set format_playlist= %-21%a %3n. %t%= %y %d 
-:set format_title=%a - %l - %t (%y)
 
 # Color scheme
 :colorscheme default           # Use default colors
@@ -532,25 +483,6 @@ Before creating an issue:
    # Check ~/cmus-debug.txt for details
    ```
 
-### 🔍 Types of Contributions
-
-- **🐛 Bug fixes** - Fix crashes, memory leaks, or incorrect behavior
-- **✨ New features** - Add new functionality or improve existing features
-- **📚 Documentation** - Improve README, man pages, or code comments
-- **🎨 UI/UX** - Enhance the user interface or experience
-- **🔧 Build system** - Improve compilation, packaging, or dependencies
-- **🧪 Testing** - Add tests or improve test coverage
-
-### 📬 Submitting Changes
-
-1. **Test your changes** thoroughly
-2. **Update documentation** if needed
-3. **Submit a pull request** with:
-   - Clear description of changes
-   - Reference to related issues
-   - Screenshots for UI changes
-   - Test results
-
 ## 📄 License
 
 This project is licensed under the **GNU General Public License v2.0** - see the [LICENSE](LICENSE) file for details.
@@ -572,19 +504,13 @@ This project is licensed under the **GNU General Public License v2.0** - see the
 
 ### 🌐 Community
 - **IRC Channel**: `#cmus` on [Libera.Chat](https://web.libera.chat/#cmus)
-- **Reddit**: [r/commandline](https://reddit.com/r/commandline)
 - **Matrix**: `#cmus:matrix.org`
 
-### 🔗 Related Projects
-- **[cmus-osx](https://github.com/PhilipTrauner/cmus-osx)** - macOS integration
-- **[cmus-notify](https://github.com/dcx86r/cmus-notify)** - Desktop notifications
-- **[cmus-lyrics](https://github.com/ok-borg/cmus-lyrics)** - Lyrics integration
 
 ---
 
 <div align="center">
 
-**[🎵 Start Your Musical Journey](#-installation) • [📖 Learn the Basics](#-usage-guide) • [🤝 Join the Community](#-support--community)**
 
 *Made with ❤️ by the cmus community*
 
