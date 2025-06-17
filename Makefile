@@ -19,7 +19,7 @@ include scripts/lib.mk
 CFLAGS += -D_FILE_OFFSET_BITS=64
 
 CMUS_LIBS = $(PTHREAD_LIBS) $(NCURSES_LIBS) $(ICONV_LIBS) $(DL_LIBS) $(DISCID_LIBS) \
-			-lm $(COMPAT_LIBS) $(LIBSYSTEMD_LIBS) $(COREAUDIO_LIBS) $(COREFOUNDATION_LIBS)
+			-lm $(COMPAT_LIBS) $(LIBSYSTEMD_LIBS) $(COREFOUNDATION_LIBS)
 
 command_mode.o input.o main.o ui_curses.o op/pulse.lo: .version
 command_mode.o input.o main.o ui_curses.o op/pulse.lo: CFLAGS += -DVERSION=\"$(VERSION)\"
