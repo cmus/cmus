@@ -44,6 +44,8 @@ struct ffmpeg_input {
 	AVPacket pkt;
 	int curr_pkt_size;
 	uint8_t *curr_pkt_buf;
+	int64_t seek_ts;
+	int64_t prev_frame_end;
 	int stream_index;
 
 	unsigned long curr_size;
@@ -76,6 +78,8 @@ static struct ffmpeg_input *ffmpeg_input_create(void)
 		return NULL;
 	}
 	input->curr_pkt_size = 0;
+	input->seek_ts = -1;
+	input->prev_frame_end = -1;
 	input->curr_pkt_buf = input->pkt.data;
 	return input;
 }
@@ -314,10 +318,7 @@ static int ffmpeg_fill_buffer(struct input_plugin_data *ip_data, AVFormatContext
 #else
 	AVFrame *frame = avcodec_alloc_frame();
 #endif
-	int got_frame;
 	while (1) {
-		int len;
-
 		if (input->curr_pkt_size <= 0) {
 #if LIBAVCODEC_VERSION_MAJOR >= 56
 			av_packet_unref(&input->pkt);
@@ -333,78 +334,108 @@ static int ffmpeg_fill_buffer(struct input_plugin_data *ip_data, AVFormatContext
 #endif
 				return 0;
 			}
-			if (input->pkt.stream_index == input->stream_index) {
-				input->curr_pkt_size = input->pkt.size;
-				input->curr_pkt_buf = input->pkt.data;
-				input->curr_size += input->pkt.size;
-				input->curr_duration += input->pkt.duration;
+
+			if (input->pkt.stream_index != input->stream_index)
+				continue;
+			input->curr_pkt_size = input->pkt.size;
+			input->curr_pkt_buf = input->pkt.data;
+			input->curr_size += input->pkt.size;
+			input->curr_duration += input->pkt.duration;
+
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
+			int send_result = avcodec_send_packet(cc, &input->pkt);
+			if (send_result != 0 && send_result != AVERROR(EAGAIN)) {
+				d_print("avcodec_send_packet() returned %d\n", send_result);
+				char errstr[AV_ERROR_MAX_STRING_SIZE];
+				if (!av_strerror(send_result, errstr, AV_ERROR_MAX_STRING_SIZE ))
+				{
+					d_print("av_strerror(): %s\n", errstr);
+				} else {
+					d_print("av_strerror(): Description for error cannot be found\n");
+				}
+				return -IP_ERROR_INTERNAL;
 			}
+#endif
+		}
+
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
+		int recv_result = avcodec_receive_frame(cc, frame);
+		if (recv_result < 0) {
+			input->curr_pkt_size = 0;
 			continue;
 		}
-
-		{
-			AVPacket avpkt;
-			av_new_packet(&avpkt, input->curr_pkt_size);
-			memcpy(avpkt.data, input->curr_pkt_buf, input->curr_pkt_size);
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
-			int send_result = avcodec_send_packet(cc, &avpkt);
-			if (send_result != 0) {
-				if (send_result != AVERROR(EAGAIN)) {
-					d_print("avcodec_send_packet() returned %d\n", send_result);
-					char errstr[AV_ERROR_MAX_STRING_SIZE];
-					if (!av_strerror(send_result, errstr, AV_ERROR_MAX_STRING_SIZE ))
-					{
-						d_print("av_strerror(): %s\n", errstr);
-					} else {
-						d_print("av_strerror(): Description for error cannot be found\n");
-					}
-					av_packet_unref(&avpkt);
-					return -IP_ERROR_INTERNAL;
-				}
-				len = 0;
-			} else {
-				len = input->curr_pkt_size;
-			}
-
-			int recv_result = avcodec_receive_frame(cc, frame);
-			got_frame = (recv_result == 0) ? 1 : 0;
 #else
-			len = avcodec_decode_audio4(cc, frame, &got_frame, &avpkt);
-#endif
-#if LIBAVCODEC_VERSION_MAJOR >= 56
-			av_packet_unref(&avpkt);
-#else
-			av_free_packet(&avpkt);
-#endif
-		}
+		int got_frame;
+		int len = avcodec_decode_audio4(cc, frame, &got_frame, &input->pkt);
 		if (len < 0) {
 			/* this is often reached when seeking, not sure why */
 			input->curr_pkt_size = 0;
 			continue;
 		}
-		input->curr_pkt_size -= len;
-		input->curr_pkt_buf += len;
-		if (got_frame) {
-			int res = swr_convert(swr,
-					&output->buffer,
-					frame->nb_samples,
-					(const uint8_t **)frame->extended_data,
-					frame->nb_samples);
-			if (res < 0)
-				res = 0;
-			output->buffer_pos = output->buffer;
-#if LIBAVCODEC_VERSION_MAJOR >= 60
-			output->buffer_used_len = res * cc->ch_layout.nb_channels * sf_get_sample_size(ip_data->sf);
-#else
-			output->buffer_used_len = res * cc->channels * sf_get_sample_size(ip_data->sf);
+		if (!got_frame)
+			continue;
 #endif
-#if LIBAVCODEC_VERSION_MAJOR >= 56
-			av_frame_free(&frame);
-#else
-			avcodec_free_frame(&frame);
-#endif
-			return output->buffer_used_len;
+
+		int64_t frame_ts = -1;
+		if (frame->pts)
+			frame_ts = frame->pts;
+		else if (frame->pkt_pts)
+			frame_ts = frame->pkt_pts;
+		else if (frame->pkt_dts)
+			frame_ts = frame->pkt_dts;
+
+		const uint8_t **in = (const uint8_t **)frame->extended_data;
+		int in_count = frame->nb_samples;
+		if (input->seek_ts > 0 && (frame_ts >= 0 || input->prev_frame_end >= 0)) {
+			struct ffmpeg_private *priv = ip_data->private;
+			AVStream *st = priv->input_context->streams[priv->input->stream_index];
+			if (frame_ts >= 0)
+				frame_ts = av_rescale_q(frame_ts, st->time_base, AV_TIME_BASE_Q);
+			else
+				frame_ts = input->prev_frame_end;
+			int64_t frame_dur = av_rescale(frame->nb_samples, AV_TIME_BASE, sf_get_rate(ip_data->sf));
+			int64_t frame_end = frame_ts + frame_dur;
+			input->prev_frame_end = frame_end;
+			d_print("seek_ts: %ld, frame_ts: %ld, frame_end: %ld\n", input->seek_ts, frame_ts, frame_end);
+			if (frame_end <= input->seek_ts)
+				continue;
+
+			/* skip part of this frame */
+			int64_t skip_samples = av_rescale(input->seek_ts - frame_ts, sf_get_rate(ip_data->sf), AV_TIME_BASE);
+			in_count -= skip_samples;
+			if (av_sample_fmt_is_planar(frame->format)) {
+				for (int i = 0; i < cc->channels; i++) {
+					in[i] += skip_samples * sf_get_sample_size(ip_data->sf);
+				}
+			} else {
+				*in += skip_samples * cc->channels * sf_get_sample_size(ip_data->sf);
+			}
+
+			input->seek_ts = -1;
+			input->prev_frame_end = -1;
 		}
+
+		int res = swr_convert(swr,
+				&output->buffer,
+				frame->nb_samples,
+				in,
+				in_count);
+		if (res < 0)
+			res = 0;
+
+		output->buffer_pos = output->buffer;
+#if LIBAVCODEC_VERSION_MAJOR >= 60
+		output->buffer_used_len = res * cc->ch_layout.nb_channels * sf_get_sample_size(ip_data->sf);
+#else
+		output->buffer_used_len = res * cc->channels * sf_get_sample_size(ip_data->sf);
+#endif
+
+#if LIBAVCODEC_VERSION_MAJOR >= 56
+		av_frame_free(&frame);
+#else
+		avcodec_free_frame(&frame);
+#endif
+		return output->buffer_used_len;
 	}
 	/* This should never get here. */
 	return -IP_ERROR_INTERNAL;
@@ -437,13 +468,16 @@ static int ffmpeg_seek(struct input_plugin_data *ip_data, double offset)
 	AVStream *st = priv->input_context->streams[priv->input->stream_index];
 	int ret;
 
-	int64_t pts = av_rescale_q(offset * AV_TIME_BASE, AV_TIME_BASE_Q, st->time_base);
+	priv->input->seek_ts = offset * AV_TIME_BASE;
+	priv->input->prev_frame_end = -1;
+	int64_t ts = av_rescale(offset, st->time_base.den, st->time_base.num);
 
 	avcodec_flush_buffers(priv->codec_context);
 	/* Force reading a new packet in next ffmpeg_fill_buffer(). */
 	priv->input->curr_pkt_size = 0;
 
-	ret = av_seek_frame(priv->input_context, priv->input->stream_index, pts, 0);
+	ret = avformat_seek_file(priv->input_context,
+			priv->input->stream_index, 0, ts, ts, 0);
 
 	if (ret < 0) {
 		return -IP_ERROR_FUNCTION_NOT_SUPPORTED;
