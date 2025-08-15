@@ -393,22 +393,26 @@ static int ffmpeg_fill_buffer(struct input_plugin_data *ip_data, AVFormatContext
 				frame_ts = av_rescale_q(frame_ts, st->time_base, AV_TIME_BASE_Q);
 			else
 				frame_ts = input->prev_frame_end;
-			int64_t frame_dur = av_rescale(frame->nb_samples, AV_TIME_BASE, sf_get_rate(ip_data->sf));
-			int64_t frame_end = frame_ts + frame_dur;
-			input->prev_frame_end = frame_end;
-			d_print("seek_ts: %ld, frame_ts: %ld, frame_end: %ld\n", input->seek_ts, frame_ts, frame_end);
-			if (frame_end <= input->seek_ts)
-				continue;
 
-			/* skip part of this frame */
-			int64_t skip_samples = av_rescale(input->seek_ts - frame_ts, sf_get_rate(ip_data->sf), AV_TIME_BASE);
-			in_count -= skip_samples;
-			if (av_sample_fmt_is_planar(frame->format)) {
-				for (int i = 0; i < cc->channels; i++) {
-					in[i] += skip_samples * sf_get_sample_size(ip_data->sf);
+			if (frame_ts < input->seek_ts) {
+				int64_t frame_dur = av_rescale(frame->nb_samples, AV_TIME_BASE, sf_get_rate(ip_data->sf));
+				int64_t frame_end = frame_ts + frame_dur;
+				input->prev_frame_end = frame_end;
+				d_print("seek_ts: %ld, frame_ts: %ld, frame_end: %ld\n", input->seek_ts, frame_ts, frame_end);
+				if (frame_end <= input->seek_ts)
+					continue;
+
+				/* skip part of this frame */
+				int64_t skip_samples = av_rescale(input->seek_ts - frame_ts, sf_get_rate(ip_data->sf), AV_TIME_BASE);
+				in_count -= skip_samples;
+				if (av_sample_fmt_is_planar(frame->format)) {
+					for (int i = 0; i < cc->channels; i++) {
+						in[i] += skip_samples * sf_get_sample_size(ip_data->sf);
+					}
+				} else {
+					*in += skip_samples * cc->channels * sf_get_sample_size(ip_data->sf);
 				}
-			} else {
-				*in += skip_samples * cc->channels * sf_get_sample_size(ip_data->sf);
+				d_print("skipping %ld samples\n", skip_samples);
 			}
 
 			input->seek_ts = -1;
