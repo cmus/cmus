@@ -444,6 +444,7 @@ static int ffmpeg_seek(struct input_plugin_data *ip_data, double offset)
 		return -IP_ERROR_FUNCTION_NOT_SUPPORTED;
 
 	priv->swr_frame->nb_samples = 0;
+	priv->swr_frame_start = 0;
 	avcodec_flush_buffers(priv->codec_ctx);
 	swr_convert(priv->swr, NULL, 0, NULL, 0); /* flush swr buffer */
 	return 0;
