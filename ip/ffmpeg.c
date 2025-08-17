@@ -444,7 +444,7 @@ static int ffmpeg_seek(struct input_plugin_data *ip_data, double offset)
 
 	priv->swr_frame->nb_samples = 0;
 	avcodec_flush_buffers(priv->codec_ctx);
-	/* also flush swresample buffers? */
+	swr_convert(priv->swr, NULL, 0, NULL, 0); /* flush swr buffer */
 	return 0;
 }
 
