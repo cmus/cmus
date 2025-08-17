@@ -356,7 +356,7 @@ static int ffmpeg_get_frame(struct ffmpeg_private *priv)
 		priv->curr_duration += priv->pkt->duration;
 
 		res = avcodec_send_packet(priv->codec_ctx, priv->pkt);
-		if (res == AVERROR(EAGAIN))
+		if (res == 0 || res == AVERROR(EAGAIN))
 			return 0;
 	}
 	if (res < 0)
