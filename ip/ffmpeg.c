@@ -44,8 +44,8 @@ struct ffmpeg_private {
 
 	AVPacket *pkt;
 	AVFrame *frame;
-	int64_t seek_ts;
-	int64_t prev_frame_end;
+	double seek_ts;
+	int64_t skip_samples;
 
 	/* A buffer to hold swr_convert()-ed samples */
 	AVFrame *swr_frame;
@@ -249,7 +249,6 @@ static int ffmpeg_open(struct input_plugin_data *ip_data)
 	priv.pkt = av_packet_alloc();
 	priv.frame = av_frame_alloc();
 	priv.seek_ts = -1;
-	priv.prev_frame_end = -1;
 
 	priv.swr = swr_alloc();
 	ffmpeg_set_sf_and_swr_opts(priv.swr, priv.codec_ctx,
@@ -283,37 +282,37 @@ static int ffmpeg_close(struct input_plugin_data *ip_data)
 	return 0;
 }
 
-/*
- * return:
- *    0 - retry
- *   >0 - ok
- */
-static int ffmpeg_seek_into_frame(struct ffmpeg_private *priv, int64_t frame_ts)
+static int64_t ffmpeg_calc_skip_samples(struct ffmpeg_private *priv)
 {
-	if (frame_ts >= 0) {
-		AVStream *s = priv->format_ctx->streams[priv->stream_index];
-		frame_ts = av_rescale_q(frame_ts, s->time_base, AV_TIME_BASE_Q);
+	int64_t ts;
+	if (priv->frame->pts >= 0) {
+		ts = priv->frame->pts;
+	} else if (priv->frame->pkt_dts >= 0) {
+		ts = priv->frame->pkt_dts;
 	} else {
-		frame_ts = priv->prev_frame_end;
+		d_print("AVFrame.pts and AVFrame.pkt_dts are unset\n");
+		return -1;
 	}
 
+	AVStream *s = priv->format_ctx->streams[priv->stream_index];
+	double frame_ts = ts * av_q2d(s->time_base);
+
+	d_print("seek_ts: %.6fs, frame_ts: %.6fs\n", priv->seek_ts, frame_ts);
+
 	if (frame_ts >= priv->seek_ts)
-		return 1;
-
-	int64_t frame_dur = av_rescale(priv->frame->nb_samples,
-			AV_TIME_BASE, priv->frame->sample_rate);
-	int64_t frame_end = frame_ts + frame_dur;
-	priv->prev_frame_end = frame_end;
-
-	d_print("seek_ts: %ld, frame_ts: %ld, frame_end: %ld\n",
-			priv->seek_ts, frame_ts, frame_end);
-
-	if (frame_end <= priv->seek_ts)
 		return 0;
+	return (priv->seek_ts - frame_ts) * priv->frame->sample_rate;
+}
 
-	int64_t skip_samples = av_rescale(priv->seek_ts - frame_ts,
-			priv->frame->sample_rate, AV_TIME_BASE);
-	priv->frame->nb_samples -= skip_samples;
+static void ffmpeg_skip_frame_part(struct ffmpeg_private *priv)
+{
+	if (priv->skip_samples >= priv->frame->nb_samples) {
+		d_print("skipping frame: %d samples\n",
+				priv->frame->nb_samples);
+		priv->skip_samples -= priv->frame->nb_samples;
+		priv->frame->nb_samples = 0;
+		return;
+	}
 
 	int bps = av_get_bytes_per_sample(priv->frame->format);
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 24, 100)
@@ -322,15 +321,17 @@ static int ffmpeg_seek_into_frame(struct ffmpeg_private *priv, int64_t frame_ts)
 	int channels = priv->codec_ctx->channels;
 #endif
 
+	priv->frame->nb_samples -= priv->skip_samples;
+
 	/* Just modify frame's data pointer because it's throw-away */
 	if (av_sample_fmt_is_planar(priv->frame->format)) {
 		for (int i = 0; i < channels; i++)
-			priv->frame->extended_data[i] += skip_samples * bps;
+			priv->frame->extended_data[i] += priv->skip_samples * bps;
 	} else {
-		priv->frame->extended_data[0] += skip_samples * channels * bps;
+		priv->frame->extended_data[0] += priv->skip_samples * channels * bps;
 	}
-	d_print("skipping %ld samples\n", skip_samples);
-	return 1;
+	d_print("skipping %ld samples\n", priv->skip_samples);
+	priv->skip_samples = 0;
 }
 
 /*
@@ -361,17 +362,16 @@ static int ffmpeg_get_frame(struct ffmpeg_private *priv)
 	if (res < 0)
 		return res;
 
-	int64_t frame_ts = -1;
-	if (priv->frame->pts >= 0)
-		frame_ts = priv->frame->pts;
-	else if (priv->frame->pkt_dts >= 0)
-		frame_ts = priv->frame->pkt_dts;
+	if (priv->seek_ts > 0) {
+		priv->skip_samples = ffmpeg_calc_skip_samples(priv);
+		if (priv->skip_samples >= 0)
+			priv->seek_ts = -1;
+	}
 
-	if (priv->seek_ts > 0 && (frame_ts >= 0 || priv->prev_frame_end >= 0)) {
-		if (ffmpeg_seek_into_frame(priv, frame_ts) == 0)
+	if (priv->skip_samples > 0) {
+		ffmpeg_skip_frame_part(priv);
+		if (priv->frame->nb_samples == 0)
 			return 0;
-		priv->seek_ts = -1;
-		priv->prev_frame_end = -1;
 	}
 	return 1;
 }
@@ -434,8 +434,8 @@ static int ffmpeg_seek(struct input_plugin_data *ip_data, double offset)
 	struct ffmpeg_private *priv = ip_data->private;
 	AVStream *st = priv->format_ctx->streams[priv->stream_index];
 
-	priv->seek_ts = offset * AV_TIME_BASE;
-	priv->prev_frame_end = -1;
+	priv->seek_ts = offset;
+	priv->skip_samples = 0;
 	int64_t ts = av_rescale(offset, st->time_base.den, st->time_base.num);
 
 	int ret = avformat_seek_file(priv->format_ctx,
