@@ -605,6 +605,16 @@ int ip_open(struct input_plugin *ip)
 		ip_reset(ip, 1);
 		return rc;
 	}
+
+	unsigned bits = sf_get_bits(ip->data.sf);
+	unsigned channels = sf_get_channels(ip->data.sf);
+	unsigned rate = sf_get_rate(ip->data.sf);
+	if (!bits || !channels || !rate) {
+		d_print("corrupt file: bits = %u, channels = %u, rate = %u\n",
+				bits, channels, rate);
+		return -IP_ERROR_FILE_FORMAT;
+	}
+
 	ip->open = 1;
 	return 0;
 }
