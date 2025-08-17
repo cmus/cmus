@@ -35,84 +35,32 @@
 #include <libavutil/mathematics.h>
 #endif
 
-#ifndef AVCODEC_MAX_AUDIO_FRAME_SIZE
-#define AVCODEC_MAX_AUDIO_FRAME_SIZE 192000
-#endif
-
-struct ffmpeg_input {
-	AVPacket pkt;
-	int curr_pkt_size;
-	int64_t seek_ts;
-	int64_t prev_frame_end;
+struct ffmpeg_private {
+	AVCodecContext *codec_ctx;
+	AVFormatContext *format_ctx;
+	AVCodec const *codec;
+	SwrContext *swr;
 	int stream_index;
 
+	AVPacket *pkt;
+	AVFrame *frame;
+	int64_t seek_ts;
+	int64_t prev_frame_end;
+
+	/* A buffer to hold swr_convert()-ed samples */
+	AVFrame *swr_frame;
+	int swr_frame_start;
+
+	/* Bitrate estimation */
 	unsigned long curr_size;
 	unsigned long curr_duration;
 };
 
-struct ffmpeg_output {
-	uint8_t *buffer;
-	uint8_t *buffer_malloc;
-	uint8_t *buffer_pos;	/* current buffer position */
-	int buffer_used_len;
-};
-
-struct ffmpeg_private {
-	AVCodecContext *codec_context;
-	AVFormatContext *input_context;
-	AVCodec const *codec;
-	SwrContext *swr;
-
-	struct ffmpeg_input *input;
-	struct ffmpeg_output *output;
-};
-
-static struct ffmpeg_input *ffmpeg_input_create(void)
+static const char *ffmpeg_errmsg(int err)
 {
-	struct ffmpeg_input *input = xnew(struct ffmpeg_input, 1);
-
-	if (av_new_packet(&input->pkt, 0) != 0) {
-		free(input);
-		return NULL;
-	}
-	input->curr_pkt_size = 0;
-	input->seek_ts = -1;
-	input->prev_frame_end = -1;
-	return input;
-}
-
-static void ffmpeg_input_free(struct ffmpeg_input *input)
-{
-	av_packet_unref(&input->pkt);
-	free(input);
-}
-
-static struct ffmpeg_output *ffmpeg_output_create(void)
-{
-	struct ffmpeg_output *output = xnew(struct ffmpeg_output, 1);
-
-	output->buffer_malloc = xnew(uint8_t, AVCODEC_MAX_AUDIO_FRAME_SIZE + 15);
-	output->buffer = output->buffer_malloc;
-	/* align to 16 bytes so avcodec can SSE/Altivec/etc */
-	while ((intptr_t) output->buffer % 16)
-		output->buffer += 1;
-	output->buffer_pos = output->buffer;
-	output->buffer_used_len = 0;
-	return output;
-}
-
-static void ffmpeg_output_free(struct ffmpeg_output *output)
-{
-	free(output->buffer_malloc);
-	output->buffer_malloc = NULL;
-	output->buffer = NULL;
-	free(output);
-}
-
-static inline void ffmpeg_buffer_flush(struct ffmpeg_output *output)
-{
-	output->buffer_pos = output->buffer;
-	output->buffer_used_len = 0;
+	static char errstr[AV_ERROR_MAX_STRING_SIZE];
+	av_strerror(err, errstr, AV_ERROR_MAX_STRING_SIZE);
+	return errstr;
 }
 
 static void ffmpeg_init(void)
@@ -132,303 +80,372 @@ static void ffmpeg_init(void)
 #endif
 }
 
+static int ffmpeg_open_input(struct input_plugin_data *ip_data,
+		struct ffmpeg_private *priv)
+{
+	AVFormatContext *ic = NULL;
+	AVCodecContext *cc = NULL;
+	AVCodecParameters *cp = NULL;
+	AVCodec const *codec = NULL;
+	int stream_index = -1;
+
+	int err;
+	int res = avformat_open_input(&ic, ip_data->filename, NULL, NULL);
+	if (res < 0) {
+		err = -IP_ERROR_FILE_FORMAT;
+		goto err;
+	}
+
+	res = avformat_find_stream_info(ic, NULL);
+	if (res < 0) {
+		d_print("unable to find stream info\n");
+		err = -IP_ERROR_FILE_FORMAT;
+		goto err;
+	}
+
+	for (int i = 0; i < ic->nb_streams; i++) {
+		cp = ic->streams[i]->codecpar;
+		if (cp->codec_type == AVMEDIA_TYPE_AUDIO) {
+			stream_index = i;
+			break;
+		}
+	}
+
+	if (stream_index == -1) {
+		d_print("could not find audio stream\n");
+		err = -IP_ERROR_FILE_FORMAT;
+		goto err_silent;
+	}
+
+	codec = avcodec_find_decoder(cp->codec_id);
+	if (!codec) {
+		d_print("codec (id: %d, name: %s) not found\n",
+				cc->codec_id, avcodec_get_name(cc->codec_id));
+		err = -IP_ERROR_UNSUPPORTED_FILE_TYPE;
+		goto err_silent;
+	}
+	cc = avcodec_alloc_context3(codec);
+	avcodec_parameters_to_context(cc, cp);
+
+	res = avcodec_open2(cc, codec, NULL);
+	if (res < 0) {
+		d_print("could not open codec (id: %d, name: %s)\n",
+				cc->codec_id, avcodec_get_name(cc->codec_id));
+		err = -IP_ERROR_UNSUPPORTED_FILE_TYPE;
+		goto err;
+	}
+
+	priv->format_ctx = ic;
+	priv->codec_ctx = cc;
+	priv->codec = codec;
+	priv->stream_index = stream_index;
+	return 0;
+err:
+	d_print("%s\n", ffmpeg_errmsg(res));
+err_silent:
+	avcodec_free_context(&cc);
+	avformat_close_input(&ic);
+	return err;
+}
+
+static void ffmpeg_set_sf_and_swr_opts(SwrContext *swr, AVCodecContext *cc,
+		sample_format_t *sf_out, enum AVSampleFormat *out_sample_fmt)
+{
+	int out_sample_rate = min_u(cc->sample_rate, 384000);
+	sample_format_t sf = sf_rate(out_sample_rate) | sf_host_endian();
+	av_opt_set_int(swr, "in_sample_rate", cc->sample_rate, 0);
+	av_opt_set_int(swr, "out_sample_rate", out_sample_rate, 0);
+
+	*out_sample_fmt = cc->sample_fmt;
+	switch (*out_sample_fmt) {
+		case AV_SAMPLE_FMT_U8:
+			sf |= sf_bits(8) | sf_signed(0);
+			break;
+		case AV_SAMPLE_FMT_S32:
+			sf |= sf_bits(32) | sf_signed(1);
+			break;
+		default:
+			sf |= sf_bits(16) | sf_signed(1);
+			*out_sample_fmt = AV_SAMPLE_FMT_S16;
+	}
+	av_opt_set_sample_fmt(swr, "in_sample_fmt", cc->sample_fmt, 0);
+	av_opt_set_sample_fmt(swr, "out_sample_fmt", *out_sample_fmt, 0);
+
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 24, 100)
+	sf |= sf_channels(cc->ch_layout.nb_channels);
+
+	if (cc->ch_layout.order == AV_CHANNEL_ORDER_UNSPEC)
+		av_channel_layout_default(&cc->ch_layout, cc->ch_layout.nb_channels);
+	av_opt_set_chlayout(swr, "in_chlayout", &cc->ch_layout, 0);
+	av_opt_set_chlayout(swr, "out_chlayout", &cc->ch_layout, 0);
+#else
+	sf |= sf_channels(cc->channels);
+
+	av_opt_set_int(swr, "in_channel_layout",
+			av_get_default_channel_layout(cc->channels), 0);
+	av_opt_set_int(swr, "out_channel_layout",
+			av_get_default_channel_layout(cc->channels), 0);
+#endif
+
+	*sf_out = sf;
+}
+
+static int ffmpeg_init_swr_frame(struct ffmpeg_private *priv,
+		sample_format_t sf, enum AVSampleFormat out_sample_fmt)
+{
+	AVCodecContext *cc = priv->codec_ctx;
+	AVFrame *frame = av_frame_alloc();
+
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 24, 100)
+	av_channel_layout_copy(&frame->ch_layout, &cc->ch_layout);
+#else
+	frame->channel_layout = av_get_default_channel_layout(cc->channels);
+#endif
+
+	frame->sample_rate = sf_get_rate(sf);
+	frame->format = out_sample_fmt;
+
+	/* NOTE: 10 sec is probably too much, but the amount of space
+	 * needed for swr_convert() is unpredictable */
+	frame->nb_samples = 10 * sf_get_rate(sf);
+	int res = av_frame_get_buffer(frame, 0);
+	if (res < 0) {
+		d_print("av_frame_get_buffer(): %s\n", ffmpeg_errmsg(res));
+		return -IP_ERROR_INTERNAL;
+	}
+	frame->nb_samples = 0;
+
+	priv->swr_frame = frame;
+	return 0;
+}
+
+static void ffmpeg_free(struct ffmpeg_private *priv)
+{
+	avcodec_close(priv->codec_ctx);
+	avcodec_free_context(&priv->codec_ctx);
+	avformat_close_input(&priv->format_ctx);
+
+	swr_free(&priv->swr);
+
+	av_frame_free(&priv->frame);
+	av_packet_free(&priv->pkt);
+	av_frame_free(&priv->swr_frame);
+}
+
 static int ffmpeg_open(struct input_plugin_data *ip_data)
 {
-	struct ffmpeg_private *priv;
-	int err = 0;
-	int i;
-	int stream_index = -1;
-	int out_sample_rate;
-	AVCodec const *codec;
-	AVCodecContext *cc = NULL;
-	AVFormatContext *ic = NULL;
-	AVCodecParameters *cp = NULL;
-	SwrContext *swr = NULL;
+	struct ffmpeg_private priv;
+	enum AVSampleFormat out_sample_fmt;
+	memset(&priv, 0, sizeof(struct ffmpeg_private));
 
 	ffmpeg_init();
 
-	err = avformat_open_input(&ic, ip_data->filename, NULL, NULL);
+	int err = ffmpeg_open_input(ip_data, &priv);
+	if (err < 0)
+		return err;
+
+	priv.pkt = av_packet_alloc();
+	priv.frame = av_frame_alloc();
+	priv.seek_ts = -1;
+	priv.prev_frame_end = -1;
+
+	priv.swr = swr_alloc();
+	ffmpeg_set_sf_and_swr_opts(priv.swr, priv.codec_ctx,
+			&ip_data->sf, &out_sample_fmt);
+	swr_init(priv.swr);
+
+	err = ffmpeg_init_swr_frame(&priv, ip_data->sf, out_sample_fmt);
 	if (err < 0) {
-		d_print("av_open failed: %d\n", err);
-		return -IP_ERROR_FILE_FORMAT;
-	}
-
-	do {
-		err = avformat_find_stream_info(ic, NULL);
-		if (err < 0) {
-			d_print("unable to find stream info: %d\n", err);
-			err = -IP_ERROR_FILE_FORMAT;
-			break;
-		}
-
-		for (i = 0; i < ic->nb_streams; i++) {
-			cp = ic->streams[i]->codecpar;
-			if (cp->codec_type == AVMEDIA_TYPE_AUDIO) {
-				stream_index = i;
-				break;
-			}
-		}
-
-		if (stream_index == -1) {
-			d_print("could not find audio stream\n");
-			err = -IP_ERROR_FILE_FORMAT;
-			break;
-		}
-
-		codec = avcodec_find_decoder(cp->codec_id);
-		cc = avcodec_alloc_context3(codec);
-		avcodec_parameters_to_context(cc, cp);
-		if (!codec) {
-			d_print("codec not found: %d, %s\n", cc->codec_id, avcodec_get_name(cc->codec_id));
-			err = -IP_ERROR_UNSUPPORTED_FILE_TYPE;
-			break;
-		}
-
-		if (avcodec_open2(cc, codec, NULL) < 0) {
-			d_print("could not open codec: %d, %s\n", cc->codec_id, avcodec_get_name(cc->codec_id));
-			err = -IP_ERROR_UNSUPPORTED_FILE_TYPE;
-			break;
-		}
-
-		/* We assume below that no more errors follow. */
-	} while (0);
-
-	if (err < 0) {
-		/* Clean up.  cc is never opened at this point.  (See above assumption.) */
-		avcodec_free_context(&cc);
-		avformat_close_input(&ic);
+		ffmpeg_free(&priv);
 		return err;
 	}
 
-	priv = xnew(struct ffmpeg_private, 1);
-	priv->codec_context = cc;
-	priv->input_context = ic;
-	priv->codec = codec;
-	priv->input = ffmpeg_input_create();
-	if (priv->input == NULL) {
-		avcodec_close(cc);
-		avcodec_free_context(&cc);
-		avformat_close_input(&ic);
-		free(priv);
-		return -IP_ERROR_INTERNAL;
-	}
-	priv->input->stream_index = stream_index;
-	priv->output = ffmpeg_output_create();
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 24, 100)
+	channel_map_init_waveex(priv.codec_ctx->ch_layout.nb_channels,
+			priv.codec_ctx->ch_layout.u.mask, ip_data->channel_map);
+#else
+	channel_map_init_waveex(priv.codec_ctx->channels,
+			priv.codec_ctx->channel_layout, ip_data->channel_map);
+#endif
 
-	/* Prepare for resampling. */
-	out_sample_rate = min_u(cc->sample_rate, 384000);
-	swr = swr_alloc();
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 24, 100)
-	if (cc->ch_layout.order == AV_CHANNEL_ORDER_UNSPEC)
-		av_channel_layout_default(&cc->ch_layout, cc->ch_layout.nb_channels);
-	av_opt_set_chlayout(swr, "in_chlayout",   &cc->ch_layout, 0);
-	av_opt_set_chlayout(swr, "out_chlayout",  &cc->ch_layout, 0);
-#else
-	av_opt_set_int(swr, "in_channel_layout",  av_get_default_channel_layout(cc->channels), 0);
-	av_opt_set_int(swr, "out_channel_layout", av_get_default_channel_layout(cc->channels), 0);
-#endif
-	av_opt_set_int(swr, "in_sample_rate",     cc->sample_rate, 0);
-	av_opt_set_int(swr, "out_sample_rate",    out_sample_rate, 0);
-	av_opt_set_sample_fmt(swr, "in_sample_fmt",  cc->sample_fmt, 0);
-	priv->swr = swr;
-
-	ip_data->private = priv;
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 24, 100)
-	ip_data->sf = sf_rate(out_sample_rate) | sf_channels(cc->ch_layout.nb_channels);
-#else
-	ip_data->sf = sf_rate(out_sample_rate) | sf_channels(cc->channels);
-#endif
-	switch (cc->sample_fmt) {
-	case AV_SAMPLE_FMT_U8:
-		ip_data->sf |= sf_bits(8) | sf_signed(0);
-		av_opt_set_sample_fmt(swr, "out_sample_fmt", AV_SAMPLE_FMT_U8,  0);
-		break;
-	case AV_SAMPLE_FMT_S32:
-		ip_data->sf |= sf_bits(32) | sf_signed(1);
-		av_opt_set_sample_fmt(swr, "out_sample_fmt", AV_SAMPLE_FMT_S32,  0);
-		break;
-	/* AV_SAMPLE_FMT_S16 */
-	default:
-		ip_data->sf |= sf_bits(16) | sf_signed(1);
-		av_opt_set_sample_fmt(swr, "out_sample_fmt", AV_SAMPLE_FMT_S16,  0);
-		break;
-	}
-	swr_init(swr);
-	ip_data->sf |= sf_host_endian();
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 24, 100)
-	channel_map_init_waveex(cc->ch_layout.nb_channels,
-			cc->ch_layout.u.mask, ip_data->channel_map);
-#else
-	channel_map_init_waveex(cc->channels,
-			cc->channel_layout, ip_data->channel_map);
-#endif
+	ip_data->private = xnew(struct ffmpeg_private, 1);
+	memcpy(ip_data->private, &priv, sizeof(struct ffmpeg_private));
 	return 0;
 }
 
 static int ffmpeg_close(struct input_plugin_data *ip_data)
 {
-	struct ffmpeg_private *priv = ip_data->private;
-
-	avcodec_close(priv->codec_context);
-	avcodec_free_context(&priv->codec_context);
-	avformat_close_input(&priv->input_context);
-	swr_free(&priv->swr);
-	ffmpeg_input_free(priv->input);
-	ffmpeg_output_free(priv->output);
-	free(priv);
+	ffmpeg_free(ip_data->private);
+	free(ip_data->private);
 	ip_data->private = NULL;
 	return 0;
 }
 
 /*
- * This returns the number of bytes added to the buffer.
- * It returns < 0 on error.  0 on EOF.
+ * return:
+ *    0 - retry
+ *   >0 - ok
  */
-static int ffmpeg_fill_buffer(struct input_plugin_data *ip_data,
-		AVFormatContext *ic, AVCodecContext *cc,
-		struct ffmpeg_input *input, struct ffmpeg_output *output,
-		SwrContext *swr)
+static int ffmpeg_seek_into_frame(struct ffmpeg_private *priv, int64_t frame_ts)
 {
-	AVFrame *frame = av_frame_alloc();
-	while (1) {
-		if (input->curr_pkt_size <= 0) {
-			av_packet_unref(&input->pkt);
-			if (av_read_frame(ic, &input->pkt) < 0) {
-				/* Force EOF once we can read no longer. */
-				av_frame_free(&frame);
-				return 0;
-			}
-
-			if (input->pkt.stream_index != input->stream_index)
-				continue;
-			input->curr_pkt_size = input->pkt.size;
-			input->curr_size += input->pkt.size;
-			input->curr_duration += input->pkt.duration;
-
-			int send_result = avcodec_send_packet(cc, &input->pkt);
-			if (send_result != 0 && send_result != AVERROR(EAGAIN)) {
-				d_print("avcodec_send_packet() returned %d\n", send_result);
-				char errstr[AV_ERROR_MAX_STRING_SIZE];
-				if (!av_strerror(send_result, errstr, AV_ERROR_MAX_STRING_SIZE ))
-				{
-					d_print("av_strerror(): %s\n", errstr);
-				} else {
-					d_print("av_strerror(): Description for error cannot be found\n");
-				}
-				return -IP_ERROR_INTERNAL;
-			}
-		}
-
-		int recv_result = avcodec_receive_frame(cc, frame);
-		if (recv_result < 0) {
-			input->curr_pkt_size = 0;
-			continue;
-		}
-
-		int64_t frame_ts = -1;
-		if (frame->pts)
-			frame_ts = frame->pts;
-		else if (frame->pkt_dts)
-			frame_ts = frame->pkt_dts;
-
-		const uint8_t **in = (const uint8_t **)frame->extended_data;
-		int in_count = frame->nb_samples;
-		if (input->seek_ts > 0 && (frame_ts >= 0 || input->prev_frame_end >= 0)) {
-			struct ffmpeg_private *priv = ip_data->private;
-			AVStream *st = priv->input_context->streams[priv->input->stream_index];
-			if (frame_ts >= 0)
-				frame_ts = av_rescale_q(frame_ts, st->time_base, AV_TIME_BASE_Q);
-			else
-				frame_ts = input->prev_frame_end;
-
-			if (frame_ts < input->seek_ts) {
-				int64_t frame_dur = av_rescale(frame->nb_samples, AV_TIME_BASE, frame->sample_rate);
-				int64_t frame_end = frame_ts + frame_dur;
-				input->prev_frame_end = frame_end;
-				d_print("seek_ts: %ld, frame_ts: %ld, frame_end: %ld\n", input->seek_ts, frame_ts, frame_end);
-				if (frame_end <= input->seek_ts)
-					continue;
-
-				/* skip part of this frame */
-				int64_t skip_samples = av_rescale(input->seek_ts - frame_ts, frame->sample_rate, AV_TIME_BASE);
-				in_count -= skip_samples;
-				if (av_sample_fmt_is_planar(frame->format)) {
-					for (int i = 0; i < sf_get_channels(ip_data->sf); i++) {
-						in[i] += skip_samples * sf_get_sample_size(ip_data->sf);
-					}
-				} else {
-					*in += skip_samples * sf_get_frame_size(ip_data->sf);
-				}
-				d_print("skipping %ld samples\n", skip_samples);
-			}
-
-			input->seek_ts = -1;
-			input->prev_frame_end = -1;
-		}
-
-		int res = swr_convert(swr,
-				&output->buffer,
-				frame->nb_samples,
-				in,
-				in_count);
-		if (res < 0)
-			res = 0;
-
-		output->buffer_pos = output->buffer;
-		output->buffer_used_len = res * sf_get_frame_size(ip_data->sf);
-
-		av_frame_free(&frame);
-		return output->buffer_used_len;
+	if (frame_ts >= 0) {
+		AVStream *s = priv->format_ctx->streams[priv->stream_index];
+		frame_ts = av_rescale_q(frame_ts, s->time_base, AV_TIME_BASE_Q);
+	} else {
+		frame_ts = priv->prev_frame_end;
 	}
-	/* This should never get here. */
-	return -IP_ERROR_INTERNAL;
+
+	if (frame_ts >= priv->seek_ts)
+		return 1;
+
+	int64_t frame_dur = av_rescale(priv->frame->nb_samples,
+			AV_TIME_BASE, priv->frame->sample_rate);
+	int64_t frame_end = frame_ts + frame_dur;
+	priv->prev_frame_end = frame_end;
+
+	d_print("seek_ts: %ld, frame_ts: %ld, frame_end: %ld\n",
+			priv->seek_ts, frame_ts, frame_end);
+
+	if (frame_end <= priv->seek_ts)
+		return 0;
+
+	int64_t skip_samples = av_rescale(priv->seek_ts - frame_ts,
+			priv->frame->sample_rate, AV_TIME_BASE);
+	priv->frame->nb_samples -= skip_samples;
+
+	int bps = av_get_bytes_per_sample(priv->frame->format);
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 24, 100)
+	int channels = priv->codec_ctx->ch_layout.nb_channels;
+#else
+	int channels = priv->codec_ctx->channels;
+#endif
+
+	/* Just modify frame's data pointer because it's throw-away */
+	if (av_sample_fmt_is_planar(priv->frame->format)) {
+		for (int i = 0; i < channels; i++)
+			priv->frame->extended_data[i] += skip_samples * bps;
+	} else {
+		priv->frame->extended_data[0] += skip_samples * channels * bps;
+	}
+	d_print("skipping %ld samples\n", skip_samples);
+	return 1;
+}
+
+/*
+ * return:
+ *   <0 - error
+ *    0 - retry
+ *   >0 - ok
+ */
+static int ffmpeg_get_frame(struct ffmpeg_private *priv)
+{
+	int res = avcodec_receive_frame(priv->codec_ctx, priv->frame);
+	if (res == AVERROR(EAGAIN)) {
+		av_packet_unref(priv->pkt);
+		res = av_read_frame(priv->format_ctx, priv->pkt);
+		if (res < 0)
+			return res;
+
+		if (priv->pkt->stream_index != priv->stream_index)
+			return 0;
+
+		priv->curr_size += priv->pkt->size;
+		priv->curr_duration += priv->pkt->duration;
+
+		res = avcodec_send_packet(priv->codec_ctx, priv->pkt);
+		if (res == AVERROR(EAGAIN))
+			return 0;
+	}
+	if (res < 0)
+		return res;
+
+	int64_t frame_ts = -1;
+	if (priv->frame->pts >= 0)
+		frame_ts = priv->frame->pts;
+	else if (priv->frame->pkt_dts >= 0)
+		frame_ts = priv->frame->pkt_dts;
+
+	if (priv->seek_ts > 0 && (frame_ts >= 0 || priv->prev_frame_end >= 0)) {
+		if (ffmpeg_seek_into_frame(priv, frame_ts) == 0)
+			return 0;
+		priv->seek_ts = -1;
+		priv->prev_frame_end = -1;
+	}
+	return 1;
+}
+
+static int ffmpeg_convert_frame(struct ffmpeg_private *priv)
+{
+	int res = swr_convert(priv->swr,
+			priv->swr_frame->extended_data,
+			/* TODO: proper buffer capacity */
+			priv->frame->nb_samples,
+			(const uint8_t **)priv->frame->extended_data,
+			priv->frame->nb_samples);
+	if (res >= 0) {
+		priv->swr_frame->nb_samples = res;
+		priv->swr_frame_start = 0;
+	}
+	return res;
 }
 
 static int ffmpeg_read(struct input_plugin_data *ip_data, char *buffer, int count)
 {
 	struct ffmpeg_private *priv = ip_data->private;
-	struct ffmpeg_output *output = priv->output;
-	int rc;
-	int out_size;
+	int written = 0;
+	int res;
 
-	if (output->buffer_used_len == 0) {
-		rc = ffmpeg_fill_buffer(ip_data,
-				priv->input_context, priv->codec_context,
-				priv->input, priv->output, priv->swr);
-		if (rc <= 0)
-			return rc;
+	count /= sf_get_frame_size(ip_data->sf);
+
+	while (count) {
+		if (priv->swr_frame->nb_samples == 0) {
+			res = ffmpeg_get_frame(priv);
+			if (res == AVERROR_EOF)
+				break;
+			else if (res == 0)
+				continue;
+			else if (res < 0)
+				goto err;
+
+			res = ffmpeg_convert_frame(priv);
+			if (res < 0)
+				goto err;
+		}
+
+		int copy_frames = min_i(count, priv->swr_frame->nb_samples);
+		int copy_bytes = copy_frames * sf_get_frame_size(ip_data->sf);
+		void *dst = priv->swr_frame->extended_data[0] + priv->swr_frame_start;
+		memcpy(buffer + written, dst, copy_bytes);
+
+		priv->swr_frame->nb_samples -= copy_frames;
+		priv->swr_frame_start += copy_bytes;
+		count -= copy_frames;
+		written += copy_bytes;
 	}
-	out_size = min_i(output->buffer_used_len, count);
-	memcpy(buffer, output->buffer_pos, out_size);
-	output->buffer_used_len -= out_size;
-	output->buffer_pos += out_size;
-	return out_size;
+	return written;
+err:
+	d_print("%s\n", ffmpeg_errmsg(res));
+	return -IP_ERROR_INTERNAL;
 }
 
 static int ffmpeg_seek(struct input_plugin_data *ip_data, double offset)
 {
 	struct ffmpeg_private *priv = ip_data->private;
-	AVStream *st = priv->input_context->streams[priv->input->stream_index];
-	int ret;
+	AVStream *st = priv->format_ctx->streams[priv->stream_index];
 
-	priv->input->seek_ts = offset * AV_TIME_BASE;
-	priv->input->prev_frame_end = -1;
+	priv->seek_ts = offset * AV_TIME_BASE;
+	priv->prev_frame_end = -1;
 	int64_t ts = av_rescale(offset, st->time_base.den, st->time_base.num);
 
-	avcodec_flush_buffers(priv->codec_context);
-	/* TODO: also flush swresample buffers */
-	/* Force reading a new packet in next ffmpeg_fill_buffer(). */
-	priv->input->curr_pkt_size = 0;
-
-	ret = avformat_seek_file(priv->input_context,
-			priv->input->stream_index, 0, ts, ts, 0);
-
-	if (ret < 0) {
+	int ret = avformat_seek_file(priv->format_ctx,
+			priv->stream_index, 0, ts, ts, 0);
+	if (ret < 0)
 		return -IP_ERROR_FUNCTION_NOT_SUPPORTED;
-	} else {
-		ffmpeg_buffer_flush(priv->output);
-		return 0;
-	}
+
+	priv->swr_frame->nb_samples = 0;
+	avcodec_flush_buffers(priv->codec_ctx);
+	/* also flush swresample buffers? */
+	return 0;
 }
 
 static void ffmpeg_read_metadata(struct growing_keyvals *c, AVDictionary *metadata)
@@ -445,7 +462,7 @@ static int ffmpeg_read_comments(struct input_plugin_data *ip_data,
 		struct keyval **comments)
 {
 	struct ffmpeg_private *priv = ip_data->private;
-	AVFormatContext *ic = priv->input_context;
+	AVFormatContext *ic = priv->format_ctx;
 
 	GROWING_KEYVALS(c);
 
@@ -463,29 +480,29 @@ static int ffmpeg_read_comments(struct input_plugin_data *ip_data,
 static int ffmpeg_duration(struct input_plugin_data *ip_data)
 {
 	struct ffmpeg_private *priv = ip_data->private;
-	return priv->input_context->duration / AV_TIME_BASE;
+	return priv->format_ctx->duration / AV_TIME_BASE;
 }
 
 static long ffmpeg_bitrate(struct input_plugin_data *ip_data)
 {
 	struct ffmpeg_private *priv = ip_data->private;
-	long bitrate = priv->input_context->bit_rate;
+	long bitrate = priv->format_ctx->bit_rate;
 	return bitrate ? bitrate : -IP_ERROR_FUNCTION_NOT_SUPPORTED;
 }
 
 static long ffmpeg_current_bitrate(struct input_plugin_data *ip_data)
 {
 	struct ffmpeg_private *priv = ip_data->private;
-	AVStream *st = priv->input_context->streams[priv->input->stream_index];
+	AVStream *st = priv->format_ctx->streams[priv->stream_index];
 	long bitrate = -1;
 	/* ape codec returns silly numbers */
 	if (priv->codec->id == AV_CODEC_ID_APE)
 		return -1;
-	if (priv->input->curr_duration > 0) {
-		double seconds = priv->input->curr_duration * av_q2d(st->time_base);
-		bitrate = (8 * priv->input->curr_size) / seconds;
-		priv->input->curr_size = 0;
-		priv->input->curr_duration = 0;
+	if (priv->curr_duration > 0) {
+		double seconds = priv->curr_duration * av_q2d(st->time_base);
+		bitrate = (8 * priv->curr_size) / seconds;
+		priv->curr_size = 0;
+		priv->curr_duration = 0;
 	}
 	return bitrate;
 }
@@ -500,7 +517,7 @@ static char *ffmpeg_codec_profile(struct input_plugin_data *ip_data)
 {
 	struct ffmpeg_private *priv = ip_data->private;
 	const char *profile;
-	profile = av_get_profile_name(priv->codec, priv->codec_context->profile);
+	profile = av_get_profile_name(priv->codec, priv->codec_ctx->profile);
 	return profile ? xstrdup(profile) : NULL;
 }
 
