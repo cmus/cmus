@@ -49,6 +49,7 @@ struct ffmpeg_private {
 
 	/* A buffer to hold swr_convert()-ed samples */
 	AVFrame *swr_frame;
+	int swr_frame_samples_cap;
 	int swr_frame_start;
 
 	/* Bitrate estimation */
@@ -213,6 +214,7 @@ static int ffmpeg_init_swr_frame(struct ffmpeg_private *priv,
 		d_print("av_frame_get_buffer(): %s\n", ffmpeg_errmsg(res));
 		return -IP_ERROR_INTERNAL;
 	}
+	priv->swr_frame_samples_cap = frame->nb_samples;
 	frame->nb_samples = 0;
 
 	priv->swr_frame = frame;
@@ -378,8 +380,7 @@ static int ffmpeg_convert_frame(struct ffmpeg_private *priv)
 {
 	int res = swr_convert(priv->swr,
 			priv->swr_frame->extended_data,
-			/* TODO: proper buffer capacity */
-			priv->frame->nb_samples,
+			priv->swr_frame_samples_cap,
 			(const uint8_t **)priv->frame->extended_data,
 			priv->frame->nb_samples);
 	if (res >= 0) {
