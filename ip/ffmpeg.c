@@ -337,30 +337,32 @@ static void ffmpeg_skip_frame_part(struct ffmpeg_private *priv)
 /*
  * return:
  *   <0 - error
- *    0 - retry
+ *    0 - eof
  *   >0 - ok
  */
 static int ffmpeg_get_frame(struct ffmpeg_private *priv)
 {
-	int res = avcodec_receive_frame(priv->codec_ctx, priv->frame);
+	int res;
+retry:
+	res = avcodec_receive_frame(priv->codec_ctx, priv->frame);
 	if (res == AVERROR(EAGAIN)) {
 		av_packet_unref(priv->pkt);
 		res = av_read_frame(priv->format_ctx, priv->pkt);
 		if (res < 0)
-			return res;
+			goto err;
 
 		if (priv->pkt->stream_index != priv->stream_index)
-			return 0;
+			goto retry;
 
 		priv->curr_size += priv->pkt->size;
 		priv->curr_duration += priv->pkt->duration;
 
 		res = avcodec_send_packet(priv->codec_ctx, priv->pkt);
 		if (res == 0 || res == AVERROR(EAGAIN))
-			return 0;
+			goto retry;
 	}
 	if (res < 0)
-		return res;
+		goto err;
 
 	if (priv->seek_ts > 0) {
 		priv->skip_samples = ffmpeg_calc_skip_samples(priv);
@@ -371,9 +373,14 @@ static int ffmpeg_get_frame(struct ffmpeg_private *priv)
 	if (priv->skip_samples > 0) {
 		ffmpeg_skip_frame_part(priv);
 		if (priv->frame->nb_samples == 0)
-			return 0;
+			goto retry;
 	}
 	return 1;
+err:
+	if (res == AVERROR_EOF)
+		return 0;
+	d_print("%s\n", ffmpeg_errmsg(res));
+	return -IP_ERROR_INTERNAL;
 }
 
 static int ffmpeg_convert_frame(struct ffmpeg_private *priv)
@@ -386,8 +393,10 @@ static int ffmpeg_convert_frame(struct ffmpeg_private *priv)
 	if (res >= 0) {
 		priv->swr_frame->nb_samples = res;
 		priv->swr_frame_start = 0;
+		return res;
 	}
-	return res;
+	d_print("%s\n", ffmpeg_errmsg(res));
+	return -IP_ERROR_INTERNAL;
 }
 
 static int ffmpeg_read(struct input_plugin_data *ip_data, char *buffer, int count)
@@ -401,16 +410,14 @@ static int ffmpeg_read(struct input_plugin_data *ip_data, char *buffer, int coun
 	while (count) {
 		if (priv->swr_frame->nb_samples == 0) {
 			res = ffmpeg_get_frame(priv);
-			if (res == AVERROR_EOF)
+			if (res == 0)
 				break;
-			else if (res == 0)
-				continue;
 			else if (res < 0)
-				goto err;
+				return res;
 
 			res = ffmpeg_convert_frame(priv);
 			if (res < 0)
-				goto err;
+				return res;
 		}
 
 		int copy_frames = min_i(count, priv->swr_frame->nb_samples);
@@ -424,9 +431,6 @@ static int ffmpeg_read(struct input_plugin_data *ip_data, char *buffer, int coun
 		written += copy_bytes;
 	}
 	return written;
-err:
-	d_print("%s\n", ffmpeg_errmsg(res));
-	return -IP_ERROR_INTERNAL;
 }
 
 static int ffmpeg_seek(struct input_plugin_data *ip_data, double offset)
