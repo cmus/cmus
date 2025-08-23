@@ -249,8 +249,17 @@ static int save_playlist_cb(void *data, struct track_info *ti)
 	return 0;
 }
 
+static int shift_backups(const char *filename)
+{
+	// TODO: delete .9
+	for (int bkp = 9; bkp > 0; bkp++) {
+		// TODO: shift files
+	}
+	// TODO: what do we do about playlist names?
+}
+
 static int do_cmus_save(for_each_ti_cb for_each_ti, const char *filename,
-		save_tracks_cb save_tracks, void *opaque)
+		save_tracks_cb save_tracks, bool backup, void *opaque)
 {
 	int fd, rc;
 
@@ -260,8 +269,12 @@ static int do_cmus_save(for_each_ti_cb for_each_ti, const char *filename,
 			return 0;
 		}
 		fd = dup(get_client_fd());
-	} else
+	} else {
+		if (backup)
+			if ((rc = shift_backups(filename)))
+				return rc; // TODO: also restore the backup if save fails, or on startup?
 		fd = open(filename, O_CREAT | O_WRONLY | O_TRUNC, 0666);
+	}
 	if (fd == -1)
 		return -1;
 	rc = for_each_ti(save_tracks, &fd, opaque);
@@ -269,16 +282,14 @@ static int do_cmus_save(for_each_ti_cb for_each_ti, const char *filename,
 	return rc;
 }
 
-int cmus_save(for_each_ti_cb for_each_ti, const char *filename, void *opaque)
+int cmus_save(for_each_ti_cb for_each_ti, const char *filename, bool backup, void *opaque)
 {
-	return do_cmus_save(for_each_ti, filename, save_playlist_cb, opaque);
+	return do_cmus_save(for_each_ti, filename, save_playlist_cb, backup, opaque);
 }
 
-int cmus_save_ext(for_each_ti_cb for_each_ti, const char *filename,
-		void *opaque)
+int cmus_save_ext(for_each_ti_cb for_each_ti, const char *filename, bool backup, void *opaque)
 {
-	return do_cmus_save(for_each_ti, filename, save_ext_playlist_cb,
-			opaque);
+	return do_cmus_save(for_each_ti, filename, save_ext_playlist_cb, backup, opaque);
 }
 
 static int update_cb(void *data, struct track_info *ti)
