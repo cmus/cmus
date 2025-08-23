@@ -1979,6 +1979,9 @@ static void update(void)
 	if (player_info.file_changed || player_info.metadata_changed)
 		mpris_metadata_changed();
 
+	if (player_info.position_seeked)
+		mpris_seeked();
+
 	needs_spawn = player_info.status_changed || player_info.file_changed ||
 		player_info.metadata_changed;
 
