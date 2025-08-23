@@ -521,21 +521,21 @@ static char *aac_codec_profile(struct input_plugin_data *ip_data)
 	return profile ? xstrdup(profile) : NULL;
 }
 
-const struct input_plugin_ops ip_ops = {
-	.open = aac_open,
-	.close = aac_close,
-	.read = aac_read,
-	.seek = aac_seek,
-	.read_comments = aac_read_comments,
-	.duration = aac_duration,
-	.bitrate = aac_bitrate,
-	.bitrate_current = aac_current_bitrate,
-	.codec = aac_codec,
-	.codec_profile = aac_codec_profile
-};
-
-const int ip_priority = 50;
-const char * const ip_extensions[] = { "aac", NULL };
-const char * const ip_mime_types[] = { "audio/aac", "audio/aacp", NULL };
-const struct input_plugin_opt ip_options[] = { { NULL } };
-const unsigned ip_abi_version = IP_ABI_VERSION;
+CMUS_IP_DEFINE(
+	.priority = 50,
+	.extensions = (const char*[]){ "aac", NULL },
+	.mime_types = (const char*[]){ "audio/aac", "audio/aacp", NULL },
+	.options = (struct input_plugin_opt[]){ { NULL } },
+	.ops = &(struct input_plugin_ops){
+		.open = aac_open,
+		.close = aac_close,
+		.read = aac_read,
+		.seek = aac_seek,
+		.read_comments = aac_read_comments,
+		.duration = aac_duration,
+		.bitrate = aac_bitrate,
+		.bitrate_current = aac_current_bitrate,
+		.codec = aac_codec,
+		.codec_profile = aac_codec_profile,
+	},
+);

@@ -265,23 +265,21 @@ static char *mad_codec_profile(struct input_plugin_data *ip_data)
 	return xstrdup(mode);
 }
 
-const struct input_plugin_ops ip_ops = {
-	.open = mad_open,
-	.close = mad_close,
-	.read = mad_read,
-	.seek = mad_seek,
-	.read_comments = mad_read_comments,
-	.duration = mad_duration,
-	.bitrate = mad_bitrate,
-	.bitrate_current = mad_current_bitrate,
-	.codec = mad_codec,
-	.codec_profile = mad_codec_profile
-};
-
-const int ip_priority = 55;
-const char * const ip_extensions[] = { "mp3", "mp2", NULL };
-const char * const ip_mime_types[] = {
-	"audio/mpeg", "audio/x-mp3", "audio/x-mpeg", NULL
-};
-const struct input_plugin_opt ip_options[] = { { NULL } };
-const unsigned ip_abi_version = IP_ABI_VERSION;
+CMUS_IP_DEFINE(
+	.priority = 55,
+	.extensions = (const char*[]){ "mp3", "mp2", NULL },
+	.mime_types = (const char*[]){ "audio/mpeg", "audio/x-mp3", "audio/x-mpeg", NULL },
+	.options = (struct input_plugin_opt[]){ { NULL } },
+	.ops = &(struct input_plugin_ops){
+		.open = mad_open,
+		.close = mad_close,
+		.read = mad_read,
+		.seek = mad_seek,
+		.read_comments = mad_read_comments,
+		.duration = mad_duration,
+		.bitrate = mad_bitrate,
+		.bitrate_current = mad_current_bitrate,
+		.codec = mad_codec,
+		.codec_profile = mad_codec_profile,
+	},
+);

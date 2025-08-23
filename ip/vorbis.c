@@ -394,21 +394,21 @@ static char *vorbis_codec_profile(struct input_plugin_data *ip_data)
 	return xstrdup(buf);
 }
 
-const struct input_plugin_ops ip_ops = {
-	.open = vorbis_open,
-	.close = vorbis_close,
-	.read = vorbis_read,
-	.seek = vorbis_seek,
-	.read_comments = vorbis_read_comments,
-	.duration = vorbis_duration,
-	.bitrate = vorbis_bitrate,
-	.bitrate_current = vorbis_current_bitrate,
-	.codec = vorbis_codec,
-	.codec_profile = vorbis_codec_profile
-};
-
-const int ip_priority = 50;
-const char * const ip_extensions[] = { "ogg", "oga", "ogx", NULL };
-const char * const ip_mime_types[] = { "application/ogg", "audio/x-ogg", NULL };
-const struct input_plugin_opt ip_options[] = { { NULL } };
-const unsigned ip_abi_version = IP_ABI_VERSION;
+CMUS_IP_DEFINE(
+	.priority = 50,
+	.extensions = (const char*[]){ "ogg", "oga", "ogx", NULL },
+	.mime_types = (const char*[]){ "application/ogg", "audio/x-ogg", NULL },
+	.options = (struct input_plugin_opt[]){ { NULL } },
+	.ops = &(struct input_plugin_ops){
+		.open = vorbis_open,
+		.close = vorbis_close,
+		.read = vorbis_read,
+		.seek = vorbis_seek,
+		.read_comments = vorbis_read_comments,
+		.duration = vorbis_duration,
+		.bitrate = vorbis_bitrate,
+		.bitrate_current = vorbis_current_bitrate,
+		.codec = vorbis_codec,
+		.codec_profile = vorbis_codec_profile,
+	},
+);

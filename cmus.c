@@ -39,13 +39,16 @@
 #include "discid.h"
 #include "locking.h"
 #include "pl_env.h"
+#include "config/plugin.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <dirent.h>
+#ifdef HAVE_DL
 #include <dlfcn.h>
+#endif
 #include <stdlib.h>
 #include <ctype.h>
 #include <strings.h>
@@ -505,6 +508,7 @@ static int cmus_raise_vte_x11_error(void)
 
 void cmus_raise_vte(void)
 {
+#ifdef HAVE_DL
 	if (cmus_can_raise_vte_x11()) {
 		if (!x11_init_done) {
 			void *x11;
@@ -542,6 +546,7 @@ void cmus_raise_vte(void)
 			}
 		}
 	}
+#endif
 }
 
 bool cmus_queue_active(void) {

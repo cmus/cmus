@@ -412,21 +412,21 @@ static char *wavpack_codec_profile(struct input_plugin_data *ip_data)
 	return xstrdup(buf);
 }
 
-const struct input_plugin_ops ip_ops = {
-	.open = wavpack_open,
-	.close = wavpack_close,
-	.read = wavpack_read,
-	.seek = wavpack_seek,
-	.read_comments = wavpack_read_comments,
-	.duration = wavpack_duration,
-	.bitrate = wavpack_bitrate,
-	.bitrate_current = wavpack_current_bitrate,
-	.codec = wavpack_codec,
-	.codec_profile = wavpack_codec_profile
-};
-
-const int ip_priority = 50;
-const char * const ip_extensions[] = { "wv", NULL };
-const char * const ip_mime_types[] = { "audio/x-wavpack", NULL };
-const struct input_plugin_opt ip_options[] = { { NULL } };
-const unsigned ip_abi_version = IP_ABI_VERSION;
+CMUS_IP_DEFINE(
+	.priority = 50,
+	.extensions = (const char*[]){ "wv", NULL },
+	.mime_types = (const char*[]){ "audio/x-wavpack", NULL },
+	.options = (struct input_plugin_opt[]){ { NULL } },
+	.ops = &(struct input_plugin_ops){
+		.open = wavpack_open,
+		.close = wavpack_close,
+		.read = wavpack_read,
+		.seek = wavpack_seek,
+		.read_comments = wavpack_read_comments,
+		.duration = wavpack_duration,
+		.bitrate = wavpack_bitrate,
+		.bitrate_current = wavpack_current_bitrate,
+		.codec = wavpack_codec,
+		.codec_profile = wavpack_codec_profile,
+	},
+);
