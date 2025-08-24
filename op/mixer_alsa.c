@@ -28,7 +28,7 @@
 
 #include <alsa/asoundlib.h>
 
-static snd_mixer_t *alsa_mixer_handle;
+static snd_mixer_t *mixer;
 static snd_mixer_elem_t *mixer_elem = NULL;
 static long mixer_vol_min, mixer_vol_max;
 
@@ -42,7 +42,6 @@ static int alsa_mixer_init(void)
 		alsa_mixer_device = xstrdup("default");
 	if (alsa_mixer_element == NULL)
 		alsa_mixer_element = xstrdup("PCM");
-	/* FIXME: check device */
 	return 0;
 }
 
@@ -55,64 +54,54 @@ static int alsa_mixer_exit(void)
 	return 0;
 }
 
-static snd_mixer_elem_t *find_mixer_elem_by_name(const char *goal_name)
+static snd_mixer_elem_t *find_mixer_elem_by_name(const char *name)
 {
 	snd_mixer_elem_t *elem;
 	snd_mixer_selem_id_t *sid = NULL;
+	snd_mixer_selem_id_alloca(&sid);
 
-	snd_mixer_selem_id_malloc(&sid);
+	if (snd_mixer_selem_id_parse(sid, name))
+		return NULL;
 
-	for (elem = snd_mixer_first_elem(alsa_mixer_handle); elem;
-		 elem = snd_mixer_elem_next(elem)) {
-
-		const char *name;
-
-		snd_mixer_selem_get_id(elem, sid);
-		name = snd_mixer_selem_id_get_name(sid);
-		d_print("name = %s\n", name);
-		d_print("has playback volume = %d\n", snd_mixer_selem_has_playback_volume(elem));
-		d_print("has playback switch = %d\n", snd_mixer_selem_has_playback_switch(elem));
-
-		if (strcasecmp(name, goal_name) == 0) {
-			if (!snd_mixer_selem_has_playback_volume(elem)) {
-				d_print("mixer element `%s' does not have playback volume\n", name);
-				elem = NULL;
-			}
-			break;
-		}
+	elem = snd_mixer_find_selem(mixer, sid);
+	if (!elem) {
+		d_print("unable to find simple control '%s',%i\n",
+				snd_mixer_selem_id_get_name(sid),
+				snd_mixer_selem_id_get_index(sid));
+		return NULL;
 	}
 
-	snd_mixer_selem_id_free(sid);
+	if (!snd_mixer_selem_has_playback_volume(elem)) {
+		d_print("simple control '%s',%i does not have playback volume\n",
+				snd_mixer_selem_id_get_name(sid),
+				snd_mixer_selem_id_get_index(sid));
+		return NULL;
+	}
+
 	return elem;
 }
 
 static int alsa_mixer_open(int *volume_max)
 {
 	snd_mixer_elem_t *elem;
-	int count;
 	int rc;
 
-	rc = snd_mixer_open(&alsa_mixer_handle, 0);
+	rc = snd_mixer_open(&mixer, 0);
 	if (rc < 0)
 		goto error;
-	rc = snd_mixer_attach(alsa_mixer_handle, alsa_mixer_device);
+	rc = snd_mixer_attach(mixer, alsa_mixer_device);
 	if (rc < 0)
 		goto error;
-	rc = snd_mixer_selem_register(alsa_mixer_handle, NULL, NULL);
+	rc = snd_mixer_selem_register(mixer, NULL, NULL);
 	if (rc < 0)
 		goto error;
-	rc = snd_mixer_load(alsa_mixer_handle);
+	rc = snd_mixer_load(mixer);
 	if (rc < 0)
 		goto error;
-	count = snd_mixer_get_count(alsa_mixer_handle);
-	if (count == 0) {
-		d_print("error: mixer does not have elements\n");
-		return -2;
-	}
 
 	elem = find_mixer_elem_by_name(alsa_mixer_element);
 	if (!elem) {
-		d_print("mixer element `%s' not found, trying `Master'\n", alsa_mixer_element);
+		d_print("mixer element '%s' not found, trying 'Master'\n", alsa_mixer_element);
 		elem = find_mixer_elem_by_name("Master");
 		if (!elem) {
 			d_print("error: cannot find suitable mixer element\n");
@@ -125,7 +114,6 @@ static int alsa_mixer_open(int *volume_max)
 	*volume_max = mixer_vol_max - mixer_vol_min;
 
 	return 0;
-
 error:
 	d_print("error: %s\n", snd_strerror(rc));
 	return -1;
@@ -133,7 +121,7 @@ error:
 
 static int alsa_mixer_close(void)
 {
-	snd_mixer_close(alsa_mixer_handle);
+	snd_mixer_close(mixer);
 	return 0;
 }
 
@@ -144,7 +132,7 @@ static int alsa_mixer_get_fds(int what, int *fds)
 
 	switch (what) {
 	case MIXER_FDS_VOLUME:
-		count = snd_mixer_poll_descriptors(alsa_mixer_handle, pfd, NR_MIXER_FDS);
+		count = snd_mixer_poll_descriptors(mixer, pfd, NR_MIXER_FDS);
 		for (i = 0; i < count; i++)
 			fds[i] = pfd[i].fd;
 		return count;
@@ -177,7 +165,7 @@ static int alsa_mixer_get_volume(int *l, int *r)
 
 	if (mixer_elem == NULL)
 		return -1;
-	snd_mixer_handle_events(alsa_mixer_handle);
+	snd_mixer_handle_events(mixer);
 	snd_mixer_selem_get_playback_volume(mixer_elem, SND_MIXER_SCHN_FRONT_LEFT, &lv);
 	snd_mixer_selem_get_playback_volume(mixer_elem, SND_MIXER_SCHN_FRONT_RIGHT, &rv);
 	*l = lv - mixer_vol_min;
