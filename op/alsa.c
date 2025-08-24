@@ -210,8 +210,6 @@ error:
 	return alsa_error_to_op_error(rc);
 }
 
-static int op_alsa_write(const char *buffer, int count);
-
 static int op_alsa_close(void)
 {
 	int rc;
