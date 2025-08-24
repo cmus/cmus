@@ -130,13 +130,8 @@ static int alsa_mixer_open(int *volume_max)
 
 	elem = find_mixer_elem_by_name(alsa_mixer_element);
 	if (!elem) {
-		d_print("mixer element '%s' not found, trying 'Master'\n",
-				alsa_mixer_element);
-		elem = find_mixer_elem_by_name("Master");
-		if (!elem) {
-			d_print("error: cannot find suitable mixer element\n");
-			return -2;
-		}
+		d_print("mixer element '%s' not found\n", alsa_mixer_element);
+		return -2;
 	}
 
 	mixer_elem = elem;
