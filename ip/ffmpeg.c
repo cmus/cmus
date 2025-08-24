@@ -223,7 +223,6 @@ static int ffmpeg_init_swr_frame(struct ffmpeg_private *priv,
 
 static void ffmpeg_free(struct ffmpeg_private *priv)
 {
-	avcodec_close(priv->codec_ctx);
 	avcodec_free_context(&priv->codec_ctx);
 	avformat_close_input(&priv->format_ctx);
 
