@@ -55,41 +55,13 @@ static int alsa_mixer_exit(void)
 	return 0;
 }
 
-static int parse_sid(const char *str, snd_mixer_selem_id_t *sid)
-{
-	int idx = 0;
-
-	/* skip whitespace */
-	while (*str == ' ' || *str == '\t')
-		str++;
-
-	if (*str == '\0')
-		return -1;
-
-	if (*str == '"' || *str == '\'') {
-		char *closing_quote = strrchr(str, *str);
-		str++;
-		if (*(closing_quote + 1) == ',')
-			idx = atoi(closing_quote + 2);
-		*closing_quote = '\0';
-	} else {
-		char *comma = strrchr(str, ',');
-		if (comma)
-			idx = atoi(comma + 1);
-	}
-
-	snd_mixer_selem_id_set_index(sid, idx);
-	snd_mixer_selem_id_set_name(sid, str);
-	return 0;
-}
-
 static snd_mixer_elem_t *find_mixer_elem_by_name(const char *name)
 {
 	snd_mixer_elem_t *elem;
 	snd_mixer_selem_id_t *sid = NULL;
 	snd_mixer_selem_id_alloca(&sid);
 
-	if (parse_sid(name, sid))
+	if (snd_mixer_selem_id_parse(sid, name))
 		return NULL;
 
 	elem = snd_mixer_find_selem(mixer, sid);
