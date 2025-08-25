@@ -157,13 +157,11 @@ static void ffmpeg_set_sf_and_swr_opts(SwrContext *swr, AVCodecContext *cc,
 	av_opt_set_int(swr, "in_sample_rate", cc->sample_rate, 0);
 	av_opt_set_int(swr, "out_sample_rate", out_sample_rate, 0);
 
-	*out_sample_fmt = cc->sample_fmt;
-	switch (*out_sample_fmt) {
-		case AV_SAMPLE_FMT_U8:
-			sf |= sf_bits(8) | sf_signed(0);
-			break;
-		case AV_SAMPLE_FMT_S32:
+	switch (cc->sample_fmt) {
+		case AV_SAMPLE_FMT_FLT: case AV_SAMPLE_FMT_FLTP:
+		case AV_SAMPLE_FMT_S32: case AV_SAMPLE_FMT_S32P:
 			sf |= sf_bits(32) | sf_signed(1);
+			*out_sample_fmt = AV_SAMPLE_FMT_S32;
 			break;
 		default:
 			sf |= sf_bits(16) | sf_signed(1);
