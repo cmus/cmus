@@ -679,21 +679,21 @@ static char *mp4_codec_profile(struct input_plugin_data *ip_data)
 	return profile ? xstrdup(profile) : NULL;
 }
 
-const struct input_plugin_ops ip_ops = {
-	.open = mp4_open,
-	.close = mp4_close,
-	.read = mp4_read,
-	.seek = mp4_seek,
-	.read_comments = mp4_read_comments,
-	.duration = mp4_duration,
-	.bitrate = mp4_bitrate,
-	.bitrate_current = mp4_current_bitrate,
-	.codec = mp4_codec,
-	.codec_profile = mp4_codec_profile
-};
-
-const int ip_priority = 50;
-const char * const ip_extensions[] = { "mp4", "m4a", "m4b", NULL };
-const char * const ip_mime_types[] = { /*"audio/mp4", "audio/mp4a-latm",*/ NULL };
-const struct input_plugin_opt ip_options[] = { { NULL } };
-const unsigned ip_abi_version = IP_ABI_VERSION;
+CMUS_IP_DEFINE(
+	.priority = 50,
+	.extensions = (const char*[]){ "mp4", "m4a", "m4b", NULL },
+	.mime_types = (const char*[]){ /*"audio/mp4", "audio/mp4a-latm",*/ NULL },
+	.options = (struct input_plugin_opt[]){ { NULL } },
+	.ops = &(struct input_plugin_ops){
+		.open = mp4_open,
+		.close = mp4_close,
+		.read = mp4_read,
+		.seek = mp4_seek,
+		.read_comments = mp4_read_comments,
+		.duration = mp4_duration,
+		.bitrate = mp4_bitrate,
+		.bitrate_current = mp4_current_bitrate,
+		.codec = mp4_codec,
+		.codec_profile = mp4_codec_profile,
+	},
+);

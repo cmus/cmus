@@ -317,22 +317,21 @@ static char *cue_codec_profile(struct input_plugin_data *ip_data)
 	return ip_codec_profile(priv->child);
 }
 
-
-const struct input_plugin_ops ip_ops = {
-	.open            = cue_open,
-	.close           = cue_close,
-	.read            = cue_read,
-	.seek            = cue_seek,
-	.read_comments   = cue_read_comments,
-	.duration        = cue_duration,
-	.bitrate         = cue_bitrate,
-	.bitrate_current = cue_current_bitrate,
-	.codec           = cue_codec,
-	.codec_profile   = cue_codec_profile,
-};
-
-const int ip_priority = 50;
-const char * const ip_extensions[] = { NULL };
-const char * const ip_mime_types[] = { "application/x-cue", NULL };
-const struct input_plugin_opt ip_options[] = { { NULL } };
-const unsigned ip_abi_version = IP_ABI_VERSION;
+CMUS_IP_DEFINE(
+	.priority = 50,
+	.extensions = (const char*[]){ NULL },
+	.mime_types = (const char*[]){ "application/x-cue", NULL },
+	.options = (struct input_plugin_opt[]){ { NULL } },
+	.ops = &(struct input_plugin_ops){
+		.open            = cue_open,
+		.close           = cue_close,
+		.read            = cue_read,
+		.seek            = cue_seek,
+		.read_comments   = cue_read_comments,
+		.duration        = cue_duration,
+		.bitrate         = cue_bitrate,
+		.bitrate_current = cue_current_bitrate,
+		.codec           = cue_codec,
+		.codec_profile   = cue_codec_profile,
+	},
+);

@@ -152,25 +152,25 @@ static char *mik_codec_profile(struct input_plugin_data *ip_data)
 	return NULL;
 }
 
-const struct input_plugin_ops ip_ops = {
-	.open = mik_open,
-	.close = mik_close,
-	.read = mik_read,
-	.seek = mik_seek,
-	.read_comments = mik_read_comments,
-	.duration = mik_duration,
-	.bitrate = mik_bitrate,
-	.bitrate_current = mik_bitrate,
-	.codec = mik_codec,
-	.codec_profile = mik_codec_profile
-};
-
-const int ip_priority = 40;
-const char * const ip_extensions[] = {
-	"mod", "s3m", "xm", "it", "669", "amf", "dsm",
-	"far", "med", "mtm", "stm", "ult",
-	NULL
-};
-const char * const ip_mime_types[] = { NULL };
-const struct input_plugin_opt ip_options[] = { { NULL } };
-const unsigned ip_abi_version = IP_ABI_VERSION;
+CMUS_IP_DEFINE(
+	.priority = 40,
+	.extensions = (const char*[]){
+		"mod", "s3m", "xm", "it", "669", "amf", "dsm",
+		"far", "med", "mtm", "stm", "ult",
+		NULL,
+	},
+	.mime_types = (const char*[]){ NULL },
+	.options = (struct input_plugin_opt[]){ { NULL } },
+	.ops = &(struct input_plugin_ops){
+		.open = mik_open,
+		.close = mik_close,
+		.read = mik_read,
+		.seek = mik_seek,
+		.read_comments = mik_read_comments,
+		.duration = mik_duration,
+		.bitrate = mik_bitrate,
+		.bitrate_current = mik_bitrate,
+		.codec = mik_codec,
+		.codec_profile = mik_codec_profile,
+	},
+);

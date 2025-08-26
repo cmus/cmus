@@ -16,13 +16,17 @@ all: main plugins man
 -include config.mk
 include scripts/lib.mk
 
+ifeq ($(STATICPLUGIN),y)
+staticplugin := 1
+endif
+
 CFLAGS += -D_FILE_OFFSET_BITS=64
 
 CMUS_LIBS = $(PTHREAD_LIBS) $(NCURSES_LIBS) $(ICONV_LIBS) $(DL_LIBS) $(DISCID_LIBS) \
 			-lm $(COMPAT_LIBS) $(LIBSYSTEMD_LIBS)
 
-command_mode.o input.o main.o ui_curses.o op/pulse.lo: .version
-command_mode.o input.o main.o ui_curses.o op/pulse.lo: CFLAGS += -DVERSION=\"$(VERSION)\"
+command_mode.o input.o main.o ui_curses.o op/pulse.lo op/pulse.o: .version
+command_mode.o input.o main.o ui_curses.o op/pulse.lo op/pulse.o: CFLAGS += -DVERSION=\"$(VERSION)\"
 main.o server.o: CFLAGS += -DDEFAULT_PORT=3000
 discid.o: CFLAGS += $(DISCID_CFLAGS)
 mpris.o: CFLAGS += $(LIBSYSTEMD_CFLAGS)
@@ -66,180 +70,123 @@ libcmus.a: $(cmus-y) file.o path.o prog.o xmalloc.o
 # }}}
 
 # input plugins {{{
-cdio-objs		:= ip/cdio.lo
-flac-objs		:= ip/flac.lo
-mad-objs		:= ip/mad.lo ip/nomad.lo
-mikmod-objs		:= ip/mikmod.lo
-modplug-objs		:= ip/modplug.lo
-bass-objs		:= ip/bass.lo
-mpc-objs		:= ip/mpc.lo
-vorbis-objs		:= ip/vorbis.lo
-opus-objs		:= ip/opus.lo
-wavpack-objs		:= ip/wavpack.lo
-wav-objs		:= ip/wav.lo
-mp4-objs		:= ip/mp4.lo
-aac-objs		:= ip/aac.lo
-ffmpeg-objs		:= ip/ffmpeg.lo
-cue-objs		:= ip/cue.lo
-vtx-objs		:= ip/vtx.lo
+ip-ext := $(if $(staticplugin),o,so)
 
-ip-$(CONFIG_CDIO)	+= ip/cdio.so
-ip-$(CONFIG_FLAC)	+= ip/flac.so
-ip-$(CONFIG_MAD)	+= ip/mad.so
-ip-$(CONFIG_MIKMOD)	+= ip/mikmod.so
-ip-$(CONFIG_MODPLUG)	+= ip/modplug.so
-ip-$(CONFIG_BASS)	+= ip/bass.so
-ip-$(CONFIG_MPC)	+= ip/mpc.so
-ip-$(CONFIG_VORBIS)	+= ip/vorbis.so
-ip-$(CONFIG_OPUS)	+= ip/opus.so
-ip-$(CONFIG_WAVPACK)	+= ip/wavpack.so
-ip-$(CONFIG_WAV)	+= ip/wav.so
-ip-$(CONFIG_MP4)	+= ip/mp4.so
-ip-$(CONFIG_AAC)	+= ip/aac.so
-ip-$(CONFIG_FFMPEG)	+= ip/ffmpeg.so
-ip-$(CONFIG_CUE)	+= ip/cue.so
-ip-$(CONFIG_VTX)	+= ip/vtx.so
+ip-$(CONFIG_CDIO)	+= ip/cdio.$(ip-ext)
+ip-$(CONFIG_FLAC)	+= ip/flac.$(ip-ext)
+ip-$(CONFIG_MAD)	+= ip/mad.$(ip-ext)
+ip-$(CONFIG_MIKMOD)	+= ip/mikmod.$(ip-ext)
+ip-$(CONFIG_MODPLUG)	+= ip/modplug.$(ip-ext)
+ip-$(CONFIG_BASS)	+= ip/bass.$(ip-ext)
+ip-$(CONFIG_MPC)	+= ip/mpc.$(ip-ext)
+ip-$(CONFIG_VORBIS)	+= ip/vorbis.$(ip-ext)
+ip-$(CONFIG_OPUS)	+= ip/opus.$(ip-ext)
+ip-$(CONFIG_WAVPACK)	+= ip/wavpack.$(ip-ext)
+ip-$(CONFIG_WAV)	+= ip/wav.$(ip-ext)
+ip-$(CONFIG_MP4)	+= ip/mp4.$(ip-ext)
+ip-$(CONFIG_AAC)	+= ip/aac.$(ip-ext)
+ip-$(CONFIG_FFMPEG)	+= ip/ffmpeg.$(ip-ext)
+ip-$(CONFIG_CUE)	+= ip/cue.$(ip-ext)
+ip-$(CONFIG_VTX)	+= ip/vtx.$(ip-ext)
 
-$(cdio-objs):		CFLAGS += $(CDIO_CFLAGS) $(CDDB_CFLAGS)
-$(flac-objs):		CFLAGS += $(FLAC_CFLAGS)
-$(mad-objs):		CFLAGS += $(MAD_CFLAGS)
-$(mikmod-objs):		CFLAGS += $(MIKMOD_CFLAGS)
-$(modplug-objs):	CFLAGS += $(MODPLUG_CFLAGS)
-$(bass-objs):		CFLAGS += $(BASS_CFLAGS)
-$(mpc-objs):		CFLAGS += $(MPC_CFLAGS)
-$(vorbis-objs):		CFLAGS += $(VORBIS_CFLAGS)
-$(opus-objs):		CFLAGS += $(OPUS_CFLAGS)
-$(wavpack-objs):	CFLAGS += $(WAVPACK_CFLAGS)
-$(mp4-objs):		CFLAGS += $(MP4_CFLAGS)
-$(aac-objs):		CFLAGS += $(AAC_CFLAGS)
-$(ffmpeg-objs):		CFLAGS += $(FFMPEG_CFLAGS)
-$(vtx-objs):		CFLAGS += $(VTX_CFLAGS)
+ip/cdio.$(ip-ext):	CFLAGS += $(CDIO_CFLAGS) $(CDDB_CFLAGS)
+ip/flac.$(ip-ext):	CFLAGS += $(FLAC_CFLAGS)
+ip/mad.$(ip-ext):	CFLAGS += $(MAD_CFLAGS)
+ip/mikmod.$(ip-ext):	CFLAGS += $(MIKMOD_CFLAGS)
+ip/modplug.$(ip-ext):	CFLAGS += $(MODPLUG_CFLAGS)
+ip/bass.$(ip-ext):	CFLAGS += $(BASS_CFLAGS)
+ip/mpc.$(ip-ext):	CFLAGS += $(MPC_CFLAGS)
+ip/vorbis.$(ip-ext):	CFLAGS += $(VORBIS_CFLAGS)
+ip/opus.$(ip-ext):	CFLAGS += $(OPUS_CFLAGS)
+ip/wavpack.$(ip-ext):	CFLAGS += $(WAVPACK_CFLAGS)
+ip/mp4.$(ip-ext):	CFLAGS += $(MP4_CFLAGS)
+ip/aac.$(ip-ext):	CFLAGS += $(AAC_CFLAGS)
+ip/ffmpeg.$(ip-ext):	CFLAGS += $(FFMPEG_CFLAGS)
+ip/vtx.$(ip-ext):	CFLAGS += $(VTX_CFLAGS)
 
-ip/cdio.so: $(cdio-objs) $(libcmus-y)
-	$(call cmd,ld_dl,$(CDIO_LIBS) $(CDDB_LIBS))
+ip-$(if $(staticplugin),$(CONFIG_CDIO),cdio)-libs	+= $(CDIO_LIBS) $(CDDB_LIBS)
+ip-$(if $(staticplugin),$(CONFIG_FLAC),flac)-libs	+= $(FLAC_LIBS)
+ip-$(if $(staticplugin),$(CONFIG_MAD),mad)-libs		+= $(MAD_LIBS) $(ICONV_LIBS)
+ip-$(if $(staticplugin),$(CONFIG_MIKMOD),mikmod)-libs	+= $(MIKMOD_LIBS)
+ip-$(if $(staticplugin),$(CONFIG_MODPLUG),modplug)-libs	+= $(MODPLUG_LIBS)
+ip-$(if $(staticplugin),$(CONFIG_BASS),bass)-libs	+= $(BASS_LIBS)
+ip-$(if $(staticplugin),$(CONFIG_MPC),mpc)-libs		+= $(MPC_LIBS)
+ip-$(if $(staticplugin),$(CONFIG_VORBIS),vorbis)-libs	+= $(VORBIS_LIBS)
+ip-$(if $(staticplugin),$(CONFIG_OPUS),opus)-libs	+= $(OPUS_LIBS)
+ip-$(if $(staticplugin),$(CONFIG_WAVPACK),wavpack)-libs	+= $(WAVPACK_LIBS)
+ip-$(if $(staticplugin),$(CONFIG_MP4),mp4)-libs		+= $(MP4_LIBS)
+ip-$(if $(staticplugin),$(CONFIG_AAC),aac)-libs		+= $(AAC_LIBS)
+ip-$(if $(staticplugin),$(CONFIG_FFMPEG),ffmpeg)-libs	+= $(FFMPEG_LIBS)
+ip-$(if $(staticplugin),$(CONFIG_VTX),cue)-libs		+= -lm
+ip-$(if $(staticplugin),$(CONFIG_VTX),vtx)-libs		+= $(VTX_LIBS)
 
-ip/flac.so: $(flac-objs) $(libcmus-y)
-	$(call cmd,ld_dl,$(FLAC_LIBS))
+ifdef staticplugin
+ip-$(CONFIG_MAD) += ip/nomad.o
+else
+ip/mad.so: ip/nomad.lo
+endif
+ip/nomad.$(ip-ext): CFLAGS += $(MAD_CFLAGS)
 
-ip/mad.so: $(mad-objs) $(libcmus-y)
-	$(call cmd,ld_dl,-lm $(MAD_LIBS) $(ICONV_LIBS))
-
-ip/mikmod.so: $(mikmod-objs) $(libcmus-y)
-	$(call cmd,ld_dl,$(MIKMOD_LIBS))
-
-ip/modplug.so: $(modplug-objs) $(libcmus-y)
-	$(call cmd,ld_dl,$(MODPLUG_LIBS))
-
-ip/bass.so: $(bass-objs) $(libcmus-y)
-	$(call cmd,ld_dl,$(BASS_LIBS))
-
-ip/mpc.so: $(mpc-objs) $(libcmus-y)
-	$(call cmd,ld_dl,$(MPC_LIBS))
-
-ip/vorbis.so: $(vorbis-objs) $(libcmus-y)
-	$(call cmd,ld_dl,-lm $(VORBIS_LIBS))
-
-ip/opus.so: $(opus-objs) $(libcmus-y)
-	$(call cmd,ld_dl,$(OPUS_LIBS))
-
-ip/wavpack.so: $(wavpack-objs) $(libcmus-y)
-	$(call cmd,ld_dl,$(WAVPACK_LIBS))
-
-ip/wav.so: $(wav-objs) $(libcmus-y)
-	$(call cmd,ld_dl,)
-
-ip/mp4.so: $(mp4-objs) $(libcmus-y)
-	$(call cmd,ld_dl,$(MP4_LIBS))
-
-ip/aac.so: $(aac-objs) $(libcmus-y)
-	$(call cmd,ld_dl,$(AAC_LIBS))
-
-ip/ffmpeg.so: $(ffmpeg-objs) $(libcmus-y)
-	$(call cmd,ld_dl,$(FFMPEG_LIBS))
-
-ip/cue.so: $(cue-objs) $(libcmus-y)
-	$(call cmd,ld_dl,-lm)
-
-ip/vtx.so: $(vtx-objs) $(libcmus-y)
-	$(call cmd,ld_dl,$(VTX_LIBS))
+ifdef staticplugin
+cmus: $(ip-y)
+CMUS_LIBS += $(ip-y-libs)
+else
+ip/%.so: ip/%.lo $(libcmus-y)
+	$(call cmd,ld_dl,$($(patsubst ip/%.so,ip-%-libs,$@)))
+endif
 
 # }}}
 
 # output plugins {{{
-pulse-objs		:= op/pulse.lo
-alsa-objs		:= op/alsa.lo op/mixer_alsa.lo
-jack-objs		:= op/jack.lo
-arts-objs		:= op/arts.lo
-oss-objs		:= op/oss.lo op/mixer_oss.lo
-sun-objs		:= op/sun.lo op/mixer_sun.lo
-sndio-objs		:= op/sndio.lo
-ao-objs			:= op/ao.lo
-coreaudio-objs		:= op/coreaudio.lo
-waveout-objs		:= op/waveout.lo
-roar-objs               := op/roar.lo
-aaudio-objs		:= op/aaudio.lo
+op-ext := $(if $(staticplugin),o,so)
 
-op-$(CONFIG_PULSE)	+= op/pulse.so
-op-$(CONFIG_ALSA)	+= op/alsa.so
-op-$(CONFIG_JACK)	+= op/jack.so
-op-$(CONFIG_ARTS)	+= op/arts.so
-op-$(CONFIG_OSS)	+= op/oss.so
-op-$(CONFIG_SNDIO)	+= op/sndio.so
-op-$(CONFIG_SUN)	+= op/sun.so
-op-$(CONFIG_COREAUDIO)	+= op/coreaudio.so
-op-$(CONFIG_AO)		+= op/ao.so
-op-$(CONFIG_WAVEOUT)	+= op/waveout.so
-op-$(CONFIG_ROAR)       += op/roar.so
-op-$(CONFIG_AAUDIO)	+= op/aaudio.so
+op-$(CONFIG_PULSE)	+= op/pulse.$(op-ext)
+op-$(CONFIG_ALSA)	+= op/alsa.$(op-ext)
+op-$(CONFIG_JACK)	+= op/jack.$(op-ext)
+op-$(CONFIG_ARTS)	+= op/arts.$(op-ext)
+op-$(CONFIG_OSS)	+= op/oss.$(op-ext)
+op-$(CONFIG_SNDIO)	+= op/sndio.$(op-ext)
+op-$(CONFIG_SUN)	+= op/sun.$(op-ext)
+op-$(CONFIG_COREAUDIO)	+= op/coreaudio.$(op-ext)
+op-$(CONFIG_AO)		+= op/ao.$(op-ext)
+op-$(CONFIG_WAVEOUT)	+= op/waveout.$(op-ext)
+op-$(CONFIG_ROAR)       += op/roar.$(op-ext)
+op-$(CONFIG_AAUDIO)	+= op/aaudio.$(op-ext)
 
-$(pulse-objs): CFLAGS		+= $(PULSE_CFLAGS)
-$(alsa-objs): CFLAGS		+= $(ALSA_CFLAGS)
-$(jack-objs): CFLAGS		+= $(JACK_CFLAGS) $(SAMPLERATE_CFLAGS)
-$(arts-objs): CFLAGS		+= $(ARTS_CFLAGS)
-$(oss-objs):  CFLAGS		+= $(OSS_CFLAGS)
-$(sndio-objs): CFLAGS		+= $(SNDIO_CFLAGS)
-$(sun-objs):  CFLAGS		+= $(SUN_CFLAGS)
-$(ao-objs):   CFLAGS		+= $(AO_CFLAGS)
-$(coreaudio-objs): CFLAGS	+= $(COREAUDIO_CFLAGS)
-$(waveout-objs): CFLAGS 	+= $(WAVEOUT_CFLAGS)
-$(roar-objs): CFLAGS		+= $(ROAR_CFLAGS)
-$(aaudio-objs): CFLAGS		+= $(AAUDIO_CFLAGS)
+$(pulse-objs):		CFLAGS += $(PULSE_CFLAGS)
+$(alsa-objs):		CFLAGS += $(ALSA_CFLAGS)
+$(jack-objs):		CFLAGS += $(JACK_CFLAGS) $(SAMPLERATE_CFLAGS)
+$(arts-objs):		CFLAGS += $(ARTS_CFLAGS)
+$(oss-objs):		CFLAGS += $(OSS_CFLAGS)
+$(sndio-objs):		CFLAGS += $(SNDIO_CFLAGS)
+$(sun-objs):		CFLAGS += $(SUN_CFLAGS)
+$(ao-objs):		CFLAGS += $(AO_CFLAGS)
+$(coreaudio-objs):	CFLAGS += $(COREAUDIO_CFLAGS)
+$(waveout-objs):	CFLAGS += $(WAVEOUT_CFLAGS)
+$(roar-objs):		CFLAGS += $(ROAR_CFLAGS)
+$(aaudio-objs):		CFLAGS += $(AAUDIO_CFLAGS)
 
-op/pulse.so: $(pulse-objs) $(libcmus-y)
-	$(call cmd,ld_dl,$(PULSE_LIBS))
+op-$(if $(staticplugin),$(CONFIG_PULSE),pulse)-libs		+= $(PULSE_LIBS)
+op-$(if $(staticplugin),$(CONFIG_ALSA),alsa)-libs		+= $(ALSA_LIBS)
+op-$(if $(staticplugin),$(CONFIG_JACK),jack)-libs		+= $(JACK_LIBS) $(SAMPLERATE_LIBS)
+op-$(if $(staticplugin),$(CONFIG_ARTS),arts)-libs		+= $(ARTS_LIBS)
+op-$(if $(staticplugin),$(CONFIG_OSS),oss)-libs			+= $(OSS_LIBS)
+op-$(if $(staticplugin),$(CONFIG_SNDIO),sndio)-libs		+= $(SNDIO_LIBS)
+op-$(if $(staticplugin),$(CONFIG_SUN),sun)-libs			+= $(SUN_LIBS)
+op-$(if $(staticplugin),$(CONFIG_AO),ao)-libs			+= $(AO_LIBS)
+op-$(if $(staticplugin),$(CONFIG_COREAUDIO),coreaudio)-libs	+= $(COREAUDIO_LIBS)
+op-$(if $(staticplugin),$(CONFIG_WAVEOUT),waveout)-libs		+= $(WAVEOUT_LIBS)
+op-$(if $(staticplugin),$(CONFIG_ROAR),roar)-libs		+= $(ROAR_LIBS)
+op-$(if $(staticplugin),$(CONFIG_AAUDIO),aaudio)-libs		+= $(AAUDIO_LIBS)
 
-op/alsa.so: $(alsa-objs) $(libcmus-y)
-	$(call cmd,ld_dl,$(ALSA_LIBS))
+ifdef staticplugin
+cmus: $(op-y)
+CMUS_LIBS += $(op-y-libs)
+else
+op/%.so: op/%.lo $(libcmus-y)
+	$(call cmd,ld_dl,$($(patsubst op/%.so,op-%-libs,$@)))
+endif
 
-op/jack.so: $(jack-objs) $(libcmus-y)
-	$(call cmd,ld_dl,$(JACK_LIBS) $(SAMPLERATE_LIBS))
-
-op/arts.so: $(arts-objs) $(libcmus-y)
-	$(call cmd,ld_dl,$(ARTS_LIBS))
-
-op/oss.so: $(oss-objs) $(libcmus-y)
-	$(call cmd,ld_dl,$(OSS_LIBS))
-
-op/sndio.so: $(sndio-objs) $(libcmus-y)
-	$(call cmd,ld_dl,$(SNDIO_LIBS))
-
-op/sun.so: $(sun-objs) $(libcmus-y)
-	$(call cmd,ld_dl,$(SUN_LIBS))
-
-op/ao.so: $(ao-objs) $(libcmus-y)
-	$(call cmd,ld_dl,$(AO_LIBS))
-
-op/coreaudio.so: $(coreaudio-objs) $(libcmus-y)
-	$(call cmd,ld_dl,$(COREAUDIO_LIBS))
-
-op/waveout.so: $(waveout-objs) $(libcmus-y)
-	$(call cmd,ld_dl,$(WAVEOUT_LIBS))
-
-op/roar.so: $(roar-objs) $(libcmus-y)
-	$(call cmd,ld_dl,$(ROAR_LIBS))
-
-op/aaudio.so: $(aaudio-objs) $(libcmus-y)
-	$(call cmd,ld_dl,$(AAUDIO_LIBS))
 # }}}
 
 # man {{{
@@ -267,7 +214,7 @@ quiet_cmd_ttman = MAN    $@
 
 data		= $(wildcard data/*)
 
-clean		+= *.o ip/*.lo op/*.lo ip/*.so op/*.so *.lo cmus libcmus.a cmus.def cmus.base cmus.exp cmus-remote Doc/*.o Doc/ttman Doc/*.1 Doc/*.7 .install.log
+clean		+= *.o ip/*.lo ip/*.o op/*.lo op/*.o ip/*.so op/*.so *.lo cmus libcmus.a cmus.def cmus.base cmus.exp cmus-remote Doc/*.o Doc/ttman Doc/*.1 Doc/*.7 .install.log
 distclean	+= .version config.mk config/*.h tags
 
 main: cmus cmus-remote
@@ -278,8 +225,10 @@ install-main: main
 	$(INSTALL) -m755 $(bindir) cmus cmus-remote
 
 install-plugins: plugins
+ifndef staticplugin
 	$(INSTALL) -m755 $(libdir)/cmus/ip $(ip-y)
 	$(INSTALL) -m755 $(libdir)/cmus/op $(op-y)
+endif
 
 install-data: man
 	$(INSTALL) -m644 $(datadir)/cmus $(data)
@@ -289,19 +238,5 @@ install-data: man
 
 install: all install-main install-plugins install-data
 
-tags:
-	exuberant-ctags *.[ch]
-
-# generating tarball using GIT {{{
-TARNAME	= cmus-$(VERSION)
-
-dist:
-	@tarname=$(TARNAME);						\
-	test "$(_ver2)" || { echo "No such revision $(REV)"; exit 1; };	\
-	echo "   DIST   $$tarname.tar.bz2";				\
-	git archive --format=tar --prefix=$$tarname/ $(REV)^{tree} | bzip2 -c -9 > $$tarname.tar.bz2
-
-# }}}
-
-.PHONY: all main plugins man dist tags
+.PHONY: all main plugins man
 .PHONY: install install-main install-plugins install-man

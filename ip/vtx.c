@@ -169,21 +169,21 @@ static char *vtx_codec_profile(struct input_plugin_data *ip_data)
 	return NULL;
 }
 
-const struct input_plugin_ops ip_ops = {
-	.open = vtx_open,
-	.close = vtx_close,
-	.read = vtx_read,
-	.seek = vtx_seek,
-	.read_comments = vtx_read_comments,
-	.duration = vtx_duration,
-	.bitrate = vtx_bitrate,
-	.bitrate_current = vtx_current_bitrate,
-	.codec = vtx_codec,
-	.codec_profile = vtx_codec_profile
-};
-
-const int ip_priority = 50;
-const char * const ip_extensions[] = {"vtx", NULL};
-const char * const ip_mime_types[] = { NULL };
-const struct input_plugin_opt ip_options[] = { { NULL } };
-const unsigned ip_abi_version = IP_ABI_VERSION;
+CMUS_IP_DEFINE(
+	.priority = 50,
+	.extensions = (const char*[]){ "vtx", NULL },
+	.mime_types = (const char*[]){ NULL },
+	.options = (struct input_plugin_opt[]){ { NULL } },
+	.ops = &(struct input_plugin_ops){
+		.open = vtx_open,
+		.close = vtx_close,
+		.read = vtx_read,
+		.seek = vtx_seek,
+		.read_comments = vtx_read_comments,
+		.duration = vtx_duration,
+		.bitrate = vtx_bitrate,
+		.bitrate_current = vtx_current_bitrate,
+		.codec = vtx_codec,
+		.codec_profile = vtx_codec_profile,
+	},
+);

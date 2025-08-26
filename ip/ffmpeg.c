@@ -529,29 +529,29 @@ static char *ffmpeg_codec_profile(struct input_plugin_data *ip_data)
 	return profile ? xstrdup(profile) : NULL;
 }
 
-const struct input_plugin_ops ip_ops = {
-	.open = ffmpeg_open,
-	.close = ffmpeg_close,
-	.read = ffmpeg_read,
-	.seek = ffmpeg_seek,
-	.read_comments = ffmpeg_read_comments,
-	.duration = ffmpeg_duration,
-	.bitrate = ffmpeg_bitrate,
-	.bitrate_current = ffmpeg_current_bitrate,
-	.codec = ffmpeg_codec,
-	.codec_profile = ffmpeg_codec_profile
-};
-
-const int ip_priority = 30;
-const char *const ip_extensions[] = {
-	"aa", "aac", "ac3", "aif", "aifc", "aiff", "ape", "au", "dsf", "fla",
-	"flac", "m4a", "m4b", "mka", "mkv", "mp+", "mp2", "mp3", "mp4", "mpc",
-	"mpp", "ogg", "opus", "shn", "tak", "tta", "wav", "webm", "wma", "wv",
+CMUS_IP_DEFINE(
+	.priority = 30,
+	.extensions = (const char*[]){
+		"aa", "aac", "ac3", "aif", "aifc", "aiff", "ape", "au", "dsf", "fla",
+		"flac", "m4a", "m4b", "mka", "mkv", "mp+", "mp2", "mp3", "mp4", "mpc",
+		"mpp", "ogg", "opus", "shn", "tak", "tta", "wav", "webm", "wma", "wv",
 #ifdef USE_FALLBACK_IP
-	"*",
+		"*",
 #endif
-	NULL
-};
-const char *const ip_mime_types[] = { NULL };
-const struct input_plugin_opt ip_options[] = { { NULL } };
-const unsigned ip_abi_version = IP_ABI_VERSION;
+		NULL
+	},
+	.mime_types = (const char*[]){ NULL },
+	.options = (struct input_plugin_opt[]){ { NULL } },
+	.ops = &(struct input_plugin_ops){
+		.open = ffmpeg_open,
+		.close = ffmpeg_close,
+		.read = ffmpeg_read,
+		.seek = ffmpeg_seek,
+		.read_comments = ffmpeg_read_comments,
+		.duration = ffmpeg_duration,
+		.bitrate = ffmpeg_bitrate,
+		.bitrate_current = ffmpeg_current_bitrate,
+		.codec = ffmpeg_codec,
+		.codec_profile = ffmpeg_codec_profile,
+	},
+);

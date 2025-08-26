@@ -20,7 +20,6 @@
 #include <roaraudio.h>
 
 #include "../op.h"
-#include "../mixer.h"
 #include "../xmalloc.h"
 #include "../utils.h"
 #include "../misc.h"
@@ -333,37 +332,34 @@ static int op_roar_get_role(char **val)
 	return 0;
 }
 
-const struct output_plugin_ops op_pcm_ops = {
-	.init = op_roar_init,
-	.exit = op_roar_exit,
-	.open = op_roar_open,
-	.close = op_roar_close,
-	.drop = op_roar_drop,
-	.write = op_roar_write,
-	.buffer_space = op_roar_buffer_space,
-	.pause = op_roar_pause,
-	.unpause = op_roar_unpause,
-};
-
-const struct output_plugin_opt op_pcm_options[] = {
-	OPT(op_roar, server),
-	OPT(op_roar, role),
-	{ NULL },
-};
-
-const struct mixer_plugin_ops op_mixer_ops = {
-	.init = op_roar_dummy,
-	.exit = op_roar_dummy,
-	.open = op_roar_mixer_open,
-	.close = op_roar_dummy,
-	.get_fds = NULL,
-	.set_volume = op_roar_mixer_set_volume,
-	.get_volume = op_roar_mixer_get_volume,
-};
-
-const struct mixer_plugin_opt op_mixer_options[] = {
-	{ NULL },
-};
-
-const int op_priority = -1;
-const unsigned op_abi_version = OP_ABI_VERSION;
+CMUS_OP_DEFINE(
+	.priority = -1,
+	.pcm_ops = &(struct output_plugin_ops){
+		.init = op_roar_init,
+		.exit = op_roar_exit,
+		.open = op_roar_open,
+		.close = op_roar_close,
+		.drop = op_roar_drop,
+		.write = op_roar_write,
+		.buffer_space = op_roar_buffer_space,
+		.pause = op_roar_pause,
+		.unpause = op_roar_unpause,
+	},
+	.pcm_options = (struct output_plugin_opt[]){
+		OPT(op_roar, server),
+		OPT(op_roar, role),
+		{ NULL },
+	},
+	.mixer_ops = &(struct mixer_plugin_ops){
+		.init = op_roar_dummy,
+		.exit = op_roar_dummy,
+		.open = op_roar_mixer_open,
+		.close = op_roar_dummy,
+		.get_fds = NULL,
+		.set_volume = op_roar_mixer_set_volume,
+		.get_volume = op_roar_mixer_get_volume,
+	},
+	.mixer_options = (struct mixer_plugin_opt[]){
+		{ NULL },
+	},
+);

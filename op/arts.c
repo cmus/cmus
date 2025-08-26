@@ -104,20 +104,19 @@ static int op_arts_buffer_space(void)
 	return space;
 }
 
-const struct output_plugin_ops op_pcm_ops = {
-	.init = op_arts_init,
-	.exit = op_arts_exit,
-	.open = op_arts_open,
-	.close = op_arts_close,
-	.write = op_arts_write,
-	.pause = op_arts_pause,
-	.unpause = op_arts_unpause,
-	.buffer_space = op_arts_buffer_space,
-};
-
-const struct output_plugin_opt op_pcm_options[] = {
-	{ NULL },
-};
-
-const int op_priority = 4;
-const unsigned op_abi_version = OP_ABI_VERSION;
+CMUS_OP_DEFINE(
+	.priority = 4,
+	.pcm_ops = &(struct output_plugin_ops){
+		.init = op_arts_init,
+		.exit = op_arts_exit,
+		.open = op_arts_open,
+		.close = op_arts_close,
+		.write = op_arts_write,
+		.pause = op_arts_pause,
+		.unpause = op_arts_unpause,
+		.buffer_space = op_arts_buffer_space,
+	},
+	.pcm_options = (struct output_plugin_opt[]){
+		{ NULL },
+	},
+);

@@ -288,22 +288,21 @@ static int waveout_get_buffer_count(char **val)
 	return 0;
 }
 
-const struct output_plugin_ops op_pcm_ops = {
-	.init = waveout_init,
-	.exit = waveout_exit,
-	.open = waveout_open,
-	.close = waveout_close,
-	.write = waveout_write,
-	.pause = waveout_pause,
-	.unpause = waveout_unpause,
-	.buffer_space = waveout_buffer_space,
-};
-
-const struct output_plugin_opt op_pcm_options[] = {
-	OPT(waveout, buffer_size),
-	OPT(waveout, buffer_count),
-	{ NULL },
-};
-
-const int op_priority = 0;
-const unsigned op_abi_version = OP_ABI_VERSION;
+CMUS_OP_DEFINE(
+	.priority = 0,
+	.pcm_ops = &(struct output_plugin_ops){
+		.init = waveout_init,
+		.exit = waveout_exit,
+		.open = waveout_open,
+		.close = waveout_close,
+		.write = waveout_write,
+		.pause = waveout_pause,
+		.unpause = waveout_unpause,
+		.buffer_space = waveout_buffer_space,
+	},
+	.pcm_options = (struct output_plugin_opt[]){
+		OPT(waveout, buffer_size),
+		OPT(waveout, buffer_count),
+		{ NULL },
+	},
+);

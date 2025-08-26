@@ -625,25 +625,24 @@ static int op_jack_get_resampling_quality(char **val)
 }
 #endif
 
-const struct output_plugin_ops op_pcm_ops = {
-	.init         = op_jack_init,
-	.exit         = op_jack_exit,
-	.open         = op_jack_open,
-	.close        = op_jack_close,
-	.drop         = op_jack_drop,
-	.write        = op_jack_write,
-	.buffer_space = op_jack_buffer_space,
-	.pause        = op_jack_pause,
-	.unpause      = op_jack_unpause,
-};
-
-const struct output_plugin_opt op_pcm_options[] = {
-	OPT(op_jack, server_name),
+CMUS_OP_DEFINE(
+	.priority = 2,
+	.pcm_ops = &(struct output_plugin_ops){
+		.init         = op_jack_init,
+		.exit         = op_jack_exit,
+		.open         = op_jack_open,
+		.close        = op_jack_close,
+		.drop         = op_jack_drop,
+		.write        = op_jack_write,
+		.buffer_space = op_jack_buffer_space,
+		.pause        = op_jack_pause,
+		.unpause      = op_jack_unpause,
+	},
+	.pcm_options = (struct output_plugin_opt[]){
+		OPT(op_jack, server_name),
 #ifdef HAVE_SAMPLERATE
-	OPT(op_jack, resampling_quality),
+		OPT(op_jack, resampling_quality),
 #endif
-	{ NULL },
-};
-
-const int op_priority = 2;
-const unsigned op_abi_version = OP_ABI_VERSION;
+		{ NULL },
+	},
+);

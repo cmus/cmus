@@ -21,7 +21,6 @@
 #include <pulse/pulseaudio.h>
 
 #include "../op.h"
-#include "../mixer.h"
 #include "../debug.h"
 #include "../utils.h"
 #include "../xmalloc.h"
@@ -616,36 +615,33 @@ static int op_pulse_get_restore_volume(char **val)
 	return 0;
 }
 
-const struct output_plugin_ops op_pcm_ops = {
-	.init		= op_pulse_init,
-	.exit		= op_pulse_exit,
-	.open		= op_pulse_open,
-	.close		= op_pulse_close,
-	.drop		= op_pulse_drop,
-	.write		= op_pulse_write,
-	.buffer_space	= op_pulse_buffer_space,
-	.pause		= op_pulse_pause,
-	.unpause	= op_pulse_unpause,
-};
-
-const struct mixer_plugin_ops op_mixer_ops = {
-	.init		= op_pulse_mixer_init,
-	.exit		= op_pulse_mixer_exit,
-	.open		= op_pulse_mixer_open,
-	.close		= op_pulse_mixer_close,
-	.get_fds.abi_2	= op_pulse_mixer_get_fds,
-	.set_volume	= op_pulse_mixer_set_volume,
-	.get_volume	= op_pulse_mixer_get_volume,
-};
-
-const struct output_plugin_opt op_pcm_options[] = {
-	{ NULL },
-};
-
-const struct mixer_plugin_opt op_mixer_options[] = {
-	OPT(op_pulse, restore_volume),
-	{ NULL },
-};
-
-const int op_priority = -2;
-const unsigned op_abi_version = OP_ABI_VERSION;
+CMUS_OP_DEFINE(
+	.priority = -2,
+	.pcm_ops = &(struct output_plugin_ops){
+		.init		= op_pulse_init,
+		.exit		= op_pulse_exit,
+		.open		= op_pulse_open,
+		.close		= op_pulse_close,
+		.drop		= op_pulse_drop,
+		.write		= op_pulse_write,
+		.buffer_space	= op_pulse_buffer_space,
+		.pause		= op_pulse_pause,
+		.unpause	= op_pulse_unpause,
+	},
+	.pcm_options = (struct output_plugin_opt[]){
+		{ NULL },
+	},
+	.mixer_ops = &(struct mixer_plugin_ops){
+		.init		= op_pulse_mixer_init,
+		.exit		= op_pulse_mixer_exit,
+		.open		= op_pulse_mixer_open,
+		.close		= op_pulse_mixer_close,
+		.get_fds	= op_pulse_mixer_get_fds,
+		.set_volume	= op_pulse_mixer_set_volume,
+		.get_volume	= op_pulse_mixer_get_volume,
+	},
+	.mixer_options = (struct mixer_plugin_opt[]){
+		OPT(op_pulse, restore_volume),
+		{ NULL },
+	},
+);
