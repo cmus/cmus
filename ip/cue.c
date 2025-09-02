@@ -75,7 +75,7 @@ static char *_make_absolute_path(const char *abs_filename, const char *rel_filen
 		return xstrdup(rel_filename);
 
 	s = xstrndup(abs_filename, slash - abs_filename);
-	snprintf(buf, sizeof buf, "%s/%s", s, rel_filename);
+	snprintf(buf, sizeof(buf), "%s/%s", s, rel_filename);
 
 	free(s);
 	return xstrdup(buf);
@@ -130,7 +130,7 @@ static int cue_open(struct input_plugin_data *ip_data)
 	if (t->length >= 0)
 		priv->end_offset = priv->start_offset + t->length;
 	else
-		priv->end_offset = ip_duration(priv->child);
+		priv->end_offset = -1;
 
 	ip_data->fd = open(ip_get_filename(priv->child), O_RDONLY);
 	if (ip_data->fd == -1)
@@ -179,26 +179,25 @@ static int cue_close(struct input_plugin_data *ip_data)
 static int cue_read(struct input_plugin_data *ip_data, char *buffer, int count)
 {
 	int rc;
-	sample_format_t sf;
-	double len;
-	double rem_len;
 	struct cue_private *priv = ip_data->private;
 
-	if (priv->current_offset >= priv->end_offset)
+	if (priv->end_offset >= 0.0 && priv->current_offset >= priv->end_offset)
 		return 0;
 
 	rc = ip_read(priv->child, buffer, count);
 	if (rc <= 0)
 		return rc;
 
-	sf = ip_get_sf(priv->child);
-	len = (double)rc / sf_get_second_size(sf);
+	if (priv->end_offset >= 0.0) {
+		sample_format_t sf = ip_get_sf(priv->child);
+		double len = (double)rc / sf_get_second_size(sf);
 
-	rem_len = priv->end_offset - priv->current_offset;
-	priv->current_offset += len;
+		double rem_len = priv->end_offset - priv->current_offset;
+		priv->current_offset += len;
 
-	if (priv->current_offset >= priv->end_offset)
-		rc = lround(rem_len * sf_get_rate(sf)) * sf_get_frame_size(sf);
+		if (priv->current_offset >= priv->end_offset)
+			rc = lround(rem_len * sf_get_rate(sf)) * sf_get_frame_size(sf);
+	}
 
 	return rc;
 }
@@ -209,7 +208,7 @@ static int cue_seek(struct input_plugin_data *ip_data, double offset)
 	struct cue_private *priv = ip_data->private;
 	double new_offset = priv->start_offset + offset;
 
-	if (new_offset > priv->end_offset)
+	if (priv->end_offset >= 0.0 && new_offset > priv->end_offset)
 		new_offset = priv->end_offset;
 
 	priv->current_offset = new_offset;
@@ -238,7 +237,7 @@ static int cue_read_comments(struct input_plugin_data *ip_data, struct keyval **
 		goto get_track_failed;
 	}
 
-	snprintf(buf, sizeof buf, "%d", priv->track_n);
+	snprintf(buf, sizeof(buf), "%d", priv->track_n);
 	comments_add_const(&c, "tracknumber", buf);
 
 	if (t->meta.title)
@@ -257,12 +256,19 @@ static int cue_read_comments(struct input_plugin_data *ip_data, struct keyval **
 		comments_add_const(&c, "compilation", cd->meta.compilation);
 	if (cd->meta.discnumber)
 		comments_add_const(&c, "discnumber", cd->meta.discnumber);
+	if (t->meta.genre)
+		comments_add_const(&c, "genre", t->meta.genre);
+	else if (cd->meta.genre)
+		comments_add_const(&c, "genre", cd->meta.genre);
 
-	/*
-	 * TODO:
-	 * - replaygain REMs
-	 * - genre?
-	 */
+	if (cd->meta.rg_gain)
+		comments_add_const(&c, "replaygain_album_gain", cd->meta.rg_gain);
+	if (cd->meta.rg_peak)
+		comments_add_const(&c, "replaygain_album_peak", cd->meta.rg_peak);
+	if (t->meta.rg_gain)
+		comments_add_const(&c, "replaygain_track_gain", t->meta.rg_gain);
+	if (t->meta.rg_peak)
+		comments_add_const(&c, "replaygain_track_peak", t->meta.rg_peak);
 
 	keyvals_terminate(&c);
 	*comments = c.keyvals;
@@ -281,8 +287,10 @@ cue_parse_failed:
 static int cue_duration(struct input_plugin_data *ip_data)
 {
 	struct cue_private *priv = ip_data->private;
-
-	return priv->end_offset - priv->start_offset;
+	if (priv->end_offset < 0.0)
+		return ip_duration(priv->child) - priv->start_offset;
+	else
+		return priv->end_offset - priv->start_offset;
 }
 
 
@@ -332,7 +340,7 @@ const struct input_plugin_ops ip_ops = {
 };
 
 const int ip_priority = 50;
-const char * const ip_extensions[] = { NULL };
+const char * const ip_extensions[] = { "cue", NULL };
 const char * const ip_mime_types[] = { "application/x-cue", NULL };
 const struct input_plugin_opt ip_options[] = { { NULL } };
 const unsigned ip_abi_version = IP_ABI_VERSION;
