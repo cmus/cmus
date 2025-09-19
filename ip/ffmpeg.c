@@ -327,7 +327,7 @@ static void ffmpeg_skip_frame_part(struct ffmpeg_private *priv)
 	} else {
 		priv->frame->extended_data[0] += priv->skip_samples * channels * bps;
 	}
-	d_print("skipping %ld samples\n", priv->skip_samples);
+	d_print("skipping %lld samples\n", priv->skip_samples);
 	priv->skip_samples = 0;
 }
 
