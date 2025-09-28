@@ -437,7 +437,7 @@ static int ffmpeg_seek(struct input_plugin_data *ip_data, double offset)
 
 	priv->seek_ts = offset;
 	priv->skip_samples = 0;
-	int64_t ts = av_rescale(offset, st->time_base.den, st->time_base.num);
+	int64_t ts = offset / av_q2d(st->time_base);
 
 	int ret = avformat_seek_file(priv->format_ctx,
 			priv->stream_index, 0, ts, ts, 0);
