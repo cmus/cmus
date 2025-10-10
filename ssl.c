@@ -10,6 +10,23 @@
 
 static SSL_CTX *ssl_context = NULL;
 
+static int ssl_verify_callback(int ok, X509_STORE_CTX *ctx)
+{
+	char buf[256];
+	int depth = X509_STORE_CTX_get_error_depth(ctx);
+	X509 *cert = X509_STORE_CTX_get_current_cert(ctx);
+
+	X509_NAME_oneline(X509_get_subject_name(cert), buf, 256);
+	d_print("depth=%d: %s\n", depth, buf);
+
+	if (!ok) {
+		int err = X509_STORE_CTX_get_error(ctx);
+		d_print("error: %s\n", X509_verify_cert_error_string(err));
+	}
+
+	return ok;
+}
+
 int init_ssl_context(void)
 {
 	ssl_context = SSL_CTX_new(TLS_client_method());
@@ -26,7 +43,7 @@ int init_ssl_context(void)
 	}
 
 	/* Enable certificate verification */
-	SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, NULL);
+	SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, ssl_verify_callback);
 
 	if (SSL_CTX_set_default_verify_paths(ssl_context) != 1)	{
 		d_print("Unable to use default location for CA certificates\n");
@@ -69,6 +86,9 @@ int ssl_open(struct connection *conn)
 	if (rc <= 0) {
 		int err = SSL_get_error(conn->ssl, rc);
 		d_print("SSL_connect() failed (%d), SSL_get_error() returns %d\n", rc, err);
+		if ((err = ERR_get_error())) {
+			d_print("%s\n", ERR_reason_error_string(err));
+		}
 		return -IP_ERROR_OPENSSL;
 	}
 	return rc - 1; /* 0 on success */
