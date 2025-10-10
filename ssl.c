@@ -53,7 +53,7 @@ int init_ssl_context(void)
 	return IP_ERROR_SUCCESS;
 }
 
-int init_ssl(struct connection *conn)
+int init_ssl(struct connection *conn, char *host)
 {
 	int rc;
 	if (ssl_context == NULL) {
@@ -67,6 +67,10 @@ int init_ssl(struct connection *conn)
 		d_print("Failed to create SSL struct\n");
 		return -IP_ERROR_OPENSSL;
 	}
+
+	SSL_set_tlsext_host_name(ssl, host);
+	SSL_set1_host(ssl, host);
+
 	SSL_set_mode(ssl, SSL_MODE_ENABLE_PARTIAL_WRITE); /* Imitate the behavior of write */
 	conn->ssl = ssl;
 
@@ -77,9 +81,9 @@ int init_ssl(struct connection *conn)
 	return IP_ERROR_SUCCESS;
 }
 
-int ssl_open(struct connection *conn)
+int ssl_open(struct connection *conn, char *host)
 {
-	if (init_ssl(conn))
+	if (init_ssl(conn, host))
 		return -IP_ERROR_OPENSSL;
 
 	int rc = SSL_connect(conn->ssl); /* 1 if successful, <=0 else */
@@ -109,7 +113,7 @@ int https_connection_open(struct http_get *hg, struct connection *conn){
 		return -IP_ERROR_FUNCTION_NOT_SUPPORTED;
 	}
 
-	if (ssl_open(conn))
+	if (ssl_open(conn, hg->uri.host))
 		return -IP_ERROR_OPENSSL;
 
 	return IP_ERROR_SUCCESS;
