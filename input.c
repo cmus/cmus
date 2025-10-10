@@ -701,7 +701,7 @@ int ip_close(struct input_plugin *ip)
 	#ifdef CONFIG_OPENSSL
 	struct connection *conn = &ip->data.conn;
 	if (conn->ssl != NULL)
-		ssl_close(conn->ssl);
+		ssl_close(conn);
 	#endif
 
 	rc = ip->ops->close(&ip->data);
