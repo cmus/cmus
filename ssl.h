@@ -29,6 +29,7 @@ typedef int (*connection_write)(struct connection*, const char*, int);
 struct connection {
 	int *fd_ref;
 	SSL *ssl;
+	int eof;
 	connection_read read;
 	connection_write write;
 };

@@ -236,6 +236,7 @@ int connection_open(struct connection *conn, struct http_get *hg, int timeout_ms
 {
 	if (socket_open(hg, timeout_ms))
 		return -IP_ERROR_ERRNO;
+	conn->eof = 0;
 	*conn->fd_ref = hg->fd;
 
 	if(hg->uri.is_https == 1)
@@ -479,7 +480,7 @@ char *http_read_body(struct connection *conn, size_t *size, int timeout_ms)
 			return NULL;
 		}
 		buf.len += rc;
-		if (rc == 0) {
+		if (conn->eof) {
 			*size = buf.len;
 			return gbuf_steal(&buf);
 		}
