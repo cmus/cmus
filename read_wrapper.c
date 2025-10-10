@@ -83,6 +83,7 @@ ssize_t read_all_from_conn(struct connection *conn, void *buf, size_t count)
 		}
 		if (rc == 0) {
 			/* eof */
+			conn->eof = 1;
 			break;
 		}
 		pos += rc;
