@@ -125,17 +125,17 @@ int https_connection_open(struct http_get *hg, struct connection *conn){
  * See https://github.com/openssl/openssl/issues/1903#issuecomment-264599892
  */
 
-int handle_ssl_error(SSL *ssl, int ret)
+int handle_ssl_error(struct connection *conn, int ret)
 {
-	int err = SSL_get_error(ssl, ret);
+	int err = SSL_get_error(conn->ssl, ret);
 
 	if (err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE) {
 		errno = EAGAIN;
 		return -IP_ERROR_ERRNO; /* try again */
 	} else if (err == SSL_ERROR_ZERO_RETURN) {
-		ssl_close(ssl);
+		ssl_close(conn);
 		return -IP_ERROR_SUCCESS; /* Received a close_notify */ // TODO
-	} else if (err == SSL_ERROR_SYSCALL && BIO_eof(SSL_get_rbio(ssl))) {
+	} else if (err == SSL_ERROR_SYSCALL && BIO_eof(SSL_get_rbio(conn->ssl))) {
 		return -IP_ERROR_SUCCESS; /* EOF */
 	} else if (err == SSL_ERROR_SYSCALL) {
 		d_print("errno: %d\n", errno);
@@ -151,17 +151,17 @@ int handle_ssl_error(SSL *ssl, int ret)
  *
  * We will only call SSL_shutdown once before closing the socket.
  */
-int ssl_close(SSL *ssl)
+int ssl_close(struct connection *conn)
 {
-	int ret = SSL_shutdown(ssl);
+	int ret = SSL_shutdown(conn->ssl);
 	d_print("shutdown: ret=%d\n", ret);
 	if (ret < 0) {
-		handle_ssl_error(ssl, ret);
+		handle_ssl_error(conn, ret);
 	}
 
-	if (ssl != NULL) {
-		SSL_free(ssl);
-		ssl = NULL;
+	if (conn->ssl != NULL) {
+		SSL_free(conn->ssl);
+		conn->ssl = NULL;
 	}
 
 	if (ssl_context != NULL) {
@@ -176,22 +176,20 @@ int ssl_close(SSL *ssl)
 
 int https_write(struct connection *conn, const char *in_buf, int count)
 {
-	SSL *ssl = conn->ssl;
-	int ret = SSL_write(ssl, in_buf, count); /* >0 on success, <=0 else */
+	int ret = SSL_write(conn->ssl, in_buf, count); /* >0 on success, <=0 else */
 	if (ret <= 0) {
-		return handle_ssl_error(ssl, ret);
+		return handle_ssl_error(conn, ret);
 	}
 	return ret;
 }
 
 int https_read(struct connection *conn, char *out_buf, int count)
 {
-	SSL *ssl = conn->ssl;
 	if (conn->ssl == NULL)
 		return -1;
-	int ret = SSL_read(ssl, out_buf, count); /* returns >0 on success, <=0 else */
+	int ret = SSL_read(conn->ssl, out_buf, count); /* returns >0 on success, <=0 else */
 	if (ret <= 0) {
-		ret = handle_ssl_error(ssl, ret);
+		ret = handle_ssl_error(conn, ret);
 		if (ret == -IP_ERROR_OPENSSL)
 			return -1; /* https_read() should emulate socket_read() which returns -1 on errors */
 		return ret;

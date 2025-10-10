@@ -256,7 +256,7 @@ int connection_close(struct connection *conn)
 
 	#ifdef CONFIG_OPENSSL
 	if (conn->ssl != NULL)
-		rc = ssl_close(conn->ssl);
+		rc = ssl_close(conn);
 	if (rc)
 		d_print("Error while closing ssl connection\n");
 	#endif

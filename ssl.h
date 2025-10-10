@@ -38,8 +38,8 @@ int https_connection_open(struct http_get *hg, struct connection *conn);
 int init_ssl_context(void);
 int init_ssl(struct connection *conn, char *host);
 int ssl_open(struct connection *conn, char *host);
-int ssl_close(SSL* ssl);
-int handle_ssl_error(SSL* ssl, int ret);
+int ssl_close(struct connection *conn);
+int handle_ssl_error(struct connection *conn, int ret);
 
 int https_write(struct connection *conn, const char *buf, int count);
 int https_read(struct connection *conn, char *buf, int count);
