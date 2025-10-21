@@ -69,17 +69,43 @@ static inline void ptr_array_sort(struct ptr_array *array,
 		qsort(array->ptrs, count, sizeof(void *), cmp);
 }
 
+static inline int ptr_array_bsearch(const void *key, struct ptr_array *array,
+		int (*cmp)(const void *a, const void *b))
+{
+	if (array->count) {
+		const void **p;
+		p = bsearch(key, array->ptrs, array->count, sizeof(void *), cmp);
+		if (p)
+			return p - (const void **)array->ptrs;
+	}
+	return -1;
+}
+
 static inline void ptr_array_unique(struct ptr_array *array,
 		int (*cmp)(const void *a, const void *b))
 {
-	void **ptrs = array->ptrs;
+	if (array->count < 2)
+		return;
+
 	int i, j = 0;
+	void **ptrs = array->ptrs;
 
 	for (i = 1; i < array->count; i++) {
 		if (cmp(&ptrs[i-1], &ptrs[i]) != 0)
-			ptrs[j++] = ptrs[i];
+			j++;
+		else
+			free(ptrs[j]);
+		ptrs[j] = ptrs[i];
 	}
-	array->count = j;
+	array->count = j + 1;
+}
+
+static inline void ptr_array_truncate(struct ptr_array *array, int new_count)
+{
+	void **ptrs = array->ptrs;
+	for (int i = new_count; i < array->count; i++)
+		free(ptrs[i]);
+	array->count = new_count;
 }
 
 static inline void ptr_array_clear(struct ptr_array *array)

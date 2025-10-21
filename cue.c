@@ -26,14 +26,13 @@
 #include "cue.h"
 #include "xmalloc.h"
 #include "file.h"
-#include "list.h"
 
 #define ASCII_LOWER_TO_UPPER(c) ((c) & ~0x20)
 
 struct cue_track_proto {
 	struct list_head node;
 
-	char *file;
+	char *file;	/* owned by cue_parser */
 	uint32_t nr;
 	int32_t pregap;
 	int32_t postgap;
@@ -41,12 +40,6 @@ struct cue_track_proto {
 	int32_t index1;
 
 	struct cue_meta meta;
-};
-
-struct cue_track_file {
-	struct list_head node;
-
-	char *file;
 };
 
 struct cue_parser {
@@ -66,16 +59,11 @@ struct cue_switch {
 	void (*parser)(struct cue_parser *p);
 };
 
-static struct cue_track_proto *cue_proto_from_node(struct list_head *n)
-{
-	return container_of(n, struct cue_track_proto, node);
-}
-
 static struct cue_track_proto *cue_last_proto(struct cue_parser *p)
 {
-	if (p->num_tracks == 0)
+	if (list_empty(&p->tracks))
 		return NULL;
-	return cue_proto_from_node(p->tracks.prev);
+	return list_entry(p->tracks.prev, struct cue_track_proto, node);
 }
 
 static inline void cue_consume(struct cue_parser *p)
@@ -200,6 +188,8 @@ CUE_PARSE_STR(date)
 CUE_PARSE_STR(comment)
 CUE_PARSE_STR(compilation);
 CUE_PARSE_STR(discnumber);
+CUE_PARSE_STR(rg_gain);
+CUE_PARSE_STR(rg_peak);
 
 static void cue_parse_file(struct cue_parser *p)
 {
@@ -211,19 +201,18 @@ static void cue_parse_file(struct cue_parser *p)
 	list_add_tail(&f->node, &p->files);
 }
 
-static char* cue_dup_current_file(struct cue_parser *p)
+static char *cue_get_last_file(struct cue_parser *p)
 {
 	if (list_empty(&p->files))
 		return NULL;
 
 	struct list_head *tail = list_prev(&p->files);
-	char* file = list_entry(tail, struct cue_track_file, node)->file;
-	return cue_strdup(file, strlen(file));
+	return list_entry(tail, struct cue_track_file, node)->file;
 }
 
 static void cue_parse_track(struct cue_parser *p)
 {
-	char *curr_file = cue_dup_current_file(p);
+	char *curr_file = cue_get_last_file(p);
 
 	if (!curr_file) {
 		cue_set_err(p);
@@ -320,6 +309,10 @@ static void cue_parse_rem(struct cue_parser *p)
 		{ "COMMENT",     cue_parse_comment     },
 		{ "COMPILATION", cue_parse_compilation },
 		{ "DISCNUMBER",  cue_parse_discnumber  },
+		{ "REPLAYGAIN_ALBUM_GAIN", cue_parse_rg_gain  },
+		{ "REPLAYGAIN_TRACK_GAIN", cue_parse_rg_gain  },
+		{ "REPLAYGAIN_ALBUM_PEAK", cue_parse_rg_peak  },
+		{ "REPLAYGAIN_TRACK_PEAK", cue_parse_rg_peak  },
 		{ 0 },
 	};
 
@@ -376,46 +369,38 @@ static void cue_parse_line(struct cue_parser *p)
 
 static void cue_post_process(struct cue_parser *p)
 {
-	if (list_empty(&p->files) || p->num_tracks == 0) {
-		cue_set_err(p);
-		return;
-	}
+	if (list_empty(&p->files) || p->num_tracks == 0)
+		goto err;
 
 	struct cue_track_proto *t;
-
-	int32_t last = -1;
-
+	struct cue_track_proto *prev = NULL;
 	list_for_each_entry(t, &p->tracks, node) {
-		if (last != -1 && t->nr != last + 1) {
-			cue_set_err(p);
-			return;
-		}
-		last = t->nr;
+		if (prev && prev->nr >= t->nr)
+			goto err;
+
+		if (t->index0 == -1 && t->index1 == -1)
+			goto err;
+
+		/*
+		 * NOTE: if we don't have index1, then the pregap spans the
+		 * whole track, so we would have an empty track.
+		 * This is pretty useless, so we do the simple thing
+		 */
+		if (t->index1 == -1)
+			t->index1 = t->index0;
+
+		if (t->index0 == -1)
+			t->index0 = t->index1;
+
+		if (prev && prev->file == t->file && prev->index1 > t->index0)
+			goto err;
+
+		prev = t;
 	}
 
-	last = -1;
-	char *last_file = NULL;
-
-	list_for_each_entry(t, &p->tracks, node) {
-		if (t->index0 == -1 && t->index1 == -1) {
-			cue_set_err(p);
-			return;
-		}
-		if (t->index0 == -1 || t->index1 == -1) {
-			int32_t pregap = t->pregap != -1 ? t->pregap : 0;
-			if (t->index1 != -1)
-				t->index0 = t->index1 - pregap;
-			else
-				t->index1 = t->index0 + pregap;
-		}
-		if (last != -1 && (t->file == last_file && t->index0 < last)) {
-			cue_set_err(p);
-			return;
-		}
-		int32_t postgap = t->postgap != -1 ? t->postgap : 0;
-		last = t->index1 + postgap;
-		last_file = t->file;
-	}
+	return;
+err:
+	cue_set_err(p);
 }
 
 static void cue_meta_move(struct cue_meta *l, struct cue_meta *r)
@@ -428,31 +413,33 @@ static struct cue_sheet *cue_parser_to_sheet(struct cue_parser *p)
 {
 	struct cue_sheet *s = xnew(struct cue_sheet, 1);
 
+	/* Move file list */
+	list_add(&s->files, &p->files);
+	list_del_init(&p->files);
+
 	s->tracks = xnew(struct cue_track, p->num_tracks);
 	s->num_tracks = p->num_tracks;
-	s->track_base = cue_last_proto(p)->nr + 1 - p->num_tracks;
 
 	cue_meta_move(&s->meta, &p->meta);
 
-	size_t idx = 0;
-	struct cue_track_proto *t, *prev;
-	list_for_each_entry(t, &p->tracks, node) {
-		s->tracks[idx].file = t->file;
-		t->file = NULL;
+	size_t i = 0;
+	struct cue_track_proto *tp = NULL;
+	struct cue_track_proto *prev_tp = NULL;
+	list_for_each_entry(tp, &p->tracks, node) {
+		struct cue_track *t = &s->tracks[i];
+		t->file = tp->file;
+		t->offset = tp->index1 / 75.0;
+		t->length = -1;
+		t->number = tp->nr;
 
-		s->tracks[idx].offset = t->index1 / 75.0;
-		s->tracks[idx].length = -1;
-
-		if (idx > 0) {
-			int32_t postgap = prev->postgap != -1 ? prev->postgap : 0;
-			s->tracks[idx - 1].length =
-				(t->index1 - prev->index1 - postgap) / 75.0;
+		if (i > 0 && t->file == s->tracks[i - 1].file) {
+			s->tracks[i - 1].length = (tp->index0 - prev_tp->index1) / 75.0;
 		}
 
-		cue_meta_move(&s->tracks[idx].meta, &t->meta);
+		cue_meta_move(&t->meta, &tp->meta);
 
-		prev = t;
-		idx++;
+		prev_tp = tp;
+		i++;
 	}
 
 	return s;
@@ -467,23 +454,29 @@ static void cue_meta_free(struct cue_meta *m)
 	free(m->date);
 	free(m->comment);
 	free(m->compilation);
+	free(m->discnumber);
+	free(m->rg_gain);
+	free(m->rg_peak);
+}
+
+static void cue_free_files(struct list_head *files)
+{
+	struct cue_track_file *tf, *next;
+	list_for_each_entry_safe(tf, next, files, node) {
+		free(tf->file);
+		free(tf);
+	}
 }
 
 static void cue_parser_free(struct cue_parser *p)
 {
 	struct cue_track_proto *t, *next;
-	struct cue_track_file *tf, *nexttf;
-
-	list_for_each_entry_safe(tf, nexttf, &p->files, node) {
-		free(tf->file);
-		free(tf);
-	}
-
 	list_for_each_entry_safe(t, next, &p->tracks, node) {
 		cue_meta_free(&t->meta);
-		free(t->file);
 		free(t);
 	}
+
+	cue_free_files(&p->files);
 
 	cue_meta_free(&p->meta);
 }
@@ -538,12 +531,24 @@ struct cue_sheet *cue_from_file(const char *file)
 
 void cue_free(struct cue_sheet *s)
 {
-	for (size_t i = 0; i < s->num_tracks; i++) {
+	size_t i;
+	for (i = 0; i < s->num_tracks; i++)
 		cue_meta_free(&s->tracks[i].meta);
-		free(s->tracks[i].file);
-	}
 	free(s->tracks);
+
+	cue_free_files(&s->files);
 
 	cue_meta_free(&s->meta);
 	free(s);
+}
+
+struct cue_track *cue_get_track(struct cue_sheet *s, size_t n)
+{
+	size_t i;
+	for (i = 0; i < s->num_tracks; i++) {
+		struct cue_track *t = &s->tracks[i];
+		if (t->number == n)
+			return t;
+	}
+	return NULL;
 }

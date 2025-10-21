@@ -24,38 +24,48 @@
 
 #include <stdio.h>
 
-char *associated_cue(const char *filename)
+int is_cue(const char *filename)
 {
-	FILE *fp;
-	const char *ext;
-	char buf[4096] = {0};
-	const char *dot;
-
-	ext = get_extension(filename);
-	if (ext != NULL && strcmp(ext, "cue") == 0)
-		return NULL;
-
-	dot = strrchr(filename, '.');
-	if (dot == NULL)
-		return NULL;
-
-	snprintf(buf, sizeof buf, "%.*s.cue", (int) (dot - filename), filename);
-	fp = fopen(buf, "r");
-	if (!fp)
-		snprintf(buf, sizeof buf, "%s.cue", filename);
-	else
-		fclose(fp);
-
-	return xstrdup(buf);
+	const char *ext = get_extension(filename);
+	return ext != NULL && strcmp(ext, "cue") == 0;
 }
 
 
-int cue_get_ntracks(const char *filename)
+int cue_get_track_nums(const char *filename, int **out_nums)
 {
 	struct cue_sheet *cd = cue_from_file(filename);
 	if (!cd)
 		return -1;
-	size_t n = cd->num_tracks;
+
+	int n = cd->num_tracks;
+	*out_nums = xnew(int, n);
+
+	int i;
+	for (i = 0; i < n; i++)
+		(*out_nums)[i] = cd->tracks[i].number;
+
+	cue_free(cd);
+	return n;
+}
+
+
+int cue_get_files(const char *filename, char ***out_files)
+{
+	struct cue_sheet *cd = cue_from_file(filename);
+	if (!cd)
+		return -1;
+
+	int n = list_len(&cd->files);
+	*out_files = xnew(char *, n);
+
+	int i = 0;
+	struct cue_track_file *tf;
+	list_for_each_entry(tf, &cd->files, node) {
+		(*out_files)[i] = tf->file;
+		tf->file = NULL;
+		i++;
+	}
+
 	cue_free(cd);
 	return n;
 }
@@ -65,7 +75,7 @@ char *construct_cue_url(const char *cue_filename, int track_n)
 {
 	char buf[4096] = {0};
 
-	snprintf(buf, sizeof buf, "cue://%s/%d", cue_filename, track_n);
+	snprintf(buf, sizeof(buf), "cue://%s/%d", cue_filename, track_n);
 
 	return xstrdup(buf);
 }

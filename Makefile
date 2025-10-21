@@ -209,7 +209,7 @@ op/pulse.so: $(pulse-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(PULSE_LIBS))
 
 op/alsa.so: $(alsa-objs) $(libcmus-y)
-	$(call cmd,ld_dl,$(ALSA_LIBS))
+	$(call cmd,ld_dl,$(ALSA_LIBS) -lm)
 
 op/jack.so: $(jack-objs) $(libcmus-y)
 	$(call cmd,ld_dl,$(JACK_LIBS) $(SAMPLERATE_LIBS))

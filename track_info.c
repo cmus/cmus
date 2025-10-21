@@ -85,6 +85,11 @@ void track_info_set_comments(struct track_info *ti, struct keyval *comments) {
 	ti->is_va_compilation = track_is_va_compilation(comments);
 	ti->media = keyvals_get_val(comments, "media");
 
+	const char *bitrate_str = keyvals_get_val(comments, "bitrate");
+	if (bitrate_str) {
+		ti->bitrate = strtol(bitrate_str, NULL, 10) * 1000;
+	}
+
 	int bpm = comments_get_int(comments, "bpm");
 	if (ti->bpm == 0 || ti->bpm == -1) {
 		ti->bpm = bpm;
@@ -254,6 +259,7 @@ int track_info_cmp(const struct track_info *a, const struct track_info *b, const
 		case SORT_ORIGINALDATE:
 		case SORT_PLAY_COUNT:
 		case SORT_BPM:
+		case SORT_DURATION:
 			res = getentry(a, key, int) - getentry(b, key, int);
 			break;
 		case SORT_FILEMTIME:
@@ -293,6 +299,7 @@ static const struct {
 	{ "album",		SORT_ALBUM		},
 	{ "title",		SORT_TITLE		},
 	{ "play_count",		SORT_PLAY_COUNT		},
+	{ "duration",		SORT_DURATION		},
 	{ "tracknumber",	SORT_TRACKNUMBER	},
 	{ "discnumber",		SORT_DISCNUMBER		},
 	{ "totaldiscs",		SORT_TOTALDISCS		},
@@ -316,6 +323,7 @@ static const struct {
 	{ "-album",		REV_SORT_ALBUM		},
 	{ "-title",		REV_SORT_TITLE		},
 	{ "-play_count", 	REV_SORT_PLAY_COUNT	},
+	{ "-duration",		REV_SORT_DURATION	},
 	{ "-tracknumber",	REV_SORT_TRACKNUMBER	},
 	{ "-discnumber",	REV_SORT_DISCNUMBER	},
 	{ "-totaldiscs",	REV_SORT_TOTALDISCS	},

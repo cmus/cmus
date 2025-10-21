@@ -321,6 +321,10 @@ static int setup_remote(struct input_plugin *ip, const struct keyval *headers, i
 	if (val)
 		ip->data.icy_url = to_utf8(val, icecast_default_charset);
 
+	val = keyvals_get_val(headers, "icy-br");
+	if (val)
+		ip->data.icy_br = to_utf8(val, icecast_default_charset);
+
 	return 0;
 }
 
@@ -605,6 +609,16 @@ int ip_open(struct input_plugin *ip)
 		ip_reset(ip, 1);
 		return rc;
 	}
+
+	unsigned bits = sf_get_bits(ip->data.sf);
+	unsigned channels = sf_get_channels(ip->data.sf);
+	unsigned rate = sf_get_rate(ip->data.sf);
+	if (!bits || !channels || !rate) {
+		d_print("corrupt file: bits = %u, channels = %u, rate = %u\n",
+				bits, channels, rate);
+		return -IP_ERROR_FILE_FORMAT;
+	}
+
 	ip->open = 1;
 	return 0;
 }
@@ -649,6 +663,7 @@ int ip_close(struct input_plugin *ip)
 	free(ip->data.icy_name);
 	free(ip->data.icy_genre);
 	free(ip->data.icy_url);
+	free(ip->data.icy_br);
 	free(ip->http_reason);
 
 	ip_init(ip, ip->data.filename);
@@ -747,6 +762,9 @@ int ip_read_comments(struct input_plugin *ip, struct keyval **comments)
 
 		if (ip->data.icy_url && !keyvals_get_val_growing(&c, "comment"))
 			keyvals_add(&c, "comment", xstrdup(ip->data.icy_url));
+
+		if (ip->data.icy_br && !keyvals_get_val_growing(&c, "bitrate"))
+			keyvals_add(&c, "bitrate", xstrdup(ip->data.icy_br));
 
 		keyvals_terminate(&c);
 
