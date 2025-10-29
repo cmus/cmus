@@ -117,7 +117,6 @@ static T(TellStatus) tell_cb(const Dec *dec, uint64_t *offset, void *data)
 	struct input_plugin_data *ip_data = data;
 	struct flac_private *priv = ip_data->private;
 
-	d_print("\n");
 	*offset = priv->pos;
 	return E(TELL_STATUS_OK);
 }
@@ -127,7 +126,6 @@ static T(LengthStatus) length_cb(const Dec *dec, uint64_t *len, void *data)
 	struct input_plugin_data *ip_data = data;
 	struct flac_private *priv = ip_data->private;
 
-	d_print("\n");
 	if (ip_data->remote) {
 		return E(LENGTH_STATUS_ERROR);
 	}
@@ -227,9 +225,8 @@ static void metadata_cb(const Dec *dec, const FLAC__StreamMetadata *metadata, vo
 		}
 		break;
 	case FLAC__METADATA_TYPE_VORBIS_COMMENT:
-		d_print("VORBISCOMMENT\n");
 		if (priv->comments) {
-			d_print("Ignoring\n");
+			d_print("Ignoring VORBISCOMMENT\n");
 		} else {
 			GROWING_KEYVALS(c);
 			int i, nr;
@@ -252,8 +249,6 @@ static void metadata_cb(const Dec *dec, const FLAC__StreamMetadata *metadata, vo
 		}
 		break;
 	default:
-		d_print("something else\n");
-		break;
 	}
 }
 
