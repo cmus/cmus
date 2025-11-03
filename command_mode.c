@@ -2936,8 +2936,10 @@ void run_parsed_command(char *cmd, char *arg)
 	while (1) {
 		const struct command *c = &commands[i];
 
+		// commands is an array of struct command elements
+		// terminated with a NULL-filled item, 
+		// here we reached the end of the list.
 		if (c->name == NULL) {
-			error_msg("unknown command\n");
 			break;
 		}
 		if (strncmp(cmd, c->name, cmd_len) == 0) {
