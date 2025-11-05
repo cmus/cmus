@@ -298,11 +298,6 @@ static int op_alsa_pause(void)
 			// state is PREPARED -> no need to pause
 		} else if (state == SND_PCM_STATE_RUNNING) {
 			// state is RUNNING - > pause
-
-			// infinite timeout
-			rc = snd_pcm_wait(alsa_handle, -1);
-			debug_ret("snd_pcm_wait", rc);
-
 			rc = snd_pcm_pause(alsa_handle, 1);
 			debug_ret("snd_pcm_pause", rc);
 		} else {
@@ -325,11 +320,6 @@ static int op_alsa_unpause(void)
 			// state is PREPARED -> no need to unpause
 		} else if (state == SND_PCM_STATE_PAUSED) {
 			// state is PAUSED -> unpause
-
-			// infinite timeout
-			rc = snd_pcm_wait(alsa_handle, -1);
-			debug_ret("snd_pcm_wait", rc);
-
 			rc = snd_pcm_pause(alsa_handle, 0);
 			debug_ret("snd_pcm_pause", rc);
 		} else {

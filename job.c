@@ -328,6 +328,8 @@ static void handle_cue_files(struct ptr_array *files)
 
 		char **files_in_cue;
 		int n = cue_get_files(ents[i], &files_in_cue);
+		if (n == -1) 
+			continue;
 		char *cue_dir = path_dirname(ents[i]);
 
 		for (j = 0; j < n; j++) {
