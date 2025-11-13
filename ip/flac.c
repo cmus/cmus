@@ -249,6 +249,7 @@ static void metadata_cb(const Dec *dec, const FLAC__StreamMetadata *metadata, vo
 		}
 		break;
 	default:
+		break;
 	}
 }
 
