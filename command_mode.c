@@ -368,6 +368,11 @@ static void cmd_add(char *arg)
 	view_add(flag_to_view(flag), arg, flag == 'Q');
 }
 
+static void cmd_add_alias(char *arg)
+{
+
+}
+
 static void cmd_clear(char *arg)
 {
 	int flag = parse_flags((const char **)&arg, "lpq");
@@ -2623,6 +2628,7 @@ static void expand_commands(const char *str);
 /* sort by name */
 struct command commands[] = {
 	{ "add",                   cmd_add,              1, 1,  expand_add,           0, 0          },
+	{ "alias",                 cmd_add_alias,        1, 1,  NULL,                 0, 0          },
 	{ "bind",                  cmd_bind,             1, 1,  expand_bind_args,     0, CMD_UNSAFE },
 	{ "browser-up",            cmd_browser_up,       0, 0,  NULL,                 0, 0          },
 	{ "cd",                    cmd_cd,               0, 1,  expand_directories,   0, 0          },
