@@ -48,6 +48,7 @@
 #include "op.h"
 #include "mpris.h"
 #include "job.h"
+#include "alias.h"
 
 #include <stdlib.h>
 #include <ctype.h>
@@ -370,6 +371,23 @@ static void cmd_add(char *arg)
 
 static void cmd_add_alias(char *arg)
 {
+	char *value = NULL;
+	int i;
+
+	for (i = 0; arg[i]; i++) {
+		if (arg[i] == '=') {
+			arg[i] = 0;
+			value = &arg[i + 1];
+			break;
+		}
+	}
+	if (value) {
+    add_alias(arg, value);
+	} else {
+    if (!delete_alias(arg)) {
+      error_msg("alias not found\n");
+    }
+	}
 
 }
 
