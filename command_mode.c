@@ -17,11 +17,9 @@
  */
 
 #include "command_mode.h"
-#include "compiler.h"
 #include "search_mode.h"
 #include "cmdline.h"
 #include "options.h"
-#include "uchar.h"
 #include "ui_curses.h"
 #include "history.h"
 #include "tabexp.h"
@@ -52,7 +50,6 @@
 #include "job.h"
 #include "alias.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
 #include <sys/types.h>
@@ -115,10 +112,10 @@ void view_add(int view, char *arg, int prepend)
 	case QUEUE_VIEW:
 		if (prepend) {
 			cmus_add(play_queue_prepend, name, ft, JOB_TYPE_QUEUE,
-				 0, NULL);
+					0, NULL);
 		} else {
 			cmus_add(play_queue_append, name, ft, JOB_TYPE_QUEUE, 0,
-				 NULL);
+					NULL);
 		}
 		break;
 	default:
@@ -160,7 +157,7 @@ void view_load(int view, char *arg)
 		worker_remove_jobs_by_type(JOB_TYPE_LIB);
 		editable_clear(&lib_editable);
 		cmus_add(lib_add_track, name, FILE_TYPE_PL, JOB_TYPE_LIB, 0,
-			 NULL);
+				NULL);
 		free(lib_filename);
 		lib_filename = name;
 		break;
@@ -170,14 +167,14 @@ void view_load(int view, char *arg)
 	}
 }
 
-static void do_save(for_each_ti_cb for_each_ti, const char *arg,
-		    char **filenamep, save_ti_cb save_ti)
+static void do_save(for_each_ti_cb for_each_ti, const char *arg, char **filenamep,
+		save_ti_cb save_ti)
 {
 	char *filename = *filenamep;
 
 	if (arg) {
 		if (strcmp(arg, "-") == 0) {
-			filename = (char *)arg;
+			filename = (char *) arg;
 		} else {
 			free(filename);
 			filename = xstrdup(arg);
@@ -195,9 +192,8 @@ static void do_save(for_each_ti_cb for_each_ti, const char *arg,
 void view_save(int view, char *arg, int to_stdout, int filtered, int extended)
 {
 	char **dest;
-	save_ti_cb save_ti = extended ? cmus_save_ext : cmus_save;
-	for_each_ti_cb lib_for_each_ti = filtered ? lib_for_each_filtered :
-						    lib_for_each;
+	save_ti_cb     save_ti         = extended ? cmus_save_ext         : cmus_save;
+	for_each_ti_cb lib_for_each_ti = filtered ? lib_for_each_filtered : lib_for_each;
 
 	if (arg) {
 		if (to_stdout) {
@@ -226,8 +222,7 @@ void view_save(int view, char *arg, int to_stdout, int filtered, int extended)
 	case QUEUE_VIEW:
 		if (worker_has_job_by_type(JOB_TYPE_QUEUE))
 			goto worker_running;
-		dest = extended ? &play_queue_ext_filename :
-				  &play_queue_filename;
+		dest = extended ? &play_queue_ext_filename : &play_queue_filename;
 		do_save(play_queue_for_each, arg, dest, save_ti);
 		break;
 	default:
@@ -387,12 +382,13 @@ static void cmd_add_alias(char *arg)
 		}
 	}
 	if (value) {
-		add_alias(arg, value);
+    add_alias(arg, value);
 	} else {
-		if (!delete_alias(arg)) {
-			error_msg("alias not found\n");
-		}
+    if (!delete_alias(arg)) {
+      error_msg("alias not found\n");
+    }
 	}
+
 }
 
 static void cmd_clear(char *arg)
@@ -599,8 +595,7 @@ static void cmd_fset(char *arg)
 
 static void cmd_help(char *arg)
 {
-	info_msg(
-		"To get started with cmus, read cmus-tutorial(7) and cmus(1) man pages");
+	info_msg("To get started with cmus, read cmus-tutorial(7) and cmus(1) man pages");
 }
 
 static void cmd_invert(char *arg)
@@ -668,8 +663,7 @@ static void cmd_cd(char *arg)
 		dir = expand_filename(arg);
 		absolute = path_absolute(dir);
 		if (chdir(dir) == -1) {
-			error_msg("could not cd to '%s': %s", dir,
-				  strerror(errno));
+			error_msg("could not cd to '%s': %s", dir, strerror(errno));
 		} else {
 			browser_chdir(absolute);
 		}
@@ -677,8 +671,7 @@ static void cmd_cd(char *arg)
 		free(dir);
 	} else {
 		if (chdir(home_dir) == -1) {
-			error_msg("could not cd to '%s': %s", home_dir,
-				  strerror(errno));
+			error_msg("could not cd to '%s': %s", home_dir, strerror(errno));
 		} else {
 			browser_chdir(home_dir);
 		}
@@ -774,12 +767,10 @@ static void cmd_quit(char *arg)
 	int flag = parse_flags((const char **)&arg, "i");
 	enum ui_query_answer answer;
 	if (!worker_has_job_by_type(JOB_TYPE_ANY)) {
-		if (flag != 'i' ||
-		    yes_no_query("Quit cmus? [y/N]") != UI_QUERY_ANSWER_NO)
+		if (flag != 'i' || yes_no_query("Quit cmus? [y/N]") != UI_QUERY_ANSWER_NO)
 			cmus_running = 0;
 	} else {
-		answer = yes_no_query(
-			"Tracks are being added. Quit and truncate playlist(s)? [y/N]");
+		answer = yes_no_query("Tracks are being added. Quit and truncate playlist(s)? [y/N]");
 		if (answer != UI_QUERY_ANSWER_NO)
 			cmus_running = 0;
 	}
@@ -804,11 +795,9 @@ static void cmd_colorscheme(char *arg)
 {
 	char filename[512];
 
-	snprintf(filename, sizeof(filename), "%s/%s.theme", cmus_config_dir,
-		 arg);
+	snprintf(filename, sizeof(filename), "%s/%s.theme", cmus_config_dir, arg);
 	if (source_file(filename) == -1) {
-		snprintf(filename, sizeof(filename), "%s/%s.theme",
-			 cmus_data_dir, arg);
+		snprintf(filename, sizeof(filename), "%s/%s.theme", cmus_data_dir, arg);
 		if (source_file(filename) == -1)
 			error_msg("sourcing %s: %s", filename, strerror(errno));
 	}
@@ -965,8 +954,7 @@ char **parse_cmd(const char *cmd, int *args_idx, int *ac)
 
 		/* there can't be spaces at start of command
 		 * and there is at least one argument */
-		if (cmd[0] == '{' && cmd[1] == '}' &&
-		    (cmd[2] == ' ' || cmd[2] == 0)) {
+		if (cmd[0] == '{' && cmd[1] == '}' && (cmd[2] == ' ' || cmd[2] == 0)) {
 			/* {} is replaced with file arguments */
 			if (*args_idx != -1)
 				goto only_once_please;
@@ -1011,8 +999,7 @@ static int add_ti(void *data, struct track_info *ti)
 	struct track_info_selection *sel = data;
 	if (sel->tis_nr == sel->tis_alloc) {
 		sel->tis_alloc = sel->tis_alloc ? sel->tis_alloc * 2 : 8;
-		sel->tis =
-			xrenew(struct track_info *, sel->tis, sel->tis_alloc);
+		sel->tis = xrenew(struct track_info *, sel->tis, sel->tis_alloc);
 	}
 	track_info_ref(ti);
 	sel->tis[sel->tis_nr++] = ti;
@@ -1082,8 +1069,7 @@ static void cmd_run(char *arg)
 
 	run = 1;
 	if (confirm_run && (sel.tis_nr > 1 || strcmp(argv[0], "rm") == 0)) {
-		if (yes_no_query("Execute %s for the %d selected files? [y/N]",
-				 arg, sel.tis_nr) != UI_QUERY_ANSWER_YES) {
+		if (yes_no_query("Execute %s for the %d selected files? [y/N]", arg, sel.tis_nr) != UI_QUERY_ANSWER_YES) {
 			info_msg("Aborted");
 			run = 0;
 		}
@@ -1098,12 +1084,10 @@ static void cmd_run(char *arg)
 				int rc = WEXITSTATUS(status);
 
 				if (rc)
-					error_msg("%s returned %d", argv[0],
-						  rc);
+					error_msg("%s returned %d", argv[0], rc);
 			}
 			if (WIFSIGNALED(status))
-				error_msg("%s received signal %d", argv[0],
-					  WTERMSIG(status));
+				error_msg("%s received signal %d", argv[0], WTERMSIG(status));
 
 			switch (cur_view) {
 			case TREE_VIEW:
@@ -1129,9 +1113,9 @@ static void cmd_run(char *arg)
 
 static void cmd_shell(char *arg)
 {
-	const char *const argv[] = { "sh", "-c", arg, NULL };
+	const char * const argv[] = { "sh", "-c", arg, NULL };
 
-	if (spawn((char **)argv, NULL, 0))
+	if (spawn((char **) argv, NULL, 0))
 		error_msg("executing '%s': %s", arg, strerror(errno));
 }
 
@@ -1165,8 +1149,7 @@ static void cmd_echo(char *arg)
 	}
 
 	if (cur_view > QUEUE_VIEW) {
-		info_msg(
-			"echo with {} in its arguments is supported only in views 1-4");
+		info_msg("echo with {} in its arguments is supported only in views 1-4");
 		return;
 	}
 
@@ -1270,6 +1253,7 @@ static void cmd_mute(char *arg)
 	update_statusline();
 }
 
+
 /*
  * :vol value [value]
  *
@@ -1306,8 +1290,7 @@ static void cmd_vol(char *arg)
 	return;
 err:
 	free_str_array(values);
-	error_msg(
-		"expecting 1 or 2 arguments (total or L and R volumes [+-]INTEGER[%%])\n");
+	error_msg("expecting 1 or 2 arguments (total or L and R volumes [+-]INTEGER[%%])\n");
 }
 
 static void cmd_prev_view(char *arg)
@@ -1361,8 +1344,7 @@ static char *get_browser_add_file(void)
 	char *sel = browser_get_sel();
 
 	if (sel && (ends_with(sel, "/../") || ends_with(sel, "/.."))) {
-		info_msg(
-			"For convenience, you can not add \"..\" directory from the browser view");
+		info_msg("For convenience, you can not add \"..\" directory from the browser view");
 		free(sel);
 		sel = NULL;
 	}
@@ -1413,8 +1395,7 @@ static void cmd_view(char *arg)
 {
 	int view;
 
-	if (parse_enum(arg, 1, NR_VIEWS, view_names, &view) &&
-	    (view - 1) != cur_view) {
+	if (parse_enum(arg, 1, NR_VIEWS, view_names, &view) && (view - 1) != cur_view) {
 		set_view(view - 1);
 	}
 }
@@ -1532,20 +1513,21 @@ static void cmd_search_b_start(char *arg)
 	enter_search_backward_mode();
 }
 
-static int sorted_for_each_sel(track_info_cb cb, void *data, int reverse,
-			       int advance)
+static int sorted_for_each_sel(track_info_cb cb, void *data, int reverse, int advance)
 {
 	return editable_for_each_sel(&lib_editable, cb, data, reverse, advance);
 }
 
-static int pq_for_each_sel(track_info_cb cb, void *data, int reverse,
-			   int advance)
+static int pq_for_each_sel(track_info_cb cb, void *data, int reverse, int advance)
 {
 	return editable_for_each_sel(&pq_editable, cb, data, reverse, advance);
 }
 
 static for_each_sel_ti_cb view_for_each_sel[4] = {
-	tree_for_each_sel, sorted_for_each_sel, pl_for_each_sel, pq_for_each_sel
+	tree_for_each_sel,
+	sorted_for_each_sel,
+	pl_for_each_sel,
+	pq_for_each_sel
 };
 
 /* wrapper for add_ti_cb, (void *) can't store function pointers */
@@ -1633,8 +1615,7 @@ static void cmd_win_add_Q(char *arg)
 		struct wrapper_cb_data add = { play_queue_prepend };
 		view_for_each_sel[cur_view](wrapper_cb, &add, 1, flag != 'n');
 	} else if (cur_view == BROWSER_VIEW) {
-		add_from_browser(play_queue_prepend, JOB_TYPE_QUEUE,
-				 flag != 'n');
+		add_from_browser(play_queue_prepend, JOB_TYPE_QUEUE, flag != 'n');
 	}
 }
 
@@ -1651,8 +1632,7 @@ static void cmd_win_add_q(char *arg)
 		struct wrapper_cb_data add = { play_queue_append };
 		view_for_each_sel[cur_view](wrapper_cb, &add, 0, flag != 'n');
 	} else if (cur_view == BROWSER_VIEW) {
-		add_from_browser(play_queue_append, JOB_TYPE_QUEUE,
-				 flag != 'n');
+		add_from_browser(play_queue_append, JOB_TYPE_QUEUE, flag != 'n');
 	}
 }
 
@@ -1665,8 +1645,7 @@ static void cmd_win_activate(char *arg)
 	if (cur_view == TREE_VIEW || cur_view == SORTED_VIEW) {
 		if (shuffle == SHUFFLE_TRACKS) {
 			if (lib_cur_track)
-				previous = &lib_cur_track->simple_track
-						    .shuffle_info;
+				previous = &lib_cur_track->simple_track.shuffle_info;
 			shuffle_root = &lib_shuffle_root;
 		} else if (shuffle == SHUFFLE_ALBUMS) {
 			if (lib_cur_track)
@@ -1982,7 +1961,7 @@ static int *rand_array(int size, int nmax)
 		offset = size - count;
 	}
 
-	for (i = 0; i < count;) {
+	for (i = 0; i < count; ) {
 		int v, j;
 found:
 		v = rand() % nmax;
@@ -2020,8 +1999,7 @@ static int count_albums(void)
 	struct rb_node *tmp1, *tmp2;
 	int count = 0;
 
-	rb_for_each_entry(artist, tmp1, &lib_artist_root, tree_node)
-	{
+	rb_for_each_entry(artist, tmp1, &lib_artist_root, tree_node) {
 		rb_for_each(tmp2, &artist->album_root)
 			count++;
 	}
@@ -2057,8 +2035,7 @@ static void cmd_lqueue(char *arg)
 		return;
 
 	r = rand_array(count, nmax);
-	album = to_album(
-		rb_first(&to_artist(rb_first(&lib_artist_root))->album_root));
+	album = to_album(rb_first(&to_artist(rb_first(&lib_artist_root))->album_root));
 	pos = 0;
 	for (i = 0; i < count; i++) {
 		struct album_list *a;
@@ -2082,8 +2059,7 @@ static void cmd_lqueue(char *arg)
 	item = head.next;
 	do {
 		struct list_head *next = item->next;
-		struct album_list *a =
-			container_of(item, struct album_list, node);
+		struct album_list *a = container_of(item, struct album_list, node);
 		struct tree_track *t;
 		struct rb_node *tmp;
 
@@ -2139,8 +2115,7 @@ static void cmd_tqueue(char *arg)
 	item = head.next;
 	do {
 		struct list_head *next = item->next;
-		struct track_list *t =
-			container_of(item, struct track_list, node);
+		struct track_list *t = container_of(item, struct track_list, node);
 		play_queue_append(t->track->info, NULL);
 		free(t);
 		item = next;
@@ -2384,8 +2359,7 @@ static void expand_bind_args(const char *str)
 			ptrs[0] = tmp;
 		}
 
-		snprintf(expbuf, sizeof(expbuf), "%s%s %s", force,
-			 key_context_names[c], ks);
+		snprintf(expbuf, sizeof(expbuf), "%s%s %s", force, key_context_names[c], ks);
 
 		tabexp.head = xstrdup(expbuf);
 		tabexp.tails = array.ptrs;
@@ -2434,8 +2408,8 @@ static void expand_bind_args(const char *str)
 	 * need to change tabexp.head to "context key com"
 	 */
 
-	snprintf(expbuf, sizeof(expbuf), "%s%s %s %s", force,
-		 key_context_names[c], key_table[k].name, tabexp.head);
+	snprintf(expbuf, sizeof(expbuf), "%s%s %s %s", force, key_context_names[c],
+			key_table[k].name, tabexp.head);
 	free(tabexp.head);
 	tabexp.head = xstrdup(expbuf);
 }
@@ -2521,8 +2495,7 @@ static void expand_fset(const char *str)
 	PTR_ARRAY(array);
 
 	list_for_each_entry(e, &filters_head, node) {
-		char *line =
-			xnew(char, strlen(e->name) + strlen(e->filter) + 2);
+		char *line = xnew(char, strlen(e->name) + strlen(e->filter) + 2);
 		sprintf(line, "%s=%s", e->name, e->filter);
 		if (!strncmp(str, line, strlen(str)))
 			ptr_array_add(&array, xstrdup(line + strlen(str)));
@@ -2557,16 +2530,14 @@ static void expand_options(const char *str)
 					tails = xnew(char *, 1);
 
 					buf[0] = 0;
-					opt->get(opt->data, buf,
-						 OPTION_MAX_SIZE);
+					opt->get(opt->data, buf, OPTION_MAX_SIZE);
 					tails[0] = xstrdup(buf);
 
 					tabexp.head = xstrdup(str);
 					tabexp.tails = tails;
 					tabexp.count = 1;
 				} else if (opt->flags & OPT_PROGRAM_PATH) {
-					expand_program_paths_option(sep + 1,
-								    var);
+					expand_program_paths_option(sep + 1, var);
 				}
 				break;
 			}
@@ -2624,8 +2595,7 @@ static void expand_toptions(const char *str)
 	}
 }
 
-static void load_themes(const char *dirname, const char *str,
-			struct ptr_array *array)
+static void load_themes(const char *dirname, const char *str, struct ptr_array *array)
 {
 	struct directory dir;
 	const char *name, *dot;
@@ -2675,96 +2645,96 @@ static void expand_commands(const char *str);
 
 /* sort by name */
 struct command commands[] = {
-	{ "add", cmd_add, 1, 1, expand_add, 0, 0 },
-	{ "alias", cmd_add_alias, 1, 1, NULL, 0, 0 },
-	{ "bind", cmd_bind, 1, 1, expand_bind_args, 0, CMD_UNSAFE },
-	{ "browser-up", cmd_browser_up, 0, 0, NULL, 0, 0 },
-	{ "cd", cmd_cd, 0, 1, expand_directories, 0, 0 },
-	{ "clear", cmd_clear, 0, 1, NULL, 0, 0 },
-	{ "colorscheme", cmd_colorscheme, 1, 1, expand_colorscheme, 0, 0 },
-	{ "echo", cmd_echo, 1, -1, NULL, 0, 0 },
-	{ "factivate", cmd_factivate, 0, 1, expand_factivate, 0, 0 },
-	{ "filter", cmd_filter, 0, 1, NULL, 0, 0 },
-	{ "fset", cmd_fset, 1, 1, expand_fset, 0, 0 },
-	{ "help", cmd_help, 0, 0, NULL, 0, 0 },
-	{ "invert", cmd_invert, 0, 0, NULL, 0, 0 },
-	{ "live-filter", cmd_live_filter, 0, 1, NULL, 0, CMD_LIVE },
-	{ "load", cmd_load, 1, 1, expand_load_save, 0, 0 },
-	{ "lqueue", cmd_lqueue, 0, 1, NULL, 0, 0 },
-	{ "mark", cmd_mark, 0, 1, NULL, 0, 0 },
-	{ "mute", cmd_mute, 0, 0, NULL, 0, 0 },
-	{ "player-next", cmd_p_next, 0, 0, NULL, 0, 0 },
-	{ "player-next-album", cmd_p_next_album, 0, 0, NULL, 0, 0 },
-	{ "player-pause", cmd_p_pause, 0, 0, NULL, 0, 0 },
-	{ "player-pause-playback", cmd_p_pause_playback, 0, 0, NULL, 0, 0 },
-	{ "player-play", cmd_p_play, 0, 1, expand_playable, 0, 0 },
-	{ "player-prev", cmd_p_prev, 0, 0, NULL, 0, 0 },
-	{ "player-prev-album", cmd_p_prev_album, 0, 0, NULL, 0, 0 },
-	{ "player-stop", cmd_p_stop, 0, 0, NULL, 0, 0 },
-	{ "prev-view", cmd_prev_view, 0, 0, NULL, 0, 0 },
-	{ "left-view", cmd_left_view, 0, 1, NULL, 0, 0 },
-	{ "right-view", cmd_right_view, 0, 1, NULL, 0, 0 },
-	{ "pl-create", cmd_pl_create, 1, -1, NULL, 0, 0 },
-	{ "pl-export", cmd_pl_export, 1, -1, NULL, 0, 0 },
-	{ "pl-import", cmd_pl_import, 0, -1, NULL, 0, 0 },
-	{ "pl-rename", cmd_pl_rename, 1, -1, NULL, 0, 0 },
-	{ "pl-delete", cmd_pl_delete, 1, 1, NULL, 0, 0 },
-	{ "push", cmd_push, 0, -1, expand_commands, 0, 0 },
-	{ "pwd", cmd_pwd, 0, 0, NULL, 0, 0 },
-	{ "raise-vte", cmd_raise_vte, 0, 0, NULL, 0, 0 },
-	{ "rand", cmd_rand, 0, 0, NULL, 0, 0 },
-	{ "quit", cmd_quit, 0, 1, NULL, 0, 0 },
-	{ "refresh", cmd_refresh, 0, 0, NULL, 0, 0 },
-	{ "reshuffle", cmd_reshuffle, 0, 0, NULL, 0, 0 },
-	{ "run", cmd_run, 1, -1, expand_program_paths, 0, CMD_UNSAFE },
-	{ "save", cmd_save, 0, 1, expand_load_save, 0, CMD_UNSAFE },
-	{ "search-b-start", cmd_search_b_start, 0, 0, NULL, 0, 0 },
-	{ "search-next", cmd_search_next, 0, 0, NULL, 0, 0 },
-	{ "search-prev", cmd_search_prev, 0, 0, NULL, 0, 0 },
-	{ "search-start", cmd_search_start, 0, 0, NULL, 0, 0 },
-	{ "seek", cmd_seek, 1, 1, NULL, 0, 0 },
-	{ "set", cmd_set, 1, 1, expand_options, 0, 0 },
-	{ "shell", cmd_shell, 1, -1, expand_program_paths, 0, CMD_UNSAFE },
-	{ "showbind", cmd_showbind, 1, 1, expand_unbind_args, 0, 0 },
-	{ "shuffle", cmd_reshuffle, 0, 0, NULL, 0, CMD_HIDDEN },
-	{ "source", cmd_source, 1, 1, expand_files, 0, CMD_UNSAFE },
-	{ "toggle", cmd_toggle, 1, 1, expand_toptions, 0, 0 },
-	{ "tqueue", cmd_tqueue, 0, 1, NULL, 0, 0 },
-	{ "unbind", cmd_unbind, 1, 1, expand_unbind_args, 0, 0 },
-	{ "unmark", cmd_unmark, 0, 0, NULL, 0, 0 },
-	{ "update-cache", cmd_update_cache, 0, 1, NULL, 0, 0 },
-	{ "version", cmd_version, 0, 0, NULL, 0, 0 },
-	{ "view", cmd_view, 1, 1, NULL, 0, 0 },
-	{ "vol", cmd_vol, 1, 2, NULL, 0, 0 },
-	{ "w", cmd_save, 0, 1, expand_load_save, 0, CMD_UNSAFE },
-	{ "win-activate", cmd_win_activate, 0, 0, NULL, 0, 0 },
-	{ "win-add-l", cmd_win_add_l, 0, 1, NULL, 0, 0 },
-	{ "win-add-p", cmd_win_add_p, 0, 1, NULL, 0, 0 },
-	{ "win-add-Q", cmd_win_add_Q, 0, 1, NULL, 0, 0 },
-	{ "win-add-q", cmd_win_add_q, 0, 1, NULL, 0, 0 },
-	{ "win-bottom", cmd_win_bottom, 0, 0, NULL, 0, 0 },
-	{ "win-down", cmd_win_down, 0, 1, NULL, 0, 0 },
-	{ "win-half-page-down", cmd_win_hf_pg_down, 0, 0, NULL, 0, 0 },
-	{ "win-half-page-up", cmd_win_hf_pg_up, 0, 0, NULL, 0, 0 },
-	{ "win-mv-after", cmd_win_mv_after, 0, 0, NULL, 0, 0 },
-	{ "win-mv-before", cmd_win_mv_before, 0, 0, NULL, 0, 0 },
-	{ "win-next", cmd_win_next, 0, 0, NULL, 0, 0 },
-	{ "win-page-bottom", cmd_win_pg_bottom, 0, 0, NULL, 0, 0 },
-	{ "win-page-down", cmd_win_pg_down, 0, 0, NULL, 0, 0 },
-	{ "win-page-middle", cmd_win_pg_middle, 0, 0, NULL, 0, 0 },
-	{ "win-page-top", cmd_win_pg_top, 0, 0, NULL, 0, 0 },
-	{ "win-page-up", cmd_win_pg_up, 0, 0, NULL, 0, 0 },
-	{ "win-remove", cmd_win_remove, 0, 0, NULL, 0, CMD_UNSAFE },
-	{ "win-scroll-down", cmd_win_scroll_down, 0, 0, NULL, 0, 0 },
-	{ "win-scroll-up", cmd_win_scroll_up, 0, 0, NULL, 0, 0 },
-	{ "win-sel-cur", cmd_win_sel_cur, 0, 0, NULL, 0, 0 },
-	{ "win-toggle", cmd_win_toggle, 0, 0, NULL, 0, 0 },
-	{ "win-top", cmd_win_top, 0, 0, NULL, 0, 0 },
-	{ "win-up", cmd_win_up, 0, 1, NULL, 0, 0 },
-	{ "win-update", cmd_win_update, 0, 0, NULL, 0, 0 },
-	{ "win-update-cache", cmd_win_update_cache, 0, 1, NULL, 0, 0 },
-	{ "wq", cmd_quit, 0, 1, NULL, 0, 0 },
-	{ NULL, NULL, 0, 0, 0, 0, 0 }
+	{ "add",                   cmd_add,              1, 1,  expand_add,           0, 0          },
+	{ "alias",                 cmd_add_alias,        1, 1,  NULL,                 0, 0          },
+	{ "bind",                  cmd_bind,             1, 1,  expand_bind_args,     0, CMD_UNSAFE },
+	{ "browser-up",            cmd_browser_up,       0, 0,  NULL,                 0, 0          },
+	{ "cd",                    cmd_cd,               0, 1,  expand_directories,   0, 0          },
+	{ "clear",                 cmd_clear,            0, 1,  NULL,                 0, 0          },
+	{ "colorscheme",           cmd_colorscheme,      1, 1,  expand_colorscheme,   0, 0          },
+	{ "echo",                  cmd_echo,             1, -1, NULL,                 0, 0          },
+	{ "factivate",             cmd_factivate,        0, 1,  expand_factivate,     0, 0          },
+	{ "filter",                cmd_filter,           0, 1,  NULL,                 0, 0          },
+	{ "fset",                  cmd_fset,             1, 1,  expand_fset,          0, 0          },
+	{ "help",                  cmd_help,             0, 0,  NULL,                 0, 0          },
+	{ "invert",                cmd_invert,           0, 0,  NULL,                 0, 0          },
+	{ "live-filter",           cmd_live_filter,      0, 1,  NULL,                 0, CMD_LIVE   },
+	{ "load",                  cmd_load,             1, 1,  expand_load_save,     0, 0          },
+	{ "lqueue",                cmd_lqueue,           0, 1,  NULL,                 0, 0          },
+	{ "mark",                  cmd_mark,             0, 1,  NULL,                 0, 0          },
+	{ "mute",                  cmd_mute,             0, 0,  NULL,                 0, 0          },
+	{ "player-next",           cmd_p_next,           0, 0,  NULL,                 0, 0          },
+	{ "player-next-album",     cmd_p_next_album,     0, 0,  NULL,                 0, 0          },
+	{ "player-pause",          cmd_p_pause,          0, 0,  NULL,                 0, 0          },
+	{ "player-pause-playback", cmd_p_pause_playback, 0, 0,  NULL,                 0, 0          },
+	{ "player-play",           cmd_p_play,           0, 1,  expand_playable,      0, 0          },
+	{ "player-prev",           cmd_p_prev,           0, 0,  NULL,                 0, 0          },
+	{ "player-prev-album",     cmd_p_prev_album,     0, 0,  NULL,                 0, 0          },
+	{ "player-stop",           cmd_p_stop,           0, 0,  NULL,                 0, 0          },
+	{ "prev-view",             cmd_prev_view,        0, 0,  NULL,                 0, 0          },
+	{ "left-view",             cmd_left_view,        0, 1,  NULL,                 0, 0          },
+	{ "right-view",            cmd_right_view,       0, 1,  NULL,                 0, 0          },
+	{ "pl-create",             cmd_pl_create,        1, -1, NULL,                 0, 0          },
+	{ "pl-export",             cmd_pl_export,        1, -1, NULL,                 0, 0          },
+	{ "pl-import",             cmd_pl_import,        0, -1, NULL,                 0, 0          },
+	{ "pl-rename",             cmd_pl_rename,        1, -1, NULL,                 0, 0          },
+	{ "pl-delete",             cmd_pl_delete,        1, 1,  NULL,                 0, 0          },
+	{ "push",                  cmd_push,             0, -1, expand_commands,      0, 0          },
+	{ "pwd",                   cmd_pwd,              0, 0,  NULL,                 0, 0          },
+	{ "raise-vte",             cmd_raise_vte,        0, 0,  NULL,                 0, 0          },
+	{ "rand",                  cmd_rand,             0, 0,  NULL,                 0, 0          },
+	{ "quit",                  cmd_quit,             0, 1,  NULL,                 0, 0          },
+	{ "refresh",               cmd_refresh,          0, 0,  NULL,                 0, 0          },
+	{ "reshuffle",             cmd_reshuffle,        0, 0,  NULL,                 0, 0          },
+	{ "run",                   cmd_run,              1, -1, expand_program_paths, 0, CMD_UNSAFE },
+	{ "save",                  cmd_save,             0, 1,  expand_load_save,     0, CMD_UNSAFE },
+	{ "search-b-start",        cmd_search_b_start,   0, 0,  NULL,                 0, 0          },
+	{ "search-next",           cmd_search_next,      0, 0,  NULL,                 0, 0          },
+	{ "search-prev",           cmd_search_prev,      0, 0,  NULL,                 0, 0          },
+	{ "search-start",          cmd_search_start,     0, 0,  NULL,                 0, 0          },
+	{ "seek",                  cmd_seek,             1, 1,  NULL,                 0, 0          },
+	{ "set",                   cmd_set,              1, 1,  expand_options,       0, 0          },
+	{ "shell",                 cmd_shell,            1, -1, expand_program_paths, 0, CMD_UNSAFE },
+	{ "showbind",              cmd_showbind,         1, 1,  expand_unbind_args,   0, 0          },
+	{ "shuffle",               cmd_reshuffle,        0, 0,  NULL,                 0, CMD_HIDDEN },
+	{ "source",                cmd_source,           1, 1,  expand_files,         0, CMD_UNSAFE },
+	{ "toggle",                cmd_toggle,           1, 1,  expand_toptions,      0, 0          },
+	{ "tqueue",                cmd_tqueue,           0, 1,  NULL,                 0, 0          },
+	{ "unbind",                cmd_unbind,           1, 1,  expand_unbind_args,   0, 0          },
+	{ "unmark",                cmd_unmark,           0, 0,  NULL,                 0, 0          },
+	{ "update-cache",          cmd_update_cache,     0, 1,  NULL,                 0, 0          },
+	{ "version",               cmd_version,          0, 0,  NULL,                 0, 0          },
+	{ "view",                  cmd_view,             1, 1,  NULL,                 0, 0          },
+	{ "vol",                   cmd_vol,              1, 2,  NULL,                 0, 0          },
+	{ "w",                     cmd_save,             0, 1,  expand_load_save,     0, CMD_UNSAFE },
+	{ "win-activate",          cmd_win_activate,     0, 0,  NULL,                 0, 0          },
+	{ "win-add-l",             cmd_win_add_l,        0, 1,  NULL,                 0, 0          },
+	{ "win-add-p",             cmd_win_add_p,        0, 1,  NULL,                 0, 0          },
+	{ "win-add-Q",             cmd_win_add_Q,        0, 1,  NULL,                 0, 0          },
+	{ "win-add-q",             cmd_win_add_q,        0, 1,  NULL,                 0, 0          },
+	{ "win-bottom",            cmd_win_bottom,       0, 0,  NULL,                 0, 0          },
+	{ "win-down",              cmd_win_down,         0, 1,  NULL,                 0, 0          },
+	{ "win-half-page-down",    cmd_win_hf_pg_down,   0, 0,  NULL,                 0, 0          },
+	{ "win-half-page-up",      cmd_win_hf_pg_up,     0, 0,  NULL,                 0, 0          },
+	{ "win-mv-after",          cmd_win_mv_after,     0, 0,  NULL,                 0, 0          },
+	{ "win-mv-before",         cmd_win_mv_before,    0, 0,  NULL,                 0, 0          },
+	{ "win-next",              cmd_win_next,         0, 0,  NULL,                 0, 0          },
+	{ "win-page-bottom",       cmd_win_pg_bottom,    0, 0,  NULL,                 0, 0          },
+	{ "win-page-down",         cmd_win_pg_down,      0, 0,  NULL,                 0, 0          },
+	{ "win-page-middle",       cmd_win_pg_middle,    0, 0,  NULL,                 0, 0          },
+	{ "win-page-top",          cmd_win_pg_top,       0, 0,  NULL,                 0, 0          },
+	{ "win-page-up",           cmd_win_pg_up,        0, 0,  NULL,                 0, 0          },
+	{ "win-remove",            cmd_win_remove,       0, 0,  NULL,                 0, CMD_UNSAFE },
+	{ "win-scroll-down",       cmd_win_scroll_down,  0, 0,  NULL,                 0, 0          },
+	{ "win-scroll-up",         cmd_win_scroll_up,    0, 0,  NULL,                 0, 0          },
+	{ "win-sel-cur",           cmd_win_sel_cur,      0, 0,  NULL,                 0, 0          },
+	{ "win-toggle",            cmd_win_toggle,       0, 0,  NULL,                 0, 0          },
+	{ "win-top",               cmd_win_top,          0, 0,  NULL,                 0, 0          },
+	{ "win-up",                cmd_win_up,           0, 1,  NULL,                 0, 0          },
+	{ "win-update",            cmd_win_update,       0, 0,  NULL,                 0, 0          },
+	{ "win-update-cache",      cmd_win_update_cache, 0, 1,  NULL,                 0, 0          },
+	{ "wq",                    cmd_quit,             0, 1,  NULL,                 0, 0          },
+	{ NULL,                    NULL,                 0, 0,  0,                    0, 0          }
 };
 
 /* fills tabexp struct */
@@ -2778,8 +2748,7 @@ static void expand_commands(const char *str)
 	len = strlen(str);
 	pos = 0;
 	for (i = 0; commands[i].name; i++) {
-		if (strncmp(str, commands[i].name, len) == 0 &&
-		    !(commands[i].flags & CMD_HIDDEN))
+		if (strncmp(str, commands[i].name, len) == 0 && !(commands[i].flags & CMD_HIDDEN))
 			tails[pos++] = xstrdup(commands[i].name + len);
 	}
 	if (pos > 0) {
@@ -2816,8 +2785,7 @@ struct command *get_command(const char *str)
 			return &commands[i];
 		}
 
-		if (commands[i + 1].name &&
-		    strncmp(str, commands[i + 1].name, len) == 0) {
+		if (commands[i + 1].name && strncmp(str, commands[i + 1].name, len) == 0) {
 			/* ambiguous */
 			return NULL;
 		}
@@ -2933,7 +2901,6 @@ static void cmdline_modified(void)
 	if (!parse_command(cmdline.line, &cmd, &arg))
 		return;
 
-
 	c = get_command(cmd);
 	if (!c)
 		goto end;
@@ -3026,8 +2993,7 @@ void run_parsed_command(char *cmd, char *arg)
 			const char *next = commands[i + 1].name;
 			int exact = c->name[cmd_len] == 0;
 
-			if (!exact && next &&
-			    strncmp(cmd, next, cmd_len) == 0) {
+			if (!exact && next && strncmp(cmd, next, cmd_len) == 0) {
 				error_msg("ambiguous command\n");
 				break;
 			}
@@ -3040,8 +3006,7 @@ void run_parsed_command(char *cmd, char *arg)
 				break;
 			}
 			if (run_only_safe_commands && (c->flags & CMD_UNSAFE)) {
-				if (c->func != cmd_save ||
-				    !is_stdout_filename(arg)) {
+				if (c->func != cmd_save || !is_stdout_filename(arg)) {
 					d_print("trying to execute unsafe command over net\n");
 					break;
 				}
@@ -3199,22 +3164,22 @@ void command_mode_key(int key)
 	case KEY_END:
 		cmdline_move_end();
 		return;
-	case KEY_UP: {
-		const char *s;
+	case KEY_UP:
+		{
+			const char *s;
 
-		if (history_search_text == NULL)
-			history_search_text = xstrdup(cmdline.line);
-		s = history_search_forward(&cmd_history, history_search_text);
-		if (s)
-			cmdline_set_text(s);
-	}
+			if (history_search_text == NULL)
+				history_search_text = xstrdup(cmdline.line);
+			s = history_search_forward(&cmd_history, history_search_text);
+			if (s)
+				cmdline_set_text(s);
+		}
 		return;
 	case KEY_DOWN:
 		if (history_search_text) {
 			const char *s;
 
-			s = history_search_backward(&cmd_history,
-						    history_search_text);
+			s = history_search_backward(&cmd_history, history_search_text);
 			if (s) {
 				cmdline_set_text(s);
 			} else {
@@ -3233,8 +3198,7 @@ void command_mode_key(int key)
 
 void command_mode_mouse(MEVENT *event)
 {
-	if ((event->bstate & BUTTON1_PRESSED) ||
-	    (event->bstate & BUTTON3_PRESSED)) {
+	if ((event->bstate & BUTTON1_PRESSED) || (event->bstate & BUTTON3_PRESSED)) {
 		if (event->y <= window_get_nr_rows(current_win()) + 2) {
 			if (cmdline.blen) {
 				history_add_line(&cmd_history, cmdline.line);
