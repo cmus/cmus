@@ -44,8 +44,7 @@ typedef int (*for_each_sel_ti_cb)(track_info_cb cb, void *data, int reverse, int
 typedef void (*add_ti_cb)(struct track_info *, void *opaque);
 
 /* cmus_save, cmus_save_ext */
-typedef int (*save_ti_cb)(for_each_ti_cb for_each_ti, const char *filename,
-		void *opaque);
+typedef int (*save_ti_cb)(for_each_ti_cb for_each_ti, const char *filename, bool backup, void *opaque);
 
 int cmus_init(void);
 void cmus_exit(void);
@@ -66,9 +65,8 @@ enum file_type cmus_detect_ft(const char *name, char **ret);
 void cmus_add(add_ti_cb, const char *name, enum file_type ft, int jt,
 		int force, void *opaque);
 
-int cmus_save(for_each_ti_cb for_each_ti, const char *filename, void *opaque);
-int cmus_save_ext(for_each_ti_cb for_each_ti, const char *filename,
-		void *opaque);
+int cmus_save(for_each_ti_cb for_each_ti, const char *filename, bool backup, void *opaque);
+int cmus_save_ext(for_each_ti_cb for_each_ti, const char *filename, bool backup, void *opaque);
 
 void cmus_update_cache(int force);
 void cmus_update_lib(void);
