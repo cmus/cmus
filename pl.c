@@ -971,7 +971,9 @@ void pl_update_track(struct track_info *old, struct track_info *new)
 {
 	struct playlist *pl;
 	list_for_each_entry(pl, &pl_head, node)
-		editable_update_track(&pl->editable, old, new);
+		if (new)
+			editable_update_track(&pl->editable, old, new);
+		/* else: preserve playlist entry when refresh failed */
 }
 
 int pl_get_cursor_in_track_window(void)
