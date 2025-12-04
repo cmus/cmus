@@ -32,7 +32,10 @@
 #include "unidecomp.h"
 #include "wcwidth_uchar.h"
 
-const char hex_tab[16] = "0123456789abcdef";
+const char hex_tab[16] = {
+	'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+	'a', 'b', 'c', 'd', 'e', 'f'
+};
 
 /*
  * Byte Sequence                                             Min       Min        Max
