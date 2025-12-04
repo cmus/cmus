@@ -32,7 +32,7 @@
 #include "unidecomp.h"
 #include "wcwidth_uchar.h"
 
-const char hex_tab[16] = "0123456789abcdef";
+const char hex_tab[16] CMUS_NONSTRING = "0123456789abcdef";
 
 /*
  * Byte Sequence                                             Min       Min        Max
