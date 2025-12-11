@@ -67,6 +67,17 @@
 
 #endif
 
+#if defined(__GNUC__) && (__GNUC__ >= 8)
+
+/* Silences the unterminated-string-initialization warnings */
+#define CMUS_NONSTRING __attribute__((nonstring))
+
+#else
+
+#define CMUS_NONSTRING
+
+#endif
+
 
 /**
  * container_of - cast a member of a structure out to the containing structure

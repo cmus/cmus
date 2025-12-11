@@ -453,7 +453,7 @@ void http_get_free(struct http_get *hg)
 
 char *base64_encode(const char *str)
 {
-	static const char t[64] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+	static const char t[64] CMUS_NONSTRING = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 	int str_len, buf_len, i, s, d;
 	char *buf;
 	unsigned char b0, b1, b2;

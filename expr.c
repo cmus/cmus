@@ -71,7 +71,7 @@ struct token {
 };
 
 /* same order as TOK_* */
-static const char specials[NR_SPECIALS] = "!<>=&|()";
+static const char specials[NR_SPECIALS] CMUS_NONSTRING = "!<>=&|()";
 
 static const int tok_to_op[NR_TOKS] = {
 	-1, OP_LT, OP_GT, OP_EQ, -1, -1, -1, -1, OP_NE, OP_LE, OP_GE, -1, -1, -1
