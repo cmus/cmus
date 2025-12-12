@@ -48,6 +48,7 @@
 #include "op.h"
 #include "mpris.h"
 #include "job.h"
+#include "alias.h"
 
 #include <stdlib.h>
 #include <ctype.h>
@@ -366,6 +367,28 @@ static void cmd_add(char *arg)
 		return;
 	}
 	view_add(flag_to_view(flag), arg, flag == 'Q');
+}
+
+static void cmd_add_alias(char *arg)
+{
+	char *value = NULL;
+	int i;
+
+	for (i = 0; arg[i]; i++) {
+		if (arg[i] == '=') {
+			arg[i] = 0;
+			value = &arg[i + 1];
+			break;
+		}
+	}
+	if (value) {
+    add_alias(arg, value);
+	} else {
+    if (!delete_alias(arg)) {
+      error_msg("alias not found\n");
+    }
+	}
+
 }
 
 static void cmd_clear(char *arg)
@@ -2623,6 +2646,7 @@ static void expand_commands(const char *str);
 /* sort by name */
 struct command commands[] = {
 	{ "add",                   cmd_add,              1, 1,  expand_add,           0, 0          },
+	{ "alias",                 cmd_add_alias,        1, 1,  NULL,                 0, 0          },
 	{ "bind",                  cmd_bind,             1, 1,  expand_bind_args,     0, CMD_UNSAFE },
 	{ "browser-up",            cmd_browser_up,       0, 0,  NULL,                 0, 0          },
 	{ "cd",                    cmd_cd,               0, 1,  expand_directories,   0, 0          },
@@ -2917,11 +2941,36 @@ int parse_command(const char *buf, char **cmdp, char **argp)
 	if (cmd_len == 0)
 		return 0;
 
-	*cmdp = xstrndup(buf + cmd_start, cmd_len);
-	if (arg_start == arg_end) {
-		*argp = NULL;
+	char *command = xstrndup(buf + cmd_start, cmd_len);
+
+	struct alias *found_alias = get_alias(command);
+
+	if (found_alias != NULL) {
+    int return_val;
+
+	  if (arg_start == arg_end) {
+      return_val = parse_command(found_alias->command, cmdp, argp);
+	  } else {
+		  char *argument = xstrndup(buf + arg_start, arg_end - arg_start);
+      char *new_buf = xstrjoin(found_alias->command, argument);
+
+      return_val = parse_command(new_buf, cmdp, argp);
+
+		  free(argument);
+		  free(new_buf);
+	  }
+
+		free(command);
+		command = NULL;
+
+		return return_val;
 	} else {
-		*argp = xstrndup(buf + arg_start, arg_end - arg_start);
+		*cmdp = command;
+    if (arg_start == arg_end) {
+      *argp = NULL;
+    }else {
+      *argp = xstrndup(buf + arg_start, arg_end - arg_start);
+    }
 	}
 	return 1;
 }
