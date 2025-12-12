@@ -202,10 +202,7 @@ static ssize_t *make_channel_remap(const channel_position_t *channel_map_out, co
 	int byte, channel_out, channel_in;
 	ssize_t *map;
 
-	map = malloc(sizeof(ssize_t) * (size_t) sf_get_frame_size(sf));
-	if (!map) {
-		return NULL;
-	}
+	map = xnew(ssize_t, sf_get_frame_size(sf));
 
 	if (!channel_map_out || !channel_map_valid(channel_map_out) || !channel_map_in || !channel_map_valid(channel_map_in)) {
 		for (byte = 0; byte < sf_get_frame_size(sf); byte++) {
