@@ -423,6 +423,24 @@ static int mpris_metadata(sd_bus *_bus, const char *_path,
 			CK(mpris_msg_append_sas_dict(reply,
 					"xesam:comment", corrected));
 		}
+		if (ti->filename) {
+			if (is_url(ti->filename)) {
+				char corrected[u_str_print_size(ti->filename)];
+				u_to_utf8(corrected, ti->filename);
+				CK(mpris_msg_append_sas_dict(reply,
+						"xesam:url", corrected));
+			}
+			else {
+				// prepend schema for local files as described in the spec
+				// https://www.freedesktop.org/wiki/Specifications/mpris-spec/metadata/#uri
+				const char prefix[] = "file://";
+				char corrected[sizeof(prefix) - 1 + u_str_print_size(ti->filename)];
+				memcpy(corrected, prefix, sizeof(prefix) - 1);
+				u_to_utf8(corrected + sizeof(prefix) - 1, ti->filename);
+				CK(mpris_msg_append_sas_dict(reply,
+						"xesam:url", corrected));
+			}
+		}
 		if (ti->bpm != -1)
 			CK(mpris_msg_append_si_dict(reply, "xesam:audioBPM",
 						ti->bpm));
