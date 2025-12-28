@@ -51,7 +51,7 @@
 #define CACHE_ENTRY_TOTAL_SIZE	(CACHE_ENTRY_RESERVED_SIZE + CACHE_ENTRY_USED_SIZE)
 
 // Cmus Track Cache version X + 4 bytes flags
-static char cache_header[8] = "CTC\0\0\0\0\0";
+static char cache_header[8] CMUS_NONSTRING = "CTC\0\0\0\0\0";
 
 // host byte order
 // mtime is either 32 or 64 bits

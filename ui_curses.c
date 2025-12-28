@@ -863,7 +863,7 @@ static void print_filter(struct window *win, int row, struct iter *iter)
 	int selected;
 	/* is the filter currently active? */
 	int current = !!e->act_stat;
-	const char stat_chars[3] = " *!";
+	const char stat_chars[3] CMUS_NONSTRING = " *!";
 	int ch1, ch2, ch3;
 	const char *e_filter;
 
