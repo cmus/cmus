@@ -111,7 +111,7 @@ static unsigned char *encode_ascii_string(const char *str)
 	unsigned char *ret;
 	int n;
 
-	ret = malloc(strlen(str) + 1);
+	ret = xmalloc(strlen(str) + 1);
 	n = u_to_ascii(ret, str, strlen(str));
 	ret[n] = '\0';
 	return ret;
