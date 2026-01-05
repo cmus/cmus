@@ -431,7 +431,7 @@ static int pl_save_cb(track_info_cb cb, void *data, void *opaque)
 static void pl_save_one(struct playlist *pl)
 {
 	char *path = pl_name_to_pl_file(pl->name);
-	cmus_save(pl_save_cb, path, pl);
+	cmus_save(pl_save_cb, path, false, pl);
 	free(path);
 }
 
@@ -667,7 +667,7 @@ void pl_export_selected_pl(const char *path)
 {
 	char *tmp = expand_filename(path);
 	if (access(tmp, F_OK) != 0 || yes_no_query("File exists. Overwrite? [y/N]") == UI_QUERY_ANSWER_YES)
-		cmus_save(pl_save_cb, tmp, pl_visible);
+		cmus_save(pl_save_cb, tmp, false, pl_visible);
 	free(tmp);
 }
 

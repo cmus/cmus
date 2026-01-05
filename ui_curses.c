@@ -2527,9 +2527,8 @@ static void exit_all(void)
 	server_exit();
 	cmus_exit();
 	if (resume_cmus)
-		cmus_save(play_queue_for_each, play_queue_autosave_filename,
-				NULL);
-	cmus_save(lib_for_each, lib_autosave_filename, NULL);
+		cmus_save(play_queue_for_each, play_queue_autosave_filename, true, NULL);
+	cmus_save(lib_for_each, lib_autosave_filename, true, NULL);
 
 	pl_exit();
 	player_exit();
