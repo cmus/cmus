@@ -125,8 +125,11 @@ static int bass_read_comments(struct input_plugin_data *ip_data,
 	const char *val;
 
 	val = BASS_ChannelGetTags(priv->chan, BASS_TAG_MUSIC_NAME);
-	if (val && val[0])
-		comments_add_const(&c, "title", encode_ascii_string(val));
+	if (val && val[0]) {
+		unsigned char *val_encoded = encode_ascii_string(val);
+		comments_add_const(&c, "title", (char *)val_encoded);
+		free(val_encoded);
+	}
 	keyvals_terminate(&c);
 	*comments = c.keyvals;
 	return 0;
