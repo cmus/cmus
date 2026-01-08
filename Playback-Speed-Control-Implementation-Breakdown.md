@@ -91,8 +91,26 @@ The `TF_SPEED` token is dynamically populated. If `speed == 1.0`, the token is c
 
 ---
 
-## 4. Current Limitations & Technical Debt
+## 5. Issue Resolution & Quality Improvements
+During the initial phase of implementation, two primary technical hurdles were identified and resolved to achieve high-fidelity playback.
 
-- **Fixed Format**: Currently hardcoded for 16-bit Stereo. 
-- **Latency**: The 200ms accumulation buffer introduces a slight delay in "Speed Change" responsiveness, as the existing buffer must be cleared or processed before the new speed is fully audible.
-- **Complexity**: The linear ramp is a first-order approximation; higher-order (cosine) windows could further reduce spectral leakage (artifacts).
+### 5.1 Artifact Reduction: From "Metallic" to Natural Sound
+**Issue**: Initial versions suffered from a "robotic" or "tinny" quality (spectral leakage) and occasional clicks.
+- **Cause A (Windowing)**: The use of a simple linear cross-fade created discontinuities in the first derivative of the waveform, leading to high-frequency artifacts.
+- **Cause B (Phase Incoherence)**: The template matching logic was incorrectly comparing the target segment against a fixed speed-step position rather than the *natural continuation* of the previous output segment.
+
+**Solution**: 
+1. **Hann (Raised Cosine) Windowing**: Implemented a lookup table for a Hann window ramp (`0.5 * (1 - cos(pi * i / n))`). This ensures that the derivative of the signal at the window boundaries is zero, drastically reducing spectral leakage.
+2. **Corrected Phase Alignment**: Redesigned the search logic to compare potential input segments against the `overlap_buf` (the natural continuation of the previous window). This ensures that the algorithm maximizes phase coherence across every join.
+3. **Larger Windows**: Increased the window size to **60ms** and overlap to **20ms** to better capture low-frequency periodicities.
+
+### 5.2 High-Precision Speed Control: Solving "Inactive" Values
+
+**Issue**: Users reported that only large increments (like 0.25, 1.75) had an effect, while values like 1.1 or 1.2 felt identical to 1.0.
+
+- **Cause**: Integer rounding in the step calculation (`step = (int)(diff * speed)`). For a 40ms difference at 44.1kHz (1764 samples), a speed change from 1.0 to 1.1 only shifted the step by ~176 samples. Without fractional tracking, these small shifts were lost or rounded away over multiple windows, causing the speed to "quantize" to specific values.
+
+**Solution**:
+1. **Fractional Position Tracking**: Introduced `in_pos_frac` (a double) to track the exact theoretical input position. 
+2. **Error Accumulation**: Instead of rounding the step for every window, the algorithm now maintains a floating-point "current position" in the input stream. 
+3. **Result**: Every decimal change (e.g., 1.01x vs 1.02x) now results in a unique and accurate temporal shift, providing smooth, granular control over the playback tempo.

@@ -6,13 +6,14 @@
 #include <stdlib.h>
 
 /*
- * Minimal WSOLA implementation for time-stretching without pitch change.
+ * WSOLA implementation for pitch-invariant time-stretching.
+ * Optimized for quality with Hann windowing and corrected template matching.
  */
 
-#define WINDOW_MS 40
-#define OVERLAP_MS 10
-#define SEARCH_MS 15
-#define IN_BUF_MS 200
+#define WINDOW_MS 60
+#define OVERLAP_MS 20
+#define SEARCH_MS 20
+#define IN_BUF_MS 300
 
 struct speed_stretcher {
 	int channels;
@@ -25,6 +26,12 @@ struct speed_stretcher {
 	int16_t *in_buf;
 	int in_buf_size;
 	int in_buf_fill;
+
+	/* Hann window ramp for overlap-add */
+	int32_t *window_table;
+
+	/* Fractional input position for high-precision speed control */
+	double in_pos_frac;
 };
 
 struct speed_stretcher *speed_stretcher_new(int channels, int rate)
@@ -40,9 +47,17 @@ struct speed_stretcher *speed_stretcher_new(int channels, int rate)
 	s->in_buf_size = (IN_BUF_MS * rate) / 1000;
 	s->in_buf = xnew(int16_t, s->in_buf_size * channels);
 	s->in_buf_fill = 0;
+	s->in_pos_frac = 0.0;
 
-	d_print("new stretcher: rate=%d channels=%d win=%d overlap=%d search=%d in_buf=%d\n", 
-		rate, channels, s->window_size, s->overlap_size, s->search_range, s->in_buf_size);
+	s->window_table = xnew(int32_t, s->overlap_size);
+	for (int i = 0; i < s->overlap_size; i++) {
+		/* Raised Cosine (Hann) ramp: 0.5 * (1 - cos(pi * i / n)) */
+		double x = (double)i / s->overlap_size;
+		s->window_table[i] = (int32_t)(0.5 * (1.0 - cos(M_PI * x)) * 16384.0);
+	}
+
+	d_print("new stretcher: rate=%d channels=%d win=%d overlap=%d search=%d\n", 
+		rate, channels, s->window_size, s->overlap_size, s->search_range);
 	return s;
 }
 
@@ -51,6 +66,7 @@ void speed_stretcher_free(struct speed_stretcher *s)
 	if (!s) return;
 	free(s->overlap_buf);
 	free(s->in_buf);
+	free(s->window_table);
 	free(s);
 }
 
@@ -87,29 +103,27 @@ int speed_stretcher_process(struct speed_stretcher *s, double speed,
 	if (speed > 0.99 && speed < 1.01) {
 		int n = s->in_buf_fill < nr_output ? s->in_buf_fill : nr_output;
 		memcpy(output, s->in_buf, n * s->channels * sizeof(int16_t));
-		
-		/* Shift buffer */
 		if (n < s->in_buf_fill)
 			memmove(s->in_buf, s->in_buf + n * s->channels, (s->in_buf_fill - n) * s->channels * sizeof(int16_t));
 		s->in_buf_fill -= n;
+		s->in_pos_frac = 0.0;
 		return n;
 	}
 
 	int out_pos = 0;
-	int in_pos = 0;
-	int step = (int)((s->window_size - s->overlap_size) * speed);
+	double step = (double)(s->window_size - s->overlap_size) * speed;
 
-	/* Check if we have enough data to process at least one window */
-	/* Requirement: in_pos + step + search_range + window_size <= in_buf_fill */
+	/* We need enough data for search and one full window */
 	while (out_pos + s->window_size <= nr_output && 
-	       in_pos + step + s->search_range + s->window_size <= s->in_buf_fill) {
+	       (int)s->in_pos_frac + (int)step + s->search_range + s->window_size <= s->in_buf_fill) {
 		
 		int best_offset = 0;
 		long long min_diff = -1;
 
-		/* Search for best match around in_pos */
+		/* 1. Find best match around the TARGET position (in_pos + step) */
+		int target_pos = (int)s->in_pos_frac + (int)step;
 		for (int offset = -s->search_range; offset < s->search_range; offset++) {
-			int check_pos = in_pos + offset;
+			int check_pos = target_pos + offset;
 			if (check_pos < 0) continue;
 			
 			long long diff = calc_diff(s->channels, s->overlap_buf, 
@@ -120,41 +134,45 @@ int speed_stretcher_process(struct speed_stretcher *s, double speed,
 			}
 		}
 
-		in_pos += best_offset;
+		/* Update real in_pos to the best matching segment */
+		int actual_in_pos = target_pos + best_offset;
 
-		/* Overlap-Add */
+		/* 2. Overlap-Add using Hann window */
 		for (int i = 0; i < s->overlap_size; i++) {
-			int32_t w2 = (i * 1024) / s->overlap_size;
-			int32_t w1 = 1024 - w2;
+			int32_t w2 = s->window_table[i];
+			int32_t w1 = 16384 - w2;
 			for (int c = 0; c < s->channels; c++) {
 				int32_t v1 = s->overlap_buf[i * s->channels + c];
-				int32_t v2 = s->in_buf[(in_pos + i) * s->channels + c];
-				output[(out_pos + i) * s->channels + c] = (int16_t)((v1 * w1 + v2 * w2) >> 10);
+				int32_t v2 = s->in_buf[(actual_in_pos + i) * s->channels + c];
+				output[(out_pos + i) * s->channels + c] = (int16_t)((v1 * w1 + v2 * w2) >> 14);
 			}
 		}
 
-		/* Copy remaining part of the window */
+		/* 3. Copy the rest of the window (non-overlapping part) */
 		int remaining = s->window_size - s->overlap_size;
 		memcpy(output + (out_pos + s->overlap_size) * s->channels, 
-		       s->in_buf + (in_pos + s->overlap_size) * s->channels, 
+		       s->in_buf + (actual_in_pos + s->overlap_size) * s->channels, 
 		       remaining * s->channels * sizeof(int16_t));
 
-		out_pos += s->window_size - s->overlap_size;
-		in_pos += step;
-
-		/* Save overlap for next iteration */
+		/* 4. Prepare for next iteration */
+		out_pos += remaining;
+		
+		/* Save the continuation as the next overlap template */
 		memcpy(s->overlap_buf, 
-		       s->in_buf + in_pos * s->channels, 
+		       s->in_buf + (actual_in_pos + remaining) * s->channels, 
 		       s->overlap_size * s->channels * sizeof(int16_t));
-	}
-
-	/* Shift remaining data in internal buffer */
-	if (in_pos > 0) {
-		if (in_pos < s->in_buf_fill) {
-			memmove(s->in_buf, s->in_buf + in_pos * s->channels, 
-			        (s->in_buf_fill - in_pos) * s->channels * sizeof(int16_t));
+		
+		/* Advance fractional position by the exact speed-scaled step */
+		s->in_pos_frac += step;
+		
+		/* Shift buffer as we go to avoid large memmoves at the end */
+		int consumed_frames = (int)s->in_pos_frac;
+		if (consumed_frames > 0) {
+			memmove(s->in_buf, s->in_buf + consumed_frames * s->channels, 
+			        (s->in_buf_fill - consumed_frames) * s->channels * sizeof(int16_t));
+			s->in_buf_fill -= consumed_frames;
+			s->in_pos_frac -= consumed_frames;
 		}
-		s->in_buf_fill -= in_pos;
 	}
 
 	return out_pos;
