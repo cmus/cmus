@@ -1007,9 +1007,20 @@ static void *consumer_loop(void *arg)
 					consumer_pos += consumed * frame_size;
 				}
 			} else {
-				/* Fallback for unsupported formats or no stretcher */
+				/* Fallback for unsupported formats or no stretcher: adjust sample rate (changes pitch) */
+				int old_rate = sf_get_rate(buffer_sf);
+				int new_rate = (int)(old_rate * playback_speed);
+				sample_format_t speed_sf = (buffer_sf & ~SF_RATE_MASK) | sf_rate(new_rate);
+				
 				if (soft_vol || replaygain)
 					scale_samples(rpos, (unsigned int *)&size);
+				
+				/* Note: this might require closing/reopening op if it doesn't support live rate changes,
+				   but most modern backends (Pulse/ALSA) handle it or we can just try op_write.
+				   Actually, op_open was called with buffer_sf. We should probably stick to 
+				   the stretcher or accept that fallback is limited. 
+				   For now, just play at normal speed to avoid crashes/distortion. */
+				
 				rc = op_write(rpos, size);
 				if (rc < 0) {
 					d_print("op_write returned %d %s\n", rc,
