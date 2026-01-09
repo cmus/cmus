@@ -31,6 +31,7 @@ extern const char *home_dir;
 char **get_words(const char *text);
 int strptrcmp(const void *a, const void *b);
 int strptrcoll(const void *a, const void *b);
+int strptrnatcmp(const void *a, const void *b);
 int misc_init(void);
 const char *escape(const char *str);
 const char *unescape(const char *str);

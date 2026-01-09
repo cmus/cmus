@@ -137,6 +137,11 @@ static inline int is_space(const char ch)
 	return (ch == ' ' || ch == '\t');
 }
 
+static inline int is_digit(const char ch)
+{
+	return (ch >= '0' && ch <= '9');
+}
+
 static inline int ends_with(const char *str, const char *suffix)
 {
 	return strstr(str, suffix) + strlen(suffix) == str + strlen(str);
