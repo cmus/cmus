@@ -550,6 +550,23 @@ err:
 	error_msg("expecting one argument: [+-]INTEGER[mh] or [+-]H:MM:SS");
 }
 
+static void cmd_speed(char *arg)
+{
+	double val;
+	if (arg == NULL) {
+		error_msg("usage: speed [+|-]VALUE");
+		return;
+	}
+
+	if (arg[0] == '+' || arg[0] == '-') {
+		val = playback_speed + atof(arg);
+	} else {
+		val = atof(arg);
+	}
+	player_set_speed(val);
+	update_statusline();
+}
+
 static void cmd_factivate(char *arg)
 {
 	filters_activate_names(arg);
@@ -2674,6 +2691,7 @@ struct command commands[] = {
 	{ "showbind",              cmd_showbind,         1, 1,  expand_unbind_args,   0, 0          },
 	{ "shuffle",               cmd_reshuffle,        0, 0,  NULL,                 0, CMD_HIDDEN },
 	{ "source",                cmd_source,           1, 1,  expand_files,         0, CMD_UNSAFE },
+	{ "speed",                 cmd_speed,            1, 1,  NULL,                 0, 0          },
 	{ "toggle",                cmd_toggle,           1, 1,  expand_toptions,      0, 0          },
 	{ "tqueue",                cmd_tqueue,           0, 1,  NULL,                 0, 0          },
 	{ "unbind",                cmd_unbind,           1, 1,  expand_unbind_args,   0, 0          },

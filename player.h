@@ -83,6 +83,7 @@ extern double replaygain_preamp;
 extern int soft_vol;
 extern int soft_vol_l;
 extern int soft_vol_r;
+extern double playback_speed;
 
 void player_init(void);
 void player_exit(void);
@@ -101,6 +102,7 @@ void player_stop(void);
 void player_pause(void);
 void player_pause_playback(void);
 void player_seek(double offset, int relative, int start_playing);
+void player_set_speed(double speed);
 void player_set_op(const char *name);
 void player_set_buffer_chunks(unsigned int nr_chunks);
 int player_get_buffer_chunks(void);
