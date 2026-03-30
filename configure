@@ -44,7 +44,8 @@ check_cflags()
 {
 	check_cc_flag -pipe -Wall -Wshadow -Wcast-align -Wpointer-arith \
 		-Wwrite-strings -Wundef -Wmissing-prototypes -Wredundant-decls \
-		-Wextra -Wno-sign-compare -Wformat-security
+		-Wextra -Wno-sign-compare -Wformat-security \
+		-D_DEFAULT_SOURCE -D_XOPEN_SOURCE=600
 
 	for i in -Wold-style-definition \
 		-Wno-pointer-sign \
@@ -74,6 +75,8 @@ check_coreaudio()
 }
 
 wcwidth_code="
+#define _DEFAULT_SOURCE
+#define _XOPEN_SOURCE 600
 #include <wchar.h>
 
 /* wchar_t must be 4 bytes to support full unicode */
@@ -528,6 +531,8 @@ check_string_function()
 {
 	msg_checking "for function $1"
 	string_function_code="
+#define _DEFAULT_SOURCE
+#define _XOPEN_SOURCE 600
 #include <string.h>
 int (*ptr)() = (int (*)()) &$1;
 int main() { return 0; }
