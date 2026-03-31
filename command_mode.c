@@ -48,8 +48,11 @@
 #include "op.h"
 #include "mpris.h"
 #include "job.h"
+#include "youtube.h"
+#include "youtube_ui.h"
 
 #include <stdlib.h>
+#include <string.h>
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -379,6 +382,62 @@ static void cmd_clear(char *arg)
 		return;
 	}
 	view_clear(flag_to_view(flag));
+}
+
+static void cmd_youtube(char *arg)
+{
+	char *subcommand, *url, *ptr;
+	char output_path[512];
+
+	if (!arg || !*arg) {
+		error_msg("usage: :youtube add <url>");
+		return;
+	}
+
+	/* Parse subcommand and URL */
+	subcommand = arg;
+	ptr = strchr(arg, ' ');
+	if (ptr) {
+		*ptr = '\0';
+		url = ptr + 1;
+		/* Skip leading spaces */
+		while (*url == ' ')
+			url++;
+	} else {
+		url = NULL;
+	}
+
+	if (!url || !*url) {
+		error_msg(":youtube requires URL");
+		return;
+	}
+
+	/* Handle different subcommands */
+	if (strcmp(subcommand, "add") == 0) {
+		/* Validate URL first */
+		if (!youtube_url_is_valid(url)) {
+			error_msg("Invalid YouTube URL");
+			return;
+		}
+
+		/* Check if yt-dlp is installed */
+		if (!check_ytdlp_installed()) {
+			error_msg("yt-dlp not installed");
+			return;
+		}
+
+		/* Show download start message */
+		youtube_ui_show_download_start(url);
+
+		/* Start download in background */
+		if (youtube_download(url, output_path, sizeof(output_path)) == 0) {
+			youtube_ui_show_download_complete(output_path);
+		} else {
+			youtube_ui_show_download_error("Download failed");
+		}
+	} else {
+		error_msg("Unknown subcommand: %s. Use 'add'", subcommand);
+	}
 }
 
 static void cmd_load(char *arg)
@@ -2710,6 +2769,7 @@ struct command commands[] = {
 	{ "win-update",            cmd_win_update,       0, 0,  NULL,                 0, 0          },
 	{ "win-update-cache",      cmd_win_update_cache, 0, 1,  NULL,                 0, 0          },
 	{ "wq",                    cmd_quit,             0, 1,  NULL,                 0, 0          },
+	{ "youtube",               cmd_youtube,          1, 1,  NULL,                 0, 0          },
 	{ NULL,                    NULL,                 0, 0,  0,                    0, 0          }
 };
 
