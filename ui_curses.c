@@ -1838,7 +1838,7 @@ static int fill_status_program_track_info_args(char **argv, int i, struct player
 	if (pi->pos) {
 		char buf[32];
 		snprintf(buf, sizeof(buf), "%d", pi->pos);
-		argv[i++] = xstrdup("position_sec");
+		argv[i++] = xstrdup("position");
 		argv[i++] = xstrdup(buf);
 	}
 
