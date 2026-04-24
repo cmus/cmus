@@ -1785,7 +1785,7 @@ static void clear_error(void)
 
 /* screen updates }}} */
 
-static int fill_status_program_track_info_args(char **argv, int i, struct track_info *ti)
+static int fill_status_program_track_info_args(char **argv, int i, struct player_info *pi, struct track_info *ti)
 {
 	/* returns first free argument index */
 
@@ -1835,10 +1835,17 @@ static int fill_status_program_track_info_args(char **argv, int i, struct track_
 		argv[i++] = xstrdup(stream_title);
 	}
 
+	if (pi->pos) {
+		char buf[32];
+		snprintf(buf, sizeof(buf), "%d", pi->pos);
+		argv[i++] = xstrdup("position_sec");
+		argv[i++] = xstrdup(buf);
+	}
+
 	return i;
 }
 
-static void spawn_status_program_inner(const char *status_text, struct track_info *ti)
+static void spawn_status_program_inner(const char *status_text, struct player_info *pi, struct track_info *ti)
 {
 	if (status_display_program == NULL || status_display_program[0] == 0)
 		return;
@@ -1852,7 +1859,7 @@ static void spawn_status_program_inner(const char *status_text, struct track_inf
 	argv[i++] = xstrdup(status_text);
 
 	if (ti) {
-		i = fill_status_program_track_info_args(argv, i, ti);
+		i = fill_status_program_track_info_args(argv, i, pi, ti);
 	}
 	argv[i++] = NULL;
 
@@ -1864,7 +1871,7 @@ static void spawn_status_program_inner(const char *status_text, struct track_inf
 
 static void spawn_status_program(void)
 {
-	spawn_status_program_inner(player_status_names[player_info.status], player_info.ti);
+	spawn_status_program_inner(player_status_names[player_info.status], &player_info, player_info.ti);
 }
 
 static volatile sig_atomic_t ctrl_c_pressed = 0;
@@ -2639,6 +2646,6 @@ int main(int argc, char *argv[])
 	init_all();
 	main_loop();
 	exit_all();
-	spawn_status_program_inner("exiting", NULL);
+	spawn_status_program_inner("exiting", NULL, NULL);
 	return 0;
 }
