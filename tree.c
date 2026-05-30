@@ -891,14 +891,25 @@ static void album_add_track(struct album *album, struct tree_track *track)
 	rb_insert_color(&track->tree_node, &album->track_root);
 }
 
-const char *tree_artist_name(const struct track_info* ti)
+char *tree_artist_name(const struct track_info* ti)
 {
-	const char *val = ti->albumartist;
+	char *val;
+	const char *found, *artist = ti->albumartist;
 
 	if (ti->is_va_compilation)
-		val = "<Various Artists>";
-	if (!val || strcmp(val, "") == 0)
-		val = "<No Name>";
+		val = xstrdup("<Various Artists>");
+	else if (!artist || strcmp(artist, "") == 0)
+		val = xstrdup("<No Name>");
+	else
+	{
+		  // Assume that artist names separated by comma and first artist is owner of track.
+		  // This needed to prevent creating albums like "Daft Punk, Pharell Williams"
+		  found = strstr(artist, ", ");
+		  if (found)
+			val = xstrndup(artist, found - artist);
+		  else
+			val = xstrdup(artist);
+	}
 
 	return val;
 }
@@ -943,6 +954,7 @@ void tree_add_track(struct tree_track *track,
 	struct album *album, *new_album;
 	int date;
 	int is_va_compilation = 0;
+	bool free_artist_name = false;
 
 	date = ti->originaldate;
 	if (date < 0)
@@ -954,6 +966,7 @@ void tree_add_track(struct tree_track *track,
 	} else {
 		album_name	= tree_album_name(ti);
 		artist_name	= tree_artist_name(ti);
+		free_artist_name = true;
 		artistsort_name	= ti->artistsort;
 		albumsort_name	= ti->albumsort;
 
@@ -1041,6 +1054,9 @@ void tree_add_track(struct tree_track *track,
 
 	if (track_visible(track))
 		window_changed(lib_track_win);
+
+	if (free_artist_name)
+		free((void*)artist_name);
 }
 
 static void remove_sel_artist(struct artist *artist)
