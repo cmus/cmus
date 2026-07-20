@@ -449,7 +449,7 @@ static int op_aaudio_set_sharing_mode(const char *val)
 
 static int op_aaudio_get_sharing_mode(char **val)
 {
-	switch (op_aaudio_opt_performance_mode) {
+	switch (op_aaudio_opt_sharing_mode) {
 	default:
 		__attribute__((fallthrough));
 	case AAUDIO_SHARING_MODE_SHARED:
