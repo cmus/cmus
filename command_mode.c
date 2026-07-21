@@ -54,6 +54,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <dirent.h>
+#include <unistd.h>
 
 static struct history cmd_history;
 static char *cmd_history_filename;
@@ -772,12 +773,21 @@ static void cmd_colorscheme(char *arg)
 {
 	char filename[512];
 
+	/* check that the theme at least exists before resetting the colors */
 	snprintf(filename, sizeof(filename), "%s/%s.theme", cmus_config_dir, arg);
-	if (source_file(filename) == -1) {
+	if (access(filename, R_OK) != 0) {
 		snprintf(filename, sizeof(filename), "%s/%s.theme", cmus_data_dir, arg);
-		if (source_file(filename) == -1)
+		if (access(filename, R_OK) != 0) {
 			error_msg("sourcing %s: %s", filename, strerror(errno));
+			return;
+		}
 	}
+
+	/* so incomplete themes don't leave behind old colors */
+	colors_reset();
+
+	if (source_file(filename) == -1)
+		error_msg("sourcing %s: %s", filename, strerror(errno));
 }
 
 /*

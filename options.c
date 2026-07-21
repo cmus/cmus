@@ -1792,9 +1792,23 @@ void option_set(const char *name, const char *value)
 		opt->set(opt->data, value);
 }
 
+static int default_colors[NR_COLORS];
+static int default_attrs[NR_ATTRS];
+
+void colors_reset(void)
+{
+	memcpy(colors, default_colors, sizeof(colors));
+	memcpy(attrs, default_attrs, sizeof(attrs));
+	update_colors();
+	update_full();
+}
+
 void options_add(void)
 {
 	int i;
+
+	memcpy(default_colors, colors, sizeof(colors));
+	memcpy(default_attrs, attrs, sizeof(attrs));
 
 	for (i = 0; simple_options[i].name; i++)
 		option_add(simple_options[i].name, NULL, simple_options[i].get,

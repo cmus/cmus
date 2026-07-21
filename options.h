@@ -231,6 +231,9 @@ extern char **pl_env_vars;
 /* build option list */
 void options_add(void);
 
+/* restore colors[]/attrs[] to the initial state */
+void colors_reset(void);
+
 /* load options from the config file */
 void options_load(void);
 
