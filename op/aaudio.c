@@ -582,10 +582,6 @@ static int op_aaudio_open(sample_format_t sf, const channel_position_t *channel_
 		d_print("configure format failed (%d - %s)\n", rc, AAudio_convertResultToText(rc));
 		return -OP_ERROR_AAUDIO(rc);
 	}
-	if (op.remap) {
-		d_print("allocating %zu bytes for remap buffer\n", (size_t) AAudioStream_getBufferCapacityInFrames(op.stream) * (size_t) sf_get_frame_size(sf));
-		op.remap_buf = xmalloc((size_t) AAudioStream_getBufferCapacityInFrames(op.stream) * (size_t) sf_get_frame_size(sf));
-	}
 	op.sf = sf;
 
 	// open the stream
@@ -593,10 +589,6 @@ static int op_aaudio_open(sample_format_t sf, const channel_position_t *channel_
 	rc = AAudioStreamBuilder_openStream(bld, &op.stream);
 	if (rc) {
 		d_print("open stream failed (%d - %s)\n", rc, AAudio_convertResultToText(rc));
-		if (op.remap_buf) {
-			free(op.remap_buf);
-			op.remap_buf = NULL;
-		}
 		if (op.remap) {
 			free(op.remap);
 			op.remap = NULL;
@@ -608,6 +600,14 @@ static int op_aaudio_open(sample_format_t sf, const channel_position_t *channel_
 
 	d_print("optimal buffer frames = %d\n", AAudioStream_getFramesPerBurst(op.stream));
 	d_print("buffer capacity frames = %d\n", AAudioStream_getBufferCapacityInFrames(op.stream));
+
+	// the remap buffer needs to fit the largest write, which op_aaudio_write
+	// bounds by the *negotiated* buffer capacity, so it can only be allocated
+	// once the stream is open
+	if (op.remap) {
+		d_print("allocating %zu bytes for remap buffer\n", (size_t) AAudioStream_getBufferCapacityInFrames(op.stream) * (size_t) sf_get_frame_size(sf));
+		op.remap_buf = xmalloc((size_t) AAudioStream_getBufferCapacityInFrames(op.stream) * (size_t) sf_get_frame_size(sf));
+	}
 
 
 	// cleanup the stream builder
