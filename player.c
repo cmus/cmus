@@ -75,6 +75,7 @@ static struct player_info player_info_priv = {
 	.metadata_changed = 0,
 	.status_changed = 0,
 	.position_changed = 0,
+	.position_seeked = 0,
 	.buffer_fill_changed = 0,
 };
 
@@ -549,6 +550,17 @@ static void _consumer_position_update(void)
 		player_info_priv.position_changed = 1;
 		player_info_priv_unlock();
 	}
+}
+
+/*
+ * position is seeked
+ */
+static void _player_position_seeked(void)
+{
+	player_info_priv_lock();
+	player_info_priv.position_seeked = 1;
+	player_info_priv_unlock();
+	_consumer_position_update();
 }
 
 /*
@@ -1294,7 +1306,7 @@ void player_seek(double offset, int relative, int start_playing)
 			reset_buffer();
 			consumer_pos = new_pos * buffer_second_size();
 			scale_pos = consumer_pos;
-			_consumer_position_update();
+			_player_position_seeked();
 			if (stopped && !start_playing) {
 				_producer_pause();
 				_consumer_pause();
@@ -1305,7 +1317,6 @@ void player_seek(double offset, int relative, int start_playing)
 			d_print("error: ip_seek returned %d\n", rc);
 		}
 	}
-	mpris_seeked();
 	player_unlock();
 }
 
@@ -1491,6 +1502,7 @@ void player_info_snapshot(void)
 	player_info_priv.metadata_changed = 0;
 	player_info_priv.status_changed = 0;
 	player_info_priv.position_changed = 0;
+	player_info_priv.position_seeked = 0;
 	player_info_priv.buffer_fill_changed = 0;
 	player_info_priv.error_msg = NULL;
 
