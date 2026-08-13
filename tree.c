@@ -948,7 +948,7 @@ void tree_add_track(struct tree_track *track,
 	if (date < 0)
 		date = ti->date;
 
-	if (is_http_url(ti->filename)) {
+	if (is_http_or_https_url(ti->filename)) {
 		artist_name = "<Stream>";
 		album_name = "<Stream>";
 	} else {

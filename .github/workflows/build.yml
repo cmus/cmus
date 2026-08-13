@@ -21,7 +21,7 @@ jobs:
           brew install \
             libao ffmpeg libcddb libcdio libcue libdiscid faad2 flac jack mad \
             libmodplug mp4v2 musepack opusfile libsamplerate libvorbis wavpack \
-            pkg-config
+            pkg-config openssl@3
       - name: Dependencies (apt)
         if: startswith(matrix.os, 'ubuntu-')
         run: |
@@ -32,7 +32,7 @@ jobs:
             libavcodec-dev libswresample-dev libflac-dev libjack-dev \
             libmad0-dev libmodplug-dev libmpcdec-dev libsystemd-dev \
             libopusfile-dev libpulse-dev libsamplerate0-dev libsndio-dev \
-            libvorbis-dev libwavpack-dev
+            libvorbis-dev libwavpack-dev libssl-dev
       - name: Build
         run: |
           ./configure CC="${{matrix.cc}}"

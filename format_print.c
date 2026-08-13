@@ -305,7 +305,7 @@ static int format_eval_cond(struct expr* expr, const struct format_option *fopts
 	}
 	if (strcmp(key, "stream") == 0) {
 		fo = find_fopt(fopts, "filename");
-		return fo && is_http_url(fo->fo_str);
+		return fo && is_http_or_https_url(fo->fo_str);
 	}
 	fo = find_fopt(fopts, key);
 	if (fo)

@@ -16,10 +16,10 @@ all: main plugins man
 -include config.mk
 include scripts/lib.mk
 
-CFLAGS += -D_FILE_OFFSET_BITS=64
+CFLAGS += -D_FILE_OFFSET_BITS=64 $(OPENSSL_CFLAGS)
 
 CMUS_LIBS = $(PTHREAD_LIBS) $(NCURSES_LIBS) $(ICONV_LIBS) $(DL_LIBS) $(DISCID_LIBS) \
-			-lm $(COMPAT_LIBS) $(LIBSYSTEMD_LIBS)
+			-lm $(COMPAT_LIBS) $(LIBSYSTEMD_LIBS) $(OPENSSL_LIBS)
 
 command_mode.o input.o main.o ui_curses.o op/pulse.lo: .version
 command_mode.o input.o main.o ui_curses.o op/pulse.lo: CFLAGS += -DVERSION=\"$(VERSION)\"
@@ -41,9 +41,10 @@ cmus-y := \
 	search_mode.o search.o server.o spawn.o tabexp_file.o tabexp.o track_info.o \
 	track.o tree.o uchar.o u_collate.o ui_curses.o window.o worker.o xstrjoin.o
 
-cmus-$(CONFIG_MPRIS) += mpris.o
+cmus-$(CONFIG_MPRIS)   += mpris.o
+cmus-$(CONFIG_OPENSSL) += ssl.o
 
-$(cmus-y): CFLAGS += $(PTHREAD_CFLAGS) $(NCURSES_CFLAGS) $(ICONV_CFLAGS) $(DL_CFLAGS)
+$(cmus-y): CFLAGS += $(PTHREAD_CFLAGS) $(NCURSES_CFLAGS) $(ICONV_CFLAGS) $(DL_CFLAGS) $(OPENSSL_CFLAGS)
 
 cmus: $(cmus-y) file.o path.o prog.o xmalloc.o
 	$(call cmd,ld,$(CMUS_LIBS))
