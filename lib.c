@@ -177,16 +177,19 @@ static bool track_exists(struct track_info *ti)
 	struct artist *artist;
 	struct album *album;
 	struct tree_track *track;
+	char * artist_name;
 
 	if (!ti->collkey_title)
 		return false;
 
-	char *artist_collkey_name = u_strcasecoll_key(tree_artist_name(ti));
+	artist_name = tree_artist_name(ti);
+	char *artist_collkey_name = u_strcasecoll_key(artist_name);
 	rb_for_each_entry(artist, node, &lib_artist_root, tree_node) {
 		if (strcmp(artist->collkey_name, artist_collkey_name) == 0)
 			break;
 	}
 	free(artist_collkey_name);
+	free(artist_name);
 
 	if (!artist)
 		return false;
