@@ -32,6 +32,7 @@
 #include "lib.h"
 #include "pl_env.h"
 #include "ui_curses.h"
+#include "speed.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -94,6 +95,7 @@ double replaygain_preamp = 0.0;
 int soft_vol;
 int soft_vol_l;
 int soft_vol_r;
+double playback_speed = 1.0;
 
 static sample_format_t buffer_sf;
 static CHANNEL_MAP(buffer_channel_map);
@@ -111,6 +113,7 @@ static pthread_cond_t consumer_playing = CMUS_COND_INITIALIZER;
 static int consumer_running = 1;
 static enum consumer_status consumer_status = CS_STOPPED;
 static unsigned long consumer_pos = 0;
+static struct speed_stretcher *stretcher = NULL;
 
 /* for replay gain and soft vol
  * usually same as consumer_pos, sometimes more than consumer_pos
@@ -163,6 +166,10 @@ static void set_buffer_sf(void)
 		buffer_sf |= sf_host_endian();
 		channel_map_init_stereo(buffer_channel_map);
 	}
+
+	if (stretcher)
+		speed_stretcher_free(stretcher);
+	stretcher = speed_stretcher_new(sf_get_channels(buffer_sf), sf_get_rate(buffer_sf));
 }
 
 #define SOFT_VOL_SCALE 65536
@@ -932,24 +939,95 @@ static void *consumer_loop(void *arg)
 			}
 			if (size > space)
 				size = space;
-			if (soft_vol || replaygain)
-				scale_samples(rpos, (unsigned int *)&size);
-			rc = op_write(rpos, size);
-			if (rc < 0) {
-				d_print("op_write returned %d %s\n", rc,
-						rc == -1 ? strerror(errno) : "");
 
-				/* try to reopen */
-				op_close();
-				_consumer_status_update(CS_STOPPED);
-				_consumer_play();
+			if (playback_speed > 0.99 && playback_speed < 1.01) {
+				if (soft_vol || replaygain)
+					scale_samples(rpos, (unsigned int *)&size);
+				rc = op_write(rpos, size);
+				if (rc < 0) {
+					d_print("op_write returned %d %s\n", rc,
+							rc == -1 ? strerror(errno) : "");
 
-				consumer_unlock();
-				break;
+					/* try to reopen */
+					op_close();
+					_consumer_status_update(CS_STOPPED);
+					_consumer_play();
+
+					consumer_unlock();
+					break;
+				}
+				buffer_consume(rc);
+				consumer_pos += rc;
+				space -= rc;
+			} else if (stretcher && sf_get_bits(buffer_sf) == 16 && sf_get_channels(buffer_sf) == 2) {
+				int consumed = 0;
+				int produced = 0;
+				int frame_size = sf_get_frame_size(buffer_sf);
+				int max_produce = space / frame_size;
+				static int16_t stretched_buf[8192 * 2]; // 16K samples, 32KB
+				
+				if (max_produce > 8192)
+					max_produce = 8192;
+
+				produced = speed_stretcher_process(stretcher, playback_speed, 
+					(int16_t *)rpos, size / frame_size,
+					stretched_buf, max_produce, &consumed);
+				
+				if (produced > 0) {
+					unsigned int produced_bytes = produced * frame_size;
+					if (soft_vol || replaygain)
+						scale_samples((char *)stretched_buf, &produced_bytes);
+					rc = op_write((char *)stretched_buf, produced_bytes);
+					if (rc < 0) {
+						d_print("op_write returned %d %s\n", rc,
+								rc == -1 ? strerror(errno) : "");
+
+						/* try to reopen */
+						op_close();
+						_consumer_status_update(CS_STOPPED);
+						_consumer_play();
+
+						consumer_unlock();
+						break;
+					}
+					/* we assume op_write wrote all bytes since it's ncurses based and usually blocks or handles it */
+					buffer_consume(consumed * frame_size);
+					consumer_pos += consumed * frame_size;
+					space -= rc;
+				} else {
+					if (consumed == 0) {
+						/* Stretcher needs more data */
+						producer_unlock();
+						_consumer_position_update();
+						consumer_unlock();
+						ms_sleep(10);
+						break;
+					}
+					buffer_consume(consumed * frame_size);
+					consumer_pos += consumed * frame_size;
+				}
+			} else {
+				/* Fallback for unsupported formats or no stretcher */
+				if (soft_vol || replaygain)
+					scale_samples(rpos, (unsigned int *)&size);
+				
+				rc = op_write(rpos, size);
+				if (rc < 0) {
+					d_print("op_write returned %d %s\n", rc,
+							rc == -1 ? strerror(errno) : "");
+
+					/* try to reopen */
+					op_close();
+					_consumer_status_update(CS_STOPPED);
+					_consumer_play();
+
+					consumer_unlock();
+					break;
+				}
+				buffer_consume(rc);
+				consumer_pos += rc;
+				space -= rc;
 			}
-			buffer_consume(rc);
-			consumer_pos += rc;
-			space -= rc;
 		}
 	}
 	_consumer_stop();
@@ -1088,6 +1166,10 @@ void player_exit(void)
 	rc = pthread_join(producer_thread, NULL);
 	BUG_ON(rc);
 	buffer_free();
+	if (stretcher) {
+		speed_stretcher_free(stretcher);
+		stretcher = NULL;
+	}
 }
 
 void player_stop(void)
@@ -1306,6 +1388,20 @@ void player_seek(double offset, int relative, int start_playing)
 		}
 	}
 	mpris_seeked();
+	player_unlock();
+}
+
+void player_set_speed(double speed)
+{
+	player_lock();
+	if (speed < 0.25)
+		speed = 0.25;
+	if (speed > 2.0)
+		speed = 2.0;
+	playback_speed = speed;
+	player_info_priv_lock();
+	player_info_priv.status_changed = 1;
+	player_info_priv_unlock();
 	player_unlock();
 }
 

@@ -274,6 +274,7 @@ static const struct {
 		"%{?show_current_bitrate & bitrate>=0? %{bitrate} kbps }"
 		"%= "
 		"%{?repeat_current?repeat current?%{?play_library?%{?playlist_mode!=\"all\"?%{playlist_mode} from }%{?play_sorted?sorted }library?playlist}} | "
+		"%{?speed?speed: %{speed}x | }"
 		"%{?volume>=0?%{?lvolume!=rvolume?%{lvolume}%% %{rvolume}?%{volume}}%% | }"
 		"%1{continue}%1{follow}%1{repeat}%1{shuffle} "
 	},
