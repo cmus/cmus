@@ -23,15 +23,65 @@
 #include "xmalloc.h"
 #include "ui_curses.h" /* using_utf8, charset */
 #include "convert.h"
+#ifdef HAVE_CONFIG
+#include "config/corefoundation.h"
+#endif
 
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
 
+#ifdef HAVE_COREFOUNDATION
+#include <CoreFoundation/CoreFoundation.h>
+
+/*
+ * strxfrm() on macOS asserts inside libc for some non-ASCII strings
+ * (https://github.com/cmus/cmus/issues/1421), so build the key with
+ * CoreFoundation instead. Canonical decomposition (NFD) makes precomposed
+ * and decomposed forms compare equal and keeps characters with diacritics
+ * next to their base character when the key is compared bytewise.
+ *
+ * Returns NULL if @str could not be converted.
+ */
+static char *cf_strcoll_key(const char *str)
+{
+	CFStringRef cfstr;
+	CFMutableStringRef normalized;
+	CFIndex max_size;
+	char *result = NULL;
+
+	cfstr = CFStringCreateWithCString(kCFAllocatorDefault, str, kCFStringEncodingUTF8);
+	if (!cfstr)
+		return NULL;
+
+	normalized = CFStringCreateMutableCopy(kCFAllocatorDefault, 0, cfstr);
+	CFRelease(cfstr);
+	if (!normalized)
+		return NULL;
+
+	CFStringNormalize(normalized, kCFStringNormalizationFormD);
+
+	max_size = CFStringGetMaximumSizeForEncoding(CFStringGetLength(normalized), kCFStringEncodingUTF8);
+	if (max_size != kCFNotFound && max_size < INT_MAX - 2) {
+		result = xnew(char, max_size + 1);
+		if (!CFStringGetCString(normalized, result, max_size + 1, kCFStringEncodingUTF8)) {
+			free(result);
+			result = NULL;
+		}
+	}
+
+	CFRelease(normalized);
+	return result;
+}
+#endif
+
 char *u_strcoll_key(const char *str)
 {
 	char *result = NULL;
 
+#ifdef HAVE_COREFOUNDATION
+	result = cf_strcoll_key(str);
+#else
 	if (using_utf8) {
 		size_t xfrm_len = strxfrm(NULL, str, 0);
 		if ((ssize_t) xfrm_len >= 0 && xfrm_len < INT_MAX - 2) {
@@ -55,6 +105,7 @@ char *u_strcoll_key(const char *str)
 			free(str_locale);
 		}
 	}
+#endif
 
 	if (!result) {
 		size_t xfrm_len = strlen(str);
