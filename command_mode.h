@@ -69,7 +69,7 @@ void run_command(const char *buf);
 
 struct command *get_command(const char *str);
 
-void view_clear(int view);
+void view_clear(int view, int explicit_view);
 void view_add(int view, char *arg, int prepend);
 void view_load(int view, char *arg);
 void view_save(int view, char *arg, int to_stdout, int filtered, int extended);
