@@ -110,10 +110,11 @@ Search mode works like the command mode. To enter search mode, press */* and
 type the query then press *ENTER*. Press *n* to move to the next result or *N*
 for the previous one. Type *?* to search backwards.
 
-In views 1-4 the query is matched against the artist, album and title tags. Type
-*//WORDS* or *??WORDS* to search only artists/albums in view 1 and only titles
-in views 2-4. If the file doesn't have tags, words are compared to the filename
-excluding the path.
+In views 1-4 the query is matched against the artist, album (or albumsort),
+albumartist (or albumartistsort) and title tags.
+Type *//WORDS* or *??WORDS* to search only artists/albums in view 1 and only
+titles in views 2-4. If the file doesn't have tags, words are compared to the
+filename excluding the path.
 
 Searching also works in views 5-7.
 

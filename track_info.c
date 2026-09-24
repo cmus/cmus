@@ -171,22 +171,22 @@ int track_info_has_tag(const struct track_info *ti)
 
 static inline int match_word(const struct track_info *ti, const char *word, unsigned int flags)
 {
-	return ((flags & TI_MATCH_ARTIST) &&
-				   ((ti->artist && u_strcasestr_base(ti->artist, word))
-				|| ((ti->artistsort && u_strcasestr_base(ti->artistsort, word))))) ||
-	       ((flags & TI_MATCH_ALBUM) &&
-				   ((ti->album && u_strcasestr_base(ti->album, word))
-				|| ((ti->albumsort && u_strcasestr_base(ti->albumsort, word))))) ||
+	return ((flags & TI_MATCH_ARTIST) && ti->artist && u_strcasestr_base(ti->artist, word)) ||
+	       ((flags & TI_MATCH_ALBUM) && ti->album && u_strcasestr_base(ti->album, word)) ||
+	       ((flags & TI_MATCH_ALBUMSORT) && ti->albumsort && u_strcasestr_base(ti->albumsort, word)) ||
 	       ((flags & TI_MATCH_TITLE) && ti->title && u_strcasestr_base(ti->title, word)) ||
-	       ((flags & TI_MATCH_ALBUMARTIST) && ti->albumartist && u_strcasestr_base(ti->albumartist, word));
+	       ((flags & TI_MATCH_ALBUMARTIST) && ti->albumartist && u_strcasestr_base(ti->albumartist, word)) ||
+	       ((flags & TI_MATCH_ALBUMARTISTSORT) && ti->artistsort && u_strcasestr_base(ti->artistsort, word));
 }
 
 static inline int flags_set(const struct track_info *ti, unsigned int flags)
 {
 	return ((flags & TI_MATCH_ARTIST) && ti->artist) ||
 	       ((flags & TI_MATCH_ALBUM) && ti->album) ||
+	       ((flags & TI_MATCH_ALBUMSORT) && ti->albumsort) ||
 	       ((flags & TI_MATCH_TITLE) && ti->title) ||
-	       ((flags & TI_MATCH_ALBUMARTIST) && ti->albumartist);
+	       ((flags & TI_MATCH_ALBUMARTIST) && ti->albumartist) ||
+	       ((flags & TI_MATCH_ALBUMARTISTSORT) && ti->artistsort);
 }
 
 int track_info_matches_full(const struct track_info *ti, const char *text,
