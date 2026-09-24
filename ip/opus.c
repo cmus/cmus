@@ -46,7 +46,7 @@ static int read_func(void *datasource, unsigned char *ptr, int size)
 static int seek_func(void *datasource, opus_int64 offset, int whence)
 {
 	struct input_plugin_data *ip_data = datasource;
-	return lseek(ip_data->fd, offset, whence);
+	return lseek(ip_data->fd, offset, whence) == -1 ? -1 : 0;
 }
 
 static int close_func(void *datasource)
@@ -66,7 +66,7 @@ static opus_int64 tell_func(void *datasource)
 	return lseek(ip_data->fd, 0, SEEK_CUR);
 }
 
-static OpusFileCallbacks callbacks = {
+static const OpusFileCallbacks callbacks = {
 	.read = read_func,
 	.seek = seek_func,
 	.tell = tell_func,
@@ -77,19 +77,12 @@ static int opus_open(struct input_plugin_data *ip_data)
 {
 	struct opus_private *priv;
 	int rc;
-	void *source;
 
 	priv = xnew(struct opus_private, 1);
 	priv->current_link = -1;
 	priv->of = NULL;
 
-	source = op_fdopen(&callbacks, ip_data->fd, "r");
-	if (source == NULL) {
-		free(priv);
-		return -IP_ERROR_INTERNAL;
-	}
-
-	priv->of = op_open_callbacks(source, &callbacks, NULL, 0, &rc);
+	priv->of = op_open_callbacks(ip_data, &callbacks, NULL, 0, &rc);
 	if (rc != 0) {
 		d_print("op_open_callbacks failed: %d:%s\n", rc, strerror(rc));
 		free(priv);
