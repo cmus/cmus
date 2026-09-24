@@ -85,6 +85,7 @@ int auto_expand_albums_follow = 1;
 int auto_expand_albums_search = 1;
 int auto_expand_albums_selcur = 1;
 int auto_hide_playlists_panel = 0;
+int auto_mark_selected_playlist = 0;
 int show_all_tracks = 1;
 int mouse = 0;
 int mpris = 1;
@@ -604,6 +605,23 @@ static void set_auto_hide_playlists_panel(void *data, const char *buf)
 static void toggle_auto_hide_playlists_panel(void *data)
 {
 	auto_hide_playlists_panel ^= 1;
+}
+
+static void get_auto_mark_selected_playlist(void *data, char *buf, size_t size)
+{
+	strscpy(buf, bool_names[auto_mark_selected_playlist], size);
+}
+
+static void set_auto_mark_selected_playlist(void *data, const char *buf)
+{
+	parse_bool(buf, &auto_mark_selected_playlist);
+	pl_sync_marked_pl();
+}
+
+static void toggle_auto_mark_selected_playlist(void *data)
+{
+	auto_mark_selected_playlist ^= 1;
+	pl_sync_marked_pl();
 }
 
 static void get_auto_reshuffle(void *data, char *buf, size_t size)
@@ -1661,6 +1679,7 @@ static const struct {
 	DT(auto_expand_albums_search)
 	DT(auto_expand_albums_selcur)
 	DT(auto_hide_playlists_panel)
+	DT(auto_mark_selected_playlist)
 	DT(show_all_tracks)
 	DT(show_current_bitrate)
 	DT(show_playback_position)

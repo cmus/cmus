@@ -868,6 +868,12 @@ auto_hide_playlists_panel (false)
 	Hide the left panel in playlist view. The panel will show as needed when
 	activated with win-next (*tab*).
 
+auto_mark_selected_playlist (false)
+	Keep the marked playlist in sync with the playlist selected in the playlist
+	view so commands like *:add -p* and *:clear -p* always operate on the
+	selected playlist. When enabled, win-toggle in the playlist list has no
+	effect.
+
 auto_reshuffle (true)
 	Reshuffle a playlist when the end of a shuffled list is reached.
 

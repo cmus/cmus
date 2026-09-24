@@ -148,6 +148,7 @@ extern int auto_expand_albums_follow;
 extern int auto_expand_albums_search;
 extern int auto_expand_albums_selcur;
 extern int auto_hide_playlists_panel;
+extern int auto_mark_selected_playlist;
 extern int show_all_tracks;
 extern int auto_reshuffle;
 extern int confirm_run;
