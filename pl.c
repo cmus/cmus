@@ -306,12 +306,25 @@ static void pl_create_default(void)
 static GENERIC_ITER_PREV(pl_list_get_prev, struct playlist, node);
 static GENERIC_ITER_NEXT(pl_list_get_next, struct playlist, node);
 
+static void pl_mark_selected_pl(void)
+{
+	pl_marked = pl_visible;
+	pl_list_win->changed = 1;
+}
+
+void pl_sync_marked_pl(void)
+{
+	if (auto_mark_selected_playlist && pl_marked != pl_visible)
+		pl_mark_selected_pl();
+}
+
 static void pl_list_sel_changed(void)
 {
 	struct list_head *list = pl_list_win->sel.data1;
 	struct playlist *pl = pl_from_list(list);
 	pl_visible = pl;
 	editable_take_ownership(&pl_visible->editable);
+	pl_sync_marked_pl();
 }
 
 static int pl_empty(struct playlist *pl)
@@ -507,12 +520,6 @@ void pl_delete_all(void)
 	pl_delete(pl);
 }
 
-static void pl_mark_selected_pl(void)
-{
-	pl_marked = pl_visible;
-	pl_list_win->changed = 1;
-}
-
 typedef struct simple_track *(*pl_shuffled_move)(struct playlist *pl,
 		struct simple_track *cur);
 typedef struct simple_track *(*pl_normal_move)(struct playlist *pl,
@@ -626,6 +633,7 @@ void pl_init_options(void)
 {
 	if (auto_hide_playlists_panel)
 		pl_cursor_in_track_window = 1;
+	pl_sync_marked_pl();
 }
 
 void pl_exit(void)
@@ -1009,6 +1017,12 @@ void pl_set_marked_pl_by_name(const char *name)
 	list_for_each_entry(pl, &pl_head, node) {
 		if (strcmp(pl->name, name) == 0) {
 			pl_marked = pl;
+			if (auto_mark_selected_playlist) {
+				/* keep the marked playlist selected too */
+				struct iter iter;
+				pl_to_iter(pl, &iter);
+				window_set_sel(pl_list_win, &iter);
+			}
 			return;
 		}
 	}

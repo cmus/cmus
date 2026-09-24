@@ -51,6 +51,7 @@ void pl_rename_selected_pl(const char *name);
 void pl_create(const char *name);
 void pl_get_sort_str(char *buf, size_t size);
 void pl_set_sort_str(const char *buf);
+void pl_sync_marked_pl(void);
 void pl_clear_selected_pl(void);
 void pl_clear_marked_pl(void);
 struct track_info *pl_goto_next(void);
