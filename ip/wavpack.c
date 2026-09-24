@@ -203,7 +203,10 @@ static int wavpack_open(struct input_plugin_data *ip_data)
 
 	if (!priv->wpc) {
 		d_print("WavpackOpenFileInputEx failed: %s\n", msg);
+		if (priv->has_wvc)
+			close(priv->wvc_file.fd);
 		free(priv);
+		ip_data->private = NULL;
 		return -IP_ERROR_FILE_FORMAT;
 	}
 
