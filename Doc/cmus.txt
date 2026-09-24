@@ -434,12 +434,13 @@ clear [-l] [-p] [-q]
 	clear library
 
 	@li -p
-	clear playlist
+	clear the marked playlist
 
 	@li -q
 	clear play queue
 
-	If a view is not specified, the current view is used.
+	If a view is not specified, the current view is used. In the playlist
+	view, this clears the selected playlist.
 
 colorscheme <name>
 	Changes the color scheme. Color schemes are found in `/usr/share/cmus/`

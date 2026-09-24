@@ -536,14 +536,14 @@ static struct track_info *pl_goto_generic(pl_shuffled_move shuffled,
 	return NULL;
 }
 
-static void pl_clear_visible_pl(void)
+static void pl_clear_pl(struct playlist *pl)
 {
-	if (pl_cursor_in_track_window)
+	if (pl == pl_visible && pl_cursor_in_track_window)
 		pl_win_next();
-	if (pl_visible == pl_playing)
+	if (pl == pl_playing)
 		pl_playing_track = NULL;
-	editable_clear(&pl_visible->editable);
-	pl_cancel_add_jobs(pl_visible);
+	editable_clear(&pl->editable);
+	pl_cancel_add_jobs(pl);
 }
 
 static int pl_name_exists(const char *name)
@@ -793,12 +793,14 @@ void pl_rename_selected_pl(const char *name)
 	pl_mark_for_redraw();
 }
 
-void pl_clear(void)
+void pl_clear_selected_pl(void)
 {
-	if (!pl_cursor_in_track_window)
-		return;
+	pl_clear_pl(pl_visible);
+}
 
-	pl_clear_visible_pl();
+void pl_clear_marked_pl(void)
+{
+	pl_clear_pl(pl_marked);
 }
 
 void pl_mark_for_redraw(void)
@@ -897,7 +899,7 @@ void pl_win_update(void)
 	if (yes_no_query("Reload this playlist? [y/N]") != UI_QUERY_ANSWER_YES)
 		return;
 
-	pl_clear_visible_pl();
+	pl_clear_pl(pl_visible);
 
 	char *full = pl_name_to_pl_file(pl_visible->name);
 	cmus_add(pl_add_cb, full, FILE_TYPE_PL, JOB_TYPE_PL, 0, pl_visible);
