@@ -152,7 +152,7 @@ static int alsa_set_hw_params(void)
 	if (rc < 0)
 		goto error;
 
-	if(sf_get_float(alsa_sf)){
+	if (sf_get_float(alsa_sf)) {
 		alsa_fmt = SND_PCM_FORMAT_FLOAT;
 	} else {
 		alsa_fmt = snd_pcm_build_linear_format(sf_get_bits(alsa_sf), sf_get_bits(alsa_sf),
