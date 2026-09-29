@@ -113,6 +113,9 @@ static char *ao_channel_matrix(int channels, const channel_position_t *map)
 
 static int op_ao_open(sample_format_t sf, const channel_position_t *channel_map)
 {
+	if (sf_get_float(sf))
+		return -OP_ERROR_NOT_SUPPORTED; 
+
 	ao_sample_format format = {
 		.bits        = sf_get_bits(sf),
 		.rate        = sf_get_rate(sf),
