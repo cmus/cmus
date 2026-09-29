@@ -43,19 +43,19 @@ typedef unsigned int sample_format_t;
 #define SF_CHANNELS_SHIFT	24
 #define SF_FLOAT_SHIFT		31
 
-#define sf_get_bigendian(sf)	(((sf) & SF_BIGENDIAN_MASK) >> SF_BIGENDIAN_SHIFT)
-#define sf_get_signed(sf)	(((sf) & SF_SIGNED_MASK   ) >> SF_SIGNED_SHIFT)
-#define sf_get_rate(sf)		(((sf) & SF_RATE_MASK     ) >> SF_RATE_SHIFT)
-#define sf_get_bits(sf)		(((sf) & SF_BITS_MASK     ) >> SF_BITS_SHIFT)
-#define sf_get_channels(sf)	(((sf) & SF_CHANNELS_MASK ) >> SF_CHANNELS_SHIFT)
-#define sf_get_float(sf)	(((sf) & SF_FLOAT_MASK    ) >> SF_FLOAT_SHIFT)
+#define sf_get_bigendian(sf)	((((unsigned int)sf) & SF_BIGENDIAN_MASK) >> SF_BIGENDIAN_SHIFT)
+#define sf_get_signed(sf)	((((unsigned int)sf) & SF_SIGNED_MASK   ) >> SF_SIGNED_SHIFT)
+#define sf_get_rate(sf)		((((unsigned int)sf) & SF_RATE_MASK     ) >> SF_RATE_SHIFT)
+#define sf_get_bits(sf)		((((unsigned int)sf) & SF_BITS_MASK     ) >> SF_BITS_SHIFT)
+#define sf_get_channels(sf)	((((unsigned int)sf) & SF_CHANNELS_MASK ) >> SF_CHANNELS_SHIFT)
+#define sf_get_float(sf)	((((unsigned int)sf) & SF_FLOAT_MASK    ) >> SF_FLOAT_SHIFT)
 
-#define sf_signed(val)		(((val) << SF_SIGNED_SHIFT   ) & SF_SIGNED_MASK)
-#define sf_rate(val)		(((val) << SF_RATE_SHIFT     ) & SF_RATE_MASK)
-#define sf_bits(val)		(((val) << SF_BITS_SHIFT     ) & SF_BITS_MASK)
-#define sf_channels(val)	(((val) << SF_CHANNELS_SHIFT ) & SF_CHANNELS_MASK)
-#define sf_float(val)		(((val) << SF_FLOAT_SHIFT    ) & SF_FLOAT_MASK)
-#define sf_bigendian(val)	(((val) << SF_BIGENDIAN_SHIFT) & SF_BIGENDIAN_MASK)
+#define sf_signed(val)		((((unsigned int)val) << SF_SIGNED_SHIFT   ) & SF_SIGNED_MASK)
+#define sf_rate(val)		((((unsigned int)val) << SF_RATE_SHIFT     ) & SF_RATE_MASK)
+#define sf_bits(val)		((((unsigned int)val) << SF_BITS_SHIFT     ) & SF_BITS_MASK)
+#define sf_channels(val)	((((unsigned int)val) << SF_CHANNELS_SHIFT ) & SF_CHANNELS_MASK)
+#define sf_float(val)		((((unsigned int)val) << SF_FLOAT_SHIFT    ) & SF_FLOAT_MASK)
+#define sf_bigendian(val)	((((unsigned int)val) << SF_BIGENDIAN_SHIFT) & SF_BIGENDIAN_MASK)
 #ifdef WORDS_BIGENDIAN
 #	define sf_host_endian()	sf_bigendian(1)
 #else
