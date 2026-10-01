@@ -122,6 +122,10 @@ static int op_roar_open(sample_format_t sf, const channel_position_t *channel_ma
 	info.channels = sf_get_channels(sf);
 	info.bits = sf_get_bits(sf);
 
+	if (sf_get_float(sf))
+		return -OP_ERROR_SAMPLE_FORMAT;
+
+
 	if (sf_get_bigendian(sf)) {
 		if (sf_get_signed(sf)) {
 			info.codec = ROAR_CODEC_PCM_S_BE;
