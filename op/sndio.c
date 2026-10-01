@@ -66,6 +66,10 @@ static int sndio_set_sf(sample_format_t sf)
 
 	sio_initpar(&par);
 
+	if (sf_get_float(sndio_sf)) {
+		return -OP_ERROR_NOT_SUPPORTED;
+	}
+
 	par.pchan = sf_get_channels(sndio_sf);
 	par.rate = sf_get_rate(sndio_sf);
 	sndio_paused = 0;
