@@ -285,7 +285,7 @@ static aaudio_result_t configure_aaudio_sf(AAudioStreamBuilder *builder, sample_
 	switch (sf_get_bits(sf)) {
 	case 16: format = AAUDIO_FORMAT_PCM_I16; break;
 	case 24: format = AAUDIO_FORMAT_PCM_I24_PACKED; break;
-	case 32: format = AAUDIO_FORMAT_PCM_I32; break;
+	case 32: format = sf_get_float(sf) ? AAUDIO_FORMAT_PCM_FLOAT : AAUDIO_FORMAT_PCM_I32; break;
 	default:
 		d_print("unsupported sample format bits\n");
 		return AAUDIO_ERROR_INVALID_FORMAT;
