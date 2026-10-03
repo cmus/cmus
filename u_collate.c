@@ -23,67 +23,65 @@
 #include "xmalloc.h"
 #include "ui_curses.h" /* using_utf8, charset */
 #include "convert.h"
+#ifdef HAVE_CONFIG
+#include "config/corefoundation.h"
+#endif
 
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
 
-int u_strcoll(const char *str1, const char *str2)
+#ifdef HAVE_COREFOUNDATION
+#include <CoreFoundation/CoreFoundation.h>
+
+/*
+ * strxfrm() on macOS asserts inside libc for some non-ASCII strings
+ * (https://github.com/cmus/cmus/issues/1421), so build the key with
+ * CoreFoundation instead. Canonical decomposition (NFD) makes precomposed
+ * and decomposed forms compare equal and keeps characters with diacritics
+ * next to their base character when the key is compared bytewise.
+ *
+ * Returns NULL if @str could not be converted.
+ */
+static char *cf_strcoll_key(const char *str)
 {
-	int result;
+	CFStringRef cfstr;
+	CFMutableStringRef normalized;
+	CFIndex max_size;
+	char *result = NULL;
 
-	if (using_utf8) {
-		result = strcoll(str1, str2);
-	} else {
-		char *str1_locale = NULL, *str2_locale = NULL;
+	cfstr = CFStringCreateWithCString(kCFAllocatorDefault, str, kCFStringEncodingUTF8);
+	if (!cfstr)
+		return NULL;
 
-		convert(str1, -1, &str1_locale, -1, charset, "UTF-8");
-		convert(str2, -1, &str2_locale, -1, charset, "UTF-8");
+	normalized = CFStringCreateMutableCopy(kCFAllocatorDefault, 0, cfstr);
+	CFRelease(cfstr);
+	if (!normalized)
+		return NULL;
 
-		if (str1_locale && str2_locale)
-			result = strcoll(str1_locale, str2_locale);
-		else
-			result = strcmp(str1, str2);
+	CFStringNormalize(normalized, kCFStringNormalizationFormD);
 
-		if (str2_locale)
-			free(str2_locale);
-		if (str1_locale)
-			free(str1_locale);
+	max_size = CFStringGetMaximumSizeForEncoding(CFStringGetLength(normalized), kCFStringEncodingUTF8);
+	if (max_size != kCFNotFound && max_size < INT_MAX - 2) {
+		result = xnew(char, max_size + 1);
+		if (!CFStringGetCString(normalized, result, max_size + 1, kCFStringEncodingUTF8)) {
+			free(result);
+			result = NULL;
+		}
 	}
 
+	CFRelease(normalized);
 	return result;
 }
-
-int u_strcasecoll(const char *str1, const char *str2)
-{
-	char *cf_a, *cf_b;
-	int res;
-
-	cf_a = u_casefold(str1);
-	cf_b = u_casefold(str2);
-
-	res = u_strcoll(cf_a, cf_b);
-
-	free(cf_b);
-	free(cf_a);
-
-	return res;
-}
-
-int u_strcasecoll0(const char *str1, const char *str2)
-{
-	if (!str1)
-		return str2 ? -1 : 0;
-	if (!str2)
-		return 1;
-
-	return u_strcasecoll(str1, str2);
-}
+#endif
 
 char *u_strcoll_key(const char *str)
 {
 	char *result = NULL;
 
+#ifdef HAVE_COREFOUNDATION
+	result = cf_strcoll_key(str);
+#else
 	if (using_utf8) {
 		size_t xfrm_len = strxfrm(NULL, str, 0);
 		if ((ssize_t) xfrm_len >= 0 && xfrm_len < INT_MAX - 2) {
@@ -107,6 +105,7 @@ char *u_strcoll_key(const char *str)
 			free(str_locale);
 		}
 	}
+#endif
 
 	if (!result) {
 		size_t xfrm_len = strlen(str);
