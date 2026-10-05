@@ -746,7 +746,7 @@ static int tree_search_matches(void *data, struct iter *iter, const char *text)
 {
 	struct tree_track *track;
 	struct iter tmpiter;
-	unsigned int flags = TI_MATCH_ARTIST | TI_MATCH_ALBUM | TI_MATCH_ALBUMARTIST;
+	unsigned int flags = TI_MATCH_ARTIST | TI_MATCH_ALBUMARTISTSORT | TI_MATCH_ALBUM | TI_MATCH_ALBUMSORT | TI_MATCH_ALBUMARTIST;
 
 	if (!search_restricted)
 		flags |= TI_MATCH_TITLE;
