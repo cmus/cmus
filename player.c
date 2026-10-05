@@ -29,10 +29,10 @@
 #include "options.h"
 #include "mpris.h"
 #include "cmus.h"
-#include "lib.h"
 #include "pl_env.h"
 #include "ui_curses.h"
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
@@ -233,6 +233,31 @@ static inline void scale_sample_int32_t(int32_t *buf, int i, int vol, int swap)
 	buf[i] = swap ? swap_uint32(sample) : sample;
 }
 
+static inline void scale_sample_float_t(float_t *buf, int i, int vol, int swap)
+{	
+	uint32_t sample;
+	memcpy(&sample, &buf[i], sizeof(uint32_t));
+	if (swap)
+		sample = swap_uint32(sample);
+
+	float_t sample_f;
+	memcpy(&sample_f, &sample, sizeof(float_t));
+
+	float_t scale_factor = vol / (float_t)SOFT_VOL_SCALE;
+	sample_f *= scale_factor;
+	
+	if (sample_f > 1.0f)
+		sample_f = 1.0f;
+	if (sample_f < -1.0f)
+		sample_f = -1.0f;
+
+	memcpy(&sample,  &sample_f, sizeof(uint32_t));
+	if(swap)
+		sample = swap_uint32(sample);
+
+	memcpy(&buf[i], &sample, sizeof(uint32_t));	
+}
+
 static inline int sf_need_swap(sample_format_t sf)
 {
 #ifdef WORDS_BIGENDIAN
@@ -303,7 +328,7 @@ static void scale_samples_s24le(char *buf, unsigned int count, int l, int r)
 static void scale_samples(char *buffer, unsigned int *countp)
 {
 	unsigned int count = *countp;
-	int ch, bits, l, r;
+	int ch, bits, l, r, flt;
 
 	BUG_ON(scale_pos < consumer_pos);
 
@@ -322,6 +347,8 @@ static void scale_samples(char *buffer, unsigned int *countp)
 
 	ch = sf_get_channels(buffer_sf);
 	bits = sf_get_bits(buffer_sf);
+	flt = sf_get_float(buffer_sf);
+
 	if (ch != 2 || (bits != 16 && bits != 24 && bits != 32))
 		return;
 
@@ -344,7 +371,11 @@ static void scale_samples(char *buffer, unsigned int *countp)
 			scale_samples_s24le(buffer, count, l, r);
 		break;
 	case 32:
-		SCALE_SAMPLES(int32_t, buffer, count, l, r, sf_need_swap(buffer_sf));
+		if (flt) {
+			SCALE_SAMPLES(float_t, buffer, count, l, r, sf_need_swap(buffer_sf))
+		} else {
+			SCALE_SAMPLES(int32_t, buffer, count, l, r, sf_need_swap(buffer_sf));
+		}
 		break;
 	}
 }
