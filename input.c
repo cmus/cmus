@@ -471,17 +471,17 @@ static void ip_init(struct input_plugin *ip, char *filename)
 
 static void ip_reset(struct input_plugin *ip, int close_fd)
 {
-	int fd = ip->data.fd;
+	int fd = -1;
+	if (close_fd)
+		connection_close(get_connection(ip));
+	else {
+		fd = ip->data.fd;
+		if (fd != -1)
+			lseek(fd, 0, SEEK_SET);
+	}
 	free(ip->data.metadata);
 	ip_init(ip, ip->data.filename);
-	if (fd != -1) {
-		if (close_fd)
-			connection_close(get_connection(ip));
-		else {
-			lseek(fd, 0, SEEK_SET);
-			set_fd(&ip->data, fd);
-		}
-	}
+	set_fd(&ip->data, fd);
 }
 
 static int open_file_locked(struct input_plugin *ip)

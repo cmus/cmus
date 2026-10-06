@@ -247,8 +247,7 @@ int connection_open(struct connection *conn, struct http_get *hg, int timeout_ms
 
 int get_sockfd(struct connection *conn)
 {
-	int fd = *conn->fd_ref;
-	return fd;
+	return *conn->fd_ref;
 }
 
 int connection_close(struct connection *conn)
@@ -262,8 +261,10 @@ int connection_close(struct connection *conn)
 		d_print("Error while closing ssl connection\n");
 #endif
 
-	int fd = get_sockfd(conn);
-	close(fd);
+	int *fd = conn->fd_ref;
+	if (*fd != -1)
+		close(*fd);
+	*fd = -1;
 
 	return rc;
 }
