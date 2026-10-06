@@ -239,7 +239,7 @@ int connection_open(struct connection *conn, struct http_get *hg, int timeout_ms
 	conn->eof = 0;
 	*conn->fd_ref = hg->fd;
 
-	if(hg->uri.is_https == 1)
+	if (hg->uri.is_https)
 		return https_connection_open(hg, conn);
 
 	return IP_ERROR_SUCCESS;
@@ -255,12 +255,12 @@ int connection_close(struct connection *conn)
 {
 	int rc = 0;
 
-	#ifdef CONFIG_OPENSSL
+#ifdef CONFIG_OPENSSL
 	if (conn->ssl != NULL)
 		rc = ssl_close(conn);
 	if (rc)
 		d_print("Error while closing ssl connection\n");
-	#endif
+#endif
 
 	int fd = get_sockfd(conn);
 	close(fd);

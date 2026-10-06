@@ -98,8 +98,8 @@ int ssl_open(struct connection *conn, char *host)
 	return rc - 1; /* 0 on success */
 }
 
-int https_connection_open(struct http_get *hg, struct connection *conn){
-	if(hg->proxy != NULL) {
+int https_connection_open(struct http_get *hg, struct connection *conn) {
+	if (hg->proxy != NULL) {
 		/*
 		 * TODO : Supporting proxy with HTTPS is not too difficult.
 		 * We need to perform a CONNECT request before ssl_connect()
