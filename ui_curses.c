@@ -311,6 +311,7 @@ enum {
 	TF_FOLLOW,
 	TF_SHUFFLE,
 	TF_PLAYLISTMODE,
+	TF_SPEED,
 	TF_BPM,
 	TF_PANEL,
 
@@ -371,6 +372,7 @@ static struct format_option track_fopts[NR_TFS + 1] = {
 	DEF_FO_STR('\0', "follow", 0),
 	DEF_FO_STR('\0', "shuffle", 0),
 	DEF_FO_STR('\0', "playlist_mode", 0),
+	DEF_FO_STR('\0', "speed", 0),
 	DEF_FO_INT('\0', "bpm", 0),
 	DEF_FO_INT('\0', "panel", 0),
 	DEF_FO_END
@@ -652,6 +654,14 @@ const struct format_option *get_global_fopts(void)
 	fopt_set_str(&track_fopts[TF_REPEAT], repeat_strs[repeat]);
 	fopt_set_str(&track_fopts[TF_SHUFFLE], shuffle_strs[shuffle]);
 	fopt_set_str(&track_fopts[TF_PLAYLISTMODE], aaa_mode_names[aaa_mode]);
+
+	if (playback_speed != 1.0) {
+		static char buf_speed[16];
+		snprintf(buf_speed, sizeof(buf_speed), "%.2f", playback_speed);
+		fopt_set_str(&track_fopts[TF_SPEED], buf_speed);
+	} else {
+		fopt_set_str(&track_fopts[TF_SPEED], NULL);
+	}
 
 	if (player_info.ti)
 		duration = player_info.ti->duration;

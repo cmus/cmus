@@ -8,8 +8,8 @@ bind common z player-prev
 bind common Z player-prev-album
 bind common v player-stop
 
-bind common ] vol +0 +1%
-bind common [ vol +1% +0
+bind common ] speed +0.25
+bind common [ speed -0.25
 bind common + vol +10%
 bind common = vol +10%
 bind common } vol -0 -1%
