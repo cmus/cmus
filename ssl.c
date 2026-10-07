@@ -178,7 +178,8 @@ int https_write(struct connection *conn, const char *in_buf, int count)
 {
 	int ret = SSL_write(conn->ssl, in_buf, count); /* >0 on success, <=0 else */
 	if (ret <= 0) {
-		return handle_ssl_error(conn, ret);
+		handle_ssl_error(conn, ret);
+		return -1;
 	}
 	return ret;
 }
@@ -189,10 +190,8 @@ int https_read(struct connection *conn, char *out_buf, int count)
 		return -1;
 	int ret = SSL_read(conn->ssl, out_buf, count); /* returns >0 on success, <=0 else */
 	if (ret <= 0) {
-		ret = handle_ssl_error(conn, ret);
-		if (ret == -IP_ERROR_OPENSSL)
-			return -1; /* https_read() should emulate socket_read() which returns -1 on errors */
-		return ret;
+		handle_ssl_error(conn, ret);
+		return -1;
 	}
 	return ret;
 }
