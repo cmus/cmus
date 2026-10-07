@@ -16,7 +16,9 @@ static int ssl_verify_callback(int ok, X509_STORE_CTX *ctx)
 	int depth = X509_STORE_CTX_get_error_depth(ctx);
 	X509 *cert = X509_STORE_CTX_get_current_cert(ctx);
 
-	X509_NAME_oneline(X509_get_subject_name(cert), buf, 256);
+	buf[0] = '\0';
+	if (cert)
+		X509_NAME_oneline(X509_get_subject_name(cert), buf, 256);
 	d_print("depth=%d: %s\n", depth, buf);
 
 	if (!ok) {
