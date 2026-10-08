@@ -30,6 +30,7 @@ struct connection {
 	int *fd_ref;
 	SSL *ssl;
 	int eof;
+	int pending;
 	connection_read read;
 	connection_write write;
 };

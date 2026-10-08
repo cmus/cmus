@@ -302,7 +302,6 @@ static int setup_remote(struct input_plugin *ip, const struct keyval *headers)
 		ip->ops = get_ops_by_mime_type(val);
 		if (ip->ops == NULL) {
 			d_print("unsupported content type: %s\n", val);
-			error_msg("unsupported content type: %s\n", val);
 			connection_close(conn);
 			return -IP_ERROR_FILE_FORMAT;
 		}
@@ -455,6 +454,8 @@ static void ip_init(struct input_plugin *ip, char *filename)
 			.conn = {
 				.fd_ref  = NULL,
 				.ssl     = NULL,
+				.eof     = 0,
+				.pending = 0,
 				.read    = &socket_read,
 				.write   = &socket_write,
 			},
@@ -740,7 +741,7 @@ int ip_read(struct input_plugin *ip, char *buffer, int count)
 			errno = EAGAIN;
 		return -1;
 	}
-	if (rc == 0) {
+	if (rc == 0 && !ip->data.conn.pending) {
 		errno = EAGAIN;
 		return -1;
 	}

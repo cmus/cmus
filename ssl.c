@@ -160,6 +160,7 @@ int ssl_close(struct connection *conn)
 	if (ret < 0) {
 		handle_ssl_error(conn, ret);
 	}
+	conn->pending = 0;
 
 	if (conn->ssl != NULL) {
 		SSL_free(conn->ssl);
@@ -191,6 +192,7 @@ int https_read(struct connection *conn, char *out_buf, int count)
 	if (conn->ssl == NULL)
 		return -1;
 	int ret = SSL_read(conn->ssl, out_buf, count); /* returns >0 on success, <=0 else */
+	conn->pending = SSL_pending(conn->ssl) ? 1 : 0;
 	if (ret <= 0) {
 		handle_ssl_error(conn, ret);
 		return -1;
