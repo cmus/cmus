@@ -65,26 +65,30 @@ static int mute_vol_l = 0, mute_vol_r = 0;
 
 /* view {{{ */
 
-void view_clear(int view) {
-  switch (view) {
-  case TREE_VIEW:
-  case SORTED_VIEW:
-    worker_remove_jobs_by_type(JOB_TYPE_LIB);
-    editable_clear(&lib_editable);
+void view_clear(int view, int explicit_view)
+{
+	switch (view) {
+	case TREE_VIEW:
+	case SORTED_VIEW:
+		worker_remove_jobs_by_type(JOB_TYPE_LIB);
+		editable_clear(&lib_editable);
 
-    /* FIXME: make this optional? */
-    lib_clear_store();
-    break;
-  case PLAYLIST_VIEW:
-    pl_clear();
-    break;
-  case QUEUE_VIEW:
-    worker_remove_jobs_by_type(JOB_TYPE_QUEUE);
-    editable_clear(&pq_editable);
-    break;
-  default:
-    info_msg(":clear only works in views 1-4");
-  }
+		/* FIXME: make this optional? */
+		lib_clear_store();
+		break;
+	case PLAYLIST_VIEW:
+		if (explicit_view)
+			pl_clear_marked_pl();
+		else
+			pl_clear_selected_pl();
+		break;
+	case QUEUE_VIEW:
+		worker_remove_jobs_by_type(JOB_TYPE_QUEUE);
+		editable_clear(&pq_editable);
+		break;
+	default:
+		info_msg(":clear only works in views 1-4");
+	}
 }
 
 void view_add(int view, char *arg, int prepend) {
@@ -364,7 +368,8 @@ static void cmd_clear(char *arg) {
     error_msg("too many arguments\n");
     return;
   }
-  view_clear(flag_to_view(flag));
+  view_clear(flag_to_view(flag), flag != 0);
+}
 
 static void cmd_load(char *arg) {
   int flag = parse_flags((const char **)&arg, "l");
