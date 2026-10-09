@@ -36,6 +36,7 @@
 #include "worker.h"
 #include "xmalloc.h"
 #include "xstrjoin.h"
+#include "misc.h"
 
 #include <errno.h>
 #include <string.h>
@@ -181,29 +182,24 @@ static void add_file(const char *filename, int force) {
     add_ti(ti);
 }
 
-static int add_file_cue(const char *filename) {
-  int n_tracks;
-  char *url;
-  char *cue_filename;
+static int add_file_cue(const char *filename)
+{
+	if (!is_cue(filename))
+		return 0;
 
-  cue_filename = associated_cue(filename);
-  if (cue_filename == NULL)
-    return 0;
+	int *track_nums;
+	int n = cue_get_track_nums(filename, &track_nums);
+	if (n == -1)
+		return 0;
 
-  n_tracks = cue_get_ntracks(cue_filename);
-  if (n_tracks <= 0) {
-    free(cue_filename);
-    return 0;
-  }
+	for (int i = 0; i < n; i++) {
+		char *url = construct_cue_url(filename, track_nums[i]);
+		add_file(url, 0);
+		free(url);
+	}
 
-  for (int i = 1; i <= n_tracks; ++i) {
-    url = construct_cue_url(cue_filename, i);
-    add_file(url, 0);
-    free(url);
-  }
-
-  free(cue_filename);
-  return 1;
+	free(track_nums);
+	return 1;
 }
 
 static void add_url(const char *url) { add_file(url, 0); }

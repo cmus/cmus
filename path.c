@@ -46,6 +46,15 @@ const char *path_basename(const char *path)
 	return f ? f + 1 : path;
 }
 
+char *path_dirname(const char *path)
+{
+	const char *f;
+
+	f = strrchr(path, '/');
+
+	return f ? xstrndup(path, f - path) : xstrdup(".");
+}
+
 void path_strip(char *str)
 {
 	int i, s, d;

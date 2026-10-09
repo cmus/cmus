@@ -306,12 +306,25 @@ static void pl_create_default(void)
 static GENERIC_ITER_PREV(pl_list_get_prev, struct playlist, node);
 static GENERIC_ITER_NEXT(pl_list_get_next, struct playlist, node);
 
+static void pl_mark_selected_pl(void)
+{
+	pl_marked = pl_visible;
+	pl_list_win->changed = 1;
+}
+
+void pl_sync_marked_pl(void)
+{
+	if (auto_mark_selected_playlist && pl_marked != pl_visible)
+		pl_mark_selected_pl();
+}
+
 static void pl_list_sel_changed(void)
 {
 	struct list_head *list = pl_list_win->sel.data1;
 	struct playlist *pl = pl_from_list(list);
 	pl_visible = pl;
 	editable_take_ownership(&pl_visible->editable);
+	pl_sync_marked_pl();
 }
 
 static int pl_empty(struct playlist *pl)
@@ -507,12 +520,6 @@ void pl_delete_all(void)
 	pl_delete(pl);
 }
 
-static void pl_mark_selected_pl(void)
-{
-	pl_marked = pl_visible;
-	pl_list_win->changed = 1;
-}
-
 typedef struct simple_track *(*pl_shuffled_move)(struct playlist *pl,
 		struct simple_track *cur);
 typedef struct simple_track *(*pl_normal_move)(struct playlist *pl,
@@ -536,14 +543,14 @@ static struct track_info *pl_goto_generic(pl_shuffled_move shuffled,
 	return NULL;
 }
 
-static void pl_clear_visible_pl(void)
+static void pl_clear_pl(struct playlist *pl)
 {
-	if (pl_cursor_in_track_window)
+	if (pl == pl_visible && pl_cursor_in_track_window)
 		pl_win_next();
-	if (pl_visible == pl_playing)
+	if (pl == pl_playing)
 		pl_playing_track = NULL;
-	editable_clear(&pl_visible->editable);
-	pl_cancel_add_jobs(pl_visible);
+	editable_clear(&pl->editable);
+	pl_cancel_add_jobs(pl);
 }
 
 static int pl_name_exists(const char *name)
@@ -626,6 +633,7 @@ void pl_init_options(void)
 {
 	if (auto_hide_playlists_panel)
 		pl_cursor_in_track_window = 1;
+	pl_sync_marked_pl();
 }
 
 void pl_exit(void)
@@ -793,12 +801,14 @@ void pl_rename_selected_pl(const char *name)
 	pl_mark_for_redraw();
 }
 
-void pl_clear(void)
+void pl_clear_selected_pl(void)
 {
-	if (!pl_cursor_in_track_window)
-		return;
+	pl_clear_pl(pl_visible);
+}
 
-	pl_clear_visible_pl();
+void pl_clear_marked_pl(void)
+{
+	pl_clear_pl(pl_marked);
 }
 
 void pl_mark_for_redraw(void)
@@ -897,7 +907,7 @@ void pl_win_update(void)
 	if (yes_no_query("Reload this playlist? [y/N]") != UI_QUERY_ANSWER_YES)
 		return;
 
-	pl_clear_visible_pl();
+	pl_clear_pl(pl_visible);
 
 	char *full = pl_name_to_pl_file(pl_visible->name);
 	cmus_add(pl_add_cb, full, FILE_TYPE_PL, JOB_TYPE_PL, 0, pl_visible);
@@ -971,7 +981,9 @@ void pl_update_track(struct track_info *old, struct track_info *new)
 {
 	struct playlist *pl;
 	list_for_each_entry(pl, &pl_head, node)
-		editable_update_track(&pl->editable, old, new);
+		if (new)
+			editable_update_track(&pl->editable, old, new);
+		/* else: preserve playlist entry when refresh failed */
 }
 
 int pl_get_cursor_in_track_window(void)
@@ -1005,6 +1017,12 @@ void pl_set_marked_pl_by_name(const char *name)
 	list_for_each_entry(pl, &pl_head, node) {
 		if (strcmp(pl->name, name) == 0) {
 			pl_marked = pl;
+			if (auto_mark_selected_playlist) {
+				/* keep the marked playlist selected too */
+				struct iter iter;
+				pl_to_iter(pl, &iter);
+				window_set_sel(pl_list_win, &iter);
+			}
 			return;
 		}
 	}

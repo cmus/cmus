@@ -113,7 +113,7 @@ static int coreaudio_ring_buffer_init(coreaudio_ring_buffer_t *rbuf, size_t num_
 	if (((num_of_bytes - 1) & num_of_bytes) != 0)
 		return -1;				/*Not Power of two. */
 	rbuf->buffer_size = num_of_bytes;
-	rbuf->buffer = (char *)malloc(num_of_bytes);
+	rbuf->buffer = (char *)xmalloc(num_of_bytes);
 	coreaudio_ring_buffer_flush(rbuf);
 	rbuf->big_mask = (num_of_bytes *2) - 1;
 	rbuf->small_mask = (num_of_bytes) - 1;
@@ -374,7 +374,7 @@ static void coreaudio_set_channel_position(AudioDeviceID dev_id,
 	};
 	AudioChannelLayout *layout = NULL;
 	size_t layout_size = (size_t) &layout->mChannelDescriptions[channels];
-	layout = (AudioChannelLayout*)malloc(layout_size);
+	layout = (AudioChannelLayout*)xmalloc(layout_size);
 	layout->mChannelLayoutTag = kAudioChannelLayoutTag_UseChannelDescriptions ;
 	layout->mChannelBitmap = 0;
 	layout->mNumberChannelDescriptions = channels;

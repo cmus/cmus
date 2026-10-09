@@ -195,7 +195,7 @@ char *pl_env_reduce(const char *path)
 		char *new, *ptr;
 		new = ptr = xmalloc(1+var_len+1+rem_len+1);
 		*ptr++ = PL_ENV_DELIMITER;
-		strncpy(ptr, *var, var_len);
+		memcpy(ptr, *var, var_len);
 		ptr += var_len;
 		*ptr++ = PL_ENV_DELIMITER;
 		strcpy(ptr, rem);

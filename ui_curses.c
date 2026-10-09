@@ -910,19 +910,20 @@ static void print_browser(struct window *win, int row, struct iter *iter) {
   sprint(row + 1, 0, e->name, win_w);
 }
 
-static void print_filter(struct window *win, int row, struct iter *iter) {
-  char buf[256];
-  struct filter_entry *e = iter_to_filter_entry(iter);
-  struct iter sel;
-  /* window active? */
-  int active = 1;
-  /* row selected? */
-  int selected;
-  /* is the filter currently active? */
-  int current = !!e->act_stat;
-  const char stat_chars[3] = " *!";
-  int ch1, ch2, ch3;
-  const char *e_filter;
+static void print_filter(struct window *win, int row, struct iter *iter)
+{
+	char buf[256];
+	struct filter_entry *e = iter_to_filter_entry(iter);
+	struct iter sel;
+	/* window active? */
+	int active = 1;
+	/* row selected? */
+	int selected;
+	/* is the filter currently active? */
+	int current = !!e->act_stat;
+	const char stat_chars[3] CMUS_NONSTRING = " *!";
+	int ch1, ch2, ch3;
+	const char *e_filter;
 
   window_get_sel(win, &sel);
   selected = iters_equal(iter, &sel);
@@ -1857,9 +1858,9 @@ static void clear_error(void) {
 
 /* screen updates }}} */
 
-static int fill_status_program_track_info_args(char **argv, int i,
-                                               struct track_info *ti) {
-  /* returns first free argument index */
+static int fill_status_program_track_info_args(char **argv, int i, struct player_info *pi, struct track_info *ti)
+{
+	/* returns first free argument index */
 
   const char *stream_title = NULL;
   if (player_info.status == PLAYER_STATUS_PLAYING && is_http_url(ti->filename))
@@ -1906,13 +1907,20 @@ static int fill_status_program_track_info_args(char **argv, int i,
     argv[i++] = xstrdup(stream_title);
   }
 
-  return i;
+	if (pi) {
+		char buf[32];
+		snprintf(buf, sizeof(buf), "%d", pi->pos);
+		argv[i++] = xstrdup("position");
+		argv[i++] = xstrdup(buf);
+	}
+
+	return i;
 }
 
-static void spawn_status_program_inner(const char *status_text,
-                                       struct track_info *ti) {
-  if (status_display_program == NULL || status_display_program[0] == 0)
-    return;
+static void spawn_status_program_inner(const char *status_text, struct player_info *pi, struct track_info *ti)
+{
+	if (status_display_program == NULL || status_display_program[0] == 0)
+		return;
 
   char *argv[32];
   int i = 0;
@@ -1922,10 +1930,10 @@ static void spawn_status_program_inner(const char *status_text,
   argv[i++] = xstrdup("status");
   argv[i++] = xstrdup(status_text);
 
-  if (ti) {
-    i = fill_status_program_track_info_args(argv, i, ti);
-  }
-  argv[i++] = NULL;
+	if (ti) {
+		i = fill_status_program_track_info_args(argv, i, pi, ti);
+	}
+	argv[i++] = NULL;
 
   if (spawn(argv, NULL, 0) == -1)
     error_msg("couldn't run `%s': %s", status_display_program, strerror(errno));
@@ -1933,9 +1941,9 @@ static void spawn_status_program_inner(const char *status_text,
     free(argv[i]);
 }
 
-static void spawn_status_program(void) {
-  spawn_status_program_inner(player_status_names[player_info.status],
-                             player_info.ti);
+static void spawn_status_program(void)
+{
+	spawn_status_program_inner(player_status_names[player_info.status], &player_info, player_info.ti);
 }
 
 static volatile sig_atomic_t ctrl_c_pressed = 0;
@@ -2683,16 +2691,16 @@ int main(int argc, char *argv[]) {
   debug_init();
   d_print("charset = '%s'\n", charset);
 
-  ip_load_plugins();
-  op_load_plugins();
-  if (list_plugins) {
-    ip_dump_plugins();
-    op_dump_plugins();
-    return 0;
-  }
-  init_all();
-  main_loop();
-  exit_all();
-  spawn_status_program_inner("exiting", NULL);
-  return 0;
+	ip_load_plugins();
+	op_load_plugins();
+	if (list_plugins) {
+		ip_dump_plugins();
+		op_dump_plugins();
+		return 0;
+	}
+	init_all();
+	main_loop();
+	exit_all();
+	spawn_status_program_inner("exiting", NULL, NULL);
+	return 0;
 }

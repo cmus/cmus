@@ -85,6 +85,7 @@ int auto_expand_albums_follow = 1;
 int auto_expand_albums_search = 1;
 int auto_expand_albums_selcur = 1;
 int auto_hide_playlists_panel = 0;
+int auto_mark_selected_playlist = 0;
 int show_all_tracks = 1;
 int mouse = 0;
 int mpris = 1;
@@ -561,8 +562,26 @@ static void toggle_auto_hide_playlists_panel(void *data) {
   auto_hide_playlists_panel ^= 1;
 }
 
-static void get_auto_reshuffle(void *data, char *buf, size_t size) {
-  strscpy(buf, bool_names[auto_reshuffle], size);
+static void get_auto_mark_selected_playlist(void *data, char *buf, size_t size)
+{
+	strscpy(buf, bool_names[auto_mark_selected_playlist], size);
+}
+
+static void set_auto_mark_selected_playlist(void *data, const char *buf)
+{
+	parse_bool(buf, &auto_mark_selected_playlist);
+	pl_sync_marked_pl();
+}
+
+static void toggle_auto_mark_selected_playlist(void *data)
+{
+	auto_mark_selected_playlist ^= 1;
+	pl_sync_marked_pl();
+}
+
+static void get_auto_reshuffle(void *data, char *buf, size_t size)
+{
+	strscpy(buf, bool_names[auto_reshuffle], size);
 }
 
 static void set_auto_reshuffle(void *data, const char *buf) {
@@ -1427,65 +1446,65 @@ static const struct {
   opt_toggle_cb toggle;
   unsigned int flags;
 } simple_options[] = {
-    DT(aaa_mode) DT(auto_reshuffle) DN_FLAGS(device, OPT_PROGRAM_PATH) DN(
-        buffer_seconds) DN(scroll_offset) DN(rewind_offset) DT(confirm_run)
-        DT(continue) DT(continue_album) DT(smart_artist_sort) DT(
-            sort_albums_by_name) DN(id3_default_charset)
-            DN(icecast_default_charset) DN(lib_sort) DN(output_plugin) DN(
-                passwd) DN(pl_sort) DT(play_library) DT(play_sorted)
-                DT(display_artist_sort_name) DT(repeat) DT(repeat_current) DT(
-                    replaygain) DT(replaygain_limit) DN(replaygain_preamp)
-                    DT(resume) DT(show_hidden) DT(auto_expand_albums_follow) DT(
-                        auto_expand_albums_search) DT(auto_expand_albums_selcur)
-                        DT(auto_hide_playlists_panel) DT(show_all_tracks) DT(
-                            show_current_bitrate) DT(show_playback_position)
-                            DT(show_remaining_time) DT(set_term_title) DT(
-                                shuffle) DT(follow) DT(softvol)
-                                DN(softvol_state) DN_FLAGS(
-                                    status_display_program, OPT_PROGRAM_PATH)
-                                    DT(wrap_search) DT(skip_track_info) DT(
-                                        ignore_duplicates) DT(mouse) DT(mpris)
-                                        DT(time_show_leading_zero) DN(
-                                            lib_add_filter) DN(start_view)
-                                            DT(stop_after_queue) DN(
-                                                tree_width_percent)
-                                                DN(tree_width_max) DT(
-                                                    pause_on_output_change)
-                                                    DN(pl_env_vars) DT(
-                                                        block_key_paste)
-                                                        DT(progress_bar) DT(
-                                                            search_resets_position){
-                                                            NULL, NULL, NULL,
-                                                            NULL, 0}};
-
-static const char *const color_names[NR_COLORS] = {
-    "color_cmdline_bg",
-    "color_cmdline_fg",
-    "color_error",
-    "color_info",
-    "color_separator",
-    "color_statusline_bg",
-    "color_statusline_fg",
-    "color_statusline_progress_bg",
-    "color_statusline_progress_fg",
-    "color_titleline_bg",
-    "color_titleline_fg",
-    "color_win_bg",
-    "color_win_cur",
-    "color_win_cur_sel_bg",
-    "color_win_cur_sel_fg",
-    "color_win_dir",
-    "color_win_fg",
-    "color_win_inactive_cur_sel_bg",
-    "color_win_inactive_cur_sel_fg",
-    "color_win_inactive_sel_bg",
-    "color_win_inactive_sel_fg",
-    "color_win_sel_bg",
-    "color_win_sel_fg",
-    "color_win_title_bg",
-    "color_win_title_fg",
-    "color_trackwin_album_bg",
-    "color_trackwin_album_fg",
+	DT(aaa_mode)
+	DT(auto_reshuffle)
+	DN_FLAGS(device, OPT_PROGRAM_PATH)
+	DN(buffer_seconds)
+	DN(scroll_offset)
+	DN(rewind_offset)
+	DT(confirm_run)
+	DT(continue)
+	DT(continue_album)
+	DT(smart_artist_sort)
+	DT(sort_albums_by_name)
+	DN(id3_default_charset)
+	DN(icecast_default_charset)
+	DN(lib_sort)
+	DN(output_plugin)
+	DN(passwd)
+	DN(pl_sort)
+	DT(play_library)
+	DT(play_sorted)
+	DT(display_artist_sort_name)
+	DT(repeat)
+	DT(repeat_current)
+	DT(replaygain)
+	DT(replaygain_limit)
+	DN(replaygain_preamp)
+	DT(resume)
+	DT(show_hidden)
+	DT(auto_expand_albums_follow)
+	DT(auto_expand_albums_search)
+	DT(auto_expand_albums_selcur)
+	DT(auto_hide_playlists_panel)
+	DT(auto_mark_selected_playlist)
+	DT(show_all_tracks)
+	DT(show_current_bitrate)
+	DT(show_playback_position)
+	DT(show_remaining_time)
+	DT(set_term_title)
+	DT(shuffle)
+	DT(follow)
+	DT(softvol)
+	DN(softvol_state)
+	DN_FLAGS(status_display_program, OPT_PROGRAM_PATH)
+	DT(wrap_search)
+	DT(skip_track_info)
+	DT(ignore_duplicates)
+	DT(mouse)
+	DT(mpris)
+	DT(time_show_leading_zero)
+	DN(lib_add_filter)
+	DN(start_view)
+	DT(stop_after_queue)
+	DN(tree_width_percent)
+	DN(tree_width_max)
+	DT(pause_on_output_change)
+	DN(pl_env_vars)
+	DT(block_key_paste)
+	DT(progress_bar)
+	DT(search_resets_position)
+	{ NULL, NULL, NULL, NULL, 0 }
 };
 
 static const char *const attr_names[NR_ATTRS] = {
@@ -1556,13 +1575,28 @@ void option_set(const char *name, const char *value) {
     opt->set(opt->data, value);
 }
 
-void options_add(void) {
-  int i;
+static int default_colors[NR_COLORS];
+static int default_attrs[NR_ATTRS];
 
-  for (i = 0; simple_options[i].name; i++)
-    option_add(simple_options[i].name, NULL, simple_options[i].get,
-               simple_options[i].set, simple_options[i].toggle,
-               simple_options[i].flags);
+void colors_reset(void)
+{
+	memcpy(colors, default_colors, sizeof(colors));
+	memcpy(attrs, default_attrs, sizeof(attrs));
+	update_colors();
+	update_full();
+}
+
+void options_add(void)
+{
+	int i;
+
+	memcpy(default_colors, colors, sizeof(colors));
+	memcpy(default_attrs, attrs, sizeof(attrs));
+
+	for (i = 0; simple_options[i].name; i++)
+		option_add(simple_options[i].name, NULL, simple_options[i].get,
+				simple_options[i].set, simple_options[i].toggle,
+				simple_options[i].flags);
 
   for (i = 0; i < NR_FMTS; i++)
     option_add(str_defaults[i].name, id_to_fmt(i), get_format, set_format, NULL,

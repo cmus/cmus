@@ -78,6 +78,7 @@ struct input_plugin_data {
 	char *icy_name;
 	char *icy_genre;
 	char *icy_url;
+	char *icy_br;
 
 	/* filled by plugin */
 	sample_format_t sf;

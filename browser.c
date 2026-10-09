@@ -332,19 +332,29 @@ void browser_up(void)
 	len = strlen(ptr);
 	pos = xstrdup(ptr);
 
-	errno = 0;
-	if (browser_load(new)) {
-		if (errno == ENOENT) {
+	while (1) {
+		errno = 0;
+		if (browser_load(new) == 0)
+			break;
+		if (errno != ENOENT || strcmp(new, "/") == 0) {
+			error_msg("could not open directory '%s': %s\n", new, strerror(errno));
+			free(new);
 			free(pos);
-			free(browser_dir);
-			browser_dir = new;
-			browser_up();
 			return;
 		}
-		error_msg("could not open directory '%s': %s\n", new, strerror(errno));
-		free(new);
+		/* failed to open, try the parent */
+		ptr = strrchr(new, '/');
 		free(pos);
-		return;
+		pos = xstrdup(ptr + 1);
+		len = strlen(pos);
+		if (ptr == new) {
+			free(new);
+			new = xstrdup("/");
+		} else {
+			char *parent = xstrndup(new, ptr - new);
+			free(new);
+			new = parent;
+		}
 	}
 	free(new);
 

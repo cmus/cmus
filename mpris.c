@@ -31,6 +31,7 @@
 #include "utils.h"
 #include "uchar.h"
 #include "path.h"
+#include "xmalloc.h"
 
 #define CK(v) \
 do { \
@@ -363,6 +364,67 @@ static int mpris_msg_append_sas_dict(sd_bus_message *m, const char *a,
 	return 0;
 }
 
+static int mpris_uri_path_char_ok(unsigned char c)
+{
+	/* RFC 3986 unreserved characters, plus '/' */
+	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
+		(c >= '0' && c <= '9') || c == '-' || c == '.' ||
+		c == '_' || c == '~' || c == '/';
+}
+
+static int mpris_uri_url_char_ok(unsigned char c)
+{
+	/* leave an existing URL unmodified except for illegal chars */
+	return c > 0x20 && c < 0x7f && !strchr("\"<>\\^`{|}", c);
+}
+
+/**
+ * Build a URI from a cmus filename by prepending prefix and percent-encoding it
+ * according to the provided callback. The filename should not be sanitized to
+ * ensure the result is always ASCII (which is required by D-Bus) and to ensure
+ * filenames with invalid UTF-8 round-trip properly.
+ */
+static char *mpris_escape_uri(const char *prefix, const char *src,
+		int (*ok)(unsigned char))
+{
+	static const char hex[] = "0123456789ABCDEF";
+	size_t prefix_len = strlen(prefix);
+	char *uri = xmalloc(prefix_len + 3 * strlen(src) + 1);
+	char *dst = uri;
+
+	memcpy(dst, prefix, prefix_len);
+	dst += prefix_len;
+	for (; *src; src++) {
+		unsigned char c = *src;
+		if (ok(c)) {
+			*dst++ = c;
+		} else {
+			*dst++ = '%';
+			*dst++ = hex[c >> 4];
+			*dst++ = hex[c & 0xf];
+		}
+	}
+	*dst = 0;
+	return uri;
+}
+
+static char *mpris_track_uri(const char *filename)
+{
+	/* urls are already escaped, so just remove illegal chars */
+	if (is_http_url(filename))
+		return mpris_escape_uri("", filename, mpris_uri_url_char_ok);
+
+	/* cmus uses raw paths internally for cue and cdda */
+	if (is_cue_url(filename))
+		return mpris_escape_uri("cue://", filename + 6,
+				mpris_uri_path_char_ok);
+	if (is_cdda_url(filename))
+		return mpris_escape_uri("cdda://", filename + 7,
+				mpris_uri_path_char_ok);
+
+	return mpris_escape_uri("file://", filename, mpris_uri_path_char_ok);
+}
+
 static int mpris_metadata(sd_bus *_bus, const char *_path,
 		const char *_interface, const char *_property,
 		sd_bus_message *reply, void *_userdata,
@@ -432,6 +494,12 @@ static int mpris_metadata(sd_bus *_bus, const char *_path,
 		if (ti->discnumber != -1)
 			CK(mpris_msg_append_si_dict(reply, "xesam:discNumber",
 						ti->discnumber));
+		{
+			char *uri = mpris_track_uri(ti->filename);
+			int rc = mpris_msg_append_ss_dict(reply, "xesam:url", uri);
+			free(uri);
+			CK(rc);
+		}
 		if (is_http_url(ti->filename))
 			CK(mpris_msg_append_ss_dict(reply, "cmus:stream_title",
 						get_stream_title()));

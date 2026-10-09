@@ -734,7 +734,7 @@ static void decode_normal(struct id3tag *id3, const char *buf, int len, int enco
 			return;
 		}
 	} else if (key == ID3_PUBLISHER) {
-		 add_v2(id3, ID3_LABEL, strdup(out));
+		 add_v2(id3, ID3_LABEL, xstrdup(out));
 	}
 
 	add_v2(id3, key, out);

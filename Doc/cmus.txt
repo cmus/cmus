@@ -452,12 +452,13 @@ clear [-l] [-p] [-q]
 	clear library
 
 	@li -p
-	clear playlist
+	clear the marked playlist
 
 	@li -q
 	clear play queue
 
-	If a view is not specified, the current view is used.
+	If a view is not specified, the current view is used. In the playlist
+	view, this clears the selected playlist.
 
 colorscheme <name>
 	Changes the color scheme. Color schemes are found in `/usr/share/cmus/`
@@ -884,6 +885,12 @@ auto_expand_albums_follow, auto_expand_albums_search, auto_expand_albums_selcur 
 auto_hide_playlists_panel (false)
 	Hide the left panel in playlist view. The panel will show as needed when
 	activated with win-next (*tab*).
+
+auto_mark_selected_playlist (false)
+	Keep the marked playlist in sync with the playlist selected in the playlist
+	view so commands like *:add -p* and *:clear -p* always operate on the
+	selected playlist. When enabled, win-toggle in the playlist list has no
+	effect.
 
 auto_reshuffle (true)
 	Reshuffle a playlist when the end of a shuffled list is reached.
@@ -1559,6 +1566,12 @@ dsp.aaudio.disable_spatialization (false)
 	This option is only supported on Android 12L+ (API 32) and requires
 	restarting cmus.
 
+dsp.aaudio.min_buffer_capacity_ms (0)
+	If non-zero, sets the requested minimum buffer capacity for the AAudio
+	stream. The lower bound depends on the playback device. Lower values may
+	result in buffer underruns. Higher values result in lower CPU usage, but
+	may make the UI laggy. If left unset, a sensible default is used.
+
 input.cdio.cddb_url
 	CDDB URL (default: freedb.freedb.org:8880). Uses HTTP if prefixed with
 	"http://" (e.g.: http://freedb.musicbrainz.org:80/~cddb/cddb.cgi). Set
@@ -1839,7 +1852,9 @@ The unique bus name is `org.mpris.MediaPlayer2.cmus`.
 
 Metadata fields follow the naming convention of the specification:
 	https://www.freedesktop.org/wiki/Specifications/mpris-spec/metadata/
-Additionally, the `cmus:stream_title` field is exposed if appropriate.
+The `xesam:url` field is a percent-encoded URI. Local files are reported as
+`file://` URIs. Additionally, the `cmus:stream_title` field is exposed if
+appropriate.
 
 @h1 BUGS
 

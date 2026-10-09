@@ -135,7 +135,7 @@ static inline void rb_set_color(struct rb_node *rb, int color)
 
 #define RB_EMPTY_ROOT(root)	((root)->rb_node == NULL)
 #define RB_EMPTY_NODE(node)	(rb_parent(node) == node)
-#define RB_CLEAR_NODE(node)	(rb_set_parent(node, node))
+#define RB_CLEAR_NODE(node)	((node)->rb_parent_color = (unsigned long)(node))
 
 void rb_insert_color(struct rb_node *, struct rb_root *);
 void rb_erase(struct rb_node *, struct rb_root *);

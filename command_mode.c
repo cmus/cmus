@@ -54,6 +54,8 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <dirent.h>
+#include <unistd.h>
 
 static struct history cmd_history;
 static char *cmd_history_filename;
@@ -363,7 +365,6 @@ static void cmd_clear(char *arg) {
     return;
   }
   view_clear(flag_to_view(flag));
-}
 
 static void cmd_load(char *arg) {
   int flag = parse_flags((const char **)&arg, "l");
@@ -727,12 +728,21 @@ static void cmd_source(char *arg) {
 static void cmd_colorscheme(char *arg) {
   char filename[512];
 
-  snprintf(filename, sizeof(filename), "%s/%s.theme", cmus_config_dir, arg);
-  if (source_file(filename) == -1) {
-    snprintf(filename, sizeof(filename), "%s/%s.theme", cmus_data_dir, arg);
-    if (source_file(filename) == -1)
-      error_msg("sourcing %s: %s", filename, strerror(errno));
-  }
+	/* check that the theme at least exists before resetting the colors */
+	snprintf(filename, sizeof(filename), "%s/%s.theme", cmus_config_dir, arg);
+	if (access(filename, R_OK) != 0) {
+		snprintf(filename, sizeof(filename), "%s/%s.theme", cmus_data_dir, arg);
+		if (access(filename, R_OK) != 0) {
+			error_msg("sourcing %s: %s", filename, strerror(errno));
+			return;
+		}
+	}
+
+	/* so incomplete themes don't leave behind old colors */
+	colors_reset();
+
+	if (source_file(filename) == -1)
+		error_msg("sourcing %s: %s", filename, strerror(errno));
 }
 
 /*
@@ -2989,13 +2999,14 @@ void commands_init(void) {
   history_load(&cmd_history, cmd_history_filename, 2000);
 }
 
-void commands_exit(void) {
-  view_clear(TREE_VIEW);
-  view_clear(SORTED_VIEW);
-  view_clear(PLAYLIST_VIEW);
-  view_clear(QUEUE_VIEW);
-  history_save(&cmd_history);
-  history_free(&cmd_history);
-  free(cmd_history_filename);
-  tabexp_reset();
+void commands_exit(void)
+{
+	view_clear(TREE_VIEW, 1);
+	view_clear(SORTED_VIEW, 1);
+	view_clear(PLAYLIST_VIEW, 1);
+	view_clear(QUEUE_VIEW, 1);
+	history_save(&cmd_history);
+	history_free(&cmd_history);
+	free(cmd_history_filename);
+	tabexp_reset();
 }

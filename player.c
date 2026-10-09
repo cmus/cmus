@@ -31,6 +31,14 @@
 #include "sf.h"
 #include "utils.h"
 #include "xmalloc.h"
+#include "debug.h"
+#include "compiler.h"
+#include "options.h"
+#include "mpris.h"
+#include "cmus.h"
+#include "lib.h"
+#include "pl_env.h"
+#include "ui_curses.h"
 
 #include <errno.h>
 #include <math.h>
@@ -1270,8 +1278,9 @@ void player_seek(double offset, int relative, int start_playing) {
 /*
  * change output plugin without stopping playback
  */
-void player_set_op(const char *name) {
-  int rc;
+void player_set_op(const char *name)
+{
+	int rc = 0;
 
   player_lock();
 
@@ -1282,16 +1291,26 @@ void player_set_op(const char *name) {
   if (consumer_status == CS_PLAYING || consumer_status == CS_PAUSED)
     op_close();
 
-  if (name) {
-    d_print("setting op to '%s'\n", name);
-    rc = op_select(name);
-  } else {
-    /* first initialized plugin */
-    d_print("selecting first initialized op\n");
-    rc = op_select_any();
-  }
-  if (rc) {
-    _consumer_status_update(CS_STOPPED);
+	if (name) {
+		d_print("setting op to '%s'\n", name);
+		rc = op_select(name);
+	}
+
+	/* when at startup and plugin is null, op_select_any() */
+	if (!ui_initialized && op_get_current() == NULL) {
+		if (rc)
+			/*
+			 * error if we are falling back because
+			 * the specified init plugin failed
+			 */
+			player_op_error(rc, "selecting output plugin '%s'", name);
+
+		d_print("selecting first initialized op\n");
+		rc = op_select_any();
+	}
+
+	if (rc) {
+		_consumer_status_update(CS_STOPPED);
 
     _producer_stop();
     if (name)

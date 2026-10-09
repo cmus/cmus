@@ -44,7 +44,8 @@ check_cflags()
 {
 	check_cc_flag -pipe -Wall -Wshadow -Wcast-align -Wpointer-arith \
 		-Wwrite-strings -Wundef -Wmissing-prototypes -Wredundant-decls \
-		-Wextra -Wno-sign-compare -Wformat-security
+		-Wextra -Wno-sign-compare -Wformat-security \
+		-D_DEFAULT_SOURCE -D_XOPEN_SOURCE=600
 
 	for i in -Wold-style-definition \
 		-Wno-pointer-sign \
@@ -74,6 +75,8 @@ check_coreaudio()
 }
 
 wcwidth_code="
+#define _DEFAULT_SOURCE
+#define _XOPEN_SOURCE 600
 #include <wchar.h>
 
 /* wchar_t must be 4 bytes to support full unicode */
@@ -452,7 +455,7 @@ check_mp4()
 {
 	pkg_config MP4 "mp4v2 faad2" "" "-lmp4v2 -lfaad -lm" || return $?
 	USE_MPEG4IP=0
-	if ! check_header mp4v2/mp4v2.h $MP4_CFLAGS
+	if ! check_header mp4v2/mp4v2.h -std=c11 $MP4_CFLAGS
 	then
 		# couldn't find the v2 header, try falling back to mp4.h
 		USE_MPEG4IP=1
@@ -471,11 +474,12 @@ check_aac()
 
 check_ffmpeg()
 {
-	pkg_config FFMPEG "libavformat libavcodec libswresample" || return $?
+	pkg_config FFMPEG "libavformat libavcodec libswresample libavutil" || return $?
 	# check the existence of specific headers since they've been renamed before
 	check_header "libavformat/avformat.h" $FFMPEG_CFLAGS || return $?
 	check_header "libavcodec/avcodec.h" $FFMPEG_CFLAGS || return $?
 	check_header "libswresample/swresample.h" $FFMPEG_CFLAGS || return $?
+	check_header "libavutil/avutil.h" $FFMPEG_CFLAGS || return $?
 	# ffmpeg api changes so frequently that it is best to compile the module
 	libs="$LDDLFLAGS $FFMPEG_LIBS"
 	cflags="$SOFLAGS $FFMPEG_CFLAGS"
@@ -527,6 +531,8 @@ check_string_function()
 {
 	msg_checking "for function $1"
 	string_function_code="
+#define _DEFAULT_SOURCE
+#define _XOPEN_SOURCE 600
 #include <string.h>
 int (*ptr)() = (int (*)()) &$1;
 int main() { return 0; }
