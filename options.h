@@ -21,121 +21,122 @@
 
 #include "list.h"
 
-#define OPTION_MAX_SIZE	4096
+#define OPTION_MAX_SIZE 4096
 
 typedef void (*opt_get_cb)(void *data, char *buf, size_t size);
 typedef void (*opt_set_cb)(void *data, const char *buf);
 typedef void (*opt_toggle_cb)(void *data);
 
 enum {
-	OPT_PROGRAM_PATH = 1 << 0,
+  OPT_PROGRAM_PATH = 1 << 0,
 };
 
 struct cmus_opt {
-	struct list_head node;
+  struct list_head node;
 
-	const char *name;
+  const char *name;
 
-	/* If there are many similar options you should write generic get(),
-	 * set() and optionally toggle() and distinguish the concrete option
-	 * via this pointer.
-	 */
-	void *data;
+  /* If there are many similar options you should write generic get(),
+   * set() and optionally toggle() and distinguish the concrete option
+   * via this pointer.
+   */
+  void *data;
 
-	opt_get_cb get;
-	opt_set_cb set;
+  opt_get_cb get;
+  opt_set_cb set;
 
-	/* NULL if not toggle-able */
-	opt_toggle_cb toggle;
+  /* NULL if not toggle-able */
+  opt_toggle_cb toggle;
 
-	unsigned int flags;
+  unsigned int flags;
 };
 
 extern struct list_head option_head;
 extern int nr_options;
 
 enum {
-	TREE_VIEW,
-	SORTED_VIEW,
-	PLAYLIST_VIEW,
-	QUEUE_VIEW,
-	BROWSER_VIEW,
-	FILTERS_VIEW,
-	HELP_VIEW,
-	NR_VIEWS
+  TREE_VIEW,
+  SORTED_VIEW,
+  PLAYLIST_VIEW,
+  QUEUE_VIEW,
+  BROWSER_VIEW,
+  FILTERS_VIEW,
+  HELP_VIEW,
+  LYRICS_VIEW,
+  NR_VIEWS
 };
 
 enum {
-	COLOR_CMDLINE_BG,
-	COLOR_CMDLINE_FG,
-	COLOR_ERROR,
-	COLOR_INFO,
+  COLOR_CMDLINE_BG,
+  COLOR_CMDLINE_FG,
+  COLOR_ERROR,
+  COLOR_INFO,
 
-	COLOR_SEPARATOR,
-	COLOR_STATUSLINE_BG,
-	COLOR_STATUSLINE_FG,
-	COLOR_STATUSLINE_PROGRESS_BG,
+  COLOR_SEPARATOR,
+  COLOR_STATUSLINE_BG,
+  COLOR_STATUSLINE_FG,
+  COLOR_STATUSLINE_PROGRESS_BG,
 
-	COLOR_STATUSLINE_PROGRESS_FG,
-	COLOR_TITLELINE_BG,
-	COLOR_TITLELINE_FG,
-	COLOR_WIN_BG,
+  COLOR_STATUSLINE_PROGRESS_FG,
+  COLOR_TITLELINE_BG,
+  COLOR_TITLELINE_FG,
+  COLOR_WIN_BG,
 
-	COLOR_WIN_CUR,
-	COLOR_WIN_CUR_SEL_BG,
-	COLOR_WIN_CUR_SEL_FG,
-	COLOR_WIN_DIR,
+  COLOR_WIN_CUR,
+  COLOR_WIN_CUR_SEL_BG,
+  COLOR_WIN_CUR_SEL_FG,
+  COLOR_WIN_DIR,
 
-	COLOR_WIN_FG,
-	COLOR_WIN_INACTIVE_CUR_SEL_BG,
-	COLOR_WIN_INACTIVE_CUR_SEL_FG,
-	COLOR_WIN_INACTIVE_SEL_BG,
+  COLOR_WIN_FG,
+  COLOR_WIN_INACTIVE_CUR_SEL_BG,
+  COLOR_WIN_INACTIVE_CUR_SEL_FG,
+  COLOR_WIN_INACTIVE_SEL_BG,
 
-	COLOR_WIN_INACTIVE_SEL_FG,
-	COLOR_WIN_SEL_BG,
-	COLOR_WIN_SEL_FG,
-	COLOR_WIN_TITLE_BG,
+  COLOR_WIN_INACTIVE_SEL_FG,
+  COLOR_WIN_SEL_BG,
+  COLOR_WIN_SEL_FG,
+  COLOR_WIN_TITLE_BG,
 
-	COLOR_WIN_TITLE_FG,
-	COLOR_TRACKWIN_ALBUM_BG,
-	COLOR_TRACKWIN_ALBUM_FG,
+  COLOR_WIN_TITLE_FG,
+  COLOR_TRACKWIN_ALBUM_BG,
+  COLOR_TRACKWIN_ALBUM_FG,
 
-	NR_COLORS
+  NR_COLORS
 };
 
 enum {
-	COLOR_CMDLINE_ATTR,
-	COLOR_STATUSLINE_ATTR,
-	COLOR_STATUSLINE_PROGRESS_ATTR,
-	COLOR_TITLELINE_ATTR,
-	COLOR_WIN_ATTR,
-	COLOR_WIN_CUR_SEL_ATTR,
-	COLOR_CUR_SEL_ATTR,
-	COLOR_WIN_INACTIVE_CUR_SEL_ATTR,
-	COLOR_WIN_INACTIVE_SEL_ATTR,
-	COLOR_WIN_SEL_ATTR,
-	COLOR_WIN_TITLE_ATTR,
-	COLOR_TRACKWIN_ALBUM_ATTR,
-	COLOR_WIN_CUR_ATTR,
-	NR_ATTRS
+  COLOR_CMDLINE_ATTR,
+  COLOR_STATUSLINE_ATTR,
+  COLOR_STATUSLINE_PROGRESS_ATTR,
+  COLOR_TITLELINE_ATTR,
+  COLOR_WIN_ATTR,
+  COLOR_WIN_CUR_SEL_ATTR,
+  COLOR_CUR_SEL_ATTR,
+  COLOR_WIN_INACTIVE_CUR_SEL_ATTR,
+  COLOR_WIN_INACTIVE_SEL_ATTR,
+  COLOR_WIN_SEL_ATTR,
+  COLOR_WIN_TITLE_ATTR,
+  COLOR_TRACKWIN_ALBUM_ATTR,
+  COLOR_WIN_CUR_ATTR,
+  NR_ATTRS
 };
 
 enum shuffle_mode {
-	SHUFFLE_OFF,
-	SHUFFLE_TRACKS,
-	SHUFFLE_ALBUMS,
-	/* backwards compatability */
-	SHUFFLE_FALSE,
-	SHUFFLE_TRUE
+  SHUFFLE_OFF,
+  SHUFFLE_TRACKS,
+  SHUFFLE_ALBUMS,
+  /* backwards compatability */
+  SHUFFLE_FALSE,
+  SHUFFLE_TRUE
 };
 
 enum progress_bar_mode {
-	PROGRESS_BAR_DISABLED,
-	PROGRESS_BAR_LINE,
-	PROGRESS_BAR_SHUTTLE,
-	PROGRESS_BAR_COLOR,
-	PROGRESS_BAR_COLOR_SHUTTLE,
-	NR_PROGRESS_BAR_MODES
+  PROGRESS_BAR_DISABLED,
+  PROGRESS_BAR_LINE,
+  PROGRESS_BAR_SHUTTLE,
+  PROGRESS_BAR_COLOR,
+  PROGRESS_BAR_COLOR_SHUTTLE,
+  NR_PROGRESS_BAR_MODES
 };
 
 #define BRIGHT (1 << 3)
@@ -181,8 +182,8 @@ extern int block_key_paste;
 extern int progress_bar;
 extern int search_resets_position;
 
-extern const char * const aaa_mode_names[];
-extern const char * const view_names[NR_VIEWS + 1];
+extern const char *const aaa_mode_names[];
+extern const char *const view_names[NR_VIEWS + 1];
 
 extern int colors[NR_COLORS];
 extern int attrs[NR_ATTRS];
@@ -225,7 +226,8 @@ extern char *clipped_text_internal;
 extern char *id3_default_charset;
 extern char *icecast_default_charset;
 
-/* comma-separated list of env vars to substitute in saved library/cache paths */
+/* comma-separated list of env vars to substitute in saved library/cache paths
+ */
 extern char **pl_env_vars;
 
 /* build option list */
@@ -245,11 +247,12 @@ void resume_load(void);
 void resume_exit(void);
 
 void option_add(const char *name, const void *data, opt_get_cb get,
-		opt_set_cb set, opt_toggle_cb toggle, unsigned int flags);
+                opt_set_cb set, opt_toggle_cb toggle, unsigned int flags);
 struct cmus_opt *option_find(const char *name);
 struct cmus_opt *option_find_silent(const char *name);
 void option_set(const char *name, const char *value);
-int parse_enum(const char *buf, int minval, int maxval, const char * const names[], int *val);
+int parse_enum(const char *buf, int minval, int maxval,
+               const char *const names[], int *val);
 
 void update_mouse(void);
 

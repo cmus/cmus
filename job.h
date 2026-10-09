@@ -21,37 +21,38 @@
 
 #include "cmus.h"
 
-#define JOB_TYPE_LIB   1 << 0
-#define JOB_TYPE_PL    1 << 1
+#define JOB_TYPE_LIB 1 << 0
+#define JOB_TYPE_PL 1 << 1
 #define JOB_TYPE_QUEUE 1 << 2
 
-#define JOB_TYPE_ADD          1 << 16
-#define JOB_TYPE_UPDATE       1 << 17
+#define JOB_TYPE_ADD 1 << 16
+#define JOB_TYPE_UPDATE 1 << 17
 #define JOB_TYPE_UPDATE_CACHE 1 << 18
-#define JOB_TYPE_DELETE       1 << 19
+#define JOB_TYPE_DELETE 1 << 19
+#define JOB_TYPE_LYRICS 1 << 20
 
 struct add_data {
-	enum file_type type;
-	char *name;
-	add_ti_cb add;
-	void *opaque;
-	unsigned int force : 1;
+  enum file_type type;
+  char *name;
+  add_ti_cb add;
+  void *opaque;
+  unsigned int force : 1;
 };
 
 struct update_data {
-	size_t size;
-	size_t used;
-	struct track_info **ti;
-	unsigned int force : 1;
+  size_t size;
+  size_t used;
+  struct track_info **ti;
+  unsigned int force : 1;
 };
 
 struct update_cache_data {
-	unsigned int force : 1;
+  unsigned int force : 1;
 };
 
 struct pl_delete_data {
-	struct playlist *pl;
-	void (*cb)(struct playlist *);
+  struct playlist *pl;
+  void (*cb)(struct playlist *);
 };
 
 extern int job_fd;
@@ -63,5 +64,6 @@ void job_schedule_update(struct update_data *data);
 void job_schedule_update_cache(int type, struct update_cache_data *data);
 void job_schedule_pl_delete(struct pl_delete_data *data);
 void job_handle(void);
+void job_schedule_lyrics(const char *filename, unsigned int generation);
 
 #endif

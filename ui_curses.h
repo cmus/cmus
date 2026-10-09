@@ -19,20 +19,16 @@
 #ifndef CMUS_UI_CURSES_H
 #define CMUS_UI_CURSES_H
 
-#include "search.h"
 #include "compiler.h"
 #include "format_print.h"
+#include "search.h"
 
-enum ui_input_mode {
-	NORMAL_MODE,
-	COMMAND_MODE,
-	SEARCH_MODE
-};
+enum ui_input_mode { NORMAL_MODE, COMMAND_MODE, SEARCH_MODE };
 
 enum ui_query_answer {
-	UI_QUERY_ANSWER_ERROR = -1,
-	UI_QUERY_ANSWER_NO = 0,
-	UI_QUERY_ANSWER_YES = 1
+  UI_QUERY_ANSWER_ERROR = -1,
+  UI_QUERY_ANSWER_NO = 0,
+  UI_QUERY_ANSWER_YES = 1
 };
 
 #include <signal.h>
@@ -52,6 +48,11 @@ extern char *play_queue_ext_filename;
 
 extern char *charset;
 extern int using_utf8;
+
+struct lyrics;
+void lyrics_loaded(unsigned int generation, struct lyrics *lyrics);
+void lyrics_reload(void);
+void lyrics_delay(int milliseconds);
 
 void update_titleline(void);
 void update_statusline(void);

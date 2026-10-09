@@ -20,66 +20,57 @@
  */
 
 #include "keys.h"
+#include "command_mode.h"
 #include "help.h"
 #include "ui_curses.h"
-#include "command_mode.h"
 #include "xmalloc.h"
 
-#include "window.h"
-#include "options.h"
 #include "editable.h"
 #include "lib.h"
+#include "options.h"
 #include "pl.h"
+#include "window.h"
 
-const char * const key_context_names[NR_CTXS + 1] = {
-	"browser",
-	"common",
-	"filters",
-	"library",
-	"playlist",
-	"queue",
-	"settings",
-	NULL
+const char *const key_context_names[NR_CTXS + 1] = {
+    "browser",  "common", "filters",  "library",
+    "playlist", "queue",  "settings", NULL};
+
+struct binding *key_bindings[NR_CTXS] = {
+    NULL,
 };
 
-struct binding *key_bindings[NR_CTXS] = { NULL, };
-
 static const enum key_context view_to_context[] = {
-	CTX_LIBRARY,
-	CTX_LIBRARY,
-	CTX_PLAYLIST,
-	CTX_QUEUE,
-	CTX_BROWSER,
-	CTX_FILTERS,
-	CTX_SETTINGS,
+    CTX_LIBRARY, CTX_LIBRARY,  CTX_PLAYLIST, CTX_QUEUE, CTX_BROWSER,
+    CTX_FILTERS, CTX_SETTINGS, CTX_COMMON, /* lyrics: playback/global controls,
+                                              no library mutation keys */
 };
 
 #define KEY_IS_CHAR -255
 
-#define KEY_M_TYPE_NONE 	(0<<3)
-#define KEY_M_TYPE_SEL		(1<<3)
-#define KEY_M_TYPE_BAR		(2<<3)
-#define KEY_M_TYPE_TIT		(3<<3)
-#define KEY_M_TYPE_BAR_R	(4<<3)
+#define KEY_M_TYPE_NONE (0 << 3)
+#define KEY_M_TYPE_SEL (1 << 3)
+#define KEY_M_TYPE_BAR (2 << 3)
+#define KEY_M_TYPE_TIT (3 << 3)
+#define KEY_M_TYPE_BAR_R (4 << 3)
 
-#define KEY_MLB_CLICK			0
-#define KEY_MRB_CLICK 			1
-#define KEY_MSCRL_UP	 		2
-#define KEY_MSCRL_DOWN			3
-#define KEY_MLB_CLICK_SEL		(KEY_MLB_CLICK|KEY_M_TYPE_SEL)
-#define KEY_MRB_CLICK_SEL 		(KEY_MRB_CLICK|KEY_M_TYPE_SEL)
-#define KEY_MLB_CLICK_BAR		(KEY_MLB_CLICK|KEY_M_TYPE_BAR)
-#define KEY_MRB_CLICK_BAR 		(KEY_MRB_CLICK|KEY_M_TYPE_BAR)
-#define KEY_MSCRL_UP_BAR		(KEY_MSCRL_UP|KEY_M_TYPE_BAR)
-#define KEY_MSCRL_DOWN_BAR		(KEY_MSCRL_DOWN|KEY_M_TYPE_BAR)
-#define KEY_MLB_CLICK_BAR_R		(KEY_MLB_CLICK|KEY_M_TYPE_BAR_R)
-#define KEY_MRB_CLICK_BAR_R		(KEY_MRB_CLICK|KEY_M_TYPE_BAR_R)
-#define KEY_MSCRL_UP_BAR_R		(KEY_MSCRL_UP|KEY_M_TYPE_BAR_R)
-#define KEY_MSCRL_DOWN_BAR_R	(KEY_MSCRL_DOWN|KEY_M_TYPE_BAR_R)
-#define KEY_MLB_CLICK_TIT		(KEY_MLB_CLICK|KEY_M_TYPE_TIT)
-#define KEY_MRB_CLICK_TIT 		(KEY_MRB_CLICK|KEY_M_TYPE_TIT)
-#define KEY_MSCRL_UP_TIT		(KEY_MSCRL_UP|KEY_M_TYPE_TIT)
-#define KEY_MSCRL_DOWN_TIT		(KEY_MSCRL_DOWN|KEY_M_TYPE_TIT)
+#define KEY_MLB_CLICK 0
+#define KEY_MRB_CLICK 1
+#define KEY_MSCRL_UP 2
+#define KEY_MSCRL_DOWN 3
+#define KEY_MLB_CLICK_SEL (KEY_MLB_CLICK | KEY_M_TYPE_SEL)
+#define KEY_MRB_CLICK_SEL (KEY_MRB_CLICK | KEY_M_TYPE_SEL)
+#define KEY_MLB_CLICK_BAR (KEY_MLB_CLICK | KEY_M_TYPE_BAR)
+#define KEY_MRB_CLICK_BAR (KEY_MRB_CLICK | KEY_M_TYPE_BAR)
+#define KEY_MSCRL_UP_BAR (KEY_MSCRL_UP | KEY_M_TYPE_BAR)
+#define KEY_MSCRL_DOWN_BAR (KEY_MSCRL_DOWN | KEY_M_TYPE_BAR)
+#define KEY_MLB_CLICK_BAR_R (KEY_MLB_CLICK | KEY_M_TYPE_BAR_R)
+#define KEY_MRB_CLICK_BAR_R (KEY_MRB_CLICK | KEY_M_TYPE_BAR_R)
+#define KEY_MSCRL_UP_BAR_R (KEY_MSCRL_UP | KEY_M_TYPE_BAR_R)
+#define KEY_MSCRL_DOWN_BAR_R (KEY_MSCRL_DOWN | KEY_M_TYPE_BAR_R)
+#define KEY_MLB_CLICK_TIT (KEY_MLB_CLICK | KEY_M_TYPE_TIT)
+#define KEY_MRB_CLICK_TIT (KEY_MRB_CLICK | KEY_M_TYPE_TIT)
+#define KEY_MSCRL_UP_TIT (KEY_MSCRL_UP | KEY_M_TYPE_TIT)
+#define KEY_MSCRL_DOWN_TIT (KEY_MSCRL_DOWN | KEY_M_TYPE_TIT)
 
 /* key_table {{{
  *
@@ -88,735 +79,730 @@ static const enum key_context view_to_context[] = {
  * key: KEY_MOUSE, neither key, nor char
  */
 const struct key key_table[] = {
-	{ "!",			KEY_IS_CHAR,		33	},
-	{ "\"",			KEY_IS_CHAR,		34	},
-	{ "#",			KEY_IS_CHAR,		35	},
-	{ "$",			KEY_IS_CHAR,		36	},
-	{ "%",			KEY_IS_CHAR,		37	},
-	{ "&",			KEY_IS_CHAR,		38	},
-	{ "'",			KEY_IS_CHAR,		39	},
-	{ "(",			KEY_IS_CHAR,		40	},
-	{ ")",			KEY_IS_CHAR,		41	},
-	{ "*",			KEY_IS_CHAR,		42	},
-	{ "+",			KEY_IS_CHAR,		43	},
-	{ ",",			KEY_IS_CHAR,		44	},
-	{ "-",			KEY_IS_CHAR,		45	},
-	{ ".",			KEY_IS_CHAR,		46	},
-	{ "/",			KEY_IS_CHAR,		47	},
-	{ "0",			KEY_IS_CHAR,		48	},
-	{ "1",			KEY_IS_CHAR,		49	},
-	{ "2",			KEY_IS_CHAR,		50	},
-	{ "3",			KEY_IS_CHAR,		51	},
-	{ "4",			KEY_IS_CHAR,		52	},
-	{ "5",			KEY_IS_CHAR,		53	},
-	{ "6",			KEY_IS_CHAR,		54	},
-	{ "7",			KEY_IS_CHAR,		55	},
-	{ "8",			KEY_IS_CHAR,		56	},
-	{ "9",			KEY_IS_CHAR,		57	},
-	{ ":",			KEY_IS_CHAR,		58	},
-	{ ";",			KEY_IS_CHAR,		59	},
-	{ "<",			KEY_IS_CHAR,		60	},
-	{ "=",			KEY_IS_CHAR,		61	},
-	{ ">",			KEY_IS_CHAR,		62	},
-	{ "?",			KEY_IS_CHAR,		63	},
-	{ "@",			KEY_IS_CHAR,		64	},
-	{ "A",			KEY_IS_CHAR,		65	},
-	{ "B",			KEY_IS_CHAR,		66	},
-	{ "C",			KEY_IS_CHAR,		67	},
-	{ "D",			KEY_IS_CHAR,		68	},
-	{ "E",			KEY_IS_CHAR,		69	},
-	{ "F",			KEY_IS_CHAR,		70	},
-	{ "F1",			KEY_F(1),		0	},
-	{ "F10",		KEY_F(10),		0	},
-	{ "F11",		KEY_F(11),		0	},
-	{ "F12",		KEY_F(12),		0	},
-	{ "F2",			KEY_F(2),		0	},
-	{ "F3",			KEY_F(3),		0	},
-	{ "F4",			KEY_F(4),		0	},
-	{ "F5",			KEY_F(5),		0	},
-	{ "F6",			KEY_F(6),		0	},
-	{ "F7",			KEY_F(7),		0	},
-	{ "F8",			KEY_F(8),		0	},
-	{ "F9",			KEY_F(9),		0	},
-	{ "G",			KEY_IS_CHAR,		71	},
-	{ "H",			KEY_IS_CHAR,		72	},
-	{ "I",			KEY_IS_CHAR,		73	},
-	{ "J",			KEY_IS_CHAR,		74	},
-	{ "K",			KEY_IS_CHAR,		75	},
-	{ "KP_center",		KEY_B2,			0	},
-	{ "KP_lower_left",	KEY_C1,			0	},
-	{ "KP_lower_right",	KEY_C3,			0	},
-	{ "KP_upper_left",	KEY_A1,			0	},
-	{ "KP_upper_right",	KEY_A3,			0	},
-	{ "L",			KEY_IS_CHAR,		76	},
-	{ "M",			KEY_IS_CHAR,		77	},
-	{ "M-!",		KEY_IS_CHAR,		161	},
-	{ "M-\"",		KEY_IS_CHAR,		162	},
-	{ "M-#",		KEY_IS_CHAR,		163	},
-	{ "M-$",		KEY_IS_CHAR,		164	},
-	{ "M-%",		KEY_IS_CHAR,		165	},
-	{ "M-&",		KEY_IS_CHAR,		166	},
-	{ "M-'",		KEY_IS_CHAR,		167	},
-	{ "M-(",		KEY_IS_CHAR,		168	},
-	{ "M-)",		KEY_IS_CHAR,		169	},
-	{ "M-*",		KEY_IS_CHAR,		170	},
-	{ "M-+",		KEY_IS_CHAR,		171	},
-	{ "M-,",		KEY_IS_CHAR,		172	},
-	{ "M--",		KEY_IS_CHAR,		173	},
-	{ "M-.",		KEY_IS_CHAR,		174	},
-	{ "M-/",		KEY_IS_CHAR,		175	},
-	{ "M-0",		KEY_IS_CHAR,		176	},
-	{ "M-1",		KEY_IS_CHAR,		177	},
-	{ "M-2",		KEY_IS_CHAR,		178	},
-	{ "M-3",		KEY_IS_CHAR,		179	},
-	{ "M-4",		KEY_IS_CHAR,		180	},
-	{ "M-5",		KEY_IS_CHAR,		181	},
-	{ "M-6",		KEY_IS_CHAR,		182	},
-	{ "M-7",		KEY_IS_CHAR,		183	},
-	{ "M-8",		KEY_IS_CHAR,		184	},
-	{ "M-9",		KEY_IS_CHAR,		185	},
-	{ "M-:",		KEY_IS_CHAR,		186	},
-	{ "M-;",		KEY_IS_CHAR,		187	},
-	{ "M-<",		KEY_IS_CHAR,		188	},
-	{ "M-=",		KEY_IS_CHAR,		189	},
-	{ "M->",		KEY_IS_CHAR,		190	},
-	{ "M-?",		KEY_IS_CHAR,		191	},
-	{ "M-@",		KEY_IS_CHAR,		192	},
-	{ "M-A",		KEY_IS_CHAR,		193	},
-	{ "M-B",		KEY_IS_CHAR,		194	},
-	{ "M-C",		KEY_IS_CHAR,		195	},
-	{ "M-D",		KEY_IS_CHAR,		196	},
-	{ "M-E",		KEY_IS_CHAR,		197	},
-	{ "M-F",		KEY_IS_CHAR,		198	},
-	{ "M-G",		KEY_IS_CHAR,		199	},
-	{ "M-H",		KEY_IS_CHAR,		200	},
-	{ "M-I",		KEY_IS_CHAR,		201	},
-	{ "M-J",		KEY_IS_CHAR,		202	},
-	{ "M-K",		KEY_IS_CHAR,		203	},
-	{ "M-L",		KEY_IS_CHAR,		204	},
-	{ "M-M",		KEY_IS_CHAR,		205	},
-	{ "M-N",		KEY_IS_CHAR,		206	},
-	{ "M-O",		KEY_IS_CHAR,		207	},
-	{ "M-P",		KEY_IS_CHAR,		208	},
-	{ "M-Q",		KEY_IS_CHAR,		209	},
-	{ "M-R",		KEY_IS_CHAR,		210	},
-	{ "M-S",		KEY_IS_CHAR,		211	},
-	{ "M-T",		KEY_IS_CHAR,		212	},
-	{ "M-U",		KEY_IS_CHAR,		213	},
-	{ "M-V",		KEY_IS_CHAR,		214	},
-	{ "M-W",		KEY_IS_CHAR,		215	},
-	{ "M-X",		KEY_IS_CHAR,		216	},
-	{ "M-Y",		KEY_IS_CHAR,		217	},
-	{ "M-Z",		KEY_IS_CHAR,		218	},
-	{ "M-[",		KEY_IS_CHAR,		219	},
-	{ "M-\\",		KEY_IS_CHAR,		220	},
-	{ "M-]",		KEY_IS_CHAR,		221	},
-	{ "M-^",		KEY_IS_CHAR,		222	},
-	{ "M-^?",		KEY_IS_CHAR,		255	},
-	{ "M-^@",		KEY_IS_CHAR,		128	},
-	{ "M-^A",		KEY_IS_CHAR,		129	},
-	{ "M-^B",		KEY_IS_CHAR,		130	},
-	{ "M-^C",		KEY_IS_CHAR,		131	},
-	{ "M-^D",		KEY_IS_CHAR,		132	},
-	{ "M-^E",		KEY_IS_CHAR,		133	},
-	{ "M-^F",		KEY_IS_CHAR,		134	},
-	{ "M-^G",		KEY_IS_CHAR,		135	},
-	{ "M-^H",		KEY_IS_CHAR,		136	},
-	{ "M-^I",		KEY_IS_CHAR,		137	},
-	{ "M-^J",		KEY_IS_CHAR,		138	},
-	{ "M-^K",		KEY_IS_CHAR,		139	},
-	{ "M-^L",		KEY_IS_CHAR,		140	},
-	{ "M-^M",		KEY_IS_CHAR,		141	},
-	{ "M-^N",		KEY_IS_CHAR,		142	},
-	{ "M-^O",		KEY_IS_CHAR,		143	},
-	{ "M-^P",		KEY_IS_CHAR,		144	},
-	{ "M-^Q",		KEY_IS_CHAR,		145	},
-	{ "M-^R",		KEY_IS_CHAR,		146	},
-	{ "M-^S",		KEY_IS_CHAR,		147	},
-	{ "M-^T",		KEY_IS_CHAR,		148	},
-	{ "M-^U",		KEY_IS_CHAR,		149	},
-	{ "M-^V",		KEY_IS_CHAR,		150	},
-	{ "M-^W",		KEY_IS_CHAR,		151	},
-	{ "M-^X",		KEY_IS_CHAR,		152	},
-	{ "M-^Y",		KEY_IS_CHAR,		153	},
-	{ "M-^Z",		KEY_IS_CHAR,		154	},
-	{ "M-^[",		KEY_IS_CHAR,		155	},
-	{ "M-^\\",		KEY_IS_CHAR,		156	},
-	{ "M-^]",		KEY_IS_CHAR,		157	},
-	{ "M-^^",		KEY_IS_CHAR,		158	},
-	{ "M-^_",		KEY_IS_CHAR,		159	},
-	{ "M-_",		KEY_IS_CHAR,		223	},
-	{ "M-`",		KEY_IS_CHAR,		224	},
-	{ "M-a",		KEY_IS_CHAR,		225	},
-	{ "M-b",		KEY_IS_CHAR,		226	},
-	{ "M-c",		KEY_IS_CHAR,		227	},
-	{ "M-d",		KEY_IS_CHAR,		228	},
-	{ "M-e",		KEY_IS_CHAR,		229	},
-	{ "M-f",		KEY_IS_CHAR,		230	},
-	{ "M-g",		KEY_IS_CHAR,		231	},
-	{ "M-h",		KEY_IS_CHAR,		232	},
-	{ "M-i",		KEY_IS_CHAR,		233	},
-	{ "M-j",		KEY_IS_CHAR,		234	},
-	{ "M-k",		KEY_IS_CHAR,		235	},
-	{ "M-l",		KEY_IS_CHAR,		236	},
-	{ "M-m",		KEY_IS_CHAR,		237	},
-	{ "M-n",		KEY_IS_CHAR,		238	},
-	{ "M-o",		KEY_IS_CHAR,		239	},
-	{ "M-p",		KEY_IS_CHAR,		240	},
-	{ "M-q",		KEY_IS_CHAR,		241	},
-	{ "M-r",		KEY_IS_CHAR,		242	},
-	{ "M-s",		KEY_IS_CHAR,		243	},
-	{ "M-space",		KEY_IS_CHAR,		160	},
-	{ "M-t",		KEY_IS_CHAR,		244	},
-	{ "M-u",		KEY_IS_CHAR,		245	},
-	{ "M-v",		KEY_IS_CHAR,		246	},
-	{ "M-w",		KEY_IS_CHAR,		247	},
-	{ "M-x",		KEY_IS_CHAR,		248	},
-	{ "M-y",		KEY_IS_CHAR,		249	},
-	{ "M-z",		KEY_IS_CHAR,		250	},
-	{ "M-{",		KEY_IS_CHAR,		251	},
-	{ "M-|",		KEY_IS_CHAR,		252	},
-	{ "M-}",		KEY_IS_CHAR,		253	},
-	{ "M-~",		KEY_IS_CHAR,		254	},
-	{ "N",			KEY_IS_CHAR,		78	},
-	{ "O",			KEY_IS_CHAR,		79	},
-	{ "P",			KEY_IS_CHAR,		80	},
-	{ "Q",			KEY_IS_CHAR,		81	},
-	{ "R",			KEY_IS_CHAR,		82	},
-	{ "S",			KEY_IS_CHAR,		83	},
-	{ "S-begin",		KEY_SBEG,		0	},
-	{ "S-cancel",		KEY_SCANCEL,		0	},
-	{ "S-command",		KEY_SCOMMAND,		0	},
-	{ "S-copy",		KEY_SCOPY,		0	},
-	{ "S-create",		KEY_SCREATE,		0	},
-	{ "S-del_line",		KEY_SDL,		0	},
-	{ "S-delete",		KEY_SDC,		0	},
-	{ "S-eol",		KEY_SEOL,		0	},
-	{ "S-exit",		KEY_SEXIT,		0	},
-	{ "S-find",		KEY_SFIND,		0	},
-	{ "S-help",		KEY_SHELP,		0	},
-	{ "S-home",		KEY_SHOME,		0	},
-	{ "S-insert",		KEY_SIC,		0	},
-	{ "S-left",		KEY_SLEFT,		0	},
-	{ "S-message",		KEY_SMESSAGE,		0	},
-	{ "S-move",		KEY_SMOVE,		0	},
-	{ "S-next",		KEY_SNEXT,		0	},
-	{ "S-options",		KEY_SOPTIONS,		0	},
-	{ "S-previous",		KEY_SPREVIOUS,		0	},
-	{ "S-print",		KEY_SPRINT,		0	},
-	{ "S-redo",		KEY_SREDO,		0	},
-	{ "S-replace",		KEY_SREPLACE,		0	},
-	{ "S-resume",		KEY_SRSUME,		0	},
-	{ "S-right",		KEY_SRIGHT,		0	},
-	{ "S-save",		KEY_SSAVE,		0	},
-	{ "S-suspend",		KEY_SSUSPEND,		0	},
-	{ "S-undo",		KEY_SUNDO,		0	},
-	{ "T",			KEY_IS_CHAR,		84	},
-	{ "U",			KEY_IS_CHAR,		85	},
-	{ "V",			KEY_IS_CHAR,		86	},
-	{ "W",			KEY_IS_CHAR,		87	},
-	{ "X",			KEY_IS_CHAR,		88	},
-	{ "Y",			KEY_IS_CHAR,		89	},
-	{ "Z",			KEY_IS_CHAR,		90	},
-	{ "[",			KEY_IS_CHAR,		91	},
-	{ "\\",			KEY_IS_CHAR,		92	},
-	{ "]",			KEY_IS_CHAR,		93	},
-	{ "^",			KEY_IS_CHAR,		94	},
-	{ "^A",			KEY_IS_CHAR,		1	},
-	{ "^B",			KEY_IS_CHAR,		2	},
-	{ "^C",			KEY_IS_CHAR,		3	},
-	{ "^D",			KEY_IS_CHAR,		4	},
-	{ "^E",			KEY_IS_CHAR,		5	},
-	{ "^F",			KEY_IS_CHAR,		6	},
-	{ "^G",			KEY_IS_CHAR,		7	},
-	{ "^H",			KEY_IS_CHAR,		8	},
-	{ "^K",			KEY_IS_CHAR,		11	},
-	{ "^L",			KEY_IS_CHAR,		12	},
-	{ "^M",			KEY_IS_CHAR,		13	},
-	{ "^N",			KEY_IS_CHAR,		14	},
-	{ "^O",			KEY_IS_CHAR,		15	},
-	{ "^P",			KEY_IS_CHAR,		16	},
-	{ "^Q",			KEY_IS_CHAR,		17	},
-	{ "^R",			KEY_IS_CHAR,		18	},
-	{ "^S",			KEY_IS_CHAR,		19	},
-	{ "^T",			KEY_IS_CHAR,		20	},
-	{ "^U",			KEY_IS_CHAR,		21	},
-	{ "^V",			KEY_IS_CHAR,		22	},
-	{ "^W",			KEY_IS_CHAR,		23	},
-	{ "^X",			KEY_IS_CHAR,		24	},
-	{ "^Y",			KEY_IS_CHAR,		25	},
-	{ "^Z",			KEY_IS_CHAR,		26	},
-	{ "^\\",		KEY_IS_CHAR,		28	},
-	{ "^]",			KEY_IS_CHAR,		29	},
-	{ "^^",			KEY_IS_CHAR,		30	},
-	{ "^_",			KEY_IS_CHAR,		31	},
-	{ "_",			KEY_IS_CHAR,		95	},
-	{ "`",			KEY_IS_CHAR,		96	},
-	{ "a",			KEY_IS_CHAR,		97	},
-	{ "b",			KEY_IS_CHAR,		98	},
-	{ "back_tab",		KEY_BTAB,		0	},
-	{ "backspace",		KEY_BACKSPACE,		127	}, /* NOTE: both key and ch */
-	{ "begin",		KEY_BEG,		0	},
-	{ "c",			KEY_IS_CHAR,		99	},
-	{ "cancel",		KEY_CANCEL,		0	},
-	{ "clear",		KEY_CLEAR,		0	},
-	{ "clear_all_tabs",	KEY_CATAB,		0	},
-	{ "clear_tab",		KEY_CTAB,		0	},
-	{ "close",		KEY_CLOSE,		0	},
-	{ "command",		KEY_COMMAND,		0	},
-	{ "copy",		KEY_COPY,		0	},
-	{ "create",		KEY_CREATE,		0	},
-	{ "d",			KEY_IS_CHAR,		100	},
-	{ "del_line",		KEY_DL,			0	},
-	{ "delete",		KEY_DC,			0	},
-	{ "down",		KEY_DOWN,		0	},
-	{ "e",			KEY_IS_CHAR,		101	},
-	{ "eic",		KEY_EIC,		0	},
-	{ "end",		KEY_END,		0	},
-	{ "enter",		KEY_IS_CHAR,		10	},
-	{ "eol",		KEY_EOL,		0	},
-	{ "eos",		KEY_EOS,		0	},
-	{ "exit",		KEY_EXIT,		0	},
-	{ "f",			KEY_IS_CHAR,		102	},
-	{ "find",		KEY_FIND,		0	},
-	{ "g",			KEY_IS_CHAR,		103	},
-	{ "h",			KEY_IS_CHAR,		104	},
-	{ "help",		KEY_HELP,		0	},
-	{ "home",		KEY_HOME,		0	},
-	{ "i",			KEY_IS_CHAR,		105	},
-	{ "ins_line",		KEY_IL,			0	},
-	{ "insert",		KEY_IC,			0	},
-	{ "j",			KEY_IS_CHAR,		106	},
-	{ "k",			KEY_IS_CHAR,		107	},
-	{ "l",			KEY_IS_CHAR,		108	},
-	{ "left",		KEY_LEFT,		0	},
-	{ "lower_left",		KEY_LL,			0	},
-	{ "m",			KEY_IS_CHAR,		109	},
-	{ "mark",		KEY_MARK,		0	},
-	{ "message",		KEY_MESSAGE,		0	},
-	{ "move",		KEY_MOVE,		0	},
-	{ "n",			KEY_IS_CHAR,		110	},
-	{ "next",		KEY_NEXT,		0	},
-	{ "o",			KEY_IS_CHAR,		111	},
-	{ "open",		KEY_OPEN,		0	},
-	{ "options",		KEY_OPTIONS,		0	},
-	{ "p",			KEY_IS_CHAR,		112	},
-	{ "page_down",		KEY_NPAGE,		0	},
-	{ "page_up",		KEY_PPAGE,		0	},
-	{ "previous",		KEY_PREVIOUS,		0	},
-	{ "print",		KEY_PRINT,		0	},
-	{ "q",			KEY_IS_CHAR,		113	},
-	{ "r",			KEY_IS_CHAR,		114	},
-	{ "redo",		KEY_REDO,		0	},
-	{ "reference",		KEY_REFERENCE,		0	},
-	{ "refresh",		KEY_REFRESH,		0	},
-	{ "replace",		KEY_REPLACE,		0	},
-	{ "restart",		KEY_RESTART,		0	},
-	{ "resume",		KEY_RESUME,		0	},
-	{ "right",		KEY_RIGHT,		0	},
-	{ "s",			KEY_IS_CHAR,		115	},
-	{ "save",		KEY_SAVE,		0	},
-	{ "scroll_b",		KEY_SR,			0	},
-	{ "scroll_f",		KEY_SF,			0	},
-	{ "select",		KEY_SELECT,		0	},
-	{ "send",		KEY_SEND,		0	},
-	{ "set_tab",		KEY_STAB,		0	},
-	{ "space",		KEY_IS_CHAR,		32	},
-	{ "suspend",		KEY_SUSPEND,		0	},
-	{ "t",			KEY_IS_CHAR,		116	},
-	{ "tab",		KEY_IS_CHAR,		9	},
-	{ "u",			KEY_IS_CHAR,		117	},
-	{ "undo",		KEY_UNDO,		0	},
-	{ "up",			KEY_UP,			0	},
-	{ "v",			KEY_IS_CHAR,		118	},
-	{ "w",			KEY_IS_CHAR,		119	},
-	{ "x",			KEY_IS_CHAR,		120	},
-	{ "y",			KEY_IS_CHAR,		121	},
-	{ "z",			KEY_IS_CHAR,		122	},
-	{ "{",			KEY_IS_CHAR,		123	},
-	{ "|",			KEY_IS_CHAR,		124	},
-	{ "}",			KEY_IS_CHAR,		125	},
-	{ "~",			KEY_IS_CHAR,		126	},
-	{ "mlb_click",		KEY_MOUSE,		KEY_MLB_CLICK		},
-	{ "mlb_click_selected",	KEY_MOUSE,		KEY_MLB_CLICK_SEL	},
-	{ "mlb_click_bar",	KEY_MOUSE,		KEY_MLB_CLICK_BAR	},
-	{ "mlb_click_bar_right",	KEY_MOUSE,		KEY_MLB_CLICK_BAR_R	},
-	{ "mlb_click_title",	KEY_MOUSE,		KEY_MLB_CLICK_TIT	},
-	{ "mrb_click",		KEY_MOUSE,		KEY_MRB_CLICK		},
-	{ "mrb_click_selected",	KEY_MOUSE,		KEY_MRB_CLICK_SEL	},
-	{ "mrb_click_bar",	KEY_MOUSE,		KEY_MRB_CLICK_BAR	},
-	{ "mrb_click_bar_right",	KEY_MOUSE,		KEY_MRB_CLICK_BAR_R	},
-	{ "mrb_click_title",	KEY_MOUSE,		KEY_MRB_CLICK_TIT	},
-	{ "mouse_scroll_up",	KEY_MOUSE,		KEY_MSCRL_UP		},
-	{ "mouse_scroll_up_bar",	KEY_MOUSE,		KEY_MSCRL_UP_BAR		},
-	{ "mouse_scroll_up_bar_right",	KEY_MOUSE,		KEY_MSCRL_UP_BAR_R		},
-	{ "mouse_scroll_up_title",	KEY_MOUSE,		KEY_MSCRL_UP_TIT		},
-	{ "mouse_scroll_down",	KEY_MOUSE,		KEY_MSCRL_DOWN		},
-	{ "mouse_scroll_down_bar",	KEY_MOUSE,		KEY_MSCRL_DOWN_BAR		},
-	{ "mouse_scroll_down_bar_right",	KEY_MOUSE,		KEY_MSCRL_DOWN_BAR_R		},
-	{ "mouse_scroll_down_title",	KEY_MOUSE,		KEY_MSCRL_DOWN_TIT		},
-	{ NULL,			0,			0	}
-};
+    {"!", KEY_IS_CHAR, 33},
+    {"\"", KEY_IS_CHAR, 34},
+    {"#", KEY_IS_CHAR, 35},
+    {"$", KEY_IS_CHAR, 36},
+    {"%", KEY_IS_CHAR, 37},
+    {"&", KEY_IS_CHAR, 38},
+    {"'", KEY_IS_CHAR, 39},
+    {"(", KEY_IS_CHAR, 40},
+    {")", KEY_IS_CHAR, 41},
+    {"*", KEY_IS_CHAR, 42},
+    {"+", KEY_IS_CHAR, 43},
+    {",", KEY_IS_CHAR, 44},
+    {"-", KEY_IS_CHAR, 45},
+    {".", KEY_IS_CHAR, 46},
+    {"/", KEY_IS_CHAR, 47},
+    {"0", KEY_IS_CHAR, 48},
+    {"1", KEY_IS_CHAR, 49},
+    {"2", KEY_IS_CHAR, 50},
+    {"3", KEY_IS_CHAR, 51},
+    {"4", KEY_IS_CHAR, 52},
+    {"5", KEY_IS_CHAR, 53},
+    {"6", KEY_IS_CHAR, 54},
+    {"7", KEY_IS_CHAR, 55},
+    {"8", KEY_IS_CHAR, 56},
+    {"9", KEY_IS_CHAR, 57},
+    {":", KEY_IS_CHAR, 58},
+    {";", KEY_IS_CHAR, 59},
+    {"<", KEY_IS_CHAR, 60},
+    {"=", KEY_IS_CHAR, 61},
+    {">", KEY_IS_CHAR, 62},
+    {"?", KEY_IS_CHAR, 63},
+    {"@", KEY_IS_CHAR, 64},
+    {"A", KEY_IS_CHAR, 65},
+    {"B", KEY_IS_CHAR, 66},
+    {"C", KEY_IS_CHAR, 67},
+    {"D", KEY_IS_CHAR, 68},
+    {"E", KEY_IS_CHAR, 69},
+    {"F", KEY_IS_CHAR, 70},
+    {"F1", KEY_F(1), 0},
+    {"F10", KEY_F(10), 0},
+    {"F11", KEY_F(11), 0},
+    {"F12", KEY_F(12), 0},
+    {"F2", KEY_F(2), 0},
+    {"F3", KEY_F(3), 0},
+    {"F4", KEY_F(4), 0},
+    {"F5", KEY_F(5), 0},
+    {"F6", KEY_F(6), 0},
+    {"F7", KEY_F(7), 0},
+    {"F8", KEY_F(8), 0},
+    {"F9", KEY_F(9), 0},
+    {"G", KEY_IS_CHAR, 71},
+    {"H", KEY_IS_CHAR, 72},
+    {"I", KEY_IS_CHAR, 73},
+    {"J", KEY_IS_CHAR, 74},
+    {"K", KEY_IS_CHAR, 75},
+    {"KP_center", KEY_B2, 0},
+    {"KP_lower_left", KEY_C1, 0},
+    {"KP_lower_right", KEY_C3, 0},
+    {"KP_upper_left", KEY_A1, 0},
+    {"KP_upper_right", KEY_A3, 0},
+    {"L", KEY_IS_CHAR, 76},
+    {"M", KEY_IS_CHAR, 77},
+    {"M-!", KEY_IS_CHAR, 161},
+    {"M-\"", KEY_IS_CHAR, 162},
+    {"M-#", KEY_IS_CHAR, 163},
+    {"M-$", KEY_IS_CHAR, 164},
+    {"M-%", KEY_IS_CHAR, 165},
+    {"M-&", KEY_IS_CHAR, 166},
+    {"M-'", KEY_IS_CHAR, 167},
+    {"M-(", KEY_IS_CHAR, 168},
+    {"M-)", KEY_IS_CHAR, 169},
+    {"M-*", KEY_IS_CHAR, 170},
+    {"M-+", KEY_IS_CHAR, 171},
+    {"M-,", KEY_IS_CHAR, 172},
+    {"M--", KEY_IS_CHAR, 173},
+    {"M-.", KEY_IS_CHAR, 174},
+    {"M-/", KEY_IS_CHAR, 175},
+    {"M-0", KEY_IS_CHAR, 176},
+    {"M-1", KEY_IS_CHAR, 177},
+    {"M-2", KEY_IS_CHAR, 178},
+    {"M-3", KEY_IS_CHAR, 179},
+    {"M-4", KEY_IS_CHAR, 180},
+    {"M-5", KEY_IS_CHAR, 181},
+    {"M-6", KEY_IS_CHAR, 182},
+    {"M-7", KEY_IS_CHAR, 183},
+    {"M-8", KEY_IS_CHAR, 184},
+    {"M-9", KEY_IS_CHAR, 185},
+    {"M-:", KEY_IS_CHAR, 186},
+    {"M-;", KEY_IS_CHAR, 187},
+    {"M-<", KEY_IS_CHAR, 188},
+    {"M-=", KEY_IS_CHAR, 189},
+    {"M->", KEY_IS_CHAR, 190},
+    {"M-?", KEY_IS_CHAR, 191},
+    {"M-@", KEY_IS_CHAR, 192},
+    {"M-A", KEY_IS_CHAR, 193},
+    {"M-B", KEY_IS_CHAR, 194},
+    {"M-C", KEY_IS_CHAR, 195},
+    {"M-D", KEY_IS_CHAR, 196},
+    {"M-E", KEY_IS_CHAR, 197},
+    {"M-F", KEY_IS_CHAR, 198},
+    {"M-G", KEY_IS_CHAR, 199},
+    {"M-H", KEY_IS_CHAR, 200},
+    {"M-I", KEY_IS_CHAR, 201},
+    {"M-J", KEY_IS_CHAR, 202},
+    {"M-K", KEY_IS_CHAR, 203},
+    {"M-L", KEY_IS_CHAR, 204},
+    {"M-M", KEY_IS_CHAR, 205},
+    {"M-N", KEY_IS_CHAR, 206},
+    {"M-O", KEY_IS_CHAR, 207},
+    {"M-P", KEY_IS_CHAR, 208},
+    {"M-Q", KEY_IS_CHAR, 209},
+    {"M-R", KEY_IS_CHAR, 210},
+    {"M-S", KEY_IS_CHAR, 211},
+    {"M-T", KEY_IS_CHAR, 212},
+    {"M-U", KEY_IS_CHAR, 213},
+    {"M-V", KEY_IS_CHAR, 214},
+    {"M-W", KEY_IS_CHAR, 215},
+    {"M-X", KEY_IS_CHAR, 216},
+    {"M-Y", KEY_IS_CHAR, 217},
+    {"M-Z", KEY_IS_CHAR, 218},
+    {"M-[", KEY_IS_CHAR, 219},
+    {"M-\\", KEY_IS_CHAR, 220},
+    {"M-]", KEY_IS_CHAR, 221},
+    {"M-^", KEY_IS_CHAR, 222},
+    {"M-^?", KEY_IS_CHAR, 255},
+    {"M-^@", KEY_IS_CHAR, 128},
+    {"M-^A", KEY_IS_CHAR, 129},
+    {"M-^B", KEY_IS_CHAR, 130},
+    {"M-^C", KEY_IS_CHAR, 131},
+    {"M-^D", KEY_IS_CHAR, 132},
+    {"M-^E", KEY_IS_CHAR, 133},
+    {"M-^F", KEY_IS_CHAR, 134},
+    {"M-^G", KEY_IS_CHAR, 135},
+    {"M-^H", KEY_IS_CHAR, 136},
+    {"M-^I", KEY_IS_CHAR, 137},
+    {"M-^J", KEY_IS_CHAR, 138},
+    {"M-^K", KEY_IS_CHAR, 139},
+    {"M-^L", KEY_IS_CHAR, 140},
+    {"M-^M", KEY_IS_CHAR, 141},
+    {"M-^N", KEY_IS_CHAR, 142},
+    {"M-^O", KEY_IS_CHAR, 143},
+    {"M-^P", KEY_IS_CHAR, 144},
+    {"M-^Q", KEY_IS_CHAR, 145},
+    {"M-^R", KEY_IS_CHAR, 146},
+    {"M-^S", KEY_IS_CHAR, 147},
+    {"M-^T", KEY_IS_CHAR, 148},
+    {"M-^U", KEY_IS_CHAR, 149},
+    {"M-^V", KEY_IS_CHAR, 150},
+    {"M-^W", KEY_IS_CHAR, 151},
+    {"M-^X", KEY_IS_CHAR, 152},
+    {"M-^Y", KEY_IS_CHAR, 153},
+    {"M-^Z", KEY_IS_CHAR, 154},
+    {"M-^[", KEY_IS_CHAR, 155},
+    {"M-^\\", KEY_IS_CHAR, 156},
+    {"M-^]", KEY_IS_CHAR, 157},
+    {"M-^^", KEY_IS_CHAR, 158},
+    {"M-^_", KEY_IS_CHAR, 159},
+    {"M-_", KEY_IS_CHAR, 223},
+    {"M-`", KEY_IS_CHAR, 224},
+    {"M-a", KEY_IS_CHAR, 225},
+    {"M-b", KEY_IS_CHAR, 226},
+    {"M-c", KEY_IS_CHAR, 227},
+    {"M-d", KEY_IS_CHAR, 228},
+    {"M-e", KEY_IS_CHAR, 229},
+    {"M-f", KEY_IS_CHAR, 230},
+    {"M-g", KEY_IS_CHAR, 231},
+    {"M-h", KEY_IS_CHAR, 232},
+    {"M-i", KEY_IS_CHAR, 233},
+    {"M-j", KEY_IS_CHAR, 234},
+    {"M-k", KEY_IS_CHAR, 235},
+    {"M-l", KEY_IS_CHAR, 236},
+    {"M-m", KEY_IS_CHAR, 237},
+    {"M-n", KEY_IS_CHAR, 238},
+    {"M-o", KEY_IS_CHAR, 239},
+    {"M-p", KEY_IS_CHAR, 240},
+    {"M-q", KEY_IS_CHAR, 241},
+    {"M-r", KEY_IS_CHAR, 242},
+    {"M-s", KEY_IS_CHAR, 243},
+    {"M-space", KEY_IS_CHAR, 160},
+    {"M-t", KEY_IS_CHAR, 244},
+    {"M-u", KEY_IS_CHAR, 245},
+    {"M-v", KEY_IS_CHAR, 246},
+    {"M-w", KEY_IS_CHAR, 247},
+    {"M-x", KEY_IS_CHAR, 248},
+    {"M-y", KEY_IS_CHAR, 249},
+    {"M-z", KEY_IS_CHAR, 250},
+    {"M-{", KEY_IS_CHAR, 251},
+    {"M-|", KEY_IS_CHAR, 252},
+    {"M-}", KEY_IS_CHAR, 253},
+    {"M-~", KEY_IS_CHAR, 254},
+    {"N", KEY_IS_CHAR, 78},
+    {"O", KEY_IS_CHAR, 79},
+    {"P", KEY_IS_CHAR, 80},
+    {"Q", KEY_IS_CHAR, 81},
+    {"R", KEY_IS_CHAR, 82},
+    {"S", KEY_IS_CHAR, 83},
+    {"S-begin", KEY_SBEG, 0},
+    {"S-cancel", KEY_SCANCEL, 0},
+    {"S-command", KEY_SCOMMAND, 0},
+    {"S-copy", KEY_SCOPY, 0},
+    {"S-create", KEY_SCREATE, 0},
+    {"S-del_line", KEY_SDL, 0},
+    {"S-delete", KEY_SDC, 0},
+    {"S-eol", KEY_SEOL, 0},
+    {"S-exit", KEY_SEXIT, 0},
+    {"S-find", KEY_SFIND, 0},
+    {"S-help", KEY_SHELP, 0},
+    {"S-home", KEY_SHOME, 0},
+    {"S-insert", KEY_SIC, 0},
+    {"S-left", KEY_SLEFT, 0},
+    {"S-message", KEY_SMESSAGE, 0},
+    {"S-move", KEY_SMOVE, 0},
+    {"S-next", KEY_SNEXT, 0},
+    {"S-options", KEY_SOPTIONS, 0},
+    {"S-previous", KEY_SPREVIOUS, 0},
+    {"S-print", KEY_SPRINT, 0},
+    {"S-redo", KEY_SREDO, 0},
+    {"S-replace", KEY_SREPLACE, 0},
+    {"S-resume", KEY_SRSUME, 0},
+    {"S-right", KEY_SRIGHT, 0},
+    {"S-save", KEY_SSAVE, 0},
+    {"S-suspend", KEY_SSUSPEND, 0},
+    {"S-undo", KEY_SUNDO, 0},
+    {"T", KEY_IS_CHAR, 84},
+    {"U", KEY_IS_CHAR, 85},
+    {"V", KEY_IS_CHAR, 86},
+    {"W", KEY_IS_CHAR, 87},
+    {"X", KEY_IS_CHAR, 88},
+    {"Y", KEY_IS_CHAR, 89},
+    {"Z", KEY_IS_CHAR, 90},
+    {"[", KEY_IS_CHAR, 91},
+    {"\\", KEY_IS_CHAR, 92},
+    {"]", KEY_IS_CHAR, 93},
+    {"^", KEY_IS_CHAR, 94},
+    {"^A", KEY_IS_CHAR, 1},
+    {"^B", KEY_IS_CHAR, 2},
+    {"^C", KEY_IS_CHAR, 3},
+    {"^D", KEY_IS_CHAR, 4},
+    {"^E", KEY_IS_CHAR, 5},
+    {"^F", KEY_IS_CHAR, 6},
+    {"^G", KEY_IS_CHAR, 7},
+    {"^H", KEY_IS_CHAR, 8},
+    {"^K", KEY_IS_CHAR, 11},
+    {"^L", KEY_IS_CHAR, 12},
+    {"^M", KEY_IS_CHAR, 13},
+    {"^N", KEY_IS_CHAR, 14},
+    {"^O", KEY_IS_CHAR, 15},
+    {"^P", KEY_IS_CHAR, 16},
+    {"^Q", KEY_IS_CHAR, 17},
+    {"^R", KEY_IS_CHAR, 18},
+    {"^S", KEY_IS_CHAR, 19},
+    {"^T", KEY_IS_CHAR, 20},
+    {"^U", KEY_IS_CHAR, 21},
+    {"^V", KEY_IS_CHAR, 22},
+    {"^W", KEY_IS_CHAR, 23},
+    {"^X", KEY_IS_CHAR, 24},
+    {"^Y", KEY_IS_CHAR, 25},
+    {"^Z", KEY_IS_CHAR, 26},
+    {"^\\", KEY_IS_CHAR, 28},
+    {"^]", KEY_IS_CHAR, 29},
+    {"^^", KEY_IS_CHAR, 30},
+    {"^_", KEY_IS_CHAR, 31},
+    {"_", KEY_IS_CHAR, 95},
+    {"`", KEY_IS_CHAR, 96},
+    {"a", KEY_IS_CHAR, 97},
+    {"b", KEY_IS_CHAR, 98},
+    {"back_tab", KEY_BTAB, 0},
+    {"backspace", KEY_BACKSPACE, 127}, /* NOTE: both key and ch */
+    {"begin", KEY_BEG, 0},
+    {"c", KEY_IS_CHAR, 99},
+    {"cancel", KEY_CANCEL, 0},
+    {"clear", KEY_CLEAR, 0},
+    {"clear_all_tabs", KEY_CATAB, 0},
+    {"clear_tab", KEY_CTAB, 0},
+    {"close", KEY_CLOSE, 0},
+    {"command", KEY_COMMAND, 0},
+    {"copy", KEY_COPY, 0},
+    {"create", KEY_CREATE, 0},
+    {"d", KEY_IS_CHAR, 100},
+    {"del_line", KEY_DL, 0},
+    {"delete", KEY_DC, 0},
+    {"down", KEY_DOWN, 0},
+    {"e", KEY_IS_CHAR, 101},
+    {"eic", KEY_EIC, 0},
+    {"end", KEY_END, 0},
+    {"enter", KEY_IS_CHAR, 10},
+    {"eol", KEY_EOL, 0},
+    {"eos", KEY_EOS, 0},
+    {"exit", KEY_EXIT, 0},
+    {"f", KEY_IS_CHAR, 102},
+    {"find", KEY_FIND, 0},
+    {"g", KEY_IS_CHAR, 103},
+    {"h", KEY_IS_CHAR, 104},
+    {"help", KEY_HELP, 0},
+    {"home", KEY_HOME, 0},
+    {"i", KEY_IS_CHAR, 105},
+    {"ins_line", KEY_IL, 0},
+    {"insert", KEY_IC, 0},
+    {"j", KEY_IS_CHAR, 106},
+    {"k", KEY_IS_CHAR, 107},
+    {"l", KEY_IS_CHAR, 108},
+    {"left", KEY_LEFT, 0},
+    {"lower_left", KEY_LL, 0},
+    {"m", KEY_IS_CHAR, 109},
+    {"mark", KEY_MARK, 0},
+    {"message", KEY_MESSAGE, 0},
+    {"move", KEY_MOVE, 0},
+    {"n", KEY_IS_CHAR, 110},
+    {"next", KEY_NEXT, 0},
+    {"o", KEY_IS_CHAR, 111},
+    {"open", KEY_OPEN, 0},
+    {"options", KEY_OPTIONS, 0},
+    {"p", KEY_IS_CHAR, 112},
+    {"page_down", KEY_NPAGE, 0},
+    {"page_up", KEY_PPAGE, 0},
+    {"previous", KEY_PREVIOUS, 0},
+    {"print", KEY_PRINT, 0},
+    {"q", KEY_IS_CHAR, 113},
+    {"r", KEY_IS_CHAR, 114},
+    {"redo", KEY_REDO, 0},
+    {"reference", KEY_REFERENCE, 0},
+    {"refresh", KEY_REFRESH, 0},
+    {"replace", KEY_REPLACE, 0},
+    {"restart", KEY_RESTART, 0},
+    {"resume", KEY_RESUME, 0},
+    {"right", KEY_RIGHT, 0},
+    {"s", KEY_IS_CHAR, 115},
+    {"save", KEY_SAVE, 0},
+    {"scroll_b", KEY_SR, 0},
+    {"scroll_f", KEY_SF, 0},
+    {"select", KEY_SELECT, 0},
+    {"send", KEY_SEND, 0},
+    {"set_tab", KEY_STAB, 0},
+    {"space", KEY_IS_CHAR, 32},
+    {"suspend", KEY_SUSPEND, 0},
+    {"t", KEY_IS_CHAR, 116},
+    {"tab", KEY_IS_CHAR, 9},
+    {"u", KEY_IS_CHAR, 117},
+    {"undo", KEY_UNDO, 0},
+    {"up", KEY_UP, 0},
+    {"v", KEY_IS_CHAR, 118},
+    {"w", KEY_IS_CHAR, 119},
+    {"x", KEY_IS_CHAR, 120},
+    {"y", KEY_IS_CHAR, 121},
+    {"z", KEY_IS_CHAR, 122},
+    {"{", KEY_IS_CHAR, 123},
+    {"|", KEY_IS_CHAR, 124},
+    {"}", KEY_IS_CHAR, 125},
+    {"~", KEY_IS_CHAR, 126},
+    {"mlb_click", KEY_MOUSE, KEY_MLB_CLICK},
+    {"mlb_click_selected", KEY_MOUSE, KEY_MLB_CLICK_SEL},
+    {"mlb_click_bar", KEY_MOUSE, KEY_MLB_CLICK_BAR},
+    {"mlb_click_bar_right", KEY_MOUSE, KEY_MLB_CLICK_BAR_R},
+    {"mlb_click_title", KEY_MOUSE, KEY_MLB_CLICK_TIT},
+    {"mrb_click", KEY_MOUSE, KEY_MRB_CLICK},
+    {"mrb_click_selected", KEY_MOUSE, KEY_MRB_CLICK_SEL},
+    {"mrb_click_bar", KEY_MOUSE, KEY_MRB_CLICK_BAR},
+    {"mrb_click_bar_right", KEY_MOUSE, KEY_MRB_CLICK_BAR_R},
+    {"mrb_click_title", KEY_MOUSE, KEY_MRB_CLICK_TIT},
+    {"mouse_scroll_up", KEY_MOUSE, KEY_MSCRL_UP},
+    {"mouse_scroll_up_bar", KEY_MOUSE, KEY_MSCRL_UP_BAR},
+    {"mouse_scroll_up_bar_right", KEY_MOUSE, KEY_MSCRL_UP_BAR_R},
+    {"mouse_scroll_up_title", KEY_MOUSE, KEY_MSCRL_UP_TIT},
+    {"mouse_scroll_down", KEY_MOUSE, KEY_MSCRL_DOWN},
+    {"mouse_scroll_down_bar", KEY_MOUSE, KEY_MSCRL_DOWN_BAR},
+    {"mouse_scroll_down_bar_right", KEY_MOUSE, KEY_MSCRL_DOWN_BAR_R},
+    {"mouse_scroll_down_title", KEY_MOUSE, KEY_MSCRL_DOWN_TIT},
+    {NULL, 0, 0}};
 /* }}} */
 
-static int find_context(const char *name)
-{
-	int i;
+static int find_context(const char *name) {
+  int i;
 
-	for (i = 0; i < NR_CTXS; i++) {
-		if (strcmp(name, key_context_names[i]) == 0)
-			return i;
-	}
-	error_msg("invalid context '%s'", name);
-	return -1;
+  for (i = 0; i < NR_CTXS; i++) {
+    if (strcmp(name, key_context_names[i]) == 0)
+      return i;
+  }
+  error_msg("invalid context '%s'", name);
+  return -1;
 }
 
-static const struct key *find_key(const char *name)
-{
-	int i;
+static const struct key *find_key(const char *name) {
+  int i;
 
-	for (i = 0; key_table[i].name; i++) {
-		if (strcmp(name, key_table[i].name) == 0)
-			return &key_table[i];
-	}
-	error_msg("invalid key '%s'", name);
-	return NULL;
+  for (i = 0; key_table[i].name; i++) {
+    if (strcmp(name, key_table[i].name) == 0)
+      return &key_table[i];
+  }
+  error_msg("invalid key '%s'", name);
+  return NULL;
 }
 
-static struct binding *find_binding(enum key_context c, const struct key *k)
-{
-	struct binding *b = key_bindings[c];
+static struct binding *find_binding(enum key_context c, const struct key *k) {
+  struct binding *b = key_bindings[c];
 
-	while (b) {
-		if (b->key == k)
-			break;
-		b = b->next;
-	}
-	return b;
+  while (b) {
+    if (b->key == k)
+      break;
+    b = b->next;
+  }
+  return b;
 }
 
-void show_binding(const char *context, const char *key)
-{
-	const struct key *k;
-	const struct binding *b;
-	int c;
+void show_binding(const char *context, const char *key) {
+  const struct key *k;
+  const struct binding *b;
+  int c;
 
-	c = find_context(context);
-	if (c < 0)
-		return;
+  c = find_context(context);
+  if (c < 0)
+    return;
 
-	k = find_key(key);
-	if (k == NULL)
-		return;
+  k = find_key(key);
+  if (k == NULL)
+    return;
 
-	b = find_binding(c, k);
-	if (b == NULL) {
-		info_msg("No such binding");
-	} else {
-		info_msg("bind %s %s %s", context, key, b->cmd);
-	}
+  b = find_binding(c, k);
+  if (b == NULL) {
+    info_msg("No such binding");
+  } else {
+    info_msg("bind %s %s %s", context, key, b->cmd);
+  }
 }
 
-int key_bind(const char *context, const char *key, const char *cmd, int force)
-{
-	const struct key *k;
-	struct binding *b, *ptr, *prev;
-	struct command *command;
-	int c, size;
+int key_bind(const char *context, const char *key, const char *cmd, int force) {
+  const struct key *k;
+  struct binding *b, *ptr, *prev;
+  struct command *command;
+  int c, size;
 
-	c = find_context(context);
-	if (c < 0)
-		return -1;
+  c = find_context(context);
+  if (c < 0)
+    return -1;
 
-	k = find_key(key);
-	if (k == NULL)
-		return -1;
+  k = find_key(key);
+  if (k == NULL)
+    return -1;
 
-	/* check if already bound */
-	b = find_binding(c, k);
-	if (b) {
-		if (!force)
-			goto bound;
-		key_unbind(context, key, 0);
-	}
+  /* check if already bound */
+  b = find_binding(c, k);
+  if (b) {
+    if (!force)
+      goto bound;
+    key_unbind(context, key, 0);
+  }
 
-	if (*cmd == ':')
-		cmd++;
-	size = strlen(cmd) + 1;
+  if (*cmd == ':')
+    cmd++;
+  size = strlen(cmd) + 1;
 
-	b = xmalloc(sizeof(struct binding) + size);
-	b->key = k;
-	b->ctx = c;
-	memcpy(b->cmd, cmd, size);
+  b = xmalloc(sizeof(struct binding) + size);
+  b->key = k;
+  b->ctx = c;
+  memcpy(b->cmd, cmd, size);
 
-	/* insert keeping sorted by key */
-	prev = NULL;
-	ptr = key_bindings[c];
-	while (ptr) {
-		if (strcmp(b->key->name, ptr->key->name) < 0)
-			break;
-		prev = ptr;
-		ptr = ptr->next;
-	}
-	b->next = ptr;
-	if (prev) {
-		prev->next = b;
-	} else {
-		key_bindings[c] = b;
-	}
-	command = get_command(cmd);
-	if (command && !command->bc++)
-		help_remove_unbound(command);
-	help_add_bound(b);
-	return 0;
+  /* insert keeping sorted by key */
+  prev = NULL;
+  ptr = key_bindings[c];
+  while (ptr) {
+    if (strcmp(b->key->name, ptr->key->name) < 0)
+      break;
+    prev = ptr;
+    ptr = ptr->next;
+  }
+  b->next = ptr;
+  if (prev) {
+    prev->next = b;
+  } else {
+    key_bindings[c] = b;
+  }
+  command = get_command(cmd);
+  if (command && !command->bc++)
+    help_remove_unbound(command);
+  help_add_bound(b);
+  return 0;
 bound:
-	error_msg("key %s already bound in context %s", key, key_context_names[c]);
-	return -1;
+  error_msg("key %s already bound in context %s", key, key_context_names[c]);
+  return -1;
 }
 
-int key_unbind(const char *context, const char *key, int force)
-{
-	int c;
-	const struct key *k;
-	struct binding *b, *prev;
-	struct command *command;
+int key_unbind(const char *context, const char *key, int force) {
+  int c;
+  const struct key *k;
+  struct binding *b, *prev;
+  struct command *command;
 
-	c = find_context(context);
-	if (c < 0)
-		return -1;
+  c = find_context(context);
+  if (c < 0)
+    return -1;
 
-	k = find_key(key);
-	if (k == NULL)
-		return -1;
+  k = find_key(key);
+  if (k == NULL)
+    return -1;
 
-	prev = NULL;
-	b = key_bindings[c];
-	while (b) {
-		if (b->key == k) {
-			if (prev) {
-				prev->next = b->next;
-			} else {
-				key_bindings[c] = b->next;
-			}
-			command = get_command(b->cmd);
-			if (command && !--command->bc)
-				help_add_unbound(command);
-			help_remove_bound(b);
-			free(b);
-			return 0;
-		}
-		prev = b;
-		b = b->next;
-	}
-	if (!force) {
-		error_msg("key %s not bound in context %s", key, context);
-		return -1;
-	}
-	return 0;
+  prev = NULL;
+  b = key_bindings[c];
+  while (b) {
+    if (b->key == k) {
+      if (prev) {
+        prev->next = b->next;
+      } else {
+        key_bindings[c] = b->next;
+      }
+      command = get_command(b->cmd);
+      if (command && !--command->bc)
+        help_add_unbound(command);
+      help_remove_bound(b);
+      free(b);
+      return 0;
+    }
+    prev = b;
+    b = b->next;
+  }
+  if (!force) {
+    error_msg("key %s not bound in context %s", key, context);
+    return -1;
+  }
+  return 0;
 }
 
-static int handle_key(const struct binding *b, const struct key *k)
-{
-	while (b) {
-		if (b->key == k) {
-			run_command(b->cmd);
-			return 1;
-		}
-		b = b->next;
-	}
-	return 0;
+static int handle_key(const struct binding *b, const struct key *k) {
+  while (b) {
+    if (b->key == k) {
+      run_command(b->cmd);
+      return 1;
+    }
+    b = b->next;
+  }
+  return 0;
 }
 
-static const struct key *ch_to_key(uchar ch)
-{
-	int i;
+static const struct key *ch_to_key(uchar ch) {
+  int i;
 
-	for (i = 0; key_table[i].name; i++) {
-		if (key_table[i].key != KEY_MOUSE && key_table[i].ch == ch)
-			return &key_table[i];
-	}
-	return NULL;
+  for (i = 0; key_table[i].name; i++) {
+    if (key_table[i].key != KEY_MOUSE && key_table[i].ch == ch)
+      return &key_table[i];
+  }
+  return NULL;
 }
 
-static const struct key *keycode_to_key(int key)
-{
-	int i;
+static const struct key *keycode_to_key(int key) {
+  int i;
 
-	for (i = 0; key_table[i].name; i++) {
-		if (key_table[i].key != KEY_IS_CHAR &&
-			key_table[i].key != KEY_MOUSE && key_table[i].key == key)
-			return &key_table[i];
-	}
-	return NULL;
+  for (i = 0; key_table[i].name; i++) {
+    if (key_table[i].key != KEY_IS_CHAR && key_table[i].key != KEY_MOUSE &&
+        key_table[i].key == key)
+      return &key_table[i];
+  }
+  return NULL;
 }
 
-#define DEF_ME_START if (event->bstate == 0) { return NULL; }
-#define DEF_ME_KEY(s, k) else if (event->bstate & s) { key = k | type; }
-#define DEF_ME_END else { return NULL; }
+#define DEF_ME_START                                                           \
+  if (event->bstate == 0) {                                                    \
+    return NULL;                                                               \
+  }
+#define DEF_ME_KEY(s, k)                                                       \
+  else if (event->bstate & s) {                                                \
+    key = k | type;                                                            \
+  }
+#define DEF_ME_END                                                             \
+  else {                                                                       \
+    return NULL;                                                               \
+  }
 
-static const struct key *mevent_to_key(MEVENT *event, int type)
-{
-	int i, key = -255;
+static const struct key *mevent_to_key(MEVENT *event, int type) {
+  int i, key = -255;
 
-	DEF_ME_START
-	DEF_ME_KEY(BUTTON1_CLICKED, KEY_MLB_CLICK)
-	DEF_ME_KEY(BUTTON1_PRESSED, KEY_MLB_CLICK)
-	DEF_ME_KEY(BUTTON3_CLICKED, KEY_MRB_CLICK)
-	DEF_ME_KEY(BUTTON3_PRESSED, KEY_MRB_CLICK)
-	DEF_ME_KEY(BUTTON4_PRESSED, KEY_MSCRL_UP)
-	DEF_ME_KEY(BUTTON5_PRESSED, KEY_MSCRL_DOWN)
-	DEF_ME_END
+  DEF_ME_START
+  DEF_ME_KEY(BUTTON1_CLICKED, KEY_MLB_CLICK)
+  DEF_ME_KEY(BUTTON1_PRESSED, KEY_MLB_CLICK)
+  DEF_ME_KEY(BUTTON3_CLICKED, KEY_MRB_CLICK)
+  DEF_ME_KEY(BUTTON3_PRESSED, KEY_MRB_CLICK)
+  DEF_ME_KEY(BUTTON4_PRESSED, KEY_MSCRL_UP)
+  DEF_ME_KEY(BUTTON5_PRESSED, KEY_MSCRL_DOWN)
+  DEF_ME_END
 
-	for (i = 0; key_table[i].name; i++) {
-		if (key_table[i].key == KEY_MOUSE && key_table[i].ch == key)
-			return &key_table[i];
-	}
-	return NULL;
+  for (i = 0; key_table[i].name; i++) {
+    if (key_table[i].key == KEY_MOUSE && key_table[i].ch == key)
+      return &key_table[i];
+  }
+  return NULL;
 }
 
 #undef DEF_ME_START
 #undef DEF_ME_KEY
 #undef DEF_ME_END
 
-void normal_mode_ch(uchar ch)
-{
-	enum key_context c;
-	const struct key *k;
+void normal_mode_ch(uchar ch) {
+  enum key_context c;
+  const struct key *k;
 
-	c = view_to_context[cur_view];
-	k = ch_to_key(ch);
+  c = view_to_context[cur_view];
+  k = ch_to_key(ch);
 
-	if (k == NULL) {
-		return;
-	}
+  if (k == NULL) {
+    return;
+  }
 
-	/* view-specific ch */
-	if (handle_key(key_bindings[c], k))
-		return;
+  /* view-specific ch */
+  if (handle_key(key_bindings[c], k))
+    return;
 
-	/* common ch */
-	if (handle_key(key_bindings[CTX_COMMON], k))
-		return;
+  /* common ch */
+  if (handle_key(key_bindings[CTX_COMMON], k))
+    return;
 
-	/* these can be overridden but have default magic */
-	switch (ch) {
-	case ':':
-		enter_command_mode();
-		return;
-	case '/':
-		enter_search_mode();
-		return;
-	case '?':
-		enter_search_backward_mode();
-		return;
-	}
+  /* these can be overridden but have default magic */
+  switch (ch) {
+  case ':':
+    enter_command_mode();
+    return;
+  case '/':
+    enter_search_mode();
+    return;
+  case '?':
+    enter_search_backward_mode();
+    return;
+  }
 }
 
-void normal_mode_key(int key)
-{
-	enum key_context c = view_to_context[cur_view];
-	const struct key *k = keycode_to_key(key);
+void normal_mode_key(int key) {
+  enum key_context c = view_to_context[cur_view];
+  const struct key *k = keycode_to_key(key);
 
-	if (k == NULL) {
-		return;
-	}
+  if (k == NULL) {
+    return;
+  }
 
-	/* view-specific key */
-	if (handle_key(key_bindings[c], k))
-		return;
+  /* view-specific key */
+  if (handle_key(key_bindings[c], k))
+    return;
 
-	/* common key */
-	handle_key(key_bindings[CTX_COMMON], k);
+  /* common key */
+  handle_key(key_bindings[CTX_COMMON], k);
 }
 
-static const struct key *normal_mode_mouse_handle(MEVENT* event)
-{
-	int track_win_x = get_track_win_x(), i = event->y - 1, need_sel, type;
-	struct window* win = NULL;
-	struct iter it, sel;
+static const struct key *normal_mode_mouse_handle(MEVENT *event) {
+  int track_win_x = get_track_win_x(), i = event->y - 1, need_sel, type;
+  struct window *win = NULL;
+  struct iter it, sel;
 
-	if (event->y == 0) {
-		need_sel = 0;
-		type = KEY_M_TYPE_TIT;
-	} else if (event->y == LINES - 2) {
-		need_sel = 0;
-		type = event->x >= (COLS - COLS/3)
-			? KEY_M_TYPE_BAR_R
-			: KEY_M_TYPE_BAR;
-	} else {
-		if (cur_view == TREE_VIEW) {
-			if (event->x >= track_win_x)
-				win = lib_track_win;
-			else if (event->x < track_win_x - 1)
-				win = lib_tree_win;
-			else
-				return NULL;
-			type = (lib_cur_win == win) ? KEY_M_TYPE_SEL : KEY_M_TYPE_NONE;
-		} else if (cur_view == PLAYLIST_VIEW) {
-			if (event->x >= track_win_x)
-				win = pl_editable_shared.win;
-			else if (event->x < track_win_x)
-				win = pl_list_win;
-			else
-				return NULL;
-			type = (pl_cursor_win() == win) ? KEY_M_TYPE_SEL : KEY_M_TYPE_NONE;
-		} else {
-			win = current_win();
-			type = KEY_M_TYPE_SEL;
-		}
+  if (event->y == 0) {
+    need_sel = 0;
+    type = KEY_M_TYPE_TIT;
+  } else if (event->y == LINES - 2) {
+    need_sel = 0;
+    type = event->x >= (COLS - COLS / 3) ? KEY_M_TYPE_BAR_R : KEY_M_TYPE_BAR;
+  } else {
+    if (cur_view == TREE_VIEW) {
+      if (event->x >= track_win_x)
+        win = lib_track_win;
+      else if (event->x < track_win_x - 1)
+        win = lib_tree_win;
+      else
+        return NULL;
+      type = (lib_cur_win == win) ? KEY_M_TYPE_SEL : KEY_M_TYPE_NONE;
+    } else if (cur_view == PLAYLIST_VIEW) {
+      if (event->x >= track_win_x)
+        win = pl_editable_shared.win;
+      else if (event->x < track_win_x)
+        win = pl_list_win;
+      else
+        return NULL;
+      type = (pl_cursor_win() == win) ? KEY_M_TYPE_SEL : KEY_M_TYPE_NONE;
+    } else {
+      win = current_win();
+      type = KEY_M_TYPE_SEL;
+    }
 
-		if ((event->bstate & BUTTON4_PRESSED) || (event->bstate & BUTTON5_PRESSED)) {
-			need_sel = 0;
-			type = KEY_M_TYPE_NONE;
-			if (event->y < 1 || event->y >= LINES - 3)
-				return NULL;
-			if (cur_view == TREE_VIEW && lib_cur_win != win)
-				tree_toggle_active_window();
-			if (cur_view == PLAYLIST_VIEW && pl_cursor_win() != win)
-				pl_win_next();
-		} else {
-			if (event->y < 1 || event->y > window_get_nr_rows(win))
-				return NULL;
-			if (cur_view == TREE_VIEW && lib_cur_win != win)
-				tree_toggle_active_window();
-			if (cur_view == PLAYLIST_VIEW && pl_cursor_win() != win)
-				pl_win_next();
-			if (!window_get_top(win, &it) || !window_get_sel(win, &sel))
-				return NULL;
-			while (i-- > 0)
-				if (!window_get_next(win, &it))
-					return NULL;
-			while (win->selectable && !win->selectable(&it))
-				if (!window_get_next(win, &it))
-					return NULL;
+    if ((event->bstate & BUTTON4_PRESSED) ||
+        (event->bstate & BUTTON5_PRESSED)) {
+      need_sel = 0;
+      type = KEY_M_TYPE_NONE;
+      if (event->y < 1 || event->y >= LINES - 3)
+        return NULL;
+      if (cur_view == TREE_VIEW && lib_cur_win != win)
+        tree_toggle_active_window();
+      if (cur_view == PLAYLIST_VIEW && pl_cursor_win() != win)
+        pl_win_next();
+    } else {
+      if (event->y < 1 || event->y > window_get_nr_rows(win))
+        return NULL;
+      if (cur_view == TREE_VIEW && lib_cur_win != win)
+        tree_toggle_active_window();
+      if (cur_view == PLAYLIST_VIEW && pl_cursor_win() != win)
+        pl_win_next();
+      if (!window_get_top(win, &it) || !window_get_sel(win, &sel))
+        return NULL;
+      while (i-- > 0)
+        if (!window_get_next(win, &it))
+          return NULL;
+      while (win->selectable && !win->selectable(&it))
+        if (!window_get_next(win, &it))
+          return NULL;
 
-			type = (type == KEY_M_TYPE_SEL && iters_equal(&sel, &it)) ? KEY_M_TYPE_SEL : KEY_M_TYPE_NONE;
-			need_sel = !iters_equal(&sel, &it);
-		}
-	}
+      type = (type == KEY_M_TYPE_SEL && iters_equal(&sel, &it))
+                 ? KEY_M_TYPE_SEL
+                 : KEY_M_TYPE_NONE;
+      need_sel = !iters_equal(&sel, &it);
+    }
+  }
 
-	const struct key *k = mevent_to_key(event, type);
-	if (k == NULL)
-		return NULL;
+  const struct key *k = mevent_to_key(event, type);
+  if (k == NULL)
+    return NULL;
 
-	if (need_sel)
-		window_set_sel(win, &it);
+  if (need_sel)
+    window_set_sel(win, &it);
 
-	return k;
+  return k;
 }
 
-void normal_mode_mouse(MEVENT *event)
-{
-	enum key_context c = view_to_context[cur_view];
-	const struct key *k = normal_mode_mouse_handle(event);
+void normal_mode_mouse(MEVENT *event) {
+  enum key_context c = view_to_context[cur_view];
+  const struct key *k = normal_mode_mouse_handle(event);
 
-	if (k == NULL)
-		return;
+  if (k == NULL)
+    return;
 
-	/* view-specific key */
-	if (handle_key(key_bindings[c], k))
-		return;
+  /* view-specific key */
+  if (handle_key(key_bindings[c], k))
+    return;
 
-	/* common key */
-	handle_key(key_bindings[CTX_COMMON], k);
+  /* common key */
+  handle_key(key_bindings[CTX_COMMON], k);
 }

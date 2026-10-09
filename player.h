@@ -23,53 +23,56 @@
 #include "track_info.h"
 
 #include <pthread.h>
+#include <stdint.h>
 
 enum {
-	/* no error */
-	PLAYER_ERROR_SUCCESS,
-	/* system error (error code in errno) */
-	PLAYER_ERROR_ERRNO,
-	/* function not supported */
-	PLAYER_ERROR_NOT_SUPPORTED
+  /* no error */
+  PLAYER_ERROR_SUCCESS,
+  /* system error (error code in errno) */
+  PLAYER_ERROR_ERRNO,
+  /* function not supported */
+  PLAYER_ERROR_NOT_SUPPORTED
 };
 
-extern const char * const player_status_names[];
+extern const char *const player_status_names[];
 enum player_status {
-	PLAYER_STATUS_STOPPED,
-	PLAYER_STATUS_PLAYING,
-	PLAYER_STATUS_PAUSED,
-	NR_PLAYER_STATUS
+  PLAYER_STATUS_STOPPED,
+  PLAYER_STATUS_PLAYING,
+  PLAYER_STATUS_PAUSED,
+  NR_PLAYER_STATUS
 };
 
 enum replaygain {
-	RG_DISABLED,
-	RG_TRACK,
-	RG_ALBUM,
-	RG_TRACK_PREFERRED,
-	RG_ALBUM_PREFERRED,
-	RG_SMART
+  RG_DISABLED,
+  RG_TRACK,
+  RG_ALBUM,
+  RG_TRACK_PREFERRED,
+  RG_ALBUM_PREFERRED,
+  RG_SMART
 };
 
 struct player_info {
-	/* current track */
-	struct track_info *ti;
+  /* current track */
+  struct track_info *ti;
 
-	/* status */
-	enum player_status status;
-	int pos;
-	int current_bitrate;
+  /* status */
+  enum player_status status;
+  int pos;
+  int64_t pos_ms; /* consumed audio position; output-device latency is not
+                     included */
+  int current_bitrate;
 
-	int buffer_fill;
-	int buffer_size;
+  int buffer_fill;
+  int buffer_size;
 
-	/* display this if not NULL */
-	char *error_msg;
+  /* display this if not NULL */
+  char *error_msg;
 
-	unsigned int file_changed : 1;
-	unsigned int metadata_changed : 1;
-	unsigned int status_changed : 1;
-	unsigned int position_changed : 1;
-	unsigned int buffer_fill_changed : 1;
+  unsigned int file_changed : 1;
+  unsigned int metadata_changed : 1;
+  unsigned int status_changed : 1;
+  unsigned int position_changed : 1;
+  unsigned int buffer_fill_changed : 1;
 };
 
 extern char player_metadata[255 * 16 + 1];
@@ -112,8 +115,8 @@ void player_set_rg(enum replaygain rg);
 void player_set_rg_limit(int limit);
 void player_set_rg_preamp(double db);
 
-#define VF_RELATIVE	0x01
-#define VF_PERCENTAGE	0x02
+#define VF_RELATIVE 0x01
+#define VF_PERCENTAGE 0x02
 int player_set_vol(int l, int lf, int r, int rf);
 
 void player_metadata_lock(void);

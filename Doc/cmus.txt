@@ -45,7 +45,7 @@ and can be controlled externally using *cmus-remote*(1).
 
 @h1 VIEWS
 
-There are 7 views in cmus. Press keys 1-7 to change active view.
+There are 8 views in cmus. Press keys 1-8 to change active view.
 
 Library view (1)
 	Displays all tracks in the *library*. Tracks are sorted and displayed in
@@ -75,6 +75,24 @@ Settings view (7)
 	Lists keybindings, unbound commands and options. Remove bindings with
 	*D* or *del*, change bindings and variables with *enter*, and toggle
 	variables with *space*.
+
+Lyrics view (8)
+	Shows synchronized local LRC lyrics for the playing track. For
+	/path/song.flac, reads /path/song.lrc, then /path/song.flac.lrc if the
+	first file is absent. The current timestamp group is highlighted and
+	kept in view. Seeking and pausing use the playback position.
+
+	Use *lyrics-reload* after editing a sidecar. *lyrics-offset MILLISECONDS*
+	sets a session-wide display delay: positive values display lyrics later,
+	negative values earlier; 0 resets it. Range: -600000 to 600000.
+	LRC [offset:MS] metadata is also supported; positive LRC offsets advance
+	the lyrics. Reading runs on the worker thread. Files must be regular
+	UTF-8 files of at most 1 MiB; at most 16384 timestamped lines are accepted.
+
+	This view does not download lyrics or display cover art. Timing is at
+	line level, follows the player's existing roughly 100 ms UI refresh,
+	and may need a display delay for audio-device latency. Long lines are
+	clipped to the terminal width; repeated timestamps highlight together.
 
 @h1 COMMAND LINE
 
