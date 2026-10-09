@@ -23,13 +23,7 @@
 #include "gbuf.h"
 #include "utils.h"
 #include "read_wrapper.h"
-
-#include "config/openssl.h"
-#ifdef CONFIG_OPENSSL
 #include "ssl.h"
-#else
-#include "nossl.h"
-#endif
 
 #include <stdio.h>
 #include <unistd.h>
@@ -239,8 +233,10 @@ int connection_open(struct connection *conn, struct http_get *hg, int timeout_ms
 	conn->eof = 0;
 	*conn->fd_ref = hg->fd;
 
+#ifdef CONFIG_OPENSSL
 	if (hg->uri.is_https)
 		return https_connection_open(hg, conn);
+#endif
 
 	return IP_ERROR_SUCCESS;
 }

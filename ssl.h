@@ -19,7 +19,10 @@
 #ifndef CMUS_SSL_H
 #define CMUS_SSL_H
 
+#include "config/openssl.h"
+#ifdef CONFIG_OPENSSL
 #include <openssl/types.h>
+#endif
 #include <stddef.h> /* size_t */
 #include <sys/types.h> /* ssize_t */
 
@@ -28,7 +31,11 @@ typedef int (*connection_read)(struct connection*, char*, int);
 typedef int (*connection_write)(struct connection*, const char*, int);
 struct connection {
 	int *fd_ref;
+#ifdef CONFIG_OPENSSL
 	SSL *ssl;
+#else
+	void *ssl;
+#endif
 	int eof;
 	int pending;
 	connection_read read;

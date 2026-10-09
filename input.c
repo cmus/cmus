@@ -34,7 +34,7 @@
 #include "ui_curses.h"
 #include "locking.h"
 #include "xstrjoin.h"
-#include "config/openssl.h"
+#include "ssl.h"
 
 #include <unistd.h>
 #include <stdbool.h>
