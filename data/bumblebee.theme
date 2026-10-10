@@ -25,7 +25,6 @@ set color_win_title_fg=252
 
 # unselected currently playing track's text
 set color_win_cur=184
-set color_win_cur=184
 set color_win_cur_attr=bold
 
 # active selection for currently playing track
