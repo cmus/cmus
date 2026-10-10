@@ -1986,6 +1986,11 @@ static void update(void)
 	if (player_info.file_changed || player_info.metadata_changed)
 		mpris_metadata_changed();
 
+	/* mpris_metadata_changed() also emits Seeked */
+	if (player_info.position_seeked && !player_info.file_changed &&
+			!player_info.metadata_changed)
+		mpris_seeked();
+
 	needs_spawn = player_info.status_changed || player_info.file_changed ||
 		player_info.metadata_changed;
 

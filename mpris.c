@@ -165,7 +165,7 @@ static int mpris_seek(sd_bus_message *m, void *_userdata,
 {
 	int64_t val = 0;
 	CK(sd_bus_message_read_basic(m, 'x', &val));
-	player_seek(val / (1000 * 1000), 1, 0);
+	player_seek(val / (1000.0 * 1000.0), 1, 0);
 	return sd_bus_reply_method_return(m, "");
 }
 
@@ -184,7 +184,7 @@ static int mpris_seek_abs(sd_bus_message *m, void *_userdata,
 	CK(sd_bus_message_read_basic(m, 'x', &val));
 
 	if (strcmp(buf, path) == 0)
-		player_seek(val / (1000 * 1000), 0, 0);
+		player_seek(val / (1000.0 * 1000.0), 0, 0);
 	return sd_bus_reply_method_return(m, "");
 }
 
@@ -652,8 +652,9 @@ void mpris_seeked(void)
 {
 	if (!bus)
 		return;
-	int64_t pos = player_info.pos;
-	pos *= 1000 * 1000;
+	int64_t pos = player_info.position_seeked
+		? player_info.seek_pos * 1000 * 1000
+		: (int64_t)player_info.pos * 1000 * 1000;
 	sd_bus_emit_signal(bus, "/org/mpris/MediaPlayer2",
 			"org.mpris.MediaPlayer2.Player", "Seeked", "x", pos);
 }
