@@ -14,6 +14,8 @@ set color_separator=236
 # bottom status line
 set color_statusline_bg=235
 set color_statusline_fg=245
+set color_statusline_progress_bg=235
+set color_statusline_progress_fg=240
 
 # bottom title line
 set color_titleline_bg=236
