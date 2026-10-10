@@ -57,6 +57,8 @@ struct player_info {
 	/* status */
 	enum player_status status;
 	int pos;
+	/* exact seek position, valid if position_seeked is set */
+	double seek_pos;
 	int current_bitrate;
 
 	int buffer_fill;
@@ -69,6 +71,7 @@ struct player_info {
 	unsigned int metadata_changed : 1;
 	unsigned int status_changed : 1;
 	unsigned int position_changed : 1;
+	unsigned int position_seeked : 1;
 	unsigned int buffer_fill_changed : 1;
 };
 
