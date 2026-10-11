@@ -39,6 +39,7 @@
 #include "pl_env.h"
 #include "misc.h"
 #include "lyrics.h"
+#include "cover.h"
 
 #include <string.h>
 #include <unistd.h>
@@ -51,6 +52,7 @@ enum job_result_var {
 	JOB_RES_UPDATE_CACHE,
 	JOB_RES_PL_DELETE,
 	JOB_RES_LYRICS,
+	JOB_RES_COVER,
 };
 
 enum update_kind {
@@ -68,6 +70,11 @@ struct job_result {
 		struct {
 			struct lyrics *lyrics;
 			unsigned int lyrics_generation;
+		};
+		/* JOB_RES_COVER: owned by the result until cover_loaded() takes it */
+		struct {
+			struct cover *cover;
+			unsigned int cover_generation;
 		};
 		struct {
 			add_ti_cb add_cb;
@@ -702,11 +709,65 @@ void job_schedule_lyrics(const char *filename, unsigned int generation)
 	worker_add_job(JOB_TYPE_LYRICS, do_lyrics_job, free_lyrics_job, job);
 }
 
+/*
+ * Covers too: decoding a picture and encoding it for the terminal takes
+ * a moment, and the picture may be in a big file on a slow disk.
+ */
+struct cover_job {
+	char *filename;
+	unsigned int generation;
+	int mode, cols, rows, cell_width, cell_height;
+};
+
+static void do_cover_job(void *data)
+{
+	struct cover_job *job = data;
+	struct cover *cover = cover_load(job->filename, job->mode, job->cols, job->rows,
+			job->cell_width, job->cell_height);
+
+	if (worker_cancelling()) {
+		cover_free(cover);
+		return;
+	}
+	struct job_result *result = xnew(struct job_result, 1);
+	result->var = JOB_RES_COVER;
+	result->cover = cover;
+	result->cover_generation = job->generation;
+	job_push_result(result);
+}
+
+static void free_cover_job(void *data)
+{
+	struct cover_job *job = data;
+	free(job->filename);
+	free(job);
+}
+
+/* Main thread only. The result arrives through cover_loaded(). */
+void job_schedule_cover(const char *filename, unsigned int generation, int mode,
+		int cols, int rows, int cell_width, int cell_height)
+{
+	struct cover_job *job = xnew(struct cover_job, 1);
+	job->filename = xstrdup(filename);
+	job->generation = generation;
+	job->mode = mode;
+	job->cols = cols;
+	job->rows = rows;
+	job->cell_width = cell_width;
+	job->cell_height = cell_height;
+	/* only the newest request matters */
+	worker_remove_queued_jobs_by_type(JOB_TYPE_COVER);
+	worker_add_job(JOB_TYPE_COVER, do_cover_job, free_cover_job, job);
+}
+
 static void job_handle_result(struct job_result *res)
 {
 	switch (res->var) {
 	case JOB_RES_LYRICS:
 		lyrics_loaded(res->lyrics_generation, res->lyrics);
+		break;
+	case JOB_RES_COVER:
+		cover_loaded(res->cover_generation, res->cover);
 		break;
 	case JOB_RES_ADD:
 		job_handle_add_result(res);

@@ -61,6 +61,15 @@ void lyrics_reload(void);
 /* positive values show lyrics later */
 void lyrics_delay(int milliseconds);
 
+/* cover view (9) */
+struct cover;
+/* takes ownership of cover; frees it if generation is stale */
+void cover_loaded(unsigned int generation, struct cover *cover);
+/* forget the picture and load it again (:cover-reload, option changes) */
+void cover_reload(void);
+/* curses cleared the terminal, so the picture must be drawn again */
+void cover_screen_cleared(void);
+
 void update_titleline(void);
 void update_statusline(void);
 void update_filterline(void);

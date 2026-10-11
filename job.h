@@ -30,6 +30,7 @@
 #define JOB_TYPE_UPDATE_CACHE 1 << 18
 #define JOB_TYPE_DELETE       1 << 19
 #define JOB_TYPE_LYRICS       1 << 20
+#define JOB_TYPE_COVER        1 << 21
 
 struct add_data {
 	enum file_type type;
@@ -66,5 +67,8 @@ void job_schedule_pl_delete(struct pl_delete_data *data);
 void job_handle(void);
 /* Read the lyrics of filename; the result goes to lyrics_loaded(). */
 void job_schedule_lyrics(const char *filename, unsigned int generation);
+/* Find, decode and encode the cover of filename; the result goes to cover_loaded(). */
+void job_schedule_cover(const char *filename, unsigned int generation, int mode,
+		int cols, int rows, int cell_width, int cell_height);
 
 #endif

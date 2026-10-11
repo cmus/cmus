@@ -45,7 +45,7 @@ and can be controlled externally using *cmus-remote*(1).
 
 @h1 VIEWS
 
-There are 8 views in cmus. Press keys 1-8 to change active view.
+There are 9 views in cmus. Press keys 1-9 to change active view.
 
 Library view (1)
 	Displays all tracks in the *library*. Tracks are sorted and displayed in
@@ -88,6 +88,21 @@ Lyrics view (8)
 	positive values display lyrics later, negative earlier, 0 resets.
 	LRC [offset:MS] metadata is also supported. Lyrics are read on the
 	worker thread, up to 1 MiB and 16384 lines. Nothing is downloaded.
+
+Cover view (9)
+	Shows the playing track's album cover, as big as the view allows,
+	from (first found): /path/song.jpg or song.png, a cover, folder,
+	front, album or albumart .jpg/.jpeg/.png/.bmp/.gif in the track's
+	directory (any letter case), or the picture in the track's tags (ID3v2
+	APIC, FLAC PICTURE, Ogg METADATA_BLOCK_PICTURE, MP4 covr), preferring
+	the front cover.
+
+	In terminals with sixel graphics (wrxvt, xterm -ti vt340, foot,
+	WezTerm, mlterm, Konsole...) the picture is shown as it is; elsewhere
+	as coloured half blocks, two pixels per character, in 24-bit colour if
+	*COLORTERM* says truecolor. See *cover_display*. cmus asks the
+	terminal about sixel support and its character size when it starts.
+	Use *cover-reload* after changing the picture.
 
 @h1 COMMAND LINE
 
@@ -458,6 +473,10 @@ clear [-l] [-p] [-q]
 colorscheme <name>
 	Changes the color scheme. Color schemes are found in `/usr/share/cmus/`
 	or `$XDG_CONFIG_HOME/cmus/` and have the extension *.theme*.
+
+cover-reload
+	Read the playing track's cover again (cover view, 9), after changing
+	the picture file or the tags.
 
 echo <arg>...
 	Displays the arguments on the command line.
@@ -1058,6 +1077,11 @@ continue (true)
 
 continue_album (true)
 	Continue playing next album after current album finishes.
+
+cover_display (auto) [auto, sixel, blocks]
+	How the cover view (9) draws pictures: *auto* uses sixel graphics if
+	the terminal said it has them when cmus started, and coloured half
+	blocks otherwise; *sixel* and *blocks* choose one.
 
 device (/dev/cdrom)
 	CDDA device file.

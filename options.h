@@ -63,6 +63,7 @@ enum {
 	FILTERS_VIEW,
 	HELP_VIEW,
 	LYRICS_VIEW,
+	COVER_VIEW,
 	NR_VIEWS
 };
 
@@ -151,6 +152,10 @@ extern int auto_expand_albums_selcur;
 extern int auto_hide_playlists_panel;
 extern int auto_mark_selected_playlist;
 extern int show_all_tracks;
+/* cover view (9): COVER_DISPLAY_AUTO (sixel if the terminal has it), _SIXEL, _BLOCKS */
+enum { COVER_DISPLAY_AUTO, COVER_DISPLAY_SIXEL, COVER_DISPLAY_BLOCKS };
+extern int cover_display;
+extern const char * const cover_display_names[];
 extern int auto_reshuffle;
 extern int confirm_run;
 extern int resume_cmus;
