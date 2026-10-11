@@ -38,6 +38,11 @@ void worker_add_job(uint32_t type, void (*job_cb)(void *job_data),
  */
 
 void worker_remove_jobs_by_type(uint32_t pat);
+/*
+ * Like worker_remove_jobs_by_type(), but only removes jobs that haven't
+ * started: it never waits for a running job, so the UI can call it freely.
+ */
+void worker_remove_queued_jobs_by_type(uint32_t pat);
 void worker_remove_jobs_by_cb(worker_match_cb cb, void *opaque);
 
 int worker_has_job(void);
