@@ -149,7 +149,7 @@ int socket_open(struct http_get *hg, int timeout_ms)
 	} addr;
 	size_t addrlen;
 	struct timeval tv;
-	int save, flags, rc;
+	int save, rc;
 	char port[16];
 
 	char *proxy = getenv("http_proxy");
@@ -177,7 +177,6 @@ int socket_open(struct http_get *hg, int timeout_ms)
 	if (hg->fd == -1)
 		return -1;
 
-	flags = fcntl(hg->fd, F_GETFL);
 	if (fcntl(hg->fd, F_SETFL, O_NONBLOCK) == -1)
 		goto close_exit;
 
@@ -215,9 +214,6 @@ int socket_open(struct http_get *hg, int timeout_ms)
 		}
 	}
 
-	/* restore old flags */
-	if (fcntl(hg->fd, F_SETFL, flags) == -1)
-		goto close_exit;
 	return 0;
 close_exit:
 	save = errno;
@@ -347,6 +343,8 @@ static int http_read_response(struct connection *conn, struct gbuf *buf, int tim
 
 		rc = conn->read(conn, &ch, 1);
 		if (rc == -1) {
+			if (errno == EAGAIN)
+				continue;
 			return -1;
 		}
 		if (rc == 0) {

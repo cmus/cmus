@@ -112,7 +112,7 @@ static int buffer_fill_min(struct input_plugin_data *ip_data, int len)
 
 	while (buffer_length(ip_data) < len) {
 		rc = buffer_fill(ip_data);
-		if (rc <= 0)
+		if (rc == 0 || (rc < 0 && errno != EAGAIN))
 			return rc;
 	}
 	return 1;

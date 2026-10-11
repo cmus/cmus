@@ -547,7 +547,9 @@ static int do_open(struct nomad *nomad)
 	if (nomad->info.filesize != -1)
 		nomad->cbs.lseek(nomad->datasource, 0, SEEK_SET);
 	if (nomad->info.filesize == -1) {
-		rc = decode(nomad);
+		do {
+			rc = decode(nomad);
+		} while (rc < 0 && errno == EAGAIN);
 		if (rc < 0)
 			goto error;
 		if (rc == 1)

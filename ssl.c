@@ -88,16 +88,21 @@ int ssl_open(struct connection *conn, char *host)
 	if (init_ssl(conn, host))
 		return -IP_ERROR_OPENSSL;
 
-	int rc = SSL_connect(conn->ssl); /* 1 if successful, <=0 else */
-	if (rc <= 0) {
-		int err = SSL_get_error(conn->ssl, rc);
-		d_print("SSL_connect() failed (%d), SSL_get_error() returns %d\n", rc, err);
-		if ((err = ERR_get_error())) {
-			d_print("%s\n", ERR_reason_error_string(err));
+	while (1) {
+		int rc = SSL_connect(conn->ssl); /* 1 if successful, <=0 else */
+		if (rc <= 0) {
+			handle_ssl_error(conn, rc);
+			if (errno == EAGAIN)
+				continue;
+			int err = SSL_get_error(conn->ssl, rc);
+			d_print("SSL_connect() failed (%d), SSL_get_error() returns %d\n", rc, err);
+			if ((err = ERR_get_error())) {
+				d_print("%s\n", ERR_reason_error_string(err));
+			}
+			return -IP_ERROR_OPENSSL;
 		}
-		return -IP_ERROR_OPENSSL;
+		return rc - 1; /* 0 on success */
 	}
-	return rc - 1; /* 0 on success */
 }
 
 int https_connection_open(struct http_get *hg, struct connection *conn) {
