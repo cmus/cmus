@@ -52,6 +52,7 @@ static const enum key_context view_to_context[] = {
 	CTX_BROWSER,
 	CTX_FILTERS,
 	CTX_SETTINGS,
+	CTX_COMMON, /* lyrics view: only the common (playback) bindings apply */
 };
 
 #define KEY_IS_CHAR -255

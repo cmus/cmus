@@ -1381,6 +1381,22 @@ static void cmd_version(char *arg)
 	info_msg(VERSION);
 }
 
+static void cmd_lyrics_reload(char *arg)
+{
+	lyrics_reload();
+}
+
+static void cmd_lyrics_offset(char *arg)
+{
+	long value;
+	if (str_to_int(arg, &value) || value < -600000 || value > 600000) {
+		error_msg("lyrics-offset: expected milliseconds from -600000 to 600000");
+		return;
+	}
+	lyrics_delay((int)value);
+	info_msg("Lyrics delay: %+ld ms (positive values display later)", value);
+}
+
 static void cmd_view(char *arg)
 {
 	int view;
@@ -2650,6 +2666,8 @@ struct command commands[] = {
 	{ "live-filter",           cmd_live_filter,      0, 1,  NULL,                 0, CMD_LIVE   },
 	{ "load",                  cmd_load,             1, 1,  expand_load_save,     0, 0          },
 	{ "lqueue",                cmd_lqueue,           0, 1,  NULL,                 0, 0          },
+	{ "lyrics-offset",         cmd_lyrics_offset,    1, 1,  NULL,                 0, 0          },
+	{ "lyrics-reload",         cmd_lyrics_reload,    0, 0,  NULL,                 0, 0          },
 	{ "mark",                  cmd_mark,             0, 1,  NULL,                 0, 0          },
 	{ "mute",                  cmd_mute,             0, 0,  NULL,                 0, 0          },
 	{ "player-next",           cmd_p_next,           0, 0,  NULL,                 0, 0          },

@@ -53,6 +53,14 @@ extern char *play_queue_ext_filename;
 extern char *charset;
 extern int using_utf8;
 
+/* lyrics view (8) */
+struct lyrics;
+/* takes ownership of lyrics; frees it if generation is stale */
+void lyrics_loaded(unsigned int generation, struct lyrics *lyrics);
+void lyrics_reload(void);
+/* positive values show lyrics later */
+void lyrics_delay(int milliseconds);
+
 void update_titleline(void);
 void update_statusline(void);
 void update_filterline(void);

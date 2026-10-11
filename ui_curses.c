@@ -52,6 +52,7 @@
 #include "mpris.h"
 #include "locking.h"
 #include "pl_env.h"
+#include "lyrics.h"
 #ifdef HAVE_CONFIG
 #include "config/curses.h"
 #include "config/iconv.h"
@@ -109,6 +110,107 @@ static char *lib_autosave_filename;
 static char *play_queue_autosave_filename;
 
 static GBUF(print_buffer);
+
+/*
+ * Lyrics view state. Everything here is used by the main thread only;
+ * the worker thread just receives a filename and a generation number and
+ * hands back a struct lyrics through lyrics_loaded().
+ *
+ * lyrics_generation is bumped whenever the shown lyrics become invalid
+ * (track change, :lyrics-reload, exit). A result that arrives with an
+ * older generation belongs to a track that is no longer playing and is
+ * thrown away, so a slow read can never show the wrong lyrics.
+ */
+static struct lyrics *current_lyrics;
+static unsigned int lyrics_generation;
+/* requested: a job was queued for this generation; loading: no result yet */
+static int lyrics_requested, lyrics_loading;
+/* something changed that the line/scroll checks below cannot see */
+static int lyrics_dirty;
+/* :lyrics-offset, positive = later; kept until cmus exits */
+static int lyrics_delay_ms;
+/* what the last redraw showed, to redraw only when it would change */
+static int lyrics_last_line = -1, lyrics_last_first;
+
+/*
+ * Load lyrics for the playing track, once per generation. Called when the
+ * view is shown and on every update while it is shown, so lyrics are read
+ * lazily: nothing is read for users who never open the view.
+ */
+static void request_lyrics(void)
+{
+	if (lyrics_requested || !player_info.ti || is_url(player_info.ti->filename))
+		return;
+	lyrics_requested = lyrics_loading = 1;
+	job_schedule_lyrics(player_info.ti->filename, lyrics_generation);
+}
+
+/* Forget the current lyrics; any job still running becomes stale. */
+static void reset_lyrics(void)
+{
+	lyrics_generation++;
+	lyrics_free(current_lyrics);
+	current_lyrics = NULL;
+	lyrics_requested = lyrics_loading = 0;
+	lyrics_dirty = 1;
+	lyrics_last_line = -1;
+}
+
+/* Called by job_handle() on the main thread with a finished job's result. */
+void lyrics_loaded(unsigned int generation, struct lyrics *lyrics)
+{
+	if (generation != lyrics_generation) {
+		lyrics_free(lyrics);
+		return;
+	}
+	lyrics_free(current_lyrics);
+	current_lyrics = lyrics;
+	lyrics_loading = 0;
+	lyrics_dirty = 1;
+}
+
+/* :lyrics-reload, e.g. after editing the .lrc file or the tags */
+void lyrics_reload(void)
+{
+	reset_lyrics();
+	if (cur_view == LYRICS_VIEW)
+		request_lyrics();
+	update_full();
+}
+
+/* :lyrics-offset */
+void lyrics_delay(int milliseconds)
+{
+	lyrics_delay_ms = milliseconds;
+	lyrics_dirty = 1;
+	update_full();
+}
+
+/* Index of the highlighted line, or -1. */
+static int current_lyric_line(void)
+{
+	if (player_info.status == PLAYER_STATUS_STOPPED)
+		return -1;
+	return lyrics_find(current_lyrics, player_info.pos_ms, lyrics_delay_ms);
+}
+
+static int lyrics_first_row(int active, int rows);
+
+/*
+ * update() runs several times a second; redrawing the whole view each time
+ * would make the terminal flicker over slow links. Redraw only when the
+ * highlighted line or, for untimed lyrics, the scroll position changes.
+ */
+static int lyrics_need_redraw(void)
+{
+	int rows = LINES - 4;
+
+	if (lyrics_dirty || current_lyric_line() != lyrics_last_line)
+		return 1;
+	/* untimed lyrics scroll with the song */
+	return current_lyrics && current_lyrics->unsynchronized && rows > 0 &&
+		lyrics_first_row(-1, rows) != lyrics_last_first;
+}
 
 /* destination buffer for utf8_encode_to_buf and utf8_decode */
 static char conv_buffer[4096];
@@ -1170,6 +1272,87 @@ static void update_pl_view(int full)
 	pl_draw(update_pl_list, update_pl_tracks, full);
 }
 
+/*
+ * Index of the first line on screen, given the active line and the number
+ * of rows available. Timed lyrics keep the active line in the middle.
+ * Untimed lyrics scroll in proportion to the playback position, so the
+ * end of the text is reached when the song ends. Never scrolls past the
+ * last line.
+ */
+static int lyrics_first_row(int active, int rows)
+{
+	int count = current_lyrics->count, first;
+
+	if (count <= rows)
+		return 0;
+	if (current_lyrics->unsynchronized) {
+		int duration = player_info.ti ? player_info.ti->duration : 0;
+		if (duration <= 0)
+			return 0;
+		first = (int64_t)(count - rows) * player_info.pos_ms / (duration * 1000LL);
+	} else {
+		first = active > rows / 2 ? active - rows / 2 : 0;
+	}
+	return first + rows > count ? count - rows : first;
+}
+
+/*
+ * Draw the view: a heading row, then the lyrics or a message saying why
+ * there are none. Every row is written, padded to the window width, so no
+ * text from the previous view or line survives.
+ */
+static void update_lyrics_window(void)
+{
+	int active = current_lyric_line();
+	/* the same rows the other views use: title, status and command lines are not ours */
+	int rows = LINES - 4;
+	int first;
+	char heading[96];
+	const char *message = NULL;
+
+	if (win_w < 3 || rows < 1)
+		return;
+	snprintf(heading, sizeof(heading), "Lyrics%s (delay %+d ms; :lyrics-reload)",
+		current_lyrics && current_lyrics->unsynchronized ? ", not timed" : "",
+		lyrics_delay_ms);
+	if (!player_info.ti)
+		message = "Nothing is playing.";
+	else if (is_url(player_info.ti->filename))
+		message = "No lyrics for streams.";
+	else if (lyrics_loading)
+		message = "Loading lyrics...";
+	else if (!current_lyrics)
+		message = "No lyrics: no .lrc file beside the track and no lyrics tag.";
+	else if (current_lyrics->error)
+		message = strerror(current_lyrics->error);
+	else if (!current_lyrics->count)
+		message = "The .lrc file has no timed lines.";
+	first = message ? 0 : lyrics_first_row(active, rows);
+
+	bkgdset(pairs[CURSED_WIN_TITLE]);
+	sprint(0, 0, heading, win_w);
+	for (int row = 0; row < rows; row++) {
+		int index = first + row;
+		const char *text = "";
+		int highlight = 0;
+
+		if (message) {
+			if (!row)
+				text = message;
+		} else if (index < (int)current_lyrics->count) {
+			text = current_lyrics->lines[index].text;
+			/* highlight the whole group of lines that share the active time */
+			highlight = active >= 0 &&
+				current_lyrics->lines[index].time_ms == current_lyrics->lines[active].time_ms;
+		}
+		bkgdset(pairs[highlight ? CURSED_WIN_CUR : CURSED_WIN]);
+		sprint(row + 1, 0, text, win_w);
+	}
+	lyrics_last_line = active;
+	lyrics_last_first = first;
+	lyrics_dirty = 0;
+}
+
 static void do_update_view(int full)
 {
 	if (!ui_initialized)
@@ -1205,6 +1388,9 @@ static void do_update_view(int full)
 		break;
 	case HELP_VIEW:
 		update_help_window();
+		break;
+	case LYRICS_VIEW:
+		update_lyrics_window();
 		break;
 	}
 }
@@ -1689,6 +1875,11 @@ void set_view(int view)
 	prev_view = cur_view;
 	cur_view = view;
 	switch (cur_view) {
+	case LYRICS_VIEW:
+		/* nothing to search; search() and search_text() check for NULL */
+		searchable = NULL;
+		request_lyrics();
+		break;
 	case TREE_VIEW:
 		searchable = tree_searchable;
 		break;
@@ -1966,6 +2157,15 @@ static void update(void)
 	int needs_status_update = 0;
 	int needs_command_update = 0;
 	int needs_spawn = 0;
+
+	/* new track: drop the old lyrics even if the view is hidden */
+	if (player_info.file_changed)
+		reset_lyrics();
+	if (cur_view == LYRICS_VIEW) {
+		request_lyrics();
+		needs_view_update = needs_to_resize || player_info.status_changed ||
+			lyrics_need_redraw();
+	}
 
 	if (first_update) {
 		needs_title_update = 1;
@@ -2533,6 +2733,8 @@ static void exit_all(void)
 
 	server_exit();
 	cmus_exit();
+	/* free the lyrics now, so leak checkers only report real leaks */
+	reset_lyrics();
 	if (resume_cmus)
 		cmus_save(play_queue_for_each, play_queue_autosave_filename,
 				NULL);
