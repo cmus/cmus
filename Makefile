@@ -13,11 +13,16 @@ VERSION	= $(or $(_ver0),$(_ver1),$(_ver2),$(_ver3))
 
 all: main plugins man
 
-.PHONY: check-lyrics
+.PHONY: check-lyrics check-cover
 check-lyrics:
 	$(CC) $(CFLAGS) -I. -o tests/lyrics-test tests/lyrics.c lyrics.c
 	./tests/lyrics-test
 	rm -f tests/lyrics-test
+
+check-cover:
+	$(CC) $(CFLAGS) -I. -o tests/cover-test tests/cover.c cover.c -lm
+	./tests/cover-test
+	rm -f tests/cover-test
 
 -include config.mk
 include scripts/lib.mk
@@ -43,7 +48,7 @@ cmus-y := \
 	comment.o convert.lo cue.o cue_utils.o debug.o discid.o editable.o expr.o \
 	filters.o format_print.o gbuf.o glob.o help.o history.o http.o id3.o input.o \
 	job.o keys.o keyval.o lib.o load_dir.o locking.o mergesort.o misc.o options.o \
-	lyrics.o output.o pcm.o player.o play_queue.o pl.o pl_env.o rbtree.o read_wrapper.o \
+	lyrics.o cover.o output.o pcm.o player.o play_queue.o pl.o pl_env.o rbtree.o read_wrapper.o \
 	search_mode.o search.o server.o spawn.o tabexp_file.o tabexp.o track_info.o \
 	track.o tree.o uchar.o u_collate.o ui_curses.o window.o worker.o xstrjoin.o
 
