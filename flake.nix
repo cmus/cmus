@@ -3,70 +3,38 @@
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
-  outputs = { self, nixpkgs }:
+  outputs =
+    { self, nixpkgs }:
     let
       system = "x86_64-linux";
       pkgs = import nixpkgs { inherit system; };
 
-      cmus = pkgs.stdenv.mkDerivation {
-        pname = "cmus";
+      # nixpkgs' own cmus, from this checkout. Same plugins and options as
+      # the cmus of the system: both read ~/.config/cmus/autosave, and an
+      # option one of them lacks (input.mikmod.priority, from the mikmod
+      # plugin) stops the other at startup with "no such option".
+      cmus = pkgs.cmus.overrideAttrs (old: {
         version = "git";
+        src = pkgs.lib.cleanSource ./.; # without result links and .git
 
-        src = ./.;
-
-        nativeBuildInputs = [ pkgs.pkg-config ];
-
-        buildInputs = with pkgs; [
-          ncurses
-          alsa-lib
-          libpulseaudio
-          systemd
-          ffmpeg
-          flac
-          libmad
-          libmodplug
-          libmpcdec
-          libvorbis
-          wavpack
-          opusfile
-          libcddb
-          libcdio
-          libcdio-paranoia
-          libcue
-        ];
-
-        configureFlags = [
-          "CONFIG_ALSA=y"
-          "CONFIG_PULSE=y"
-          "CONFIG_MPRIS=y"
-          "CONFIG_FFMPEG=y"
-          "CONFIG_FLAC=y"
-          "CONFIG_MAD=y"
-          "CONFIG_MODPLUG=y"
-          "CONFIG_MPC=y"
-          "CONFIG_VORBIS=y"
-          "CONFIG_WAVPACK=y"
-          "CONFIG_OPUS=y"
-          "CONFIG_CDDB=y"
-          "CONFIG_CDIO=y"
-          "CONFIG_CUE=y"
-        ];
-
-        # cmus expects the compiler to perform the final link.
-        makeFlags = [ "LD=$(CC)" ];
-
-        meta = with pkgs.lib; {
-          description = "Small, fast console music player";
-          homepage = "https://cmus.github.io/";
-          license = licenses.gpl2;
-          platforms = platforms.linux;
-        };
-      };
+        # the parser and reader tests of the lyrics and cover views
+        doCheck = true;
+        checkTarget = "check-lyrics check-cover";
+      });
     in
     {
       packages.${system} = {
         default = cmus;
-        cmus = cmus;
+        inherit cmus;
+      };
+
+      overlays.default = final: prev: {
+        cmus = prev.cmus.overrideAttrs (old: {
+          version = "git";
+          src = final.lib.cleanSource ./.;
+          doCheck = true;
+          checkTarget = "check-lyrics check-cover";
+        });
       };
 
       checks.${system}.build = cmus;
@@ -74,5 +42,7 @@
       devShells.${system}.default = pkgs.mkShell {
         inputsFrom = [ cmus ];
       };
+
+      formatter.${system} = pkgs.nixfmt;
     };
 }
