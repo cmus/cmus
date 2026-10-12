@@ -500,7 +500,7 @@ static int mpris_metadata(sd_bus *_bus, const char *_path,
 			free(uri);
 			CK(rc);
 		}
-		if (is_http_url(ti->filename))
+		if (is_http_or_https_url(ti->filename))
 			CK(mpris_msg_append_ss_dict(reply, "cmus:stream_title",
 						get_stream_title()));
 	}

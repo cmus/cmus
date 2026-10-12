@@ -302,7 +302,7 @@ static int parse_cddb_url(const char *url, struct http_uri *http_uri, int *use_h
 		full_url = xstrjoin("http://", url);
 	}
 
-	rc = http_parse_uri(full_url, http_uri);
+	rc = parse_uri(full_url, http_uri);
 	free(full_url);
 	return rc == 0;
 }
@@ -316,7 +316,7 @@ static void setup_cddb_conn(cddb_conn_t *cddb_conn)
 	parse_cddb_url(cddb_url, &http_uri, &use_http);
 
 	proxy = getenv("http_proxy");
-	if (proxy && http_parse_uri(proxy, &http_proxy_uri) == 0) {
+	if (proxy && parse_uri(proxy, &http_proxy_uri) == 0) {
 		cddb_http_proxy_enable(cddb_conn);
 		cddb_set_http_proxy_server_name(cddb_conn, http_proxy_uri.host);
 		cddb_set_http_proxy_server_port(cddb_conn, http_proxy_uri.port);
@@ -336,8 +336,8 @@ static void setup_cddb_conn(cddb_conn_t *cddb_conn)
 	cddb_set_server_name(cddb_conn, http_uri.host);
 	cddb_set_email_address(cddb_conn, "me@home");
 	cddb_set_server_port(cddb_conn, http_uri.port);
-	if (strcmp(http_uri.path, "/") != 0)
-		cddb_set_http_path_query(cddb_conn, http_uri.path);
+	if (strcmp(http_uri.path_and_query, "/") != 0)
+		cddb_set_http_path_query(cddb_conn, http_uri.path_and_query);
 #ifdef DEBUG_CDDB
 	cddb_cache_disable(cddb_conn);
 #endif
