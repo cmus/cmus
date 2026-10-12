@@ -211,6 +211,8 @@ static const char *interesting[] = {
 	"arranger", "composer", "conductor", "lyricist", "performer",
 	"remixer", "label", "publisher", "work", "opus",
 	"subtitle", "media",
+	/* read by the lyrics view (key 8); track_info_set_comments() drops it */
+	"lyrics",
 	NULL
 };
 
@@ -239,6 +241,11 @@ static struct {
 	{ "artist-sort", "artistsort" },
 	{ "TSO2", "albumartistsort" },
 	{ "album-sort", "albumsort" },
+	/* lyrics */
+	{ "unsyncedlyrics", "lyrics" },
+	{ "unsynchronizedlyrics", "lyrics" },
+	{ "\xc2\xa9lyr", "lyrics" }, /* mp4 */
+	{ "WM/Lyrics", "lyrics" },
 	/* ffmpeg mp4 */
 	{ "sort_artist", "artistsort" },
 	{ "sort_album_artist", "albumartistsort" },
@@ -267,6 +274,10 @@ int comments_add(struct growing_keyvals *c, const char *key, char *val)
 		int r = comments_add_const(c, "lyricist", val);
 		return comments_add(c, "composer", val) && r;
 	}
+
+	/* ffmpeg names ID3 USLT frames "lyrics-<language>[-<description>]" */
+	if (!strncasecmp(key, "lyrics-", 7))
+		key = "lyrics";
 
 	key = fix_key(key);
 	if (!key) {

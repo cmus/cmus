@@ -88,6 +88,7 @@ int auto_hide_playlists_panel = 0;
 int auto_mark_selected_playlist = 0;
 int show_all_tracks = 1;
 int mouse = 0;
+int cover_display = COVER_DISPLAY_AUTO;
 int mpris = 1;
 int time_show_leading_zero = 1;
 int start_view = TREE_VIEW;
@@ -731,7 +732,7 @@ static void toggle_confirm_run(void *data)
 }
 
 const char * const view_names[NR_VIEWS + 1] = {
-	"tree", "sorted", "playlist", "queue", "browser", "filters", "settings", NULL
+	"tree", "sorted", "playlist", "queue", "browser", "filters", "settings", "lyrics", "cover", NULL
 };
 
 static void get_play_library(void *data, char *buf, size_t size)
@@ -883,6 +884,26 @@ static void toggle_repeat(void *data)
 	if (!player_repeat_current)
 		mpris_loop_status_changed();
 	update_statusline();
+}
+
+/* how the cover view (9) draws pictures */
+const char * const cover_display_names[] = {
+	"auto", "sixel", "blocks", NULL
+};
+
+static void get_cover_display(void *data, char *buf, size_t size)
+{
+	strscpy(buf, cover_display_names[cover_display], size);
+}
+
+static void set_cover_display(void *data, const char *buf)
+{
+	int tmp;
+
+	if (!parse_enum(buf, 0, 2, cover_display_names, &tmp))
+		return;
+	cover_display = tmp;
+	cover_reload();
 }
 
 static const char * const replaygain_names[] = {
@@ -1657,6 +1678,7 @@ static const struct {
 	DT(confirm_run)
 	DT(continue)
 	DT(continue_album)
+	DN(cover_display)
 	DT(smart_artist_sort)
 	DT(sort_albums_by_name)
 	DN(id3_default_charset)

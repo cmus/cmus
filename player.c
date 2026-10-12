@@ -460,6 +460,7 @@ static void player_error(const char *msg)
 {
 	player_info_priv_lock();
 	player_info_priv.status = (enum player_status)consumer_status;
+	player_info_priv.pos_ms = 0;
 	player_info_priv.pos = 0;
 	player_info_priv.current_bitrate = -1;
 	player_info_priv.buffer_fill = buffer_get_filled_chunks();
@@ -527,28 +528,44 @@ static void _producer_buffer_fill_update(void)
 /*
  * playing position changed
  */
+/*
+ * Position of the consumer (the audio written to the output) in
+ * milliseconds. Computed from bytes so it doesn't drift; the two parts
+ * avoid overflowing consumer_pos * 1000 on very long tracks.
+ */
+static int64_t consumer_position_ms(void)
+{
+	if (consumer_status != CS_PLAYING && consumer_status != CS_PAUSED)
+		return 0;
+	unsigned int bytes_per_second = buffer_second_size();
+	if (!bytes_per_second)
+		return 0;
+	return (int64_t)(consumer_pos / bytes_per_second) * 1000 +
+		(consumer_pos % bytes_per_second) * 1000ULL / bytes_per_second;
+}
+
+/*
+ * pos_ms is updated on every call, for views that follow playback closely
+ * (lyrics); pos, the bitrate and position_changed still change once per
+ * second, as before, so nothing else redraws more often.
+ */
 static void _consumer_position_update(void)
 {
-	static unsigned int old_pos = -1;
-	unsigned int pos = 0;
-	long bitrate;
+	int64_t ms = consumer_position_ms();
+	unsigned int pos = ms / 1000;
 
-	if (consumer_status == CS_PLAYING || consumer_status == CS_PAUSED)
-		pos = consumer_pos / buffer_second_size();
-	if (pos != old_pos) {
-		old_pos = pos;
-
-		player_info_priv_lock();
+	player_info_priv_lock();
+	player_info_priv.pos_ms = ms;
+	if (pos != player_info_priv.pos) {
 		player_info_priv.pos = pos;
-
 		if (show_current_bitrate) {
-			bitrate = ip_current_bitrate(ip);
+			long bitrate = ip_current_bitrate(ip);
 			if (bitrate != -1)
 				player_info_priv.current_bitrate = bitrate;
 		}
 		player_info_priv.position_changed = 1;
-		player_info_priv_unlock();
 	}
+	player_info_priv_unlock();
 }
 
 /*
@@ -564,6 +581,7 @@ static void _player_status_changed(void)
 
 	player_info_priv_lock();
 	player_info_priv.status = (enum player_status)consumer_status;
+	player_info_priv.pos_ms = consumer_position_ms();
 	player_info_priv.pos = pos;
 	player_info_priv.current_bitrate = -1;
 	player_info_priv.buffer_fill = buffer_get_filled_chunks();

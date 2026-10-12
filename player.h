@@ -23,6 +23,7 @@
 #include "track_info.h"
 
 #include <pthread.h>
+#include <stdint.h>
 
 enum {
 	/* no error */
@@ -57,6 +58,7 @@ struct player_info {
 	/* status */
 	enum player_status status;
 	int pos;
+	int64_t pos_ms; /* consumed audio position; output-device latency is not included */
 	int current_bitrate;
 
 	int buffer_fill;
