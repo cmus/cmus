@@ -199,7 +199,7 @@ static int wavpack_open(struct input_plugin_data *ip_data)
 
 	priv->wpc = WavpackOpenFileInputEx(&callbacks, &priv->wv_file,
 			priv->has_wvc ? &priv->wvc_file : NULL, msg,
-			OPEN_NORMALIZE, 0);
+			OPEN_NORMALIZE | OPEN_DSD_AS_PCM, 0);
 
 	if (!priv->wpc) {
 		d_print("WavpackOpenFileInputEx failed: %s\n", msg);
