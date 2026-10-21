@@ -1160,10 +1160,17 @@ static void set_shuffle(void *data, const char *buf)
 	else if (tmp == SHUFFLE_TRUE)
 		tmp = SHUFFLE_TRACKS;
 
-	if (tmp != shuffle)
-		mpris_shuffle_changed();
+	if (tmp == shuffle)
+		return;
 
 	shuffle = tmp;
+
+	if (shuffle && auto_reshuffle) {
+		lib_reshuffle();
+		pl_reshuffle();
+	}
+
+	mpris_shuffle_changed();
 	update_statusline();
 }
 
@@ -1176,6 +1183,12 @@ static void toggle_shuffle(void *data)
 	if (!play_library && shuffle == SHUFFLE_ALBUMS)
 		shuffle = SHUFFLE_OFF;
 
+	if (shuffle == SHUFFLE_TRACKS && auto_reshuffle) {
+		lib_reshuffle();
+		pl_reshuffle();
+	}
+
+	mpris_shuffle_changed();
 	update_statusline();
 }
 

@@ -236,6 +236,7 @@ static int mpris_set_loop_status(sd_bus *_bus, const char *_path,
 		player_repeat_current = 0;
 		repeat = 1;
 	}
+	mpris_loop_status_changed();
 	update_statusline();
 	return sd_bus_reply_method_return(value, "");
 }
@@ -265,8 +266,7 @@ static int mpris_set_shuffle(sd_bus *_bus, const char *_path,
 {
 	uint32_t s = 0;
 	CK(sd_bus_message_read_basic(value, 'b', &s));
-	shuffle = s;
-	update_statusline();
+	option_set("shuffle", s ? "1" : "0");
 	return sd_bus_reply_method_return(value, "");
 }
 
