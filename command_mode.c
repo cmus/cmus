@@ -59,7 +59,6 @@
 static struct history cmd_history;
 static char *cmd_history_filename;
 static char *history_search_text = NULL;
-static int arg_expand_cmd = -1;
 static int mute_vol_l = 0, mute_vol_r = 0;
 
 /* view {{{ */
@@ -2879,7 +2878,6 @@ static void tab_expand(int direction)
 static void reset_tab_expansion(void)
 {
 	tabexp_reset();
-	arg_expand_cmd = -1;
 }
 
 static void cmdline_modified(void)

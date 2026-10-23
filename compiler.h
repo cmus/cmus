@@ -67,15 +67,15 @@
 
 #endif
 
-#if defined(__GNUC__) && (__GNUC__ >= 8)
-
 /* Silences the unterminated-string-initialization warnings */
+#ifdef __has_attribute
+#if __has_attribute(nonstring)
 #define CMUS_NONSTRING __attribute__((nonstring))
+#endif
+#endif
 
-#else
-
+#ifndef CMUS_NONSTRING
 #define CMUS_NONSTRING
-
 #endif
 
 
