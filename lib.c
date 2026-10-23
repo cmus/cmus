@@ -79,16 +79,6 @@ static void shuffle_add(struct tree_track *track)
 	shuffle_list_add(&track->simple_track.shuffle_info, &lib_shuffle_root, track->album);
 }
 
-static void album_shuffle_list_add(struct album *album)
-{
-	shuffle_list_add(&album->shuffle_info, &lib_album_shuffle_root, album);
-}
-
-static void album_shuffle_list_remove(struct album *album)
-{
-	rb_erase(&album->shuffle_info.tree_node, &lib_album_shuffle_root);
-}
-
 static void views_add_track(struct track_info *ti)
 {
 	struct tree_track *track = xnew(struct tree_track, 1);
@@ -99,7 +89,7 @@ static void views_add_track(struct track_info *ti)
 	/* both the hash table and views have refs */
 	track_info_ref(ti);
 
-	tree_add_track(track, album_shuffle_list_add);
+	tree_add_track(track);
 	shuffle_add(track);
 	editable_add(&lib_editable, (struct simple_track *)track);
 }
@@ -445,7 +435,7 @@ void lib_reshuffle(void)
 }
 
 void lib_sort_artists(void) {
-	tree_sort_artists(album_shuffle_list_add, album_shuffle_list_remove);
+	tree_sort_artists();
 }
 
 static void free_lib_track(struct editable *e, struct list_head *item)
@@ -460,7 +450,7 @@ static void free_lib_track(struct editable *e, struct list_head *item)
 		hash_remove(ti);
 
 	rb_erase(&track->simple_track.shuffle_info.tree_node, &lib_shuffle_root);
-	tree_remove(track, album_shuffle_list_remove);
+	tree_remove(track);
 
 	track_info_unref(ti);
 	free(track);
