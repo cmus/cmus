@@ -19,6 +19,7 @@
 #include "misc.h"
 #include "prog.h"
 #include "xmalloc.h"
+#include "utils.h"
 #include "xstrjoin.h"
 #include "ui_curses.h"
 #include "config/libdir.h"
@@ -26,6 +27,7 @@
 
 #include <string.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
@@ -90,6 +92,57 @@ int strptrcoll(const void *a, const void *b)
 	const char *bs = *(char **)b;
 
 	return strcoll(as, bs);
+}
+
+int strptrnatcmp(const void *a, const void *b)
+{
+	const char *as = *(char **)a;
+	const char *bs = *(char **)b;
+	int as_digit, bs_digit;
+	int as_lzcnt = 0, bs_lzcnt = 0;
+	const char *as_end, *bs_end;
+	ptrdiff_t as_len, bs_len;
+
+	while (*as && *bs) {
+		if (*as != *bs)
+			break;
+		++as; ++bs;
+	}
+
+	as_digit = is_digit(*as);
+	bs_digit = is_digit(*bs);
+	if (!as_digit && !bs_digit)
+		return (signed char)*as - (signed char)*bs;
+	else if (!as_digit)
+		return -1;
+	else if (!bs_digit)
+		return 1;
+
+	while (*as == '0' && is_digit(*(as + 1))) {
+		++as; ++as_lzcnt;
+	}
+	while (*bs == '0' && is_digit(*(bs + 1))) {
+		++bs; ++bs_lzcnt;
+	}
+
+	as_end = as + 1;
+	bs_end = bs + 1;
+	while (is_digit(*as_end))
+		++as_end;
+	while (is_digit(*bs_end))
+		++bs_end;
+
+	as_len = as_end - as;
+	bs_len = bs_end - bs;
+	if (as_len != bs_len)
+		return as_len - bs_len;
+
+	while (as != as_end) {
+		if (*as != *bs)
+			return (signed char)*as - (signed char)*bs;
+		++as; ++bs;
+	}
+	return as_lzcnt - bs_lzcnt;
 }
 
 const char *escape(const char *str)
