@@ -8,8 +8,9 @@ bind common z player-prev
 bind common Z player-prev-album
 bind common v player-stop
 
-bind common ] vol +0 +1%
-bind common [ vol +1% +0
+bind common ] speed *1.1
+bind common [ speed /1.1
+bind common backspace speed 1
 bind common + vol +10%
 bind common = vol +10%
 bind common } vol -0 -1%
@@ -62,6 +63,8 @@ bind common 4 view queue
 bind common 5 view browser
 bind common 6 view filters
 bind common 7 view settings
+bind common 8 view lyrics
+bind common 9 view cover
 
 bind common mouse_scroll_up_title left-view -n
 bind common mouse_scroll_down_title right-view -n

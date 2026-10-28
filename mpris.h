@@ -31,6 +31,7 @@ void mpris_playback_status_changed(void);
 void mpris_loop_status_changed(void);
 void mpris_shuffle_changed(void);
 void mpris_volume_changed(void);
+void mpris_rate_changed(void);
 void mpris_metadata_changed(void);
 void mpris_seeked(void);
 
@@ -44,6 +45,7 @@ void mpris_seeked(void);
 #define mpris_loop_status_changed() { }
 #define mpris_shuffle_changed() { }
 #define mpris_volume_changed() { }
+#define mpris_rate_changed() { }
 #define mpris_metadata_changed() { }
 #define mpris_seeked() { }
 

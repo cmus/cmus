@@ -21,7 +21,7 @@ jobs:
           brew install \
             libao ffmpeg libcddb libcdio libcue libdiscid faad2 flac jack mad \
             libmodplug mp4v2 musepack opusfile libsamplerate libvorbis wavpack \
-            pkg-config
+            pkg-config rubberband
       - name: Dependencies (apt)
         if: startswith(matrix.os, 'ubuntu-')
         run: |
@@ -32,11 +32,15 @@ jobs:
             libavcodec-dev libswresample-dev libflac-dev libjack-dev \
             libmad0-dev libmodplug-dev libmpcdec-dev libsystemd-dev \
             libopusfile-dev libpulse-dev libsamplerate0-dev libsndio-dev \
-            libvorbis-dev libwavpack-dev
+            libvorbis-dev libwavpack-dev librubberband-dev
       - name: Build
         run: |
           ./configure CC="${{matrix.cc}}"
           make
+          make check-lyrics check-cover check-tempo
+      - name: Playback integration tests
+        if: startswith(matrix.os, 'ubuntu-')
+        run: make check-player-speed
       - name: Run
         run: |
           CMUS_LIB_DIR="${PWD}" ./cmus --version

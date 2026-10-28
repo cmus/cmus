@@ -157,11 +157,10 @@ void worker_remove_jobs_by_type(uint32_t pat)
 	worker_remove_jobs_by_cb(worker_matches_type, &pat);
 }
 
-void worker_remove_jobs_by_cb(worker_match_cb cb, void *opaque)
+/* Called with worker_mutex held. Does not wait for a running job. */
+static void remove_queued_jobs(worker_match_cb cb, void *opaque)
 {
 	struct list_head *item;
-
-	worker_lock();
 
 	item = worker_job_head.next;
 	while (item != &worker_job_head) {
@@ -176,6 +175,19 @@ void worker_remove_jobs_by_cb(worker_match_cb cb, void *opaque)
 		}
 		item = next;
 	}
+}
+
+void worker_remove_queued_jobs_by_type(uint32_t pat)
+{
+	worker_lock();
+	remove_queued_jobs(worker_matches_type, &pat);
+	worker_unlock();
+}
+
+void worker_remove_jobs_by_cb(worker_match_cb cb, void *opaque)
+{
+	worker_lock();
+	remove_queued_jobs(cb, opaque);
 
 	/* wait current job to finish or cancel if it's of the specified type */
 	if (cur_job && cb(cur_job->type, cur_job->data, opaque)) {

@@ -118,6 +118,9 @@ static void delete(void)
 
 void search_text(const char *text, int restricted, int beginning)
 {
+	if (!searchable)
+		return;
+
 	if (text[0] == 0) {
 		/* cmdline is "/", "?", "//" or "??" */
 		if (search_str) {

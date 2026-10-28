@@ -63,11 +63,32 @@ struct track_info *track_info_new(const char *filename)
 	return ti;
 }
 
+/*
+ * Lyrics tags can be kilobytes long and contain newlines. The lyrics view
+ * reads them from the file when it needs them (lyrics_load_tag()), so they
+ * are not kept in the library, the cache, or cmus-remote/status output.
+ */
+static void drop_lyrics(struct keyval *comments)
+{
+	int i, j = 0;
+
+	for (i = 0; comments[i].key; i++) {
+		if (strcasecmp(comments[i].key, "lyrics") == 0) {
+			free(comments[i].key);
+			free(comments[i].val);
+		} else {
+			comments[j++] = comments[i];
+		}
+	}
+	comments[j] = comments[i];
+}
+
 void track_info_set_comments(struct track_info *ti, struct keyval *comments) {
 	long int r128_track_gain;
 	long int r128_album_gain;
 	long int output_gain;
 
+	drop_lyrics(comments);
 	ti->comments = comments;
 	ti->artist = keyvals_get_val(comments, "artist");
 	ti->album = keyvals_get_val(comments, "album");

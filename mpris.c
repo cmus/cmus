@@ -25,6 +25,7 @@
 #include "ui_curses.h"
 #include "cmus.h"
 #include "player.h"
+#include "tempo.h"
 #include "options.h"
 #include "output.h"
 #include "track_info.h"
@@ -245,8 +246,26 @@ static int mpris_rate(sd_bus *_bus, const char *_path,
 		sd_bus_message *reply, void *_userdata,
 		sd_bus_error *_ret_error)
 {
-	static const double d = 1.0;
+	double d = player_get_speed();
+
+	if (!strcmp(_property, "MinimumRate"))
+		d = tempo_enabled() ? PLAYER_SPEED_MIN : 1.0;
+	else if (!strcmp(_property, "MaximumRate"))
+		d = tempo_enabled() ? PLAYER_SPEED_MAX : 1.0;
 	return sd_bus_message_append_basic(reply, 'd', &d);
+}
+
+static int mpris_set_rate(sd_bus *_bus, const char *_path,
+		const char *_interface, const char *_property,
+		sd_bus_message *value, void *_userdata, sd_bus_error *error)
+{
+	double speed;
+
+	CK(sd_bus_message_read_basic(value, 'd', &speed));
+	if (player_set_speed(speed))
+		return sd_bus_error_set_const(error, SD_BUS_ERROR_INVALID_ARGS,
+			"Unsupported playback speed");
+	return 1;
 }
 
 static int mpris_shuffle(sd_bus *_bus, const char *_path,
@@ -545,7 +564,7 @@ static const sd_bus_vtable media_player2_player_vt[] = {
 	SD_BUS_METHOD("OpenUri", "s", "", mpris_play_file, 0),
 	MPRIS_PROP("PlaybackStatus", "s", mpris_playback_status),
 	MPRIS_WPROP("LoopStatus", "s", mpris_loop_status, mpris_set_loop_status),
-	MPRIS_WPROP("Rate", "d", mpris_rate, mpris_write_ignore),
+	MPRIS_WPROP("Rate", "d", mpris_rate, mpris_set_rate),
 	MPRIS_WPROP("Shuffle", "b", mpris_shuffle, mpris_set_shuffle),
 	MPRIS_WPROP("Volume", "d", mpris_volume, mpris_set_volume),
 	SD_BUS_PROPERTY("Position", "x", mpris_position, 0, 0),
@@ -633,6 +652,11 @@ void mpris_loop_status_changed(void)
 void mpris_shuffle_changed(void)
 {
 	mpris_player_property_changed("Shuffle");
+}
+
+void mpris_rate_changed(void)
+{
+	mpris_player_property_changed("Rate");
 }
 
 void mpris_volume_changed(void)

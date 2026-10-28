@@ -52,6 +52,8 @@
 #include "mpris.h"
 #include "locking.h"
 #include "pl_env.h"
+#include "lyrics.h"
+#include "cover.h"
 #ifdef HAVE_CONFIG
 #include "config/curses.h"
 #include "config/iconv.h"
@@ -75,6 +77,7 @@
 #include <stdarg.h>
 #include <math.h>
 #include <sys/time.h>
+#include <termios.h>
 
 #if defined(__sun__) || defined(__CYGWIN__)
 /* TIOCGWINSZ */
@@ -109,6 +112,321 @@ static char *lib_autosave_filename;
 static char *play_queue_autosave_filename;
 
 static GBUF(print_buffer);
+
+/*
+ * Lyrics view state. Everything here is used by the main thread only;
+ * the worker thread just receives a filename and a generation number and
+ * hands back a struct lyrics through lyrics_loaded().
+ *
+ * lyrics_generation is bumped whenever the shown lyrics become invalid
+ * (track change, :lyrics-reload, exit). A result that arrives with an
+ * older generation belongs to a track that is no longer playing and is
+ * thrown away, so a slow read can never show the wrong lyrics.
+ */
+static struct lyrics *current_lyrics;
+static unsigned int lyrics_generation;
+/* requested: a job was queued for this generation; loading: no result yet */
+static int lyrics_requested, lyrics_loading;
+/* something changed that the line/scroll checks below cannot see */
+static int lyrics_dirty;
+/* :lyrics-offset, positive = later; kept until cmus exits */
+static int lyrics_delay_ms;
+/* what the last redraw showed, to redraw only when it would change */
+static int lyrics_last_line = -1, lyrics_last_first;
+
+/*
+ * Load lyrics for the playing track, once per generation. Called when the
+ * view is shown and on every update while it is shown, so lyrics are read
+ * lazily: nothing is read for users who never open the view.
+ */
+static void request_lyrics(void)
+{
+	if (lyrics_requested || !player_info.ti || is_url(player_info.ti->filename))
+		return;
+	lyrics_requested = lyrics_loading = 1;
+	job_schedule_lyrics(player_info.ti->filename, lyrics_generation);
+}
+
+/* Forget the current lyrics; any job still running becomes stale. */
+static void reset_lyrics(void)
+{
+	lyrics_generation++;
+	lyrics_free(current_lyrics);
+	current_lyrics = NULL;
+	lyrics_requested = lyrics_loading = 0;
+	lyrics_dirty = 1;
+	lyrics_last_line = -1;
+}
+
+/* Called by job_handle() on the main thread with a finished job's result. */
+void lyrics_loaded(unsigned int generation, struct lyrics *lyrics)
+{
+	if (generation != lyrics_generation) {
+		lyrics_free(lyrics);
+		return;
+	}
+	lyrics_free(current_lyrics);
+	current_lyrics = lyrics;
+	lyrics_loading = 0;
+	lyrics_dirty = 1;
+}
+
+/* :lyrics-reload, e.g. after editing the .lrc file or the tags */
+void lyrics_reload(void)
+{
+	reset_lyrics();
+	if (cur_view == LYRICS_VIEW)
+		request_lyrics();
+	update_full();
+}
+
+/* :lyrics-offset */
+void lyrics_delay(int milliseconds)
+{
+	lyrics_delay_ms = milliseconds;
+	lyrics_dirty = 1;
+	update_full();
+}
+
+/* Index of the highlighted line, or -1. */
+static int current_lyric_line(void)
+{
+	if (player_info.status == PLAYER_STATUS_STOPPED)
+		return -1;
+	return lyrics_find(current_lyrics, player_info.pos_ms, lyrics_delay_ms);
+}
+
+static int lyrics_first_row(int active, int rows);
+
+/*
+ * update() runs several times a second; redrawing the whole view each time
+ * would make the terminal flicker over slow links. Redraw only when the
+ * highlighted line or, for untimed lyrics, the scroll position changes.
+ */
+static int lyrics_need_redraw(void)
+{
+	int rows = LINES - 4;
+
+	if (lyrics_dirty || current_lyric_line() != lyrics_last_line)
+		return 1;
+	/* untimed lyrics scroll with the song */
+	return current_lyrics && current_lyrics->unsynchronized && rows > 0 &&
+		lyrics_first_row(-1, rows) != lyrics_last_first;
+}
+
+/*
+ * Cover view state, main thread only, like the lyrics: the worker thread
+ * gets a filename, a size and a generation, and hands back a struct
+ * cover through cover_loaded().
+ *
+ * The picture is not curses text: it is written to the terminal after
+ * curses has drawn the (blank) view, and curses doesn't know it is there.
+ * cover_on_screen says it is; whenever something else must appear in its
+ * place (another view, another picture, a resize), the whole screen is
+ * redrawn with clearok(), which erases it.
+ */
+static struct cover *current_cover;
+static unsigned int cover_generation;
+static int cover_requested, cover_loading, cover_dirty, cover_on_screen;
+/* what the terminal said when cmus started: sixel support, cell size in pixels */
+static int term_has_sixel, term_cell_width, term_cell_height;
+
+/*
+ * Ask the terminal, before curses starts, whether it draws sixel graphics
+ * (the 4 in its device attributes) and how big a character cell is in
+ * pixels (CSI 16 t). The attributes are always answered, and answered
+ * last, so their reply ends the wait; a terminal that answers nothing
+ * costs at most half a second.
+ */
+static void probe_terminal(void)
+{
+	struct termios saved, raw;
+	char reply[512];
+	size_t used = 0;
+	struct timeval start, now;
+	const char *p;
+
+	if (!isatty(0) || !isatty(1) || tcgetattr(0, &saved))
+		return;
+	raw = saved;
+	raw.c_lflag &= ~(ICANON | ECHO);
+	raw.c_cc[VMIN] = 0;
+	raw.c_cc[VTIME] = 0;
+	if (tcsetattr(0, TCSANOW, &raw))
+		return;
+	if (write(1, "[16t[c", 9) != 9)
+		goto out;
+	gettimeofday(&start, NULL);
+	for (;;) {
+		fd_set set;
+		struct timeval wait = { 0, 50000 };
+		long elapsed;
+
+		reply[used] = 0;
+		/* the attributes' reply: ESC [ ? ... c */
+		if ((p = strstr(reply, "[?")) && strchr(p, 'c'))
+			break;
+		gettimeofday(&now, NULL);
+		elapsed = (now.tv_sec - start.tv_sec) * 1000 + (now.tv_usec - start.tv_usec) / 1000;
+		if (elapsed > 500 || used + 1 >= sizeof(reply))
+			break;
+		FD_ZERO(&set);
+		FD_SET(0, &set);
+		if (select(1, &set, NULL, NULL, &wait) > 0) {
+			ssize_t n = read(0, reply + used, sizeof(reply) - 1 - used);
+			if (n > 0)
+				used += n;
+		}
+	}
+	reply[used] = 0;
+	if ((p = strstr(reply, "[6;"))) {
+		int h, w;
+		if (sscanf(p + 4, "%d;%dt", &h, &w) == 2 && h > 0 && w > 0) {
+			term_cell_width = w;
+			term_cell_height = h;
+		}
+	}
+	if ((p = strstr(reply, "[?"))) {
+		/* parameters separated by ';' up to the 'c': is one of them 4? */
+		for (p += 3; *p && *p != 'c'; ) {
+			char *end;
+			long v = strtol(p, &end, 10);
+			if (end == p)
+				break;
+			if (v == 4 && (*end == ';' || *end == 'c'))
+				term_has_sixel = 1;
+			p = *end == ';' ? end + 1 : end;
+		}
+	}
+	d_print("terminal: sixel %d, cell %dx%d\n", term_has_sixel, term_cell_width, term_cell_height);
+out:
+	tcsetattr(0, TCSANOW, &saved);
+}
+
+/* the cell size in pixels: from the kernel if the terminal tells it, else probed, else a guess */
+static void cell_size(int *width, int *height)
+{
+	struct winsize ws;
+
+	if (!ioctl(1, TIOCGWINSZ, &ws) && ws.ws_xpixel && ws.ws_ypixel && ws.ws_col && ws.ws_row) {
+		*width = ws.ws_xpixel / ws.ws_col;
+		*height = ws.ws_ypixel / ws.ws_row;
+	} else if (term_cell_width) {
+		*width = term_cell_width;
+		*height = term_cell_height;
+	} else {
+		*width = 10;
+		*height = 20;
+	}
+}
+
+static enum cover_mode chosen_cover_mode(void)
+{
+	const char *colorterm = getenv("COLORTERM");
+
+	if (cover_display == COVER_DISPLAY_SIXEL ||
+			(cover_display == COVER_DISPLAY_AUTO && term_has_sixel))
+		return COVER_SIXEL;
+	if (!using_utf8)
+		return COVER_SPACES_256;
+	if (colorterm && (strstr(colorterm, "truecolor") || strstr(colorterm, "24bit")))
+		return COVER_BLOCKS_TRUECOLOR;
+	return COVER_BLOCKS_256;
+}
+
+/* the cells the picture may use: below the heading, not the last column */
+static void cover_area(int *cols, int *rows)
+{
+	*cols = COLS - 1;
+	*rows = LINES - 4;
+}
+
+/* Load the playing track's cover, once per generation, only while the view is shown. */
+static void request_cover(void)
+{
+	int cols, rows, cw, ch;
+
+	if (cover_requested || !player_info.ti || is_url(player_info.ti->filename))
+		return;
+	cover_area(&cols, &rows);
+	if (cols < 1 || rows < 1)
+		return;
+	cell_size(&cw, &ch);
+	cover_requested = cover_loading = 1;
+	job_schedule_cover(player_info.ti->filename, cover_generation, chosen_cover_mode(),
+			cols, rows, cw, ch);
+}
+
+/* Forget the picture; any job still running becomes stale. */
+static void reset_cover(void)
+{
+	cover_generation++;
+	cover_free(current_cover);
+	current_cover = NULL;
+	cover_requested = cover_loading = 0;
+	cover_dirty = 1;
+	if (cover_on_screen) {
+		/* the next refresh redraws everything, erasing the old picture */
+		clearok(curscr, TRUE);
+		cover_on_screen = 0;
+	}
+}
+
+void cover_loaded(unsigned int generation, struct cover *cover)
+{
+	if (generation != cover_generation) {
+		cover_free(cover);
+		return;
+	}
+	cover_free(current_cover);
+	current_cover = cover;
+	cover_loading = 0;
+	cover_dirty = 1;
+}
+
+/* :cover-reload, and changing cover_display */
+void cover_reload(void)
+{
+	reset_cover();
+	if (cur_view == COVER_VIEW)
+		request_cover();
+	update_full();
+}
+
+/*
+ * Write the picture into the view, centred, after curses has drawn the
+ * screen. The cursor and attributes are saved and restored around it, so
+ * curses's idea of the terminal stays right.
+ */
+static void paint_cover(void)
+{
+	int cols, rows, col, row;
+	char move[48];
+
+	if (cur_view != COVER_VIEW || cover_on_screen || !current_cover ||
+			current_cover->error || !current_cover->data)
+		return;
+	cover_area(&cols, &rows);
+	col = (cols - current_cover->cols) / 2;
+	row = 1 + (rows - current_cover->rows) / 2;
+	if (col < 0)
+		col = 0;
+	if (row < 1)
+		row = 1;
+	snprintf(move, sizeof(move), "\0337\033[%d;%dH", row + 1, col + 1);
+	fflush(stdout);
+	fputs(move, stdout);
+	fwrite(current_cover->data, 1, current_cover->size, stdout);
+	fputs("\0338", stdout);
+	fflush(stdout);
+	cover_on_screen = 1;
+}
+
+/* curses cleared the terminal (resize, :refresh): the picture is gone */
+void cover_screen_cleared(void)
+{
+	cover_on_screen = 0;
+}
 
 /* destination buffer for utf8_encode_to_buf and utf8_decode */
 static char conv_buffer[4096];
@@ -1170,6 +1488,140 @@ static void update_pl_view(int full)
 	pl_draw(update_pl_list, update_pl_tracks, full);
 }
 
+/*
+ * Index of the first line on screen, given the active line and the number
+ * of rows available. Timed lyrics keep the active line in the middle.
+ * Untimed lyrics scroll in proportion to the playback position, so the
+ * end of the text is reached when the song ends. Never scrolls past the
+ * last line.
+ */
+static int lyrics_first_row(int active, int rows)
+{
+	int count = current_lyrics->count, first;
+
+	if (count <= rows)
+		return 0;
+	if (current_lyrics->unsynchronized) {
+		int duration = player_info.ti ? player_info.ti->duration : 0;
+		if (duration <= 0)
+			return 0;
+		first = (int64_t)(count - rows) * player_info.pos_ms / (duration * 1000LL);
+	} else {
+		first = active > rows / 2 ? active - rows / 2 : 0;
+	}
+	return first + rows > count ? count - rows : first;
+}
+
+/*
+ * Draw the view: a heading row, then the lyrics or a message saying why
+ * there are none. Every row is written, padded to the window width, so no
+ * text from the previous view or line survives.
+ */
+static void update_lyrics_window(void)
+{
+	int active = current_lyric_line();
+	/* the same rows the other views use: title, status and command lines are not ours */
+	int rows = LINES - 4;
+	int first;
+	char heading[96];
+	const char *message = NULL;
+
+	if (win_w < 3 || rows < 1)
+		return;
+	snprintf(heading, sizeof(heading), "Lyrics%s (delay %+d ms; :lyrics-reload)",
+		current_lyrics && current_lyrics->unsynchronized ? ", not timed" : "",
+		lyrics_delay_ms);
+	if (!player_info.ti)
+		message = "Nothing is playing.";
+	else if (is_url(player_info.ti->filename))
+		message = "No lyrics for streams.";
+	else if (lyrics_loading)
+		message = "Loading lyrics...";
+	else if (!current_lyrics)
+		message = "No lyrics: no .lrc file beside the track and no lyrics tag.";
+	else if (current_lyrics->error)
+		message = strerror(current_lyrics->error);
+	else if (!current_lyrics->count)
+		message = "The .lrc file has no timed lines.";
+	first = message ? 0 : lyrics_first_row(active, rows);
+
+	bkgdset(pairs[CURSED_WIN_TITLE]);
+	sprint(0, 0, heading, win_w);
+	for (int row = 0; row < rows; row++) {
+		int index = first + row;
+		const char *text = "";
+		int highlight = 0;
+
+		if (message) {
+			if (!row)
+				text = message;
+		} else if (index < (int)current_lyrics->count) {
+			text = current_lyrics->lines[index].text;
+			/* highlight the whole group of lines that share the active time */
+			highlight = active >= 0 &&
+				current_lyrics->lines[index].time_ms == current_lyrics->lines[active].time_ms;
+		}
+		bkgdset(pairs[highlight ? CURSED_WIN_CUR : CURSED_WIN]);
+		sprint(row + 1, 0, text, win_w);
+	}
+	lyrics_last_line = active;
+	lyrics_last_first = first;
+	lyrics_dirty = 0;
+}
+
+/*
+ * The cover view's text: a heading and blank rows, or a message. The
+ * picture itself is drawn by paint_cover() after the refresh.
+ */
+static void update_cover_window(int full)
+{
+	int rows = LINES - 4;
+	char heading[256];
+	const char *message = NULL;
+	const char *how;
+
+	if (win_w < 3 || rows < 1)
+		return;
+	switch (chosen_cover_mode()) {
+	case COVER_SIXEL:
+		how = "sixel";
+		break;
+	case COVER_BLOCKS_TRUECOLOR:
+	case COVER_BLOCKS_256:
+		how = "blocks";
+		break;
+	default:
+		how = "colour cells";
+		break;
+	}
+	if (current_cover && !current_cover->error)
+		snprintf(heading, sizeof(heading), "Cover: %s, %dx%d (%s; :cover-reload)",
+				current_cover->source ? current_cover->source : "?",
+				current_cover->width, current_cover->height, how);
+	else
+		snprintf(heading, sizeof(heading), "Cover (%s; :cover-reload)", how);
+	if (!player_info.ti)
+		message = "Nothing is playing.";
+	else if (is_url(player_info.ti->filename))
+		message = "No cover for streams.";
+	else if (cover_loading || !current_cover)
+		message = "Loading the cover...";
+	else if (current_cover->error == ENOENT)
+		message = "No cover: no picture beside the track (cover.jpg, folder.png...) and none in its tags.";
+	else if (current_cover->error)
+		message = "The cover can't be read.";
+
+	bkgdset(pairs[CURSED_WIN_TITLE]);
+	sprint(0, 0, heading, win_w);
+	bkgdset(pairs[CURSED_WIN]);
+	for (int row = 0; row < rows; row++)
+		sprint(row + 1, 0, message && !row ? message : "", win_w);
+	/* a full redraw (or a clear) wiped the picture: paint it again */
+	if (full)
+		cover_on_screen = 0;
+	cover_dirty = 0;
+}
+
 static void do_update_view(int full)
 {
 	if (!ui_initialized)
@@ -1205,6 +1657,12 @@ static void do_update_view(int full)
 		break;
 	case HELP_VIEW:
 		update_help_window();
+		break;
+	case LYRICS_VIEW:
+		update_lyrics_window();
+		break;
+	case COVER_VIEW:
+		update_cover_window(full);
 		break;
 	}
 }
@@ -1448,6 +1906,7 @@ static void post_update(void)
 			curs_set(0);
 		}
 	}
+	paint_cover();
 }
 
 static const char *get_stream_title_locked(void)
@@ -1688,7 +2147,21 @@ void set_view(int view)
 
 	prev_view = cur_view;
 	cur_view = view;
+	/* leaving the cover: redraw everything, so the picture goes */
+	if (cover_on_screen) {
+		clearok(curscr, TRUE);
+		cover_on_screen = 0;
+	}
 	switch (cur_view) {
+	case COVER_VIEW:
+		searchable = NULL;
+		request_cover();
+		break;
+	case LYRICS_VIEW:
+		/* nothing to search; search() and search_text() check for NULL */
+		searchable = NULL;
+		request_lyrics();
+		break;
 	case TREE_VIEW:
 		searchable = tree_searchable;
 		break;
@@ -1953,8 +2426,15 @@ static void update_window_size(void)
 		window_set_nr_rows(filters_win, h - 1);
 		window_set_nr_rows(help_win, h - 1);
 		window_set_nr_rows(browser_win, h - 1);
+		/* the picture was made for the old size */
+		if (current_cover || cover_requested) {
+			reset_cover();
+			if (cur_view == COVER_VIEW)
+				request_cover();
+		}
 	}
 	clearok(curscr, TRUE);
+	cover_on_screen = 0;
 	refresh();
 }
 
@@ -1966,6 +2446,21 @@ static void update(void)
 	int needs_status_update = 0;
 	int needs_command_update = 0;
 	int needs_spawn = 0;
+
+	/* new track: drop the old lyrics and cover even if the view is hidden */
+	if (player_info.file_changed) {
+		reset_lyrics();
+		reset_cover();
+	}
+	if (cur_view == COVER_VIEW) {
+		request_cover();
+		needs_view_update = needs_to_resize || cover_dirty;
+	}
+	if (cur_view == LYRICS_VIEW) {
+		request_lyrics();
+		needs_view_update = needs_to_resize || player_info.status_changed ||
+			lyrics_need_redraw();
+	}
 
 	if (first_update) {
 		needs_title_update = 1;
@@ -1982,6 +2477,8 @@ static void update(void)
 
 	if (player_info.status_changed)
 		mpris_playback_status_changed();
+	if (player_info.speed_changed)
+		mpris_rate_changed();
 
 	if (player_info.file_changed || player_info.metadata_changed)
 		mpris_metadata_changed();
@@ -2390,6 +2887,7 @@ static void init_curses(void)
 	act.sa_handler = sig_winch;
 	sigaction(SIGWINCH, &act, NULL);
 
+	probe_terminal();
 	initscr();
 	nodelay(stdscr, TRUE);
 	keypad(stdscr, TRUE);
@@ -2538,6 +3036,10 @@ static void exit_all(void)
 
 	server_exit();
 	cmus_exit();
+	/* free the lyrics now, so leak checkers only report real leaks */
+	reset_lyrics();
+	cover_free(current_cover);
+	current_cover = NULL;
 	if (resume_cmus)
 		cmus_save(play_queue_for_each, play_queue_autosave_filename,
 				NULL);

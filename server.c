@@ -89,6 +89,7 @@ static int cmd_status(struct client *client)
 	enum player_status status;
 
 	gbuf_addf(&buf, "status %s\n", player_status_names[player_info.status]);
+	gbuf_addf(&buf, "speed %.6f\n", player_get_speed());
 	ti = player_info.ti;
 	if (ti) {
 		gbuf_addf(&buf, "file %s\n", escape(ti->filename));

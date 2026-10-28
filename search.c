@@ -131,6 +131,8 @@ int search(struct searchable *s, const char *text, enum search_direction dir, in
 	struct iter iter;
 	int ret;
 
+	if (!s)
+		return 0;
 	if (beginning) {
 		/* first or last item */
 		iter = s->head;
@@ -153,7 +155,7 @@ int search_next(struct searchable *s, const char *text, enum search_direction di
 	struct iter iter;
 	int ret;
 
-	if (!s->ops.get_current(s->data, &iter, dir)) {
+	if (!s || !s->ops.get_current(s->data, &iter, dir)) {
 		return 0;
 	}
 	ret = do_search(s, &iter, text, dir, 1);
