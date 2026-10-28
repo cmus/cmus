@@ -57,6 +57,7 @@ struct player_info {
 
 	/* status */
 	enum player_status status;
+	double speed;
 	int pos;
 	int64_t pos_ms; /* consumed audio position; output-device latency is not included */
 	/* exact seek position, valid if position_seeked is set */
@@ -72,6 +73,7 @@ struct player_info {
 	unsigned int file_changed : 1;
 	unsigned int metadata_changed : 1;
 	unsigned int status_changed : 1;
+	unsigned int speed_changed : 1;
 	unsigned int position_changed : 1;
 	unsigned int position_seeked : 1;
 	unsigned int buffer_fill_changed : 1;
@@ -110,6 +112,9 @@ void player_set_op(const char *name);
 void player_set_buffer_chunks(unsigned int nr_chunks);
 int player_get_buffer_chunks(void);
 void player_info_snapshot(void);
+
+double player_get_speed(void);
+int player_set_speed(double speed);
 
 void player_set_soft_volume(int l, int r);
 void player_set_soft_vol(int soft);

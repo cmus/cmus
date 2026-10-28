@@ -17,9 +17,12 @@
         version = "git";
         src = pkgs.lib.cleanSource ./.; # without result links and .git
 
-        # the parser and reader tests of the lyrics and cover views
+        buildInputs = (old.buildInputs or [ ]) ++ [ pkgs.rubberband ];
+        configureFlags = (old.configureFlags or [ ]) ++ [ "CONFIG_RUBBERBAND=y" ];
+
+        # The parsers and playback-speed processor.
         doCheck = true;
-        checkTarget = "check-lyrics check-cover";
+        checkTarget = "check-lyrics check-cover check-tempo";
       });
     in
     {
@@ -32,8 +35,10 @@
         cmus = prev.cmus.overrideAttrs (old: {
           version = "git";
           src = final.lib.cleanSource ./.;
+          buildInputs = (old.buildInputs or [ ]) ++ [ final.rubberband ];
+          configureFlags = (old.configureFlags or [ ]) ++ [ "CONFIG_RUBBERBAND=y" ];
           doCheck = true;
-          checkTarget = "check-lyrics check-cover";
+          checkTarget = "check-lyrics check-cover check-tempo";
         });
       };
 

@@ -369,6 +369,12 @@ check_jack()
 	return $?
 }
 
+check_rubberband()
+{
+	pkg_config RUBBERBAND "rubberband >= 3.0"
+	return $?
+}
+
 check_samplerate()
 {
 	pkg_config SAMPLERATE "samplerate" && HAVE_SAMPLERATE=y
@@ -597,6 +603,7 @@ Optional Features: y/n
   CONFIG_OSS            Open Sound System                               [auto]
   CONFIG_PULSE          native PulseAudio output                        [auto]
   CONFIG_ROAR           native RoarAudio output                         [auto]
+  CONFIG_RUBBERBAND     Pitch-preserving playback speed                [auto]
   CONFIG_SAMPLERATE     Use libsamplerate to resample to JACK's rate    [auto]
   CONFIG_SNDIO          Sndio                                           [auto]
   CONFIG_SUN            Sun Audio                                       [auto]
@@ -670,6 +677,7 @@ check true             CONFIG_CUE
 check check_pulse      CONFIG_PULSE
 check check_alsa       CONFIG_ALSA
 check check_jack       CONFIG_JACK
+check check_rubberband CONFIG_RUBBERBAND
 check check_samplerate CONFIG_SAMPLERATE
 check check_ao         CONFIG_AO
 check check_coreaudio  CONFIG_COREAUDIO
@@ -709,6 +717,7 @@ config_header config/ffmpeg.h HAVE_FFMPEG_AVCODEC_H USE_FALLBACK_IP
 config_header config/utils.h HAVE_BYTESWAP_H
 config_header config/iconv.h HAVE_ICONV
 config_header config/wcwidth.h HAVE_WCWIDTH
+config_header config/rubberband.h CONFIG_RUBBERBAND
 config_header config/samplerate.h HAVE_SAMPLERATE
 config_header config/xmalloc.h HAVE_STRDUP HAVE_STRNDUP
 
@@ -720,7 +729,7 @@ makefile_vars \
 	CONFIG_COREAUDIO CONFIG_CUE CONFIG_FFMPEG CONFIG_FLAC CONFIG_JACK \
 	CONFIG_MAD CONFIG_MIKMOD CONFIG_MODPLUG CONFIG_MP4 CONFIG_MPC \
 	CONFIG_MPRIS CONFIG_OPUS CONFIG_OSS CONFIG_PULSE CONFIG_ROAR \
-	CONFIG_SAMPLERATE CONFIG_SNDIO CONFIG_SUN CONFIG_VORBIS CONFIG_VTX \
+	CONFIG_RUBBERBAND CONFIG_SAMPLERATE CONFIG_SNDIO CONFIG_SUN CONFIG_VORBIS CONFIG_VTX \
 	CONFIG_WAV CONFIG_WAVEOUT CONFIG_WAVPACK CONFIG_BASS CONFIG_AAUDIO
 
 generate_config_mk

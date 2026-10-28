@@ -13,7 +13,7 @@ VERSION	= $(or $(_ver0),$(_ver1),$(_ver2),$(_ver3))
 
 all: main plugins man
 
-.PHONY: check-lyrics check-cover
+.PHONY: check-lyrics check-cover check-tempo check-player-speed
 check-lyrics:
 	$(CC) $(CFLAGS) -I. -o tests/lyrics-test tests/lyrics.c lyrics.c
 	./tests/lyrics-test
@@ -24,19 +24,25 @@ check-cover:
 	./tests/cover-test
 	rm -f tests/cover-test
 
+check-tempo:
+	$(CC) $(CFLAGS) $(RUBBERBAND_CFLAGS) -I. -o tests/tempo-test tests/tempo.c tempo.c $(LDFLAGS) $(RUBBERBAND_LIBS) -lm
+	./tests/tempo-test
+	rm -f tests/tempo-test
+
 -include config.mk
 include scripts/lib.mk
 
 CFLAGS += -D_FILE_OFFSET_BITS=64
 
 CMUS_LIBS = $(PTHREAD_LIBS) $(NCURSES_LIBS) $(ICONV_LIBS) $(DL_LIBS) $(DISCID_LIBS) \
-			-lm $(COMPAT_LIBS) $(LIBSYSTEMD_LIBS)
+			-lm $(COMPAT_LIBS) $(LIBSYSTEMD_LIBS) $(RUBBERBAND_LIBS)
 
 command_mode.o input.o main.o ui_curses.o op/pulse.lo: .version
 command_mode.o input.o main.o ui_curses.o op/pulse.lo: CFLAGS += -DVERSION=\"$(VERSION)\"
 main.o server.o: CFLAGS += -DDEFAULT_PORT=3000
 discid.o: CFLAGS += $(DISCID_CFLAGS)
 mpris.o: CFLAGS += $(LIBSYSTEMD_CFLAGS)
+tempo.o: CFLAGS += $(RUBBERBAND_CFLAGS)
 
 .version: Makefile
 	@test "`cat $@ 2> /dev/null`" = "$(VERSION)" && exit 0; \
@@ -48,7 +54,7 @@ cmus-y := \
 	comment.o convert.lo cue.o cue_utils.o debug.o discid.o editable.o expr.o \
 	filters.o format_print.o gbuf.o glob.o help.o history.o http.o id3.o input.o \
 	job.o keys.o keyval.o lib.o load_dir.o locking.o mergesort.o misc.o options.o \
-	lyrics.o cover.o output.o pcm.o player.o play_queue.o pl.o pl_env.o rbtree.o read_wrapper.o \
+	lyrics.o cover.o output.o pcm.o tempo.o player.o play_queue.o pl.o pl_env.o rbtree.o read_wrapper.o \
 	search_mode.o search.o server.o spawn.o tabexp_file.o tabexp.o track_info.o \
 	track.o tree.o uchar.o u_collate.o ui_curses.o window.o worker.o xstrjoin.o
 
@@ -58,6 +64,18 @@ $(cmus-y): CFLAGS += $(PTHREAD_CFLAGS) $(NCURSES_CFLAGS) $(ICONV_CFLAGS) $(DL_CF
 
 cmus: $(cmus-y) file.o path.o prog.o xmalloc.o
 	$(call cmd,ld,$(CMUS_LIBS))
+
+tests/speed-server.o: CFLAGS += -DDEFAULT_PORT=3000 $(NCURSES_CFLAGS)
+
+tests/cmus-speed-test: $(filter-out server.o,$(cmus-y)) tests/speed-server.o file.o path.o prog.o xmalloc.o
+	$(call cmd,ld,$(CMUS_LIBS))
+
+check-player-speed: tests/cmus-speed-test ip/wav.so
+	mkdir -p tests/plugins/ip tests/plugins/op
+	cp ip/wav.so tests/plugins/ip/
+	$(CC) $(CFLAGS) $(SOFLAGS) -I. -shared -o tests/plugins/op/speedtest.so tests/speed-output.c
+	CMUS_TEST_NO_TEMPO=$(if $(filter y,$(CONFIG_RUBBERBAND)),0,1) python3 tests/player-speed.py
+	rm -rf tests/plugins tests/cmus-speed-test tests/speed-server.o
 
 cmus-remote: main.o file.o misc.o path.o prog.o xmalloc.o xstrjoin.o
 	$(call cmd,ld,$(COMPAT_LIBS))
@@ -278,7 +296,7 @@ quiet_cmd_ttman = MAN    $@
 
 data		= $(wildcard data/*)
 
-clean		+= *.o ip/*.lo op/*.lo ip/*.so op/*.so *.lo cmus libcmus.a cmus.def cmus.base cmus.exp cmus-remote Doc/*.o Doc/ttman Doc/*.1 Doc/*.7 .install.log
+clean		+= tests/*-test tests/speed-server.o tests/plugins/ip/*.so tests/plugins/op/*.so *.o ip/*.lo op/*.lo ip/*.so op/*.so *.lo cmus libcmus.a cmus.def cmus.base cmus.exp cmus-remote Doc/*.o Doc/ttman Doc/*.1 Doc/*.7 .install.log
 distclean	+= .version config.mk config/*.h tags
 
 main: cmus cmus-remote

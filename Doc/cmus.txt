@@ -706,6 +706,23 @@ showbind <context> <key>
 source <filename>
 	Reads and executes commands from <filename>.
 
+speed [[\*/+-]<number>] (*[*, *]*, *backspace*)
+	Changes playback speed while preserving pitch. A number sets the absolute
+	speed (1 is normal); \* and / multiply or divide it, and + and - add or
+	subtract. With no argument, displays the current speed.
+
+	The range is 0.25 to 4.0. Relative adjustments stop at these limits.
+	*[* runs *speed /1.1*, *]* runs *speed \*1.1*, and *backspace* resets to
+	1.0. In the file browser, backspace retains its browser-up binding;
+	use *:speed 1* there. Speed is retained across tracks, but resets on exit.
+
+	Requires Rubber Band 3.0 or newer at build time (CONFIG_RUBBERBAND).
+	Supports PCM with 8, 16, 24 or 32 bits, 1-32 channels and sample rates
+	from 8000 to 192000 Hz. At normal speed, the original audio path is used.
+
+	Existing default [ and ] volume bindings are migrated automatically.
+	Custom bindings and overrides in the user's rc file are preserved.
+
 toggle <option>
 	Toggles the value of a toggle-able option (all booleans and the options
 	*shuffle*, *aaa_mode*, and *replaygain*).

@@ -1885,6 +1885,25 @@ int source_file(const char *filename)
 	return file_for_each_line(filename, handle_line, NULL);
 }
 
+/* Upgrade only the former defaults, leaving custom bindings alone. */
+static void migrate_speed_bindings(void)
+{
+	struct binding *b, *next;
+	int has_reset = 0;
+
+	for (b = key_bindings[CTX_COMMON]; b; b = next) {
+		next = b->next;
+		if (!strcmp(b->key->name, "backspace"))
+			has_reset = 1;
+		if (!strcmp(b->key->name, "[") && !strcmp(b->cmd, "vol +1% +0"))
+			key_bind("common", "[", "speed /1.1", 1);
+		else if (!strcmp(b->key->name, "]") && !strcmp(b->cmd, "vol +0 +1%"))
+			key_bind("common", "]", "speed *1.1", 1);
+	}
+	if (!has_reset)
+		key_bind("common", "backspace", "speed 1", 1);
+}
+
 void options_load(void)
 {
 	char filename[512];
@@ -1921,6 +1940,8 @@ void options_load(void)
 		option_set(str_defaults[FMT_TRACKWIN].name, str_defaults[FMT_TRACKWIN].value);
 		option_set(str_defaults[FMT_TRACKWIN_VA].name, str_defaults[FMT_TRACKWIN_VA].value);
 	}
+
+	migrate_speed_bindings();
 
 	/* load optional static config */
 	snprintf(filename, sizeof(filename), "%s/rc", cmus_config_dir);

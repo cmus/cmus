@@ -27,6 +27,7 @@
 #include "browser.h"
 #include "filters.h"
 #include "player.h"
+#include "tempo.h"
 #include "output.h"
 #include "editable.h"
 #include "lib.h"
@@ -50,6 +51,7 @@
 #include "job.h"
 
 #include <stdlib.h>
+#include <math.h>
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/wait.h>
@@ -492,6 +494,55 @@ static int get_number(char *str, char **end)
 	}
 	*end = str;
 	return val;
+}
+
+static void cmd_speed(char *arg)
+{
+	double speed = player_get_speed(), value;
+	char *end;
+	char op = 0;
+
+	if (!arg) {
+		info_msg("Playback speed: %.2fx", speed);
+		return;
+	}
+	if (*arg == '*' || *arg == '/' || *arg == '+' || *arg == '-')
+		op = *arg++;
+	value = strtod(arg, &end);
+	if (end == arg || *end || !isfinite(value) || value < 0 ||
+		((op == '/' || op == '*') && value == 0)) {
+		error_msg("expected speed [*/+-]NUMBER (0.25 to 4.0)");
+		return;
+	}
+	switch (op) {
+	case '*': speed *= value; break;
+	case '/': speed /= value; break;
+	case '+': speed += value; break;
+	case '-': speed -= value; break;
+	default: speed = value; break;
+	}
+	if (!isfinite(speed)) {
+		error_msg("invalid playback speed");
+		return;
+	}
+	/* Relative adjustments stop at the limits; absolute values must fit. */
+	if (op) {
+		if (speed < PLAYER_SPEED_MIN)
+			speed = PLAYER_SPEED_MIN;
+		if (speed > PLAYER_SPEED_MAX)
+			speed = PLAYER_SPEED_MAX;
+	}
+	if (fabs(speed - 1.0) < 0.000001)
+		speed = 1.0;
+	if (!tempo_enabled() && speed != 1.0) {
+		error_msg("playback speed requires a build with Rubber Band support");
+		return;
+	}
+	if (player_set_speed(speed)) {
+		error_msg("speed must be between 0.25 and 4.0");
+		return;
+	}
+	info_msg("Playback speed: %.2fx", speed);
 }
 
 static void cmd_seek(char *arg)
@@ -2711,6 +2762,7 @@ struct command commands[] = {
 	{ "showbind",              cmd_showbind,         1, 1,  expand_unbind_args,   0, 0          },
 	{ "shuffle",               cmd_reshuffle,        0, 0,  NULL,                 0, CMD_HIDDEN },
 	{ "source",                cmd_source,           1, 1,  expand_files,         0, CMD_UNSAFE },
+	{ "speed",                 cmd_speed,            0, 1,  NULL,                 0, 0          },
 	{ "toggle",                cmd_toggle,           1, 1,  expand_toptions,      0, 0          },
 	{ "tqueue",                cmd_tqueue,           0, 1,  NULL,                 0, 0          },
 	{ "unbind",                cmd_unbind,           1, 1,  expand_unbind_args,   0, 0          },

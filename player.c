@@ -18,6 +18,7 @@
 
 #include "player.h"
 #include "buffer.h"
+#include "tempo.h"
 #include "input.h"
 #include "output.h"
 #include "sf.h"
@@ -66,6 +67,7 @@ char player_metadata[255 * 16 + 1];
 static struct player_info player_info_priv = {
 	.ti = NULL,
 	.status = PLAYER_STATUS_STOPPED,
+	.speed = 1.0,
 	.pos = 0,
 	.seek_pos = 0.0,
 	.current_bitrate = -1,
@@ -112,7 +114,11 @@ static pthread_mutex_t consumer_mutex = CMUS_MUTEX_INITIALIZER;
 static pthread_cond_t consumer_playing = CMUS_COND_INITIALIZER;
 static int consumer_running = 1;
 static enum consumer_status consumer_status = CS_STOPPED;
+/* Source bytes fed to the tempo processor (or directly to the output). */
 static unsigned long consumer_pos = 0;
+/* Source position of audio actually written, excluding tempo lookahead. */
+static double consumer_played;
+static struct tempo *tempo;
 
 /* for replay gain and soft vol
  * usually same as consumer_pos, sometimes more than consumer_pos
@@ -149,6 +155,9 @@ static void reset_buffer(void)
 {
 	buffer_reset();
 	consumer_pos = 0;
+	consumer_played = 0;
+	tempo_free(tempo);
+	tempo = NULL;
 	scale_pos = 0;
 	pthread_cond_broadcast(&producer_playing);
 }
@@ -531,8 +540,7 @@ static void _producer_buffer_fill_update(void)
 
 /*
  * Position of the consumer (the audio written to the output) in
- * milliseconds. Computed from bytes so it doesn't drift; the two parts
- * avoid overflowing consumer_pos * 1000 on very long tracks.
+ * milliseconds, in the source track's timeline even at a different speed.
  */
 static int64_t consumer_position_ms(void)
 {
@@ -541,8 +549,7 @@ static int64_t consumer_position_ms(void)
 	unsigned int bytes_per_second = buffer_second_size();
 	if (!bytes_per_second)
 		return 0;
-	return (int64_t)(consumer_pos / bytes_per_second) * 1000 +
-		(consumer_pos % bytes_per_second) * 1000ULL / bytes_per_second;
+	return consumer_played * 1000.0 / bytes_per_second;
 }
 
 /*
@@ -583,7 +590,7 @@ static void _player_status_changed(void)
 
 /* 	d_print("\n"); */
 	if (consumer_status == CS_PLAYING || consumer_status == CS_PAUSED)
-		pos = consumer_pos / buffer_second_size();
+		pos = consumer_played / buffer_second_size();
 
 	player_info_priv_lock();
 	player_info_priv.status = (enum player_status)consumer_status;
@@ -916,11 +923,27 @@ static void *consumer_loop(void *arg)
 /* 		d_print("BS: %6d %3d\n", space, space * 1000 / (44100 * 2 * 2)); */
 
 		while (1) {
+			double speed = player_get_speed();
+
 			if (space == 0) {
 				_consumer_position_update(0, 0.0);
 				consumer_unlock();
 				ms_sleep(25);
 				break;
+			}
+			if (tempo) {
+				/* Drain a speed segment before starting the next one. This
+				 * preserves buffered audio and its source-time accounting. */
+				if (tempo_speed(tempo) != speed)
+					tempo_finish(tempo);
+				size = tempo_read(tempo, &rpos);
+				if (size)
+					goto write_output;
+				if (tempo_finished(tempo)) {
+					tempo_free(tempo);
+					tempo = NULL;
+					consumer_played = consumer_pos;
+				}
 			}
 			size = buffer_get_rpos(&rpos);
 			if (size == 0) {
@@ -935,7 +958,12 @@ static void *consumer_loop(void *arg)
 				if (size == 0) {
 					/* OK. now it's safe to check if we are at EOF */
 					if (ip_eof(ip)) {
-						/* EOF */
+						/* Flush the stretcher's tail before advancing tracks. */
+						if (tempo) {
+							tempo_finish(tempo);
+							producer_unlock();
+							continue;
+						}
 						_consumer_handle_eof();
 						producer_unlock();
 						consumer_unlock();
@@ -954,11 +982,34 @@ static void *consumer_loop(void *arg)
 				/* player_buffer and ip.eof were inconsistent */
 				producer_unlock();
 			}
-			if (size > space)
+			if (!tempo && speed != 1.0) {
+				tempo = tempo_new(buffer_sf, speed);
+				if (!tempo) {
+					player_set_speed(1.0);
+					player_error("cannot initialize playback speed; using normal speed");
+				}
+			}
+			if (tempo) {
+				int limit = TEMPO_BLOCK_FRAMES * sf_get_frame_size(buffer_sf);
+				if (size > limit)
+					size = limit;
+			} else if (size > space) {
 				size = space;
+			}
+			size -= size % sf_get_frame_size(buffer_sf);
 			if (soft_vol || replaygain)
 				scale_samples(rpos, (unsigned int *)&size);
-			rc = op_write(rpos, size);
+			if (tempo) {
+				tempo_write(tempo, rpos, size);
+				buffer_consume(size);
+				consumer_pos += size;
+				continue;
+			}
+write_output:
+			if (size > space)
+				size = space;
+			size -= size % sf_get_frame_size(buffer_sf);
+			rc = size ? op_write(rpos, size) : 0;
 			if (rc < 0) {
 				d_print("op_write returned %d %s\n", rc,
 						rc == -1 ? strerror(errno) : "");
@@ -971,8 +1022,22 @@ static void *consumer_loop(void *arg)
 				consumer_unlock();
 				break;
 			}
-			buffer_consume(rc);
-			consumer_pos += rc;
+			if (rc == 0) {
+				_consumer_position_update(0, 0.0);
+				consumer_unlock();
+				ms_sleep(10);
+				break;
+			}
+			if (tempo) {
+				tempo_consume(tempo, rc);
+				consumer_played += rc * tempo_speed(tempo);
+				if (consumer_played > consumer_pos)
+					consumer_played = consumer_pos;
+			} else {
+				buffer_consume(rc);
+				consumer_pos += rc;
+				consumer_played = consumer_pos;
+			}
 			space -= rc;
 		}
 	}
@@ -1269,7 +1334,7 @@ void player_seek(double offset, int relative, int start_playing)
 		double pos, duration, new_pos;
 		int rc;
 
-		pos = (double)consumer_pos / (double)buffer_second_size();
+		pos = consumer_played / buffer_second_size();
 		duration = ip_duration(ip);
 		if (duration < 0) {
 			/* can't seek */
@@ -1317,6 +1382,7 @@ void player_seek(double offset, int relative, int start_playing)
 			op_drop();
 			reset_buffer();
 			consumer_pos = new_pos * buffer_second_size();
+			consumer_played = consumer_pos;
 			scale_pos = consumer_pos;
 			_consumer_position_update(1, new_pos);
 			if (stopped && !start_playing) {
@@ -1411,6 +1477,32 @@ void player_set_buffer_chunks(unsigned int nr_chunks)
 int player_get_buffer_chunks(void)
 {
 	return buffer_nr_chunks;
+}
+
+double player_get_speed(void)
+{
+	double speed;
+
+	/* Never take consumer_mutex here: at EOF the consumer can be waiting
+	 * for the main thread to provide the next track. */
+	player_info_priv_lock();
+	speed = player_info_priv.speed;
+	player_info_priv_unlock();
+	return speed;
+}
+
+int player_set_speed(double speed)
+{
+	if (!isfinite(speed) || speed < PLAYER_SPEED_MIN || speed > PLAYER_SPEED_MAX ||
+		(speed != 1.0 && !tempo_enabled()))
+		return -1;
+	player_info_priv_lock();
+	if (player_info_priv.speed != speed) {
+		player_info_priv.speed = speed;
+		player_info_priv.speed_changed = 1;
+	}
+	player_info_priv_unlock();
+	return 0;
 }
 
 void player_set_soft_volume(int l, int r)
@@ -1513,6 +1605,7 @@ void player_info_snapshot(void)
 	player_info_priv.file_changed = 0;
 	player_info_priv.metadata_changed = 0;
 	player_info_priv.status_changed = 0;
+	player_info_priv.speed_changed = 0;
 	player_info_priv.position_changed = 0;
 	player_info_priv.position_seeked = 0;
 	player_info_priv.buffer_fill_changed = 0;

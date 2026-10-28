@@ -33,6 +33,21 @@ The packages containing dependencies on common distributions are listed below. A
 | **Homebrew**      | brew install pkg-config ncurses faad2 libao libcddb libcdio libdiscid ffmpeg flac jack mad libmodplug mp4v2 musepack opusfile libsamplerate libvorbis wavpack |
 
 
+## Playback speed
+
+`[` slows playback by a factor of 1.1 and `]` speeds it up by the same
+factor, preserving pitch. Backspace resets to normal speed (in the file
+browser, use `:speed 1`). `:speed 0.75` sets a specific speed; `:speed` shows it.
+The supported range is 0.25x to 4x. The speed survives track changes and
+resets when cmus exits. Existing default bracket bindings are upgraded;
+custom bindings and the file browser's Backspace binding are retained.
+
+Install Rubber Band 3.0 or newer's development package (`librubberband-dev`
+on Debian/Ubuntu, `rubberband-devel` on Fedora, `rubberband` on Arch or
+Homebrew), then configure with `./configure CONFIG_RUBBERBAND=y` and build.
+The Nix flake includes it automatically. Without Rubber Band, normal playback
+still works and the speed command explains the missing build dependency.
+
 ## Building
 
     $ make
@@ -41,6 +56,15 @@ Or on some BSD systems you need to explicitly use GNU make:
 
     $ gmake
 
+
+## Testing playback speed
+
+`make check-tempo` checks duration, pitch, PCM formats and partial writes.
+`make check-player-speed` (Linux, Python 3) runs the player with isolated
+settings and a capture output, checking the keys, config migration, live
+speed changes, pause, seek, normal-speed passthrough and track transitions.
+The latter uses an inherited terminal instead of a listening control socket;
+it does not need an audio device or a desktop session.
 
 ## Installation
 
