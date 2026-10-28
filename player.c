@@ -67,6 +67,7 @@ static struct player_info player_info_priv = {
 	.ti = NULL,
 	.status = PLAYER_STATUS_STOPPED,
 	.pos = 0,
+	.seek_pos = 0.0,
 	.current_bitrate = -1,
 	.buffer_fill = 0,
 	.buffer_size = 0,
@@ -75,6 +76,7 @@ static struct player_info player_info_priv = {
 	.metadata_changed = 0,
 	.status_changed = 0,
 	.position_changed = 0,
+	.position_seeked = 0,
 	.buffer_fill_changed = 0,
 };
 
@@ -411,7 +413,7 @@ static inline unsigned int buffer_second_size(void)
 
 /* updating player status {{{ */
 
-static inline void _file_changed(struct track_info *ti)
+static inline void _file_changed(struct track_info *ti, int reset_seek)
 {
 	player_info_priv_lock();
 	if (player_info_priv.ti)
@@ -421,6 +423,8 @@ static inline void _file_changed(struct track_info *ti)
 	update_rg_scale();
 	player_metadata[0] = 0;
 	player_info_priv.file_changed = 1;
+	if (reset_seek)
+		player_info_priv.position_seeked = 0;
 	player_info_priv_unlock();
 }
 
@@ -431,7 +435,7 @@ static inline void file_changed(struct track_info *ti)
 	} else {
 		d_print("unloaded\n");
 	}
-	_file_changed(ti);
+	_file_changed(ti, 1);
 }
 
 static inline void metadata_changed(void)
@@ -526,9 +530,6 @@ static void _producer_buffer_fill_update(void)
 }
 
 /*
- * playing position changed
- */
-/*
  * Position of the consumer (the audio written to the output) in
  * milliseconds. Computed from bytes so it doesn't drift; the two parts
  * avoid overflowing consumer_pos * 1000 on very long tracks.
@@ -549,15 +550,20 @@ static int64_t consumer_position_ms(void)
  * (lyrics); pos, the bitrate and position_changed still change once per
  * second, as before, so nothing else redraws more often.
  */
-static void _consumer_position_update(void)
+static void _consumer_position_update(int seeked, double seek_pos)
 {
 	int64_t ms = consumer_position_ms();
 	unsigned int pos = ms / 1000;
 
 	player_info_priv_lock();
 	player_info_priv.pos_ms = ms;
-	if (pos != player_info_priv.pos) {
+	if (pos != player_info_priv.pos || seeked) {
 		player_info_priv.pos = pos;
+		if (seeked) {
+			player_info_priv.seek_pos = seek_pos;
+			player_info_priv.position_seeked = 1;
+		}
+
 		if (show_current_bitrate) {
 			long bitrate = ip_current_bitrate(ip);
 			if (bitrate != -1)
@@ -911,7 +917,7 @@ static void *consumer_loop(void *arg)
 
 		while (1) {
 			if (space == 0) {
-				_consumer_position_update();
+				_consumer_position_update(0, 0.0);
 				consumer_unlock();
 				ms_sleep(25);
 				break;
@@ -937,7 +943,7 @@ static void *consumer_loop(void *arg)
 					} else {
 						/* possible underrun */
 						producer_unlock();
-						_consumer_position_update();
+						_consumer_position_update(0, 0.0);
 						consumer_unlock();
 /* 						d_print("possible underrun\n"); */
 						ms_sleep(10);
@@ -1239,7 +1245,7 @@ out:
 
 void player_file_changed(struct track_info *ti)
 {
-	_file_changed(ti);
+	_file_changed(ti, 0);
 }
 
 void player_seek(double offset, int relative, int start_playing)
@@ -1312,7 +1318,7 @@ void player_seek(double offset, int relative, int start_playing)
 			reset_buffer();
 			consumer_pos = new_pos * buffer_second_size();
 			scale_pos = consumer_pos;
-			_consumer_position_update();
+			_consumer_position_update(1, new_pos);
 			if (stopped && !start_playing) {
 				_producer_pause();
 				_consumer_pause();
@@ -1323,7 +1329,6 @@ void player_seek(double offset, int relative, int start_playing)
 			d_print("error: ip_seek returned %d\n", rc);
 		}
 	}
-	mpris_seeked();
 	player_unlock();
 }
 
@@ -1509,6 +1514,7 @@ void player_info_snapshot(void)
 	player_info_priv.metadata_changed = 0;
 	player_info_priv.status_changed = 0;
 	player_info_priv.position_changed = 0;
+	player_info_priv.position_seeked = 0;
 	player_info_priv.buffer_fill_changed = 0;
 	player_info_priv.error_msg = NULL;
 
