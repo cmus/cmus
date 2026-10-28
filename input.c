@@ -21,6 +21,7 @@
 #include "ip.h"
 #include "pcm.h"
 #include "http.h"
+#include "sf.h"
 #include "xmalloc.h"
 #include "file.h"
 #include "path.h"
@@ -625,18 +626,19 @@ int ip_open(struct input_plugin *ip)
 
 void ip_setup(struct input_plugin *ip)
 {
-	unsigned int bits, is_signed, channels;
+	unsigned int bits, is_signed, channels, is_float;
 	sample_format_t sf = ip->data.sf;
 
 	bits = sf_get_bits(sf);
 	is_signed = sf_get_signed(sf);
 	channels = sf_get_channels(sf);
+	is_float = sf_get_float(sf);
 
 	ip->pcm_convert_scale = 1;
 	ip->pcm_convert = NULL;
 	ip->pcm_convert_in_place = NULL;
 
-	if (bits <= 16 && channels <= 2) {
+	if (bits <= 16 && channels <= 2 && is_float == 0) {
 		unsigned int mask = ((bits >> 2) & 4) | (is_signed << 1);
 
 		ip->pcm_convert = pcm_conv[mask | (channels - 1)];

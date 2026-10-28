@@ -80,7 +80,7 @@ static int waveout_open(sample_format_t sf, const channel_position_t *channel_ma
 {
 	WAVEFORMATEX format = {
 		.cbSize          = sizeof(format),
-		.wFormatTag      = WAVE_FORMAT_PCM,
+		.wFormatTag      = sf_get_float(sf) ? WAVE_FORMAT_IEEE_FLOAT : WAVE_FORMAT_PCM,
 		.nChannels       = sf_get_channels(sf),
 		.nSamplesPerSec  = sf_get_rate(sf),
 		.wBitsPerSample  = sf_get_bits(sf),

@@ -213,7 +213,8 @@ static int wavpack_open(struct input_plugin_data *ip_data)
 	ip_data->sf = sf_rate(WavpackGetSampleRate(priv->wpc))
 		| sf_channels(WavpackGetReducedChannels(priv->wpc))
 		| sf_bits(WavpackGetBitsPerSample(priv->wpc))
-		| sf_signed(1);
+		| sf_signed(1)
+		| sf_float((WavpackGetMode(priv->wpc) & MODE_FLOAT) ? 1 : 0);
 	channel_mask = WavpackGetChannelMask(priv->wpc);
 	channel_map_init_waveex(sf_get_channels(ip_data->sf), channel_mask, ip_data->channel_map);
 	return 0;

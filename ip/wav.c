@@ -32,6 +32,7 @@
 #include <unistd.h>
 
 #define WAVE_FORMAT_PCM        0x0001U
+#define WAVE_FORMAT_IEEE_FLOAT 0x0003U
 #define WAVE_FORMAT_EXTENSIBLE 0xfffeU
 
 #define WAVE_WRONG_HEADER 1
@@ -179,8 +180,8 @@ static int wav_open(struct input_plugin_data *ip_data)
 		}
 		free(fmt);
 
-		if (format_tag != WAVE_FORMAT_PCM) {
-			d_print("unsupported format tag %u, should be 1\n", format_tag);
+		if (!(format_tag == WAVE_FORMAT_PCM || format_tag == WAVE_FORMAT_IEEE_FLOAT)) {
+			d_print("unsupported format tag %u, should be 1 or 3\n", format_tag);
 			rc = -IP_ERROR_UNSUPPORTED_FILE_TYPE;
 			goto error_exit;
 		}
@@ -189,7 +190,7 @@ static int wav_open(struct input_plugin_data *ip_data)
 			goto error_exit;
 		}
 		ip_data->sf = sf_channels(channels) | sf_rate(rate) | sf_bits(bits) |
-			sf_signed(bits > 8);
+			sf_signed(bits > 8) | sf_float(format_tag == WAVE_FORMAT_IEEE_FLOAT ? 1 : 0);
 		channel_map_init_waveex(channels, channel_mask, ip_data->channel_map);
 	}
 
@@ -209,9 +210,9 @@ static int wav_open(struct input_plugin_data *ip_data)
 	d_print("pcm start: %u\n", (unsigned int)priv->pcm_start);
 	d_print("pcm size: %u\n", priv->pcm_size);
 	d_print("\n");
-	d_print("sr: %d, ch: %d, bits: %d, signed: %d\n", sf_get_rate(ip_data->sf),
+	d_print("sr: %d, ch: %d, bits: %d, signed: %d, float: %d\n", sf_get_rate(ip_data->sf),
 			sf_get_channels(ip_data->sf), sf_get_bits(ip_data->sf),
-			sf_get_signed(ip_data->sf));
+			sf_get_signed(ip_data->sf), sf_get_float(ip_data->sf));
 
 	/* clamp pcm_size to full frames (file might be corrupt or truncated) */
 	priv->pcm_size -= priv->pcm_size % sf_get_frame_size(ip_data->sf);

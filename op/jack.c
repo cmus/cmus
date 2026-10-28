@@ -126,6 +126,14 @@ static jack_default_audio_sample_t read_sample_le32u(const char *buffer)
 		/ ((jack_default_audio_sample_t) UINT32_MAX)) * 2.0 - 2.0;
 }
 
+static jack_default_audio_sample_t read_sample_le32f(const char *buffer)
+{
+	jack_default_audio_sample_t sample;
+	memcpy(&sample, buffer, sizeof(jack_default_audio_sample_t));
+	return sample;
+
+}
+
 #ifdef HAVE_SAMPLERATE
 static void op_jack_reset_src(void) {
 	for (int c = 0; c < CHANNELS; c++) {
@@ -422,7 +430,11 @@ static int op_jack_open(sample_format_t sf, const channel_position_t *cm)
 		read_sample = sf_get_signed(sf) ? &read_sample_le24 : &read_sample_le24u;
 	} else if (bits == 32) {
 		sample_bytes = 4;
-		read_sample = sf_get_signed(sf) ? &read_sample_le32 : &read_sample_le32u;
+		if (sf_get_float(sf)) {
+			read_sample = &read_sample_le32f;
+		} else {
+			read_sample = sf_get_signed(sf) ? &read_sample_le32 : &read_sample_le32u;
+		}
 	} else {
 		d_print("%d bits not supported\n", sf_get_bits(sf));
 		return -OP_ERROR_SAMPLE_FORMAT;

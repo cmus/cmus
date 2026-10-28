@@ -121,6 +121,10 @@ static int oss_set_sf(sample_format_t sf)
 		return -1;
 #endif
 
+	if (sf_get_float(oss_sf)) {
+		d_print("support for float sample format (AFMT_FLOAT) not implemented yet\n");
+		return -1; 
+	}
 	found = 0;
 	for (i = 0; i < N_ELEMENTS(oss_fmts); i++) {
 		if (sf_get_bits(oss_sf) == oss_fmts[i].bits &&

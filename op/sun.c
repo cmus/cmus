@@ -53,6 +53,9 @@ static int sun_set_sf(sample_format_t sf)
 	sun_reset();
 	sun_sf = sf;
 
+	if (sf_get_float(sun_sf))
+		return -1;
+
 	ainf.play.channels = sf_get_channels(sun_sf);
 	ainf.play.sample_rate = sf_get_rate(sun_sf);
 	ainf.play.pause = 0;

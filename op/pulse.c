@@ -108,6 +108,7 @@ static pa_sample_format_t convert_sample_format(sample_format_t sf)
 	const int _signed = sf_get_signed(sf);
 	const int big_endian = sf_get_bigendian(sf);
 	const int sample_size = sf_get_sample_size(sf) * 8;
+	const int _float = sf_get_float(sf);
 
 	if (!_signed && sample_size == 8)
 		return PA_SAMPLE_U8;
@@ -119,7 +120,11 @@ static pa_sample_format_t convert_sample_format(sample_format_t sf)
 		case 24:
 			return big_endian ? PA_SAMPLE_S24BE : PA_SAMPLE_S24LE;
 		case 32:
-			return big_endian ? PA_SAMPLE_S32BE : PA_SAMPLE_S32LE;
+			if (_float) {
+				return big_endian ? PA_SAMPLE_FLOAT32BE : PA_SAMPLE_FLOAT32LE;
+			} else {
+				return big_endian ? PA_SAMPLE_S32BE : PA_SAMPLE_S32LE;
+			}
 		}
 	}
 

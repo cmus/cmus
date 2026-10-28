@@ -422,7 +422,9 @@ static AudioStreamBasicDescription coreaudio_fill_format_description(sample_form
 		desc.mFormatFlags |= kAudioFormatFlagIsBigEndian;
 	if (sf_get_signed(sf))
 		desc.mFormatFlags |= kLinearPCMFormatFlagIsSignedInteger;
-
+	if (sf_get_float(sf))
+		desc.mFormatFlags |= kAudioFormatFlagIsFloat;
+	
 	return desc;
 }
 
