@@ -1160,10 +1160,17 @@ static void set_shuffle(void *data, const char *buf)
 	else if (tmp == SHUFFLE_TRUE)
 		tmp = SHUFFLE_TRACKS;
 
-	if (tmp != shuffle)
-		mpris_shuffle_changed();
+	if (tmp == shuffle)
+		return;
 
 	shuffle = tmp;
+
+	if (shuffle && auto_reshuffle) {
+		lib_reshuffle();
+		pl_reshuffle();
+	}
+
+	mpris_shuffle_changed();
 	update_statusline();
 }
 
@@ -1176,6 +1183,12 @@ static void toggle_shuffle(void *data)
 	if (!play_library && shuffle == SHUFFLE_ALBUMS)
 		shuffle = SHUFFLE_OFF;
 
+	if (shuffle == SHUFFLE_TRACKS && auto_reshuffle) {
+		lib_reshuffle();
+		pl_reshuffle();
+	}
+
+	mpris_shuffle_changed();
 	update_statusline();
 }
 
@@ -2031,6 +2044,7 @@ void resume_load(void)
 {
 	char filename[512];
 	struct track_info *ti, *old;
+	struct tree_track *track;
 	struct resume resume = { .status = PLAYER_STATUS_STOPPED, .view = -1 };
 
 	snprintf(filename, sizeof(filename), "%s/resume", cmus_config_dir);
@@ -2049,9 +2063,10 @@ void resume_load(void)
 			lib_add_track(ti, NULL);
 			track_info_unref(ti);
 			lib_store_cur_track(ti);
-			track_info_unref(ti);
-			ti = lib_set_track(lib_find_track(ti));
-			if (ti) {
+			if ((track = lib_find_track(ti))) {
+				track->simple_track.shuffle_info.rand = 0.0;
+				track->album->shuffle_info.rand = 0.0;
+				ti = lib_set_track(track);
 				BUG_ON(ti != old);
 				track_info_unref(ti);
 				tree_sel_current(auto_expand_albums_follow);

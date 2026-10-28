@@ -226,6 +226,8 @@ static void pl_loaded(struct playlist *pl)
 	pl_playing_track = to_simple_track(li);
 	pl_playing = pl;
 	pl_select_playing_track();
+	// move to start of shuffle list
+	shuffle_insert(&pl_playing->shuffle_root, NULL, &pl_playing_track->shuffle_info);
 
 	free(pl_resume_name);
 	pl_resume_name = NULL;

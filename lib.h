@@ -138,9 +138,9 @@ struct tree_track *tree_get_selected(void);
 struct track_info *tree_activate_selected(void);
 const char *tree_artist_name(const struct track_info* ti);
 const char *tree_album_name(const struct track_info* ti);
-void tree_sort_artists(void (*add_album_cb)(struct album *), void (*remove_album_cb)(struct album *));
-void tree_add_track(struct tree_track *track, void (*add_album_cb)(struct album *));
-void tree_remove(struct tree_track *track, void (*remove_album_cb)(struct album *));
+void tree_sort_artists(void);
+void tree_add_track(struct tree_track *track);
+void tree_remove(struct tree_track *track);
 void tree_remove_sel(void);
 void tree_toggle_active_window(void);
 void tree_toggle_expand_artist(void);
@@ -155,6 +155,16 @@ int _tree_for_each_sel(int (*cb)(void *data, struct track_info *ti), void *data,
 
 struct track_info *sorted_activate_selected(void);
 void sorted_sel_current(void);
+
+static inline void album_shuffle_list_add(struct album *album)
+{
+	shuffle_list_add(&album->shuffle_info, &lib_album_shuffle_root, album);
+}
+
+static inline void album_shuffle_list_remove(struct album *album)
+{
+	rb_erase(&album->shuffle_info.tree_node, &lib_album_shuffle_root);
+}
 
 static inline struct tree_track *iter_to_sorted_track(const struct iter *iter)
 {
