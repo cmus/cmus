@@ -40,6 +40,7 @@
 struct vorbis_private {
 	OggVorbis_File vf;
 	int current_section;
+	int opening;
 };
 
 /* http://www.xiph.org/vorbis/doc/vorbisfile/callbacks.html */
@@ -47,9 +48,12 @@ struct vorbis_private {
 static size_t read_func(void *ptr, size_t size, size_t nmemb, void *datasource)
 {
 	struct input_plugin_data *ip_data = datasource;
+	struct vorbis_private *priv = ip_data->private;
 	int rc;
 
-	rc = read_wrapper(ip_data, ptr, size * nmemb);
+	do {
+		rc = read_wrapper(ip_data, ptr, size * nmemb);
+	} while (priv->opening && rc < 0 && errno == EAGAIN);
 	if (rc == -1) {
 		d_print("error: %s\n", strerror(errno));
 		return 0;
@@ -157,7 +161,9 @@ static int vorbis_open(struct input_plugin_data *ip_data)
 	int rc;
 
 	priv = xnew(struct vorbis_private, 1);
+	ip_data->private = priv;
 	priv->current_section = -1;
+	priv->opening = 1;
 	memset(&priv->vf, 0, sizeof(priv->vf));
 
 	rc = ov_open_callbacks(ip_data, &priv->vf, NULL, 0, callbacks);
@@ -168,7 +174,7 @@ static int vorbis_open(struct input_plugin_data *ip_data)
 		 * something else if it isn't vorbis */
 		return -IP_ERROR_UNSUPPORTED_FILE_TYPE;
 	}
-	ip_data->private = priv;
+	priv->opening = 0;
 
 	vi = ov_info(&priv->vf, -1);
 	ip_data->sf = sf_rate(vi->rate) | sf_channels(vi->channels) | sf_bits(16) | sf_signed(1);

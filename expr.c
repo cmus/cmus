@@ -912,7 +912,7 @@ static int int_val(const char *key, struct track_info *ti)
 	if (strcmp(key, "duration") == 0) {
 		val = ti->duration;
 		/* duration of a stream is infinite (well, almost) */
-		if (is_http_url(ti->filename))
+		if (is_http_or_https_url(ti->filename))
 			val = INT_MAX;
 	} else if (strcmp(key, "date") == 0) {
 		val = (ti->date >= 0) ? (ti->date / 10000) : -1;
@@ -1029,7 +1029,7 @@ int expr_eval(struct expr *expr, struct track_info *ti)
 		return res;
 	}
 	if (strcmp(key, "stream") == 0)
-		return is_http_url(ti->filename);
+		return is_http_or_https_url(ti->filename);
 	return track_info_has_tag(ti);
 }
 
