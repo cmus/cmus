@@ -124,11 +124,13 @@ typedef size_t sort_key_t;
 #define REV_SORT_MEDIA          (REV_SORT__START + offsetof(struct track_info, media))
 #define REV_SORT_BPM            (REV_SORT__START + offsetof(struct track_info, bpm))
 
-#define TI_MATCH_ARTIST       (1 << 0)
-#define TI_MATCH_ALBUM        (1 << 1)
-#define TI_MATCH_TITLE        (1 << 2)
-#define TI_MATCH_ALBUMARTIST  (1 << 3)
-#define TI_MATCH_ALL          (~0)
+#define TI_MATCH_ARTIST           (1 << 0)
+#define TI_MATCH_ALBUM            (1 << 2)
+#define TI_MATCH_ALBUMSORT        (1 << 3)
+#define TI_MATCH_TITLE            (1 << 4)
+#define TI_MATCH_ALBUMARTIST      (1 << 5)
+#define TI_MATCH_ALBUMARTISTSORT  (1 << 6)
+#define TI_MATCH_ALL              (~0)
 
 /* initializes only filename and ref */
 struct track_info *track_info_new(const char *filename);
