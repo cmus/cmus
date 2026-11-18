@@ -259,7 +259,7 @@ static int pl_list_compare(const struct list_head *l, const struct list_head *r)
 {
 	struct playlist *pl = pl_from_list(l);
 	struct playlist *pr = pl_from_list(r);
-	return strcmp(pl->name, pr->name);
+	return strptrnatcmp(&pl->name, &pr->name);
 }
 
 static void pl_sort_all(void)
