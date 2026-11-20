@@ -500,6 +500,18 @@ static int mpris_metadata(sd_bus *_bus, const char *_path,
 			free(uri);
 			CK(rc);
 		}
+		if (ti->musicbrainz_trackid) {
+			CK(mpris_msg_append_sas_dict(reply, "xesam:musicBrainzTrackID", ti->musicbrainz_trackid));
+		}
+		if (ti->musicbrainz_albumid) {
+			CK(mpris_msg_append_sas_dict(reply, "xesam:musicBrainzAlbumID", ti->musicbrainz_albumid));
+		}
+		if (ti->musicbrainz_artistid) {
+			CK(mpris_msg_append_sas_dict(reply, "xesam:musicBrainzArtistID", ti->musicbrainz_artistid));
+		}
+		if (ti->musicbrainz_albumartistid) {
+			CK(mpris_msg_append_sas_dict(reply, "xesam:musicBrainzAlbumArtistID", ti->musicbrainz_albumartistid));
+		}
 		if (is_http_url(ti->filename))
 			CK(mpris_msg_append_ss_dict(reply, "cmus:stream_title",
 						get_stream_title()));

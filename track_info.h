@@ -57,6 +57,10 @@ struct track_info {
 	const char *artistsort;
 	const char *albumsort;
 	const char *media;
+	const char *musicbrainz_trackid;
+	const char *musicbrainz_albumid;
+	const char *musicbrainz_artistid;
+	const char *musicbrainz_albumartistid;
 
 	char *collkey_artist;
 	char *collkey_album;

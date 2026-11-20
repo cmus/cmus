@@ -59,6 +59,10 @@ struct track_info *track_info_new(const char *filename)
 	ti->codec = NULL;
 	ti->codec_profile = NULL;
 	ti->output_gain = 0;
+	ti->musicbrainz_trackid = NULL;
+	ti->musicbrainz_albumid = NULL;
+	ti->musicbrainz_artistid = NULL;
+	ti->musicbrainz_albumartistid = NULL;
 
 	return ti;
 }
@@ -84,6 +88,10 @@ void track_info_set_comments(struct track_info *ti, struct keyval *comments) {
 	ti->albumsort = keyvals_get_val(comments, "albumsort");
 	ti->is_va_compilation = track_is_va_compilation(comments);
 	ti->media = keyvals_get_val(comments, "media");
+	ti->musicbrainz_trackid = keyvals_get_val(comments, "musicbrainz_trackid");
+	ti->musicbrainz_albumid = keyvals_get_val(comments, "musicbrainz_albumid");
+	ti->musicbrainz_artistid = keyvals_get_val(comments, "musicbrainz_artistid");
+	ti->musicbrainz_albumartistid = keyvals_get_val(comments, "musicbrainz_albumartistid");
 
 	const char *bitrate_str = keyvals_get_val(comments, "bitrate");
 	if (bitrate_str) {
